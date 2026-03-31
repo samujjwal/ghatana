@@ -207,6 +207,35 @@ include(":products:tutorputor:libs:content-studio-agents")
 include(":products:tutorputor:services:tutorputor-content-generation")
 
 // =============================================================================
+// Product: Aura — Personal AI Intelligence Platform
+// Five domain clusters: Foundation | Domain | Agents | Platform | Integration
+// =============================================================================
+
+include(":products:aura")
+
+// Cluster 1: Foundation (core domain types, base contracts)
+include(":products:aura:foundation")
+
+// Cluster 2: Domain (product, user, and intelligence domain logic)
+include(":products:aura:domain:profile")
+include(":products:aura:domain:catalog")
+include(":products:aura:domain:recommendation")
+include(":products:aura:domain:explainability")
+include(":products:aura:domain:community")
+
+// Cluster 3: Agents (ADAPTIVE intelligence agent + PLANNING task agent)
+include(":products:aura:agents:intelligence-agent")
+include(":products:aura:agents:task-agent")
+
+// Cluster 4: Platform (HTTP API layer + runtime config)
+include(":products:aura:platform:api")
+include(":products:aura:platform:config")
+
+// Cluster 5: Integration (AEP event bridge + Knowledge Graph adapter)
+include(":products:aura:integration:aep")
+include(":products:aura:integration:knowledge-graph")
+
+// =============================================================================
 // Product: Software-Org — Software Organization Simulation
 // =============================================================================
 

@@ -105,7 +105,7 @@ export interface SimRuntimeService {
     stepBackward(sessionId: SimulationSessionId): Promise<SimKeyframe>;
     seekToStep(sessionId: SimulationSessionId, stepIndex: number): Promise<SimKeyframe>;
     terminateSession(sessionId: SimulationSessionId): Promise<void>;
-    getSessionState(sessionId: SimulationSessionId): Promise<any>;
+    getSessionState(sessionId: SimulationSessionId): Promise<unknown>;
 }
 /**
  * Base kernel interface - all domain kernels implement this.

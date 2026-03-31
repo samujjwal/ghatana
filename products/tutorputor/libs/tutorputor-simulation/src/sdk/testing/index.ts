@@ -209,7 +209,7 @@ export class KernelTestHarness {
     // Extract values from entities that have a value property or from metadata
     const values = entities.map((e) => {
       if ("value" in e) {
-        return (e as any).value as number;
+        return (e as { value: unknown }).value as number;
       }
       if (e.metadata && "value" in e.metadata) {
         return e.metadata.value as number;

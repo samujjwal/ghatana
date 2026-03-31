@@ -10,7 +10,7 @@
  * @doc.purpose Provide live pipeline run data with initial REST load + SSE updates
  * @doc.layer frontend
  */
-import { useEffect } from "react";
+import { useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtomValue } from "jotai";
 import { tenantIdAtom } from "@/stores/tenant.store";
@@ -23,6 +23,7 @@ import {
 } from "@/api/aep.api";
 import { subscribeToAepStream } from "@/api/sse";
 import { useMutation } from "@tanstack/react-query";
+import { useSSESubscription } from "@ghatana/realtime";
 
 export const PIPELINE_RUNS_QUERY_KEY = "pipeline-runs";
 
@@ -40,49 +41,51 @@ export function useLivePipelineRuns(limit = 20) {
     staleTime: 10_000,
   });
 
-  // Subscribe to SSE updates and merge into query cache
-  useEffect(() => {
-    const sub = subscribeToAepStream(
-      tenantId,
-      (msg) => {
-        const UPDATE_TYPES = new Set([
-          "run.update",
-          "run_started",
-          "run_completed",
-          "run_failed",
-          "stage_failed",
-        ]);
-        if (!UPDATE_TYPES.has(msg.type)) return;
+  // Keep callbacks stable in refs so the subscription only restarts on tenantId/limit change.
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
+  const limitRef = useRef(limit);
+  limitRef.current = limit;
 
-        queryClient.setQueryData<PipelineRun[]>(
-          [PIPELINE_RUNS_QUERY_KEY, tenantId, limit],
-          (prev = []) => {
-            if (!msg.data || typeof msg.data !== "object") return prev;
-            const run = normalizePipelineRun(msg.data as PipelineRunWire);
-            if (!run.id) return prev;
+  useSSESubscription(
+    () =>
+      subscribeToAepStream(
+        tenantId,
+        (msg) => {
+          const UPDATE_TYPES = new Set([
+            "run.update",
+            "run_started",
+            "run_completed",
+            "run_failed",
+            "stage_failed",
+          ]);
+          if (!UPDATE_TYPES.has(msg.type)) return;
 
-            const idx = prev.findIndex((r) => r.id === run.id);
-            if (idx === -1) {
-              // New run — prepend and keep up to limit
-              return [run, ...prev].slice(0, limit);
-            }
-            // Update existing run
-            const next = [...prev];
-            next[idx] = { ...next[idx], ...run };
-            return next;
-          },
-        );
-      },
-      () => {
-        // On SSE error, trigger a full refetch so data stays fresh
-        queryClient.invalidateQueries({
-          queryKey: [PIPELINE_RUNS_QUERY_KEY, tenantId],
-        });
-      },
-    );
+          queryClientRef.current.setQueryData<PipelineRun[]>(
+            [PIPELINE_RUNS_QUERY_KEY, tenantId, limitRef.current],
+            (prev = []) => {
+              if (!msg.data || typeof msg.data !== "object") return prev;
+              const run = normalizePipelineRun(msg.data as PipelineRunWire);
+              if (!run.id) return prev;
 
-    return () => sub.close();
-  }, [tenantId, limit, queryClient]);
+              const idx = prev.findIndex((r) => r.id === run.id);
+              if (idx === -1) {
+                return [run, ...prev].slice(0, limitRef.current);
+              }
+              const next = [...prev];
+              next[idx] = { ...next[idx], ...run };
+              return next;
+            },
+          );
+        },
+        () => {
+          queryClientRef.current.invalidateQueries({
+            queryKey: [PIPELINE_RUNS_QUERY_KEY, tenantId],
+          });
+        },
+      ),
+    [tenantId, limit],
+  );
 
   return query;
 }

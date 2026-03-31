@@ -173,30 +173,30 @@ export function createPathwaysService(
                 status: "ACTIVE",
                 nodes: {
                   create: pathNodes.map((n: Record<string, unknown>) => ({
-                    moduleId: n.contentId,
-                    orderIndex: n.orderIndex,
+                    moduleId: String(n.contentId),
+                    orderIndex: Number(n.orderIndex ?? 0),
                   })),
                 },
               },
               include: { nodes: true },
             });
 
+            const selected = pathNodes.map((n: Record<string, unknown>) => ({
+              id: String(n.contentId) as ModuleId,
+              slug: "",
+              title: String(n.title ?? ""),
+              domain: "TECH" as const,
+              difficulty: "INTRO" as const,
+              estimatedTimeMinutes: 30,
+              tags: [],
+              status: "PUBLISHED" as const,
+            }));
+
             return {
-              id: path.id as LearningPathId,
-              title: path.title,
-              description: path.goal,
-              progress: 0,
-              nodes: pathNodes.map((n: Record<string, unknown>) => ({
-                id: `temp-${n.orderIndex}` as LearningPathNodeId,
-                title: n.title,
-                description: n.description,
-                type: "MODULE",
-                contentId: n.contentId,
-                status: "PENDING",
-                orderIndex: n.orderIndex,
-                estimatedTimeMinutes: 30,
-              })),
-            } as unknown as LearningPath;
+              modules: selected,
+              reasoning: `Generated pathway for ${goal} using AI-ranked modules.`,
+              estimatedDurationMinutes: selected.length * 30,
+            } as LearningPathRecommendation;
           }
         }
       } catch (err) {
@@ -263,14 +263,15 @@ export function createPathwaysService(
       const filteredModules: ModuleSummary[] = [];
 
       for (const { module } of selectedModules) {
+        const estimatedMinutes = Number(module.estimatedTimeMinutes ?? 0);
         if (
           constraints?.maxDurationMinutes &&
-          totalDuration + module.estimatedTimeMinutes >
+          totalDuration + estimatedMinutes >
           constraints.maxDurationMinutes
         ) {
           continue;
         }
-        totalDuration += module.estimatedTimeMinutes;
+        totalDuration += estimatedMinutes;
         filteredModules.push(mapToModuleSummary(module));
       }
 
@@ -408,18 +409,32 @@ function mapToModuleSummary(module: Record<string, unknown>): ModuleSummary {
     id: module.id as ModuleId,
     slug: module.slug as string,
     title: module.title as string,
-    description: module.description as string,
     domain: module.domain as "MATH" | "SCIENCE" | "TECH",
     difficulty: module.difficulty as "INTRO" | "INTERMEDIATE" | "ADVANCED",
     estimatedTimeMinutes: module.estimatedTimeMinutes as number,
     tags: (module.tags as Array<Record<string, unknown>>).map((t: Record<string, unknown>) => t.label as string),
     status: module.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: (module.publishedAt as Date | undefined)?.toISOString(),
+    ...((module.publishedAt as Date | undefined)
+      ? { publishedAt: (module.publishedAt as Date).toISOString() }
+      : {}),
   };
 }
 
 function mapToLearningPath(path: LearningPathWithNodes): LearningPath {
   const nodes = (path.nodes as Array<Record<string, unknown>> | undefined) ?? [];
+  const mappedNodes: LearningPathNode[] = nodes.map((node: Record<string, unknown>) => {
+    const mappedNode: LearningPathNode = {
+      id: node.id as LearningPathNodeId,
+      moduleId: node.moduleId as ModuleId,
+      orderIndex: node.orderIndex as number,
+      isOptional: node.isOptional as boolean,
+    };
+    if (node.completedAt instanceof Date) {
+      mappedNode.completedAt = node.completedAt.toISOString();
+    }
+    return mappedNode;
+  });
+
   return {
     id: path.id as LearningPathId,
     userId: path.userId as UserId,
@@ -427,13 +442,7 @@ function mapToLearningPath(path: LearningPathWithNodes): LearningPath {
     title: path.title as string,
     goal: path.goal as string,
     status: path.status as "ACTIVE" | "COMPLETED" | "PAUSED",
-    nodes: nodes.map((node: Record<string, unknown>) => ({
-      id: node.id as LearningPathNodeId,
-      moduleId: node.moduleId as ModuleId,
-      orderIndex: node.orderIndex as number,
-      isOptional: node.isOptional as boolean,
-      completedAt: (node.completedAt as Date | undefined)?.toISOString(),
-    })),
+    nodes: mappedNodes,
     createdAt: (path.createdAt as Date).toISOString(),
     updatedAt: (path.updatedAt as Date).toISOString(),
   };

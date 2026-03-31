@@ -208,7 +208,7 @@ export class SecureDatabaseManager {
     }
 
     if (typeof input === "object" && input !== null) {
-      const sanitized: any = {};
+      const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(input)) {
         sanitized[key] = this.validateInput(value);
       }

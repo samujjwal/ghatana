@@ -3,8 +3,8 @@
  *
  * Verifies:
  *   1. REST load populates the queue on mount
- *   2. `hitl.new` SSE events prepend items without a full refetch
- *   3. `hitl.new` with duplicate reviewId is ignored
+ *   2. `hitl_request_created` SSE events prepend items without a full refetch
+ *   3. `hitl_request_created` with duplicate reviewId is ignored
  *   4. SSE errors trigger query invalidation (refetch)
  *   5. Approve/reject mutations invalidate the queue
  *
@@ -100,7 +100,7 @@ describe('useHitlQueue', () => {
     expect(result.current.data![0].reviewId).toBe('rev-001');
   });
 
-  it('prepends a new item when hitl.new SSE event arrives', async () => {
+  it('prepends a new item when hitl_request_created SSE event arrives', async () => {
     const initial = [makeReview('rev-001')];
     vi.mocked(aepApi.listPendingReviews).mockResolvedValue(initial);
 
@@ -111,7 +111,7 @@ describe('useHitlQueue', () => {
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
     // setQueryData is synchronous — check cache immediately after calling handler
-    capturedOnMessage({ type: 'hitl.new', data: makeReview('rev-999') });
+    capturedOnMessage({ type: 'hitl_request_created', data: makeReview('rev-999') });
 
     const cached = getHitlCache(client);
     expect(cached).toHaveLength(2);
@@ -119,7 +119,7 @@ describe('useHitlQueue', () => {
     expect(cached![1].reviewId).toBe('rev-001');
   });
 
-  it('ignores hitl.new when the review ID already exists in the queue', async () => {
+  it('ignores hitl_request_created when the review ID already exists in the queue', async () => {
     const initial = [makeReview('rev-001')];
     vi.mocked(aepApi.listPendingReviews).mockResolvedValue(initial);
 
@@ -129,13 +129,13 @@ describe('useHitlQueue', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
-    capturedOnMessage({ type: 'hitl.new', data: makeReview('rev-001') }); // duplicate
+    capturedOnMessage({ type: 'hitl_request_created', data: makeReview('rev-001') }); // duplicate
 
     // Cache length must remain 1
     expect(getHitlCache(client)).toHaveLength(1);
   });
 
-  it('ignores SSE messages that are not hitl.new', async () => {
+  it('ignores SSE messages that are not hitl_request_created', async () => {
     vi.mocked(aepApi.listPendingReviews).mockResolvedValue([makeReview('rev-001')]);
 
     const { client, Wrapper } = makeWrapper();

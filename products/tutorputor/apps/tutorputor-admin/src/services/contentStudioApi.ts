@@ -213,7 +213,7 @@ export interface PublishGenerationRequestResult {
 // API Adapter
 // ---------------------------------------------------------------------------
 
-function mapExpToAdmin(exp: any): AdminExperience {
+function mapExpToAdmin(exp: Record<string, unknown>): AdminExperience {
   return {
     id: exp.id,
     title: exp.title,
@@ -228,7 +228,7 @@ function mapExpToAdmin(exp: any): AdminExperience {
             : "draft",
     gradeLevel: exp.gradeAdaptation?.gradeRange ?? "grade_6_8",
     subject: exp.domain ?? "TECH",
-    claims: (exp.claims ?? []).map((c: any) => ({
+    claims: (exp.claims ?? []).map((c) => ({
       id: c.id,
       text: c.text ?? c.statement ?? "",
       bloomLevel: c.bloomLevel ?? c.bloom,
@@ -242,7 +242,7 @@ function mapExpToAdmin(exp: any): AdminExperience {
   };
 }
 
-function mapValidationToAdmin(v: any): AdminValidationResult {
+function mapValidationToAdmin(v: Record<string, unknown>): AdminValidationResult {
   const pillarScores: Record<string, number> = {
     Educational: v.pillarScores?.educational ?? v.score ?? 0,
     Experiential: v.pillarScores?.experiential ?? v.score ?? 0,
@@ -252,7 +252,7 @@ function mapValidationToAdmin(v: any): AdminValidationResult {
   };
 
   const checks: AdminValidationResult["checks"] = (v.checks ?? []).map(
-    (c: any) => ({
+    (c: unknown) => ({
       checkId: c.checkId ?? c.id ?? "check",
       pillar: c.pillar ?? "General",
       name: c.name ?? c.description ?? "Check",

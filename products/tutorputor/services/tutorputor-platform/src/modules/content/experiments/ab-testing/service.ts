@@ -83,7 +83,7 @@ export class ABTestingService {
   private get observationStore() {
     return (this.prisma as PrismaClient & {
       aBExperimentObservation: {
-        findMany: (...args: any[]) => Promise<any[]>;
+        findMany: (...args: any[]) => Promise<unknown[]>;
         create: (...args: any[]) => Promise<any>;
       };
     }).aBExperimentObservation;

@@ -79,14 +79,14 @@ export class CredentialService {
         });
 
         // Map and filter in memory
-        let credentials = events.map((e: any) => e.payload as unknown as Credential).filter((c: any) => c && c.id);
+        let credentials = events.map((e) => e.payload as unknown as Credential).filter((c) => c && c.id);
 
         if (filter) {
-            if (filter.type) credentials = credentials.filter((c: any) => c.type === filter.type);
-            if (filter.status) credentials = credentials.filter((c: any) => c.status === filter.status);
-            if (filter.category) credentials = credentials.filter((c: any) => c.metadata.category === filter.category);
-            if (filter.simulationId) credentials = credentials.filter((c: any) => c.achievement?.simulationId === filter.simulationId);
-            if (filter.tenantId) credentials = credentials.filter((c: any) => c.tenantId === filter.tenantId);
+            if (filter.type) credentials = credentials.filter((c) => c.type === filter.type);
+            if (filter.status) credentials = credentials.filter((c) => c.status === filter.status);
+            if (filter.category) credentials = credentials.filter((c) => c.metadata.category === filter.category);
+            if (filter.simulationId) credentials = credentials.filter((c) => c.achievement?.simulationId === filter.simulationId);
+            if (filter.tenantId) credentials = credentials.filter((c) => c.tenantId === filter.tenantId);
         }
 
         return credentials;
@@ -216,7 +216,7 @@ export class CredentialService {
             simulationsCompleted: attempts.length,
             domainPacksCompleted: 0,
             totalTimeSpent: totalTime,
-            averageScore: attempts.length > 0 ? attempts.reduce((a: any, b: any) => a + (b.scorePercent || 0), 0) / attempts.length : 0,
+            averageScore: attempts.length > 0 ? attempts.reduce((a, b) => a + (b.scorePercent || 0), 0) / attempts.length : 0,
             perfectScoresCount: perfectScores,
             firstAttemptPassCount: 0, // Need attempt history per assessment
             domainProgress

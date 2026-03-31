@@ -7,7 +7,7 @@
  * @doc.pattern Service
  */
 
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type {
   SimulationAuthorService,
 } from "@tutorputor/contracts/v1/simulation/services";
@@ -293,7 +293,7 @@ Ensure all required fields are present and the manifest is valid.`;
       authorId: request.userId,
       tenantId: request.tenantId,
       needsReview: parsed.needsReview ?? false,
-      moduleId: undefined,
+      ...(parsed.moduleId ? { moduleId: parsed.moduleId } : {}),
       canvas: parsed.canvas || {
         width: 800,
         height: 600,
@@ -352,15 +352,15 @@ Ensure all required fields are present and the manifest is valid.`;
             authorId: request.userId as string,
             title: manifest.title,
             domain: manifest.domain,
-            manifest: manifest as unknown as Record<string, unknown>,
+            manifest: manifest as any,
             needsReview,
             schemaVersion: manifest.schemaVersion,
-          },
+          } as any,
           update: {
-            manifest: manifest as unknown as Record<string, unknown>,
+            manifest: manifest as any,
             needsReview,
             updatedAt: new Date(),
-          },
+          } as any,
         });
       }
 

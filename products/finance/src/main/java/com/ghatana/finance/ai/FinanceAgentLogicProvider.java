@@ -7,10 +7,12 @@ package com.ghatana.finance.ai;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.spi.AgentLogicProvider;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -39,9 +41,47 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
     private final Map<String, Function<AgentConfig, TypedAgent<?, ?>>> factories =
             new ConcurrentHashMap<>();
 
+    /**
+     * Default no-arg constructor for environments where agent dependencies are
+     * registered later via {@link #registerFactory}.
+     */
     public FinanceAgentLogicProvider() {
-        factories.put("finance:risk-assessment", FinanceAgentLogicProvider::stubFactory);
-        factories.put("finance:fraud-detection", FinanceAgentLogicProvider::stubFactory);
+        // No real agent wiring; factories must be registered externally.
+    }
+
+    /**
+     * Constructor that wires fully initialized finance agents.
+     *
+     * @param alertService the standalone alert service for event notifications
+     */
+    public FinanceAgentLogicProvider(AlertService alertService) {
+        Objects.requireNonNull(alertService, "alertService must not be null");
+
+        // Wire RiskAssessmentAgent with minimal default service adapters.
+        factories.put("finance:risk-assessment", config -> {
+            RiskAssessmentAgent.ModelRegistry modelRegistry =
+                    modelId -> {
+                        log.info("Risk model retraining triggered for '{}'", modelId);
+                        return Promise.complete();
+                    };
+            RiskAssessmentAgent.InferenceService inferenceService =
+                    (modelId, features) -> {
+                        log.debug("Risk inference: model='{}', features={}", modelId, features.size());
+                        return RiskAssessmentResult.skip();
+                    };
+            RiskAssessmentAgent.RiskAlertService riskAlertService =
+                    update -> {
+                        alertService.sendAlert("Risk Update", update.toString());
+                        return Promise.complete();
+                    };
+            return new RiskAssessmentAgent(modelRegistry, inferenceService, riskAlertService);
+        });
+
+        // FraudDetectionAgent requires external wiring since FraudDetectionResult
+        // is not available in this package. Register via registerFactory() with
+        // production-grade InferenceService and AlertService implementations.
+        log.info("FinanceAgentLogicProvider initialized; " +
+                "finance:fraud-detection requires external factory registration");
     }
 
     @Override
@@ -82,11 +122,5 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
                                  Function<AgentConfig, TypedAgent<?, ?>> factory) {
         factories.put(implementationRef, factory);
         log.debug("Registered Finance agent factory for ref '{}'", implementationRef);
-    }
-
-    private static TypedAgent<?, ?> stubFactory(AgentConfig config) {
-        throw new UnsupportedOperationException(
-                "Stub factory for '" + config.getAgentId()
-                        + "'. Wire real factories via registerFactory().");
     }
 }

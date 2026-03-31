@@ -151,7 +151,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
         }
     }, [query]);
 
-    const handleCreateExperience = useCallback(async (variation: any) => {
+    const handleCreateExperience = useCallback(async (variation: unknown) => {
         if (!variation) return;
 
         try {
@@ -185,7 +185,7 @@ export function ExperienceWizard({ onExperienceCreated }: ExperienceWizardProps)
         }
     }, [query, onExperienceCreated]);
 
-    const handleSelectExisting = useCallback((experience: any) => {
+    const handleSelectExisting = useCallback((experience: unknown) => {
         onExperienceCreated(experience);
     }, [onExperienceCreated]);
 

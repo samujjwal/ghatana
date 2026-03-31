@@ -7,10 +7,20 @@
  * @doc.pattern Routing
  */
 
-import type {
-  GenerationRequestConfig,
-  GenerationRoutingDecision,
-} from "@tutorputor/contracts/v1/content-studio";
+type GenerationRequestConfig = {
+  minQualityScore?: number;
+  urgent?: boolean;
+  maxBudgetUsd?: number;
+};
+
+type GenerationRoutingDecision = {
+  selectedModel: string;
+  provider: string;
+  useCache: boolean;
+  cacheKey: string;
+  estimatedSpendUsd: number;
+  warning?: string;
+};
 
 export interface BudgetContext {
   remainingDailyBudgetUsd: number;

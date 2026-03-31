@@ -95,6 +95,7 @@ export async function respondWithErrors<T>(
     const result = await fn();
     reply.send(result);
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = error as any;
     const statusCode = err.statusCode || 500;
     const message = err.message || "Internal Server Error";

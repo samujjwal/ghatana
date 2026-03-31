@@ -68,7 +68,7 @@ export const baseSchemas = {
   safeText: z
     .string()
     .max(10000, "Text too long")
-    .transform((val) =>
+    .transform((val: any) =>
       val
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // Remove scripts
         .replace(/javascript:/gi, "") // Remove javascript: URLs
@@ -318,7 +318,7 @@ export const simulationSchemas = {
     configuration: z
       .record(z.string(), z.unknown())
       .refine(
-        (val) => typeof val === "object" && val !== null,
+        (val: any) => typeof val === "object" && val !== null,
         "Configuration must be an object",
       ),
     parameters: z
@@ -441,13 +441,17 @@ export class ValidationError extends Error {
     super(message);
     this.name = "ValidationError";
     this.code = code;
-    this.field = field;
-    this.context = context;
+    if (field !== undefined) {
+      this.field = field;
+    }
+    if (context !== undefined) {
+      this.context = context;
+    }
   }
 }
 
 export class InputValidator {
-  private static sanitizeInput(input: unknown): unknown {
+  private static sanitizeInput(input: any): unknown {
     if (typeof input === "string") {
       return input
         .trim()
@@ -456,7 +460,7 @@ export class InputValidator {
     }
 
     if (Array.isArray(input)) {
-      return input.map((item) => InputValidator.sanitizeInput(item));
+      return input.map((item: any) => InputValidator.sanitizeInput(item));
     }
 
     if (typeof input === "object" && input !== null) {
@@ -503,7 +507,7 @@ export class InputValidator {
       /binding\s*\(/gi,
     ];
 
-    return suspiciousPatterns.some((pattern) => pattern.test(input));
+    return suspiciousPatterns.some((pattern: any) => pattern.test(input));
   }
 
   static validate<T>(
@@ -590,7 +594,7 @@ export class InputValidator {
 
   static validateBatch<T>(
     schema: z.ZodSchema<T>,
-    dataArray: unknown[],
+    dataArray: any[],
     context?: ValidationContext,
   ): T[] {
     if (!Array.isArray(dataArray)) {
@@ -611,7 +615,7 @@ export class InputValidator {
       );
     }
 
-    return dataArray.map((data, index) => {
+    return dataArray.map((data: any, index: any) => {
       try {
         return this.validate(schema, data, {
           ...context,

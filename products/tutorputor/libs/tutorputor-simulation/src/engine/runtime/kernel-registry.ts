@@ -227,7 +227,7 @@ export class KernelRegistry {
   ): any {
     if (!manifest.domainMetadata) return undefined;
 
-    const metadata = manifest.domainMetadata as any;
+    const metadata = manifest.domainMetadata as Record<string, unknown>;
 
     switch (manifest.domain) {
       case 'PHYSICS': return metadata.physics;

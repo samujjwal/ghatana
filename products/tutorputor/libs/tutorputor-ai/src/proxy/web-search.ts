@@ -159,7 +159,7 @@ export class WebSearchService {
         throw new Error(`DuckDuckGo API returned ${response.status}`);
       }
 
-      const data = await response.json() as any;
+      const data = await response.json() as unknown;
       
       // Parse DuckDuckGo response format
       const results: SearchResult[] = [];
@@ -176,7 +176,7 @@ export class WebSearchService {
 
       // Add related topics
       if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-        data.RelatedTopics.slice(0, this.config.resultCount - 1).forEach((topic: any) => {
+        data.RelatedTopics.slice(0, this.config.resultCount - 1).forEach((topic) => {
           if (topic.Text) {
             results.push({
               title: topic.FirstURL?.split('/')[2] || topic.Text.substring(0, 50),
@@ -224,13 +224,13 @@ export class WebSearchService {
         throw new Error(`Google API returned ${response.status}`);
       }
 
-      const data = await response.json() as any;
+      const data = await response.json() as unknown;
       
       if (!data.items || data.items.length === 0) {
         return this.getFallbackResults(query);
       }
 
-      return data.items.map((item: any) => ({
+      return data.items.map((item) => ({
         title: item.title,
         url: item.link,
         snippet: item.snippet,
@@ -270,13 +270,13 @@ export class WebSearchService {
         throw new Error(`Bing API returned ${response.status}`);
       }
 
-      const data = await response.json() as any;
+      const data = await response.json() as unknown;
       
       if (!data.webPages || data.webPages.value.length === 0) {
         return this.getFallbackResults(query);
       }
 
-      return data.webPages.value.map((item: any) => ({
+      return data.webPages.value.map((item) => ({
         title: item.name,
         url: item.url,
         snippet: item.snippet,

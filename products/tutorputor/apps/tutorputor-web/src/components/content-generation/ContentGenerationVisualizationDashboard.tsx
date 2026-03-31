@@ -36,9 +36,9 @@ export const ContentGenerationVisualizationDashboard: React.FC = () => {
     successRate: 0,
     averageTime: 0,
     confidenceScore: 0,
-    domainDistribution: [] as any[],
-    performanceData: [] as any[],
-    qualityMetrics: [] as any[],
+    domainDistribution: [] as unknown[],
+    performanceData: [] as unknown[],
+    qualityMetrics: [] as unknown[],
   });
 
   const [activeView, setActiveView] = useState<
@@ -217,7 +217,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
  * Overview View Component
  */
 interface OverviewViewProps {
-  metrics: any;
+  metrics: unknown;
 }
 
 const OverviewView: React.FC<OverviewViewProps> = ({ metrics }) => (
@@ -270,7 +270,7 @@ const OverviewView: React.FC<OverviewViewProps> = ({ metrics }) => (
               fill="#8884d8"
               dataKey="count"
             >
-              {metrics.domainDistribution.map((entry: any, index: number) => (
+              {metrics.domainDistribution.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
@@ -295,7 +295,7 @@ const OverviewView: React.FC<OverviewViewProps> = ({ metrics }) => (
           <YAxis />
           <Tooltip />
           <Bar dataKey="value" fill="#8884d8">
-            {metrics.qualityMetrics.map((entry: any, index: number) => (
+            {metrics.qualityMetrics.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Bar>
@@ -401,7 +401,7 @@ const QualityView: React.FC<OverviewViewProps> = ({ metrics }) => (
             <YAxis />
             <Tooltip />
             <Bar dataKey="value">
-              {metrics.qualityMetrics.map((entry: any, index: number) => (
+              {metrics.qualityMetrics.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Bar>
@@ -430,7 +430,7 @@ const QualityView: React.FC<OverviewViewProps> = ({ metrics }) => (
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
         Quality Indicators
       </h3>
-      {metrics.qualityMetrics.map((metric: any) => (
+      {metrics.qualityMetrics.map((metric) => (
         <div
           key={metric.metric}
           className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
@@ -498,7 +498,7 @@ const DomainsView: React.FC<OverviewViewProps> = ({ metrics }) => (
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
         Domain Performance Details
       </h3>
-      {metrics.domainDistribution.map((domain: any) => (
+      {metrics.domainDistribution.map((domain) => (
         <div key={domain.domain} className="border rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="font-semibold text-gray-900">{domain.domain}</h4>

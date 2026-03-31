@@ -201,7 +201,7 @@ function scanObject(
 /**
  * Recursively strip HTML from all string fields in an object.
  */
-function stripObjectHtml(obj: any): any {
+function stripObjectHtml(obj: unknown): unknown {
     if (typeof obj === 'string') {
         return stripHtmlContent(obj);
     }
@@ -209,7 +209,7 @@ function stripObjectHtml(obj: any): any {
         return obj.map(stripObjectHtml);
     }
     if (obj && typeof obj === 'object') {
-        const result: any = {};
+        const result: Record<string, unknown> = {};
         for (const [key, val] of Object.entries(obj)) {
             result[key] = stripObjectHtml(val);
         }

@@ -125,6 +125,35 @@ public final class InMemoryHumanReviewQueue implements HumanReviewQueue {
 
     @Override
     @NotNull
+    public Promise<ReviewItem> escalate(@NotNull String reviewId) {
+        ReviewItem item = items.get(reviewId);
+        if (item == null) {
+            return Promise.ofException(
+                    new IllegalArgumentException("Review item not found: " + reviewId));
+        }
+        if (item.getStatus() != ReviewStatus.PENDING && item.getStatus() != ReviewStatus.IN_REVIEW) {
+            return Promise.ofException(
+                    new IllegalStateException("Review item " + reviewId + " cannot be escalated from state: " + item.getStatus()));
+        }
+        item.markEscalated();
+        return Promise.of(item);
+    }
+
+    @Override
+    @NotNull
+    public Promise<List<ReviewItem>> findOverdue(long thresholdSeconds, @Nullable String tenantId) {
+        java.time.Instant cutoff = java.time.Instant.now().minusSeconds(thresholdSeconds);
+        List<ReviewItem> overdue = items.values().stream()
+                .filter(i -> i.getStatus() == ReviewStatus.PENDING
+                        || i.getStatus() == ReviewStatus.IN_REVIEW)
+                .filter(i -> i.getCreatedAt().isBefore(cutoff))
+                .filter(i -> tenantId == null || tenantId.equals(i.getTenantId()))
+                .collect(Collectors.toList());
+        return Promise.of(overdue);
+    }
+
+    @Override
+    @NotNull
     public Promise<Long> pendingCount() {
         long count = items.values().stream()
                 .filter(i -> i.getStatus() == ReviewStatus.PENDING

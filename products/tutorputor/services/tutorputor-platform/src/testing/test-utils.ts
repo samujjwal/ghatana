@@ -47,14 +47,14 @@ export class TestUtils {
    * Create a mock reply object for API testing
    */
   static createMockReply(overrides: Partial<FastifyReply> = {}): FastifyReply {
-    const reply: any = {
+    const reply: Record<string, unknown> = {
       code: vi.fn().mockReturnThis(),
       send: vi.fn().mockReturnThis(),
       status: vi.fn().mockReturnThis(),
       header: vi.fn().mockReturnThis(),
       ...overrides,
     };
-    return reply as FastifyReply;
+    return reply as unknown as FastifyReply;
   }
 
   /**
@@ -183,16 +183,16 @@ interface TenantContext {
 }
 
 interface FastifyRequest {
-  body: any;
-  params: any;
-  query: any;
-  headers: any;
+  body: unknown;
+  params: unknown;
+  query: unknown;
+  headers: unknown;
   user?: TenantContext;
 }
 
 interface FastifyReply {
   code: (statusCode: number) => FastifyReply;
-  send: (payload?: any) => FastifyReply;
+  send: (payload?: unknown) => FastifyReply;
   status: (statusCode: number) => FastifyReply;
   header: (name: string, value: string) => FastifyReply;
 }
@@ -246,7 +246,7 @@ export class CoverageAnalyzer {
   /**
    * Parse coverage report and identify gaps
    */
-  static analyzeCoverage(coverageData: any): {
+  static analyzeCoverage(coverageData: Record<string, { total?: number; covered?: number; pct?: number; uncovered?: number }>): {
     total: number;
     covered: number;
     gaps: Array<{ file: string; lines: number[]; functions: string[] }>;
@@ -262,17 +262,20 @@ export class CoverageAnalyzer {
     for (const [file, data] of Object.entries(coverageData)) {
       if (typeof data !== "object" || !data) continue;
 
-      const fileData = data as any;
-      total += fileData.lines?.total || 0;
-      covered += fileData.lines?.covered || 0;
+      const fileData = data as Record<string, unknown>;
+      const lines = (fileData.lines as Record<string, unknown> | undefined) ?? {};
+      const functions =
+        (fileData.functions as Record<string, unknown> | undefined) ?? {};
+      total += Number(lines.total ?? 0);
+      covered += Number(lines.covered ?? 0);
 
       // Identify files with low coverage
-      const coverage = fileData.lines?.pct || 0;
+      const coverage = Number(lines.pct ?? 0);
       if (coverage < 40) {
         gaps.push({
           file,
-          lines: fileData.lines?.uncovered || [],
-          functions: fileData.functions?.uncovered || [],
+          lines: (lines.uncovered as number[]) ?? [],
+          functions: (functions.uncovered as string[]) ?? [],
         });
       }
     }
@@ -358,7 +361,7 @@ export const TestPatterns = {
    * Test pagination
    */
   pagination: (
-    testFn: (params: { page: number; limit: number }) => Promise<any>,
+    testFn: (params: { page: number; limit: number }) => Promise<{ data: Array<{ id: unknown }> }>,
   ) => {
     it("should support pagination", async () => {
       const page1 = await testFn({ page: 1, limit: 10 });
@@ -366,14 +369,14 @@ export const TestPatterns = {
 
       expect(page1.data).toHaveLength(10);
       expect(page2.data).toHaveLength(10);
-      expect(page1.data[0].id).not.toBe(page2.data[0].id);
+      expect(page1.data[0]?.id).not.toBe(page2.data[0]?.id);
     });
   },
 
   /**
    * Test caching behavior
    */
-  caching: (testFn: () => Promise<any>, cacheKey: string) => {
+  caching: (testFn: () => Promise<unknown>, cacheKey: string) => {
     it("should cache results", async () => {
       const result1 = await testFn();
       const result2 = await testFn();
@@ -434,7 +437,7 @@ export class PerformanceTestUtils {
       results.push(
         ...batchResults.map((r) => ({
           success: r.status === "fulfilled",
-          duration: r.status === "fulfilled" ? (r.value as any).duration : 0,
+          duration: r.status === "fulfilled" ? ((r.value as { duration?: number }).duration ?? 0) : 0,
         })),
       );
     }

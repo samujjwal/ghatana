@@ -22,14 +22,12 @@ export interface CircuitBreakerOptions {
   rollingCountTimeout?: number;
   // Minimum number of requests before the circuit starts calculating error percentages
   rollingCountBuckets?: number;
-  // Whether to track the current state of the circuit
-  trackRunning?: boolean;
 }
 
 export interface ServiceWrapper<T> {
   name: string;
   circuitBreaker: CircuitBreaker;
-  execute: (...args: unknown[]) => Promise<T>;
+  execute: (...args: any[]) => Promise<T>;
   healthCheck: () => Promise<boolean>;
 }
 
@@ -38,7 +36,6 @@ const DEFAULT_OPTIONS: CircuitBreakerOptions = {
   errorThresholdPercentage: 50, // 50% failure rate
   rollingCountTimeout: 60000, // 1 minute
   rollingCountBuckets: 12, // 12 buckets of 5 seconds each
-  trackRunning: true,
 };
 
 /**
@@ -46,19 +43,27 @@ const DEFAULT_OPTIONS: CircuitBreakerOptions = {
  */
 export function createCircuitBreaker<T>(
   serviceName: string,
-  action: (...args: unknown[]) => Promise<T>,
+  action: (...args: any[]) => Promise<T>,
   options: CircuitBreakerOptions = {},
   logger?: Logger,
 ): ServiceWrapper<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
-  const breaker = new CircuitBreaker(action, {
-    resetTimeout: opts.resetTimeout,
-    errorThresholdPercentage: opts.errorThresholdPercentage,
-    rollingCountTimeout: opts.rollingCountTimeout,
-    rollingCountBuckets: opts.rollingCountBuckets,
-    trackRunning: opts.trackRunning,
-  });
+  const breakerOptions: Record<string, number> = {};
+  if (opts.resetTimeout !== undefined) {
+    breakerOptions.resetTimeout = opts.resetTimeout;
+  }
+  if (opts.errorThresholdPercentage !== undefined) {
+    breakerOptions.errorThresholdPercentage = opts.errorThresholdPercentage;
+  }
+  if (opts.rollingCountTimeout !== undefined) {
+    breakerOptions.rollingCountTimeout = opts.rollingCountTimeout;
+  }
+  if (opts.rollingCountBuckets !== undefined) {
+    breakerOptions.rollingCountBuckets = opts.rollingCountBuckets;
+  }
+
+  const breaker = new CircuitBreaker(action, breakerOptions as any);
 
   // Setup event listeners for monitoring
   if (logger) {
@@ -77,7 +82,7 @@ export function createCircuitBreaker<T>(
       logger.info({ serviceName }, `Circuit breaker closed for ${serviceName}`);
     });
 
-    breaker.on("fallback", (result: unknown) => {
+    breaker.on("fallback", (result: any) => {
       logger.warn(
         {
           serviceName,
@@ -101,7 +106,7 @@ export function createCircuitBreaker<T>(
   return {
     name: serviceName,
     circuitBreaker: breaker,
-    execute: async (...args: unknown[]): Promise<T> => {
+    execute: async (...args: any[]): Promise<T> => {
       try {
         return await breaker.fire(...args);
       } catch (error) {
@@ -110,7 +115,7 @@ export function createCircuitBreaker<T>(
       }
     },
     healthCheck: async (): Promise<boolean> => {
-      return breaker.stats?.closed === true;
+      return breaker.opened === false;
     },
   };
 }
@@ -120,8 +125,8 @@ export function createCircuitBreaker<T>(
  */
 export function createAICircuitBreaker<T>(
   serviceName: string,
-  action: (...args: unknown[]) => Promise<T>,
-  fallbackAction?: (...args: unknown[]) => Promise<T>,
+  action: (...args: any[]) => Promise<T>,
+  fallbackAction?: (...args: any[]) => Promise<T>,
   logger?: Logger,
 ): ServiceWrapper<T> {
   const wrapper = createCircuitBreaker<T>(
@@ -148,7 +153,7 @@ export function createAICircuitBreaker<T>(
  */
 export function createPaymentCircuitBreaker<T>(
   serviceName: string,
-  action: (...args: unknown[]) => Promise<T>,
+  action: (...args: any[]) => Promise<T>,
   logger?: Logger,
 ): ServiceWrapper<T> {
   return createCircuitBreaker<T>(
@@ -197,16 +202,20 @@ export function getCircuitBreakerStats(wrapper: ServiceWrapper<unknown>): {
   averageResponseTime: number;
   percentFailure: number;
 } {
-  const stats = wrapper.circuitBreaker.stats;
+  const stats = wrapper.circuitBreaker.stats as Record<string, number | undefined>;
+  const state = wrapper.circuitBreaker.opened ? "open" : "closed";
+  const totalRequests = stats.total ?? stats.fires ?? 0;
+  const totalFailures = stats.failures ?? 0;
+  const totalSuccesses = Math.max(0, (stats.fires ?? 0) - totalFailures);
 
   return {
     name: wrapper.name,
-    state: wrapper.circuitBreaker.state,
-    totalRequests: stats?.total || 0,
-    totalFailures: stats?.failures || 0,
-    totalSuccesses: stats?.fires - (stats?.failures || 0) || 0,
-    totalTimeouts: stats?.timeouts || 0,
-    averageResponseTime: stats?.mean || 0,
-    percentFailure: stats?.percentFailures || 0,
+    state,
+    totalRequests,
+    totalFailures,
+    totalSuccesses,
+    totalTimeouts: stats.timeouts ?? 0,
+    averageResponseTime: stats.mean ?? 0,
+    percentFailure: stats.percentFailures ?? 0,
   };
 }

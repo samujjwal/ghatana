@@ -29,7 +29,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   // Create circuit breakers for external services
   const stripeCircuitBreaker = createPaymentCircuitBreaker(
     "stripe-webhook",
-    async (...args: unknown[]) => {
+    async (...args: any[]) => {
       const [stripeSecretKey, bodyString, signature, webhookSecret] = args as [
         string,
         string,
@@ -47,7 +47,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
         webhookSecret,
       );
     },
-    app.log,
+    app.log as any,
   );
 
   /**
@@ -72,8 +72,8 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         listingId,
-        successUrl,
-        cancelUrl,
+        ...(successUrl ? { successUrl } : {}),
+        ...(cancelUrl ? { cancelUrl } : {}),
       }),
     );
   });
@@ -114,7 +114,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
       billingService.listPurchases({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
-        cursor,
+        ...(cursor ? { cursor } : {}),
         limit: limit ? parseInt(limit, 10) : 20,
       }),
     );

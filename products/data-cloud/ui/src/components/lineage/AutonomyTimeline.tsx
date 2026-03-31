@@ -1,3 +1,11 @@
+/**
+ * AutonomyTimeline component.
+ *
+ * @doc.type component
+ * @doc.purpose Displays a timeline of autonomous agent decisions with drill-down detail in a DashboardCard
+ * @doc.layer product
+ * @doc.pattern Display Component
+ */
 import React, { useEffect, useState } from 'react';
 import { DashboardCard } from '../cards/DashboardCard';
 

@@ -9,7 +9,7 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { validatePluginMetadata } from "../validation/plugin-policy.js";
+import { validateMetadata as validatePluginMetadata } from "./validation/plugin-policy.js";
 import { getTenantId } from "../../core/http/requestContext.js";
 
 // =============================================================================
@@ -49,16 +49,18 @@ interface ListPluginsRequest {
 // =============================================================================
 
 /** Serialize PluginMetadata from a Prisma KernelPlugin record */
-function rowToMetadata(row: any): PluginMetadata {
+function rowToMetadata(row: Record<string, unknown>): PluginMetadata {
   return {
-    id: row.pluginId,
-    name: row.name,
-    version: row.version,
-    description: row.description ?? undefined,
-    author: row.author ?? undefined,
-    kernelType: row.kernelType,
-    capabilities: JSON.parse(row.capabilities ?? "[]"),
-    dependencies: row.dependencies ? JSON.parse(row.dependencies) : undefined,
+    id: String(row.pluginId ?? ""),
+    name: String(row.name ?? ""),
+    version: String(row.version ?? ""),
+    ...(typeof row.description === "string" ? { description: row.description } : {}),
+    ...(typeof row.author === "string" ? { author: row.author } : {}),
+    kernelType: String(row.kernelType ?? ""),
+    capabilities: JSON.parse(String(row.capabilities ?? "[]")),
+    ...(typeof row.dependencies === "string"
+      ? { dependencies: JSON.parse(row.dependencies) as Record<string, string> }
+      : {}),
   };
 }
 
@@ -75,11 +77,11 @@ async function registerPlugin(
     const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
 
     // Validate plugin metadata
-    const validation = validatePluginMetadata(metadata);
-    if (!validation.valid) {
+    const validation = validatePluginMetadata(metadata as any);
+    if (!validation.passed) {
       return reply.code(400).send({
         error: "Invalid plugin metadata",
-        details: validation.errors,
+        details: validation.violations,
       });
     }
 
@@ -158,7 +160,7 @@ async function listPlugins(
     const tenantId = getTenantId(request);
     const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     if (kernelType) where.kernelType = kernelType;
 
     const rows = await prisma.kernelPlugin.findMany({ where });
@@ -166,7 +168,7 @@ async function listPlugins(
 
     // capability filter (JSON array field, done in-process)
     if (capability) {
-      plugins = plugins.filter((p) => p.capabilities.includes(capability));
+      plugins = plugins.filter((p: any) => p.capabilities.includes(capability));
     }
 
     return reply.send({ plugins, count: plugins.length });
@@ -215,11 +217,11 @@ async function updatePlugin(
     const prisma = (request.server as FastifyInstance & { prisma: any }).prisma;
 
     // Validate plugin metadata
-    const validation = validatePluginMetadata(metadata);
-    if (!validation.valid) {
+    const validation = validatePluginMetadata(metadata as any);
+    if (!validation.passed) {
       return reply.code(400).send({
         error: "Invalid plugin metadata",
-        details: validation.errors,
+        details: validation.violations,
       });
     }
 
@@ -279,7 +281,7 @@ export async function registerKernelRegistryRoutes(fastify: FastifyInstance) {
   fastify.delete("/api/v1/plugins/:pluginId", deletePlugin);
 
   // Health check for kernel registry
-  fastify.get("/api/v1/plugins/health", async (request, reply) => {
+  fastify.get("/api/v1/plugins/health", async (request: any, reply: any) => {
     const prisma = (fastify as FastifyInstance & { prisma: any }).prisma;
     const pluginCount = await prisma.kernelPlugin.count();
     return reply.send({

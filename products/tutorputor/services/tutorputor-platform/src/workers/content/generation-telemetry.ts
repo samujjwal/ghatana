@@ -13,10 +13,27 @@
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import type { Logger } from "pino";
-import type {
-  GenerationExecutionWorkerTelemetry,
-  GenerationJobStatus,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type GenerationJobStatus = "pending" | "running" | "completed" | "failed";
+type GenerationExecutionWorkerTelemetry = {
+  at: string;
+  requestId: string;
+  jobId: string;
+  stage: string;
+  message: string;
+  jobType?: string;
+  progressPercent?: number;
+  status?: GenerationJobStatus;
+  diagnostics?: Record<string, unknown>;
+  cost?: {
+    model?: string;
+    estimatedTokens?: number;
+    actualTokens?: number;
+    estimatedCostUsd?: number;
+    actualCostUsd?: number;
+    generationTimeMs?: number;
+  };
+};
 import {
   getGenerationExecutionChannel,
   type GenerationExecutionStreamMessage,
@@ -261,7 +278,7 @@ export class ContentWorkerTelemetryPublisher {
             },
           }
         : {}),
-    } satisfies GenerationExecutionWorkerTelemetry;
+    } as GenerationExecutionWorkerTelemetry;
 
     if (generationJobId && existingJob) {
       const diagnostics = mergeDiagnostics(existingJob.diagnostics, telemetry, job);
@@ -306,7 +323,7 @@ function mergeDiagnostics(
   };
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
+function asRecord(value: any): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
@@ -316,7 +333,7 @@ function clampProgress(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function toFiniteNumber(value: unknown): number | undefined {
+function toFiniteNumber(value: any): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 

@@ -11,15 +11,42 @@
  * @doc.pattern Service
  */
 
-import type {
-  ManifestValidationResult,
-  ManifestValidationRule,
-  ManifestPayloadMap,
-  WorkedExampleManifest,
-  AnimationManifest,
-  AssessmentManifest,
-} from "@tutorputor/contracts/v1/artifact-manifests";
-import { MANIFEST_VALIDATION_RULES } from "@tutorputor/contracts/v1/artifact-manifests";
+type ManifestValidationRule = {
+  field: string;
+  rule:
+    | "required"
+    | "min_length"
+    | "max_length"
+    | "min_value"
+    | "max_value"
+    | "pattern"
+    | "custom";
+  expected?: unknown;
+  severity?: "error" | "warning";
+};
+
+type ManifestValidationResult = {
+  isValid: boolean;
+  manifestType: string;
+  violations: Array<ManifestValidationRule & { actualValue: unknown }>;
+  validatedAt: string;
+};
+
+type ManifestPayloadMap = {
+  worked_example: Record<string, unknown>;
+  animation: Record<string, unknown>;
+  assessment: Record<string, unknown>;
+};
+
+type WorkedExampleManifest = Record<string, unknown>;
+type AnimationManifest = Record<string, unknown>;
+type AssessmentManifest = Record<string, unknown>;
+
+const MANIFEST_VALIDATION_RULES: Record<string, ManifestValidationRule[]> = {
+  worked_example: [],
+  animation: [],
+  assessment: [],
+};
 
 // ---------------------------------------------------------------------------
 // Field-path accessor
@@ -39,7 +66,7 @@ function getFieldValue(obj: Record<string, unknown>, path: string): unknown {
 // Rule evaluator
 // ---------------------------------------------------------------------------
 
-function evaluateRule(value: unknown, rule: ManifestValidationRule): boolean {
+function evaluateRule(value: any, rule: ManifestValidationRule): boolean {
   switch (rule.rule) {
     case "required":
       return value !== undefined && value !== null && value !== "";
@@ -85,7 +112,7 @@ export function validateManifest<T extends keyof ManifestPayloadMap>(
   }
 
   return {
-    isValid: violations.filter((v) => v.severity === "error").length === 0,
+    isValid: violations.filter((v: any) => v.severity === "error").length === 0,
     manifestType,
     violations,
     validatedAt: new Date().toISOString(),

@@ -22,7 +22,7 @@ import type {
 /**
  * Maps database module to ModuleSummary contract type
  */
-export function mapModuleSummary(module: any): ModuleSummary {
+export function mapModuleSummary(module: Record<string, unknown>): ModuleSummary {
   return {
     id: module.id as ModuleId,
     title: module.title,
@@ -39,7 +39,7 @@ export function mapModuleSummary(module: any): ModuleSummary {
 /**
  * Maps database enrollment to Enrollment contract type
  */
-export function mapEnrollment(enrollment: any): Enrollment {
+export function mapEnrollment(enrollment: Record<string, unknown>): Enrollment {
   return {
     id: enrollment.id as EnrollmentId,
     moduleId: enrollment.moduleId as ModuleId,
@@ -82,7 +82,7 @@ export function mapUserRole(role: string): 'student' | 'teacher' | 'creator' | '
 /**
  * Maps assessment attempt to contract type
  */
-export function mapAssessmentAttempt(attempt: any): any {
+export function mapAssessmentAttempt(attempt: Record<string, unknown>): any {
   return {
     id: attempt.id,
     assessmentId: attempt.assessmentId,
@@ -101,7 +101,7 @@ export function mapAssessmentAttempt(attempt: any): any {
 /**
  * Maps learning event to contract type
  */
-export function mapLearningEvent(event: any): any {
+export function mapLearningEvent(event: Record<string, unknown>): any {
   return {
     id: event.id,
     userId: event.userId,
@@ -116,7 +116,7 @@ export function mapLearningEvent(event: any): any {
 /**
  * Maps classroom to contract type
  */
-export function mapClassroom(classroom: any): any {
+export function mapClassroom(classroom: Record<string, unknown>): any {
   return {
     id: classroom.id,
     tenantId: classroom.tenantId,
@@ -132,7 +132,7 @@ export function mapClassroom(classroom: any): any {
 /**
  * Maps notification to contract type
  */
-export function mapNotification(notification: any): any {
+export function mapNotification(notification: Record<string, unknown>): any {
   return {
     id: notification.id,
     userId: notification.userId,
@@ -149,7 +149,7 @@ export function mapNotification(notification: any): any {
 /**
  * Maps pagination parameters from request to database query
  */
-export function mapPaginationParams(params: any): {
+export function mapPaginationParams(params: Record<string, unknown>): {
   skip: number;
   take: number;
   cursor?: { id: string };
@@ -282,7 +282,7 @@ export function sanitizeDisplayName(name: string): string {
 /**
  * Maps error to user-friendly message
  */
-export function mapErrorMessage(error: any): string {
+export function mapErrorMessage(error: Record<string, unknown>): string {
   if (error instanceof Error) {
     return error.message;
   }
@@ -297,13 +297,13 @@ export function mapErrorMessage(error: any): string {
 /**
  * Extracts tenant ID from request
  */
-export function extractTenantId(request: any): TenantId {
+export function extractTenantId(request: Record<string, unknown>): TenantId {
   return (request.params?.tenantId || request.user?.tenantId || 'default') as TenantId;
 }
 
 /**
  * Extracts user ID from request
  */
-export function extractUserId(request: any): UserId {
+export function extractUserId(request: Record<string, unknown>): UserId {
   return (request.user?.id || request.params?.userId) as UserId;
 }

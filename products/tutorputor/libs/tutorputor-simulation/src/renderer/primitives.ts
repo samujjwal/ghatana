@@ -496,11 +496,26 @@ export function drawText(
         const boldMatch = fontStr?.match(/bold\s+(\d+)px\s+(.+)/);
         const normalMatch = fontStr?.match(/(\d+)px\s+(.+)/);
         if (boldMatch) {
-            style = { color: styleOrColor, fontSize: parseInt(boldMatch[1]!), fontFamily: boldMatch[2]!, fontWeight: 'bold', align: alignStr };
+            style = {
+                color: styleOrColor,
+                fontSize: parseInt(boldMatch[1]!),
+                fontFamily: boldMatch[2]!,
+                fontWeight: 'bold',
+                ...(alignStr ? { align: alignStr } : {}),
+            };
         } else if (normalMatch) {
-            style = { color: styleOrColor, fontSize: parseInt(normalMatch[1]!), fontFamily: normalMatch[2]!, align: alignStr };
+            style = {
+                color: styleOrColor,
+                fontSize: parseInt(normalMatch[1]!),
+                fontFamily: normalMatch[2]!,
+                ...(alignStr ? { align: alignStr } : {}),
+            };
         } else {
-            style = { color: styleOrColor, fontSize: 12, align: alignStr };
+            style = {
+                color: styleOrColor,
+                fontSize: 12,
+                ...(alignStr ? { align: alignStr } : {}),
+            };
         }
     } else {
         style = styleOrColor;

@@ -78,6 +78,19 @@ public class PipelineRegistration {
     private Instant createdAt;
     private Instant updatedAt;
     private String createdBy;
+
+    /**
+     * Human-readable version label assigned when a draft is published.
+     * Examples: "v1.0.0", "release-2026-04". Null for unpublished drafts.
+     */
+    private String versionLabel;
+
+    /**
+     * Lifecycle status of this pipeline version.
+     * Defaults to DRAFT until explicitly published.
+     */
+    @Builder.Default
+    private PipelineVersionStatus versionStatus = PipelineVersionStatus.DRAFT;
     private long versionControl;
 
     /**
@@ -185,6 +198,9 @@ public class PipelineRegistration {
         newPipeline.setCreatedBy(this.createdBy);
         newPipeline.setUpdatedBy(this.updatedBy);
         newPipeline.setTags(new ArrayList<>(this.tags));
+        // New versions start as DRAFT; label is unset until published
+        newPipeline.setVersionLabel(null);
+        newPipeline.setVersionStatus(PipelineVersionStatus.DRAFT);
         return newPipeline;
     }
 

@@ -5,7 +5,7 @@ import type { Redis } from "ioredis";
 export async function setupRateLimit(app: FastifyInstance) {
   const redis = (app as any).redis as Redis;
 
-  await app.register(rateLimit, {
+  await app.register(rateLimit as any, {
     global: true,
     max: parseInt(process.env.RATE_LIMIT_MAX || "100", 10), // 100 requests
     timeWindow: process.env.RATE_LIMIT_WINDOW || "1 minute",
@@ -38,7 +38,7 @@ export async function setupRateLimit(app: FastifyInstance) {
   } as any);
 
   // Add rate limit headers to responses
-  app.addHook("onResponse", async (request, reply) => {
+  app.addHook("onResponse", async (request: any, reply: any) => {
     const remaining = reply.getHeader("x-ratelimit-remaining");
     const limit = reply.getHeader("x-ratelimit-limit");
     const reset = reply.getHeader("x-ratelimit-reset");

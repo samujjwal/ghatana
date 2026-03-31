@@ -70,4 +70,25 @@ class AepBoundaryTest {
                     .allowEmptyShould(true)
                     .because("AEP compliance must use the published engine API/SPI, "
                             + "not internal engine implementation classes.");
+
+    /**
+     * AEP engine core must not depend on the HTTP server or launcher.
+     *
+     * <p>The topology rule: external clients must reach AEP through the gateway/BFF layer,
+     * which proxies to {@code AepHttpServer}. The engine itself is agnostic of transport.
+     * If the engine depended on {@code aep.server}, that layer would leak into domain logic.
+     *
+     * <p>See: {@code products/aep/docs/TOPOLOGY.md §API-Routing-Rules}
+     */
+    @ArchTest
+    static final ArchRule engine_must_not_depend_on_server_launcher =
+            noClasses()
+                    .that().resideInAPackage("com.ghatana.aep.engine..")
+                    .should().dependOnClassesThat().resideInAnyPackage(
+                            "com.ghatana.aep.server.."
+                    )
+                    .allowEmptyShould(true)
+                    .because("AEP engine must not depend on the HTTP server or launcher. "
+                            + "Transport (HTTP, SSE) is wired by AepLauncher; engine logic must stay transport-agnostic. "
+                            + "See products/aep/docs/TOPOLOGY.md §API-Routing-Rules.");
 }

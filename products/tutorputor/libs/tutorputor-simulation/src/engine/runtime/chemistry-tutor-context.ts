@@ -189,7 +189,7 @@ export class ChemistryTutorContextBuilder {
      * Extract reaction type from manifest metadata
      */
     private extractReactionType(): string {
-        const metadata = this.manifest.domainMetadata as any;
+        const metadata = this.manifest.domainMetadata as Record<string, unknown>;
         const chemistry = metadata?.chemistry;
         if (chemistry && 'reactionType' in chemistry) {
             return chemistry.reactionType as string;
@@ -201,7 +201,7 @@ export class ChemistryTutorContextBuilder {
      * Extract mechanism from manifest metadata
      */
     private extractMechanism(): string | undefined {
-        const metadata = this.manifest.domainMetadata as any;
+        const metadata = this.manifest.domainMetadata as Record<string, unknown>;
         const chemistry = metadata?.chemistry;
         if (chemistry && 'mechanism' in chemistry) {
             return chemistry.mechanism as string;
@@ -264,7 +264,7 @@ export class ChemistryTutorContextBuilder {
         // Group atoms by molecule
         for (const entity of this.currentKeyframe.entities) {
             if (entity.type === 'atom') {
-                const moleculeId = (entity as any).moleculeId || 'standalone';
+                const moleculeId = (entity as Record<string, unknown>).moleculeId || 'standalone';
                 const atoms = atomsByMolecule.get(moleculeId) || [];
                 atoms.push(entity);
                 atomsByMolecule.set(moleculeId, atoms);
@@ -273,13 +273,13 @@ export class ChemistryTutorContextBuilder {
             if (entity.type === 'molecule') {
                 molecules.push({
                     id: entity.id,
-                    name: (entity as any).name || entity.label || 'Unknown',
-                    formula: (entity as any).formula || '',
+                    name: (entity as Record<string, unknown>).name || entity.label || 'Unknown',
+                    formula: (entity as Record<string, unknown>).formula || '',
                     role: this.determineRole(entity),
                     atoms: [],
-                    functionalGroups: (entity as any).functionalGroups || [],
-                    charge: (entity as any).charge || 0,
-                    isHighlighted: (entity as any).highlighted || false,
+                    functionalGroups: (entity as Record<string, unknown>).functionalGroups || [],
+                    charge: (entity as Record<string, unknown>).charge || 0,
+                    isHighlighted: (entity as Record<string, unknown>).highlighted || false,
                 });
             }
         }
@@ -292,11 +292,11 @@ export class ChemistryTutorContextBuilder {
      */
     private determineRole(entity: SimEntity): MoleculeContext['role'] {
         const label = entity.label?.toLowerCase() || '';
-        const data = (entity as any).data || {};
+        const data = (entity as Record<string, unknown>).data || {};
 
         if (label.includes('catalyst')) return 'catalyst';
         if (label.includes('intermediate')) return 'intermediate';
-        if ((data as any).role) return (data as any).role;
+        if ((data as Record<string, unknown>).role) return (data as Record<string, unknown>).role;
 
         // Infer from step
         if (!this.currentStep) return 'reactant';
@@ -322,7 +322,7 @@ export class ChemistryTutorContextBuilder {
         // Collect current bonds
         for (const entity of this.currentKeyframe.entities) {
             if (entity.type === 'bond') {
-                const bond = entity as any;
+                const bond = entity as Record<string, unknown>;
                 currentBonds.add(`${bond.atom1Id}-${bond.atom2Id}`);
             }
         }
@@ -330,7 +330,7 @@ export class ChemistryTutorContextBuilder {
         // Collect previous bonds
         for (const entity of this.previousKeyframe.entities) {
             if (entity.type === 'bond') {
-                const bond = entity as any;
+                const bond = entity as Record<string, unknown>;
                 previousBonds.add(`${bond.atom1Id}-${bond.atom2Id}`);
             }
         }
@@ -376,12 +376,12 @@ export class ChemistryTutorContextBuilder {
 
         if (!energyProfile) return undefined;
 
-        const data = (energyProfile as any).data || {};
+        const data = (energyProfile as Record<string, unknown>).data || {};
         return {
-            activationEnergy: (data as any).activationEnergy,
-            deltaH: (data as any).deltaH,
-            isExothermic: ((data as any).deltaH || 0) < 0,
-            currentEnergy: (data as any).currentEnergy || 0,
+            activationEnergy: (data as Record<string, unknown>).activationEnergy,
+            deltaH: (data as Record<string, unknown>).deltaH,
+            isExothermic: ((data as Record<string, unknown>).deltaH || 0) < 0,
+            currentEnergy: (data as Record<string, unknown>).currentEnergy || 0,
             transitionStateReached: this.determinePhase() === 'transition_state',
         };
     }

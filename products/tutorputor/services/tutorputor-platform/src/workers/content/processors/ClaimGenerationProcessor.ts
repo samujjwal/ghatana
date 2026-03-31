@@ -214,7 +214,7 @@ export class ClaimGenerationProcessor {
         }
     }
 
-    private mapBloomLevel(value: unknown): string {
+    private mapBloomLevel(value: any): string {
         if (typeof value === 'number') {
             const byIndex = [
                 'REMEMBER',

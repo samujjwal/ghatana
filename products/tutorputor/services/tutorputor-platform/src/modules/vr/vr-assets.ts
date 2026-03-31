@@ -136,7 +136,7 @@ export class VRAssetServiceImpl implements VRAssetService {
     const { tenantId, type, search, pagination } = args;
     const { page = 1, limit = 20 } = pagination;
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       OR: [{ tenantId }, { isPublic: true }],
     };
 

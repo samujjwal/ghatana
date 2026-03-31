@@ -28,7 +28,7 @@ export interface DeadLetterQueueConfig {
 export interface DeadLetterJob {
   originalJobId: string;
   jobName: string;
-  data: any;
+  data: unknown;
   failedReason: string;
   failedAt: Date;
   attemptCount: number;
@@ -146,7 +146,7 @@ export class DeadLetterQueueManager {
    */
   configureWorkerWithDLQ<T = any>(
     queueName: string,
-    processor: (job: Job<T>) => Promise<any>,
+    processor: (job: Job<T>) => Promise<unknown>,
     redis: DeadLetterQueueConfig["redis"],
   ): Worker {
     const worker = new Worker(

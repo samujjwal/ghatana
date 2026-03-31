@@ -114,6 +114,7 @@ export class JWTManager {
   /**
    * Validate and decode token
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async validateToken(token: string): Promise<any> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret, {
@@ -452,6 +453,7 @@ export class AuthMiddleware {
   /**
    * Get user from token (placeholder)
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async getUserFromToken(decoded: any): Promise<User> {
     // This would integrate with your user service/database
     // For now, return a mock user based on token

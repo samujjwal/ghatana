@@ -54,8 +54,8 @@ export async function paymentRoutes(
         tenantId,
         planId: body.planId as any,
         billingInterval: body.billingInterval,
-        paymentMethodId: body.paymentMethodId as any,
-        trialDays: body.trialDays,
+        ...(body.paymentMethodId ? { paymentMethodId: body.paymentMethodId as any } : {}),
+        ...(typeof body.trialDays === "number" ? { trialDays: body.trialDays } : {}),
       });
       return reply.code(201).send(subscription);
     },
@@ -98,7 +98,7 @@ export async function paymentRoutes(
           tenantId,
           subscriptionId: currentSub.id,
           cancelImmediately: !atPeriodEnd,
-          reason,
+          ...(reason ? { reason } : {}),
         });
       });
     },

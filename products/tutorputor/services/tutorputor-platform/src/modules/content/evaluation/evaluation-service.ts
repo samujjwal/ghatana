@@ -18,12 +18,52 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  EvaluationRecord,
-  EvaluationScorecard,
-  EvaluationIssue,
-  PublishRecommendation,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type PublishRecommendation = "block" | "manual_review" | "auto_publish";
+
+interface EvaluationIssue {
+  dimension: string;
+  severity: "warning" | "error";
+  message: string;
+  detail?: string;
+}
+
+interface EvaluationRecord {
+  id: string;
+  tenantId: string;
+  assetId?: string;
+  generationJobId?: string;
+  generationRequestId?: string;
+  coherenceScore?: number;
+  completenessScore?: number;
+  safetyScore?: number;
+  accessibilityScore?: number;
+  manifestValidityScore?: number;
+  overallScore?: number;
+  status: "passed" | "failed";
+  recommendation: PublishRecommendation;
+  issues?: EvaluationIssue[];
+  diagnostics?: Record<string, unknown>;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface EvaluationScorecard {
+  evaluationId: string;
+  generationRequestId: string;
+  overallScore: number;
+  recommendation: PublishRecommendation;
+  dimensions: {
+    coherence: number;
+    completeness: number;
+    safety: number;
+    accessibility: number;
+    manifestValidity: number;
+  };
+  issues: EvaluationIssue[];
+  blockedReasons: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Internal scorer helpers
@@ -34,8 +74,8 @@ function scoreCoherence(outputData: Record<string, unknown>): {
   issues: EvaluationIssue[];
 } {
   const issues: EvaluationIssue[] = [];
-  const claims = (outputData["claims"] as unknown[] | undefined) ?? [];
-  const examples = (outputData["examples"] as unknown[] | undefined) ?? [];
+  const claims = (outputData["claims"] as any[] | undefined) ?? [];
+  const examples = (outputData["examples"] as any[] | undefined) ?? [];
 
   // Each example and assessment should map to at least one claim
   if (claims.length === 0) {
@@ -155,11 +195,11 @@ function scoreManifestValidity(
   }
 
   const manifests =
-    (outputData["simulations"] as unknown[]) ??
-    (outputData["animations"] as unknown[]) ??
+    (outputData["simulations"] as any[]) ??
+    (outputData["animations"] as any[]) ??
     [];
 
-  manifests.forEach((m: any, idx: number) => {
+  manifests.forEach((m, idx) => {
     if (!m.id) {
       issues.push({
         dimension: "manifest_validity",
@@ -194,28 +234,32 @@ function deriveRecommendation(
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapRecord(row: any): EvaluationRecord {
+function mapRecord(row: Record<string, unknown>): EvaluationRecord {
+  const createdAt = row.createdAt instanceof Date ? row.createdAt : new Date(String(row.createdAt));
+  const updatedAt = row.updatedAt instanceof Date ? row.updatedAt : new Date(String(row.updatedAt));
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    assetId: row.assetId ?? undefined,
-    generationJobId: row.generationJobId ?? undefined,
-    generationRequestId: row.generationRequestId ?? undefined,
-    coherenceScore: row.coherenceScore ?? undefined,
-    completenessScore: row.completenessScore ?? undefined,
-    safetyScore: row.safetyScore ?? undefined,
-    accessibilityScore: row.accessibilityScore ?? undefined,
-    manifestValidityScore: row.manifestValidityScore ?? undefined,
-    overallScore: row.overallScore ?? undefined,
+    id: String(row.id),
+    tenantId: String(row.tenantId),
+    ...(typeof row.assetId === "string" ? { assetId: row.assetId } : {}),
+    ...(typeof row.generationJobId === "string" ? { generationJobId: row.generationJobId } : {}),
+    ...(typeof row.generationRequestId === "string" ? { generationRequestId: row.generationRequestId } : {}),
+    ...(typeof row.coherenceScore === "number" ? { coherenceScore: row.coherenceScore } : {}),
+    ...(typeof row.completenessScore === "number" ? { completenessScore: row.completenessScore } : {}),
+    ...(typeof row.safetyScore === "number" ? { safetyScore: row.safetyScore } : {}),
+    ...(typeof row.accessibilityScore === "number" ? { accessibilityScore: row.accessibilityScore } : {}),
+    ...(typeof row.manifestValidityScore === "number" ? { manifestValidityScore: row.manifestValidityScore } : {}),
+    ...(typeof row.overallScore === "number" ? { overallScore: row.overallScore } : {}),
     status: (row.status as string).toLowerCase() as EvaluationRecord["status"],
     recommendation: (row.recommendation as string)
       .toLowerCase()
       .replace(/_/g, "_") as PublishRecommendation,
-    issues: row.issues ?? undefined,
-    diagnostics: row.diagnostics ?? undefined,
-    errorMessage: row.errorMessage ?? undefined,
-    createdAt: (row.createdAt as Date).toISOString(),
-    updatedAt: (row.updatedAt as Date).toISOString(),
+    ...(Array.isArray(row.issues) ? { issues: row.issues as EvaluationIssue[] } : {}),
+    ...(row.diagnostics && typeof row.diagnostics === "object"
+      ? { diagnostics: row.diagnostics as Record<string, unknown> }
+      : {}),
+    ...(typeof row.errorMessage === "string" ? { errorMessage: row.errorMessage } : {}),
+    createdAt: createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
   };
 }
 

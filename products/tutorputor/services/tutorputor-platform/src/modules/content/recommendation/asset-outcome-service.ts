@@ -12,13 +12,43 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  AssetOutcomeSummary,
-  GenerationReviewDecisionStatus,
-  PublishRecommendation,
-} from "@tutorputor/contracts/v1/content-studio";
 import { RegenerationCandidateService } from "../candidates/candidate-service.js";
 import { RecommendationService } from "./recommendation-service.js";
+
+type PublishRecommendation = "auto_publish" | "manual_review" | "block";
+type GenerationReviewDecisionStatus = string;
+
+interface AssetOutcomeSummary {
+  assetId: string;
+  assetStatus: string;
+  evaluationScore?: number;
+  evaluationRecommendation?: PublishRecommendation;
+  latestReviewStatus?: GenerationReviewDecisionStatus;
+  telemetry: {
+    impressions: number;
+    clicks: number;
+    completions: number;
+    nextStepSelections: number;
+    positiveFeedback: number;
+    negativeFeedback: number;
+    ctr: number;
+    completionRate: number;
+    feedbackRatio: number;
+  };
+  engagementScore: number;
+  confidenceScore: number;
+  healthStatus: "healthy" | "watch" | "intervene";
+  openCandidateCount: number;
+  recommendedActions: string[];
+  experimentSummary?: {
+    observationCount: number;
+    controlMean?: number;
+    treatmentMean?: number;
+    relativeLift?: number;
+    dominantVariant: "control" | "treatment" | "balanced";
+  };
+  recommendationRefresh?: unknown;
+}
 
 const POSITIVE_FEEDBACK = new Set(["positive", "helpful", "relevant"]);
 const NEGATIVE_FEEDBACK = new Set(["negative", "not_relevant", "unhelpful"]);

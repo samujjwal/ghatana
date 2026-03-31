@@ -56,7 +56,7 @@ export function CMSModuleEditorPage() {
     };
 
     // Handle block selection from picker
-    const handleBlockTypeSelect = (blockType: any) => {
+    const handleBlockTypeSelect = (blockType: unknown) => {
         handleAddBlock(blockType);
     };
 

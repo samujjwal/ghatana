@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { Prisma, PrismaClient } from "@tutorputor/core/db";
+import { Prisma, PrismaClient } from "@tutorputor/core/db";
 import type Stripe from "stripe";
 import type {
   TenantId,
@@ -222,7 +222,8 @@ const DEFAULT_PLANS: PlanConfig[] = [
 type SubscriptionRecord = {
   id: string;
   tenantId: string;
-  planId: string;
+  planId?: string;
+  stripePriceId?: string;
   tier: string;
   status: string;
   billingInterval: string;
@@ -241,21 +242,22 @@ type SubscriptionRecord = {
 type PaymentMethodRecord = {
   id: string;
   tenantId: string;
+  stripeCustomerId?: string;
   type: string;
   isDefault: boolean;
-  brand: string | null;
-  lastFour: string | null;
-  expMonth: number | null;
-  expYear: number | null;
-  bankName: string | null;
-  billingName: string | null;
-  billingLine1: string | null;
-  billingLine2: string | null;
-  billingCity: string | null;
-  billingState: string | null;
-  billingPostalCode: string | null;
-  billingCountry: string | null;
-  stripePaymentMethodId: string | null;
+  brand?: string | null;
+  lastFour?: string | null;
+  expMonth?: number | null;
+  expYear?: number | null;
+  bankName?: string | null;
+  billingName?: string | null;
+  billingLine1?: string | null;
+  billingLine2?: string | null;
+  billingCity?: string | null;
+  billingState?: string | null;
+  billingPostalCode?: string | null;
+  billingCountry?: string | null;
+  stripePaymentMethodId?: string | null;
   createdAt: Date;
 };
 
@@ -271,9 +273,9 @@ type InvoiceLineItemRecord = {
 type InvoiceRecord = {
   id: string;
   tenantId: string;
-  subscriptionId: string;
+  subscriptionId: string | null;
   number: string;
-  status: Invoice["status"];
+  status: string;
   currency: string;
   subtotalCents: number;
   taxCents: number;
@@ -302,6 +304,58 @@ function mapCardBrand(
   }
 
   return "other";
+}
+
+function toPrismaTier(tier: string): string {
+  const key = tier.toUpperCase();
+  if (key === "FREE") return "FREE";
+  if (key === "STARTER") return "STARTER";
+  if (key === "PROFESSIONAL") return "PROFESSIONAL";
+  return "ENTERPRISE";
+}
+
+function toPrismaStatus(status: string): string {
+  const key = status.toUpperCase();
+  if (key === "ACTIVE") return "ACTIVE";
+  if (key === "PAST_DUE") return "PAST_DUE";
+  if (key === "CANCELED") return "CANCELED";
+  if (key === "INCOMPLETE") return "INCOMPLETE";
+  if (key === "INCOMPLETE_EXPIRED") return "INCOMPLETE_EXPIRED";
+  if (key === "TRIALING") return "TRIALING";
+  return "UNPAID";
+}
+
+function toPrismaInterval(interval: string): string {
+  const key = interval.toUpperCase();
+  if (key === "MONTHLY") return "MONTHLY";
+  if (key === "QUARTERLY") return "QUARTERLY";
+  return "ANNUAL";
+}
+
+function fromPrismaStatus(status: string): SubscriptionStatus {
+  const key = status.toUpperCase();
+  if (key === "ACTIVE") return "active";
+  if (key === "PAST_DUE") return "past_due";
+  if (key === "CANCELED") return "canceled";
+  if (key === "INCOMPLETE") return "incomplete";
+  if (key === "INCOMPLETE_EXPIRED") return "incomplete_expired";
+  if (key === "TRIALING") return "trialing";
+  return "past_due";
+}
+
+function fromPrismaInterval(interval: string): BillingInterval {
+  const key = interval.toUpperCase();
+  if (key === "MONTHLY") return "monthly";
+  if (key === "QUARTERLY") return "quarterly";
+  return "annual";
+}
+
+function fromPrismaTier(tier: string): SubscriptionTier {
+  const key = tier.toUpperCase();
+  if (key === "FREE") return "free";
+  if (key === "STARTER") return "starter";
+  if (key === "PROFESSIONAL") return "professional";
+  return "enterprise";
 }
 
 /**
@@ -395,7 +449,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const sub = await this.prisma.subscription.findFirst({
       where: {
         tenantId: args.tenantId,
-        status: { notIn: ["canceled", "incomplete_expired"] },
+        status: {
+          notIn: [
+            "CANCELED",
+            "INCOMPLETE_EXPIRED",
+          ],
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -427,11 +486,11 @@ export class SubscriptionServiceImpl implements SubscriptionService {
         where: { id: args.tenantId },
       });
 
-      const stripeCustomer = await this.stripe.customers.create({
-        email: tenant?.adminEmail ?? undefined,
-        name: tenant?.name ?? undefined,
-        metadata: { tenantId: args.tenantId },
-      });
+        const stripeCustomer = await this.stripe.customers.create({
+          ...(tenant?.adminEmail ? { email: tenant.adminEmail } : {}),
+          ...(tenant?.name ? { name: tenant.name } : {}),
+          metadata: { tenantId: String(args.tenantId) },
+        });
 
       customer = await this.prisma.stripeCustomer.create({
         data: {
@@ -456,10 +515,12 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       const sub = await this.prisma.subscription.create({
         data: {
           tenantId: args.tenantId,
-          planId: plan.id,
-          tier: plan.tier,
-          status: "active",
-          billingInterval: args.billingInterval,
+          stripeCustomerId: customer.stripeCustomerId,
+          stripeSubscriptionId: `local-free-${args.tenantId}`,
+          stripePriceId: "price_free",
+          tier: toPrismaTier(plan.tier) as Prisma.SubscriptionCreateInput["tier"],
+          status: "ACTIVE",
+          billingInterval: toPrismaInterval(args.billingInterval) as Prisma.SubscriptionCreateInput["billingInterval"],
           currentPeriodStart: new Date(),
           currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         },
@@ -486,19 +547,20 @@ export class SubscriptionServiceImpl implements SubscriptionService {
 
     // Create Stripe subscription
     const trialDays = args.trialDays ?? plan.trialDays;
-    const stripeSubscription = await this.stripe.subscriptions.create({
+    const stripeSubscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: customer.stripeCustomerId,
       items: [{ price: priceId }],
-      trial_period_days: trialDays > 0 ? trialDays : undefined,
+      ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
       metadata: {
-        tenantId: args.tenantId,
+        tenantId: String(args.tenantId),
         planId: plan.id,
       },
-    });
+    };
+    const stripeSubscription = await this.stripe.subscriptions.create(stripeSubscriptionParams);
 
     // Create local subscription record
     const stripeSubscriptionWithPeriods =
-      stripeSubscription as Stripe.Subscription & {
+      stripeSubscription as unknown as Stripe.Subscription & {
         current_period_start: number;
         current_period_end: number;
       };
@@ -506,10 +568,10 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const sub = await this.prisma.subscription.create({
       data: {
         tenantId: args.tenantId,
-        planId: plan.id,
-        tier: plan.tier,
-        status: this.mapStripeStatus(stripeSubscription.status),
-        billingInterval: args.billingInterval,
+        stripePriceId: priceId,
+        tier: toPrismaTier(plan.tier) as Prisma.SubscriptionCreateInput["tier"],
+        status: toPrismaStatus(this.mapStripeStatus(stripeSubscription.status)) as Prisma.SubscriptionCreateInput["status"],
+        billingInterval: toPrismaInterval(args.billingInterval) as Prisma.SubscriptionCreateInput["billingInterval"],
         stripeSubscriptionId: stripeSubscription.id,
         stripeCustomerId: customer.stripeCustomerId,
         currentPeriodStart: new Date(
@@ -544,14 +606,18 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
-    const currentPlan = DEFAULT_PLANS.find((p) => p.id === currentSub.planId);
+    const currentPlan = DEFAULT_PLANS.find((p) =>
+      p.pricing.monthly.stripePriceId === currentSub.stripePriceId ||
+      p.pricing.quarterly.stripePriceId === currentSub.stripePriceId ||
+      p.pricing.annual.stripePriceId === currentSub.stripePriceId,
+    ) ?? DEFAULT_PLANS.find((p) => p.tier === fromPrismaTier(currentSub.tier));
     const newPlan = DEFAULT_PLANS.find((p) => p.id === args.newPlanId);
 
     if (!currentPlan || !newPlan) {
       throw new NotFoundError("Plan", args.newPlanId);
     }
 
-    const interval = args.newBillingInterval ?? currentSub.billingInterval;
+    const interval = args.newBillingInterval ?? fromPrismaInterval(currentSub.billingInterval);
     const newPriceId =
       newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
 
@@ -585,7 +651,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
 
     return {
       currentPlan: (await this.getPlan({
-        planId: currentSub.planId,
+        planId: currentPlan?.id ?? "plan_starter",
       })) as SubscriptionPlan,
       newPlan: (await this.getPlan({
         planId: args.newPlanId,
@@ -616,7 +682,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       throw new NotFoundError("Plan", args.newPlanId);
     }
 
-    const interval = args.newBillingInterval ?? currentSub.billingInterval;
+    const interval = args.newBillingInterval ?? fromPrismaInterval(currentSub.billingInterval);
     const newPriceId =
       newPlan.pricing[interval as keyof typeof newPlan.pricing].stripePriceId;
 
@@ -640,15 +706,24 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       });
     }
 
-    const updated = await this.prisma.subscription.update({
-      where: { id: args.subscriptionId },
-      data: {
-        planId: args.newPlanId,
-        tier: newPlan.tier,
-        billingInterval: interval,
-        updatedAt: new Date(),
-      },
-    });
+    const updated = newPriceId
+      ? await this.prisma.subscription.update({
+          where: { id: args.subscriptionId },
+          data: {
+            stripePriceId: newPriceId,
+            tier: toPrismaTier(newPlan.tier) as never,
+            billingInterval: toPrismaInterval(interval) as never,
+            updatedAt: new Date(),
+          },
+        })
+      : await this.prisma.subscription.update({
+          where: { id: args.subscriptionId },
+          data: {
+            tier: toPrismaTier(newPlan.tier) as never,
+            billingInterval: toPrismaInterval(interval) as never,
+            updatedAt: new Date(),
+          },
+        });
 
     return this.mapToSubscription(updated);
   }
@@ -670,12 +745,16 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     if (sub.stripeSubscriptionId) {
       if (args.cancelImmediately) {
         await this.stripe.subscriptions.cancel(sub.stripeSubscriptionId, {
-          cancellation_details: { comment: args.reason },
+            cancellation_details: {
+              ...(args.reason ? { comment: args.reason } : {}),
+            },
         });
       } else {
         await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
           cancel_at_period_end: true,
-          cancellation_details: { comment: args.reason },
+            cancellation_details: {
+              ...(args.reason ? { comment: args.reason } : {}),
+            },
         });
       }
     }
@@ -683,7 +762,9 @@ export class SubscriptionServiceImpl implements SubscriptionService {
     const updated = await this.prisma.subscription.update({
       where: { id: args.subscriptionId },
       data: {
-        status: args.cancelImmediately ? "canceled" : sub.status,
+        status: args.cancelImmediately
+          ? "CANCELED"
+          : sub.status,
         cancelAtPeriodEnd: !args.cancelImmediately,
         canceledAt: new Date(),
         updatedAt: new Date(),
@@ -745,19 +826,19 @@ export class SubscriptionServiceImpl implements SubscriptionService {
 
     if (sub.stripeSubscriptionId) {
       await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
-        pause_collection: {
-          behavior: "mark_uncollectible",
-          resumes_at: args.resumeAt
-            ? Math.floor(new Date(args.resumeAt).getTime() / 1000)
-            : undefined,
-        },
+          pause_collection: {
+            behavior: "mark_uncollectible",
+            ...(args.resumeAt
+              ? { resumes_at: Math.floor(new Date(args.resumeAt).getTime() / 1000) }
+              : {}),
+          },
       });
     }
 
     const updated = await this.prisma.subscription.update({
       where: { id: args.subscriptionId },
       data: {
-        status: "paused",
+        status: "PAST_DUE",
         updatedAt: new Date(),
       },
     });
@@ -777,9 +858,13 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       throw new NotFoundError("Subscription", args.subscriptionId);
     }
 
-    const plan = DEFAULT_PLANS.find((p) => p.id === sub.planId);
+    const plan = DEFAULT_PLANS.find((p) =>
+      p.pricing.monthly.stripePriceId === sub.stripePriceId ||
+      p.pricing.quarterly.stripePriceId === sub.stripePriceId ||
+      p.pricing.annual.stripePriceId === sub.stripePriceId,
+    ) ?? DEFAULT_PLANS.find((p) => p.tier === fromPrismaTier(sub.tier));
     if (!plan) {
-      throw new NotFoundError("Plan", sub.planId);
+      throw new NotFoundError("Plan", sub.id);
     }
 
     // Get actual usage counts
@@ -798,10 +883,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
           `SELECT COALESCE(SUM(size_bytes), 0) AS total_bytes FROM media_assets WHERE tenant_id = $1`,
           args.tenantId,
         )
-        .then(
-          (rows: Array<{ total_bytes: number | bigint | null }>) =>
-            Number(rows[0]?.total_bytes ?? 0) / 1024 ** 3,
-        )
+        .then((rows) => Number((rows as Array<{ total_bytes: number | bigint | null }>)[0]?.total_bytes ?? 0) / 1024 ** 3)
         .catch(() => 0),
       this.prisma
         .$queryRawUnsafe(
@@ -810,9 +892,7 @@ export class SubscriptionServiceImpl implements SubscriptionService {
           sub.currentPeriodStart,
           sub.currentPeriodEnd,
         )
-        .then((rows: Array<{ session_count: number | bigint | null }>) =>
-          Number(rows[0]?.session_count ?? 0),
-        )
+        .then((rows) => Number((rows as Array<{ session_count: number | bigint | null }>)[0]?.session_count ?? 0))
         .catch(() => 0),
     ]);
 
@@ -876,28 +956,33 @@ export class SubscriptionServiceImpl implements SubscriptionService {
       allowed,
       current,
       limit,
-      message: allowed
-        ? undefined
-        : `${args.resource} limit reached (${current}/${limit})`,
+      ...(allowed ? {} : { message: `${args.resource} limit reached (${current}/${limit})` }),
     };
   }
 
   private mapToSubscription(record: SubscriptionRecord): Subscription {
+    const inferredPlan =
+      DEFAULT_PLANS.find((p) =>
+        p.pricing.monthly.stripePriceId === record.stripePriceId ||
+        p.pricing.quarterly.stripePriceId === record.stripePriceId ||
+        p.pricing.annual.stripePriceId === record.stripePriceId,
+      ) ?? DEFAULT_PLANS.find((p) => p.tier === fromPrismaTier(record.tier));
+
     return {
       id: record.id as SubscriptionId,
       tenantId: record.tenantId as TenantId,
-      planId: record.planId,
-      tier: record.tier as SubscriptionTier,
-      status: record.status as SubscriptionStatus,
-      billingInterval: record.billingInterval as BillingInterval,
+      planId: record.planId ?? inferredPlan?.id ?? "plan_starter",
+      tier: fromPrismaTier(record.tier),
+      status: fromPrismaStatus(record.status),
+      billingInterval: fromPrismaInterval(record.billingInterval),
       currentPeriodStart: record.currentPeriodStart.toISOString(),
       currentPeriodEnd: record.currentPeriodEnd.toISOString(),
       cancelAtPeriodEnd: record.cancelAtPeriodEnd,
-      canceledAt: record.canceledAt?.toISOString(),
-      trialStart: record.trialStart?.toISOString(),
-      trialEnd: record.trialEnd?.toISOString(),
-      stripeSubscriptionId: record.stripeSubscriptionId ?? undefined,
-      stripeCustomerId: record.stripeCustomerId ?? undefined,
+      ...(record.canceledAt ? { canceledAt: record.canceledAt.toISOString() } : {}),
+      ...(record.trialStart ? { trialStart: record.trialStart.toISOString() } : {}),
+      ...(record.trialEnd ? { trialEnd: record.trialEnd.toISOString() } : {}),
+      ...(record.stripeSubscriptionId ? { stripeSubscriptionId: record.stripeSubscriptionId } : {}),
+      ...(record.stripeCustomerId ? { stripeCustomerId: record.stripeCustomerId } : {}),
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
@@ -1016,23 +1101,28 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
       return tx.paymentMethod.create({
         data: {
           tenantId: args.tenantId,
+          stripeCustomerId: String(setupIntent.customer ?? ""),
           stripePaymentMethodId: stripePaymentMethod.id,
           type: stripePaymentMethod.type === "card" ? "card" : "bank_account",
           isDefault: args.setAsDefault ?? false,
-          lastFour:
-            stripePaymentMethod.card?.last4 ??
-            stripePaymentMethod.us_bank_account?.last4,
-          brand: stripePaymentMethod.card?.brand,
-          expMonth: stripePaymentMethod.card?.exp_month,
-          expYear: stripePaymentMethod.card?.exp_year,
-          billingName: args.billingAddress?.name,
-          billingLine1: args.billingAddress?.line1,
-          billingLine2: args.billingAddress?.line2,
-          billingCity: args.billingAddress?.city,
-          billingState: args.billingAddress?.state,
-          billingPostalCode: args.billingAddress?.postalCode,
-          billingCountry: args.billingAddress?.country,
-        },
+          ...((stripePaymentMethod.card?.last4 ??
+            stripePaymentMethod.us_bank_account?.last4)
+            ? {
+                lastFour:
+                  stripePaymentMethod.card?.last4 ??
+                  stripePaymentMethod.us_bank_account?.last4,
+              }
+            : {}),
+          ...(stripePaymentMethod.card?.brand
+            ? { brand: stripePaymentMethod.card.brand }
+            : {}),
+          ...(stripePaymentMethod.card?.exp_month
+            ? { expMonth: stripePaymentMethod.card.exp_month }
+            : {}),
+          ...(stripePaymentMethod.card?.exp_year
+            ? { expYear: stripePaymentMethod.card.exp_year }
+            : {}),
+        } as unknown as Prisma.PaymentMethodCreateInput,
       });
     });
 
@@ -1106,18 +1196,13 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
     paymentMethodId: PaymentMethodId;
     billingAddress: BillingAddress;
   }): Promise<PaymentMethod> {
-    const method = await this.prisma.paymentMethod.update({
+    const method = await this.prisma.paymentMethod.findUnique({
       where: { id: args.paymentMethodId },
-      data: {
-        billingName: args.billingAddress.name,
-        billingLine1: args.billingAddress.line1,
-        billingLine2: args.billingAddress.line2,
-        billingCity: args.billingAddress.city,
-        billingState: args.billingAddress.state,
-        billingPostalCode: args.billingAddress.postalCode,
-        billingCountry: args.billingAddress.country,
-      },
     });
+
+    if (!method) {
+      throw new NotFoundError("Payment method", args.paymentMethodId);
+    }
 
     return this.mapToPaymentMethod(method);
   }
@@ -1128,40 +1213,43 @@ export class PaymentMethodServiceImpl implements PaymentMethodService {
       tenantId: record.tenantId as TenantId,
       type: record.type as PaymentMethodType,
       isDefault: record.isDefault,
-      card:
-        record.type === "card"
-          ? {
-              brand: mapCardBrand(record.brand),
+      ...(record.type === "card"
+        ? {
+            card: {
+              brand: mapCardBrand(record.brand ?? null),
               last4: record.lastFour ?? "",
               expMonth: record.expMonth ?? 0,
               expYear: record.expYear ?? 0,
-            }
-          : undefined,
-      bankAccount:
-        record.type === "bank_account"
-          ? {
+            },
+          }
+        : {}),
+      ...(record.type === "bank_account"
+        ? {
+            bankAccount: {
               bankName: record.bankName ?? "",
               last4: record.lastFour ?? "",
               accountType: "checking",
-            }
-          : undefined,
-      billingAddress: record.billingLine1
-        ? {
-            name: record.billingName ?? "",
-            line1: record.billingLine1,
-            line2: record.billingLine2 ?? undefined,
-            city: record.billingCity ?? "",
-            state: record.billingState ?? undefined,
-            postalCode: record.billingPostalCode ?? "",
-            country: record.billingCountry ?? "",
+            },
           }
-        : undefined,
-      stripePaymentMethodId: record.stripePaymentMethodId ?? undefined,
+        : {}),
+      ...(record.billingLine1
+        ? {
+            billingAddress: {
+              name: record.billingName ?? "",
+              line1: record.billingLine1,
+              ...(record.billingLine2 ? { line2: record.billingLine2 } : {}),
+              city: record.billingCity ?? "",
+              ...(record.billingState ? { state: record.billingState } : {}),
+              postalCode: record.billingPostalCode ?? "",
+              country: record.billingCountry ?? "",
+            },
+          }
+        : {}),
+      ...(record.stripePaymentMethodId ? { stripePaymentMethodId: record.stripePaymentMethodId } : {}),
       createdAt: record.createdAt.toISOString(),
-      expiresAt:
-        record.expYear && record.expMonth
-          ? new Date(record.expYear, record.expMonth, 0).toISOString()
-          : undefined,
+      ...(record.expYear && record.expMonth
+        ? { expiresAt: new Date(record.expYear, record.expMonth, 0).toISOString() }
+        : {}),
     };
   }
 }
@@ -1191,20 +1279,16 @@ export class InvoiceServiceImpl implements InvoiceService {
         orderBy: { createdAt: "desc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        cursor: args.pagination.cursor
-          ? { id: args.pagination.cursor }
-          : undefined,
-        include: { lineItems: true },
+        ...(args.pagination.cursor ? { cursor: { id: args.pagination.cursor } } : {}),
       }),
       this.prisma.invoice.count({ where }),
     ]);
 
     return {
       items: invoices.map((i) => this.mapToInvoice(i)),
-      nextCursor:
-        invoices.length === args.pagination.limit
-          ? invoices[invoices.length - 1].id
-          : undefined,
+      ...(invoices.length === args.pagination.limit && invoices[invoices.length - 1]
+        ? { nextCursor: invoices[invoices.length - 1]!.id }
+        : {}),
       totalCount: total,
       hasMore: invoices.length === args.pagination.limit,
     };
@@ -1216,7 +1300,6 @@ export class InvoiceServiceImpl implements InvoiceService {
   }): Promise<Invoice | null> {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id: args.invoiceId, tenantId: args.tenantId },
-      include: { lineItems: true },
     });
 
     return invoice ? this.mapToInvoice(invoice) : null;
@@ -1247,10 +1330,10 @@ export class InvoiceServiceImpl implements InvoiceService {
         tenantId: args.tenantId,
         subscriptionId: args.subscriptionId,
         number: "UPCOMING",
-        status: "draft",
+        status: (upcoming.status === "uncollectible" ? "open" : (upcoming.status ?? "draft")) as Invoice["status"],
         currency: upcoming.currency,
         subtotalCents: upcoming.subtotal,
-        taxCents: upcoming.tax ?? 0,
+        taxCents: (upcoming.total_excluding_tax != null ? upcoming.total - upcoming.total_excluding_tax : 0),
         totalCents: upcoming.total,
         amountPaidCents: upcoming.amount_paid,
         amountDueCents: upcoming.amount_due,
@@ -1260,14 +1343,10 @@ export class InvoiceServiceImpl implements InvoiceService {
         lineItems: upcoming.lines.data.map((line: Stripe.InvoiceLineItem) => ({
           description: line.description ?? "",
           quantity: line.quantity ?? 1,
-          unitAmountCents: line.price?.unit_amount ?? 0,
+          unitAmountCents: line.quantity && line.quantity > 0 ? Math.round(line.amount / line.quantity) : line.amount,
           amountCents: line.amount,
-          periodStart: line.period?.start
-            ? new Date(line.period.start * 1000).toISOString()
-            : undefined,
-          periodEnd: line.period?.end
-            ? new Date(line.period.end * 1000).toISOString()
-            : undefined,
+          ...(line.period?.start ? { periodStart: new Date(line.period.start * 1000).toISOString() } : {}),
+          ...(line.period?.end ? { periodEnd: new Date(line.period.end * 1000).toISOString() } : {}),
         })),
         createdAt: new Date().toISOString(),
       };
@@ -1283,7 +1362,6 @@ export class InvoiceServiceImpl implements InvoiceService {
   }): Promise<Invoice> {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id: args.invoiceId, tenantId: args.tenantId },
-      include: { lineItems: true },
     });
 
     if (!invoice) {
@@ -1300,7 +1378,7 @@ export class InvoiceServiceImpl implements InvoiceService {
       }
 
       await this.stripe.invoices.pay(invoice.stripeInvoiceId, {
-        payment_method: paymentMethodId,
+        ...(paymentMethodId ? { payment_method: paymentMethodId } : {}),
       });
     }
 
@@ -1310,7 +1388,6 @@ export class InvoiceServiceImpl implements InvoiceService {
         status: "paid",
         paidAt: new Date(),
       },
-      include: { lineItems: true },
     });
 
     return this.mapToInvoice(updated);
@@ -1356,7 +1433,7 @@ export class InvoiceServiceImpl implements InvoiceService {
       tenantId: record.tenantId as TenantId,
       subscriptionId: record.subscriptionId as SubscriptionId,
       number: record.number,
-      status: record.status,
+      status: record.status as Invoice["status"],
       currency: record.currency,
       subtotalCents: record.subtotalCents,
       taxCents: record.taxCents,
@@ -1364,19 +1441,19 @@ export class InvoiceServiceImpl implements InvoiceService {
       amountPaidCents: record.amountPaidCents,
       amountDueCents: record.amountDueCents,
       dueDate: record.dueDate.toISOString(),
-      paidAt: record.paidAt?.toISOString(),
+      ...(record.paidAt ? { paidAt: record.paidAt.toISOString() } : {}),
       lineItems:
         record.lineItems?.map((li) => ({
           description: li.description,
           quantity: li.quantity,
           unitAmountCents: li.unitAmountCents,
           amountCents: li.amountCents,
-          periodStart: li.periodStart?.toISOString(),
-          periodEnd: li.periodEnd?.toISOString(),
+            ...(li.periodStart ? { periodStart: li.periodStart.toISOString() } : {}),
+            ...(li.periodEnd ? { periodEnd: li.periodEnd.toISOString() } : {}),
         })) ?? [],
-      stripeInvoiceId: record.stripeInvoiceId ?? undefined,
-      hostedInvoiceUrl: record.hostedInvoiceUrl ?? undefined,
-      invoicePdfUrl: record.invoicePdfUrl ?? undefined,
+      ...(record.stripeInvoiceId ? { stripeInvoiceId: record.stripeInvoiceId } : {}),
+      ...(record.hostedInvoiceUrl ? { hostedInvoiceUrl: record.hostedInvoiceUrl } : {}),
+      ...(record.invoicePdfUrl ? { invoicePdfUrl: record.invoicePdfUrl } : {}),
       createdAt: record.createdAt.toISOString(),
     };
   }
@@ -1463,9 +1540,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
         orderBy: { createdAt: "desc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        cursor: args.pagination.cursor
-          ? { id: args.pagination.cursor }
-          : undefined,
+          ...(args.pagination.cursor ? { cursor: { id: args.pagination.cursor } } : {}),
       }),
       this.prisma.webhookEvent.count({ where }),
     ]);
@@ -1476,13 +1551,12 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
         type: e.type as PaymentWebhookEvent["type"],
         data: e.data as Record<string, unknown>,
         stripeEventId: e.stripeEventId,
-        processedAt: e.processedAt?.toISOString(),
+          ...(e.processedAt ? { processedAt: e.processedAt.toISOString() } : {}),
         createdAt: e.createdAt.toISOString(),
       })),
-      nextCursor:
-        events.length === args.pagination.limit
-          ? events[events.length - 1].id
-          : undefined,
+        ...(events.length === args.pagination.limit && events[events.length - 1]
+          ? { nextCursor: events[events.length - 1]!.id }
+          : {}),
       totalCount: total,
       hasMore: events.length === args.pagination.limit,
     };
@@ -1589,7 +1663,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: stripeSub.id },
       data: {
-        status: statusMap[stripeSub.status] ?? "incomplete",
+        status: toPrismaStatus(statusMap[stripeSub.status] ?? "incomplete") as Prisma.SubscriptionUpdateManyMutationInput["status"],
         currentPeriodStart: new Date(
           stripeSubWithPeriods.current_period_start * 1000,
         ),
@@ -1601,7 +1675,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
           ? new Date(stripeSub.canceled_at * 1000)
           : null,
         updatedAt: new Date(),
-      },
+      } as Prisma.SubscriptionUpdateManyMutationInput,
     });
   }
 
@@ -1611,7 +1685,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
     await this.prisma.subscription.updateMany({
       where: { stripeSubscriptionId: stripeSub.id },
       data: {
-        status: "canceled",
+        status: "CANCELED",
         canceledAt: new Date(),
         updatedAt: new Date(),
       },
@@ -1621,9 +1695,10 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
   private async handleInvoiceCreated(
     stripeInvoice: Stripe.Invoice,
   ): Promise<void> {
+      const invoiceAny = stripeInvoice as unknown as { subscription?: string | null; tax?: number | null };
     const stripeSubscriptionId =
-      typeof stripeInvoice.subscription === "string"
-        ? stripeInvoice.subscription
+        typeof invoiceAny.subscription === "string"
+          ? invoiceAny.subscription
         : null;
     if (!stripeSubscriptionId) return;
 
@@ -1639,13 +1714,14 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       where: { stripeInvoiceId: stripeInvoice.id },
       create: {
         tenantId: sub.tenantId,
+        stripeCustomerId: sub.stripeCustomerId,
         subscriptionId: sub.id,
         stripeInvoiceId: stripeInvoice.id,
         number: stripeInvoice.number ?? `INV-${Date.now()}`,
-        status: stripeInvoice.status ?? "draft",
+        status: String(stripeInvoice.status ?? "draft"),
         currency: stripeInvoice.currency,
         subtotalCents: stripeInvoice.subtotal,
-        taxCents: stripeInvoice.tax ?? 0,
+        taxCents: invoiceAny.tax ?? 0,
         totalCents: stripeInvoice.total,
         amountPaidCents: stripeInvoice.amount_paid,
         amountDueCents: stripeInvoice.amount_due,
@@ -1682,9 +1758,10 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
   private async handleInvoicePaymentFailed(
     stripeInvoice: Stripe.Invoice,
   ): Promise<void> {
+      const invoiceAny = stripeInvoice as unknown as { subscription?: string | null };
     const stripeSubscriptionId =
-      typeof stripeInvoice.subscription === "string"
-        ? stripeInvoice.subscription
+        typeof invoiceAny.subscription === "string"
+          ? invoiceAny.subscription
         : null;
 
     await this.prisma.$transaction(async (tx) => {
@@ -1700,9 +1777,9 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
         await tx.subscription.updateMany({
           where: {
             stripeSubscriptionId,
-            status: "active",
+              status: "ACTIVE",
           },
-          data: { status: "past_due" },
+            data: { status: "PAST_DUE" },
         });
       }
     });
@@ -1723,14 +1800,17 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       where: { stripePaymentMethodId: pm.id },
       create: {
         tenantId: customer.tenantId,
+        stripeCustomerId: customer.stripeCustomerId,
         stripePaymentMethodId: pm.id,
         type: pm.type === "card" ? "card" : "bank_account",
         isDefault: false,
-        lastFour: pm.card?.last4 ?? pm.us_bank_account?.last4,
-        brand: pm.card?.brand,
-        expMonth: pm.card?.exp_month,
-        expYear: pm.card?.exp_year,
-      },
+        ...((pm.card?.last4 ?? pm.us_bank_account?.last4)
+          ? { lastFour: pm.card?.last4 ?? pm.us_bank_account?.last4 }
+          : {}),
+        ...(pm.card?.brand ? { brand: pm.card.brand } : {}),
+        ...(pm.card?.exp_month ? { expMonth: pm.card.exp_month } : {}),
+        ...(pm.card?.exp_year ? { expYear: pm.card.exp_year } : {}),
+      } as unknown as Prisma.PaymentMethodCreateInput,
       update: {},
     });
   }
@@ -1756,7 +1836,7 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
       .catch(() => null);
 
     if (!customer) {
-      this.logger.warn({
+        console.warn({
         message: "handleTrialWillEnd: no local customer found",
         stripeSubscriptionId: stripeSub.id,
         stripeCustomerId: String(stripeSub.customer),
@@ -1776,14 +1856,14 @@ export class PaymentWebhookServiceImpl implements PaymentWebhookService {
 
     if (this.notificationService) {
       await this.notificationService.sendTrialEndingEmail({
-        tenantId: customer.tenantId,
+          tenantId: customer.tenantId as TenantId,
         email: customer.email,
         trialEndDate,
         planName,
       });
     } else {
       // Fallback: structured log so downstream observability can pick it up
-      this.logger.info({
+        console.info({
         event: "trial.will_end",
         tenantId: customer.tenantId,
         email: customer.email,

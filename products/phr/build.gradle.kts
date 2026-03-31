@@ -107,3 +107,19 @@ tasks.register<JavaExec>("benchmarkBillingFlow") {
         "-rff", layout.buildDirectory.file("reports/benchmarks/phr-billing-benchmark.json").get().asFile.absolutePath
     )
 }
+
+tasks.register<Test>("phrReleaseGate") {
+    group = "verification"
+    description = "Runs the PHR release-gate regression suite used before staging sign-off"
+    dependsOn("validatePhrSpec")
+    useJUnitPlatform()
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    filter {
+        includeTestsMatching("com.ghatana.phr.security.PHRSecurityIntegrationTest")
+        includeTestsMatching("com.ghatana.phr.observability.PHRAuditTrailServiceTest")
+        includeTestsMatching("com.ghatana.phr.service.PatientServiceTest")
+        includeTestsMatching("com.ghatana.phr.kernel.service.ClinicalDecisionSupportServiceTest")
+        includeTestsMatching("com.ghatana.phr.kernel.PhrKernelModuleTest")
+    }
+}

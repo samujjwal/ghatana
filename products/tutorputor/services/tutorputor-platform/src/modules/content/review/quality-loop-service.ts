@@ -11,16 +11,46 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  EvaluationRecord,
-  GenerationQualityLoopSummary,
-  RegenerationTrigger,
-  ReviewPath,
-} from "@tutorputor/contracts/v1/content-studio";
 import { RegenerationCandidateService } from "../candidates/candidate-service.js";
 import { EvaluationService } from "../evaluation/evaluation-service.js";
 import { PublishService } from "../publish/publish-service.js";
 import { GenerationReviewService } from "./review-service.js";
+
+type ReviewPath = "auto_publish" | "expert_review" | "human_review";
+type RegenerationTrigger = "safety_concern" | "low_evaluation_score";
+
+interface EvaluationRecord {
+  id: string;
+  assetId?: string;
+  recommendation: "auto_publish" | "manual_review" | "block";
+  overallScore?: number;
+  issues?: Array<{ dimension?: string }>;
+  diagnostics?: Record<string, unknown>;
+}
+
+interface GenerationQualityLoopSummary {
+  requestId: string;
+  reviewPath: ReviewPath;
+  evaluation: {
+    recommendation: "auto_publish" | "manual_review" | "block";
+  } & Record<string, unknown>;
+  latestDecision?: unknown;
+  openCandidates: unknown[];
+  nextAction:
+    | "auto_published"
+    | "regeneration_required"
+    | "awaiting_assets"
+    | "ready_for_manual_review"
+    | "ready_for_publish";
+  autoPublished: boolean;
+  publishResult?: {
+    published: number;
+    results: Array<{ published: boolean; assetId: string }>;
+  };
+  publishedAssetIds: string[];
+  eligibleAssetIds: string[];
+  blockedAssetIds: string[];
+}
 
 type PersistedRequest = {
   id: string;
@@ -72,18 +102,18 @@ export class GenerationQualityLoopService {
     const eligibleAssetIds = unique(
       records
         .filter(
-          (record) =>
+          (record: any) =>
             record.assetId != null && record.recommendation !== "block",
         )
-        .map((record) => record.assetId as string),
+        .map((record: any) => record.assetId as string),
     );
     const blockedAssetIds = unique(
       records
         .filter(
-          (record) =>
+          (record: any) =>
             record.assetId != null && record.recommendation === "block",
         )
-        .map((record) => record.assetId as string),
+        .map((record: any) => record.assetId as string),
     );
 
     let latestDecision = await this.reviewService.getLatestDecision(
@@ -124,10 +154,11 @@ export class GenerationQualityLoopService {
     return {
       requestId: generationRequestId,
       reviewPath,
-      evaluation,
+      evaluation:
+        evaluation as unknown as GenerationQualityLoopSummary["evaluation"],
       ...(latestDecision ? { latestDecision } : {}),
       openCandidates: openCandidates.filter(
-        (candidate) =>
+        (candidate: any) =>
           candidate.generationRequestId === generationRequestId ||
           blockedAssetIds.includes(candidate.assetId) ||
           eligibleAssetIds.includes(candidate.assetId),
@@ -143,8 +174,8 @@ export class GenerationQualityLoopService {
       ...(publishResult ? { publishResult } : {}),
       publishedAssetIds: publishResult
         ? publishResult.results
-            .filter((result) => result.published)
-            .map((result) => result.assetId)
+            .filter((result: any) => result.published)
+            .map((result: any) => result.assetId)
         : [],
       eligibleAssetIds,
       blockedAssetIds,
@@ -229,7 +260,7 @@ function buildCandidateConfig(record: EvaluationRecord):
   }
 
   const issues = record.issues ?? [];
-  const safetyIssue = issues.find((issue) => issue.dimension === "safety");
+  const safetyIssue = issues.find((issue: any) => issue.dimension === "safety");
 
   if (record.recommendation === "block") {
     return {

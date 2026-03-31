@@ -123,10 +123,13 @@ pmd {
 }
 
 // =============================================================================
-// OpenAPI Spec Sync — canonical source is products/aep/contracts/openapi.yaml
+// OpenAPI Spec Sync — canonical source is platform/contracts/openapi/aep.yaml
+// The product-local copy at products/aep/contracts/openapi.yaml is kept as
+// a legacy alias; CI enforces that both match the platform canonical.
 // =============================================================================
 
-val canonicalSpec = rootProject.file("products/aep/contracts/openapi.yaml")
+val canonicalSpec = rootProject.file("platform/contracts/openapi/aep.yaml")
+val legacySpec    = rootProject.file("products/aep/contracts/openapi.yaml")
 val runtimeSpec   = file("src/main/resources/openapi.yaml")
 
 tasks.register<Copy>("syncOpenApiSpec") {
@@ -138,11 +141,22 @@ tasks.register<Copy>("syncOpenApiSpec") {
 }
 
 tasks.register("verifyOpenApiSync") {
-    description = "Fails build if the runtime OpenAPI spec diverges from the canonical copy"
+    description = "Fails build if the runtime OpenAPI spec diverges from the canonical copy in platform/contracts"
     group = "verification"
     doLast {
         if (!canonicalSpec.exists()) {
             throw GradleException("Canonical OpenAPI spec not found: $canonicalSpec")
+        }
+        // Ensure the legacy product-local copy has not drifted from the platform canonical
+        if (legacySpec.exists()) {
+            val canonical = canonicalSpec.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
+            val legacy = legacySpec.readText().lines().dropWhile { it.startsWith("#") }.joinToString("\n").trim()
+            if (canonical != legacy) {
+                throw GradleException(
+                    "OpenAPI spec drift: products/aep/contracts/openapi.yaml diverges from platform/contracts/openapi/aep.yaml.\n" +
+                    "The platform canonical is the source of truth — update or remove the legacy copy."
+                )
+            }
         }
         if (!runtimeSpec.exists()) {
             throw GradleException("Runtime OpenAPI spec not found: $runtimeSpec — run :products:aep:server:syncOpenApiSpec")

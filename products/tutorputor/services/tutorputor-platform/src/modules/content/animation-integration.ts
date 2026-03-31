@@ -239,7 +239,7 @@ export class AnimationContentIntegration {
         difficulty: "INTERMEDIATE",
         estimatedDuration: 30,
       },
-      spec: config["spec"] as AnimationSpec | undefined,
+      ...(config["spec"] ? { spec: config["spec"] as AnimationSpec } : {}),
     };
   }
 

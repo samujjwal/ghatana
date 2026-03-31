@@ -12,7 +12,7 @@ import {
   getTenantId,
   getUserId,
   requireRole,
-} from "../../core/http/requestContext.js";
+} from "../../../core/http/requestContext.js";
 
 export const adminRoutes: FastifyPluginAsync = async (app) => {
   const adminService = new InstitutionAdminServiceImpl(app.prisma);
@@ -61,13 +61,13 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     try {
       const result = await adminService.listTenantUsers({
         tenantId,
-        role,
-        searchQuery,
+        ...(role ? { role } : {}),
+        ...(searchQuery ? { searchQuery } : {}),
         pagination: {
-          cursor,
-          limit: limit ? Number(limit) : undefined,
-          sortBy,
-          sortOrder,
+          ...(cursor ? { cursor } : {}),
+          ...(typeof limit === "number" ? { limit: Number(limit) } : {}),
+          ...(sortBy ? { sortBy } : {}),
+          ...(sortOrder ? { sortOrder } : {}),
         },
       });
       return reply.send(result);
@@ -138,7 +138,9 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
         tenantId,
         importedBy: adminId,
         users: request.body.users,
-        sendInvites: request.body.sendInvites,
+        ...(typeof request.body.sendInvites === "boolean"
+          ? { sendInvites: request.body.sendInvites }
+          : {}),
       });
       return reply.send(result);
     } catch (error) {

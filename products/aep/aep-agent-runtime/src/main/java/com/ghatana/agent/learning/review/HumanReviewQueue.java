@@ -79,6 +79,25 @@ public interface HumanReviewQueue {
     @NotNull Promise<ReviewItem> reject(@NotNull String reviewId, @NotNull ReviewDecision decision);
 
     /**
+     * Escalates a review item that has exceeded its SLA or requires immediate attention.
+     * Valid from PENDING or IN_REVIEW states.
+     *
+     * @param reviewId the review item to escalate
+     * @return the updated review item with ESCALATED status
+     */
+    @NotNull Promise<ReviewItem> escalate(@NotNull String reviewId);
+
+    /**
+     * Returns all PENDING or IN_REVIEW items older than the given threshold.
+     * Used by the auto-escalation scheduler.
+     *
+     * @param thresholdSeconds age threshold in seconds
+     * @param tenantId the tenant to scan (null = all tenants)
+     * @return list of overdue review items
+     */
+    @NotNull Promise<List<ReviewItem>> findOverdue(long thresholdSeconds, @Nullable String tenantId);
+
+    /**
      * Returns the count of pending review items.
      *
      * @return count of items awaiting review

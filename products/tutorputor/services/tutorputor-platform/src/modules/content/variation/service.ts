@@ -9,7 +9,6 @@
  * @doc.pattern Content Variants
  */
 
-import type { ArtifactManifest } from "@tutorputor/contracts/v1/content-studio";
 import { ContentAssetReadService } from "../asset/read-service.js";
 import {
   extractBlockText,
@@ -34,6 +33,13 @@ export interface AdaptedContentVariant {
     generatedAt: string;
     strategy: string;
   };
+}
+
+interface ArtifactManifest {
+  id: string;
+  assetId: string;
+  manifestType: string;
+  manifest: unknown;
 }
 
 export interface DifficultyVariantSet {

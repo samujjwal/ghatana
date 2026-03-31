@@ -17,10 +17,25 @@ import {
 } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { TelemetryService } from "./telemetry-service.js";
-import type {
-  TrackExplorerEventInput,
-  TrackBatchEventsInput,
-} from "@tutorputor/contracts/v1/content-studio";
+
+interface TrackExplorerEventInput {
+  userId?: string;
+  sessionId?: string;
+  eventType: string;
+  query?: string;
+  assetId?: string;
+  assetType?: string;
+  position?: number;
+  score?: number;
+  feedbackLabel?: string;
+  feedbackScore?: number;
+  metadata?: Record<string, unknown>;
+  occurredAt?: string;
+}
+
+interface TrackBatchEventsInput {
+  events: TrackExplorerEventInput[];
+}
 
 export function registerTelemetryRoutes(
   app: FastifyInstance,
@@ -42,7 +57,7 @@ export function registerTelemetryRoutes(
 
       const event = await service.trackEvent(tenantId, {
         ...request.body,
-        userId,
+        ...(userId ? { userId } : {}),
       });
 
       return reply.status(201).send(event);
@@ -58,7 +73,10 @@ export function registerTelemetryRoutes(
     async (request, reply) => {
       const tenantId = getTenantId(request);
 
-      const result = await service.trackBatch(tenantId, request.body);
+      const result = await service.trackBatch(
+        tenantId,
+        request.body as TrackBatchEventsInput,
+      );
 
       return reply.status(200).send(result);
     },

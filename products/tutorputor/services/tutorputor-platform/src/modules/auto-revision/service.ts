@@ -34,7 +34,7 @@ export interface RegenerationInsight {
     | "mastery_problems"
     | "feedback_issues";
   issue: string;
-  evidence: any;
+  evidence: unknown;
   suggestedAction: string;
   priority: number;
 }
@@ -409,7 +409,7 @@ export class AutoRevisionService {
       throw new Error(`Experience not found: ${experienceId}`);
     }
 
-    const created = await this.prisma.abExperiment.create({
+    const created = await this.prisma.aBExperiment.create({
       data: {
         tenantId: experience.tenantId,
         experienceId,
@@ -436,13 +436,13 @@ export class AutoRevisionService {
         treatment: (created.treatmentMetrics as any) || {},
       },
       createdAt: created.createdAt,
-      startedAt: created.startedAt || undefined,
-      completedAt: created.completedAt || undefined,
+      ...(created.startedAt ? { startedAt: created.startedAt } : {}),
+      ...(created.completedAt ? { completedAt: created.completedAt } : {}),
     };
   }
 
   async evaluateABExperiments(): Promise<void> {
-    const experiments = await this.prisma.abExperiment.findMany({
+    const experiments = await this.prisma.aBExperiment.findMany({
       where: { status: "running" },
     });
 
@@ -470,7 +470,7 @@ export class AutoRevisionService {
             ? "control"
             : "inconclusive";
 
-      await this.prisma.abExperiment.update({
+      await this.prisma.aBExperiment.update({
         where: { id: experiment.id },
         data: {
           status: "completed",
@@ -495,7 +495,7 @@ export class AutoRevisionService {
     }
   }
 
-  async getRegenerationHistory(experienceId: string): Promise<any[]> {
+  async getRegenerationHistory(experienceId: string): Promise<unknown[]> {
     return this.prisma.experienceAutoRefinement.findMany({
       where: { experienceId },
       orderBy: { createdAt: "desc" },
@@ -504,7 +504,7 @@ export class AutoRevisionService {
   }
 
   async getABExperimentResults(experimentId: string): Promise<any> {
-    return this.prisma.abExperiment.findUnique({
+    return this.prisma.aBExperiment.findUnique({
       where: { id: experimentId },
     });
   }
@@ -606,7 +606,7 @@ export class AutoRevisionService {
     return 0;
   }
 
-  private toNumber(value: unknown, fallback = 0): number {
+  private toNumber(value: any, fallback = 0): number {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string" && value.trim().length > 0) {
       const parsed = Number(value);

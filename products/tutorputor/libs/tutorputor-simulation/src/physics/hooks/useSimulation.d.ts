@@ -24,7 +24,7 @@ export interface UseSimulationResult {
         success: boolean;
         error?: string;
     }>;
-    loadManifest: (manifest: any) => void;
+    loadManifest: (manifest: unknown) => void;
 }
 /**
  * Main hook for simulation state management

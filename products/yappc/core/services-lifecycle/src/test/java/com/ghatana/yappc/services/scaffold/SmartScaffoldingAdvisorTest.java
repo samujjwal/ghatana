@@ -3,13 +3,13 @@ package com.ghatana.yappc.services.scaffold;
 import com.ghatana.ai.llm.CompletionRequest;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Set;
@@ -19,12 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
 @DisplayName("SmartScaffoldingAdvisor Tests")
-class SmartScaffoldingAdvisorTest {
+class SmartScaffoldingAdvisorTest extends EventloopTestBase {
 
-    @Mock
-    private CompletionService completionService;
+    private CompletionService completionService = mock(CompletionService.class);
 
     private SmartScaffoldingAdvisor advisor;
 
@@ -44,7 +42,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith(llmResponse);
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(3);
         // Sorted descending by confidence
@@ -60,7 +58,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith("   ");
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).isEmpty();
     }
@@ -69,7 +67,7 @@ class SmartScaffoldingAdvisorTest {
     @DisplayName("returns empty list for null context")
     void returnsEmptyListForNullContext() {
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(null).getResult();
+                runPromise(() -> advisor.recommendTemplates(null));
 
         assertThat(recs).isEmpty();
     }
@@ -84,7 +82,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith(llmResponse);
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(1);
         assertThat(recs.get(0).name()).isEqualTo("gradle-java-ci");
@@ -100,7 +98,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith(llmResponse);
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(1);
         assertThat(recs.get(0).name()).isEqualTo("docker-compose");
@@ -117,7 +115,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith(llmResponse);
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(1);
         assertThat(recs.get(0).name()).isEqualTo("template-c");
@@ -135,7 +133,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith(llmResponse.toString());
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(5);
     }
@@ -166,7 +164,7 @@ class SmartScaffoldingAdvisorTest {
         stubCompletionWith("gradle-java-ci|CI pipeline|0.95|Matches stack\n");
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
-                advisor.recommendTemplates(javaProjectContext()).getResult();
+                runPromise(() -> advisor.recommendTemplates(javaProjectContext()));
 
         assertThat(recs).hasSize(1);
         org.junit.jupiter.api.Assertions.assertThrows(

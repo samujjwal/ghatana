@@ -51,17 +51,17 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     try {
       const result = await auditService.queryAuditEvents({
         tenantId,
-        actorId: actorId as UserId,
-        action,
-        resourceType,
-        resourceId,
-        startDate,
-        endDate,
+        ...(actorId ? { actorId: actorId as UserId } : {}),
+        ...(action ? { action } : {}),
+        ...(resourceType ? { resourceType } : {}),
+        ...(resourceId ? { resourceId } : {}),
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
         pagination: {
-          cursor,
-          limit: limit ? Number(limit) : undefined,
-          sortBy,
-          sortOrder,
+          ...(cursor ? { cursor } : {}),
+          ...(typeof limit === "number" ? { limit: Number(limit) } : {}),
+          ...(sortBy ? { sortBy } : {}),
+          ...(sortOrder ? { sortOrder } : {}),
         },
       });
       return reply.send(result);
@@ -91,7 +91,7 @@ export const auditRoutes: FastifyPluginAsync = async (app) => {
     try {
       const summary = await auditService.getAuditSummary({
         tenantId,
-        days: days ? Number(days) : undefined,
+        ...(typeof days === "number" ? { days: Number(days) } : {}),
       });
       return reply.send(summary);
     } catch (error) {

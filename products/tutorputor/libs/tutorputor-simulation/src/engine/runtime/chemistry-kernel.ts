@@ -123,11 +123,12 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
           });
         } else if (entity.type === "bond") {
           const bond = entity as ChemBondEntity;
+          const bondOrder = bond.bondOrder ?? 1;
           bonds.set(entity.id, {
             id: entity.id,
             atom1Id: bond.atom1Id,
             atom2Id: bond.atom2Id,
-            bondOrder: bond.bondOrder
+            bondOrder
           });
 
           // Update atom bond lists
@@ -135,11 +136,11 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
           const atom2 = atoms.get(bond.atom2Id);
           if (atom1) {
             atom1.bonds.push(entity.id);
-            atom1.totalBondOrder += bond.bondOrder;
+            atom1.totalBondOrder += bondOrder;
           }
           if (atom2) {
             atom2.bonds.push(entity.id);
-            atom2.totalBondOrder += bond.bondOrder;
+            atom2.totalBondOrder += bondOrder;
           }
         } else if (entity.type === "molecule") {
           molecules.set(entity.id, entity as ChemMoleculeEntity);
@@ -168,7 +169,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
       let currentTime = 0;
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
-        const step = stepsToProcess[stepIndex];
+        const step = stepsToProcess[stepIndex]!;
 
         // Apply step actions
         for (const action of step.actions) {
@@ -209,7 +210,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        ...(warnings.length > 0 ? { warnings } : {})
       };
     },
 
@@ -235,6 +236,9 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
       // Parse atoms
       while ((match = elementRegex.exec(smiles)) !== null) {
         const element = match[1];
+        if (!element) {
+          continue;
+        }
         if (ELEMENT_DATA[element]) {
           atoms.push({
             element,
@@ -572,6 +576,9 @@ function countAtomsInSMILES(smiles: string): Map<string, number> {
   let match;
   while ((match = elementRegex.exec(smiles)) !== null) {
     const element = match[1];
+    if (!element) {
+      continue;
+    }
     const count = match[2] ? parseInt(match[2], 10) : 1;
 
     if (ELEMENT_DATA[element]) {

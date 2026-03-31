@@ -6,7 +6,7 @@
  */
 
 import type { FastifyPluginAsync } from "fastify";
-import { KnowledgeBaseService } from "./service";
+import { KnowledgeBaseServiceImpl } from "./service";
 import { registerKnowledgeBaseRoutes } from "./routes";
 import type { KnowledgeBaseModuleConfig } from "./types";
 
@@ -15,7 +15,7 @@ export const knowledgeBaseModule: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
 
   // Initialize knowledge base service
-  const knowledgeBaseService = new KnowledgeBaseService(prisma, {
+  const knowledgeBaseService = new KnowledgeBaseServiceImpl(prisma, {
     wikipediaApiUrl:
       process.env.KNOWLEDGE_BASE_WIKIPEDIA_API_URL ||
       "https://en.wikipedia.org/api/rest_v1",

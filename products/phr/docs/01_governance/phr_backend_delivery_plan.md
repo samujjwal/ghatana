@@ -8,6 +8,8 @@
 **Approval status:** Draft for architecture review  
 **Classification:** Internal — Restricted
 
+> Runtime correction (2026-03-30): This document is preserved as a planning artifact. The live backend implementation is Java 21 + ActiveJ under `products/phr/src/main/java`, not the planned NestJS workspace shape described below. Treat the execution waves here as historical planning context unless they align with the current runtime docs and code.
+
 | Field | Value |
 | --- | --- |
 | Primary consumers | Backend, architecture, platform, QA |
@@ -33,6 +35,12 @@ The first three blocked decisions are non-negotiable:
 - Consent enforcement contract
 - Multi-tenant isolation strategy
 - Secrets management and environment bootstrap
+
+### 1.1 Current implementation status update
+
+- kernel-managed Java backend services are implemented for patient, consent, document, appointment, medication, lab, immunization, clinical note, imaging, referral, billing, telemedicine, caregiver, emergency access, and clinical decision support
+- the remaining production blockers are staging validation and formal HIPAA evidence capture
+- use `./gradlew :products:phr:phrReleaseGate` plus the staging evidence template to drive the remaining release workflow
 
 ---
 
@@ -67,6 +75,20 @@ products/phr/
     audit/
     events/
     interoperability/
+```
+
+Current implemented locations:
+
+```text
+products/phr/
+  src/main/java/com/ghatana/phr/
+    kernel/
+    security/
+    observability/
+    fhir/
+    plugin/
+    extension/
+  src/test/java/com/ghatana/phr/
 ```
 
 Planned common package responsibilities:
@@ -222,10 +244,8 @@ No migration is implementation-ready until all of the following exist:
 
 | Blocker | Impact | Handoff owner |
 | --- | --- | --- |
-| ConsentService contract not implemented | blocks all patient-data route implementation | Architecture Lead |
-| Tenant strategy not operationalized | blocks Prisma and repository implementation | Architecture Lead |
-| Secrets delivery not fixed | blocks staging and worker integration testing | DevOps Lead |
-| DTO draft set not promoted to shared schemas | blocks parallel frontend and backend implementation | API Lead |
-| Test suite locations not created | blocks execution-ready QA ownership | QA Lead |
+| Staging deployment execution not completed | blocks PHR production promotion | DevOps Lead |
+| HIPAA evidence pack not signed off | blocks compliance release approval | Compliance Lead |
+| Remaining planning-doc drift | creates documentation ambiguity for follow-on work | PHR Technical Lead |
 
 This plan is complete when every Core MVP backend capability has an owning team, dependency chain, planned file location, and measurable exit gate.

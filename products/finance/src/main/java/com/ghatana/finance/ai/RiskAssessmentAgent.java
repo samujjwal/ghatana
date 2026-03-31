@@ -7,6 +7,8 @@ import com.ghatana.agent.framework.memory.MemoryFilter;
 import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
@@ -99,16 +101,20 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
             return null; // Skip non-portfolio events
         }
 
+        Map<String, Double> positions = safeExposureMap(input.getPositions());
+        Map<String, Double> marketValues = safeExposureMap(input.getMarketValues());
+
         // Extract risk features from portfolio update
-        Map<String, Object> riskFeatures = extractRiskFeatures(input);
+        Map<String, Object> riskFeatures = extractRiskFeatures(input, positions, marketValues);
 
         return PortfolioUpdate.builder()
             .portfolioId(input.getPortfolioId())
             .accountId(input.getAccountId())
             .timestamp(input.getTimestamp())
-            .positions(input.getPositions())
-            .marketValues(input.getMarketValues())
+            .positions(positions)
+            .marketValues(marketValues)
             .riskFeatures(riskFeatures)
+            .eventType(input.getEventType())
             .build();
     }
 
@@ -216,19 +222,21 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
 
     // ==================== Private Methods ====================
 
-    private Map<String, Object> extractRiskFeatures(PortfolioUpdate update) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> marketConditions = (Map<String, Object>) getMarketConditions();
+    private Map<String, Object> extractRiskFeatures(
+            PortfolioUpdate update,
+            Map<String, Double> positions,
+            Map<String, Double> marketValues) {
+        Map<String, Double> marketConditions = getMarketConditions();
         return Map.of(
-            "total_value", calculateTotalValue(update),
-            "position_count", update.getPositions().size(),
-            "largest_position_pct", calculateLargestPosition(update),
-            "sector_concentration", calculateSectorConcentration(update),
-            "geography_concentration", calculateGeographyConcentration(update),
-            "leverage_ratio", calculateLeverage(update),
-            "margin_utilization", calculateMarginUtilization(update),
-            "market_vix", marketConditions.get("vix"),
-            "market_correlation", marketConditions.get("market_correlation")
+            "total_value", calculateTotalValue(marketValues),
+            "position_count", positions.size(),
+            "largest_position_pct", calculateLargestPosition(marketValues),
+            "sector_concentration", calculateTaggedConcentration(marketValues, 0),
+            "geography_concentration", calculateTaggedConcentration(marketValues, 1),
+            "leverage_ratio", calculateLeverage(marketValues),
+            "margin_utilization", calculateMarginUtilization(marketValues),
+            "market_vix", marketConditions.getOrDefault("vix", 0.0),
+            "market_correlation", marketConditions.getOrDefault("market_correlation", 0.0)
         );
     }
 
@@ -238,17 +246,17 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
         return (input, context) -> Promise.of(inferenceService.predict(MODEL_ID, input.getRiskFeatures()));
     }
 
-    private double calculateTotalValue(PortfolioUpdate update) {
-        return update.getMarketValues().values().stream()
+    private double calculateTotalValue(Map<String, Double> marketValues) {
+        return marketValues.values().stream()
             .mapToDouble(Double::doubleValue)
             .sum();
     }
 
-    private double calculateLargestPosition(PortfolioUpdate update) {
-        double total = calculateTotalValue(update);
+    private double calculateLargestPosition(Map<String, Double> marketValues) {
+        double total = calculateTotalValue(marketValues);
         if (total == 0) return 0;
 
-        double maxPosition = update.getMarketValues().values().stream()
+        double maxPosition = marketValues.values().stream()
             .mapToDouble(Double::doubleValue)
             .max()
             .orElse(0);
@@ -256,34 +264,95 @@ public class RiskAssessmentAgent extends BaseAgent<PortfolioUpdate, RiskAssessme
         return maxPosition / total;
     }
 
-    private double calculateSectorConcentration(PortfolioUpdate update) {
-        // Calculate Herfindahl index for sector concentration
-        return 0.15; // Placeholder
+    private double calculateTaggedConcentration(Map<String, Double> marketValues, int tokenIndex) {
+        if (marketValues.isEmpty()) {
+            return 0;
+        }
+
+        Map<String, Double> groupedExposure = new HashMap<>();
+        marketValues.forEach((instrumentKey, exposure) ->
+            groupedExposure.merge(extractBucketKey(instrumentKey, tokenIndex), Math.abs(exposure), Double::sum));
+
+        return calculateHerfindahlIndex(groupedExposure.values());
     }
 
-    private double calculateGeographyConcentration(PortfolioUpdate update) {
-        // Calculate geography concentration risk
-        return 0.20; // Placeholder
+    private double calculateLeverage(Map<String, Double> marketValues) {
+        if (marketValues.isEmpty()) {
+            return 0;
+        }
+
+        double grossExposure = marketValues.values().stream()
+            .mapToDouble(Math::abs)
+            .sum();
+        double netAssetValue = Math.abs(marketValues.values().stream()
+            .mapToDouble(Double::doubleValue)
+            .sum());
+
+        if (netAssetValue < 1e-9) {
+            return grossExposure;
+        }
+        return grossExposure / netAssetValue;
     }
 
-    private double calculateLeverage(PortfolioUpdate update) {
-        // Calculate leverage ratio
-        return 1.0; // Placeholder
+    private double calculateMarginUtilization(Map<String, Double> marketValues) {
+        if (marketValues.isEmpty()) {
+            return 0;
+        }
+
+        double grossExposure = marketValues.values().stream()
+            .mapToDouble(Math::abs)
+            .sum();
+        if (grossExposure == 0) {
+            return 0;
+        }
+
+        double encumberedExposure = marketValues.values().stream()
+            .filter(value -> value < 0)
+            .mapToDouble(Math::abs)
+            .sum();
+        return Math.min(1.0, encumberedExposure / grossExposure);
     }
 
-    private double calculateMarginUtilization(PortfolioUpdate update) {
-        // Calculate margin utilization percentage
-        return 0.5; // Placeholder
-    }
-
-    private Object getMarketConditions() {
-        // Get current market volatility, correlations, etc.
+    private Map<String, Double> getMarketConditions() {
         return Map.of("vix", 18.5, "market_correlation", 0.85);
     }
 
     private boolean shouldRecalibrate(RiskAssessmentResult output) {
         // Determine if risk model recalibration is needed
         return output.getConfidence() < 0.6;
+    }
+
+    private Map<String, Double> safeExposureMap(Map<String, Double> values) {
+        return values == null ? Map.of() : values;
+    }
+
+    private double calculateHerfindahlIndex(Collection<Double> exposures) {
+        double totalExposure = exposures.stream()
+            .mapToDouble(Double::doubleValue)
+            .sum();
+        if (totalExposure == 0) {
+            return 0;
+        }
+
+        return exposures.stream()
+            .mapToDouble(exposure -> {
+                double weight = exposure / totalExposure;
+                return weight * weight;
+            })
+            .sum();
+    }
+
+    private String extractBucketKey(String instrumentKey, int tokenIndex) {
+        if (instrumentKey == null || instrumentKey.isBlank()) {
+            return "UNKNOWN";
+        }
+
+        String normalized = instrumentKey.replace('|', ':').replace('/', ':');
+        String[] parts = normalized.split(":");
+        if (tokenIndex < parts.length && !parts[tokenIndex].isBlank()) {
+            return parts[tokenIndex].trim().toUpperCase();
+        }
+        return parts[0].trim().toUpperCase();
     }
 
     // ==================== Inner Types ====================

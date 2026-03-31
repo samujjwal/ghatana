@@ -174,7 +174,7 @@ export function createMockHttpResponse(
 /**
  * Creates a mock fetch function
  */
-export function createMockFetch(responses: Map<string, any>) {
+export function createMockFetch(responses: Map<string, Record<string, unknown>>) {
   return vi.fn(async (url: string, options?: any) => {
     const response = responses.get(url);
     if (!response) {
@@ -208,12 +208,12 @@ function getStatusText(status: number): string {
  */
 export function createMockAIService() {
   return {
-    handleTutorQuery: vi.fn(async (args: any) => ({
+    handleTutorQuery: vi.fn(async (args: unknown) => ({
       answer: 'Mock AI response',
       confidence: 0.95,
       sources: [],
     })),
-    generateConcept: vi.fn(async (args: any) => ({
+    generateConcept: vi.fn(async (args: unknown) => ({
       name: args.conceptName,
       description: 'Mock concept description',
       learningObjectives: [],
@@ -230,18 +230,18 @@ export function createMockAIService() {
  */
 export function createMockPaymentService() {
   return {
-    createPaymentIntent: vi.fn(async (args: any) => ({
+    createPaymentIntent: vi.fn(async (args: unknown) => ({
       id: 'pi_mock_123',
       clientSecret: 'mock_secret',
       status: 'requires_payment_method',
       amount: args.amount,
       currency: args.currency,
     })),
-    confirmPayment: vi.fn(async (args: any) => ({
+    confirmPayment: vi.fn(async (args: unknown) => ({
       id: args.paymentIntentId,
       status: 'succeeded',
     })),
-    refundPayment: vi.fn(async (args: any) => ({
+    refundPayment: vi.fn(async (args: unknown) => ({
       id: 'ref_mock_123',
       status: 'succeeded',
       amount: args.amount,
@@ -253,10 +253,10 @@ export function createMockPaymentService() {
  * Creates a mock email service
  */
 export function createMockEmailService() {
-  const sentEmails: any[] = [];
+  const sentEmails: unknown[] = [];
   
   return {
-    sendEmail: vi.fn(async (args: any) => {
+    sendEmail: vi.fn(async (args: unknown) => {
       sentEmails.push(args);
       return { messageId: 'mock_msg_123' };
     }),
@@ -396,7 +396,7 @@ export function delay(ms: number): Promise<void> {
 export function createSpy<T extends (...args: any[]) => any>(
   implementation?: T,
 ) {
-  const calls: any[][] = [];
+  const calls: unknown[][] = [];
   const spy = vi.fn((...args: any[]) => {
     calls.push(args);
     return implementation ? implementation(...args) : undefined;
@@ -456,7 +456,7 @@ export function assertDefined<T>(
  * Asserts that an error was thrown
  */
 export async function assertThrows(
-  fn: () => Promise<any>,
+  fn: () => Promise<unknown>,
   expectedError?: string | RegExp,
 ): Promise<void> {
   try {

@@ -11,12 +11,47 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ContentAsset,
-  ContentAssetType,
-  HybridSearchResult,
-} from "@tutorputor/contracts/v1/content-studio";
 import { HybridSearchService } from "./hybrid-search-service.js";
+
+type ContentAssetType = string;
+
+interface ContentAsset {
+  id: string;
+  tenantId: string;
+  slug: string;
+  title: string;
+  assetType: ContentAssetType;
+  domain: string;
+  status: string;
+  currentVersion: number;
+  tags: string[];
+  targetGrades: string[];
+  authorId: string;
+  createdAt: string;
+  updatedAt: string;
+  riskLevel: string;
+  conceptId?: string;
+  qualityScore?: number;
+  semanticIndexStatus?: "pending" | "indexed" | "stale";
+  recommendationStatus?: "pending" | "computed" | "stale";
+  difficultyLevel?: string;
+  lastEditedBy?: string;
+  publishedAt?: string;
+  promptHash?: string;
+  confidenceScore?: number;
+  legacyModuleId?: string;
+  legacyExperienceId?: string;
+}
+
+interface HybridSearchResult {
+  asset: ContentAsset;
+  ranking: {
+    score: number;
+    signals: unknown[];
+    matchReason: string;
+  };
+  highlights: Array<{ field: string; snippet: string }>;
+}
 
 export interface SemanticSearchOptions {
   tenantId: string;

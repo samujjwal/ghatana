@@ -1,3 +1,11 @@
+/**
+ * KPICard component.
+ *
+ * @doc.type component
+ * @doc.purpose Displays a key performance indicator with title, value, icon, and optional loading state
+ * @doc.layer product
+ * @doc.pattern Display Card
+ */
 import React from 'react';
 
 interface KPICardProps {

@@ -32,6 +32,9 @@ This checklist prepares the PHR platform for internal and third-party security a
 - audit log retention configuration verified
 - RLS policies verified in staging
 - backup restore evidence attached
+- HIPAA minimum-necessary evidence pack attached
+- break-the-glass review evidence attached
+- PHRSecurityIntegrationTest and PHRAuditTrailServiceTest evidence attached from staging
 
 ---
 
@@ -62,5 +65,13 @@ This checklist prepares the PHR platform for internal and third-party security a
 - test automation mapping
 - compliance evidence pack
 - remediation backlog with owners and due dates
+
+---
+
+## 6. Audit remediation update (2026-03-30)
+
+- clinical AI implementation gap closed in code via `ClinicalDecisionSupportService`
+- remaining security/compliance release gates are operational, not code gaps
+- staging execution evidence is still required before the checklist can be signed off
 
 The checklist is complete only when each item has a dated owner sign-off or linked evidence artifact.

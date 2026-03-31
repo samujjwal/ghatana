@@ -152,7 +152,7 @@ export class DataRetentionWorker {
                     where: { id: request.id },
                     data: {
                         status: 'failed',
-                        error: err.message,
+                        ...(err?.message ? { failureReason: String(err.message) } : {}),
                     },
                 });
             }
@@ -227,8 +227,8 @@ export class DataRetentionWorker {
             session_data: {
                 archive: async () => 0,
                 delete: async (tenantId, cutoff, limit) => {
-                    const result = await this.prisma.sessionEvent.deleteMany({
-                        where: { tenantId, createdAt: { lt: cutoff } },
+                    const result = await (this.prisma as any).sessionEvent.deleteMany({
+                        where: { tenantId, timestamp: { lt: cutoff } },
                     });
                     return result.count;
                 },
@@ -236,8 +236,8 @@ export class DataRetentionWorker {
             audit_log: {
                 archive: async (tenantId, cutoff, limit) => {
                     // Archive = mark as archived (real impl would export to cold storage)
-                    const result = await this.prisma.auditLog.updateMany({
-                        where: { tenantId, createdAt: { lt: cutoff }, archived: false },
+                    const result = await (this.prisma as any).auditLog.updateMany({
+                        where: { tenantId, timestamp: { lt: cutoff }, archived: false },
                     });
                     return result.count;
                 },
@@ -246,7 +246,7 @@ export class DataRetentionWorker {
             temp_export: {
                 archive: async () => 0,
                 delete: async (tenantId, cutoff, limit) => {
-                    const result = await this.prisma.tempExport.deleteMany({
+                    const result = await (this.prisma as any).tempExport.deleteMany({
                         where: { tenantId, createdAt: { lt: cutoff } },
                     });
                     return result.count;
@@ -256,10 +256,10 @@ export class DataRetentionWorker {
                 archive: async () => 0,
                 delete: async (tenantId, cutoff, limit) => {
                     // Permanently purge soft-deleted user data after grace period
-                    const result = await this.prisma.user.deleteMany({
+                    const result = await (this.prisma as any).user.deleteMany({
                         where: {
                             tenantId,
-                            deletedAt: { not: null, lt: cutoff },
+                            archivedAt: { not: null, lt: cutoff },
                         },
                     });
                     return result.count;
@@ -275,12 +275,12 @@ export class DataRetentionWorker {
      */
     private async deleteUserData(tenantId: string, userId: string): Promise<void> {
         // Anonymize user record instead of hard delete (preserve referential integrity)
-        await this.prisma.user.update({
+        await (this.prisma as any).user.update({
             where: { id: userId },
             data: {
                 email: `deleted-${userId}@anonymized.local`,
-                name: 'Deleted User',
-                deletedAt: new Date(),
+                displayName: 'Deleted User',
+                archivedAt: new Date(),
             },
         });
 

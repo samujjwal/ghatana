@@ -100,9 +100,9 @@ export function registerCMSRoutes(
     await respondWithErrors(reply, () =>
       cmsService.listModules({
         tenantId,
-        status: status as ModuleSummary["status"] | undefined,
-        cursor: cursor as ModuleId | null | undefined,
-        limit,
+        ...(status ? { status: status as ModuleSummary["status"] } : {}),
+        ...(cursor ? { cursor: cursor as ModuleId | null } : {}),
+        ...(typeof limit === "number" ? { limit } : {}),
       }),
     );
   });

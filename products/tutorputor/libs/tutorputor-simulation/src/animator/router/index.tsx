@@ -86,7 +86,7 @@ export function useRouteAnimation(configs: RouteAnimationConfig[]): UseRouteAnim
     
     // Check navigation state for direction hints
     const navState = navigation.state;
-    const historyAction = (navigation as any).historyAction;
+    const historyAction = (navigation as Record<string, unknown>).historyAction;
     
     if (historyAction === 'PUSH') return 'forward';
     if (historyAction === 'POP') {

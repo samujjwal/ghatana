@@ -10,10 +10,11 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ContentAssetType,
-  HybridSearchResult,
-} from "@tutorputor/contracts/v1/content-studio";
+type ContentAssetType = string;
+type HybridSearchResult = {
+  asset: { id: string; title: string };
+  ranking?: { score?: number };
+};
 import { RecommendationEngine } from "../recommendation/recommendation-engine.js";
 import { RecommendationService } from "../recommendation/recommendation-service.js";
 import { SemanticSearchService } from "../semantic/semantic-search-service.js";
@@ -389,10 +390,15 @@ function calculateSearchRelevance(
   if (results.length === 0) return 0;
 
   const scores = results.map((result) => {
-    let score = result.ranking.score * 100;
-    if (result.asset.domain === asset.domain) score += 15;
-    if (result.asset.assetType === asset.assetType) score += 10;
-    if (result.asset.id === asset.id) score += 20;
+    const resultAsset = result.asset as {
+      id: string;
+      domain?: string;
+      assetType?: string;
+    };
+    let score = (result.ranking?.score ?? 0) * 100;
+    if (resultAsset.domain === asset.domain) score += 15;
+    if (resultAsset.assetType === asset.assetType) score += 10;
+    if (resultAsset.id === asset.id) score += 20;
     return Math.min(score, 100);
   });
 
@@ -406,9 +412,16 @@ function calculateSearchAccuracy(
   if (results.length === 0) return 0;
 
   const accurate = results.filter(
-    (result) =>
-      result.asset.domain === asset.domain ||
-      result.asset.assetType === asset.assetType,
+    (result) => {
+      const resultAsset = result.asset as {
+        domain?: string;
+        assetType?: string;
+      };
+      return (
+        resultAsset.domain === asset.domain ||
+        resultAsset.assetType === asset.assetType
+      );
+    },
   ).length;
 
   return (accurate / results.length) * 100;
@@ -419,7 +432,9 @@ function calculateRankingQuality(results: HybridSearchResult[]): number {
 
   let monotonicPairs = 0;
   for (let index = 1; index < results.length; index += 1) {
-    if (results[index - 1]!.ranking.score >= results[index]!.ranking.score) {
+    const prevScore = results[index - 1]?.ranking?.score ?? 0;
+    const nextScore = results[index]?.ranking?.score ?? 0;
+    if (prevScore >= nextScore) {
       monotonicPairs += 1;
     }
   }
@@ -428,7 +443,7 @@ function calculateRankingQuality(results: HybridSearchResult[]): number {
 }
 
 function calculateRecommendationDiversity(
-  suggestions: Array<{ asset: { assetType: string; domain: string } }>,
+  suggestions: Array<{ asset: { assetType?: string; domain?: string } }>,
 ): number {
   if (suggestions.length === 0) return 0;
 
@@ -438,14 +453,14 @@ function calculateRecommendationDiversity(
 }
 
 function calculateRecommendationRelevance(
-  suggestions: Array<{ asset: { domain: string; title: string } }>,
+  suggestions: Array<{ asset: { domain?: string; title?: string } }>,
   asset: ValidationAsset,
 ): number {
   if (suggestions.length === 0) return 0;
 
   const matches = suggestions.map((suggestion) => {
     let score = suggestion.asset.domain === asset.domain ? 70 : 35;
-    if (suggestion.asset.title.toLowerCase().includes(asset.domain.toLowerCase())) {
+    if ((suggestion.asset.title ?? "").toLowerCase().includes(asset.domain.toLowerCase())) {
       score += 10;
     }
     return Math.min(score, 100);

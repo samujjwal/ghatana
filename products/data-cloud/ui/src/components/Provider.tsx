@@ -1,3 +1,11 @@
+/**
+ * Application state provider.
+ *
+ * @doc.type component
+ * @doc.purpose Wraps the component tree with Jotai state provider and supports optional hydration of initial atom values
+ * @doc.layer product
+ * @doc.pattern Provider
+ */
 import React, { useEffect } from 'react';
 import { Provider as JotaiProvider, useStore, type Atom, type WritableAtom } from 'jotai';
 import type { Store } from 'jotai/vanilla/store';

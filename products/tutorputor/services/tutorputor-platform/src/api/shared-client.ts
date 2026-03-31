@@ -13,7 +13,7 @@ import { getConfig } from "../config/config.js";
 import { createLogger, securityLogger } from "../utils/logger.js";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-type RequestBody = Exclude<RequestInit["body"], undefined>;
+type RequestBody = RequestInit["body"];
 
 export interface ApiClientConfig {
   baseURL?: string;
@@ -185,8 +185,10 @@ export class SharedApiClient {
 
     this.logger.debug(
       {
-        requestId: config.metadata?.requestId,
-        method: config.method,
+        ...(config.metadata?.requestId
+          ? { requestId: config.metadata.requestId }
+          : {}),
+        ...(config.method ? { method: config.method } : {}),
         url,
         headers: this.sanitizeHeaders(headers),
       },
@@ -199,8 +201,10 @@ export class SharedApiClient {
     } catch (error) {
       this.logger.error(
         {
-          requestId: config.metadata?.requestId,
-          method: config.method,
+          ...(config.metadata?.requestId
+            ? { requestId: config.metadata.requestId }
+            : {}),
+          ...(config.method ? { method: config.method } : {}),
           url,
           error: error instanceof Error ? error.message : "Unknown error",
         },
@@ -216,9 +220,11 @@ export class SharedApiClient {
 
     this.logger.debug(
       {
-        requestId: config.metadata?.requestId,
+        ...(config.metadata?.requestId
+          ? { requestId: config.metadata.requestId }
+          : {}),
         status: response.status,
-        duration,
+        ...(duration !== undefined ? { duration } : {}),
         url,
       },
       "API request completed",
@@ -232,7 +238,7 @@ export class SharedApiClient {
       if (response.status === 401 || response.status === 403) {
         securityLogger.logAuthzEvent("access_denied", {
           resource: url,
-          action: config.method,
+          ...(config.method ? { action: config.method } : {}),
           reason:
             typeof apiResponse.data === "string"
               ? apiResponse.data
@@ -335,9 +341,9 @@ export class SharedApiClient {
     }
 
     return {
-      method: config.method,
+      ...(config.method ? { method: config.method } : {}),
       headers,
-      body,
+      ...(body !== undefined ? { body } : {}),
     };
   }
 
@@ -345,7 +351,7 @@ export class SharedApiClient {
     data: unknown,
     body: RequestBody | null | undefined,
     headers: Record<string, string>,
-  ): RequestBody | null | undefined {
+  ): RequestInit["body"] {
     if (body !== undefined) {
       return body;
     }
@@ -362,7 +368,7 @@ export class SharedApiClient {
       data instanceof ArrayBuffer ||
       ArrayBuffer.isView(data)
     ) {
-      return data;
+      return data as RequestBody;
     }
 
     headers["Content-Type"] = "application/json";
@@ -382,17 +388,24 @@ export class SharedApiClient {
       data = (await response.text()) as T;
     }
 
-    return {
+    const result: ApiResponse<T> = {
       data,
       status: response.status,
       statusText: response.statusText,
       headers: Object.fromEntries(response.headers.entries()),
-      requestId: response.headers.get("x-request-id") ?? undefined,
-      duration,
     };
+    const requestId = response.headers.get("x-request-id");
+    if (requestId) {
+      result.requestId = requestId;
+    }
+    if (duration !== undefined) {
+      result.duration = duration;
+    }
+
+    return result;
   }
 
-  private enhanceError(error: unknown, config: RequestConfig): ApiError {
+  private enhanceError(error: any, config: RequestConfig): ApiError {
     if (error instanceof Error && this.isApiError(error)) {
       return error;
     }
@@ -487,7 +500,7 @@ export class AIServiceClient extends SharedApiClient {
     return this.post("/ai/generate", { prompt, ...options });
   }
 
-  async validateContent(content: unknown) {
+  async validateContent(content: any) {
     return this.post("/ai/validate", content);
   }
 }
@@ -502,7 +515,7 @@ export class SimulationServiceClient extends SharedApiClient {
     });
   }
 
-  async runSimulation(simulationId: string, parameters: unknown) {
+  async runSimulation(simulationId: string, parameters: any) {
     return this.post(`/simulations/${simulationId}/run`, parameters);
   }
 

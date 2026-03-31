@@ -78,29 +78,32 @@ public class KeyManagerModule extends AbstractModule {
                 // Use provided keys from configuration
                 Map<String, KeyConfig> configuredKeys = keyProps.getConfiguredKeys();
                 if (configuredKeys != null && !configuredKeys.isEmpty()) {
-                    // In a real implementation, we would load the actual keys from a secure store
-                    // For now, we'll just log a warning and generate random keys
-                    logger.warn("Loading configured keys is not implemented. Using random keys instead.");
-                    
-                    KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-                    keyGen.init(256, new SecureRandom());
-                    
                     for (Map.Entry<String, KeyConfig> entry : configuredKeys.entrySet()) {
                         String keyId = entry.getKey();
                         KeyConfig keyConfig = entry.getValue();
-                        
-                        // In a real implementation, we would use the keyConfig to load the key
-                        // For now, we'll generate a new random key
-                        SecretKey key = keyGen.generateKey();
+
+                        String algorithm = keyConfig.getAlgorithm() != null
+                                ? keyConfig.getAlgorithm() : "AES";
+                        int keySize = keyConfig.getSize() > 0 ? keyConfig.getSize() : 256;
+
+                        KeyGenerator configuredKeyGen = KeyGenerator.getInstance(algorithm);
+                        configuredKeyGen.init(keySize, new SecureRandom());
+                        SecretKey key = configuredKeyGen.generateKey();
                         keys.put(keyId, key);
-                        
-                        // First key is the current one
+
                         if (currentKeyId == null) {
                             currentKeyId = keyId;
                         }
-                        
-                        logger.debug("Added configured key: {}", keyId);
+
+                        logger.debug("Initialized key '{}' via configured spec (algorithm={}, size={})",
+                                keyId, algorithm, keySize);
                     }
+
+                    logger.info("Initialized KeyManager with {} configured keys, current key: {}",
+                            keys.size(), currentKeyId);
+                    logger.warn("Keys are generated in-memory from configured specs. " +
+                            "For production, integrate a KMS provider (set key-management.provider=aws-kms or hashicorp-vault) " +
+                            "and load actual key material from the secure store.");
                 } else {
                     throw new IllegalStateException("No keys configured and key generation is disabled");
                 }

@@ -10,10 +10,28 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  NextStepSuggestion,
-  RelatedAssetsResponse,
-} from "@tutorputor/contracts/v1/content-studio";
+
+interface NextStepSuggestion {
+  reason: string;
+  asset: {
+    id: string;
+    title: string;
+    domain: string;
+    difficultyLevel?: string;
+    qualityScore?: number;
+  };
+  edge: {
+    weight?: number;
+    confidence?: number;
+  };
+}
+
+interface RelatedAssetsResponse {
+  prerequisites: NextStepSuggestion[];
+  followUps: NextStepSuggestion[];
+  related: NextStepSuggestion[];
+  alternatives: NextStepSuggestion[];
+}
 import { RecommendationService } from "./recommendation-service.js";
 
 export interface RecommendationOptions {

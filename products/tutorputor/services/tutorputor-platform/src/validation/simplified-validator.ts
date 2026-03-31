@@ -57,7 +57,7 @@ function detectSuspiciousPatterns(input: string): boolean {
     /binding\s*\(/gi,
   ];
 
-  return suspiciousPatterns.some((pattern) => pattern.test(input));
+  return suspiciousPatterns.some((pattern: any) => pattern.test(input));
 }
 
 // ============================================================================
@@ -336,7 +336,7 @@ export const simulationSchemas = {
     configuration: z
       .record(z.string(), z.unknown())
       .refine(
-        (val) => typeof val === "object" && val !== null,
+        (val: any) => typeof val === "object" && val !== null,
         "Configuration must be an object",
       ),
     parameters: z
@@ -468,19 +468,23 @@ export class ValidationError extends Error {
     super(message);
     this.name = "ValidationError";
     this.code = code;
-    this.field = field;
-    this.context = context;
+    if (field !== undefined) {
+      this.field = field;
+    }
+    if (context !== undefined) {
+      this.context = context;
+    }
   }
 }
 
 export class InputValidator {
-  private static sanitizeInput(input: unknown): unknown {
+  private static sanitizeInput(input: any): unknown {
     if (typeof input === "string") {
       return sanitizeText(input);
     }
 
     if (Array.isArray(input)) {
-      return input.map((item) => InputValidator.sanitizeInput(item));
+      return input.map((item: any) => InputValidator.sanitizeInput(item));
     }
 
     if (typeof input === "object" && input !== null) {
@@ -587,7 +591,7 @@ export class InputValidator {
 
   static validateBatch<T>(
     schema: z.ZodSchema<T>,
-    dataArray: unknown[],
+    dataArray: any[],
     context?: ValidationContext,
   ): T[] {
     if (!Array.isArray(dataArray)) {
@@ -608,7 +612,7 @@ export class InputValidator {
       );
     }
 
-    return dataArray.map((data, index) => {
+    return dataArray.map((data: any, index: any) => {
       try {
         return this.validate(schema, data, {
           ...context,

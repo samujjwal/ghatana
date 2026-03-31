@@ -326,6 +326,55 @@ If migrating server access through gateway:
 
 ---
 
+## API Routing Rules
+
+> **Enforced by**: `AepBoundaryTest#engine_must_not_depend_on_server_launcher` (ArchUnit)
+
+### Golden Path: Gateway → Java Server
+
+```
+Browser / Mobile
+     │
+     ▼ (all API calls)
+Gateway / BFF  :3002  (TypeScript, optional in dev; required in prod)
+     │   - Validates JWT
+     │   - Enriches headers (X-Tenant-ID, X-Correlation-ID)
+     │   - Proxies to Java server
+     ▼
+AepHttpServer  :8090  (Java, canonical backend)
+     │   - /api/v1/*   REST endpoints
+     │   - /events/stream    SSE
+     └── AepLauncher (wires HTTP server + engine; not a public endpoint)
+```
+
+### Routing Prohibitions
+
+| ❌ Forbidden | ✅ Required |
+|---|---|
+| UI calls Java server port `:8090` directly in production | UI calls gateway port `:3002` (or proxied `/api`) |
+| Engine imports from `aep.server.*` package | Engine uses SPI/contracts only; server bootstrapped by `AepLauncher` |
+| Controllers call `AepLauncher` directly | Controllers receive injected services; `AepLauncher` is bootstrap-only |
+| Gateway talks to engine internals | Gateway proxies to HTTP REST endpoints only |
+
+### Module Dependency Direction
+
+```
+aep-engine  ──(SPI)──▶  aep-api (contracts)
+                               ▲
+                               │
+                         aep-server  ──▶  AepLauncher (wires everything)
+                               ▲
+                               │
+                        gateway (TypeScript BFF)
+                               ▲
+                               │
+                          Browser UI
+```
+
+**Rule**: dependency arrows flow **upward** only. Lower layers (engine, api) must never import from higher layers (server, gateway). This is enforced at the Java level by `AepBoundaryTest`.
+
+---
+
 ## Related Documents
 
 - `AEP_V2_DEEP_AUDIT_2026-03-19.md` - Audit findings

@@ -627,7 +627,7 @@ export const allVisualizationExamples = [
 
 export const curlCommands = {
     // Domain Creation
-    createDomain: (domain: any) => `
+    createDomain: (domain: unknown) => `
 curl -X POST http://localhost:3200/admin/api/v1/content/db/domains \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer YOUR_TOKEN" \\

@@ -193,3 +193,15 @@ Every executed compliance testcase should produce durable evidence:
 | `NFR-052` | MVP   | breach | Simulated data breach detected | Notification to DPO within 1 hour                                     |
 | `NFR-053` | MVP   | breach | Affected patients identified   | Data classification determines notification scope                     |
 | `NFR-054` | MVP   | breach | Regulatory notification        | Report generated for Nepal Privacy Act 2075 authority within 72 hours |
+
+---
+
+## 15. Staging and compliance release-gate validation (Added in v2.1)
+
+| Test ID   | Phase | Area                  | Scenario                                               | Expected result                                              |
+| --------- | ----- | --------------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| `NFR-055` | MVP   | staging smoke         | Deploy current PHR backend artifact to staging         | Health endpoints green, telemetry emitted, smoke checks pass |
+| `NFR-056` | MVP   | staging security      | Execute PHRSecurityIntegrationTest-equivalent staging flow | Consent and policy enforcement behave the same as local verification |
+| `NFR-057` | MVP   | staging audit trail   | Execute PHRAuditTrailServiceTest-equivalent staging flow | Immutable audit evidence is queryable and correlated         |
+| `NFR-058` | MVP   | staging performance   | Validate p99 security and audit latencies in staging   | Security < 10ms p99, audit write < 5ms p99                  |
+| `NFR-059` | MVP   | HIPAA release gate    | Review minimum-necessary, access audit, and break-glass evidence | Compliance lead signs release evidence pack                  |

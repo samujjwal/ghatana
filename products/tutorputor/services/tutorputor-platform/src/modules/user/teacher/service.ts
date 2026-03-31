@@ -92,13 +92,16 @@ export class TeacherServiceImpl implements TeacherService {
                         : 0;
 
                 if (avgProgress < 30) {
-                    atRiskStudents.push({
+                    const entry: RosterEntry = {
                         userId: student.userId as UserId,
                         displayName: student.displayName,
-                        email: student.email ?? undefined,
                         enrolledAt: student.enrolledAt.toISOString(),
                         progressPercent: avgProgress,
-                    });
+                    };
+                    if (student.email) {
+                        entry.email = student.email;
+                    }
+                    atRiskStudents.push(entry);
                 }
             }
         }
@@ -134,7 +137,7 @@ export class TeacherServiceImpl implements TeacherService {
                 tenantId: args.tenantId,
                 teacherId: args.teacherId,
                 name: args.name,
-                description: args.description,
+                ...(args.description ? { description: args.description } : {}),
             },
             include: {
                 roster: true,
@@ -188,12 +191,15 @@ export class TeacherServiceImpl implements TeacherService {
                     userId: args.studentId,
                 },
             },
-            update: { displayName: args.displayName, email: args.email },
+            update: {
+                displayName: args.displayName,
+                ...(args.email ? { email: args.email } : {}),
+            },
             create: {
                 classroomId: args.classroomId,
                 userId: args.studentId,
                 displayName: args.displayName,
-                email: args.email,
+                ...(args.email ? { email: args.email } : {}),
             },
         });
 
@@ -341,10 +347,12 @@ export class TeacherServiceImpl implements TeacherService {
                     const entry: RosterEntry = {
                         userId: student.userId as UserId,
                         displayName: student.displayName,
-                        email: student.email ?? undefined,
                         enrolledAt: student.enrolledAt.toISOString(),
                         progressPercent: e.progressPercent,
                     };
+                    if (student.email) {
+                        entry.email = student.email;
+                    }
                     return entry;
                 })
                 .filter((s: RosterEntry | null): s is RosterEntry => Boolean(s));
@@ -381,36 +389,51 @@ export class TeacherServiceImpl implements TeacherService {
     }
 
     private mapToClassroom(classroom: ClassroomWithRelations): Classroom {
-        return {
+        const mapped: Classroom = {
             id: classroom.id as ClassroomId,
             tenantId: classroom.tenantId as TenantId,
             teacherId: classroom.teacherId as UserId,
             name: classroom.name,
-            description: classroom.description ?? undefined,
             roster: classroom.roster.map(
-                (s): RosterEntry => ({
-                    userId: s.userId as UserId,
-                    displayName: s.displayName,
-                    email: s.email ?? undefined,
-                    enrolledAt: s.enrolledAt.toISOString(),
-                    progressPercent: 0, // Will be calculated on demand
-                })
+                (s): RosterEntry => {
+                    const rosterEntry: RosterEntry = {
+                        userId: s.userId as UserId,
+                        displayName: s.displayName,
+                        enrolledAt: s.enrolledAt.toISOString(),
+                        progressPercent: 0, // Will be calculated on demand
+                    };
+                    if (s.email) {
+                        rosterEntry.email = s.email;
+                    }
+                    return rosterEntry;
+                }
             ),
             assignedModules: classroom.assignments.map(
-                (a) => a.moduleId as ModuleId
+                (a: any) => a.moduleId as ModuleId
             ),
             createdAt: classroom.createdAt.toISOString(),
             updatedAt: classroom.updatedAt.toISOString(),
         };
+
+        if (classroom.description) {
+            mapped.description = classroom.description;
+        }
+
+        return mapped;
     }
 
     private mapToLearningEvent(event: any): LearningEventInput {
-        return {
+        const mapped: LearningEventInput = {
             type: event.eventType as any,
             userId: event.userId as UserId,
-            moduleId: event.moduleId as ModuleId | undefined,
-            payload: event.payload as Record<string, unknown> | undefined,
             timestamp: event.timestamp.toISOString(),
         };
+        if (event.moduleId) {
+            mapped.moduleId = event.moduleId as ModuleId;
+        }
+        if (event.payload && typeof event.payload === 'object') {
+            mapped.payload = event.payload as Record<string, unknown>;
+        }
+        return mapped;
     }
 }

@@ -25,10 +25,10 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
     badgeEarned: GamificationServicePrisma["badgeEarned"];
     userPoints: GamificationServicePrisma["userPoints"];
     userAchievement: {
-      create(args: unknown): Promise<unknown>;
+      create(args: any): Promise<any>;
     };
     learningStreak: {
-      findFirst(args: unknown): Promise<unknown>;
+      findFirst(args: any): Promise<any>;
     };
   };
 
@@ -123,16 +123,31 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
   app.post("/points/award", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     requireRole(request, ["teacher", "admin", "superadmin"]);
-    // @ts-ignore
-    const { userId, points, reason, sourceType } = request.body as any;
+    const body = request.body as Record<string, unknown>;
+    const userId = typeof body["userId"] === "string" ? (body["userId"] as UserId) : undefined;
+    const points = typeof body["points"] === "number" ? body["points"] : Number(body["points"]);
+    const reason = typeof body["reason"] === "string" ? body["reason"] : "Admin award";
+    const rawSourceType = typeof body["sourceType"] === "string" ? body["sourceType"] : "bonus";
+    const sourceType =
+      rawSourceType === "module_complete" ||
+      rawSourceType === "assessment" ||
+      rawSourceType === "streak" ||
+      rawSourceType === "daily_login" ||
+      rawSourceType === "bonus"
+        ? rawSourceType
+        : "bonus";
+
+    if (!userId || Number.isNaN(points)) {
+      return reply.code(400).send({ error: "Valid userId and points are required" });
+    }
 
     try {
       const result = await service.awardPoints({
         tenantId,
         userId,
         points,
-        reason: reason || "Admin award",
-        sourceType: sourceType || "bonus",
+        reason,
+        sourceType,
       });
       return reply.code(200).send(result);
     } catch (error) {

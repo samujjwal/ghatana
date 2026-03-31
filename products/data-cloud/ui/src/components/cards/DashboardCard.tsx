@@ -1,3 +1,11 @@
+/**
+ * DashboardCard component.
+ *
+ * @doc.type component
+ * @doc.purpose Presents a titled dashboard section card with a view-all navigation link and slotted child content
+ * @doc.layer product
+ * @doc.pattern Display Card
+ */
 import { ReactNode } from 'react';
 import { Link } from 'react-router';
 

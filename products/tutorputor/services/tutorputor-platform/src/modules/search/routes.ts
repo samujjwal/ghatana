@@ -62,9 +62,9 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
       free !== undefined
     ) {
       filters.price = {
-        min: minPrice,
-        max: maxPrice,
-        free: free,
+        ...(typeof minPrice === "number" ? { min: minPrice } : {}),
+        ...(typeof maxPrice === "number" ? { max: maxPrice } : {}),
+        ...(typeof free === "boolean" ? { free } : {}),
       };
     }
 
@@ -72,9 +72,9 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
       const results = await searchService.search({
         tenantId,
         query: q,
-        limit: limit ? Number(limit) : undefined,
-        offset: offset ? Number(offset) : undefined,
-        sortBy,
+        ...(limit ? { limit: Number(limit) } : {}),
+        ...(offset ? { offset: Number(offset) } : {}),
+        ...(sortBy ? { sortBy } : {}),
         filters,
       });
       return reply.send(results);

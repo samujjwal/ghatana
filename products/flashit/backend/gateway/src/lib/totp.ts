@@ -11,6 +11,7 @@
 import { authenticator } from "otplib";
 import QRCode from "qrcode";
 import { prisma } from "./prisma";
+import { comparePassword } from "./auth";
 import { Logger } from "./logger";
 
 const logger = Logger.create({ component: "TOTPService" });
@@ -207,8 +208,10 @@ export async function disableTOTP(
   }
 
   // TODO: Verify password here
-  // const validPassword = await comparePassword(password, user.passwordHash);
-  // if (!validPassword) throw new Error('Invalid password');
+  const validPassword = await comparePassword(password, user.passwordHash);
+  if (!validPassword) {
+    throw new Error("Invalid password");
+  }
 
   // Disable 2FA
   await prisma.user.update({

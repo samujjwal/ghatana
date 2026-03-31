@@ -5,6 +5,7 @@
 package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
@@ -52,7 +53,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AdvancePhaseUseCase Integration Tests")
-class AdvancePhaseUseCaseTest {
+class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
     @Mock
     private TransitionConfigLoader transitionConfig;
@@ -108,7 +109,8 @@ class AdvancePhaseUseCaseTest {
             );
 
             // WHEN: Execute the transition
-            String result = runPromise(() -> useCase.execute(request));
+            TransitionResult transResult = runPromise(() -> useCase.execute(request));
+            String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status();
 
             // THEN: Should return blocked result
             assertThat(result).isEqualTo("BLOCKED");
@@ -151,7 +153,8 @@ class AdvancePhaseUseCaseTest {
             );
 
             // WHEN: Execute the transition
-            String result = runPromise(() -> useCase.execute(request));
+            TransitionResult transResult = runPromise(() -> useCase.execute(request));
+            String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status();
 
             // THEN: Should return blocked result with missing artifacts
             assertThat(result).isEqualTo("BLOCKED");
@@ -190,7 +193,8 @@ class AdvancePhaseUseCaseTest {
             );
 
             // WHEN: Execute the transition
-            String result = runPromise(() -> useCase.execute(request));
+            TransitionResult transResult = runPromise(() -> useCase.execute(request));
+            String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status();
 
             // THEN: Should return blocked result
             assertThat(result).isEqualTo("BLOCKED");
@@ -233,7 +237,8 @@ class AdvancePhaseUseCaseTest {
             );
 
             // WHEN: Execute the transition
-            String result = runPromise(() -> useCase.execute(request));
+            TransitionResult transResult = runPromise(() -> useCase.execute(request));
+            String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status();
 
             // THEN: Should return success with new phase
             assertThat(result).isEqualTo("testing");
@@ -244,18 +249,4 @@ class AdvancePhaseUseCaseTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
-
-    // Test helper for ActiveJ Promise execution
-    private String runPromise(java.util.function.Supplier<Promise<TransitionResult>> supplier) {
-        try {
-            TransitionResult result = supplier.get().getResult();
-            if (result.isSuccess()) {
-                return result.toPhase();
-            } else {
-                return result.status();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

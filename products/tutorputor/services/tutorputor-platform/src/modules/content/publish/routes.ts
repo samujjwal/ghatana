@@ -17,7 +17,11 @@ import {
 } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { PublishService } from "./publish-service.js";
-import type { PublishAssetInput } from "@tutorputor/contracts/v1/content-studio";
+
+interface PublishAssetInput {
+  assetId: string;
+  bypassEvaluationCheck?: boolean;
+}
 
 export function registerPublishRoutes(
   app: FastifyInstance,

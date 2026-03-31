@@ -14,9 +14,10 @@
 import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
-import type { ContentAssetType } from "@tutorputor/contracts/v1/content-studio";
 import { SemanticChunkService } from "./chunk-service.js";
 import { SemanticSearchService } from "./semantic-search-service.js";
+
+type ContentAssetType = string;
 
 // =============================================================================
 // Types

@@ -186,7 +186,7 @@ function resolveProtoPath(file: string): string {
         path.resolve(process.cwd(), 'services/tutorputor-ai-agents/src/main/proto', file),
     ];
 
-    const found = candidates.find((candidate) => fs.existsSync(candidate));
+    const found = candidates.find((candidate: any) => fs.existsSync(candidate));
     if (!found) {
         throw new Error(`Proto file not found: ${file}. Checked: ${candidates.join(', ')}`);
     }
@@ -195,8 +195,8 @@ function resolveProtoPath(file: string): string {
 }
 
 export class RealContentGenerationClient {
-    private contentClient: any;
-    private validationClient: any;
+    private contentClient: unknown;
+    private validationClient: unknown;
     private logger: Logger;
     private timeout: number;
     private maxRetries: number;
@@ -347,18 +347,18 @@ export class RealContentGenerationClient {
                 title: '',
                 domain: normalizeDomain(request.content.domain),
                 grade_level: normalizeGradeLevel(request.content.gradeLevel),
-                claims: (request.content.claims || []).map((claim) => ({
+                claims: (request.content.claims || []).map((claim: any) => ({
                     claim_ref: claim.claimRef,
                     text: claim.text,
                     bloom_level: normalizeBloom(claim.bloomLevel),
                 })),
-                evidences: (request.content.evidences || []).map((evidence, index) => ({
+                evidences: (request.content.evidences || []).map((evidence: any, index: any) => ({
                     evidence_ref: `E${index + 1}`,
                     claim_ref: evidence.claimRef,
                     type: evidence.type,
                     description: '',
                 })),
-                tasks: (request.content.tasks || []).map((task, index) => ({
+                tasks: (request.content.tasks || []).map((task: any, index: any) => ({
                     task_ref: `T${index + 1}`,
                     claim_ref: task.claimRef,
                     type: task.type,
@@ -397,7 +397,7 @@ export class RealContentGenerationClient {
         let attempt = 0;
         while (attempt <= this.maxRetries) {
             try {
-                return await new Promise((resolve, reject) => {
+                return await new Promise((resolve: any, reject: any) => {
                     method(
                         request,
                         { deadline: Date.now() + this.timeout },

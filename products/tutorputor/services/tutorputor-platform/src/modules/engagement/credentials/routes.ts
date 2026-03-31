@@ -16,6 +16,7 @@ import {
  * @doc.pattern REST API
  */
 export const credentialsRoutes: FastifyPluginAsync = async (app) => {
+  const prisma = app.prisma as any;
   /**
    * GET /badges
    * List available badges
@@ -48,7 +49,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     requireSelfOrRole(request, userId, ["teacher", "admin", "superadmin"]);
 
     try {
-      const userBadges = await app.prisma.userBadge.findMany({
+      const userBadges = await prisma.userBadge.findMany({
         where: { tenantId, userId },
         include: { badge: true },
         orderBy: { earnedAt: "desc" },
@@ -84,7 +85,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const userBadge = await app.prisma.userBadge.create({
+      const userBadge = await prisma.userBadge.create({
         data: {
           tenantId,
           userId,
@@ -113,7 +114,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     const userId = getUserId(request) as UserId;
 
     try {
-      const certificates = await app.prisma.certificate.findMany({
+      const certificates = await prisma.certificate.findMany({
         where: { tenantId, userId },
         orderBy: { issuedAt: "desc" },
       });
@@ -144,7 +145,7 @@ export const credentialsRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const certificate = await app.prisma.certificate.create({
+      const certificate = await prisma.certificate.create({
         data: {
           tenantId,
           userId,

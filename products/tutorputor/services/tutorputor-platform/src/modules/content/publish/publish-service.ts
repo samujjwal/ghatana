@@ -12,10 +12,30 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  PublishAssetInput,
-  PublishResult,
-} from "@tutorputor/contracts/v1/content-studio";
+
+interface PublishAssetInput {
+  assetId: string;
+  bypassEvaluationCheck?: boolean;
+}
+
+interface PublishResult {
+  assetId: string;
+  published: boolean;
+  reason?: string;
+  semanticIndexStatus?: string;
+  recommendationStatus?: string;
+  semanticIndexQueued?: boolean;
+  recommendationRecomputeQueued?: boolean;
+  qualityPredictionApplied?: boolean;
+  outcomeAnalysisApplied?: boolean;
+  recommendationRefresh?: {
+    bootstrapCreated: number;
+    bootstrapSkipped: number;
+    processedAssets: number;
+    updatedEdges: number;
+    skippedEdges: number;
+  };
+}
 import { RecommendationService } from "../recommendation/recommendation-service.js";
 import { AssetOutcomeService } from "../recommendation/asset-outcome-service.js";
 import { ContentQualityMLPipeline } from "../quality-ml/pipeline.js";
@@ -147,7 +167,6 @@ export class PublishService {
     return {
       assetId: input.assetId,
       published: true,
-      publishedAt: new Date().toISOString(),
       semanticIndexStatus: "pending",
       recommendationStatus: "computed",
       semanticIndexQueued: true,

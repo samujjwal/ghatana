@@ -10,7 +10,7 @@ import { Button } from '@ghatana/design-system';
 import { useContentStudioApi } from '../../services/contentStudioApi';
 
 interface ContentGenerationWizardProps {
-    onContentGenerated: (content: any) => void;
+    onContentGenerated: (content: unknown) => void;
     onCancel: () => void;
 }
 

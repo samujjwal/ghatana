@@ -326,6 +326,11 @@ public class AepHttpServer {
             .with(HttpMethod.PUT, "/api/v1/pipelines/:pipelineId", this::handleUpdatePipeline)
             .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", this::handleDeletePipeline)
 
+            // Pipeline versioning endpoints (AEP-07: draft → named version → rollback)
+            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/versions", this::handleGetPipelineVersions)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/publish", this::handlePublishPipeline)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/rollback", this::handleRollbackPipeline)
+
             // Capability endpoints (delegated to CapabilitiesController – P7-2c)
             .with(HttpMethod.GET, "/admin/capabilities/schemas", capabilitiesController::handleSchemaCapabilities)
             .with(HttpMethod.GET, "/admin/capabilities/connectors", capabilitiesController::handleConnectorCapabilities)
@@ -364,6 +369,7 @@ public class AepHttpServer {
             .with(HttpMethod.GET, "/api/v1/hitl/pending", hitlController::handleListPending)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/approve", hitlController::handleApprove)
             .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/reject", hitlController::handleReject)
+            .with(HttpMethod.POST, "/api/v1/hitl/:reviewId/escalate", hitlController::handleEscalate)
 
             // Learning system endpoints (delegated to LearningController)
             .with(HttpMethod.GET, "/api/v1/learning/episodes", learningController::handleListEpisodes)
@@ -440,6 +446,7 @@ public class AepHttpServer {
      * Stops the HTTP server.
      */
     public void stop() {
+        hitlController.shutdown();
         if (eventloop != null) {
             // server.close() must be called from the reactor thread;
             // schedule it there and then break the eventloop.
@@ -635,6 +642,9 @@ public class AepHttpServer {
                     body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
                 String tenantId = resolveTenantId(request, pipeline);
                 Pipeline candidate = mapToPipeline(pipeline, tenantId);
+                if (candidate.getId() == null || candidate.getId().isBlank()) {
+                    candidate.setId(java.util.UUID.randomUUID().toString());
+                }
 
                 if (candidate.getName() == null || candidate.getName().isBlank()) {
                     return Promise.of(errorResponse(400, "Pipeline name is required"));
@@ -741,6 +751,174 @@ public class AepHttpServer {
             .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to delete pipeline: " + e.getMessage())));
     }
 
+    // ==================== Pipeline Versioning Handlers (AEP-07) ====================
+
+    /**
+     * GET /api/v1/pipelines/:pipelineId/versions
+     * Returns the full version history for the pipeline ordered by version number ascending.
+     */
+    private Promise<HttpResponse> handleGetPipelineVersions(HttpRequest request) {
+        String tenantId = resolveTenantId(request, null);
+        String pipelineId = request.getPathParameter("pipelineId");
+
+        return pipelineRepository.findVersionHistory(pipelineId, tenantId)
+            .map(history -> {
+                List<Map<String, Object>> versions = history.stream()
+                    .map(this::toPipelineVersionResponse)
+                    .toList();
+                return jsonResponse(Map.of(
+                    "pipelineId", pipelineId,
+                    "versions", versions,
+                    "count", versions.size(),
+                    "timestamp", Instant.now().toString()
+                ));
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to retrieve version history: " + e.getMessage())));
+    }
+
+    /**
+     * POST /api/v1/pipelines/:pipelineId/publish
+     * Publishes the current DRAFT pipeline under a named version label.
+     *
+     * <p>Expected body: {@code {"versionLabel": "v1.0.0"}}
+     *
+     * <ul>
+     *   <li>Archives the previous PUBLISHED snapshot.</li>
+     *   <li>Saves the current state as a PUBLISHED snapshot.</li>
+     *   <li>The live pipeline record retains the new version number and label.</li>
+     * </ul>
+     */
+    private Promise<HttpResponse> handlePublishPipeline(HttpRequest request) {
+        String tenantId = resolveTenantId(request, null);
+        String pipelineId = request.getPathParameter("pipelineId");
+        TenantId tenant = TenantId.of(tenantId);
+
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.getString(StandardCharsets.UTF_8);
+                Map<String, Object> payload = objectMapper.readValue(
+                    body, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                String versionLabel = asString(payload.get("versionLabel"));
+                if (versionLabel == null || versionLabel.isBlank()) {
+                    return Promise.of(errorResponse(400, "versionLabel is required to publish a pipeline version"));
+                }
+
+                return pipelineRepository.findById(pipelineId, tenant)
+                    .then(optPipeline -> {
+                        if (optPipeline.isEmpty()) {
+                            return Promise.of(errorResponse(404, "Pipeline not found: " + pipelineId));
+                        }
+
+                        com.ghatana.pipeline.registry.model.PipelineRegistration existing = optPipeline.get();
+
+                        // Build the published snapshot (copy of current draft)
+                        com.ghatana.pipeline.registry.model.PipelineRegistration snapshot = existing.newVersion();
+                        snapshot.setId(existing.getId());
+                        snapshot.setVersion(existing.getVersion());
+                        snapshot.setVersionLabel(versionLabel);
+                        snapshot.setVersionStatus(com.ghatana.pipeline.registry.model.PipelineVersionStatus.PUBLISHED);
+                        snapshot.setUpdatedAt(Instant.now());
+
+                        // Persist snapshot to version history
+                        return pipelineRepository.saveVersionSnapshot(pipelineId, snapshot)
+                            .then(ignored -> {
+                                // Update the live pipeline to carry the new label and published status
+                                existing.setVersionLabel(versionLabel);
+                                existing.setVersionStatus(com.ghatana.pipeline.registry.model.PipelineVersionStatus.PUBLISHED);
+                                existing.setUpdatedAt(Instant.now());
+                                return pipelineRepository.save(existing);
+                            })
+                            .map(saved -> {
+                                log.info("Published pipeline id={} as version '{}' (v{})",
+                                    pipelineId, versionLabel, existing.getVersion());
+                                return jsonResponse(Map.of(
+                                    "published", true,
+                                    "pipelineId", pipelineId,
+                                    "versionLabel", versionLabel,
+                                    "version", existing.getVersion(),
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
+                    })
+                    .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to publish pipeline: " + e.getMessage())));
+            } catch (Exception e) {
+                log.error("Error reading publish pipeline body", e);
+                return Promise.of(errorResponse(400, "Invalid publish request: " + e.getMessage()));
+            }
+        }, e -> {
+            log.error("Failed to read publish pipeline body", e);
+            return Promise.of(errorResponse(400, "Failed to read request body"));
+        });
+    }
+
+    /**
+     * POST /api/v1/pipelines/:pipelineId/rollback?toVersion=N
+     * Restores the pipeline to a specific version snapshot from history.
+     *
+     * <p>The restored snapshot becomes the current DRAFT; the previous live state
+     * is NOT automatically snapshotted (publish first if preservation is needed).
+     */
+    private Promise<HttpResponse> handleRollbackPipeline(HttpRequest request) {
+        String tenantId = resolveTenantId(request, null);
+        String pipelineId = request.getPathParameter("pipelineId");
+        String toVersionParam = request.getQueryParameter("toVersion");
+
+        if (toVersionParam == null || toVersionParam.isBlank()) {
+            return Promise.of(errorResponse(400, "Query parameter 'toVersion' is required for rollback"));
+        }
+
+        int toVersion;
+        try {
+            toVersion = Integer.parseInt(toVersionParam);
+        } catch (NumberFormatException e) {
+            return Promise.of(errorResponse(400, "Invalid 'toVersion' value — must be an integer"));
+        }
+
+        final int targetVersion = toVersion;
+        return pipelineRepository.findVersionSnapshot(pipelineId, targetVersion, tenantId)
+            .then(optSnapshot -> {
+                if (optSnapshot.isEmpty()) {
+                    return Promise.of(errorResponse(404,
+                        "No version snapshot found for pipeline " + pipelineId + " at version " + targetVersion));
+                }
+
+                com.ghatana.pipeline.registry.model.PipelineRegistration snapshot = optSnapshot.get();
+
+                // Restore the snapshot as the current live pipeline in DRAFT status
+                com.ghatana.pipeline.registry.model.PipelineRegistration restored = snapshot.newVersion();
+                restored.setId(pipelineId);
+                restored.setVersion(snapshot.getVersion());
+                restored.setVersionLabel(null);
+                restored.setVersionStatus(com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT);
+                restored.setUpdatedAt(Instant.now());
+
+                return pipelineRepository.save(restored)
+                    .map(saved -> {
+                        log.info("Rolled back pipeline id={} to version {}", pipelineId, targetVersion);
+                        return jsonResponse(Map.of(
+                            "rolledBack", true,
+                            "pipelineId", pipelineId,
+                            "restoredVersion", targetVersion,
+                            "status", com.ghatana.pipeline.registry.model.PipelineVersionStatus.DRAFT.name(),
+                            "timestamp", Instant.now().toString()
+                        ));
+                    });
+            })
+            .then(Promise::of, e -> Promise.of(errorResponse(500, "Failed to rollback pipeline: " + e.getMessage())));
+    }
+
+    private Map<String, Object> toPipelineVersionResponse(com.ghatana.pipeline.registry.model.PipelineRegistration snapshot) {
+        var base = new java.util.HashMap<String, Object>();
+        base.put("version", snapshot.getVersion());
+        base.put("versionLabel", snapshot.getVersionLabel() != null ? snapshot.getVersionLabel() : "");
+        base.put("versionStatus", snapshot.getVersionStatus() != null ? snapshot.getVersionStatus().name() : "DRAFT");
+        base.put("name", snapshot.getName() != null ? snapshot.getName() : "");
+        base.put("createdAt", snapshot.getCreatedAt() != null ? snapshot.getCreatedAt().toString() : "");
+        base.put("updatedAt", snapshot.getUpdatedAt() != null ? snapshot.getUpdatedAt().toString() : "");
+        base.put("updatedBy", snapshot.getUpdatedBy() != null ? snapshot.getUpdatedBy() : "");
+        return java.util.Collections.unmodifiableMap(base);
+    }
+
     private Promise<HttpResponse> handleValidatePipeline(HttpRequest request) {
         return request.loadBody().then(buf -> {
             try {
@@ -808,18 +986,20 @@ public class AepHttpServer {
     }
 
     private Map<String, Object> toPipelineResponse(PipelineRegistration pipeline) {
-        return Map.of(
-            "id", pipeline.getId() != null ? pipeline.getId() : "",
-            "tenantId", pipeline.getTenantId() != null ? pipeline.getTenantId().value() : "default",
-            "name", pipeline.getName() != null ? pipeline.getName() : "",
-            "description", pipeline.getDescription() != null ? pipeline.getDescription() : "",
-            "version", pipeline.getVersion(),
-            "active", pipeline.isActive(),
-            "config", pipeline.getConfig() != null ? parseJsonObject(pipeline.getConfig()) : Map.of(),
-            "createdAt", pipeline.getCreatedAt() != null ? pipeline.getCreatedAt().toString() : Instant.now().toString(),
-            "updatedAt", pipeline.getUpdatedAt() != null ? pipeline.getUpdatedAt().toString() : Instant.now().toString(),
-            "updatedBy", pipeline.getUpdatedBy() != null ? pipeline.getUpdatedBy() : "aep-http"
-        );
+        var response = new java.util.HashMap<String, Object>();
+        response.put("id", pipeline.getId() != null ? pipeline.getId() : "");
+        response.put("tenantId", pipeline.getTenantId() != null ? pipeline.getTenantId().value() : "default");
+        response.put("name", pipeline.getName() != null ? pipeline.getName() : "");
+        response.put("description", pipeline.getDescription() != null ? pipeline.getDescription() : "");
+        response.put("version", pipeline.getVersion());
+        response.put("versionLabel", pipeline.getVersionLabel() != null ? pipeline.getVersionLabel() : "");
+        response.put("versionStatus", pipeline.getVersionStatus() != null ? pipeline.getVersionStatus().name() : "DRAFT");
+        response.put("active", pipeline.isActive());
+        response.put("config", pipeline.getConfig() != null ? parseJsonObject(pipeline.getConfig()) : Map.of());
+        response.put("createdAt", pipeline.getCreatedAt() != null ? pipeline.getCreatedAt().toString() : Instant.now().toString());
+        response.put("updatedAt", pipeline.getUpdatedAt() != null ? pipeline.getUpdatedAt().toString() : Instant.now().toString());
+        response.put("updatedBy", pipeline.getUpdatedBy() != null ? pipeline.getUpdatedBy() : "aep-http");
+        return java.util.Collections.unmodifiableMap(response);
     }
 
     private Object parseJsonObject(String json) {
@@ -1012,6 +1192,8 @@ public class AepHttpServer {
     }
 
     private String resolveTenantId(HttpRequest request, Map<String, Object> payload) {
+        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
         String tenantId = request.getQueryParameter("tenantId");
         if ((tenantId == null || tenantId.isBlank()) && payload != null) {
             tenantId = asString(payload.get("tenantId"));

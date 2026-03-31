@@ -11,10 +11,33 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  GenerationJob,
-  GenerationRequestWithJobs,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type GenerationJob = {
+  id: string;
+  jobType: string;
+  status: string;
+  maxRetries?: number;
+  progress: number;
+  diagnostics?: Record<string, unknown>;
+  dependencies?: string[];
+  targetRef?: string;
+  inputPrompt?: string;
+  outputAssetId?: string;
+  parameters?: Record<string, unknown>;
+};
+
+type GenerationRequestWithJobs = {
+  id: string;
+  tenantId: string;
+  requestedBy: string;
+  title: string;
+  description?: string;
+  domain: string;
+  conceptId?: string;
+  targetGrades?: string[];
+  requestConfig?: Record<string, unknown>;
+  jobs: GenerationJob[];
+};
 import {
   getContentGenerationQueue,
   type ContentGenerationQueueLike,
@@ -287,7 +310,7 @@ function getDependencyState(
   let waiting = false;
 
   for (const dependencyRef of dependencyRefs) {
-    const dependencyJob = jobs.find((candidate) => candidate.targetRef === dependencyRef);
+    const dependencyJob = jobs.find((candidate: any) => candidate.targetRef === dependencyRef);
     if (!dependencyJob) {
       waiting = true;
       continue;
@@ -307,8 +330,8 @@ function getFailedDependencyRefs(
   jobs: GenerationJob[],
   job: GenerationJob,
 ): string[] {
-  return getDependencyRefs(job).filter((dependencyRef) => {
-    const dependencyJob = jobs.find((candidate) => candidate.targetRef === dependencyRef);
+  return getDependencyRefs(job).filter((dependencyRef: any) => {
+    const dependencyJob = jobs.find((candidate: any) => candidate.targetRef === dependencyRef);
     return (
       dependencyJob != null &&
       (dependencyJob.status === "failed" || dependencyJob.status === "cancelled")
@@ -337,13 +360,13 @@ function mergeJobDiagnostics(
   };
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
+function asRecord(value: any): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function mapReviewPath(value: string): GenerationRequestWithJobs["reviewPath"] {
+function mapReviewPath(value: string): "auto_publish" | "expert_review" | "human_review" {
   switch (value) {
     case "AUTO_PUBLISH":
       return "auto_publish";

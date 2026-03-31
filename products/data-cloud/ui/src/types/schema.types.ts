@@ -1,6 +1,11 @@
 /**
  * Schema type definitions for the application.
- * 
+ *
+ * @doc.type types
+ * @doc.purpose Domain schema types for collections, fields, and metadata structures
+ * @doc.layer product
+ * @doc.pattern Type Contract
+ *
  * @module types/schema
  */
 

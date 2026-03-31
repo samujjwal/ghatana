@@ -1,5 +1,13 @@
 import type { FastifyPluginAsync } from "fastify";
-import type { TenantId, UserId } from "@tutorputor/contracts";
+import type { ModuleId, TenantId, UserId } from "@tutorputor/contracts";
+import type {
+  ChatMessageType,
+  ChatRoomType,
+  ForumScope,
+  StudyGroupVisibility,
+  TutoringSession,
+  TutoringSessionType,
+} from "@tutorputor/contracts/v1/social";
 import { StudyGroupServiceImpl } from "./study-groups";
 import { ForumServiceImpl } from "./forums";
 import { PeerTutoringServiceImpl } from "./peer-tutoring";
@@ -19,8 +27,146 @@ import {
  * @doc.pattern REST API
  */
 export const socialRoutes: FastifyPluginAsync = async (app) => {
+  const asRecord = (value: unknown): Record<string, unknown> =>
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
+
+  const asString = (value: unknown): string | undefined =>
+    typeof value === "string" ? value : undefined;
+
+  const asNumber = (value: unknown): number | undefined => {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim()) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  };
+
+  const asStringArray = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : [];
+
+  const asAttachments = (
+    value: unknown,
+  ): Array<{ name: string; type: string; url: string }> | undefined => {
+    if (!Array.isArray(value)) return undefined;
+    const attachments = value
+      .map((item) => asRecord(item))
+      .map((item) => ({
+        name: asString(item.name),
+        type: asString(item.type),
+        url: asString(item.url),
+      }))
+      .filter(
+        (item): item is { name: string; type: string; url: string } =>
+          Boolean(item.name && item.type && item.url),
+      );
+    return attachments.length ? attachments : undefined;
+  };
+
+  const asMetadata = (value: unknown): Record<string, unknown> | undefined =>
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : undefined;
+
+  const parseStudyGroupVisibility = (
+    value: unknown,
+  ): StudyGroupVisibility | undefined => {
+    if (
+      value === "public" ||
+      value === "private" ||
+      value === "classroom_only"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseForumScope = (value: unknown): ForumScope | undefined => {
+    if (
+      value === "global" ||
+      value === "study_group" ||
+      value === "classroom" ||
+      value === "module"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseTutoringSessionType = (
+    value: unknown,
+  ): TutoringSessionType | undefined => {
+    if (
+      value === "text_chat" ||
+      value === "video_call" ||
+      value === "screen_share" ||
+      value === "collaborative_whiteboard"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseTutoringSessionStatus = (
+    value: unknown,
+  ): TutoringSession["status"] | undefined => {
+    if (
+      value === "scheduled" ||
+      value === "in_progress" ||
+      value === "completed" ||
+      value === "no_show" ||
+      value === "cancelled"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseChatRoomType = (value: unknown): ChatRoomType | undefined => {
+    if (
+      value === "direct" ||
+      value === "study_group" ||
+      value === "classroom" ||
+      value === "tutoring" ||
+      value === "support"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseChatMessageType = (
+    value: unknown,
+  ): ChatMessageType | undefined => {
+    if (
+      value === "text" ||
+      value === "image" ||
+      value === "file" ||
+      value === "code" ||
+      value === "math" ||
+      value === "quiz_share" ||
+      value === "system"
+    ) {
+      return value;
+    }
+    return undefined;
+  };
+
+  const parseDate = (value: unknown): Date | undefined => {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+    if (typeof value === "string" || typeof value === "number") {
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) return date;
+    }
+    return undefined;
+  };
+
   const activityPrisma = app.prisma as typeof app.prisma & {
-    socialActivity: any;
+    socialActivity: unknown;
   };
   const studyGroupService = new StudyGroupServiceImpl({
     prisma: app.prisma,
@@ -46,13 +192,32 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   app.post("/study-groups", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
-    const body = request.body as any;
+    const body = asRecord(request.body);
+    const name = asString(body.name);
+    const description = asString(body.description);
+    const visibility = parseStudyGroupVisibility(body.visibility);
+    const moduleIds = asStringArray(body.moduleIds) as ModuleId[];
+    const maxMembers = asNumber(body.maxMembers);
+    const requireApproval =
+      typeof body.requireApproval === "boolean" ? body.requireApproval : undefined;
 
     try {
+      if (!name || !description || !visibility) {
+        return reply.code(400).send({
+          error: "name, description, and visibility are required",
+        });
+      }
+
       const group = await studyGroupService.createGroup({
         tenantId,
-        creatorId: userId,
-        ...body,
+        createdBy: userId,
+        name,
+        description,
+        visibility,
+        subjects: asStringArray(body.subjects),
+        moduleIds,
+        ...(maxMembers !== undefined ? { maxMembers } : {}),
+        ...(requireApproval !== undefined ? { requireApproval } : {}),
       });
       return reply.code(201).send(group);
     } catch (error) {
@@ -116,12 +281,25 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/forums", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const body = request.body as any;
+    const body = asRecord(request.body);
+    const name = asString(body.name);
+    const description = asString(body.description);
+    const scope = parseForumScope(body.scope);
+    const scopeId = asString(body.scopeId);
 
     try {
+      if (!name || !description || !scope) {
+        return reply.code(400).send({
+          error: "name, description, and scope are required",
+        });
+      }
+
       const forum = await forumService.createForum({
         tenantId,
-        ...body,
+        name,
+        description,
+        scope,
+        ...(scopeId !== undefined ? { scopeId } : {}),
       });
       return reply.code(201).send(forum);
     } catch (error) {
@@ -135,14 +313,16 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/forums", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const query = request.query as any;
+    const query = asRecord(request.query);
 
     try {
+      const scope = parseForumScope(query.contextType);
+      const scopeId = asString(query.contextId);
       const forums = await forumService.listForums({
         tenantId,
-        scope: query.contextType as any, // Cast to ForumScope
-        scopeId: query.contextId,
-        pagination: { page: 1, limit: 100 },
+        ...(scope ? { scope } : {}),
+        ...(scopeId !== undefined ? { scopeId } : {}),
+        pagination: { limit: 100, page: 1 },
       });
       return reply.send(forums);
     } catch (error) {
@@ -158,14 +338,36 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
     const { forumId } = request.params as { forumId: string };
-    const body = request.body as any;
+    const body = asRecord(request.body);
+    const title = asString(body.title);
+    const content = asString(body.content);
+    const contentFormat = asString(body.contentFormat);
+    const categoryId = asString(body.categoryId);
+    const attachments = asAttachments(body.attachments);
 
     try {
+      if (!title || !content) {
+        return reply
+          .code(400)
+          .send({ error: "title and content are required" });
+      }
+
       const topic = await forumService.createTopic({
         tenantId,
         forumId,
         authorId: userId,
-        ...body,
+        title,
+        content,
+        ...(contentFormat
+          ? {
+              contentFormat: contentFormat as
+                | "markdown"
+                | "html"
+                | "plain",
+            }
+          : {}),
+        ...(categoryId !== undefined ? { categoryId } : {}),
+        ...(attachments ? { attachments } : {}),
       });
       return reply.code(201).send(topic);
     } catch (error) {
@@ -180,15 +382,15 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   app.get("/forums/:forumId/topics", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const { forumId } = request.params as { forumId: string };
-    const query = request.query as any;
+    const query = asRecord(request.query);
 
     try {
       const result = await forumService.listTopics({
         tenantId,
         forumId,
         pagination: {
-          page: query.page ? parseInt(query.page) : 1,
-          limit: query.limit ? parseInt(query.limit) : 20,
+          page: asNumber(query.page) ?? 1,
+          limit: asNumber(query.limit) ?? 20,
         },
       });
       return reply.send(result);
@@ -207,12 +409,29 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
 
   app.post("/peer-tutoring/sessions", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
-    const body = request.body as any;
+    const body = asRecord(request.body);
+    const requestId = asString(body.requestId);
+    const tutorId = asString(body.tutorId) as UserId | undefined;
+    const scheduledAt = parseDate(body.scheduledAt);
+    const duration = asNumber(body.duration);
+    const type = parseTutoringSessionType(body.type);
+    const meetingUrl = asString(body.meetingUrl);
 
     try {
+      if (!requestId || !tutorId || !scheduledAt || !duration || !type) {
+        return reply.code(400).send({
+          error: "requestId, tutorId, scheduledAt, duration, and type are required",
+        });
+      }
+
       const session = await peerTutoringService.scheduleSession({
         tenantId,
-        ...body,
+        requestId,
+        tutorId,
+        scheduledAt,
+        duration,
+        type,
+        ...(meetingUrl !== undefined ? { meetingUrl } : {}),
       });
       return reply.code(201).send(session);
     } catch (error) {
@@ -227,27 +446,24 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   app.get("/peer-tutoring/sessions", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
-    const query = request.query as any;
+    const query = asRecord(request.query);
     const requestedRole =
       query.role === "student" || query.role === "tutor"
         ? query.role
         : undefined;
 
     try {
+      const status = parseTutoringSessionStatus(query.status);
       const result = await peerTutoringService.listSessions({
         tenantId,
         userId,
-        status: query.status,
-        role: requestedRole,
+        ...(status !== undefined ? { status } : {}),
+        ...(requestedRole !== undefined ? { role: requestedRole } : {}),
         pagination: {
-          page: query.page ? parseInt(query.page) : 1, // listSessions expects page/limit in implementation?
-          // PaginationArgs in contracts usually uses page/limit OR skip/take.
-          // Implementation used skip: args.pagination.offset
-          // So I should stick to offset if that's what I saw earlier?
-          // No, earlier errors showed `offset` does not exist on `PaginationArgs`.
-          // So I should use `page` and `limit` if `PaginationArgs` uses proper standard.
+            page: asNumber(query.page) ?? 1,
+            limit: asNumber(query.limit) ?? 20,
         },
-      } as any); // Casting to any to bypass strict checks for now as I fix the build
+        });
       return reply.send(result);
     } catch (error) {
       app.log.error(error, "Failed to list peer tutoring sessions");
@@ -265,21 +481,28 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   app.post("/chat/rooms", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
-    const body = request.body as any;
+    const body = asRecord(request.body);
 
     try {
-      const participants = body.participants || [];
+      const participants = asStringArray(body.participants) as UserId[];
+      const studyGroupId = asString(body.studyGroupId);
+      const tutoringSessionId = asString(body.tutoringSessionId);
       if (!participants.includes(userId)) {
         participants.push(userId);
+      }
+
+      const type = parseChatRoomType(body.type);
+      if (!type) {
+        return reply.code(400).send({ error: "Valid chat room type is required" });
       }
 
       const room = await chatService.getOrCreateRoom({
         tenantId,
         createdBy: userId,
-        type: body.type,
+        type,
         participants,
-        studyGroupId: body.studyGroupId,
-        tutoringSessionId: body.tutoringSessionId,
+        ...(studyGroupId !== undefined ? { studyGroupId } : {}),
+        ...(tutoringSessionId !== undefined ? { tutoringSessionId } : {}),
       });
       return reply.code(200).send(room);
     } catch (error) {
@@ -294,16 +517,17 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   app.get("/chat/rooms", async (request, reply) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
-    const query = request.query as any;
+    const query = asRecord(request.query);
 
     try {
+      const roomType = parseChatRoomType(query.type);
       const result = await chatService.listRooms({
         tenantId,
         userId,
-        type: query.type,
+        ...(roomType !== undefined ? { type: roomType } : {}),
         pagination: {
-          offset: query.offset ? parseInt(query.offset) : 0,
-          limit: query.limit ? parseInt(query.limit) : 20,
+          offset: asNumber(query.offset) ?? 0,
+          limit: asNumber(query.limit) ?? 20,
         },
       });
       return reply.send(result);
@@ -320,18 +544,26 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
     const { roomId } = request.params as { roomId: string };
-    const body = request.body as any;
+    const body = asRecord(request.body);
+    const content = asString(body.content);
+    const metadata = asMetadata(body.metadata);
+    const replyToId = asString(body.replyToId);
+    const attachments = asAttachments(body.attachments);
 
     try {
+      if (!content) {
+        return reply.code(400).send({ error: "content is required" });
+      }
+
       const message = await chatService.sendMessage({
         tenantId,
         roomId,
         senderId: userId,
-        type: body.type || "text",
-        content: body.content,
-        metadata: body.metadata,
-        replyToId: body.replyToId,
-        attachments: body.attachments,
+        type: parseChatMessageType(body.type) ?? "text",
+        content,
+        ...(metadata ? { metadata } : {}),
+        ...(replyToId !== undefined ? { replyToId } : {}),
+        ...(attachments ? { attachments } : {}),
       });
       return reply.code(201).send(message);
     } catch (error) {
@@ -347,15 +579,16 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
     const { roomId } = request.params as { roomId: string };
-    const query = request.query as any;
+    const query = asRecord(request.query);
 
     try {
+      const before = asString(query.before);
       const result = await chatService.getMessages({
         tenantId,
         roomId,
         userId,
-        before: query.before,
-        limit: query.limit ? parseInt(query.limit) : 50,
+        ...(before !== undefined ? { before } : {}),
+        limit: asNumber(query.limit) ?? 50,
       });
       return reply.send(result);
     } catch (error) {

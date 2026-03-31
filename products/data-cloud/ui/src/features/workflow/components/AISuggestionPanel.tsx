@@ -17,7 +17,8 @@
  * @doc.pattern React Component
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import { loadWorkflowAtom } from '../stores/workflow.store';
 import { workflowClient } from '../../../lib/api/workflow-client';
@@ -49,33 +50,22 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
 }) => {
   const loadWorkflow = useSetAtom(loadWorkflowAtom);
 
-  const [suggestions, setSuggestions] = useState<WorkflowSuggestion[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  /**
-   * Fetches suggestions.
-   */
-  useEffect(() => {
-    const fetchSuggestions = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await workflowClient.getSuggestions(collectionId);
-        setSuggestions(response.suggestions);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to fetch suggestions';
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const {
+    data: suggestions = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['workflow-suggestions', collectionId],
+    queryFn: async () => {
+      const response = await workflowClient.getSuggestions(collectionId);
+      return response.suggestions;
+    },
+    enabled: Boolean(collectionId),
+  });
 
-    if (collectionId) {
-      fetchSuggestions();
-    }
-  }, [collectionId]);
+  const error = queryError instanceof Error ? queryError.message : queryError ? 'Failed to fetch suggestions' : null;
 
   /**
    * Handles suggestion apply.

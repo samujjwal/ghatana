@@ -77,10 +77,111 @@ export async function credentialRoutes(
       const requesterId = getUserId(request);
       requireRole(request, privilegedCredentialRoles);
 
-      const credential = createCredential({
-        ...dto,
-        tenantId: tenantId,
-      });
+      const credentialInput: IssueCredentialDTO = {
+        type: dto.type,
+        userId: dto.userId,
+        tenantId,
+        name: dto.name,
+        description: dto.description,
+        metadata: {
+          ...(dto.metadata.category ? { category: dto.metadata.category } : {}),
+          ...(typeof dto.metadata.points === "number"
+            ? { points: dto.metadata.points }
+            : {}),
+          ...(dto.metadata.tier ? { tier: dto.metadata.tier } : {}),
+          ...(dto.metadata.rarity ? { rarity: dto.metadata.rarity } : {}),
+          ...(dto.metadata.tags ? { tags: dto.metadata.tags } : {}),
+          ...(dto.metadata.customData
+            ? { customData: dto.metadata.customData }
+            : {}),
+        },
+        ...(dto.imageUrl ? { imageUrl: dto.imageUrl } : {}),
+        ...(dto.achievement
+          ? {
+              achievement: {
+                ...(dto.achievement.simulationId
+                  ? { simulationId: dto.achievement.simulationId }
+                  : {}),
+                ...(dto.achievement.simulationName
+                  ? { simulationName: dto.achievement.simulationName }
+                  : {}),
+                ...(dto.achievement.domainPackId
+                  ? { domainPackId: dto.achievement.domainPackId }
+                  : {}),
+                ...(typeof dto.achievement.score === "number"
+                  ? { score: dto.achievement.score }
+                  : {}),
+                ...(typeof dto.achievement.maxScore === "number"
+                  ? { maxScore: dto.achievement.maxScore }
+                  : {}),
+                ...(typeof dto.achievement.completionTime === "number"
+                  ? { completionTime: dto.achievement.completionTime }
+                  : {}),
+                ...(typeof dto.achievement.attempts === "number"
+                  ? { attempts: dto.achievement.attempts }
+                  : {}),
+                ...(dto.achievement.criteria
+                  ? {
+                      criteria: dto.achievement.criteria.map((criterion) => ({
+                        id: criterion.id,
+                        name: criterion.name,
+                        description: criterion.description,
+                        met: criterion.met,
+                        ...(typeof criterion.value === "number"
+                          ? { value: criterion.value }
+                          : {}),
+                        ...(typeof criterion.threshold === "number"
+                          ? { threshold: criterion.threshold }
+                          : {}),
+                      }))
+                    }
+                  : {}),
+              },
+            }
+          : {}),
+        ...(dto.skill
+          ? {
+              skill: {
+                ...(dto.skill.skillId ? { skillId: dto.skill.skillId } : {}),
+                ...(dto.skill.skillName
+                  ? { skillName: dto.skill.skillName }
+                  : {}),
+                ...(dto.skill.level ? { level: dto.skill.level } : {}),
+                ...(dto.skill.domain ? { domain: dto.skill.domain } : {}),
+                ...(dto.skill.subDomain
+                  ? { subDomain: dto.skill.subDomain }
+                  : {}),
+              },
+            }
+          : {}),
+        ...(dto.certificate
+          ? {
+              certificate: {
+                ...(dto.certificate.courseId
+                  ? { courseId: dto.certificate.courseId }
+                  : {}),
+                ...(dto.certificate.courseName
+                  ? { courseName: dto.certificate.courseName }
+                  : {}),
+                ...(dto.certificate.curriculum
+                  ? { curriculum: dto.certificate.curriculum }
+                  : {}),
+                ...(dto.certificate.completionDate
+                  ? { completionDate: dto.certificate.completionDate }
+                  : {}),
+                ...(dto.certificate.grade
+                  ? { grade: dto.certificate.grade }
+                  : {}),
+                ...(typeof dto.certificate.hoursCompleted === "number"
+                  ? { hoursCompleted: dto.certificate.hoursCompleted }
+                  : {}),
+              },
+            }
+          : {}),
+        ...(dto.expiresAt ? { expiresAt: dto.expiresAt } : {}),
+      };
+
+      const credential = createCredential(credentialInput);
 
       const created = await service.create(credential);
 
@@ -132,16 +233,26 @@ export async function credentialRoutes(
             name: achievement.credentialName || "",
             description: achievement.credentialDescription || "",
             metadata: {
-              category: achievement.metadata?.category as any,
-              tier: achievement.metadata?.tier as any,
-              rarity: achievement.metadata?.rarity as any,
-              points: achievement.metadata?.points as number,
-              customData: achievement.metadata,
+              ...(achievement.metadata?.category
+                ? { category: achievement.metadata.category as any }
+                : {}),
+              ...(achievement.metadata?.tier
+                ? { tier: achievement.metadata.tier as any }
+                : {}),
+              ...(achievement.metadata?.rarity
+                ? { rarity: achievement.metadata.rarity as any }
+                : {}),
+              ...(typeof achievement.metadata?.points === "number"
+                ? { points: achievement.metadata.points as number }
+                : {}),
+              ...(achievement.metadata
+                ? { customData: achievement.metadata }
+                : {}),
             },
             achievement: {
               simulationId: result.simulationId,
               simulationName: result.simulationName,
-              domainPackId: result.domainPackId,
+              ...(result.domainPackId ? { domainPackId: result.domainPackId } : {}),
               score: result.score,
               maxScore: result.maxScore,
               completionTime: result.completionTime,

@@ -115,7 +115,7 @@ export interface GetRecommendationsResponse {
 interface GrpcServiceClient {
   [method: string]: (
     request: unknown,
-    callback: (error: grpc.ServiceError | null, response: unknown) => void,
+    callback: (error: grpc.ServiceError | null, response: any) => void,
   ) => void;
 }
 

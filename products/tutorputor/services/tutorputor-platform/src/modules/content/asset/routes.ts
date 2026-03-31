@@ -13,10 +13,8 @@
 
 import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
-import type {
-  ContentAssetType,
-  ContentAssetStatus,
-} from "@tutorputor/contracts/v1/content-studio";
+type ContentAssetType = string;
+type ContentAssetStatus = string;
 import { ContentAssetReadService } from "./read-service.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 
@@ -80,13 +78,13 @@ export function registerContentAssetRoutes(
 
       const result = await service.listAssets({
         tenantId,
-        assetType,
-        status,
-        domain,
-        authorId,
-        search,
-        limit: limit ? parseInt(limit, 10) : undefined,
-        offset: offset ? parseInt(offset, 10) : undefined,
+        ...(assetType ? { assetType } : {}),
+        ...(status ? { status } : {}),
+        ...(domain ? { domain } : {}),
+        ...(authorId ? { authorId } : {}),
+        ...(search ? { search } : {}),
+        ...(limit ? { limit: parseInt(limit, 10) } : {}),
+        ...(offset ? { offset: parseInt(offset, 10) } : {}),
       });
 
       return reply.send({

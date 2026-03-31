@@ -72,7 +72,7 @@ export class ContentWorkerService {
       maxRetries: 3,
     });
 
-    this.redisConnection = new Redis({
+    this.redisConnection = new (Redis as unknown as new (...args: any[]) => any)({
       host: config.redis.host,
       port: config.redis.port,
       password: config.redis.password,
@@ -91,12 +91,12 @@ export class ContentWorkerService {
 
     // Initialize distributed job deduplicator (Redis + Prisma fallback)
     this.jobDeduplicator = new JobDeduplicator(this.prisma, {
-      redis: this.redisConnection,
+      ...(this.redisConnection ? { redis: this.redisConnection } : {}),
     });
     this.telemetryPublisher = new ContentWorkerTelemetryPublisher(
       this.prisma,
       this.logger,
-      this.redisConnection,
+      this.redisConnection ?? undefined,
     );
 
     this.producerQueue = new Queue("content-generation", {
@@ -105,7 +105,7 @@ export class ContentWorkerService {
     });
     const generationExecutionService = new GenerationExecutionService(
       this.prisma,
-      this.redisConnection,
+      this.redisConnection ?? undefined,
     );
     const generationQueueDispatcher = new GenerationQueueDispatcher(this.prisma);
 
@@ -285,7 +285,7 @@ export class ContentWorkerService {
       await this.dlqManager.close();
     }
     if (this.redisConnection) {
-      await this.redisConnection.quit();
+      await (this.redisConnection as any).quit();
     }
     // We do not close prisma here as it might be shared
   }

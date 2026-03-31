@@ -179,7 +179,7 @@ export function createTenantService(prisma: TutorPrismaClient) {
           )
         : DEFAULT_SETTINGS.simulationQuotas;
 
-      const data: any = {};
+      const data: Record<string, unknown> = {};
       if (updates.allowPublicRegistration !== undefined)
         data.allowPublicRegistration = updates.allowPublicRegistration;
       if (updates.requireEmailVerification !== undefined)
@@ -204,7 +204,7 @@ export function createTenantService(prisma: TutorPrismaClient) {
           tenantId,
           ...DEFAULT_SETTINGS, // base defaults
           ...data, // overrides
-        },
+        } as any,
         update: data,
       });
 

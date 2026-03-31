@@ -30,7 +30,7 @@ export interface ModalityAvailability {
     simulationManifest: {
       id: string;
       title: string;
-      manifest: any;
+      manifest: unknown;
     } | null;
   }>;
   animations: Array<{
@@ -38,13 +38,13 @@ export interface ModalityAvailability {
     type: string;
     title: string;
     duration: number;
-    config: any;
+    config: unknown;
   }>;
   examples: Array<{
     id: string;
     type: string;
     title: string;
-    content: any;
+    content: unknown;
   }>;
 }
 
@@ -170,9 +170,9 @@ export class ModalitySelector {
       availableModalities,
       fallbackUsed,
       details: {
-        simulation: available.simulations[0],
-        animation: available.animations[0],
-        example: available.examples[0],
+        ...(available.simulations[0] ? { simulation: available.simulations[0] } : {}),
+        ...(available.animations[0] ? { animation: available.animations[0] } : {}),
+        ...(available.examples[0] ? { example: available.examples[0] } : {}),
       },
     };
   }

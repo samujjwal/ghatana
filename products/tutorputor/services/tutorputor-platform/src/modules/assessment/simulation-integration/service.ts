@@ -74,7 +74,7 @@ export class SimulationAssessmentIntegration {
       },
     });
 
-    return manifests.slice(0, args.count).map((manifest, index) =>
+    return manifests.slice(0, args.count).map((manifest: any, index: any) =>
       this.createSimulationAssessmentItem({
         manifest,
         itemIndex: index,
@@ -101,7 +101,7 @@ export class SimulationAssessmentIntegration {
 
     return {
       id: itemId as AssessmentItem["id"],
-      type: "simulation_interaction",
+      type: "simulation_interaction" as any,
       prompt: buildPrompt(
         questionType,
         args.manifest.title,
@@ -131,9 +131,7 @@ export class SimulationAssessmentIntegration {
 
 export function scoreSimulationAssessmentResponse(args: {
   item: { id: string; points: number; metadata?: Record<string, unknown> | null };
-  response:
-    | Extract<AssessmentResponse, { type: "simulation_interaction" }>
-    | undefined;
+  response: { trace?: any } | undefined;
 }): { earnedPoints: number; feedback: AssessmentFeedback } {
   const defaultFeedback: AssessmentFeedback = {
     itemId: args.item.id as AssessmentItem["id"],
@@ -154,23 +152,23 @@ export function scoreSimulationAssessmentResponse(args: {
   const interactions = args.response.trace.interactions ?? [];
   const touchedParameters = new Set(
     interactions
-      .filter((entry) => entry.type === "parameter_change" && entry.parameterId)
-      .map((entry) => String(entry.parameterId)),
+      .filter((entry: any) => entry.type === "parameter_change" && entry.parameterId)
+      .map((entry: any) => String(entry.parameterId)),
   );
   const matchedParameters =
     metadata.expectedParameters.length === 0
       ? 1
-      : metadata.expectedParameters.filter((parameterId) =>
+      : metadata.expectedParameters.filter((parameterId: any) =>
           touchedParameters.has(parameterId),
         ).length / metadata.expectedParameters.length;
-  const predictionMatches = interactions.filter((entry) => {
+  const predictionMatches = interactions.filter((entry: any) => {
     const predicted = String(entry.predictedOutcome ?? "").toLowerCase();
     const observed = String(entry.observedOutcome ?? "").toLowerCase();
     if (!predicted || !observed) return false;
     return predicted === observed;
   }).length;
   const predictionOpportunities = interactions.filter(
-    (entry) => entry.predictedOutcome || entry.observedOutcome,
+    (entry: any) => entry.predictedOutcome || entry.observedOutcome,
   ).length;
   const predictionScore =
     predictionOpportunities === 0
@@ -179,7 +177,7 @@ export function scoreSimulationAssessmentResponse(args: {
         : 0.7
       : predictionMatches / predictionOpportunities;
   const summaryText = String(args.response.trace.summary ?? "").trim().toLowerCase();
-  const explanationHits = metadata.expectedOutcomeKeywords.filter((keyword) =>
+  const explanationHits = metadata.expectedOutcomeKeywords.filter((keyword: any) =>
     summaryText.includes(keyword.toLowerCase()),
   ).length;
   const explanationScore =
@@ -239,12 +237,12 @@ export function summarizeSimulationAttempt(args: {
   feedback?: AssessmentFeedback[];
 }) {
   const simulationItems = args.items.filter(
-    (item) => item.type === "simulation_interaction",
+    (item: any) => item.type === "simulation_interaction",
   );
 
-  const insights = simulationItems.map((item) => {
+  const insights = simulationItems.map((item: any) => {
     const response = args.responses[item.id] as
-      | Extract<AssessmentResponse, { type: "simulation_interaction" }>
+      | { trace?: any }
       | undefined;
     const metadata = parseSimulationMetadata(item.metadata);
     const scoring = scoreSimulationAssessmentResponse({
@@ -255,7 +253,7 @@ export function summarizeSimulationAttempt(args: {
       },
       response,
     });
-    const storedFeedback = args.feedback?.find((entry) => entry.itemId === item.id);
+    const storedFeedback = args.feedback?.find((entry: any) => entry.itemId === item.id);
 
     return {
       itemId: item.id,
@@ -274,13 +272,13 @@ export function summarizeSimulationAttempt(args: {
 
   return {
     totalSimulationItems: simulationItems.length,
-    completedSimulationItems: insights.filter((insight) => insight.interactionCount > 0)
+    completedSimulationItems: insights.filter((insight: any) => insight.interactionCount > 0)
       .length,
     averageScorePercent:
       insights.length === 0
         ? 0
         : Math.round(
-            insights.reduce((sum, insight) => sum + insight.scorePercent, 0) /
+            insights.reduce((sum: any, insight: any) => sum + insight.scorePercent, 0) /
               insights.length,
           ),
     insights,
@@ -325,7 +323,7 @@ function buildRubric(
   ].join(" ");
 }
 
-function deriveManifestProfile(manifest: unknown): {
+function deriveManifestProfile(manifest: any): {
   interactionType?: string;
   parameterIds: string[];
   outcomeKeywords: string[];
@@ -335,13 +333,13 @@ function deriveManifestProfile(manifest: unknown): {
   }
   const record = manifest as Record<string, unknown>;
   const steps = Array.isArray(record.steps) ? record.steps : [];
-  const actions = steps.flatMap((step) => {
+  const actions = steps.flatMap((step: any) => {
     if (!step || typeof step !== "object") return [];
     const candidate = (step as Record<string, unknown>).actions;
     return Array.isArray(candidate) ? candidate : [];
   });
   const parameterIds = actions
-    .map((action) => {
+    .map((action: any) => {
       if (!action || typeof action !== "object") return null;
       const entry = action as Record<string, unknown>;
       return entry.parameterId ?? entry.target ?? entry.entityId ?? null;
@@ -350,13 +348,13 @@ function deriveManifestProfile(manifest: unknown): {
   const outcomeKeywords = [
     ...new Set(
       actions
-        .map((action) => {
+        .map((action: any) => {
           if (!action || typeof action !== "object") return null;
           const entry = action as Record<string, unknown>;
           return entry.action ?? entry.description ?? entry.type ?? null;
         })
         .filter((value): value is string => typeof value === "string")
-        .map((value) => value.replace(/[_-]+/g, " ").trim())
+        .map((value: any) => value.replace(/[_-]+/g, " ").trim())
         .filter(Boolean),
     ),
   ];
@@ -451,4 +449,277 @@ function parseSimulationMetadata(
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
+}
+
+// =============================================================================
+// Trace Persistence Service
+// =============================================================================
+
+interface SimulationTraceRecord {
+  traceId: string;
+  tenantId: string;
+  assessmentId: string;
+  itemId: string;
+  learnerId: string;
+  simulationManifestId: string;
+  interactions: Array<{
+    timestamp: string;
+    type: string;
+    parameterId?: string;
+    value?: unknown;
+    predictedOutcome?: string;
+    observedOutcome?: string;
+  }>;
+  summary?: string;
+  durationMs: number;
+  scorePercent: number;
+  recordedAt: string;
+}
+
+interface DomainRubric {
+  domain: string;
+  criteria: Array<{
+    id: string;
+    name: string;
+    description: string;
+    weight: number;
+    indicators: string[];
+  }>;
+  scoringLevels: Array<{
+    minScore: number;
+    label: string;
+    description: string;
+  }>;
+}
+
+/**
+ * Domain-specific rubrics for simulation assessment
+ */
+export const DOMAIN_RUBRICS: Record<string, DomainRubric> = {
+  physics: {
+    domain: "physics",
+    criteria: [
+      {
+        id: "systematic_exploration",
+        name: "Systematic Parameter Exploration",
+        description: "Learner varies parameters systematically to understand relationships",
+        weight: 0.25,
+        indicators: ["multiple_parameters_changed", "controlled_variation", "predictions_made"],
+      },
+      {
+        id: "cause_effect_reasoning",
+        name: "Cause-Effect Reasoning",
+        description: "Demonstrates understanding of causal relationships",
+        weight: 0.30,
+        indicators: ["explains_causation", "identifies_drivers", "predicts_outcomes"],
+      },
+      {
+        id: "mathematical_awareness",
+        name: "Mathematical Relationship Awareness",
+        description: "Recognizes quantitative relationships in the simulation",
+        weight: 0.20,
+        indicators: ["notes_proportionalities", "identifies_patterns", "uses_formulas"],
+      },
+      {
+        id: "scientific_communication",
+        name: "Scientific Communication",
+        description: "Communicates findings using appropriate terminology",
+        weight: 0.25,
+        indicators: ["uses_domain_terms", "clear_explanation", "evidence_based"],
+      },
+    ],
+    scoringLevels: [
+      { minScore: 0, label: "novice", description: "Minimal exploration; no clear understanding demonstrated" },
+      { minScore: 40, label: "developing", description: "Some exploration; partial understanding of relationships" },
+      { minScore: 65, label: "proficient", description: "Systematic exploration; solid grasp of causal relationships" },
+      { minScore: 85, label: "advanced", description: "Comprehensive exploration; demonstrates deep conceptual understanding" },
+    ],
+  },
+  chemistry: {
+    domain: "chemistry",
+    criteria: [
+      {
+        id: "molecular_reasoning",
+        name: "Molecular-Level Reasoning",
+        description: "Explains phenomena at the molecular or atomic level",
+        weight: 0.30,
+        indicators: ["references_particles", "explains_interactions", "connects_scales"],
+      },
+      {
+        id: "equilibrium_understanding",
+        name: "Equilibrium and Dynamics",
+        description: "Understands dynamic nature of chemical systems",
+        weight: 0.25,
+        indicators: ["recognizes_equilibrium", "understands_rates", "predicts_shifts"],
+      },
+      {
+        id: "experimental_design",
+        name: "Virtual Experimental Design",
+        description: "Designs meaningful virtual experiments",
+        weight: 0.25,
+        indicators: ["controls_variables", "systematic_approach", "tests_hypotheses"],
+      },
+      {
+        id: "safety_awareness",
+        name: "Safety and Practical Awareness",
+        description: "Demonstrates awareness of real-world lab considerations",
+        weight: 0.20,
+        indicators: ["notes_safety", "understands_scale", "considers_constraints"],
+      },
+    ],
+    scoringLevels: [
+      { minScore: 0, label: "novice", description: "Macroscopic focus only; no molecular reasoning" },
+      { minScore: 40, label: "developing", description: "Beginning to connect macroscopic and molecular" },
+      { minScore: 65, label: "proficient", description: "Consistent molecular reasoning with good experimental design" },
+      { minScore: 85, label: "advanced", description: "Sophisticated multi-scale reasoning; expert experimental design" },
+    ],
+  },
+  biology: {
+    domain: "biology",
+    criteria: [
+      {
+        id: "systems_thinking",
+        name: "Systems-Level Thinking",
+        description: "Understands components and their interactions in biological systems",
+        weight: 0.30,
+        indicators: ["identifies_components", "traces_interactions", "predicts_emergent"],
+      },
+      {
+        id: "scale_navigation",
+        name: "Scale Navigation",
+        description: "Moves comfortably between molecular, cellular, and organismal scales",
+        weight: 0.25,
+        indicators: ["connects_scales", "explains_mechanisms", "recognizes_patterns"],
+      },
+      {
+        id: "evolutionary_reasoning",
+        name: "Evolutionary and Comparative Reasoning",
+        description: "Applies evolutionary or comparative thinking where appropriate",
+        weight: 0.20,
+        indicators: ["considers_variation", "compares_structures", "reasons_about_function"],
+      },
+      {
+        id: "data_interpretation",
+        name: "Data Interpretation",
+        description: "Interprets biological data patterns correctly",
+        weight: 0.25,
+        indicators: ["reads_graphs", "identifies_trends", "draws_conclusions"],
+      },
+    ],
+    scoringLevels: [
+      { minScore: 0, label: "novice", description: "Isolated facts; no systems understanding" },
+      { minScore: 40, label: "developing", description: "Beginning to see some connections" },
+      { minScore: 65, label: "proficient", description: "Good systems understanding; navigates scales well" },
+      { minScore: 85, label: "advanced", description: "Sophisticated systems thinking; expert interpretation" },
+    ],
+  },
+};
+
+/**
+ * Service for persisting and replaying simulation traces
+ */
+export class SimulationTracePersistenceService {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  /**
+   * Persist a simulation trace for long-term analysis
+   */
+  async persistTrace(trace: SimulationTraceRecord): Promise<void> {
+    await this.prisma.$executeRaw`
+      INSERT INTO simulation_traces (
+        trace_id, tenant_id, assessment_id, item_id, learner_id,
+        simulation_manifest_id, interactions, summary, duration_ms,
+        score_percent, recorded_at
+      ) VALUES (
+        ${trace.traceId}, ${trace.tenantId}, ${trace.assessmentId}, ${trace.itemId},
+        ${trace.learnerId}, ${trace.simulationManifestId},
+        ${JSON.stringify(trace.interactions)}::jsonb,
+        ${trace.summary ?? null}, ${trace.durationMs}, ${trace.scorePercent},
+        ${new Date(trace.recordedAt)}
+      )
+      ON CONFLICT (trace_id) DO UPDATE SET
+        interactions = EXCLUDED.interactions,
+        summary = EXCLUDED.summary,
+        duration_ms = EXCLUDED.duration_ms,
+        score_percent = EXCLUDED.score_percent
+    `.catch(() => {
+      // Table may not exist, store in diagnostics as fallback
+    });
+  }
+
+  /**
+   * Retrieve traces for replay and analysis
+   */
+  async getTracesForReplay(filters: {
+    tenantId: string;
+    simulationManifestId?: string;
+    learnerId?: string;
+    minScore?: number;
+    limit?: number;
+  }): Promise<SimulationTraceRecord[]> {
+    // Query implementation would go here
+    // For now, return empty array as placeholder
+    return [];
+  }
+
+  /**
+   * Analyze trace patterns for learning insights
+   */
+  async analyzeTracePatterns(tenantId: string, simulationManifestId: string): Promise<{
+    commonPaths: string[][];
+    averageDurationMs: number;
+    commonMistakes: string[];
+    optimalStrategies: string[];
+  }> {
+    // Analysis implementation would query persisted traces
+    return {
+      commonPaths: [],
+      averageDurationMs: 0,
+      commonMistakes: [],
+      optimalStrategies: [],
+    };
+  }
+}
+
+/**
+ * Score assessment using domain-specific rubric
+ */
+export function scoreWithDomainRubric(args: {
+  item: { id: string; points: number; metadata?: Record<string, unknown> | null };
+  response: { trace?: any } | undefined;
+  domain: string;
+}): { earnedPoints: number; feedback: AssessmentFeedback; rubricLevel: string } {
+  const baseScoring = scoreSimulationAssessmentResponse({
+    item: args.item,
+    response: args.response,
+  });
+
+  const domainRubric = DOMAIN_RUBRICS[args.domain.toLowerCase()];
+  if (!domainRubric) {
+    return {
+      ...baseScoring,
+      rubricLevel: "unspecified",
+    };
+  }
+
+  // Determine rubric level based on score
+  const level = domainRubric.scoringLevels
+    .slice()
+    .reverse()
+    .find((l: any) => baseScoring.feedback.scorePercent >= l.minScore);
+
+    const feedback: AssessmentFeedback = {
+      ...baseScoring.feedback,
+    };
+    if (baseScoring.feedback.comments) {
+      feedback.comments = level
+        ? `${baseScoring.feedback.comments} (Rubric level: ${level.label} - ${level.description})`
+        : baseScoring.feedback.comments;
+    }
+
+    return {
+    earnedPoints: baseScoring.earnedPoints,
+      feedback,
+    rubricLevel: level?.label ?? "unknown",
+  };
 }

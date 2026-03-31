@@ -12,38 +12,64 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  RegenerationCandidate,
-  CreateRegenerationCandidateInput,
-} from "@tutorputor/contracts/v1/content-studio";
+
+interface RegenerationCandidate {
+  id: string;
+  tenantId: string;
+  assetId: string;
+  assetType?: string;
+  trigger: string;
+  severity: string;
+  reason: string;
+  evidence?: Record<string, unknown>;
+  priority: number;
+  status: string;
+  generationRequestId?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateRegenerationCandidateInput {
+  assetId: string;
+  assetType?: string;
+  trigger: string;
+  severity?: string;
+  reason: string;
+  evidence?: Record<string, unknown>;
+  priority?: number;
+}
 
 // ---------------------------------------------------------------------------
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapCandidate(row: any): RegenerationCandidate {
+function mapCandidate(row: Record<string, unknown>): RegenerationCandidate {
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    assetId: row.assetId,
-    assetType: row.assetType ?? undefined,
+    id: String(row.id),
+    tenantId: String(row.tenantId),
+    assetId: String(row.assetId),
+    ...(typeof row.assetType === "string" ? { assetType: row.assetType } : {}),
     trigger: (
       row.trigger as string
     ).toLowerCase() as RegenerationCandidate["trigger"],
     severity: (
       row.severity as string
     ).toLowerCase() as RegenerationCandidate["severity"],
-    reason: row.reason,
-    evidence: row.evidence ?? undefined,
-    priority: row.priority,
+    reason: String(row.reason),
+    ...(row.evidence && typeof row.evidence === "object"
+      ? { evidence: row.evidence as Record<string, unknown> }
+      : {}),
+    priority: Number(row.priority ?? 0),
     status: (
       row.status as string
     ).toLowerCase() as RegenerationCandidate["status"],
-    generationRequestId: row.generationRequestId ?? undefined,
-    resolvedBy: row.resolvedBy ?? undefined,
-    resolvedAt: row.resolvedAt
-      ? (row.resolvedAt as Date).toISOString()
-      : undefined,
+    ...(typeof row.generationRequestId === "string"
+      ? { generationRequestId: row.generationRequestId }
+      : {}),
+    ...(typeof row.resolvedBy === "string" ? { resolvedBy: row.resolvedBy } : {}),
+    ...(row.resolvedAt ? { resolvedAt: (row.resolvedAt as Date).toISOString() } : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -87,7 +113,7 @@ export class RegenerationCandidateService {
     tenantId: string,
     filter?: { assetId?: string; trigger?: string },
   ): Promise<RegenerationCandidate[]> {
-    const where: any = { tenantId, status: "OPEN" };
+    const where: Record<string, unknown> = { tenantId, status: "OPEN" };
     if (filter?.assetId) where.assetId = filter.assetId;
     if (filter?.trigger)
       where.trigger = filter.trigger.toUpperCase().replace(/-/g, "_");

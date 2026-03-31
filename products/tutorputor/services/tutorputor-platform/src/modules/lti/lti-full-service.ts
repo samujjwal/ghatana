@@ -57,14 +57,7 @@ const TOOL_CLIENT_ID = process.env.LTI_TOOL_CLIENT_ID ?? "tutorputor-lti-tool";
 
 type LtiKeyMaterial = unknown;
 
-type LegacyLtiPrismaClient = PrismaClient & {
-  lTIPlatform: any;
-  ltiContext: any;
-  ltiLineItem: any;
-  ltiScore: any;
-  ltiSession: any;
-  ltiUserMapping: any;
-};
+type LegacyLtiPrismaClient = PrismaClient & Record<string, any>;
 
 /**
  * LTI Platform Service implementation.
@@ -82,7 +75,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
     tenantId: TenantId;
     isActive?: boolean;
   }): Promise<LtiPlatform[]> {
-    const where: any = { tenantId: args.tenantId };
+    const where: Record<string, unknown> = { tenantId: args.tenantId };
     if (args.isActive !== undefined) {
       where.isActive = args.isActive;
     }
@@ -132,7 +125,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
         jwksUrl: args.jwksUrl,
         publicKeyPem: args.publicKeyPem,
         isActive: true,
-      },
+      } as any,
     });
 
     return this.mapToPlatform(platform);
@@ -158,7 +151,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
         publicKeyPem: args.updates.publicKeyPem,
         isActive: args.updates.isActive,
         updatedAt: new Date(),
-      },
+      } as any,
     });
 
     return this.mapToPlatform(platform);
@@ -170,7 +163,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
   }): Promise<void> {
     await this.prisma.lTIPlatform.update({
       where: { id: args.platformId },
-      data: { isActive: false, updatedAt: new Date() },
+      data: { isActive: false, updatedAt: new Date() } as any,
     });
   }
 
@@ -228,13 +221,18 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
  * LTI Launch Service implementation.
  */
 export class LtiLaunchServiceImpl implements LtiLaunchService {
+  private readonly jwksResolver: (jwksUrl: string) => ReturnType<typeof jose.createRemoteJWKSet>;
+
   constructor(
     private readonly prisma: LegacyLtiPrismaClient,
     private readonly keyPair: {
       publicKey: LtiKeyMaterial;
       privateKey: LtiKeyMaterial;
     },
-  ) {}
+    jwksResolver?: (jwksUrl: string) => ReturnType<typeof jose.createRemoteJWKSet>,
+  ) {
+    this.jwksResolver = jwksResolver ?? ((url: any) => jose.createRemoteJWKSet(new URL(url)));
+  }
 
   async initiateLogin(args: {
     tenantId: TenantId;
@@ -250,7 +248,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
         tenantId: args.tenantId,
         issuer: args.issuer,
         isActive: true,
-      },
+      } as any,
     });
 
     if (!platform) {
@@ -334,7 +332,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
 
     try {
       // Fetch platform JWKS
-      const jwks = jose.createRemoteJWKSet(new URL(platform.jwksUrl));
+      const jwks = this.jwksResolver(platform.jwksUrl);
 
       // Verify and decode token
       const { payload } = (await jose.jwtVerify(args.idToken, jwks, {
@@ -371,11 +369,11 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       // Extract user claims
       const userClaims: LtiUserClaims = {
         sub: payload.sub,
-        name: payload.name,
-        givenName: payload.given_name,
-        familyName: payload.family_name,
-        email: payload.email,
-        picture: payload.picture,
+        ...(payload.name ? { name: payload.name } : {}),
+        ...(payload.given_name ? { givenName: payload.given_name } : {}),
+        ...(payload.family_name ? { familyName: payload.family_name } : {}),
+        ...(payload.email ? { email: payload.email } : {}),
+        ...(payload.picture ? { picture: payload.picture } : {}),
         roles: (payload["https://purl.imsglobal.org/spec/lti/claim/roles"] ??
           []) as LtiRole[],
       };
@@ -478,7 +476,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
           contextId: launchContext.contextId,
           resourceLinkId: launchContext.resourceLinkId,
           roles: userClaims.roles,
-          targetModuleId,
+          ...(targetModuleId ? { targetModuleId } : {}),
           launchData: payload as any,
           createdAt: session.createdAt.toISOString(),
           expiresAt: session.expiresAt.toISOString(),
@@ -540,7 +538,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
 
       // Determine role from LTI roles
       const isInstructor = args.userClaims.roles.some(
-        (r) => r.includes("Instructor") || r.includes("Administrator"),
+        (r: any) => r.includes("Instructor") || r.includes("Administrator"),
       );
 
       user = await this.prisma.user.create({
@@ -595,7 +593,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       contextId: session.contextId as LtiContextId,
       resourceLinkId: session.resourceLinkId as LtiResourceLinkId,
       roles: session.roles as LtiRole[],
-      targetModuleId: session.targetModuleId as ModuleId | undefined,
+      ...(session.targetModuleId ? { targetModuleId: session.targetModuleId as ModuleId } : {}),
       launchData: session.launchData as Record<string, unknown>,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
@@ -622,7 +620,7 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       contextId: session.contextId as LtiContextId,
       resourceLinkId: session.resourceLinkId as LtiResourceLinkId,
       roles: session.roles as LtiRole[],
-      targetModuleId: session.targetModuleId as ModuleId | undefined,
+      ...(session.targetModuleId ? { targetModuleId: session.targetModuleId as ModuleId } : {}),
       launchData: session.launchData as Record<string, unknown>,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
@@ -700,7 +698,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
       difficulty: string;
     }>
   > {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
       status: "PUBLISHED",
     };
@@ -718,9 +716,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
         orderBy: { title: "asc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        cursor: args.pagination.cursor
-          ? { id: args.pagination.cursor }
-          : undefined,
+        ...(args.pagination.cursor ? { cursor: { id: args.pagination.cursor } } : {}),
       }),
       this.prisma.module.count({ where }),
     ]);
@@ -733,10 +729,9 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
         domain: m.domain,
         difficulty: m.difficulty,
       })),
-      nextCursor:
-        modules.length === args.pagination.limit && modules.length > 0
-          ? modules[modules.length - 1]?.id
-          : undefined,
+      ...(modules.length === args.pagination.limit && modules.length > 0
+        ? { nextCursor: modules[modules.length - 1]!.id as string }
+        : {}),
       totalCount: total,
       hasMore: modules.length === args.pagination.limit,
     };
@@ -807,7 +802,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
         "LtiDeepLinkingResponse",
       "https://purl.imsglobal.org/spec/lti/claim/version": "1.3.0",
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id":
-        platform.deploymentId,
+        "",
       "https://purl.imsglobal.org/spec/lti-dl/claim/content_items":
         args.contentItems,
       "https://purl.imsglobal.org/spec/lti-dl/claim/data":
@@ -904,7 +899,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       throw new Error(`Failed to create line item: ${response.statusText}`);
     }
 
-    const result: any = await response.json();
+    const result = (await response.json()) as { id: string };
 
     // Store locally
     const lineItem = await this.prisma.ltiLineItem.create({
@@ -1220,7 +1215,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
     lineItemId: string;
     userId?: string;
   }): Promise<LtiScore[]> {
-    const where: any = { lineItemId: args.lineItemId };
+    const where: Record<string, unknown> = { lineItemId: args.lineItemId };
     if (args.userId) {
       where.ltiUserId = args.userId;
     }
@@ -1419,7 +1414,15 @@ export class LtiRosterServiceImpl implements LtiRosterService {
       throw new Error(`NRPS request failed: ${response.statusText}`);
     }
 
-    const data: any = await response.json();
+    const data = (await response.json()) as {
+      members: Array<{
+        user_id: string;
+        roles: LtiRole[];
+        name?: string;
+        email?: string;
+        status?: string;
+      }>;
+    };
 
     return data.members.map((m: any) => ({
       userId: m.user_id,
@@ -1488,7 +1491,7 @@ export class LtiRosterServiceImpl implements LtiRosterService {
             } else if (args.createMissing) {
               // Create new user
               const isInstructor = member.roles.some(
-                (r) => r.includes("Instructor") || r.includes("Administrator"),
+                (r: any) => r.includes("Instructor") || r.includes("Administrator"),
               );
 
               const newUser = await this.prisma.user.create({
@@ -1537,7 +1540,7 @@ export class LtiRosterServiceImpl implements LtiRosterService {
             create: {
               classroomId: args.classroomId,
               userId: mapping.userId,
-              role: member.roles.some((r) => r.includes("Instructor"))
+              role: member.roles.some((r: any) => r.includes("Instructor"))
                 ? "instructor"
                 : "student",
             },

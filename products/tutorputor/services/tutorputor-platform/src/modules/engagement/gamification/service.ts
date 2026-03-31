@@ -256,7 +256,7 @@ export class GamificationService {
           category: "general" as BadgeCategory,
           points: 10,
         },
-        earnedAt: existing.earnedAt,
+        earnedAt: existing.earnedAt.toISOString(),
       };
     }
 
@@ -284,7 +284,7 @@ export class GamificationService {
         category: "general" as BadgeCategory,
         points: 10,
       },
-      earnedAt: earned.earnedAt,
+      earnedAt: earned.earnedAt.toISOString(),
     };
   }
 
@@ -306,6 +306,9 @@ export class GamificationService {
 
     return earned.map((e) => ({
       id: e.id,
+      userId: e.userId as UserId,
+      badgeId: e.badgeId as BadgeId,
+      tenantId: e.tenantId as TenantId,
       badge: {
         id: e.badge.id as BadgeId,
         name: e.badge.name,
@@ -314,7 +317,7 @@ export class GamificationService {
         category: "LEARNING",
         criteria: JSON.parse(e.badge.criteria),
       } as unknown as Badge,
-      earnedAt: e.earnedAt,
+      earnedAt: e.earnedAt.toISOString(),
     }));
   }
 
@@ -384,6 +387,9 @@ export class GamificationService {
       longestStreak: 0,
       badges: achievements.map((a) => ({
         id: a.id,
+        userId: a.userId as UserId,
+        badgeId: a.badgeId as BadgeId,
+        tenantId: a.tenantId as TenantId,
         badge: {
           id: a.badge.id as BadgeId,
           name: a.badge.name,
@@ -392,7 +398,7 @@ export class GamificationService {
           category: "LEARNING",
           criteria: JSON.parse(a.badge.criteria),
         } as unknown as Badge,
-        earnedAt: a.earnedAt,
+        earnedAt: a.earnedAt.toISOString(),
       })),
       level,
       xpToNextLevel,

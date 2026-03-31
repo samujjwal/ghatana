@@ -11,11 +11,15 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ContentAssetType,
-  SimulationManifest,
-  AnimationConfig,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type ContentAssetType =
+  | "learning_claim"
+  | "content_example"
+  | "simulation"
+  | "animation";
+
+type SimulationManifest = Record<string, any>;
+type AnimationConfig = Record<string, any>;
 
 // ============================================================================
 // Types
@@ -191,7 +195,7 @@ export class AutomatedContentReviewService {
    * Review a content example for quality and alignment
    */
   async reviewExample(exampleId: string): Promise<ExampleReviewResult> {
-    const example = await this.prisma.contentExample.findUnique({
+    const example = await (this.prisma.contentExample as any).findUnique({
       where: { id: exampleId },
       include: {
         claim: true,
@@ -396,7 +400,7 @@ export class AutomatedContentReviewService {
    * Review an animation configuration for completeness and renderability
    */
   async reviewAnimation(animationId: string): Promise<AnimationReviewResult> {
-    const animation = await this.prisma.animationConfig.findUnique({
+    const animation = await (this.prisma as any).animationConfig.findUnique({
       where: { id: animationId },
     });
 
@@ -561,28 +565,28 @@ export class AutomatedContentReviewService {
       claims.map((claim) => this.reviewClaim(experienceId, claim.claimRef)),
     );
 
-    const examples = await this.prisma.contentExample.findMany({
+    const examples = await (this.prisma.contentExample as any).findMany({
       where: { experienceId },
     });
 
     const exampleReviews = await Promise.all(
-      examples.map((example) => this.reviewExample(example.id)),
+      examples.map((example: any) => this.reviewExample(example.id)),
     );
 
-    const simulations = await this.prisma.simulationManifest.findMany({
+    const simulations = await (this.prisma.simulationManifest as any).findMany({
       where: { experienceId },
     });
 
     const simulationReviews = await Promise.all(
-      simulations.map((sim) => this.reviewSimulation(sim.id)),
+      simulations.map((sim: any) => this.reviewSimulation(sim.id)),
     );
 
-    const animations = await this.prisma.animationConfig.findMany({
+    const animations = await (this.prisma as any).animationConfig.findMany({
       where: { experienceId },
     });
 
     const animationReviews = await Promise.all(
-      animations.map((animation) => this.reviewAnimation(animation.id)),
+      animations.map((animation: any) => this.reviewAnimation(animation.id)),
     );
 
     const allReviews = [
@@ -592,7 +596,7 @@ export class AutomatedContentReviewService {
       ...animationReviews,
     ];
     const overallScore =
-      allReviews.reduce((sum, review) => sum + review.overallScore, 0) /
+      allReviews.reduce((sum: number, review) => sum + review.overallScore, 0) /
       allReviews.length;
     const passed =
       overallScore >= 70 && allReviews.every((review) => review.passed);
@@ -682,7 +686,7 @@ export class AutomatedContentReviewService {
     if (example.explanation && example.claim?.claimText) {
       const claimWords = example.claim.claimText.toLowerCase().split(" ");
       const exampleWords = example.explanation.toLowerCase().split(" ");
-      const overlap = claimWords.filter((word) =>
+      const overlap = claimWords.filter((word: string) =>
         exampleWords.includes(word),
       ).length;
       score += Math.min(overlap * 5, 50);
@@ -729,7 +733,7 @@ export class AutomatedContentReviewService {
       ""
     ).toLowerCase();
 
-    const keywordMatches = domainKeywords.filter((keyword) =>
+    const keywordMatches = domainKeywords.filter((keyword: any) =>
       text.includes(keyword.toLowerCase()),
     ).length;
     const relevanceScore = Math.min(
@@ -783,7 +787,7 @@ export class AutomatedContentReviewService {
     }
 
     // Bonus for different parameter types
-    const paramTypes = new Set(manifest.parameters?.map((p) => p.type));
+    const paramTypes = new Set(manifest.parameters?.map((p: any) => p.type));
     score += paramTypes.size * 10;
 
     // Bonus for controls
@@ -805,7 +809,7 @@ export class AutomatedContentReviewService {
     let score = 100;
 
     // Check for potentially unsafe parameter ranges
-    manifest.parameters?.forEach((param) => {
+    manifest.parameters?.forEach((param: any) => {
       if (param.type === "range") {
         if (param.min !== undefined && param.max !== undefined) {
           // Check for reasonable ranges
@@ -819,7 +823,7 @@ export class AutomatedContentReviewService {
     // Check for safety warnings
     if (
       !manifest.safetyWarnings &&
-      manifest.parameters?.some((p) => p.type === "range")
+      manifest.parameters?.some((p: any) => p.type === "range")
     ) {
       score -= 20;
     }
@@ -844,7 +848,7 @@ export class AutomatedContentReviewService {
     }
 
     // Check for valid timing
-    config.keyframes?.forEach((keyframe) => {
+    config.keyframes?.forEach((keyframe: any) => {
       if (typeof keyframe.time !== "number" || keyframe.time < 0) {
         score -= 10;
       }

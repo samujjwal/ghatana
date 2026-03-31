@@ -5,7 +5,7 @@
  * @doc.pattern Utility
  */
 
-import type { FastifyRequest } from 'fastify';
+type FastifyRequestLike = { log: Logger };
 
 export interface LogContext {
   [key: string]: unknown;
@@ -26,7 +26,7 @@ export interface Logger {
  * Create a logger from a Fastify request.
  * Uses the request's built-in Pino logger for structured logging.
  */
-export function createLogger(request: FastifyRequest): Logger {
+export function createLogger(request: FastifyRequestLike): Logger {
   return request.log;
 }
 

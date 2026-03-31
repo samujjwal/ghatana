@@ -8,6 +8,8 @@ import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.phr.fhir.FhirResourceService;
 import com.ghatana.phr.fhir.FhirTransformer;
 import com.ghatana.phr.fhir.FhirValidator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -33,6 +35,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
 
     private static final String PLUGIN_ID = "fhir-interop-r4";
     private static final String VERSION = "1.0.0";
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private volatile KernelContext context;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -245,10 +248,48 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     private boolean performValidation(String resourceType, String resourceJson) {
-        // Real FHIR R4 validation logic
-        return resourceJson != null && !resourceJson.isEmpty() &&
-               Set.of("Patient", "Observation", "Encounter", "Condition", "Procedure",
-                      "Medication", "AllergyIntolerance", "DiagnosticReport").contains(resourceType);
+        if (resourceJson == null || resourceJson.isBlank()) {
+            return false;
+        }
+
+        // Allowed FHIR R4 resource types
+        Set<String> allowedTypes = Set.of(
+                "Patient", "Observation", "Encounter", "Condition", "Procedure",
+                "Medication", "AllergyIntolerance", "DiagnosticReport",
+                "MedicationRequest", "Immunization", "CarePlan", "Coverage");
+        if (!allowedTypes.contains(resourceType)) {
+            return false;
+        }
+
+        // Parse JSON and validate required FHIR R4 structural fields
+        try {
+            JsonNode root = JSON_MAPPER.readTree(resourceJson);
+
+            // FHIR R4 requires `resourceType` field matching the declared type
+            JsonNode rtNode = root.get("resourceType");
+            if (rtNode == null || !resourceType.equals(rtNode.asText())) {
+                return false;
+            }
+
+            // Resource-type-specific required field checks (PHR-03 contract correctness)
+            return switch (resourceType) {
+                case "Patient" ->
+                        root.has("id") || root.has("identifier") || root.has("name");
+                case "Observation" ->
+                        root.has("status") && root.has("code") && root.has("subject");
+                case "Encounter" ->
+                        root.has("status") && root.has("class") && root.has("subject");
+                case "Condition" ->
+                        root.has("code") && root.has("subject");
+                case "Procedure" ->
+                        root.has("status") && root.has("code") && root.has("subject");
+                case "DiagnosticReport" ->
+                        root.has("status") && root.has("code") && root.has("subject");
+                default -> true; // Other supported types: structural check sufficient
+            };
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String performTransformation(Object internalData, String targetResourceType) {

@@ -27,10 +27,22 @@ This audit covers three critical systems in the Ghatana platform:
 
 **Overall Assessment:** The Kernel + PHR + Finance stack demonstrates **strong architectural foundations** with clear separation of concerns, comprehensive security controls, and enterprise-grade observability. PHR is at ~95% production readiness with staging deployment pending. Finance serves as a reference implementation for product boundary hygiene.
 
+### Implementation Progress Update (2026-03-30)
+
+| Action | Status | Progress Notes |
+|--------|--------|----------------|
+| PHR staging deployment and validation | In progress | Local preflight is complete via `:products:phr:phrReleaseGate` with 33/33 passing; deployment itself still requires environment execution |
+| PHR release-gate automation | Complete | Added and verified `:products:phr:phrReleaseGate` plus staging evidence template to make the remaining operational work executable and auditable |
+| PHR transformation engine TODO review | Complete | Verified `FhirR4TransformationEngine` has no active TODO markers and already has dedicated regression tests |
+| Finance risk agent TODO review | Complete | Verified `RiskAssessmentAgent` has no active TODO markers; hardened risk feature extraction and added regression tests |
+| PHR clinical AI agents | Complete | Existing lab, medication, and readmission agents are now wired through a new `ClinicalDecisionSupportService` exposed from `PhrKernelModule` |
+| Test coverage variance analysis | Complete | Confirmed `26` PHR vs `12` Finance test files reflects broader PHR surface area, not direct duplication; added missing finance risk-agent tests |
+| Documentation drift cleanup | In progress | Updated PHR README and integration guide to reflect current AI/runtime state; older planning docs may still require follow-up cleanup |
+
 ### Major Risks
 1. **P0 - PHR Staging Gap:** PHR integration tests pass but no staging deployment validation completed
-2. **P1 - TODO Items:** Minor TODOs in `FhirR4TransformationEngine` and `RiskAssessmentAgent`
-3. **P1 - Test Coverage Variance:** PHR has 26 test items vs Finance's 12 - may indicate test duplication or coverage gaps
+2. **P1 - Operational Release Evidence:** Staging and HIPAA release-gate evidence must still be captured outside local development
+3. **P1 - Documentation Drift:** Some older planning docs in `products/phr/docs/` still describe pre-implementation states
 4. **P2 - Documentation Drift:** PHR OWNER.md notes documentation drift in older planning docs
 
 ### Major Opportunities
@@ -39,10 +51,10 @@ This audit covers three critical systems in the Ghatana platform:
 3. **Compliance Automation:** SOX/HIPAA audit trails provide foundation for automated compliance validation
 
 ### Highest-Priority Actions
-1. Complete PHR staging deployment and validation (P0)
-2. Resolve TODO items in PHR transformation engine (P1)
-3. Conduct HIPAA compliance audit for PHR (P1)
-4. Implement PHR clinical AI agents following Finance pattern (P2)
+1. Execute PHR staging deployment and validation using the new release-gate checklist and `phrReleaseGate` task (P0)
+2. Conduct HIPAA compliance audit for PHR and attach evidence artifacts (P1)
+3. Finish remaining planning-doc drift cleanup in `products/phr/docs/` (P1)
+4. Monitor newly integrated clinical decision-support service in staging (P2)
 
 ---
 
@@ -220,22 +232,22 @@ Financial operations platform providing:
 - **Priority:** P0
 
 ### Finding 2: TODO Items in PHR Transformation Engine
-- **Issue:** `FhirR4TransformationEngine.java` contains TODO marker
+- **Issue:** Audit assumption was stale; `FhirR4TransformationEngine.java` no longer contains a TODO marker
 - **Why it matters:** May indicate incomplete implementation or technical debt
 - **Impacted files:** `/products/phr/src/.../FhirR4TransformationEngine.java`
-- **What needs to be done:** Review TODO, resolve or create tracked ticket
+- **What needs to be done:** Keep regression coverage current and remove stale audit references
 - **Recommended solution:** 
-  1. Review TODO content
-  2. If critical: implement; if minor: document; if obsolete: remove
-- **Priority:** P1
+  1. Treat the finding as closed
+  2. Preserve regression coverage in `FhirR4TransformationEngineTest`
+- **Priority:** Closed
 
 ### Finding 3: Risk Assessment Agent TODOs
-- **Issue:** `RiskAssessmentAgent.java` contains 2 TODO markers
+- **Issue:** Audit assumption was stale; `RiskAssessmentAgent.java` does not contain TODO markers, but did need implementation hardening and dedicated tests
 - **Why it matters:** AI agents should be complete for production use
 - **Impacted files:** `/products/finance/src/.../RiskAssessmentAgent.java`
-- **What needs to be done:** Resolve TODOs or track as issues
-- **Recommended solution:** Review and address before production deployment
-- **Priority:** P1
+- **What needs to be done:** Keep feature extraction deterministic and covered by tests
+- **Recommended solution:** Implement non-placeholder concentration/leverage derivation and add regression tests
+- **Priority:** Complete
 
 ### Finding 4: Test Coverage Variance
 - **Issue:** PHR has 26 test items vs Finance's 12 test items
@@ -243,7 +255,7 @@ Financial operations platform providing:
 - **Impacted files:** `/products/phr/src/test`, `/products/finance/src/test`
 - **What needs to be done:** Analyze test coverage, consolidate if duplicated
 - **Recommended solution:** Run coverage analysis, identify gaps, remove duplication
-- **Priority:** P2
+- **Priority:** Complete — variance reflects domain breadth; finance risk-agent tests added
 
 ---
 
@@ -377,8 +389,8 @@ Financial operations platform providing:
 ### Exact Issues Found
 | Issue | File | Action |
 |-------|------|--------|
-| TODO marker | `FhirR4TransformationEngine.java` | Review and resolve |
-| TODO markers (2) | `RiskAssessmentAgent.java` | Review and resolve |
+| Stale audit TODO claim | `FhirR4TransformationEngine.java` | Closed: no active TODO markers remain; keep regression coverage current |
+| Stale audit TODO claim | `RiskAssessmentAgent.java` | Closed: no active TODO markers remain; hardened extraction logic and added tests |
 
 ### No Critical Duplications Found
 The codebase follows "Reuse Before Build" principle effectively. Shared libraries are properly utilized:
@@ -420,10 +432,12 @@ The codebase follows "Reuse Before Build" principle effectively. Shared librarie
 - **Dependencies:** Staging environment access
 - **Implementation steps:**
   1. Deploy PHR services to staging
-  2. Run PHRSecurityIntegrationTest (8 tests)
-  3. Run PHRAuditTrailServiceTest (4 tests)
-  4. Run PatientServiceTest (2 tests)
-  5. Validate performance targets
+  2. Run `./gradlew :products:phr:phrReleaseGate`
+  3. Run PHRSecurityIntegrationTest (8 tests)
+  4. Run PHRAuditTrailServiceTest (4 tests)
+  5. Run PatientServiceTest (2 tests)
+  6. Validate performance targets
+- **Progress update:** Release-gate testcases `NFR-055` to `NFR-059`, checklist evidence requirements, `phrReleaseGate` automation, and a staging evidence template have been added. Local preflight is green (`33/33`), and environment execution remains pending in staging
 - **Tests:** All PHR integration tests
 - **O11y/Security/Privacy:** Verify staging telemetry, validate HIPAA controls
 - **Acceptance criteria:** All tests pass, performance targets met, security audit clean
@@ -432,44 +446,46 @@ The codebase follows "Reuse Before Build" principle effectively. Shared librarie
 
 #### P1.1: Resolve PHR TODO
 - **Title:** Address FhirR4TransformationEngine TODO
-- **Problem:** TODO marker indicates potential technical debt
-- **Solution:** Review, implement, or ticket
+- **Problem:** Original audit finding is stale
+- **Solution:** Close the finding and retain regression coverage
 - **Impacted modules:** `/products/phr/src/.../FhirR4TransformationEngine.java`
-- **Acceptance criteria:** TODO resolved or tracked in issue tracker
+- **Acceptance criteria:** Audit updated to reflect no active TODO and tests remain green
 
 #### P1.2: Resolve Finance TODOs
 - **Title:** Address RiskAssessmentAgent TODOs
-- **Problem:** 2 TODO markers in AI agent
-- **Solution:** Review and resolve
+- **Problem:** Original audit finding is stale, but the agent needed stronger feature derivation and tests
+- **Solution:** Harden extraction logic and add regression tests
 - **Impacted modules:** `/products/finance/src/.../RiskAssessmentAgent.java`
-- **Acceptance criteria:** TODOs resolved
+- **Acceptance criteria:** Feature extraction and alert publication are covered by tests
 
 #### P1.3: HIPAA Compliance Audit
 - **Title:** Conduct Formal HIPAA Compliance Audit
 - **Problem:** HIPAA controls implemented but not formally audited
 - **Solution:** Engage compliance team, conduct audit
 - **Impacted modules:** `/products/phr`
+- **Progress update:** Checklist and non-functional release-gate evidence expectations updated; formal audit remains an external execution task
 - **Acceptance criteria:** Audit report, any findings addressed
 
 ### P2 Actions (Medium Priority)
 
 #### P2.1: Clinical AI Agents for PHR
 - **Title:** Implement Clinical Decision Support Agents
-- **Problem:** PHR lacks AI agents that Finance has
-- **Solution:** Implement following Finance fraud detection pattern
+- **Problem:** PHR had agent classes but no kernel-level orchestration surface
+- **Solution:** Expose existing lab, medication, and readmission agents through `ClinicalDecisionSupportService`
 - **Impacted modules:** `/products/phr`
 - **Implementation steps:**
-  1. Create `ClinicalDecisionAgent`
-  2. Implement model governance
-  3. Add explainability framework
-  4. Create autonomy manager
-- **Acceptance criteria:** Agents operational, approved models only
+  1. Create lifecycle-managed orchestration service
+  2. Reuse existing explainability framework
+  3. Wire service into `PhrKernelModule` and `PhrServiceCatalog`
+  4. Add orchestration tests
+- **Acceptance criteria:** Complete — service is operational in module wiring with regression coverage
 
 #### P2.2: Test Coverage Analysis
 - **Title:** Analyze and Optimize Test Coverage
 - **Problem:** PHR has 2x test items vs Finance
 - **Solution:** Coverage analysis, deduplication
 - **Impacted modules:** `/products/phr/src/test`, `/products/finance/src/test`
+- **Progress update:** Variance reviewed; no direct duplication identified in source tests, and finance risk-agent coverage was added where missing
 
 ### P3 Actions (Low Priority)
 
@@ -581,13 +597,13 @@ The codebase follows "Reuse Before Build" principle effectively. Shared librarie
 2. **HIPAA Audit (P1):** Formal compliance audit recommended before production
 
 ### Next Actions
-1. **Immediate (This Week):** Deploy PHR to staging, run integration tests
-2. **Short-term (Next 2 Weeks):** Complete HIPAA audit, resolve TODOs
-3. **Medium-term (Next Month):** Implement clinical AI agents for PHR
-4. **Ongoing:** Monitor performance, enhance observability alerts
+1. **Immediate (This Week):** Run `./gradlew :products:phr:phrReleaseGate`, deploy PHR to staging, and execute `NFR-055` to `NFR-059`
+2. **Short-term (Next 2 Weeks):** Complete HIPAA audit evidence pack and sign-off checklist
+3. **Medium-term (Next Month):** Continue planning-doc drift cleanup in `products/phr/docs/`
+4. **Ongoing:** Monitor clinical decision-support telemetry and expand alert rules
 
 ### Overall Assessment
-The Kernel + PHR + Finance stack is **architecturally sound and production-ready** with minor gaps in staging validation. The architecture demonstrates:
+The Kernel + PHR + Finance stack is **architecturally sound and locally implementation-complete** with the remaining gaps concentrated in staging validation and formal compliance evidence. The architecture demonstrates:
 - Strong separation of concerns
 - Effective reuse of shared libraries
 - Comprehensive security and privacy controls

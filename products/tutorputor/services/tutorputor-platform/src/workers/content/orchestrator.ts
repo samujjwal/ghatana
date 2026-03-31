@@ -431,7 +431,7 @@ export class ContentGenerationOrchestrator {
 
         return {
           status: "success",
-          jobId: job.id,
+          ...(job.id ? { jobId: String(job.id) } : {}),
           durationMs: Date.now() - start,
         };
       } catch (error: any) {
@@ -443,8 +443,8 @@ export class ContentGenerationOrchestrator {
 
         return {
           status: isTimeout ? "timeout" : "failed",
-          jobId: job.id,
-          error: error?.message,
+          ...(job.id ? { jobId: String(job.id) } : {}),
+          ...(error?.message ? { error: error.message } : {}),
           durationMs: Date.now() - start,
         };
       }

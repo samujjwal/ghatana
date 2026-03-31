@@ -126,7 +126,7 @@ export class SecurityLogger {
     userId?: string;
     ip?: string;
     userAgent?: string;
-    details?: any;
+    details?: unknown;
     severity?: 'low' | 'medium' | 'high' | 'critical';
   }): void {
     this.logger.warn({
@@ -155,7 +155,7 @@ export class PerformanceLogger {
     success: boolean;
     userId?: string;
     tenantId?: string;
-    metadata?: any;
+    metadata?: unknown;
   }): void {
     this.logger.info({
       operation,
@@ -215,11 +215,7 @@ export function createRequestContext(requestId: string, context: LogContext = {}
  */
 export function correlateError(error: Error, context: LogContext = {}): LogContext {
   return {
-    error: {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    },
+    error,
     ...context,
   };
 }
@@ -227,7 +223,7 @@ export function correlateError(error: Error, context: LogContext = {}): LogConte
 /**
  * Log sanitization for security
  */
-export function sanitizeForLogging(obj: any): any {
+export function sanitizeForLogging(obj: Record<string, unknown>): any {
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
@@ -243,13 +239,13 @@ export function sanitizeForLogging(obj: any): any {
     'jwt',
   ];
 
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
       sanitized[key] = '[REDACTED]';
     } else if (typeof value === 'object' && value !== null) {
-      sanitized[key] = sanitizeForLogging(value);
+      sanitized[key] = sanitizeForLogging(value as Record<string, unknown>);
     } else {
       sanitized[key] = value;
     }

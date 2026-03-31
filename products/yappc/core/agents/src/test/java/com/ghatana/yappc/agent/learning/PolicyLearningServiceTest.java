@@ -9,9 +9,9 @@ import com.ghatana.agent.memory.model.Provenance;
 import com.ghatana.agent.memory.model.Validity;
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.procedure.ProcedureStep;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.api.domain.LearnedPolicy;
 import com.ghatana.yappc.api.repository.LearnedPolicyRepository;
-import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @DisplayName("PolicyLearningService")
-class PolicyLearningServiceTest {
+class PolicyLearningServiceTest extends EventloopTestBase {
 
     // In-memory repository for tests (no DB required)
     private MapLearnedPolicyRepository repository;
@@ -226,18 +226,9 @@ class PolicyLearningServiceTest {
                 .build();
     }
 
-    /** Runs a promise synchronously on a fresh eventloop. */
-    private static <T> T runSync(Promise<T> promise) {
-        Eventloop eventloop = Eventloop.builder().build();
-        T[] result = (T[]) new Object[1];
-        Throwable[] error = new Throwable[1];
-        eventloop.execute(() -> promise.whenComplete((v, e) -> {
-            result[0] = v;
-            error[0]  = e;
-        }));
-        eventloop.run();
-        if (error[0] != null) throw new RuntimeException(error[0]);
-        return result[0];
+    /** Runs a promise synchronously using the managed event loop. */
+    private <T> T runSync(Promise<T> promise) {
+        return runPromise(() -> promise);
     }
 
     // ─── In-memory LearnedPolicyRepository ───────────────────────────────────

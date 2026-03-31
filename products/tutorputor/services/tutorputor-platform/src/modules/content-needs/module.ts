@@ -25,7 +25,10 @@ export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
   });
 
   // Initialize content needs analyzer
-  const contentNeedsAnalyzer = new ContentNeedsAnalyzer(prisma, contentStudio);
+  const contentNeedsAnalyzer = new ContentNeedsAnalyzer(
+    prisma,
+    contentStudio as any,
+  );
   const contentDriftDetector = createContentDriftDetector(prisma);
   const qualityPipeline = new ContentQualityMLPipeline(prisma);
 

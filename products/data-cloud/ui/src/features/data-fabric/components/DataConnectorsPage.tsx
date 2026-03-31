@@ -9,10 +9,11 @@
  * @doc.pattern Container Component
  */
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useAtom } from "jotai";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadingState } from '../../../components/common/LoadingState';
 import {
   allDataConnectorsAtom,
@@ -42,27 +43,22 @@ export const DataConnectorsPage: React.FC<DataConnectorsPageProps> = ({
   const [connectors] = useAtom(allDataConnectorsAtom);
   const [, deleteConnector] = useAtom(deleteDataConnectorAtom);
   const [, updateStatistics] = useAtom(updateSyncStatisticsAtom);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await dataConnectorApi.getAll();
-        await loadConnectors(data);
-      } catch (error) {
-        toast.error(
-          `Failed to load data connectors: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { isLoading, isError } = useQuery({
+    queryKey: ['data-connectors'],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const data = await dataConnectorApi.getAll();
+      await loadConnectors(data);
+      return data;
+    },
+    throwOnError: false,
+  });
 
-    loadData();
-  }, [loadConnectors]);
+  if (isError) {
+    toast.error('Failed to load data connectors');
+  }
 
   const handleDelete = async (connectorId: string) => {
     if (
@@ -76,6 +72,7 @@ export const DataConnectorsPage: React.FC<DataConnectorsPageProps> = ({
     try {
       await dataConnectorApi.delete(connectorId);
       await deleteConnector(connectorId);
+      queryClient.invalidateQueries({ queryKey: ['data-connectors'] });
       toast.success("Data connector deleted successfully");
     } catch (error) {
       toast.error(
@@ -91,7 +88,6 @@ export const DataConnectorsPage: React.FC<DataConnectorsPageProps> = ({
       const result = await dataConnectorApi.triggerSync(connectorId);
       toast.success(`Sync triggered successfully (Job ID: ${result.jobId})`);
 
-      // Fetch updated statistics
       const stats = await dataConnectorApi.getSyncStatistics(connectorId);
       await updateStatistics(stats);
     } catch (error) {

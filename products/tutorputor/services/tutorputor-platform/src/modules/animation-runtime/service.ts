@@ -74,7 +74,7 @@ export interface AnimationState {
 }
 
 export interface AnimationRenderer {
-  setProperty(property: string, value: unknown): void;
+  setProperty(property: string, value: any): void;
   getProperty(property: string): unknown;
   applyTransform(transform: Record<string, unknown>): void;
   render(): void;
@@ -409,7 +409,7 @@ export class AnimationRuntime {
 
     // Apply easing
     const easing = nextKeyframe.easing || "linear";
-    const easedProgress = applyEasing(segmentProgress, easing as string);
+    const easedProgress = applyEasing(segmentProgress, easing as any);
 
     // Interpolate properties
     const interpolated: Record<string, any> = {};
@@ -433,7 +433,7 @@ export class AnimationRuntime {
     return interpolated;
   }
 
-  private interpolateValue(start: unknown, end: unknown, progress: number): unknown {
+  private interpolateValue(start: any, end: unknown, progress: number): unknown {
     // Handle different value types
     if (typeof start === "number" && typeof end === "number") {
       return lerp(start, end, progress);
@@ -457,8 +457,10 @@ export class AnimationRuntime {
       end !== null
     ) {
       const result: Record<string, unknown> = {};
-      for (const key of Object.keys(end)) {
-        result[key] = this.interpolateValue(start[key], end[key], progress);
+      const startRecord = start as Record<string, unknown>;
+      const endRecord = end as Record<string, unknown>;
+      for (const key of Object.keys(endRecord)) {
+        result[key] = this.interpolateValue(startRecord[key], endRecord[key], progress);
       }
       return result;
     }
@@ -475,7 +477,7 @@ export class AnimationRuntime {
       keyframe.properties,
       easedProgress,
     );
-    this.renderer.applyTransform(interpolated);
+    this.renderer.applyTransform((interpolated ?? {}) as Record<string, unknown>);
     this.renderer.render();
   }
 }
@@ -584,11 +586,11 @@ export function createAnimationSpec(config: {
       timeMs: kf.time * 1000,
       description: `Keyframe at ${kf.time}s`,
       properties: kf.properties,
-      easing: kf.easing,
+      ...(kf.easing ? { easing: kf.easing } : {}),
     })),
     config: {},
-    loop: config.loop,
-    autoplay: config.autoplay,
+    ...(config.loop !== undefined ? { loop: config.loop } : {}),
+    ...(config.autoplay !== undefined ? { autoplay: config.autoplay } : {}),
   };
 }
 

@@ -54,7 +54,9 @@ export class ChatServiceImpl implements ChatService {
 
   constructor(config: ChatServiceConfig) {
     this.prisma = config.prisma;
-    this.redis = config.redis;
+    if (config.redis) {
+      this.redis = config.redis;
+    }
     this.defaultRetentionDays = config.defaultRetentionDays ?? 90;
     this.maxMessageLength = config.maxMessageLength ?? 10000;
   }
@@ -192,8 +194,10 @@ export class ChatServiceImpl implements ChatService {
       data: {
         tenantId: args.tenantId,
         type: this.mapRoomTypeToDb(args.type) as any,
-        studyGroupId: args.studyGroupId,
-        tutoringSessionId: args.tutoringSessionId,
+        ...(args.studyGroupId ? { studyGroupId: args.studyGroupId } : {}),
+        ...(args.tutoringSessionId
+          ? { tutoringSessionId: args.tutoringSessionId }
+          : {}),
         participants: JSON.stringify(sortedParticipants),
         retentionDays: this.defaultRetentionDays,
       },
@@ -244,7 +248,7 @@ export class ChatServiceImpl implements ChatService {
 
     // Filter rooms where user is a participant
     const userRooms = allRooms.filter((room: Record<string, unknown>) => {
-      const participants: string[] = JSON.parse(room.participants);
+      const participants: string[] = JSON.parse(String(room.participants));
       return participants.includes(args.userId);
     });
 
@@ -293,7 +297,7 @@ export class ChatServiceImpl implements ChatService {
         type: this.mapMessageTypeToDb(args.type) as any,
         content: args.content,
         metadata: args.metadata ? JSON.stringify(args.metadata) : null,
-        replyToId: args.replyToId,
+        ...(args.replyToId ? { replyToId: args.replyToId } : {}),
         attachments: args.attachments ? JSON.stringify(args.attachments) : null,
         reactions: JSON.stringify({}),
         status: "sent",
@@ -414,7 +418,7 @@ export class ChatServiceImpl implements ChatService {
     );
 
     const reactions: Record<string, string[]> = JSON.parse(
-      message.reactions || "{}",
+      String(message.reactions ?? "{}"),
     );
 
     // Add reaction
@@ -713,27 +717,41 @@ export class ChatServiceImpl implements ChatService {
     return map[type] ?? "text";
   }
 
-  private mapRoomFromDb(room: Record<string, unknown>): ChatRoom {
-    return {
+  private mapRoomFromDb(room: any): ChatRoom {
+    const mapped: ChatRoom = {
       id: room.id,
       tenantId: room.tenantId,
       type: this.mapRoomTypeFromDb(room.type),
-      name: room.name ?? undefined,
-      studyGroupId: room.studyGroupId ?? undefined,
-      classroomId: undefined,
-      tutoringSessionId: room.tutoringSessionId ?? undefined,
-      participants: JSON.parse(room.participants || "[]"),
-      maxParticipants: room.maxParticipants ?? undefined,
+      participants: JSON.parse(String(room.participants || "[]")),
       isEncrypted: room.isEncrypted,
       retentionDays: room.retentionDays,
       messageCount: room.messageCount,
-      lastMessageAt: room.lastMessageAt ?? undefined,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
     };
+    if (room.name) {
+      mapped.name = room.name;
+    }
+    if (room.studyGroupId) {
+      mapped.studyGroupId = room.studyGroupId;
+    }
+    if (room.classroomId) {
+      mapped.classroomId = room.classroomId;
+    }
+    if (room.tutoringSessionId) {
+      mapped.tutoringSessionId = room.tutoringSessionId;
+    }
+    if (room.maxParticipants !== null && room.maxParticipants !== undefined) {
+      mapped.maxParticipants = room.maxParticipants;
+    }
+    if (room.lastMessageAt) {
+      mapped.lastMessageAt = room.lastMessageAt;
+    }
+
+    return mapped;
   }
 
-  private mapMessageFromDb(message: Record<string, unknown>): ChatMessage {
+  private mapMessageFromDb(message: any): ChatMessage {
     return {
       id: message.id,
       roomId: message.roomId,

@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * EventLogStore tailing service for real-time feature ingestion.
@@ -88,11 +89,18 @@ public class FeatureStoreIngestLauncher {
 
         // Start health-check HTTP server so orchestration platforms can probe readiness
         int healthPort = Integer.parseInt(System.getenv().getOrDefault("FEATURE_STORE_HEALTH_PORT", "8087"));
+        io.activej.http.HttpHeaders.HttpHeader correlationIdHeader =
+                io.activej.http.HttpHeaders.of("X-Correlation-ID");
         HttpServer healthServer = HttpServer.builder(eventloop, request -> {
             if (HttpMethod.GET.equals(request.getMethod()) && "/health".equals(request.getPath())) {
+                String correlationId = request.getHeader(correlationIdHeader);
+                if (correlationId == null || correlationId.isBlank()) {
+                    correlationId = UUID.randomUUID().toString();
+                }
                 String body = healthPayloadJson(Instant.now());
                 return Promise.of(HttpResponse.ok200()
                         .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
+                        .withHeader("X-Correlation-ID", correlationId)
                         .withBody(body.getBytes())
                         .build());
             }

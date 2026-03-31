@@ -11,25 +11,41 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  GenerationReviewDecision,
-  SubmitReviewDecisionInput,
-} from "@tutorputor/contracts/v1/content-studio";
+
+interface GenerationReviewDecision {
+  id: string;
+  tenantId: string;
+  requestId: string;
+  status: "approved" | "rejected" | "pending" | "regeneration_requested";
+  reviewedBy?: string;
+  decisionNote?: string;
+  regenerateJobIds?: string[];
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SubmitReviewDecisionInput {
+  requestId: string;
+  status: "approved" | "rejected" | "regeneration_requested";
+  decisionNote?: string;
+  regenerateJobIds?: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapDecision(row: any): GenerationReviewDecision {
+function mapDecision(row: Record<string, unknown>): GenerationReviewDecision {
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    requestId: row.requestId,
+    id: String(row.id),
+    tenantId: String(row.tenantId),
+    requestId: String(row.requestId),
     status: (row.status as string)
       .toLowerCase()
       .replace(/_/g, "_") as GenerationReviewDecision["status"],
-    ...(row.reviewedBy != null ? { reviewedBy: row.reviewedBy } : {}),
-    ...(row.decisionNote != null ? { decisionNote: row.decisionNote } : {}),
+    ...(row.reviewedBy != null ? { reviewedBy: String(row.reviewedBy) } : {}),
+    ...(row.decisionNote != null ? { decisionNote: String(row.decisionNote) } : {}),
     ...(row.regenerateJobIds != null
       ? { regenerateJobIds: row.regenerateJobIds as string[] }
       : {}),

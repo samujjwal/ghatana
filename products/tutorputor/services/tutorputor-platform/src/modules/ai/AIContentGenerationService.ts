@@ -254,7 +254,7 @@ Ensure the response is valid JSON only, with no additional text.`;
       return {
         description: parsed.description ?? "No description provided",
         learningObjectives: Array.isArray(parsed.learningObjectives)
-          ? parsed.learningObjectives.map((obj: unknown) => {
+          ? parsed.learningObjectives.map((obj: any) => {
               if (typeof obj === "string") return { text: obj };
               const item = obj as Record<string, unknown>;
               return {

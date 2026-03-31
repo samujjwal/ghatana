@@ -10,10 +10,8 @@
  * @doc.pattern StreamProtocol
  */
 
-import type {
-  GenerationExecutionSnapshot,
-  GenerationExecutionWorkerTelemetry,
-} from "@tutorputor/contracts/v1/content-studio";
+type GenerationExecutionSnapshot = Record<string, unknown>;
+type GenerationExecutionWorkerTelemetry = Record<string, unknown>;
 import type {
   ExecutionSummary,
   JobExecutionResult,

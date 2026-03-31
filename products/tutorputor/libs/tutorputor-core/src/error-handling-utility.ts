@@ -186,7 +186,7 @@ export function handleError(
 /**
  * Wraps an async function with error handling
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
+export function withErrorHandling<T extends (...args: any[]) => Promise<unknown>>(
   fn: T,
   context?: { component?: string },
 ): T {

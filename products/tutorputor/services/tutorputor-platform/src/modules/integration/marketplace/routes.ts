@@ -34,10 +34,10 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
 
     const listings = await marketplaceService.listListings({
       tenantId: tenantId as TenantId,
-      status,
-      visibility,
-      cursor,
-      limit: limit ? Number(limit) : undefined,
+      ...(status ? { status } : {}),
+      ...(visibility ? { visibility } : {}),
+      ...(cursor ? { cursor } : {}),
+      ...(limit ? { limit: Number(limit) } : {}),
     });
     reply.send(listings);
   });
@@ -81,8 +81,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         return marketplaceService.adminUpdateListing({
           tenantId: tenantId as TenantId,
           listingId: listingId as MarketplaceListingId,
-          status: body.status,
-          visibility: body.visibility,
+          ...(body.status ? { status: body.status } : {}),
+          ...(body.visibility ? { visibility: body.visibility } : {}),
         });
       }
 
@@ -90,9 +90,9 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         tenantId: tenantId as TenantId,
         listingId: listingId as MarketplaceListingId,
         userId: userId as UserId,
-        status: body.status,
-        visibility: body.visibility,
-        priceCents: body.priceCents,
+        ...(body.status ? { status: body.status } : {}),
+        ...(body.visibility ? { visibility: body.visibility } : {}),
+        ...(typeof body.priceCents === "number" ? { priceCents: body.priceCents } : {}),
       });
     });
   });
@@ -119,17 +119,17 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         tenantId: tenantId as TenantId,
         page: page ? Number(page) : 1,
         pageSize: pageSize ? Number(pageSize) : 12,
-        domains: domains ? (domains as string).split(",") : undefined,
-        difficulties: difficulties
-          ? ((difficulties as string).split(",") as any[])
-          : undefined,
-        tags: tags ? (tags as string).split(",") : undefined,
-        isPremium: isPremium === "true",
-        isVerified: isVerified === "true",
-        minRating: minRating ? Number(minRating) : undefined,
-        search,
-        sortBy,
-        sortOrder,
+        ...(domains ? { domains: (domains as string).split(",") } : {}),
+        ...(difficulties
+          ? { difficulties: (difficulties as string).split(",") as any[] }
+          : {}),
+        ...(tags ? { tags: (tags as string).split(",") } : {}),
+        ...(isPremium === "true" ? { isPremium: true } : {}),
+        ...(isVerified === "true" ? { isVerified: true } : {}),
+        ...(minRating ? { minRating: Number(minRating) } : {}),
+        ...(search ? { search } : {}),
+        ...(sortBy ? { sortBy } : {}),
+        ...(sortOrder ? { sortOrder } : {}),
       }),
     );
   });

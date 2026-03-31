@@ -120,6 +120,8 @@ interface CoverageBacklogExecutionSummary {
   templateIds: string[];
 }
 
+type SimulationTemplateWithManifest = any;
+
 interface TemplateCoverageActionPlan {
   starters: Array<{
     starterId: string;
@@ -1490,7 +1492,209 @@ export class SimulationTemplateLibraryService {
       throw new Error("Template manifest not found");
     }
 
-    return validateManifest(manifestPayload as never);
+    // Base manifest validation
+    const baseValidation = validateManifest(manifestPayload as never);
+    
+    // Enhanced quality validation
+    const qualityChecks = this.performQualityValidation(template, manifestPayload);
+    
+    // Governance validation for publish eligibility
+    const governanceCheck = this.validateGovernanceForPublish(template, manifestPayload);
+
+    const baseIssues = Array.isArray((baseValidation as any).issues)
+      ? (baseValidation as any).issues
+      : Array.isArray((baseValidation as any).errors)
+        ? (baseValidation as any).errors
+        : [];
+
+    const allIssues = [
+      ...baseIssues,
+      ...qualityChecks.issues,
+      ...governanceCheck.issues,
+    ];
+
+    return {
+      valid: baseValidation.valid && qualityChecks.valid && governanceCheck.valid,
+      score: qualityChecks.qualityScore,
+      issues: allIssues,
+      canPublish: governanceCheck.canPublish,
+      publishBlocked: governanceCheck.publishBlocked,
+      qualityTier: qualityChecks.qualityTier,
+      details: {
+        base: baseValidation,
+        quality: qualityChecks,
+        governance: governanceCheck,
+      },
+    };
+  }
+
+  private performQualityValidation(
+    template: SimulationTemplateWithManifest,
+    manifest: Record<string, unknown>,
+  ) {
+    const issues: string[] = [];
+    let qualityScore = 1.0;
+    
+    // Content quality checks
+    const title = String(template.title ?? "").trim();
+    const description = String(template.description ?? "").trim();
+    
+    if (title.length < 5) {
+      issues.push("Title is too short (minimum 5 characters)");
+      qualityScore -= 0.15;
+    }
+    
+    if (description.length < 20) {
+      issues.push("Description is too short (minimum 20 characters)");
+      qualityScore -= 0.1;
+    }
+    
+    // Manifest structure validation
+    const steps = Array.isArray(manifest.steps) ? manifest.steps : [];
+    const entities = Array.isArray((manifest as { entities?: any[] }).entities) 
+      ? (manifest as { entities: any[] }).entities 
+      : [];
+    
+    if (steps.length === 0) {
+      issues.push("Manifest has no simulation steps");
+      qualityScore -= 0.25;
+    } else if (steps.length < 2) {
+      issues.push("Manifest should have at least 2 steps for meaningful simulation");
+      qualityScore -= 0.1;
+    }
+    
+    if (entities.length === 0) {
+      issues.push("Manifest has no entities");
+      qualityScore -= 0.25;
+    }
+    
+    // Check for step quality
+    const stepsWithNarration = steps.filter((step: { narration?: string }) => 
+      step.narration && String(step.narration).length > 10
+    ).length;
+    
+    if (steps.length > 0 && stepsWithNarration < steps.length * 0.5) {
+      issues.push("Many steps lack educational narration");
+      qualityScore -= 0.1;
+    }
+    
+    // Domain appropriateness
+    const domain = String(template.domain ?? "").toUpperCase();
+    const validDomains = ["PHYSICS", "CHEMISTRY", "BIOLOGY", "MEDICINE", "ECONOMICS", "CS_DISCRETE", "ENGINEERING", "MATHEMATICS"];
+    if (!validDomains.includes(domain)) {
+      issues.push(`Domain "${domain}" is not in approved list`);
+      qualityScore -= 0.15;
+    }
+    
+    // Check for duplicate/similar templates
+    const similarityScore = this.checkTemplateSimilarity(template, manifest);
+    if (similarityScore > 0.85) {
+      issues.push("Template is highly similar to existing templates (possible duplicate)");
+      qualityScore -= 0.2;
+    }
+    
+    // Quality tier determination
+    let qualityTier: "high" | "medium" | "low" = "low";
+    if (qualityScore >= 0.85) {
+      qualityTier = "high";
+    } else if (qualityScore >= 0.65) {
+      qualityTier = "medium";
+    }
+    
+    return {
+      valid: qualityScore >= 0.5,
+      qualityScore: Math.max(0, qualityScore),
+      issues,
+      qualityTier,
+      metrics: {
+        stepCount: steps.length,
+        entityCount: entities.length,
+        stepsWithNarration,
+        titleLength: title.length,
+        descriptionLength: description.length,
+        similarityScore,
+      },
+    };
+  }
+
+  private validateGovernanceForPublish(
+    template: SimulationTemplateWithManifest,
+    manifest: Record<string, unknown>,
+  ) {
+    const issues: string[] = [];
+    let canPublish = true;
+    let publishBlocked = false;
+    
+    const governance = normalizeGovernance(
+      manifest.templateGovernance,
+      { reviewStatus: "draft", source: "starter" },
+    );
+    
+    // Check review status
+    if (governance.reviewStatus !== "approved") {
+      issues.push(`Template must be approved before publishing (current: ${governance.reviewStatus})`);
+      canPublish = false;
+    }
+    
+    // Check source quality for auto-generated templates
+    if (governance.source === "auto_preset") {
+      // Auto presets require extra scrutiny
+      const qualityMetrics = this.performQualityValidation(template, manifest);
+      
+      if (qualityMetrics.qualityScore < 0.7) {
+        issues.push("Auto-generated templates must have quality score >= 0.7 to publish");
+        canPublish = false;
+        publishBlocked = true;
+      }
+      
+      if (qualityMetrics.qualityTier === "low") {
+        issues.push("Low-quality auto-generated templates cannot be published (use curated starters instead)");
+        publishBlocked = true;
+      }
+    }
+    
+    // Check if already published
+    if (template.status === "PUBLISHED") {
+      issues.push("Template is already published");
+      canPublish = false;
+    }
+    
+    // Check if deprecated
+    if (governance.reviewStatus === "deprecated") {
+      issues.push("Deprecated templates cannot be published");
+      publishBlocked = true;
+    }
+    
+    return {
+      valid: !publishBlocked,
+      canPublish,
+      publishBlocked,
+      issues,
+      governance,
+    };
+  }
+
+  private checkTemplateSimilarity(
+    template: SimulationTemplateWithManifest,
+    manifest: Record<string, unknown>,
+  ): number {
+    // Simplified similarity check based on title/description overlap
+    // In production, this would use vector embeddings or more sophisticated methods
+    const title = String(template.title ?? "").toLowerCase().trim();
+    const description = String(template.description ?? "").toLowerCase().trim();
+    
+    // Extract key terms from manifest
+    const steps = Array.isArray(manifest.steps) ? manifest.steps : [];
+    const stepTitles = steps
+      .map((s: { title?: string }) => String(s.title ?? "").toLowerCase())
+      .join(" ");
+    
+    // Create a content fingerprint
+    const fingerprint = `${title} ${description} ${stepTitles}`;
+    
+    // This is a placeholder for actual similarity computation
+    // Return 0-1 where 1 means identical, 0 means completely different
+    return 0.0; // Placeholder - actual implementation would compare against existing templates
   }
 
   async validateTemplatesBulk(
@@ -1499,7 +1703,7 @@ export class SimulationTemplateLibraryService {
   ): Promise<
     BulkTemplateActionResult<{
       templateId: string;
-      validation: ReturnType<typeof validateManifest>;
+        validation: Awaited<ReturnType<SimulationTemplateLibraryService["validateTemplate"]>>;
     }>
   > {
     const templates = await this.prisma.simulationTemplate.findMany({
@@ -1511,10 +1715,13 @@ export class SimulationTemplateLibraryService {
       orderBy: { updatedAt: "desc" },
     });
 
-    const items = templates.map((template) => ({
-      templateId: template.id,
-      validation: validateManifest(template.manifest?.manifest as never),
-    }));
+    const items = [];
+    for (const template of templates) {
+      items.push({
+        templateId: template.id,
+        validation: await this.validateTemplate(tenantId, template.id),
+      });
+    }
 
     return {
       processed: items.length,

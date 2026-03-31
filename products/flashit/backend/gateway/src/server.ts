@@ -97,9 +97,10 @@ export const buildServer = () => {
   app.register(registerTracingMiddleware);
 
   // Multi-tenant isolation (extracts X-Tenant-ID / JWT tenantId)
+  // Strict mode rejects requests without X-Tenant-ID header in production.
   const tenantIsolation = (await import("./middleware/tenant-isolation"))
     .default;
-  app.register(tenantIsolation, { strict: false });
+  app.register(tenantIsolation, { strict: env.NODE_ENV === 'production' });
 
   // JWT authentication
   app.register(jwt, {

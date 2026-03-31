@@ -153,12 +153,12 @@ export class CollaborationServiceImpl implements CollaborationService {
 
     const paged = await paginate<ThreadWithPosts, Prisma.ThreadWhereInput>(
       {
-        findMany: (input) =>
+        findMany: (input: any) =>
           this.prisma.thread.findMany({
             ...input,
             include: { posts: true },
           }) as Promise<ThreadWithPosts[]>,
-        count: (input) => this.prisma.thread.count(input),
+        count: (input: any) => this.prisma.thread.count(input),
       },
       where,
       {
@@ -170,15 +170,15 @@ export class CollaborationServiceImpl implements CollaborationService {
       },
     );
 
-    const trimmed = paged.items.map((thread) => ({
+    const trimmed = paged.items.map((thread: any) => ({
       ...thread,
       posts: [...thread.posts]
-        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+        .sort((left: any, right: any) => left.createdAt.getTime() - right.createdAt.getTime())
         .slice(0, 3),
     }));
 
     return {
-      items: trimmed.map((thread) => this.mapToThread(thread)),
+      items: trimmed.map((thread: any) => this.mapToThread(thread)),
       nextCursor: paged.hasMore ? ((paged.nextCursor ?? null) as ThreadId | null) : null,
     };
   }
@@ -445,7 +445,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     );
 
     await Promise.all(
-      args.shareWith.map((shareTarget) =>
+      args.shareWith.map((shareTarget: any) =>
         (this.prisma as any).sharedNoteAccess.upsert({
           where: {
             noteId_userId: { noteId: args.noteId, userId: shareTarget.userId },
@@ -479,7 +479,7 @@ export class CollaborationServiceImpl implements CollaborationService {
   }): Promise<PaginatedResult<SharedNote>> {
     const skip = args.pagination?.offset ?? 0;
     const take = args.pagination?.limit ?? 20;
-    const where: any = { tenantId: args.tenantId };
+    const where: Record<string, unknown> = { tenantId: args.tenantId };
     if (args.moduleId) where.moduleId = args.moduleId;
     if (args.studyGroupId) where.studyGroupId = args.studyGroupId;
     where.OR = [
@@ -541,7 +541,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       status: thread.status as ThreadStatus,
       authorId: thread.authorId as UserId,
       authorName: thread.authorName,
-      posts: thread.posts.map((post) => this.mapToPost(post)),
+      posts: thread.posts.map((post: any) => this.mapToPost(post)),
       createdAt: thread.createdAt.toISOString(),
       ...(thread.moduleId ? { moduleId: thread.moduleId as ModuleId } : {}),
       ...(thread.resolvedAt

@@ -111,7 +111,7 @@ export function createLearningService(
           id: user.id as UserId,
           email: user.email,
           displayName: user.displayName,
-          role: user.role,
+          role: user.role as any,
         },
         currentEnrollments: enrollments.map(mapEnrollment),
         recommendedModules: modules.map((module) => mapModuleSummary(module)),
@@ -224,8 +224,8 @@ function mapEnrollment(record: EnrollmentRecord): Enrollment {
     moduleId: record.moduleId as ModuleId,
     status: record.status,
     progressPercent: record.progressPercent,
-    startedAt: record.startedAt?.toISOString(),
-    completedAt: record.completedAt?.toISOString(),
+    ...(record.startedAt ? { startedAt: record.startedAt.toISOString() } : {}),
+    ...(record.completedAt ? { completedAt: record.completedAt.toISOString() } : {}),
     timeSpentSeconds: record.timeSpentSeconds,
   };
 }
@@ -241,6 +241,8 @@ function mapModuleSummary(module: ModuleWithSummaries): ModuleSummary {
     estimatedTimeMinutes: module.estimatedTimeMinutes,
     tags: module.tags.map((tag) => tag.label),
     status: "PUBLISHED",
-    progressPercent: enrollment?.progressPercent,
+    ...(typeof enrollment?.progressPercent === "number"
+      ? { progressPercent: enrollment.progressPercent }
+      : {}),
   };
 }

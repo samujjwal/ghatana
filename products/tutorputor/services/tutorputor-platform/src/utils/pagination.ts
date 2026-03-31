@@ -136,8 +136,8 @@ export class PaginationHelper {
       limit,
       hasNextPage: hasMore ?? !!nextCursor,
       hasPreviousPage: hasPrevious ?? !!previousCursor,
-      nextCursor,
-      previousCursor,
+      ...(nextCursor ? { nextCursor } : {}),
+      ...(previousCursor ? { previousCursor } : {}),
     };
   }
 
@@ -230,7 +230,11 @@ export class PaginationHelper {
       throw new Error("Invalid cursor format");
     }
 
-    return { limit, cursor: options.cursor, direction };
+    return {
+      limit,
+      ...(options.cursor ? { cursor: options.cursor } : {}),
+      direction,
+    };
   }
 
   /**

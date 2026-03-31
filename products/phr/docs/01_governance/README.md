@@ -12,6 +12,7 @@ Files:
 - `phr_frontend_delivery_plan.md`
 - `phr_qa_delivery_plan.md`
 - `phr_implementation_status_board.md`
+- `phr_staging_release_evidence_template.md`
 - `phr_data_protection_impact_assessment.md`
 - `phr_retention_and_deletion_policy.md`
 - `phr_data_classification_matrix.md`

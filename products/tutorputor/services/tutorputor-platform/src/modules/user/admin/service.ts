@@ -25,10 +25,61 @@ interface ServiceConfig {
     maxPageSize: number;
 }
 
+interface CursorPagination {
+    cursor?: string;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
+interface DateRangeInput {
+    start: string;
+    end: string;
+}
+
 const DEFAULT_CONFIG: ServiceConfig = {
     defaultPageSize: 50,
     maxPageSize: 200,
 };
+
+function parsePagination(input: unknown): CursorPagination {
+    if (!input || typeof input !== 'object') {
+        return {};
+    }
+
+    const value = input as Record<string, unknown>;
+    const pagination: CursorPagination = {};
+    if (typeof value.cursor === 'string') {
+        pagination.cursor = value.cursor;
+    }
+    if (typeof value.limit === 'number') {
+        pagination.limit = value.limit;
+    }
+    if (typeof value.sortBy === 'string') {
+        pagination.sortBy = value.sortBy;
+    }
+    if (value.sortOrder === 'asc' || value.sortOrder === 'desc') {
+        pagination.sortOrder = value.sortOrder;
+    }
+
+    return pagination;
+}
+
+function parseDateRange(input: unknown): DateRangeInput {
+    if (!input || typeof input !== 'object') {
+        throw new Error('Invalid date range');
+    }
+
+    const value = input as Record<string, unknown>;
+    if (typeof value.start !== 'string' || typeof value.end !== 'string') {
+        throw new Error('Invalid date range');
+    }
+
+    return {
+        start: value.start,
+        end: value.end,
+    };
+}
 
 export class InstitutionAdminServiceImpl implements InstitutionAdminService {
     private readonly config: ServiceConfig;
@@ -89,18 +140,19 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
         tenantId: TenantId;
         role?: string;
         searchQuery?: string;
-        pagination: any;
+        pagination: unknown;
     }): Promise<PaginatedResult<UserSummary>> {
         const { tenantId, role, searchQuery, pagination } = args;
+        const parsedPagination = parsePagination(pagination);
         const {
             cursor,
             limit = this.config.defaultPageSize,
             sortBy,
             sortOrder,
-        } = pagination;
+        } = parsedPagination;
         const take = Math.min(limit, this.config.maxPageSize);
 
-        const where: any = { tenantId };
+        const where: Record<string, unknown> = { tenantId };
 
         if (role) {
             where.role = role;
@@ -113,27 +165,31 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
             ];
         }
 
-        const orderBy: any = {};
+        const orderBy: Record<string, unknown> = {};
         if (sortBy) {
             orderBy[sortBy] = sortOrder ?? 'asc';
         } else {
             orderBy.displayName = 'asc';
         }
 
+        const queryArgs: Record<string, unknown> = {
+            where,
+            take: take + 1,
+            skip: cursor ? 1 : 0,
+            orderBy,
+            select: {
+                id: true,
+                email: true,
+                displayName: true,
+                role: true,
+            },
+        };
+        if (cursor) {
+            queryArgs.cursor = { id: cursor };
+        }
+
         const [users, totalCount] = await Promise.all([
-            this.prisma.user.findMany({
-                where,
-                take: take + 1,
-                skip: cursor ? 1 : 0,
-                cursor: cursor ? { id: cursor } : undefined,
-                orderBy,
-                select: {
-                    id: true,
-                    email: true,
-                    displayName: true,
-                    role: true,
-                },
-            }),
+            this.prisma.user.findMany(queryArgs as any),
             this.prisma.user.count({ where }),
         ]);
 
@@ -141,26 +197,31 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
         const items = hasMore ? users.slice(0, -1) : users;
         const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
-        return {
-            items: items.map((u: any) => ({
+        const result: PaginatedResult<UserSummary> = {
+            items: items.map((u) => ({
                 id: u.id as UserId,
                 email: u.email,
                 displayName: u.displayName,
                 role: u.role as UserSummary['role'],
             })),
-            nextCursor,
             totalCount,
             hasMore,
         };
+        if (nextCursor) {
+            result.nextCursor = nextCursor;
+        }
+
+        return result;
     }
 
     async getTenantUsage(args: {
         tenantId: TenantId;
-        dateRange: any;
+        dateRange: unknown;
     }): Promise<UsageMetrics> {
         const { tenantId, dateRange } = args;
-        const startDate = new Date(dateRange.start);
-        const endDate = new Date(dateRange.end);
+        const parsedDateRange = parseDateRange(dateRange);
+        const startDate = new Date(parsedDateRange.start);
+        const endDate = new Date(parsedDateRange.end);
 
         const [
             dailyActiveUsers,
@@ -241,7 +302,7 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
             }),
         ]);
 
-        const moduleIds = topModules.map((m: any) => m.moduleId).filter(Boolean);
+        const moduleIds = topModules.map((m) => m.moduleId).filter(Boolean);
         const modules =
             moduleIds.length > 0
                 ? await this.prisma.module.findMany({
@@ -250,14 +311,14 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
                 })
                 : [];
 
-        const moduleMap = new Map(modules.map((m: any) => [m.id, m.title]));
+        const moduleMap = new Map(modules.map((m) => [m.id, m.title]));
 
         const totalEnrollments = completionStats.reduce(
             (sum: number, s: any) => sum + s._count.status,
             0
         );
         const completedEnrollments =
-            completionStats.find((s: any) => s.status === 'COMPLETED')?._count.status ?? 0;
+            completionStats.find((s) => s.status === 'COMPLETED')?._count.status ?? 0;
         const completionRate =
             totalEnrollments > 0
                 ? (completedEnrollments / totalEnrollments) * 100
@@ -266,8 +327,8 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
         return {
             tenantId: tenantId as TenantId,
             dateRange: {
-                start: dateRange.start,
-                end: dateRange.end,
+                start: parsedDateRange.start,
+                end: parsedDateRange.end,
             },
             dailyActiveUsers: dailyActiveUsers.length,
             weeklyActiveUsers: weeklyActiveUsers.length,
@@ -279,8 +340,8 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
             ),
             moduleCompletionRate: Math.round(completionRate * 10) / 10,
             topModules: topModules
-                .filter((m: any) => m.moduleId)
-                .map((m: any) => ({
+                .filter((m) => m.moduleId)
+                .map((m) => ({
                     moduleId: m.moduleId as ModuleId,
                     title: moduleMap.get(m.moduleId as string) ?? 'Unknown Module',
                     enrollments: m._count.moduleId,

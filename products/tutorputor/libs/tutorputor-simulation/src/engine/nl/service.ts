@@ -71,7 +71,7 @@ const CONVERSATIONS: Map<string, ConversationContext> = new Map();
 export class NLService {
   private parser: NLIntentParser;
   private engine: RefinementEngine;
-  private aiProxy?: AIProxyService;
+  private aiProxy: AIProxyService | undefined;
 
   constructor(aiProxy?: AIProxyService) {
     this.parser = new NLIntentParser();
@@ -126,11 +126,11 @@ export class NLService {
 
     // Parse intent
     let intent: ParsedIntent;
-    const manifestEntities = context.manifest.entities ?? [];
-    const manifestSteps = context.manifest.steps ?? [];
+    const manifestEntities = (((context.manifest as unknown) as Record<string, unknown>)["entities"] as Array<{ id?: string; type?: string }> | undefined) ?? [];
+    const manifestSteps = (((context.manifest as unknown) as Record<string, unknown>)["steps"] as unknown[] | undefined) ?? [];
 
     if (this.aiProxy) {
-      const contextStr = `Entities: ${manifestEntities.map((e) => `${e.id} (${e.type})`).join(", ")}. Steps: ${manifestSteps.length}.`;
+      const contextStr = `Entities: ${manifestEntities.map((e: any) => `${e.id} (${e.type})`).join(", ")}. Steps: ${manifestSteps.length}.`;
       try {
         intent = await this.aiProxy.parseSimulationIntent({
           userInput: resolvedInput,
@@ -202,7 +202,7 @@ export class NLService {
 
     return {
       success: result.success,
-      manifest: result.manifest,
+      ...(result.manifest ? { manifest: result.manifest as SimulationManifest } : {}),
       response,
       suggestions: result.suggestions.length > 0 ? result.suggestions : this.generateSuggestions(context),
       intent,
@@ -233,7 +233,7 @@ export class NLService {
 
       responses.push({
         success: result.success,
-        manifest: result.manifest,
+        ...(result.manifest ? { manifest: result.manifest as SimulationManifest } : {}),
         response: this.generateResponse(result, intent),
         suggestions: result.suggestions,
         intent,
@@ -352,8 +352,8 @@ export class NLService {
   private generateSuggestions(context: ConversationContext): string[] {
     const suggestions: string[] = [];
     const manifest = context.manifest;
-    const entities = manifest.entities ?? [];
-    const steps = manifest.steps ?? [];
+    const entities = (((manifest as unknown) as Record<string, unknown>)["entities"] as Array<{ id?: string; type?: string; label?: string }> | undefined) ?? [];
+    const steps = (((manifest as unknown) as Record<string, unknown>)["steps"] as unknown[] | undefined) ?? [];
 
     // Suggest based on current state
     if (entities.length === 0) {
@@ -365,12 +365,12 @@ export class NLService {
     }
 
     // Suggest visual enhancements
-    if (entities.length > 0 && !context.history.some((t) => t.intent.type === 'change_visual')) {
+    if (entities.length > 0 && !context.history.some((t: any) => t.intent.type === 'change_visual')) {
       suggestions.push('Try changing colors or sizes to make elements more distinguishable');
     }
 
     // Suggest annotations
-    if (steps.length > 0 && !context.history.some((t) => t.intent.type === 'add_annotation')) {
+    if (steps.length > 0 && !context.history.some((t: any) => t.intent.type === 'add_annotation')) {
       suggestions.push('Add annotations to explain what\'s happening');
     }
 
@@ -381,8 +381,8 @@ export class NLService {
    * Get suggestions for low-confidence intents.
    */
   private getSuggestionsForLowConfidence(manifest: SimulationManifest): string[] {
-    const entities = manifest.entities ?? [];
-    const entityNames = entities.slice(0, 3).map((e) => e.label);
+    const entities = (((manifest as unknown) as Record<string, unknown>)["entities"] as Array<{ label?: string }> | undefined) ?? [];
+    const entityNames = entities.slice(0, 3).map((e: any) => e.label);
     return [
       `Try: "add a new element"`,
       `Try: "make ${entityNames[0] ?? 'element'} blue"`,

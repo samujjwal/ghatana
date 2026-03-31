@@ -291,7 +291,7 @@ export class TemplateGovernanceService {
         tenantId: string,
         domain?: string
     ): Promise<SimulationTemplate[]> {
-        const where: any = {
+        const where: Record<string, unknown> = {
             tenantId
         };
 

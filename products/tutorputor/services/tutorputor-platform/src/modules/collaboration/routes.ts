@@ -52,7 +52,7 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
         authorName,
-        moduleId,
+        ...(moduleId ? { moduleId } : {}),
         title,
         content,
       }),
@@ -75,9 +75,9 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
     await respondWithErrors(reply, () =>
       collaborationService.listThreads({
         tenantId: tenantId as TenantId,
-        moduleId,
-        status,
-        cursor,
+        ...(moduleId ? { moduleId } : {}),
+        ...(status ? { status } : {}),
+        ...(cursor ? { cursor } : {}),
         limit: limit ? parseInt(limit, 10) : 20,
       }),
     );
@@ -206,11 +206,11 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
         createdBy: userId as UserId,
         title,
         content,
-        moduleId,
-        lessonId,
-        studyGroupId,
-        allowEditing,
-        allowComments,
+        ...(moduleId ? { moduleId } : {}),
+        ...(lessonId ? { lessonId } : {}),
+        ...(studyGroupId ? { studyGroupId } : {}),
+        ...(allowEditing !== undefined ? { allowEditing } : {}),
+        ...(allowComments !== undefined ? { allowComments } : {}),
       }),
     );
   });
@@ -251,7 +251,7 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       collaborationService.updateSharedNote({
         tenantId: tenantId as TenantId,
         noteId,
-        editorId: userId as UserId,
+        userId: userId as UserId,
         content,
       }),
     );
@@ -277,16 +277,12 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      let note = null;
-      for (const share of shareWith) {
-        note = await collaborationService.shareNote({
-          tenantId: tenantId as TenantId,
-          noteId,
-          sharedById: userId as UserId,
-          userId: share.userId,
-          permission: share.permission,
-        });
-      }
+      const note = await collaborationService.shareNote({
+        tenantId: tenantId as TenantId,
+        noteId,
+        sharedBy: userId as UserId,
+        shareWith,
+      });
       return reply.code(200).send(note);
     } catch (error) {
       return reply
@@ -320,10 +316,10 @@ export const collaborationRoutes: FastifyPluginAsync = async (app) => {
       collaborationService.listSharedNotes({
         tenantId: tenantId as TenantId,
         userId: userId as UserId,
-        studyGroupId,
-        moduleId,
+        ...(studyGroupId ? { studyGroupId } : {}),
+        ...(moduleId ? { moduleId } : {}),
         pagination: {
-          cursor,
+          ...(cursor ? { cursor } : {}),
           limit: limit ? parseInt(limit, 10) : 20,
         },
       }),

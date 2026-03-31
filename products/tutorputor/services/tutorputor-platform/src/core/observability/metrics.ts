@@ -178,7 +178,7 @@ export async function setupHealthChecks(
     // Check Redis
     try {
       const start = Date.now();
-      await redis.ping();
+      await (redis as any).ping();
       checks.redis = { status: "ok", latency: Date.now() - start };
     } catch (error) {
       checks.redis = {
@@ -232,7 +232,7 @@ export async function setupHealthChecks(
     // Check if service is ready to accept traffic
     try {
       await prisma.$queryRaw`SELECT 1`;
-      await redis.ping();
+      await (redis as any).ping();
 
       const learnerProfileGrpcRuntime = getLearnerProfileGrpcRuntimeState();
       if (

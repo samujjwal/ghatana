@@ -93,9 +93,9 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
             type: comp.compartmentType,
             volume: comp.volume,
             concentration: comp.concentration,
-            ke: comp.ke,
-            k12: comp.k12,
-            k21: comp.k21
+            ...(comp.ke !== undefined ? { ke: comp.ke } : {}),
+            ...(comp.k12 !== undefined ? { k12: comp.k12 } : {}),
+            ...(comp.k21 !== undefined ? { k21: comp.k21 } : {})
           });
         } else if (entity.type === "dose") {
           doses.push(entity as MedDoseEntity);
@@ -122,6 +122,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
         const step = stepsToProcess[stepIndex];
+        if (!step) continue;
 
         // Apply step actions
         for (const action of step.actions) {
@@ -216,7 +217,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        ...(warnings.length > 0 ? { warnings } : {})
       };
     },
 
@@ -251,8 +252,13 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       let c2 = 0;
 
       for (const targetTime of timePoints) {
-        while (results.length === 0 || results[results.length - 1].time < targetTime) {
-          const currentTime = results.length > 0 ? results[results.length - 1].time + dt : 0;
+        while (true) {
+          const lastResult = results.length > 0 ? results[results.length - 1] : undefined;
+          if (lastResult && lastResult.time >= targetTime) {
+            break;
+          }
+
+          const currentTime = lastResult ? lastResult.time + dt : 0;
 
           // Rate equations
           const dc1 = -k12 * c1 + k21 * c2 * (v2 / v1) - ke * c1;
@@ -318,7 +324,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
         results.push({
           day,
           susceptible: S,
-          exposed: model === "seir" ? E : undefined,
+          ...(model === "seir" ? { exposed: E } : {}),
           infected: I,
           recovered: R
         });
@@ -454,9 +460,9 @@ function applyMedicineAction(
           type: comp.compartmentType,
           volume: comp.volume,
           concentration: comp.concentration,
-          ke: comp.ke,
-          k12: comp.k12,
-          k21: comp.k21
+          ...(comp.ke !== undefined ? { ke: comp.ke } : {}),
+          ...(comp.k12 !== undefined ? { k12: comp.k12 } : {}),
+          ...(comp.k21 !== undefined ? { k21: comp.k21 } : {})
         });
       } else if (entity.type === "dose") {
         doses.push(entity as MedDoseEntity);
@@ -559,7 +565,7 @@ function simulateEpidemiology(
   dt: number
 ): void {
   for (const [id, agent] of infectionAgents) {
-    const population = agent.population;
+    const population = agent.population ?? agent.load ?? 0;
     const beta = agent.infectivity || 0.3;
     const gamma = 1 / 14; // Recovery rate (14 days)
 
@@ -567,7 +573,7 @@ function simulateEpidemiology(
     const entity = entities.get(id);
     if (entity && entity.type === "infectionAgent") {
       // Simplified: just update population based on reproduction
-      const infected = agent.population;
+      const infected = population;
       const newInfected = infected * beta * dt;
       const recovered = infected * gamma * dt;
 

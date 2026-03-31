@@ -19,7 +19,9 @@ import {
   getUserId,
   requireRole,
 } from "../../core/http/requestContext.js";
-import type { AiRegistryClient } from "../../clients/ai-registry.client.js";
+import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
+
+type AiRegistryClient = typeof defaultAiRegistryClient;
 
 interface AIRouteDeps {
   aiProxyService: AIProxyService & {
@@ -165,9 +167,9 @@ export async function registerAIRoutes(
     const response = await deps.aiProxyService.handleTutorQuery({
       tenantId,
       userId,
-      moduleId,
       question,
-      locale,
+      ...(moduleId ? { moduleId } : {}),
+      ...(locale ? { locale } : {}),
     });
 
     if (activeModelId) {

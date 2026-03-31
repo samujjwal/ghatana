@@ -142,7 +142,7 @@ export class DataExporter {
             orderBy: { updatedAt: 'desc' },
         });
 
-        const data = enrollments.map((e: any) => ({
+        const data = enrollments.map((e) => ({
             moduleId: e.module.id,
             moduleTitle: e.module.title,
             status: e.status,
@@ -184,10 +184,10 @@ export class DataExporter {
         const data = attempts.map((a: any) => ({
             assessmentId: a.assessment.id,
             assessmentTitle: a.assessment.title,
-            score: a.score,
-            maxScore: a.maxScore,
+            score: a.score ?? a.points ?? null,
+            maxScore: a.maxScore ?? a.totalPoints ?? null,
             startedAt: a.startedAt,
-            completedAt: a.completedAt,
+            completedAt: a.completedAt ?? a.gradedAt ?? null,
         }));
 
         const filePath = join(exportPath, 'assessment_attempts.json');
@@ -238,7 +238,11 @@ export class DataExporter {
                 where: { authorId: userId, tenantId },
                 select: { id: true, title: true, content: true, createdAt: true }
             });
-        } catch (e) { logger.error({ error: e }, 'Error occurred'); throw e; }
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            logger.error({ error }, 'Error occurred');
+            throw error;
+        }
 
         const data = {
             threads

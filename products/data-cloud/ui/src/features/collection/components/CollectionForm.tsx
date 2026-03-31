@@ -1,3 +1,11 @@
+/**
+ * CollectionForm component.
+ *
+ * @doc.type component
+ * @doc.purpose Form for creating or updating a collection with configurable fields, privacy options, and Zod validation
+ * @doc.layer product
+ * @doc.pattern Form
+ */
 import React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Button, TextField, TextArea, Switch } from '@ghatana/design-system';

@@ -496,7 +496,7 @@ export class Animator {
         if (property.startsWith('--')) {
           (el as HTMLElement).style.setProperty(property, String(value));
         } else if (property in (el as HTMLElement).style) {
-          (el as HTMLElement).style[property as any] = value;
+          (el as HTMLElement).style[property as keyof CSSStyleDeclaration] = value;
         } else {
           (el as HTMLElement).setAttribute(property, String(value));
         }

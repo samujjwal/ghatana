@@ -416,7 +416,7 @@ export function toSimulationStep(
       options?.prerequisites?.map((p) => ({
         stepId: p.stepId,
         type: p.type,
-        minScore: p.type === "required" ? 70 : undefined,
+        ...(p.type === "required" ? { minScore: 70 } : {}),
       })) ?? [],
     estimatedTimeMinutes: estimatedTime,
     assessmentRefs: (options?.assessmentRefs ?? []).map((ref) => ({

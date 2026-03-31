@@ -13,7 +13,14 @@
 
 import { createHash } from "crypto";
 import type { PrismaClient } from "@tutorputor/core/db";
-import type { SemanticIndexResult } from "@tutorputor/contracts/v1/content-studio";
+
+type SemanticIndexResult = {
+  assetId: string;
+  chunksCreated: number;
+  chunksUpdated: number;
+  chunksStale: number;
+  embeddingsPending: number;
+};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -81,13 +88,13 @@ function splitText(text: string, maxChars: number): string[] {
     remaining = remaining.slice(splitIdx).trim();
   }
 
-  return chunks.filter((c) => c.length > 0);
+  return chunks.filter((c: any) => c.length > 0);
 }
 
 /**
  * Extracts plain text from a JSON payload (recursively).
  */
-function extractText(value: unknown): string {
+function extractText(value: any): string {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
@@ -204,7 +211,7 @@ export class SemanticChunkService {
           tokenCount: estimateTokens(text),
           contentHash: hashText(text),
           domain: asset.domain,
-          claimRefs: manifest.claimRef ? [manifest.claimRef] : undefined,
+          ...(manifest.claimRef ? { claimRefs: [manifest.claimRef] } : {}),
         });
       }
     }
@@ -214,7 +221,7 @@ export class SemanticChunkService {
       where: { assetId },
     });
 
-    const existingMap = new Map<string, any>();
+    const existingMap = new Map<string, Record<string, unknown>>();
     for (const ec of existingChunks) {
       existingMap.set(ec.chunkRef, ec);
     }

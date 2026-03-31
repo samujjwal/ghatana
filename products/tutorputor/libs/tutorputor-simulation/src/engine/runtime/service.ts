@@ -149,6 +149,9 @@ export class SimulationRuntimeService implements SimRuntimeService {
     // Advance to next step
     session.currentStepIndex++;
     const step = session.manifest.steps[session.currentStepIndex];
+    if (!step) {
+      throw new Error(`Simulation step not found at index ${session.currentStepIndex}`);
+    }
 
     // Execute kernel step
     kernel.step();
@@ -218,6 +221,9 @@ export class SimulationRuntimeService implements SimRuntimeService {
 
       // Generate keyframe
       const step = session.manifest.steps[session.currentStepIndex];
+      if (!step) {
+        throw new Error(`Simulation step not found at index ${session.currentStepIndex}`);
+      }
       session.currentKeyframe = this.generateKeyframeForStep(session, step, kernel);
 
       // Update time
@@ -280,6 +286,9 @@ export class SimulationRuntimeService implements SimRuntimeService {
 
     // Generate interpolated keyframe
     const step = session.manifest.steps[stepIndex];
+    if (!step) {
+      throw new Error(`Simulation step not found at index ${stepIndex}`);
+    }
     const baseKeyframe = this.generateKeyframeForStep(session, step, kernel);
 
     // Apply interpolation
@@ -369,6 +378,9 @@ export class SimulationRuntimeService implements SimRuntimeService {
 
       // Generate keyframe
       const step = session.manifest.steps[targetIndex];
+      if (!step) {
+        throw new Error(`Simulation step not found at index ${targetIndex}`);
+      }
       session.currentKeyframe = this.generateKeyframeForStep(session, step, kernel);
       session.currentTime = this.calculateTimeForStep(session, targetIndex);
     }
@@ -627,7 +639,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
     const interpolatedState = kernel.interpolate(1.0);
 
     // Map kernel entities to keyframe entities
-    const entities: SimEntityBase[] = (interpolatedState.entities || []).map((kernelEntity) => {
+    const entities = (interpolatedState.entities || []).map((kernelEntity) => {
       const originalEntity = session.manifest.initialEntities.find((e) => e.id === kernelEntity.id);
       return {
         ...originalEntity,
@@ -643,14 +655,21 @@ export class SimulationRuntimeService implements SimRuntimeService {
       };
     });
 
-    return {
+    const keyframe: SimKeyframe = {
       timestamp: session.currentTime,
       stepIndex: session.currentStepIndex,
-      entities: entities as any, // Cast to SimEntity[]
+      entities: entities as any,
       annotations: step.annotations ?? [],
-      audio: step.audio,
-      camera: step.camera,
     };
+
+    if (step.audio !== undefined) {
+      keyframe.audio = step.audio;
+    }
+    if (step.camera !== undefined) {
+      keyframe.camera = step.camera;
+    }
+
+    return keyframe;
   }
 
   /**
@@ -659,7 +678,8 @@ export class SimulationRuntimeService implements SimRuntimeService {
   private calculateTimeForStep(session: SessionState, stepIndex: number): number {
     let time = 0;
     for (let i = 0; i < stepIndex; i++) {
-      time += session.manifest.steps[i].duration ?? 1000;
+      const step = session.manifest.steps[i];
+      time += step?.duration ?? 1000;
     }
     return time;
   }
@@ -674,7 +694,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
     let accumulatedTime = 0;
 
     for (let i = 0; i < session.manifest.steps.length; i++) {
-      const stepDuration = session.manifest.steps[i].duration ?? 1000;
+      const stepDuration = session.manifest.steps[i]?.duration ?? 1000;
       const stepEndTime = accumulatedTime + stepDuration;
 
       if (timeMs < stepEndTime) {

@@ -12,12 +12,43 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ExplorerEvent,
-  TrackExplorerEventInput,
-  TrackBatchEventsInput,
-} from "@tutorputor/contracts/v1/content-studio";
 import { createLearnerProfileService } from "../../learning/learner-profile-service.js";
+
+interface ExplorerEvent {
+  id: string;
+  tenantId: string;
+  userId?: string;
+  sessionId?: string;
+  eventType: string;
+  query?: string;
+  assetId?: string;
+  assetType?: string;
+  position?: number;
+  score?: number;
+  feedbackLabel?: string;
+  feedbackScore?: number;
+  metadata?: Record<string, unknown>;
+  occurredAt: string;
+}
+
+interface TrackExplorerEventInput {
+  userId?: string;
+  sessionId?: string;
+  eventType: string;
+  query?: string;
+  assetId?: string;
+  assetType?: string;
+  position?: number;
+  score?: number;
+  feedbackLabel?: string;
+  feedbackScore?: number;
+  metadata?: Record<string, unknown>;
+  occurredAt?: string;
+}
+
+interface TrackBatchEventsInput {
+  events: TrackExplorerEventInput[];
+}
 
 const POSITIVE_FEEDBACK = new Set(["positive", "helpful", "relevant"]);
 const NEGATIVE_FEEDBACK = new Set(["negative", "not_relevant", "unhelpful"]);
@@ -32,23 +63,25 @@ interface LearnerSignalAsset {
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapEvent(row: any): ExplorerEvent {
+function mapEvent(row: Record<string, unknown>): ExplorerEvent {
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    userId: row.userId ?? undefined,
-    sessionId: row.sessionId ?? undefined,
+    id: String(row.id),
+    tenantId: String(row.tenantId),
+    ...(typeof row.userId === "string" ? { userId: row.userId } : {}),
+    ...(typeof row.sessionId === "string" ? { sessionId: row.sessionId } : {}),
     eventType: (
       row.eventType as string
     ).toLowerCase() as ExplorerEvent["eventType"],
-    query: row.query ?? undefined,
-    assetId: row.assetId ?? undefined,
-    assetType: row.assetType ?? undefined,
-    position: row.position ?? undefined,
-    score: row.score ?? undefined,
-    feedbackLabel: row.feedbackLabel ?? undefined,
-    feedbackScore: row.feedbackScore ?? undefined,
-    metadata: row.metadata ?? undefined,
+    ...(typeof row.query === "string" ? { query: row.query } : {}),
+    ...(typeof row.assetId === "string" ? { assetId: row.assetId } : {}),
+    ...(typeof row.assetType === "string" ? { assetType: row.assetType } : {}),
+    ...(typeof row.position === "number" ? { position: row.position } : {}),
+    ...(typeof row.score === "number" ? { score: row.score } : {}),
+    ...(typeof row.feedbackLabel === "string" ? { feedbackLabel: row.feedbackLabel } : {}),
+    ...(typeof row.feedbackScore === "number" ? { feedbackScore: row.feedbackScore } : {}),
+    ...(row.metadata && typeof row.metadata === "object"
+      ? { metadata: row.metadata as Record<string, unknown> }
+      : {}),
     occurredAt: (row.occurredAt as Date).toISOString(),
   };
 }
@@ -130,9 +163,9 @@ export class TelemetryService {
     await this.markRecommendationStateStale(
       tenantId,
       input.events
-        .map((evt) => evt.assetId)
-        .filter((assetId): assetId is string => typeof assetId === "string"),
-      input.events.map((evt) => evt.eventType),
+        .map((evt: any) => evt.assetId)
+        .filter((assetId: unknown): assetId is string => typeof assetId === "string"),
+      input.events.map((evt: any) => evt.eventType),
     );
     await this.applyLearnerFeedbackSignals(tenantId, input.events);
 
@@ -147,9 +180,9 @@ export class TelemetryService {
     assetId: string,
     eventTypes?: string[],
   ): Promise<ExplorerEvent[]> {
-    const where: any = { tenantId, assetId };
+    const where: Record<string, unknown> = { tenantId, assetId };
     if (eventTypes && eventTypes.length > 0) {
-      where.eventType = { in: eventTypes.map((t) => t.toUpperCase()) };
+      where.eventType = { in: eventTypes.map((t: any) => t.toUpperCase()) };
     }
 
     const rows = await (this.prisma as any).explorerEvent.findMany({
@@ -175,7 +208,7 @@ export class TelemetryService {
 
     if (
       assetIds.length === 0 ||
-      !eventTypes.some((eventType) => relevantTypes.has(eventType))
+      !eventTypes.some((eventType: any) => relevantTypes.has(eventType))
     ) {
       return;
     }
@@ -196,7 +229,7 @@ export class TelemetryService {
     events: TrackExplorerEventInput[],
   ): Promise<void> {
     const actionable = events.filter(
-      (event) =>
+      (event: any) =>
         typeof event.userId === "string" &&
         typeof event.assetId === "string" &&
         (event.eventType === "asset_complete" ||
@@ -210,7 +243,7 @@ export class TelemetryService {
     const assets = (await (this.prisma as any).contentAsset.findMany({
       where: {
         tenantId,
-        id: { in: actionable.map((event) => event.assetId) },
+        id: { in: actionable.map((event: any) => event.assetId) },
       },
       select: {
         id: true,
@@ -219,7 +252,7 @@ export class TelemetryService {
       },
     })) as LearnerSignalAsset[];
     const assetMap = new Map<string, LearnerSignalAsset>(
-      assets.map((asset) => [asset.id, asset]),
+      assets.map((asset: any) => [asset.id, asset]),
     );
 
     for (const event of actionable) {

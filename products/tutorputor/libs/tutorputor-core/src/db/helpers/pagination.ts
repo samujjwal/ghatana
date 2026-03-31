@@ -66,7 +66,7 @@ export async function paginate<T extends { id: string }, TWhere>(
   return {
     items: trimmed,
     hasMore,
-    nextCursor: hasMore ? trimmed.at(-1)?.id : undefined,
-    totalCount,
+    ...(hasMore && trimmed.at(-1)?.id ? { nextCursor: trimmed.at(-1)!.id } : {}),
+    ...(totalCount !== undefined ? { totalCount } : {}),
   };
 }

@@ -12,15 +12,14 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ContentAsset,
-  ContentAssetType,
-  RecommendationEdgeType,
-  RecommendationSource,
-  RecommendationEdge,
-  NextStepSuggestion,
-  RelatedAssetsResponse,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type ContentAsset = any;
+type ContentAssetType = any;
+type RecommendationEdgeType = any;
+type RecommendationSource = any;
+type RecommendationEdge = any;
+type NextStepSuggestion = any;
+type RelatedAssetsResponse = any;
 
 // ---------------------------------------------------------------------------
 // Difficulty ordering for progression rules
@@ -51,7 +50,7 @@ function getDifficultyRank(level: string | null | undefined): number | null {
   return DIFFICULTY_ORDER[level.toLowerCase()] ?? null;
 }
 
-function computePathwayAffinity(source: any, target: any): number {
+function computePathwayAffinity(source: Record<string, unknown>, target: Record<string, unknown>): number {
   if (
     source.conceptId &&
     target.conceptId &&
@@ -65,9 +64,13 @@ function computePathwayAffinity(source: any, target: any): number {
   return 0.35;
 }
 
-function inferEdgeType(source: any, target: any): string {
-  const sourceRank = getDifficultyRank(source.difficultyLevel);
-  const targetRank = getDifficultyRank(target.difficultyLevel);
+function inferEdgeType(source: Record<string, unknown>, target: Record<string, unknown>): string {
+  const sourceRank = getDifficultyRank(
+    typeof source.difficultyLevel === "string" ? source.difficultyLevel : null,
+  );
+  const targetRank = getDifficultyRank(
+    typeof target.difficultyLevel === "string" ? target.difficultyLevel : null,
+  );
 
   if (
     source.conceptId &&
@@ -213,7 +216,7 @@ export class RecommendationService {
         eventsByAsset.set(event.assetId, rows);
       }
 
-      const evaluationByAsset = new Map<string, any>();
+      const evaluationByAsset = new Map<string, Record<string, unknown>>();
       for (const evaluation of evaluations) {
         if (!evaluation.assetId || evaluationByAsset.has(evaluation.assetId)) {
           continue;
@@ -601,7 +604,7 @@ export class RecommendationService {
     return "created";
   }
 
-  private mapAsset(raw: Record<string, unknown>): ContentAsset {
+  private mapAsset(raw: any): ContentAsset {
     const asset: ContentAsset = {
       id: raw.id as string,
       tenantId: raw.tenantId as string,
@@ -683,7 +686,7 @@ export class RecommendationService {
     return asset;
   }
 
-  private mapEdge(raw: Record<string, unknown>): RecommendationEdge {
+  private mapEdge(raw: any): RecommendationEdge {
     return {
       id: raw.id as string,
       sourceAssetId: raw.sourceAssetId as string,

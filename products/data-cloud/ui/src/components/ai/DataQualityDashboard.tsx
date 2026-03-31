@@ -136,9 +136,9 @@ function QualityScoreRing({ score, size = 120 }: { score: number; size?: number 
     };
 
     const getStrokeColor = (s: number): string => {
-        if (s >= 90) return '#22c55e';
-        if (s >= 70) return '#eab308';
-        return '#ef4444';
+        if (s >= 90) return 'var(--color-success)';
+        if (s >= 70) return 'var(--color-warning)';
+        return 'var(--color-error)';
     };
 
     return (

@@ -284,7 +284,9 @@ export class PipelineRunner {
                 result: processingResult,
                 durationMs,
                 skipped: processingResult.status === 'skipped',
-                skipReason: processingResult.status === 'skipped' ? 'Plugin returned skipped status' : undefined,
+                ...(processingResult.status === 'skipped'
+                    ? { skipReason: 'Plugin returned skipped status' }
+                    : {}),
             };
 
             await this.runAfterHooks(pluginId, result, context);

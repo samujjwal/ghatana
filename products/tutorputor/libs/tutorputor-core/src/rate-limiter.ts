@@ -74,7 +74,7 @@ setInterval(() => defaultStore.cleanup(), 60000);
  */
 function defaultKeyGenerator(request: FastifyRequest): string {
   const ip = request.ip || 'unknown';
-  const tenantId = (request.params as any)?.tenantId || 'global';
+  const tenantId = (request.params as Record<string, unknown>)?.tenantId || 'global';
   return `${ip}:${tenantId}`;
 }
 
@@ -226,7 +226,7 @@ export function createTenantRateLimiter(
     windowMs,
     maxRequests,
     keyGenerator: (request) => {
-      const tenantId = (request.params as any)?.tenantId || 'global';
+      const tenantId = (request.params as Record<string, unknown>)?.tenantId || 'global';
       return `tenant:${tenantId}`;
     },
   });

@@ -527,7 +527,7 @@ export class AutoAnimationService {
     return this.generateFromDescription({
       description: learningObjective,
       target,
-      domain: domain as any,
+      domain: domain as unknown,
       purpose: 'educational',
       learningObjective,
       style: 'moderate',

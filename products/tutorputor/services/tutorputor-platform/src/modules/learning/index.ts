@@ -10,6 +10,7 @@ import { ContentVariationService } from "../content/variation/service.js";
 import learningRoutes from "./routes";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type { Redis } from "ioredis";
+import type { FastifyPluginAsync } from "fastify";
 
 /**
  * Learning Module Plugin
@@ -22,7 +23,7 @@ import type { Redis } from "ioredis";
  * - tutorputor-analytics (Done)
  */
 export const learningModule = fp(
-  async (fastify) => {
+  async (fastify: any) => {
     const prisma = (fastify as any).prisma as TutorPrismaClient;
     const redis = (fastify as any).redis as Redis;
 
@@ -74,4 +75,4 @@ export const learningModule = fp(
     name: "learning-module",
     dependencies: ["database-plugin"],
   },
-);
+) as FastifyPluginAsync;

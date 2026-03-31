@@ -259,7 +259,8 @@ export const NGLMoleculeRenderer = forwardRef<
 
         try {
             // Dynamic import of NGL
-            const NGL = await import("ngl");
+            const nglModule = "ngl";
+            const NGL = await import(nglModule);
 
             // Create stage
             const stage = new NGL.Stage(containerRef.current, {
@@ -324,6 +325,7 @@ export const NGLMoleculeRenderer = forwardRef<
             const error = err instanceof Error ? err : new Error(String(err));
             setError(error);
             onError?.(error);
+            return undefined;
         }
     }, [
         backgroundColor,

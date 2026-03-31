@@ -32,7 +32,7 @@ function makePrisma(overrides: Record<string, unknown> = {}): PrismaClient {
       updateMany: vi.fn(),
     },
     invoice: { findUnique: vi.fn(), findFirst: vi.fn() },
-    $transaction: vi.fn((fn: (tx: unknown) => unknown) =>
+    $transaction: vi.fn((fn: (tx: any) => unknown) =>
       fn({
         paymentMethod: {
           updateMany: vi.fn().mockResolvedValue({ count: 0 }),

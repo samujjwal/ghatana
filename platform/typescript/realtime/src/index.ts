@@ -21,6 +21,7 @@ export * from './client';
 
 // Export React hooks
 export * from './hooks/useWebSocket';
+export * from './hooks/useSSESubscription';
 
 // Export ActiveJ integration
 export * from './activej';

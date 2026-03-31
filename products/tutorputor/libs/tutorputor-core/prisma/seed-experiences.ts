@@ -11,7 +11,7 @@
 
 import { createPrismaClient, DEFAULT_TENANT_ID } from "../src/index.js";
 
-let prisma: any;
+let prisma: unknown;
 
 const TENANT_ID = process.env.TUTORPUTOR_DEFAULT_TENANT_ID ?? DEFAULT_TENANT_ID;
 const CREATOR_USER_ID = "user-creator-001";
@@ -23,7 +23,7 @@ async function seedExperiences() {
         {
             id: "exp_demo_1",
             title: "Projectile Motion Fundamentals",
-            domain: "SCIENCE" as any,
+            domain: "SCIENCE",
             intentProblem: "Students need to understand projectile motion principles through hands-on exploration",
             intentMotivation: "Physics is best learned through interactive visualization and experimentation",
             intentMisconceptions: JSON.stringify([
@@ -52,18 +52,18 @@ async function seedExperiences() {
                     }
                 ]
             }),
-            status: "PUBLISHED" as any,
+            status: "PUBLISHED",
             version: 1,
             estimatedTimeMinutes: 45,
             createdBy: CREATOR_USER_ID,
             publishedAt: new Date(),
             promptHash: "demo_hash_1",
-            riskLevel: "LOW" as any
+            riskLevel: "LOW"
         },
         {
             id: "exp_demo_2",
             title: "Chemical Bonding Basics",
-            domain: "SCIENCE" as any,
+            domain: "SCIENCE",
             intentProblem: "Students struggle to visualize abstract chemical bonding concepts",
             intentMotivation: "Chemistry becomes intuitive when students can see bonds forming",
             intentMisconceptions: JSON.stringify([
@@ -88,17 +88,17 @@ async function seedExperiences() {
                     }
                 ]
             }),
-            status: "DRAFT" as any,
+            status: "DRAFT",
             version: 1,
             estimatedTimeMinutes: 40,
             createdBy: CREATOR_USER_ID,
             promptHash: "demo_hash_2",
-            riskLevel: "LOW" as any
+            riskLevel: "LOW"
         },
         {
             id: "exp_demo_3",
             title: "Newton's Laws of Motion",
-            domain: "SCIENCE" as any,
+            domain: "SCIENCE",
             intentProblem: "Students need concrete examples to understand abstract physics laws",
             intentMotivation: "Newton's laws govern everyday motion and are fundamental to physics",
             intentMisconceptions: JSON.stringify([
@@ -121,13 +121,13 @@ async function seedExperiences() {
                     }
                 ]
             }),
-            status: "PUBLISHED" as any,
+            status: "PUBLISHED",
             version: 1,
             estimatedTimeMinutes: 50,
             createdBy: CREATOR_USER_ID,
             publishedAt: new Date(),
             promptHash: "demo_hash_3",
-            riskLevel: "LOW" as any
+            riskLevel: "LOW"
         }
     ];
 

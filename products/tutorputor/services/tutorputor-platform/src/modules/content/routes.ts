@@ -25,12 +25,12 @@ export async function registerContentRoutes(
 
     const result = await deps.contentService.listModules({
       tenantId,
-      domain,
+      ...(domain ? { domain } : {}),
       status: "PUBLISHED",
-      cursor,
+      ...(cursor ? { cursor } : {}),
       limit: 20,
-      userId,
-      query,
+      ...(userId ? { userId } : {}),
+      ...(query ? { query } : {}),
     });
 
     return reply.send(result);

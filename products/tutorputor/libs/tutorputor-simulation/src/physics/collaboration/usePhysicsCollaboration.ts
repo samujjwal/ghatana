@@ -172,7 +172,7 @@ export function usePhysicsCollaboration(
             const states = provider.awareness.getStates();
             const users: Record<string, CollaborationUser> = {};
 
-            states.forEach((state: any, _clientId: number) => {
+            states.forEach((state, _clientId) => {
                 if (state.user && state.user.id !== userId) {
                     users[state.user.id] = {
                         id: state.user.id,

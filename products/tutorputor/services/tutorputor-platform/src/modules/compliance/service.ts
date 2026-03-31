@@ -22,13 +22,13 @@ interface DataRequest {
   id: string;
   userId: UserId;
   tenantId: TenantId;
-  status: any;
+  status: unknown;
 }
 
 // Add missing DataExportRequest type if needed or use DataRequest
 type DataExportRequest = DataRequest & {
-  requestedAt: any;
-  completedAt?: any;
+  requestedAt: unknown;
+  completedAt?: unknown;
   downloadUrl?: string;
   error?: string;
   estimatedCompletionAt: string;
@@ -59,7 +59,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     userId: UserId;
     tenantId: TenantId;
     requestedBy: UserId;
-  }): Promise<DataExportRequest> {
+  }): Promise<any> {
     const user = await this.prisma.user.findFirst({
       where: {
         id: params.userId,
@@ -96,7 +96,7 @@ export class ComplianceServiceImpl implements ComplianceService {
   async getExportStatus(args: {
     requestId: string;
     tenantId: TenantId;
-  }): Promise<DataExportRequest> {
+  }): Promise<any> {
     // NOTE: Data export requests need persistent storage (DataRequest model in Prisma schema)
     // Currently requests are created in-memory by requestUserExport()
     //
@@ -114,11 +114,9 @@ export class ComplianceServiceImpl implements ComplianceService {
       status: "not_found",
       requestedAt: new Date().toISOString(),
       estimatedCompletionAt: new Date().toISOString(),
-      completedAt: undefined,
-      downloadUrl: undefined,
       error:
         "Export request not found. The request may have expired or was not persisted.",
-    } as DataExportRequest;
+    };
   }
 
   async downloadExport(_args: {
@@ -261,7 +259,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     return true;
   }
 
-  async queryAuditEvents(_args: any): Promise<any> {
+  async queryAuditEvents(_args: Record<string, unknown>): Promise<any> {
     return { items: [], totalCount: 0, hasMore: false };
   }
 }

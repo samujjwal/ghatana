@@ -582,8 +582,8 @@ export class SecurityScanner {
         file: relative(process.cwd(), filePath),
         line,
         recommendation: check.recommendation,
-        cwe: check.cwe,
-        owasp: check.owasp,
+        ...(check.cwe ? { cwe: check.cwe } : {}),
+        ...(check.owasp ? { owasp: check.owasp } : {}),
       });
     }
 
@@ -638,7 +638,13 @@ export class SecurityScanner {
         type: "DEPENDENCY_VULNERABILITY",
         description: vulnerability.title ? `${vulnerability.title} in ${packageName}` : `Vulnerability found in ${packageName}`,
         recommendation: `Upgrade ${packageName} to a non-vulnerable version`,
-        cwe: Array.isArray(vulnerability.cwe) ? vulnerability.cwe.join(",") : vulnerability.cwe,
+        ...(vulnerability.cwe
+          ? {
+              cwe: Array.isArray(vulnerability.cwe)
+                ? vulnerability.cwe.join(",")
+                : vulnerability.cwe,
+            }
+          : {}),
         owasp: "A06:2021-Vulnerable and Outdated Components",
       });
     }

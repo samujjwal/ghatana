@@ -215,7 +215,7 @@ export async function testGetDomainWithContent() {
       // Check if concepts include simulations/visualizations
       if (response.data.concepts && response.data.concepts.length > 0) {
         const conceptWithContent = response.data.concepts.find(
-          (c: any) => c.simulation || c.visualization,
+          (c: unknown) => c.simulation || c.visualization,
         );
 
         if (conceptWithContent) {

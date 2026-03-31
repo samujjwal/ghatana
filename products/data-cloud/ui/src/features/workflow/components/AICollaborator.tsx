@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { workflowAtom, nodesAtom } from '@/stores/workflow.store';
@@ -62,7 +62,6 @@ export interface AgentRecommendation {
 export function AICollaborator() {
   const [workflow] = useAtom(workflowAtom);
   const [nodes] = useAtom(nodesAtom);
-  const [suggestions, setSuggestions] = useState<AgentSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [_selectedSuggestion, setSelectedSuggestion] = useState<AgentSuggestion | null>(null);
 
@@ -105,14 +104,7 @@ export function AICollaborator() {
     staleTime: 2000,
   });
 
-  /**
-   * Updates suggestions when recommendations are received.
-   */
-  useEffect(() => {
-    if (recommendations?.suggestions) {
-      setSuggestions(recommendations.suggestions);
-    }
-  }, [recommendations]);
+  const suggestions = recommendations?.suggestions ?? [];
 
   /**
    * Handles accepting a suggestion.

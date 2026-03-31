@@ -145,7 +145,7 @@ export async function ltiAuthMiddleware(
   try {
     // 1. Extract token from Authorization header or id_token parameter
     const authHeader = request.headers.authorization;
-    const idToken = (request.body as any)?.id_token || (request.query as any)?.id_token;
+    const idToken = (request.body as Record<string, unknown>)?.id_token || (request.query as Record<string, unknown>)?.id_token;
     
     const token = authHeader?.replace('Bearer ', '') || idToken;
 

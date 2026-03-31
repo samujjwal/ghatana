@@ -17,7 +17,16 @@ import {
 } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 import { RegenerationCandidateService } from "./candidate-service.js";
-import type { CreateRegenerationCandidateInput } from "@tutorputor/contracts/v1/content-studio";
+
+interface CreateRegenerationCandidateInput {
+  assetId: string;
+  assetType?: string;
+  trigger: string;
+  severity?: string;
+  reason: string;
+  evidence?: Record<string, unknown>;
+  priority?: number;
+}
 
 export function registerCandidateRoutes(
   app: FastifyInstance,
@@ -50,7 +59,10 @@ export function registerCandidateRoutes(
       const tenantId = getTenantId(request);
       const { assetId, trigger } = request.query;
 
-      const candidates = await service.listOpenCandidates(tenantId, { assetId, trigger });
+      const candidates = await service.listOpenCandidates(tenantId, {
+        ...(assetId ? { assetId } : {}),
+        ...(trigger ? { trigger } : {}),
+      });
       return reply.status(200).send({ candidates });
     },
   );

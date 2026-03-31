@@ -150,6 +150,45 @@ public interface PipelineRepository {
         p.setUpdatedAt(reg.getUpdatedAt());
         p.setCreatedBy(reg.getCreatedBy());
         p.setUpdatedBy(reg.getUpdatedBy());
+        p.setVersionLabel(reg.getVersionLabel());
+        p.setVersionStatus(reg.getVersionStatus());
         return p;
+    }
+
+    // ==================== Versioning (AEP-07) ====================
+
+    /**
+     * Saves an immutable version snapshot of a pipeline.
+     * Implementations should preserve all snapshots keyed by ({@code pipelineId}, {@code version}).
+     *
+     * @param pipelineId the pipeline whose snapshot to store
+     * @param snapshot   the pipeline state to capture
+     * @return promise of completion
+     */
+    default Promise<Void> saveVersionSnapshot(String pipelineId, PipelineRegistration snapshot) {
+        return Promise.complete();
+    }
+
+    /**
+     * Retrieves the complete ordered version history for a pipeline.
+     *
+     * @param pipelineId the pipeline ID
+     * @param tenantId   the tenant identifier
+     * @return promise with version snapshots in ascending version order
+     */
+    default Promise<List<PipelineRegistration>> findVersionHistory(String pipelineId, String tenantId) {
+        return Promise.of(List.of());
+    }
+
+    /**
+     * Retrieves a specific version snapshot.
+     *
+     * @param pipelineId the pipeline ID
+     * @param version    the version number
+     * @param tenantId   the tenant identifier
+     * @return promise with the version snapshot if found
+     */
+    default Promise<Optional<PipelineRegistration>> findVersionSnapshot(String pipelineId, int version, String tenantId) {
+        return Promise.of(Optional.empty());
     }
 }

@@ -72,6 +72,8 @@ public class AIInferenceHttpAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(AIInferenceHttpAdapter.class);
     private static final ObjectMapper objectMapper = JsonUtils.getDefaultMapper();
+    static final io.activej.http.HttpHeaders.HttpHeader CORRELATION_ID_HEADER =
+            io.activej.http.HttpHeaders.of("X-Correlation-ID");
 
     /** Maximum allowed prompt/text length to prevent resource abuse. */
     private static final int MAX_TEXT_LENGTH = 32_768;
@@ -216,6 +218,7 @@ public class AIInferenceHttpAdapter {
         if (authError != null) {
             return Promise.of(authError);
         }
+        String correlationId = extractCorrelationId(request);
 
         return parseRequestBody(request, EmbeddingRequest.class)
                 .then(req -> {
@@ -236,17 +239,17 @@ public class AIInferenceHttpAdapter {
                     }
 
                     String sanitizedText = sanitizeText(req.text);
-                    String requestId = UUID.randomUUID().toString();
                     long startMs = System.currentTimeMillis();
-                    logger.info("AI inference request requestId={} operation=embedding tenant={}",
-                            requestId, req.tenant);
+                    logger.info("AI inference request correlationId={} operation=embedding tenant={}",
+                            correlationId, req.tenant);
 
                     return gateway.generateEmbedding(req.tenant, sanitizedText)
                             .map(result -> {
-                                logger.info("AI inference response requestId={} operation=embedding tenant={} dimensions={} durationMs={}",
-                                        requestId, req.tenant, result.getVector().length,
+                                logger.info("AI inference response correlationId={} operation=embedding tenant={} dimensions={} durationMs={}",
+                                        correlationId, req.tenant, result.getVector().length,
                                         System.currentTimeMillis() - startMs);
                                 return ResponseBuilder.ok()
+                                        .header("X-Correlation-ID", correlationId)
                                         .json(Map.of(
                                                 "vector", result.getVector(),
                                                 "dimensions", result.getVector().length,
@@ -256,7 +259,7 @@ public class AIInferenceHttpAdapter {
                             });
                 })
                 .whenException(error -> {
-                    logger.error("Failed to generate embedding", error);
+                    logger.error("Failed to generate embedding correlationId={}", correlationId, error);
                     metrics.incrementCounter("ai.infer.http.errors", "endpoint", "embedding");
                 })
                 .then(
@@ -277,6 +280,7 @@ public class AIInferenceHttpAdapter {
         if (authError != null) {
             return Promise.of(authError);
         }
+        String correlationId = extractCorrelationId(request);
 
         return parseRequestBody(request, BatchEmbeddingRequest.class)
                 .then(req -> {
@@ -304,20 +308,20 @@ public class AIInferenceHttpAdapter {
                     List<String> sanitizedTexts = req.texts.stream()
                             .map(AIInferenceHttpAdapter::sanitizeText)
                             .toList();
-                    String requestId = UUID.randomUUID().toString();
                     long startMs = System.currentTimeMillis();
-                    logger.info("AI inference request requestId={} operation=batch-embeddings tenant={} batchSize={}",
-                            requestId, req.tenant, sanitizedTexts.size());
+                    logger.info("AI inference request correlationId={} operation=batch-embeddings tenant={} batchSize={}",
+                            correlationId, req.tenant, sanitizedTexts.size());
 
                     return gateway.generateEmbeddings(req.tenant, sanitizedTexts)
                             .map(results -> {
                                 List<float[]> vectors = results.stream()
                                         .map(EmbeddingResult::getVector)
                                         .toList();
-                                logger.info("AI inference response requestId={} operation=batch-embeddings tenant={} count={} durationMs={}",
-                                        requestId, req.tenant, vectors.size(),
+                                logger.info("AI inference response correlationId={} operation=batch-embeddings tenant={} count={} durationMs={}",
+                                        correlationId, req.tenant, vectors.size(),
                                         System.currentTimeMillis() - startMs);
                                 return ResponseBuilder.ok()
+                                        .header("X-Correlation-ID", correlationId)
                                         .json(Map.of(
                                                 "embeddings", vectors,
                                                 "count", vectors.size()
@@ -326,7 +330,7 @@ public class AIInferenceHttpAdapter {
                             });
                 })
                 .whenException(error -> {
-                    logger.error("Failed to generate batch embeddings", error);
+                    logger.error("Failed to generate batch embeddings correlationId={}", correlationId, error);
                     metrics.incrementCounter("ai.infer.http.errors", "endpoint", "embeddings");
                 })
                 .then(
@@ -347,6 +351,7 @@ public class AIInferenceHttpAdapter {
         if (authError != null) {
             return Promise.of(authError);
         }
+        String correlationId = extractCorrelationId(request);
 
         return parseRequestBody(request, CompletionRequestDto.class)
                 .then(req -> {
@@ -367,10 +372,9 @@ public class AIInferenceHttpAdapter {
                     }
 
                     String sanitizedPrompt = sanitizeText(req.prompt);
-                    String requestId = UUID.randomUUID().toString();
                     long startMs = System.currentTimeMillis();
-                    logger.info("AI inference request requestId={} operation=completion tenant={} promptChars={}",
-                            requestId, req.tenant, sanitizedPrompt.length());
+                    logger.info("AI inference request correlationId={} operation=completion tenant={} promptChars={}",
+                            correlationId, req.tenant, sanitizedPrompt.length());
 
                     CompletionRequest completionRequest = CompletionRequest.builder()
                             .prompt(sanitizedPrompt)
@@ -379,11 +383,12 @@ public class AIInferenceHttpAdapter {
 
                     return gateway.generateCompletion(req.tenant, completionRequest)
                             .map(result -> {
-                                logger.info("AI inference response requestId={} operation=completion tenant={} tokensUsed={} model={} durationMs={}",
-                                        requestId, req.tenant, result.getTokensUsed(),
+                                logger.info("AI inference response correlationId={} operation=completion tenant={} tokensUsed={} model={} durationMs={}",
+                                        correlationId, req.tenant, result.getTokensUsed(),
                                         result.getModelUsed() != null ? result.getModelUsed() : "unknown",
                                         System.currentTimeMillis() - startMs);
                                 return ResponseBuilder.ok()
+                                        .header("X-Correlation-ID", correlationId)
                                         .json(Map.of(
                                                 "text", result.getText(),
                                                 "tokensUsed", result.getTokensUsed(),
@@ -396,7 +401,7 @@ public class AIInferenceHttpAdapter {
                             });
                 })
                 .whenException(error -> {
-                    logger.error("Failed to generate completion", error);
+                    logger.error("Failed to generate completion correlationId={}", correlationId, error);
                     metrics.incrementCounter("ai.infer.http.errors", "endpoint", "completion");
                 })
                 .then(
@@ -452,6 +457,19 @@ public class AIInferenceHttpAdapter {
         } catch (Exception e) {
             return Promise.ofException(new IllegalArgumentException("Invalid JSON request body"));
         }
+    }
+
+    /**
+     * Extracts the {@code X-Correlation-ID} header value from an incoming request.
+     * If the header is absent or blank, generates a fresh random UUID.
+     * The same ID should be forwarded to all downstream service calls.
+     *
+     * @param request incoming HTTP request
+     * @return non-null correlationId suitable for structured logging and header propagation
+     */
+    static String extractCorrelationId(HttpRequest request) {
+        String id = request.getHeader(CORRELATION_ID_HEADER);
+        return (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
     }
 
     private static HttpResponse mapRequestError(Throwable error, String internalCode, String internalMessage) {

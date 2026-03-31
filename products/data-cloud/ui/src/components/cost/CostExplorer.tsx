@@ -20,7 +20,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { costService, CostBreakdown } from '../../api/cost.service';
-import BaseCard from '../cards/BaseCard';
+import { Card } from '@ghatana/design-system';
 
 interface CostExplorerProps {
   period?: string;
@@ -47,30 +47,30 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
 
   if (isLoading) {
     return (
-      <BaseCard title="Cost Explorer">
+      <Card title="Cost Explorer">
         <div className="animate-pulse space-y-4">
           <div className="h-24 bg-gray-200 rounded"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
         </div>
-      </BaseCard>
+      </Card>
     );
   }
 
   if (!costData) {
     return (
-      <BaseCard title="Cost Explorer">
+      <Card title="Cost Explorer">
         <div className="text-center py-8 text-gray-500">
           <DollarSign className="h-12 w-12 mx-auto mb-2 opacity-50" />
           <p>No cost data available</p>
         </div>
-      </BaseCard>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Summary Card */}
-      <BaseCard>
+      <Card>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600">Total Cost</p>
@@ -83,7 +83,7 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
             <DollarSign className="h-8 w-8 text-white" />
           </div>
         </div>
-      </BaseCard>
+      </Card>
 
       {/* View Mode Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
@@ -123,7 +123,7 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
       </div>
 
       {/* Content */}
-      <BaseCard>
+      <Card>
         {viewMode === 'DATASET' && (
           <CostByDataset items={costData.byDataset} formatCurrency={formatCurrency} />
         )}
@@ -133,7 +133,7 @@ export function CostExplorer({ period = '30d' }: CostExplorerProps) {
         {viewMode === 'USER' && (
           <CostByUser items={costData.byUser} formatCurrency={formatCurrency} />
         )}
-      </BaseCard>
+      </Card>
     </div>
   );
 }

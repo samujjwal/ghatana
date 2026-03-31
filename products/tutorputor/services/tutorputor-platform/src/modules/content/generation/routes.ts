@@ -26,7 +26,7 @@ import {
   type JobExecutionResult,
   type GenerationExecutionStreamMessage,
 } from "./execution-service.js";
-import type { GenerationRequestConfig } from "@tutorputor/contracts/v1/content-studio";
+type GenerationRequestConfig = Record<string, unknown>;
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";
 
 // =============================================================================
@@ -205,7 +205,7 @@ export function registerGenerationRoutes(
         return;
       }
 
-      const subscriber = deps.redis.duplicate();
+      const subscriber = (deps.redis as any).duplicate() as any;
       const channel = getGenerationExecutionChannel(requestId);
       const heartbeat = setInterval(() => {
         writeSseEvent(reply.raw, "heartbeat", {
@@ -225,22 +225,23 @@ export function registerGenerationRoutes(
         void cleanup();
       });
 
-      subscriber.on("message", async (_channel, rawMessage) => {
+      subscriber.on("message", async (_channel: string, rawMessage: string) => {
         const message = JSON.parse(
           rawMessage,
         ) as GenerationExecutionStreamMessage;
 
         if (message.kind === "snapshot" && message.snapshot) {
+          const snapshot = message.snapshot as any;
           writeSseEvent(reply.raw, "snapshot", {
-            request: message.snapshot.request,
-            progress: message.snapshot.progress,
+            request: snapshot.request,
+            progress: snapshot.progress,
           });
 
-          if (message.snapshot.progress.terminal) {
+          if (snapshot.progress?.terminal) {
             writeSseEvent(reply.raw, "done", {
-              requestId: message.snapshot.request.id,
-              status: message.snapshot.request.status,
-              completionPercent: message.snapshot.progress.completionPercent,
+              requestId: snapshot.request?.id,
+              status: snapshot.request?.status,
+              completionPercent: snapshot.progress?.completionPercent,
               terminal: true,
             });
             await cleanup();
@@ -283,7 +284,7 @@ export function registerGenerationRoutes(
       try {
         const result = await service.planRequest(tenantId, requestId);
         return reply.send(result);
-      } catch (err: unknown) {
+      } catch (err: any) {
         const message = err instanceof Error ? err.message : "Planning failed";
         return reply.status(400).send({ error: message });
       }
@@ -305,7 +306,7 @@ export function registerGenerationRoutes(
       try {
         const result = await service.cancelRequest(tenantId, requestId);
         return reply.send(result);
-      } catch (err: unknown) {
+      } catch (err: any) {
         const message =
           err instanceof Error ? err.message : "Cancellation failed";
         return reply.status(400).send({ error: message });
@@ -336,7 +337,7 @@ export function registerGenerationRoutes(
           request: updated,
           dispatch,
         });
-      } catch (err: unknown) {
+      } catch (err: any) {
         const message =
           err instanceof Error ? err.message : "Execution start failed";
         return reply.status(400).send({ error: message });
@@ -367,7 +368,7 @@ export function registerGenerationRoutes(
           results,
         );
         return reply.send(summary);
-      } catch (err: unknown) {
+      } catch (err: any) {
         const message =
           err instanceof Error ? err.message : "Recording results failed";
         return reply.status(400).send({ error: message });

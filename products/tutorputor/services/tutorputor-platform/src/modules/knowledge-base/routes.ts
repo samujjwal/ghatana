@@ -6,11 +6,11 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import type { KnowledgeBaseService } from "./service";
+import type { KnowledgeBaseServiceImpl } from "./service";
 
 export function registerKnowledgeBaseRoutes(
   fastify: FastifyInstance,
-  knowledgeBaseService: KnowledgeBaseService,
+  knowledgeBaseService: KnowledgeBaseServiceImpl,
 ): void {
   // Verify a factual claim
   fastify.post("/api/knowledge-base/verify-fact", async (request, reply) => {

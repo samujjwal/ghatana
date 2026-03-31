@@ -16,10 +16,15 @@ import {
   roleGuard,
 } from "../../../core/http/requestContext.js";
 import type { PrismaClient } from "@tutorputor/core/db";
-import type { GenerationQualityLoopSummary } from "@tutorputor/contracts/v1/content-studio";
 import { GenerationReviewService } from "./review-service.js";
 import { GenerationQualityLoopService } from "./quality-loop-service.js";
-import type { SubmitReviewDecisionInput } from "@tutorputor/contracts/v1/content-studio";
+
+interface SubmitReviewDecisionInput {
+  requestId: string;
+  status: "approved" | "rejected" | "regeneration_requested";
+  decisionNote?: string;
+  regenerateJobIds?: string[];
+}
 
 export function registerReviewRoutes(
   app: FastifyInstance,
@@ -103,7 +108,7 @@ export function registerReviewRoutes(
           autoPublish: false,
         },
       );
-      return reply.status(200).send(summary satisfies GenerationQualityLoopSummary);
+      return reply.status(200).send(summary);
     },
   );
 
@@ -129,7 +134,7 @@ export function registerReviewRoutes(
           actorId: reviewedBy,
         },
       );
-      return reply.status(200).send(summary satisfies GenerationQualityLoopSummary);
+      return reply.status(200).send(summary);
     },
   );
 }

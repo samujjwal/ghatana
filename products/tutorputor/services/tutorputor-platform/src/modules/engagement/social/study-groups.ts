@@ -45,7 +45,7 @@ export interface StudyGroupServiceConfig {
  */
 export class StudyGroupServiceImpl implements StudyGroupService {
   private readonly prisma: PrismaClient;
-  private readonly redis?: Redis;
+  private readonly redis: Redis | undefined;
   private readonly defaultMaxMembers: number;
   private readonly inviteExpirationDays: number;
 
@@ -77,7 +77,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         name: args.name,
         description: args.description,
         createdBy: args.createdBy,
-        visibility: this.mapVisibilityToDb(args.visibility),
+        visibility: this.mapVisibilityToDb(args.visibility) as any,
         subjects: JSON.stringify(args.subjects),
         modules: args.moduleIds ? JSON.stringify(args.moduleIds) : null,
         maxMembers: args.maxMembers ?? this.defaultMaxMembers,
@@ -125,7 +125,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       throw new Error("Study group not found");
     }
 
-    return { ...mapped, membership };
+    return membership ? { ...mapped, membership } : mapped;
   }
 
   async listGroups(args: {
@@ -138,7 +138,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     memberOf?: boolean;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<StudyGroup>> {
-    const where = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
       status: "ACTIVE",
     };
@@ -315,7 +315,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       data: {
         groupId: args.groupId,
         userId: args.userId,
-        message: args.message,
+        ...(args.message !== undefined ? { message: args.message } : {}),
         status: "PENDING",
       },
     });
@@ -366,7 +366,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         status: args.approved ? "APPROVED" : "REJECTED",
         reviewedBy: args.reviewerId,
         reviewedAt: new Date(),
-        rejectionReason: args.rejectionReason,
+        ...(args.rejectionReason !== undefined
+          ? { rejectionReason: args.rejectionReason }
+          : {}),
       },
     });
 
@@ -546,7 +548,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
 
     const updatedMember = await this.prisma.studyGroupMember.update({
       where: { id: member.id },
-      data: { role: this.mapRoleToDb(args.newRole) },
+      data: { role: this.mapRoleToDb(args.newRole) as any },
     });
 
     return this.mapMemberFromDb(updatedMember);
@@ -642,14 +644,16 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       data: {
         groupId: args.groupId,
         title: args.title,
-        description: args.description,
+        ...(args.description !== undefined ? { description: args.description } : {}),
         createdBy: args.createdBy,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
-        type: this.mapSessionTypeToDb(args.type),
-        moduleId: args.moduleId,
+        type: this.mapSessionTypeToDb(args.type) as any,
+        ...(args.moduleId !== undefined ? { moduleId: args.moduleId } : {}),
         lessonIds: args.lessonIds ? JSON.stringify(args.lessonIds) : null,
-        maxParticipants: args.maxParticipants,
+        ...(args.maxParticipants !== undefined
+          ? { maxParticipants: args.maxParticipants }
+          : {}),
         status: "SCHEDULED",
       },
     });
@@ -685,7 +689,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     includeCompleted?: boolean;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<StudySession>> {
-    const where = { groupId: args.groupId };
+    const where: Record<string, unknown> = { groupId: args.groupId };
 
     if (!args.includeCompleted) {
       where.status = { in: ["SCHEDULED", "IN_PROGRESS"] };
@@ -740,12 +744,12 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       create: {
         sessionId: args.sessionId,
         userId: args.userId,
-        status: this.mapRsvpStatusToDb(args.status),
-        note: args.note,
+        status: this.mapRsvpStatusToDb(args.status) as any,
+        ...(args.note !== undefined ? { note: args.note } : {}),
       },
       update: {
-        status: this.mapRsvpStatusToDb(args.status),
-        note: args.note,
+        status: this.mapRsvpStatusToDb(args.status) as any,
+        ...(args.note !== undefined ? { note: args.note } : {}),
       },
     });
 
@@ -802,8 +806,10 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       data: {
         status: "COMPLETED",
         endedAt: new Date(),
-        notes: args.notes,
-        recordingUrl: args.recordingUrl,
+        ...(args.notes !== undefined ? { notes: args.notes } : {}),
+        ...(args.recordingUrl !== undefined
+          ? { recordingUrl: args.recordingUrl }
+          : {}),
       },
     });
 
@@ -840,7 +846,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       where: { id: args.sessionId },
       data: {
         status: "CANCELLED",
-        notes: args.reason,
+        ...(args.reason !== undefined ? { notes: args.reason } : {}),
       },
     });
 
@@ -976,7 +982,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         targetType: activity.targetType,
         targetId: activity.targetId,
         targetTitle: activity.targetTitle,
-        studyGroupId: activity.studyGroupId,
+        ...(activity.studyGroupId !== undefined
+          ? { studyGroupId: activity.studyGroupId }
+          : {}),
       },
     });
 
@@ -1001,15 +1009,21 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma, {
+    await createSocialNotification(this.prisma as unknown as Parameters<typeof createSocialNotification>[0], {
       tenantId,
       userId,
       type: notification.type,
       title: notification.title,
       body: notification.body,
-      targetType: notification.targetType,
-      targetId: notification.targetId,
-      actorId: notification.actorId,
+      ...(notification.targetType !== undefined
+        ? { targetType: notification.targetType }
+        : {}),
+      ...(notification.targetId !== undefined
+        ? { targetId: notification.targetId }
+        : {}),
+      ...(notification.actorId !== undefined
+        ? { actorId: notification.actorId }
+        : {}),
     });
 
     if (this.redis) {
