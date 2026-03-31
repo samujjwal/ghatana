@@ -129,13 +129,13 @@ function calculateNodePosition(index: number, total: number): { x: number; y: nu
 function getEdgeColor(type: string): string {
   switch (type) {
     case 'DERIVES_FROM':
-      return '#3b82f6'; // blue
+      return 'var(--color-info)';      // blue
     case 'FEEDS_INTO':
-      return '#10b981'; // green
+      return 'var(--color-success)';   // green
     case 'TRANSFORMS':
-      return '#8b5cf6'; // purple
+      return 'var(--color-transform)'; // purple
     default:
-      return '#6b7280'; // gray
+      return 'var(--color-text-muted)'; // gray
   }
 }
 

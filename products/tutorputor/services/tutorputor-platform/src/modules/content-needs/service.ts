@@ -156,8 +156,8 @@ export class ContentNeedsAnalyzer {
         needs: ContentNeeds
     ): Promise<{
         examples: any[];
-        simulation?: any;
-        animation?: any;
+        simulation?: unknown;
+        animation?: unknown;
     }> {
         const claim = await this.prisma.learningClaim.findUnique({
             where: { id: claimId },
@@ -170,8 +170,8 @@ export class ContentNeedsAnalyzer {
 
         const result: {
             examples: any[];
-            simulation?: any;
-            animation?: any;
+            simulation?: unknown;
+            animation?: unknown;
         } = {
             examples: [],
         };
@@ -194,7 +194,7 @@ export class ContentNeedsAnalyzer {
         return result;
     }
 
-    async getAnalysisHistory(experienceId: string): Promise<any[]> {
+    async getAnalysisHistory(experienceId: string): Promise<unknown[]> {
         const claims = await this.prisma.learningClaim.findMany({
             where: { experienceId },
             orderBy: { orderIndex: 'asc' },
@@ -467,7 +467,7 @@ export class ContentNeedsAnalyzer {
     // Content Generation Methods
     // ===========================================================================
 
-    private async persistExamples(claim: any, needs: ContentNeeds): Promise<any[]> {
+    private async persistExamples(claim: any, needs: ContentNeeds): Promise<unknown[]> {
         const generated = await this.generateExamples(claim, needs);
 
         await this.prisma.claimExample.deleteMany({
@@ -580,7 +580,7 @@ export class ContentNeedsAnalyzer {
         });
     }
 
-    private async generateExamples(claim: any, needs: ContentNeeds): Promise<any[]> {
+    private async generateExamples(claim: any, needs: ContentNeeds): Promise<unknown[]> {
         const examples: any[] = [];
 
         for (let i = 0; i < needs.examples.count; i++) {

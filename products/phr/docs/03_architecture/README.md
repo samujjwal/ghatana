@@ -2,6 +2,8 @@
 
 This folder contains architecture, runtime, schema, and migration documents that define how the platform is built.
 
+> Runtime status note (2026-03-30): The live PHR backend implementation is Java 21 + ActiveJ under `products/phr/src/main/java`. Documents in this folder that describe NestJS modules or a planned app/worker workspace shape should be treated as historical design context unless they are explicitly updated to match the runtime code.
+
 Files:
 
 - `phr_mvp_activation_plan.md`

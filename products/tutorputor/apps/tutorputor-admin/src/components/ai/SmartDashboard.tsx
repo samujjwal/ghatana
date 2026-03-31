@@ -45,7 +45,7 @@ interface AIInsight {
   action?: {
     label: string;
     type: "create" | "optimize" | "analyze" | "review";
-    data?: any;
+    data?: unknown;
   };
   metrics?: {
     current: number;

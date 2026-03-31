@@ -147,14 +147,16 @@ export class OpenAIProvider extends BaseAIProvider {
                 stream: false,
             });
 
+            const usage = completion.usage ? {
+                promptTokens: completion.usage.prompt_tokens,
+                completionTokens: completion.usage.completion_tokens,
+                totalTokens: completion.usage.total_tokens,
+            } : undefined;
+
             const response: AIResponse = {
                 content: completion.choices[0]?.message?.content || '',
-                usage: completion.usage ? {
-                    promptTokens: completion.usage.prompt_tokens,
-                    completionTokens: completion.usage.completion_tokens,
-                    totalTokens: completion.usage.total_tokens,
-                } : undefined,
-                finishReason: completion.choices[0]?.finish_reason as any,
+                ...(usage ? { usage } : {}),
+                finishReason: completion.choices[0]?.finish_reason as 'stop' | 'length' | 'content_filter',
                 model: completion.model,
                 provider: 'openai'
             };
@@ -202,8 +204,6 @@ export class OpenAIProvider extends BaseAIProvider {
     async getModels(): Promise<AIModel[]> {
         const models = await this.client.models.list();
         return models.data.map((model: any) => ({
-            id: model.id,
-            provider: 'openai',
             name: model.id,
             maxTokens: model.id.includes('gpt-4') ? 8192 : 4096,
             costPer1kTokens: model.id.includes('gpt-4') ? 0.03 : 0.002,
@@ -247,14 +247,16 @@ export class AnthropicProvider extends BaseAIProvider {
                 stop_sequences: request.stopSequences,
             });
 
+            const usage = message.usage ? {
+                promptTokens: message.usage.input_tokens,
+                completionTokens: message.usage.output_tokens,
+                totalTokens: message.usage.input_tokens + message.usage.output_tokens,
+            } : undefined;
+
             const response: AIResponse = {
                 content: message.content[0]?.text || '',
-                usage: message.usage ? {
-                    promptTokens: message.usage.input_tokens,
-                    completionTokens: message.usage.output_tokens,
-                    totalTokens: message.usage.input_tokens + message.usage.output_tokens,
-                } : undefined,
-                finishReason: message.stop_reason as any,
+                ...(usage ? { usage } : {}),
+                finishReason: message.stop_reason as 'stop' | 'length' | 'content_filter',
                 model: message.model,
                 provider: 'anthropic'
             };
@@ -491,7 +493,7 @@ export class OllamaProvider extends BaseAIProvider {
  * AI Provider Factory
  */
 export class AIProviderFactory {
-    private providers = new Map<AIProvider, typeof BaseAIProvider>();
+    private providers = new Map<AIProvider, new (config: AIProviderConfig) => BaseAIProvider>();
 
     constructor() {
         this.providers.set('openai', OpenAIProvider);
@@ -517,7 +519,7 @@ export class AIProviderFactory {
  */
 export class MultiProviderAIService {
     private providers: Map<string, BaseAIProvider> = new Map();
-    private defaultProvider: string;
+    private defaultProvider?: string;
     private factory: AIProviderFactory;
 
     constructor(configs: Array<{ name: string; config: AIProviderConfig; isDefault?: boolean }>) {
@@ -541,18 +543,26 @@ export class MultiProviderAIService {
     }
 
     async generate(request: AIRequest, providerName?: string): Promise<AIResponse> {
-        const provider = this.providers.get(providerName || this.defaultProvider);
+        const resolvedProviderName = providerName ?? this.defaultProvider;
+        if (!resolvedProviderName) {
+            throw new Error('No default provider configured');
+        }
+        const provider = this.providers.get(resolvedProviderName);
         if (!provider) {
-            throw new Error(`Provider not found: ${providerName || this.defaultProvider}`);
+            throw new Error(`Provider not found: ${resolvedProviderName}`);
         }
 
         return provider.generate(request);
     }
 
     async *generateStream(request: AIRequest, providerName?: string): AsyncIterable<string> {
-        const provider = this.providers.get(providerName || this.defaultProvider);
+        const resolvedProviderName = providerName ?? this.defaultProvider;
+        if (!resolvedProviderName) {
+            throw new Error('No default provider configured');
+        }
+        const provider = this.providers.get(resolvedProviderName);
         if (!provider) {
-            throw new Error(`Provider not found: ${providerName || this.defaultProvider}`);
+            throw new Error(`Provider not found: ${resolvedProviderName}`);
         }
 
         yield* provider.generateStream(request);
@@ -595,6 +605,9 @@ export class MultiProviderAIService {
     }
 
     getDefaultProvider(): string {
+        if (!this.defaultProvider) {
+            throw new Error('No default provider configured');
+        }
         return this.defaultProvider;
     }
 }

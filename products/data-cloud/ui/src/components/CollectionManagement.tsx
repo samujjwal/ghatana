@@ -1,3 +1,11 @@
+/**
+ * CollectionManagement component.
+ *
+ * @doc.type component
+ * @doc.purpose Provides full CRUD UI for data collections including list, create, update, and delete operations
+ * @doc.layer product
+ * @doc.pattern Management UI
+ */
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 

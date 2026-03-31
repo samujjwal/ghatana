@@ -19,28 +19,28 @@ export interface AutoRevisionRoutes {
   // Drift detection endpoints
   getDriftSignals: (
     request: FastifyRequest<{ Params: { experienceId: string } }>,
-  ) => Promise<any>;
-  monitorAllDrift: (request: FastifyRequest) => Promise<any>;
+  ) => Promise<unknown>;
+  monitorAllDrift: (request: FastifyRequest) => Promise<unknown>;
 
   // Regeneration endpoints
   queueRegeneration: (
     request: FastifyRequest<{ Params: { experienceId: string } }>,
-  ) => Promise<any>;
-  processRegenerationQueue: (request: FastifyRequest) => Promise<any>;
+  ) => Promise<unknown>;
+  processRegenerationQueue: (request: FastifyRequest) => Promise<unknown>;
 
   // A/B testing endpoints
   createABExperiment: (
     request: FastifyRequest<{ Params: { experienceId: string } }>,
-  ) => Promise<any>;
-  evaluateABExperiments: (request: FastifyRequest) => Promise<any>;
+  ) => Promise<unknown>;
+  evaluateABExperiments: (request: FastifyRequest) => Promise<unknown>;
 
   // Analytics endpoints
   getRegenerationHistory: (
     request: FastifyRequest<{ Params: { experienceId: string } }>,
-  ) => Promise<any>;
+  ) => Promise<unknown>;
   getABExperimentResults: (
     request: FastifyRequest<{ Params: { experimentId: string } }>,
-  ) => Promise<any>;
+  ) => Promise<unknown>;
 }
 
 const adminGuard = roleGuard(["admin", "superadmin", "content_creator"]);

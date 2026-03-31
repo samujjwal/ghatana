@@ -72,18 +72,18 @@ export class GenerationQualityLoopService {
     const eligibleAssetIds = unique(
       records
         .filter(
-          (record) =>
+          (record: any) =>
             record.assetId != null && record.recommendation !== "block",
         )
-        .map((record) => record.assetId as string),
+        .map((record: any) => record.assetId as string),
     );
     const blockedAssetIds = unique(
       records
         .filter(
-          (record) =>
+          (record: any) =>
             record.assetId != null && record.recommendation === "block",
         )
-        .map((record) => record.assetId as string),
+        .map((record: any) => record.assetId as string),
     );
 
     let latestDecision = await this.reviewService.getLatestDecision(
@@ -127,7 +127,7 @@ export class GenerationQualityLoopService {
       evaluation,
       ...(latestDecision ? { latestDecision } : {}),
       openCandidates: openCandidates.filter(
-        (candidate) =>
+        (candidate: any) =>
           candidate.generationRequestId === generationRequestId ||
           blockedAssetIds.includes(candidate.assetId) ||
           eligibleAssetIds.includes(candidate.assetId),
@@ -143,8 +143,8 @@ export class GenerationQualityLoopService {
       ...(publishResult ? { publishResult } : {}),
       publishedAssetIds: publishResult
         ? publishResult.results
-            .filter((result) => result.published)
-            .map((result) => result.assetId)
+            .filter((result: any) => result.published)
+            .map((result: any) => result.assetId)
         : [],
       eligibleAssetIds,
       blockedAssetIds,
@@ -229,7 +229,7 @@ function buildCandidateConfig(record: EvaluationRecord):
   }
 
   const issues = record.issues ?? [];
-  const safetyIssue = issues.find((issue) => issue.dimension === "safety");
+  const safetyIssue = issues.find((issue: any) => issue.dimension === "safety");
 
   if (record.recommendation === "block") {
     return {

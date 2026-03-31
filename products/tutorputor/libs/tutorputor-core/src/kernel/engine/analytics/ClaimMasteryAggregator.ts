@@ -173,8 +173,8 @@ function mapTelemetryToEvidence(
           evidenceId: `${sessionId}:${e.object.taskId}:explanation`,
           claimId,
           type: "explanation_quality",
-          rubricScore: e.result.score,
-          maxRubricScore: e.result.maxScore,
+          ...(typeof e.result.score === "number" ? { rubricScore: e.result.score } : {}),
+          ...(typeof e.result.maxScore === "number" ? { maxRubricScore: e.result.maxScore } : {}),
           learnerId,
           sessionId,
           timestamp: new Date(event.timestamp),
@@ -202,7 +202,9 @@ function mapTelemetryToEvidence(
         evidenceId: `${sessionId}:${e.object.linkedAnswerId}:cbm`,
         claimId: pending.claimId,
         type: "prediction_vs_outcome",
-        correct: pending.event.result.correct,
+        ...(typeof pending.event.result.correct === "boolean"
+          ? { correct: pending.event.result.correct }
+          : {}),
         confidence: e.result.confidence as ConfidenceLevel,
         learnerId,
         sessionId,

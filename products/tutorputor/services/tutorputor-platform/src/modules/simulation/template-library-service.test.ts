@@ -246,7 +246,7 @@ function makePrisma() {
     simulationManifestVersion: {
       create: tx.simulationManifestVersion.create,
     },
-    $transaction: vi.fn(async (arg: unknown) => {
+    $transaction: vi.fn(async (arg: any) => {
       if (typeof arg === "function") {
         return arg(tx as never);
       }

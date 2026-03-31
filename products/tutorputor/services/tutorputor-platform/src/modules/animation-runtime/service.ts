@@ -74,7 +74,7 @@ export interface AnimationState {
 }
 
 export interface AnimationRenderer {
-  setProperty(property: string, value: unknown): void;
+  setProperty(property: string, value: any): void;
   getProperty(property: string): unknown;
   applyTransform(transform: Record<string, unknown>): void;
   render(): void;
@@ -433,7 +433,7 @@ export class AnimationRuntime {
     return interpolated;
   }
 
-  private interpolateValue(start: unknown, end: unknown, progress: number): unknown {
+  private interpolateValue(start: any, end: unknown, progress: number): unknown {
     // Handle different value types
     if (typeof start === "number" && typeof end === "number") {
       return lerp(start, end, progress);

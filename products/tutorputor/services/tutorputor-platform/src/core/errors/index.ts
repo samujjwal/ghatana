@@ -106,9 +106,9 @@ export abstract class TutorPutorError extends Error {
   public readonly code: ErrorCode;
   public readonly category: ErrorCategory;
   public readonly statusCode: number;
-  public readonly context?: ErrorContext;
+  public readonly context: ErrorContext | undefined;
   public readonly timestamp: string;
-  public readonly cause?: Error;
+  public override readonly cause: Error | undefined;
 
   constructor(
     code: ErrorCode,
@@ -136,15 +136,18 @@ export abstract class TutorPutorError extends Error {
   /**
    * Convert error to a standardized JSON response
    */
-  public override toJSON(): ErrorDetails {
-    return {
+  public toJSON(): ErrorDetails {
+    const details: ErrorDetails = {
       code: this.code,
       message: this.message,
       category: this.category,
       statusCode: this.statusCode,
-      context: this.context,
       timestamp: this.timestamp,
     };
+    if (this.context) {
+      details.context = this.context;
+    }
+    return details;
   }
 
   /**
@@ -627,7 +630,7 @@ export class PaymentProcessingFailedError extends TutorPutorError {
  * Error factory functions for common scenarios
  */
 export class ErrorFactory {
-  static fromUnknown(error: unknown, context?: ErrorContext): TutorPutorError {
+  static fromUnknown(error: any, context?: ErrorContext): TutorPutorError {
     if (error instanceof TutorPutorError) {
       return error;
     }
@@ -674,18 +677,18 @@ export class ErrorFactory {
 /**
  * Utility functions for error handling
  */
-export function isTutorPutorError(error: unknown): error is TutorPutorError {
+export function isTutorPutorError(error: any): error is TutorPutorError {
   return error instanceof TutorPutorError;
 }
 
-export function getErrorCode(error: unknown): ErrorCode | null {
+export function getErrorCode(error: any): ErrorCode | null {
   return isTutorPutorError(error) ? error.code : null;
 }
 
-export function getErrorCategory(error: unknown): ErrorCategory | null {
+export function getErrorCategory(error: any): ErrorCategory | null {
   return isTutorPutorError(error) ? error.category : null;
 }
 
-export function getErrorStatusCode(error: unknown): number {
+export function getErrorStatusCode(error: any): number {
   return isTutorPutorError(error) ? error.statusCode : 500;
 }

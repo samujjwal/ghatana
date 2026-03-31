@@ -359,7 +359,7 @@ export class VRSessionServiceImpl implements VRSessionService {
   // Private helper methods
   // ============================================
 
-  private mapToVRSession(session: Record<string, unknown>): VRSession {
+  private mapToVRSession(session: any): VRSession {
     return {
       id: session.id as string,
       userId: session.userId as string,

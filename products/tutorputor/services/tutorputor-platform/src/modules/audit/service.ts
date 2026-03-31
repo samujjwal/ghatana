@@ -53,6 +53,52 @@ export interface AuditLogSummary {
 export class AuditServiceImpl {
     constructor(private readonly prisma: PrismaClient) { }
 
+    private parseMetadata(metadata: string | null): Record<string, any> {
+        if (!metadata) {
+            return {};
+        }
+
+        try {
+            const parsed = JSON.parse(metadata);
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+            return {};
+        }
+    }
+
+    private toAuditLogEntry(e: {
+        id: string;
+        tenantId: string;
+        timestamp: Date;
+        actorId: string;
+        action: string;
+        resourceType: string;
+        resourceId: string;
+        metadata: string;
+        ipAddress: string | null;
+        userAgent: string | null;
+    }): AuditLogEntry {
+        const entry: AuditLogEntry = {
+            id: e.id,
+            tenantId: e.tenantId as TenantId,
+            timestamp: e.timestamp.toISOString(),
+            actorId: e.actorId as UserId,
+            action: e.action,
+            resourceType: e.resourceType,
+            resourceId: e.resourceId ?? '',
+            metadata: this.parseMetadata(e.metadata),
+        };
+
+        if (e.ipAddress) {
+            entry.ipAddress = e.ipAddress;
+        }
+        if (e.userAgent) {
+            entry.userAgent = e.userAgent;
+        }
+
+        return entry;
+    }
+
     async queryAuditEvents(query: AuditLogQuery): Promise<PaginatedResult<AuditLogEntry>> {
         const {
             tenantId,
@@ -68,6 +114,7 @@ export class AuditServiceImpl {
         const { cursor, limit = 50, sortBy, sortOrder } = pagination;
         const take = Math.min(limit, 200);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = { tenantId: tenantId as string };
 
         if (actorId) where.actorId = actorId as string;
@@ -76,26 +123,31 @@ export class AuditServiceImpl {
         if (resourceId) where.resourceId = resourceId;
 
         if (startDate || endDate) {
-            where.createdAt = {};
-            if (startDate) where.createdAt.gte = new Date(startDate);
-            if (endDate) where.createdAt.lte = new Date(endDate);
+            where.timestamp = {};
+            if (startDate) where.timestamp.gte = new Date(startDate);
+            if (endDate) where.timestamp.lte = new Date(endDate);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const orderBy: any = {};
         if (sortBy) {
             orderBy[sortBy] = sortOrder ?? 'desc';
         } else {
-            orderBy.createdAt = 'desc';
+            orderBy.timestamp = 'desc';
+        }
+
+        const queryArgs: Record<string, unknown> = {
+            where,
+            take: take + 1,
+            skip: cursor ? 1 : 0,
+            orderBy,
+        };
+        if (cursor) {
+            queryArgs.cursor = { id: cursor };
         }
 
         const [events, totalCount] = await Promise.all([
-            this.prisma.auditLog.findMany({
-                where,
-                take: take + 1,
-                skip: cursor ? 1 : 0,
-                cursor: cursor ? { id: cursor } : undefined,
-                orderBy,
-            }),
+            this.prisma.auditLog.findMany(queryArgs as any),
             this.prisma.auditLog.count({ where }),
         ]);
 
@@ -103,24 +155,16 @@ export class AuditServiceImpl {
         const items = hasMore ? events.slice(0, -1) : events;
         const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
-        return {
-            items: items.map((e: any) => ({
-                id: e.id,
-                tenantId: e.tenantId as TenantId,
-                timestamp: e.createdAt.toISOString(),
-                actorId: e.actorId as UserId,
-                actorEmail: e.actorEmail ?? undefined,
-                action: e.action,
-                resourceType: e.resourceType,
-                resourceId: e.resourceId ?? '',
-                metadata: (e.metadata as Record<string, any>) ?? {},
-                ipAddress: e.ipAddress ?? undefined,
-                userAgent: e.userAgent ?? undefined,
-            })),
-            nextCursor,
+        const result: PaginatedResult<AuditLogEntry> = {
+            items: items.map((e) => this.toAuditLogEntry(e as any)),
             totalCount,
             hasMore,
         };
+        if (nextCursor) {
+            result.nextCursor = nextCursor;
+        }
+
+        return result;
     }
 
     async getAuditSummary(args: {
@@ -133,29 +177,29 @@ export class AuditServiceImpl {
         const [totalEvents, actors, topActions, topResources, recent] =
             await Promise.all([
                 this.prisma.auditLog.count({
-                    where: { tenantId, createdAt: { gte: startDate } },
+                    where: { tenantId, timestamp: { gte: startDate } },
                 }),
                 this.prisma.auditLog.groupBy({
                     by: ['actorId'],
-                    where: { tenantId, createdAt: { gte: startDate } },
+                    where: { tenantId, timestamp: { gte: startDate } },
                 }),
                 this.prisma.auditLog.groupBy({
                     by: ['action'],
-                    where: { tenantId, createdAt: { gte: startDate } },
+                    where: { tenantId, timestamp: { gte: startDate } },
                     _count: { action: true },
                     orderBy: { _count: { action: 'desc' } },
                     take: 5,
                 }),
                 this.prisma.auditLog.groupBy({
                     by: ['resourceType'],
-                    where: { tenantId, createdAt: { gte: startDate } },
+                    where: { tenantId, timestamp: { gte: startDate } },
                     _count: { resourceType: true },
                     orderBy: { _count: { resourceType: 'desc' } },
                     take: 5,
                 }),
                 this.prisma.auditLog.findMany({
                     where: { tenantId },
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { timestamp: 'desc' },
                     take: 10,
                 }),
             ]);
@@ -171,17 +215,7 @@ export class AuditServiceImpl {
                 resourceType: r.resourceType,
                 count: r._count.resourceType,
             })),
-            recentEvents: (recent as any[]).map((e: any) => ({
-                id: e.id,
-                tenantId: e.tenantId as TenantId,
-                timestamp: e.createdAt.toISOString(),
-                actorId: e.actorId as UserId,
-                actorEmail: e.actorEmail ?? undefined,
-                action: e.action,
-                resourceType: e.resourceType,
-                resourceId: e.resourceId ?? '',
-                metadata: (e.metadata as Record<string, any>) ?? {},
-            })),
+            recentEvents: (recent as any[]).map((e: any) => this.toAuditLogEntry(e)),
         };
     }
 

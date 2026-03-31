@@ -17,7 +17,8 @@
  * @doc.pattern React Component
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import { loadWorkflowAtom } from '../stores/workflow.store';
 import { workflowClient } from '../../../lib/api/workflow-client';
@@ -45,33 +46,24 @@ export interface TemplateLibraryProps {
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateApplied }) => {
   const loadWorkflow = useSetAtom(loadWorkflowAtom);
 
-  const [templates, setTemplates] = useState<WorkflowTemplate[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  /**
-   * Fetches templates.
-   */
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await workflowClient.getTemplates();
-        setTemplates(response.templates);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to fetch templates';
-        setError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const {
+    data: templates = [],
+    isLoading: loading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['workflow-templates'],
+    queryFn: async () => {
+      const response = await workflowClient.getTemplates();
+      return response.templates;
+    },
+    staleTime: 60_000,
+  });
 
-    fetchTemplates();
-  }, []);
+  const error = queryError instanceof Error ? queryError.message : queryError ? 'Failed to fetch templates' : null;
 
   /**
    * Filtered templates.

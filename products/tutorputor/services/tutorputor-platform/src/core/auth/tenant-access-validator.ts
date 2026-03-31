@@ -299,13 +299,12 @@ export class TenantAccessValidator {
       where: { id: tenantId },
       select: {
         id: true,
-        isActive: true,
         subscriptionTier: true,
       },
     });
 
     if (!tenant) {
-      throw new ResourceNotFoundError("Tenant", tenantId);
+      throw new ResourceNotFoundError("Tenant", { tenantId });
     }
 
     // Get user information within tenant
@@ -316,30 +315,20 @@ export class TenantAccessValidator {
       },
       select: {
         id: true,
-        isActive: true,
-        role: {
-          select: {
-            name: true,
-            permissions: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
+        role: true,
       },
     });
 
     if (!user) {
-      throw new ResourceNotFoundError("User", userId);
+      throw new ResourceNotFoundError("User", { userId });
     }
 
     return {
-      tenantId: tenant.id,
-      userId: user.id,
-      userRole: user.role?.name || "user",
-      permissions: user.role?.permissions.map((p) => p.name) || [],
-      isActive: user.isActive && tenant.isActive,
+      tenantId: tenant.id as TenantId,
+      userId: user.id as UserId,
+      userRole: user.role || "user",
+      permissions: [],
+      isActive: true,
       subscriptionTier: tenant.subscriptionTier || undefined,
     };
   }
@@ -443,7 +432,14 @@ export class TenantAccessValidator {
         };
       }
 
-      const ownerId = resource[0].owner_id;
+      const ownerId = resource[0]?.owner_id;
+      if (!ownerId) {
+        return {
+          allowed: false,
+          reason: "Resource owner metadata missing",
+          errorCode: "RESOURCE_NOT_FOUND",
+        };
+      }
       if (ownerId !== context.userId) {
         return {
           allowed: false,

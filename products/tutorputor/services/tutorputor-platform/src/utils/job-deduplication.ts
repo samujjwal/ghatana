@@ -30,6 +30,7 @@ export interface DeduplicationResult {
 export class JobDeduplicator {
   private readonly dedupWindowMs: number;
   private readonly lockTtlSeconds: number;
+  private readonly redis?: Redis;
 
   constructor(
     private readonly prisma: PrismaClient,
@@ -37,10 +38,10 @@ export class JobDeduplicator {
   ) {
     this.dedupWindowMs = options.dedupWindowMs || 24 * 60 * 60 * 1000; // 24 hours default
     this.lockTtlSeconds = Math.max(1, Math.floor(this.dedupWindowMs / 1000));
-    this.redis = options.redis;
+    if (options.redis) {
+      this.redis = options.redis;
+    }
   }
-
-  private readonly redis?: Redis;
 
   /**
    * Generate a unique fingerprint for a job based on its parameters.
@@ -67,7 +68,7 @@ export class JobDeduplicator {
 
     // Fast distributed duplicate check via Redis lock.
     if (this.redis) {
-      const lockResult = await this.redis.set(
+      const lockResult = await (this.redis as any).set(
         lockKey,
         "1",
         "NX",
@@ -77,14 +78,13 @@ export class JobDeduplicator {
       if (lockResult !== "OK") {
         return {
           isDuplicate: true,
-          existingJobId: undefined,
           fingerprint,
         };
       }
     }
 
     // Check in database for recent jobs with same fingerprint
-    const recentJob = await this.prisma.jobTracking.findFirst({
+    const recentJob = await (this.prisma as any).jobTracking.findFirst({
       where: {
         fingerprint,
         createdAt: {
@@ -120,7 +120,7 @@ export class JobDeduplicator {
     jobType: string,
     metadata: Record<string, any>,
   ): Promise<void> {
-    await this.prisma.jobTracking.create({
+    await (this.prisma as any).jobTracking.create({
       data: {
         jobId,
         fingerprint,
@@ -140,7 +140,7 @@ export class JobDeduplicator {
     jobId: string,
     status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED",
   ): Promise<void> {
-    const updated = await this.prisma.jobTracking.update({
+    const updated = await (this.prisma as any).jobTracking.update({
       where: { jobId },
       data: {
         status,
@@ -160,7 +160,7 @@ export class JobDeduplicator {
   async cleanupOldJobs(
     olderThanMs: number = this.dedupWindowMs,
   ): Promise<number> {
-    const result = await this.prisma.jobTracking.deleteMany({
+    const result = await (this.prisma as any).jobTracking.deleteMany({
       where: {
         createdAt: {
           lt: new Date(Date.now() - olderThanMs),

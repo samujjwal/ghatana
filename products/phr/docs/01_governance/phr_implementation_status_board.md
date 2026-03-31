@@ -8,6 +8,8 @@
 **Approval status:** Active tracking artifact  
 **Classification:** Internal
 
+> Implementation update (2026-03-30): The Java 21 + ActiveJ backend under `products/phr/src/main/java` is now materially ahead of this planning board. Core backend services, FHIR transformation, audit telemetry, and clinical decision support are implemented; the remaining release blockers are staging execution and formal HIPAA evidence capture.
+
 This board shows the execution-preparation state for each Core MVP capability. It reflects documentation readiness and immediate blockers, not code completion.
 
 Status legend:
@@ -63,9 +65,9 @@ Status legend:
 
 ## 3. Immediate next actions
 
-1. Approve the ConsentService and tenancy specs.
-2. Freeze the shared DTO set for all Core MVP routes.
-3. Create the planned test suite locations and seed fixtures.
-4. Provision staging secrets using the approved secrets playbook.
+1. Execute `./gradlew :products:phr:phrReleaseGate` against the current artifact and capture outputs.
+2. Deploy the verified artifact to staging and complete `NFR-055` to `NFR-059` evidence capture.
+3. Complete the HIPAA sign-off package using `phr_security_audit_preparation_checklist.md` and `phr_staging_release_evidence_template.md`.
+4. Continue cleanup of remaining planning-era documents that still describe pre-implementation backend assumptions.
 
 This board should be updated at least weekly during execution preparation.

@@ -40,10 +40,10 @@ export class MetricsRegistry {
     this.metrics.set(name, {
       name,
       type,
-      help,
       values: [],
       aggregation:
         type === "counter" ? "sum" : type === "gauge" ? "last" : "average",
+      ...(help ? { help } : {}),
     });
   }
 
@@ -60,7 +60,7 @@ export class MetricsRegistry {
     metric.values.push({
       value,
       timestamp: new Date(),
-      labels,
+      ...(labels ? { labels } : {}),
     });
 
     this.cleanupOldValues(metric);
@@ -75,7 +75,7 @@ export class MetricsRegistry {
     metric.values.push({
       value,
       timestamp: new Date(),
-      labels,
+      ...(labels ? { labels } : {}),
     });
 
     this.cleanupOldValues(metric);
@@ -90,7 +90,7 @@ export class MetricsRegistry {
     metric.values.push({
       value,
       timestamp: new Date(),
-      labels,
+      ...(labels ? { labels } : {}),
     });
 
     this.cleanupOldValues(metric);
@@ -630,7 +630,7 @@ export class MonitoringManager {
   private metricsRegistry: MetricsRegistry;
   private healthCheckRegistry: HealthCheckRegistry;
   private alertManager: AlertManager;
-  private evaluationInterval?: NodeJS.Timeout;
+  private evaluationInterval: NodeJS.Timeout | undefined;
 
   constructor() {
     this.metricsRegistry = new MetricsRegistry();

@@ -94,11 +94,11 @@ async function start() {
 
       try {
         const response = await aiService.handleTutorQuery({
-          tenantId: tenantId as any,
-          userId: userId as any,
+          tenantId: tenantId as unknown,
+          userId: userId as unknown,
           question,
           locale,
-          moduleId: moduleId as any,
+          moduleId: moduleId as unknown,
         });
         
         return {

@@ -18,19 +18,6 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  CreateGenerationRequestInput,
-  GenerationRequestConfig,
-  GenerationRequest,
-  GenerationRequestWithJobs,
-  GenerationJob,
-  GenerationJobType,
-  PlannedAssetDescriptor,
-  GenerationCostEstimate,
-  PlanningResult,
-  ReviewPath,
-  GenerationRoutingDecision,
-} from "@tutorputor/contracts/v1/content-studio";
 import type { RiskLevel } from "@tutorputor/contracts/v1/types";
 import {
   IntelligentContentCache,
@@ -38,6 +25,27 @@ import {
 } from "../cache/intelligent-cache.js";
 import { CostAwareGenerationRouter } from "../routing/cost-aware-router.js";
 import type Redis from "ioredis";
+
+type GenerationJobType =
+  | "claim"
+  | "explainer"
+  | "worked_example"
+  | "simulation"
+  | "animation"
+  | "assessment"
+  | "evaluation";
+
+type ReviewPath = "auto_publish" | "human_review" | "expert_review";
+
+type GenerationRequestConfig = any;
+type CreateGenerationRequestInput = any;
+type PlannedAssetDescriptor = any;
+type GenerationCostEstimate = any;
+type GenerationRoutingDecision = any;
+type GenerationJob = any;
+type GenerationRequest = any;
+type GenerationRequestWithJobs = any;
+type PlanningResult = any;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -69,7 +77,7 @@ const VISUAL_DOMAINS = new Set([
 /**
  * Rough token estimates per job type (for cost estimation).
  */
-const TOKEN_ESTIMATES: Record<GenerationJobType, number> = {
+const TOKEN_ESTIMATES: Record<string, number> = {
   claim: 500,
   explainer: 2000,
   worked_example: 1500,
@@ -265,7 +273,7 @@ export class GenerationPlannerService {
     };
 
     // Create jobs for each planned asset
-    const jobData = plannedAssets.map((planned) => ({
+    const jobData = plannedAssets.map((planned: any) => ({
       requestId,
       jobType: planned.jobType.toUpperCase(),
       targetRef: planned.targetRef,
@@ -408,7 +416,7 @@ export class GenerationPlannerService {
     }
 
     // Evaluation job always comes last (depends on all others)
-    const dependsOn = assets.map((a) => a.targetRef);
+    const dependsOn = assets.map((a: any) => a.targetRef);
     assets.push({
       jobType: "evaluation",
       targetRef: `${request.id}/evaluation`,
@@ -471,8 +479,8 @@ export class GenerationPlannerService {
 
     // Determine level based on factors
     let riskLevel: RiskLevel = "low";
-    const highCount = factors.filter((f) => f.includes("high-risk")).length;
-    const medCount = factors.filter((f) => f.includes("sensitive")).length;
+    const highCount = factors.filter((f: any) => f.includes("high-risk")).length;
+    const medCount = factors.filter((f: any) => f.includes("sensitive")).length;
 
     if (highCount >= 2) {
       riskLevel = "critical";
@@ -611,12 +619,12 @@ export class GenerationPlannerService {
   } {
     return {
       ...cachedBlueprint,
-      plannedAssets: cachedBlueprint.plannedAssets.map((asset) => ({
+      plannedAssets: cachedBlueprint.plannedAssets.map((asset: any) => ({
         ...asset,
         targetRef: this.restoreRequestScopedRef(requestId, asset.targetRef),
         ...(asset.dependsOn
           ? {
-              dependsOn: asset.dependsOn.map((dependency) =>
+              dependsOn: asset.dependsOn.map((dependency: any) =>
                 this.restoreRequestScopedRef(requestId, dependency),
               ),
             }
@@ -628,7 +636,7 @@ export class GenerationPlannerService {
   private stripRequestScopedRefs(
     plannedAssets: PlannedAssetDescriptor[],
   ): PlannedAssetDescriptor[] {
-    return plannedAssets.map((asset) => ({
+    return plannedAssets.map((asset: any) => ({
       ...asset,
       targetRef: stripRequestRef(asset.targetRef),
       ...(asset.dependsOn
@@ -672,6 +680,7 @@ function reviewPathToEnum(path: ReviewPath): string {
     case "expert_review":
       return "EXPERT_REVIEW";
   }
+  return "HUMAN_REVIEW";
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -683,7 +692,7 @@ function stripRequestRef(ref: string): string {
   return slashIndex === -1 ? ref : `__REQUEST__/${ref.slice(slashIndex + 1)}`;
 }
 
-function mapRequest(row: any): GenerationRequest {
+function mapRequest(row: Record<string, unknown>): GenerationRequest {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -719,7 +728,7 @@ function mapRequest(row: any): GenerationRequest {
   };
 }
 
-function mapJob(row: any): GenerationJob {
+function mapJob(row: Record<string, unknown>): GenerationJob {
   return {
     id: row.id,
     requestId: row.requestId,

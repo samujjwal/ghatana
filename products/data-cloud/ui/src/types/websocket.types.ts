@@ -1,6 +1,11 @@
 /**
  * WebSocket type definitions for real-time communication.
- * 
+ *
+ * @doc.type types
+ * @doc.purpose WebSocket event and message type definitions for real-time communication
+ * @doc.layer product
+ * @doc.pattern Type Contract
+ *
  * @module types/websocket
  */
 

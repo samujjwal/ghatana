@@ -293,7 +293,7 @@ const FEATURE_IMPORTANCE: Record<keyof QualityFeatures, number> = {
   replayRate: 0.06,
 };
 
-function stringifyBlock(payload: unknown): string {
+function stringifyBlock(payload: any): string {
   if (!payload) return "";
   if (typeof payload === "string") return payload;
   if (typeof payload === "object") return JSON.stringify(payload);

@@ -128,7 +128,7 @@ export class OllamaAIProxyService implements AIProxyService {
     topic: string;
     targetAudience: string;
     learningObjectives?: string[];
-  }): Promise<unknown> {
+  }): Promise<{ title: string; description: string; sections: unknown[] }> {
     void args;
     return Promise.resolve({
       title: "",

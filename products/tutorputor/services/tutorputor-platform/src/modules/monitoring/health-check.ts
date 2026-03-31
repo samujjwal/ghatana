@@ -43,7 +43,7 @@ export interface HealthCheckConfig {
 }
 
 interface FastifyLike {
-  get: (path: string, handler: (request: unknown, reply: any) => Promise<void> | void) => void;
+  get: (path: string, handler: (request: any, reply: any) => Promise<void> | void) => void;
 }
 
 /**
@@ -254,7 +254,7 @@ export class HealthCheckService extends EventEmitter {
       enabled: true,
       check: async () => {
         type PrismaLike = {
-          $queryRaw: (query: TemplateStringsArray, ...values: unknown[]) => Promise<unknown>;
+          $queryRaw: (query: TemplateStringsArray, ...values: any[]) => Promise<any>;
           $disconnect: () => Promise<void>;
         };
 

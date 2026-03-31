@@ -72,7 +72,7 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
         ));
         
         assertTrue(execResult.isSuccess());
-        assertNotNull(execResult.getResult());
+        assertNotNull(execResult.getResult()); // y04-ok: TaskResult domain accessor, not Promise.getResult()
         
         // 4. Create canvas
         CreateCanvasRequest canvasRequest = new CreateCanvasRequest(

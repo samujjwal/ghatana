@@ -380,3 +380,49 @@ tasks.register<CheckStructuralGovernanceTask>("checkStructuralGovernance") {
 tasks.named("check") {
     dependsOn("checkStructuralGovernance")
 }
+
+// ============================================================================
+// Y-04: EventloopTestBase enforcement
+// Fails the build when any YAPPC Java test file calls .getResult() directly
+// on an ActiveJ Promise (bypassing the managed event-loop).
+// All async tests must extend EventloopTestBase and use runPromise().
+// ============================================================================
+val yappcProjectDir = layout.projectDirectory.asFile.absolutePath
+tasks.register("checkNoGetResultInTests") {
+    description = "Fails if any YAPPC Java test calls .getResult() directly on an ActiveJ Promise"
+    group = "verification"
+    inputs.property("yappcProjectDir", yappcProjectDir)
+
+    doLast {
+        val testPattern = Regex("""\.getResult\(\)""")
+        val violations = mutableListOf<String>()
+        val root = File(inputs.properties["yappcProjectDir"] as String)
+
+        root.walkTopDown()
+            .filter { it.isFile && it.extension == "java" &&
+                (it.name.endsWith("Test.java") || it.name.endsWith("IT.java")) &&
+                it.absolutePath.contains("/src/test/") }
+            .forEach { file ->
+                file.readLines().forEachIndexed { idx, line ->
+                    if (testPattern.containsMatchIn(line) && !line.trimStart().startsWith("//") &&
+                        !line.contains("y04-ok")) {
+                        violations.add("${file.relativeTo(root)}:${idx + 1}: ${line.trim()}")
+                    }
+                }
+            }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Y-04 violation: .getResult() called directly in ${violations.size} test location(s).\n" +
+                "All ActiveJ async tests must extend EventloopTestBase and use runPromise().\n" +
+                violations.joinToString("\n") { "  ✗ $it" } + "\n" +
+                "See copilot-instructions.md § ActiveJ async tests"
+            )
+        }
+        logger.lifecycle("✓ Y-04 EventloopTestBase enforcement: no .getResult() calls in test files")
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkNoGetResultInTests")
+}

@@ -34,6 +34,7 @@ import {
     Timer,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@ghatana/design-system';
 import { cn } from '../../lib/theme';
 
 // Types
@@ -94,26 +95,43 @@ async function fetchSystemMetrics(): Promise<SystemMetrics> {
     return response.json();
 }
 
+const o11yStatusTone: Record<Execution['status'], 'info' | 'success' | 'danger' | 'warning' | 'neutral'> = {
+    running: 'info',
+    completed: 'success',
+    failed: 'danger',
+    pending: 'warning',
+    cancelled: 'neutral',
+};
+
+const o11yStatusIcon: Record<Execution['status'], React.ElementType> = {
+    running: Play,
+    completed: CheckCircle,
+    failed: XCircle,
+    pending: Clock,
+    cancelled: Pause,
+};
+
+const o11yStatusLabel: Record<Execution['status'], string> = {
+    running: 'Running',
+    completed: 'Completed',
+    failed: 'Failed',
+    pending: 'Pending',
+    cancelled: 'Cancelled',
+};
+
 /**
  * Status badge with icon
  */
 function StatusBadge({ status }: { status: Execution['status'] }) {
-    const configs = {
-        running: { icon: Play, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Running' },
-        completed: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30', label: 'Completed' },
-        failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Failed' },
-        pending: { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30', label: 'Pending' },
-        cancelled: { icon: Pause, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', label: 'Cancelled' },
-    };
-
-    const config = configs[status];
-    const Icon = config.icon;
-
+    const Icon = o11yStatusIcon[status];
     return (
-        <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium', config.bg, config.color)}>
-            <Icon className="h-3 w-3" />
-            {config.label}
-        </span>
+        <Badge
+            tone={o11yStatusTone[status]}
+            variant="soft"
+            startIcon={<Icon className="h-3 w-3" />}
+        >
+            {o11yStatusLabel[status]}
+        </Badge>
     );
 }
 

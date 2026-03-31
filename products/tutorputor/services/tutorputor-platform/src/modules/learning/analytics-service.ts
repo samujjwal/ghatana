@@ -109,7 +109,7 @@ export function createAnalyticsService(
     },
 
     async getSummary({ tenantId, moduleId }) {
-      const where: any = { tenantId };
+      const where: Record<string, unknown> = { tenantId };
       if (moduleId) {
         where.moduleId = moduleId;
       }
@@ -157,8 +157,8 @@ export function createAnalyticsService(
         activeLearners: activeUsers.length,
         eventsByType,
         moduleCompletions: completions
-          .filter((group: any) => group.moduleId)
-          .map((group: any) => ({
+          .filter((group) => group.moduleId)
+          .map((group) => ({
             moduleId: group.moduleId as ModuleId,
             count: group._count.moduleId,
           })),
@@ -189,7 +189,7 @@ export function createAnalyticsService(
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-      const enrollmentWhere: any = {
+      const enrollmentWhere: Record<string, unknown> = {
         tenantId,
         status: { in: ["NOT_STARTED", "IN_PROGRESS"] },
       };
@@ -321,7 +321,7 @@ export function createAnalyticsService(
     },
 
     async getDifficultyHeatmap({ tenantId, moduleIds }) {
-      const moduleWhere: any = { tenantId, status: "PUBLISHED" };
+      const moduleWhere: Record<string, unknown> = { tenantId, status: "PUBLISHED" };
       if (moduleIds && moduleIds.length > 0) {
         moduleWhere.id = { in: moduleIds };
       }
@@ -368,7 +368,7 @@ export function createAnalyticsService(
 
         const avgAttempts =
           attempts.length > 0
-            ? attempts.length / new Set(attempts.map((a: any) => a.userId)).size
+            ? attempts.length / new Set(attempts.map((a) => a.userId)).size
             : 1;
 
         const failedAttempts = attempts.filter(
@@ -438,7 +438,7 @@ export function createAnalyticsService(
           }),
         ]);
 
-        const activeUsers = new Set(events.map((e: any) => e.userId)).size;
+        const activeUsers = new Set(events.map((e) => e.userId)).size;
         const completions = events.filter(
           (e: any) => e.eventType === "module_completed",
         ).length;

@@ -113,6 +113,10 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
     // Key: tenantId.toString(), Value: Set of revoked token IDs (jti)
     private final Map<String, Set<String>> revokedTokens = new ConcurrentHashMap<>();
 
+    // Tracks active token JTIs per user for bulk revocation.
+    // Key: "tenantId:userId", Value: Set of active token JTIs
+    private final Map<String, Set<String>> userActiveTokens = new ConcurrentHashMap<>();
+
     /**
      * Creates JWT token provider with auto-generated RSA 2048-bit key pair.
      *
@@ -324,13 +328,26 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
 
     @Override
     public Promise<Integer> revokeAllTokensForUser(TenantId tenantId, String userId) {
-        // This is simplified - production would track user's active tokens in database/cache
-        logger.info("Revoke all tokens requested for user: {} in tenant: {}",
-                userId, tenantId);
+        logger.info("Revoking all tokens for user: {} in tenant: {}", userId, tenantId);
+        String trackingKey = tenantId.toString() + ":" + userId;
+        Set<String> activeJtis = userActiveTokens.remove(trackingKey);
+        if (activeJtis == null || activeJtis.isEmpty()) {
+            metrics.incrementCounter("jwt.user.tokens.revoked",
+                    "tenant", tenantId.toString(),
+                    "user", userId,
+                    "count", "0");
+            return Promise.of(0);
+        }
+        Set<String> tenantRevokedSet = revokedTokens.computeIfAbsent(
+                tenantId.toString(), k -> ConcurrentHashMap.newKeySet());
+        tenantRevokedSet.addAll(activeJtis);
+        int count = activeJtis.size();
         metrics.incrementCounter("jwt.user.tokens.revoked",
                 "tenant", tenantId.toString(),
-                "user", userId);
-        return Promise.of(0); // Placeholder - implement with token tracking
+                "user", userId,
+                "count", String.valueOf(count));
+        logger.info("Revoked {} tokens for user: {} in tenant: {}", count, userId, tenantId);
+        return Promise.of(count);
     }
 
     @Override
@@ -385,6 +402,11 @@ public class JwtTokenProviderImpl implements JwtTokenProvider {
         // Sign JWT
         SignedJWT signedJWT = new SignedJWT(header, claimsSet);
         signedJWT.sign(signer);
+
+        // Register JTI in user active tokens for bulk revocation support
+        String trackingKey = tenantId.toString() + ":" + principal.getUserId();
+        userActiveTokens.computeIfAbsent(trackingKey, k -> ConcurrentHashMap.newKeySet())
+                .add(claimsSet.getJWTID());
 
         return signedJWT.serialize();
     }

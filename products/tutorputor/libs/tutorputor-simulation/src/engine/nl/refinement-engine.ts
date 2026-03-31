@@ -12,6 +12,9 @@ import type {
   SimulationManifest,
   SimEntityBase,
   SimulationStep,
+  SimEntityId,
+  SimStepId,
+  SimAnnotation,
 } from '@tutorputor/contracts/v1/simulation/types';
 import "./type-augmentations";
 import type { ParsedIntent, IntentParams } from './intent-parser';
@@ -51,7 +54,7 @@ type ManifestExt = SimulationManifest & {
   entities: SimEntityBase[];
   steps: SimulationStep[];
   domainConfig?: { duration?: number; frameRate?: number };
-  domainMetadata?: any;
+  domainMetadata?: unknown;
 };
 
 export class RefinementEngine {
@@ -63,11 +66,12 @@ export class RefinementEngine {
   private maxHistorySize = 50;
 
   private ensureManifest(manifest: SimulationManifest): ManifestExt {
+    const ext = manifest as Partial<ManifestExt>;
     return {
       ...manifest,
-      entities: manifest.entities ?? [],
+      entities: ext.entities ?? manifest.initialEntities ?? [],
       steps: manifest.steps ?? [],
-      domainConfig: manifest.domainConfig ?? {},
+      domainConfig: ext.domainConfig ?? {},
     };
   }
   /**
@@ -157,7 +161,7 @@ export class RefinementEngine {
       if (!result.success) {
         return {
           success: false,
-          error: result.error,
+          ...(result.error ? { error: result.error } : {}),
           changes: allChanges,
           suggestions: result.suggestions,
         };
@@ -179,7 +183,7 @@ export class RefinementEngine {
   private addEntity(manifest: ManifestExt, params: IntentParams): RefinementResult {
     const entityType = params.entityType ?? 'element';
     const newEntity: SimEntityBase = {
-      id: randomUUID() as unknown as any,
+      id: randomUUID() as SimEntityId,
       label: entityType,
       type: entityType,
       x: params.position?.x ?? 0,
@@ -232,8 +236,8 @@ export class RefinementEngine {
 
     return {
       success: true,
-      manifest: { ...manifest, entities: updated },
-      changes: [`Removed entity: ${entities[idx].label}`],
+      manifest: { ...manifest, entities: updated } as ManifestExt,
+      changes: [`Removed entity: ${entities[idx]!.label}`],
       suggestions: [],
     };
   }
@@ -260,32 +264,32 @@ export class RefinementEngine {
       };
     }
 
-    const entity = entities[idx];
+    const entity = entities[idx]!;
     const property = params.property?.toLowerCase();
     let updatedEntity: SimEntityBase;
 
     switch (property) {
       case 'label':
       case 'name':
-        updatedEntity = { ...entity, label: String(params.newValue) };
+        updatedEntity = { ...entity, label: String(params.newValue) } as SimEntityBase;
         break;
       case 'color':
         updatedEntity = {
           ...entity,
           color: String(params.newValue),
-        };
+        } as SimEntityBase;
         break;
       case 'size':
         updatedEntity = {
           ...entity,
           scale: Number(params.newValue) || 1,
-        };
+        } as SimEntityBase;
         break;
       case 'opacity':
         updatedEntity = {
           ...entity,
           opacity: Number(params.newValue) || 1,
-        };
+        } as SimEntityBase;
         break;
       default:
         return {
@@ -301,7 +305,7 @@ export class RefinementEngine {
 
     return {
       success: true,
-      manifest: { ...manifest, entities: updatedEntities },
+      manifest: { ...manifest, entities: updatedEntities } as ManifestExt,
       changes: [`Changed ${entity.label}'s ${property} to ${params.newValue}`],
       suggestions: [],
     };
@@ -311,7 +315,7 @@ export class RefinementEngine {
     const description = params.text ?? 'New step';
     const steps = manifest.steps ?? [];
     const newStep: SimulationStep = {
-      id: randomUUID() as unknown as any,
+      id: randomUUID() as SimStepId,
       orderIndex: steps.length,
       title: params.text ?? `Step ${steps.length + 1}`,
       description,
@@ -343,13 +347,13 @@ export class RefinementEngine {
       };
     }
 
-    const step = manifest.steps![stepIndex];
+    const step = manifest.steps![stepIndex]!;
     const updatedSteps = manifest.steps!.filter((_, i) => i !== stepIndex);
 
     return {
       success: true,
       manifest: { ...manifest, steps: updatedSteps },
-      changes: [`Removed step ${stepIndex + 1}: "${step.description}"`],
+      changes: [`Removed step ${stepIndex + 1}: "${step.description ?? ''}"`],
       suggestions: [],
     };
   }
@@ -369,10 +373,11 @@ export class RefinementEngine {
     }
 
     const updatedSteps = [...manifest.steps];
+    const currentStep = updatedSteps[stepIndex]!;
     updatedSteps[stepIndex] = {
-      ...updatedSteps[stepIndex],
-      description: params.text ?? updatedSteps[stepIndex].description,
-    };
+      ...currentStep,
+      ...(params.text ? { description: params.text } : {}),
+    } as SimulationStep;
 
     return {
       success: true,
@@ -413,12 +418,14 @@ export class RefinementEngine {
       return { success: false, error: `Could not find entity: ${target}`, changes: [], suggestions: [] };
     }
 
-    const entity = manifest.entities[entityIndex];
+    const entity = manifest.entities[entityIndex]!;
     const updatedEntities = [...manifest.entities];
     updatedEntities[entityIndex] = {
       ...entity,
-      visual: { ...(entity as any).visual, ...params.visual },
-    };
+      ...(params.visual?.color ? { color: params.visual.color } : {}),
+      ...(params.visual?.size !== undefined ? { scale: params.visual.size } : {}),
+      ...(params.visual?.opacity !== undefined ? { opacity: params.visual.opacity } : {}),
+    } as SimEntityBase;
 
     const changes: string[] = [];
     if (params.visual?.color) changes.push(`color to ${params.visual.color}`);
@@ -427,7 +434,7 @@ export class RefinementEngine {
 
     return {
       success: true,
-      manifest: { ...manifest, entities: updatedEntities },
+      manifest: { ...manifest, entities: updatedEntities } as ManifestExt,
       changes: [`Changed ${entity.label}'s ${changes.join(', ')}`],
       suggestions: [],
     };
@@ -443,18 +450,20 @@ export class RefinementEngine {
     const lastStep = updatedSteps[updatedSteps.length - 1];
 
     if (lastStep) {
+      const existingAnnotations = (lastStep as unknown as Record<string, unknown>).annotations as SimAnnotation[] | undefined;
       updatedSteps[updatedSteps.length - 1] = {
         ...lastStep,
-        annotations: [
-          ...(lastStep.annotations ?? []),
-          {
-            id: randomUUID(),
-            text,
-            position: { x: 0, y: -50 },
-            style: 'callout',
-          },
-        ],
-      };
+        ...{
+          annotations: [
+            ...(existingAnnotations ?? []),
+            {
+              id: randomUUID(),
+              text,
+              position: { x: 0, y: -50 },
+            } satisfies SimAnnotation,
+          ],
+        },
+      } as SimulationStep;
     }
 
     return {

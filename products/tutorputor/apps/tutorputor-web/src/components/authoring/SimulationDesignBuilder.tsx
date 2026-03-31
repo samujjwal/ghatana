@@ -10,8 +10,8 @@
 import { useState } from "react";
 
 interface SimulationDesignBuilderProps {
-    manifest: any;
-    onComplete: (updatedManifest: any) => void;
+    manifest: unknown;
+    onComplete: (updatedManifest: unknown) => void;
     onBack: () => void;
 }
 
@@ -21,7 +21,7 @@ export function SimulationDesignBuilder({ manifest, onComplete, onBack }: Simula
     const [selectedEntity, setSelectedEntity] = useState<string | null>(null);
 
     const updateEntity = (entityId: string, updates: any) => {
-        const updatedEntities = editedManifest.initialEntities.map((e: any) =>
+        const updatedEntities = editedManifest.initialEntities.map((e) =>
             e.id === entityId ? { ...e, ...updates } : e
         );
         setEditedManifest({ ...editedManifest, initialEntities: updatedEntities });
@@ -44,7 +44,7 @@ export function SimulationDesignBuilder({ manifest, onComplete, onBack }: Simula
     const removeEntity = (entityId: string) => {
         setEditedManifest({
             ...editedManifest,
-            initialEntities: editedManifest.initialEntities.filter((e: any) => e.id !== entityId)
+            initialEntities: editedManifest.initialEntities.filter((e) => e.id !== entityId)
         });
     };
 
@@ -104,7 +104,7 @@ export function SimulationDesignBuilder({ manifest, onComplete, onBack }: Simula
                             </div>
 
                             <div className="space-y-2">
-                                {editedManifest.initialEntities.map((entity: any) => (
+                                {editedManifest.initialEntities.map((entity) => (
                                     <div
                                         key={entity.id}
                                         onClick={() => setSelectedEntity(entity.id)}
@@ -230,7 +230,7 @@ export function SimulationDesignBuilder({ manifest, onComplete, onBack }: Simula
                         <div className="mt-4 p-4 border rounded-lg bg-white">
                             <h4 className="font-semibold mb-4">Entity Properties</h4>
                             {(() => {
-                                const entity = editedManifest.initialEntities.find((e: any) => e.id === selectedEntity);
+                                const entity = editedManifest.initialEntities.find((e) => e.id === selectedEntity);
                                 return (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>

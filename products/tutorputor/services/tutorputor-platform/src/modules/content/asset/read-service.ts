@@ -12,14 +12,13 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ContentAssetType,
-  ContentAssetStatus,
-  ContentAsset,
-  ContentAssetRevision,
-  ContentBlock,
-  ArtifactManifest,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type ContentAssetType = any;
+type ContentAssetStatus = any;
+type ContentAsset = any;
+type ContentAssetRevision = any;
+type ContentBlock = any;
+type ArtifactManifest = any;
 
 // ---------------------------------------------------------------------------
 // Query types
@@ -191,7 +190,7 @@ export class ContentAssetReadService {
   // Mapping helpers
   // -------------------------------------------------------------------------
 
-  private mapAsset(raw: Record<string, unknown>): ContentAsset {
+  private mapAsset(raw: any): ContentAsset {
     return {
       id: raw.id as string,
       tenantId: raw.tenantId as string,
@@ -233,7 +232,7 @@ export class ContentAssetReadService {
     };
   }
 
-  private mapBlock(raw: Record<string, unknown>): ContentBlock {
+  private mapBlock(raw: any): ContentBlock {
     return {
       id: raw.id as string,
       assetId: raw.assetId as string,
@@ -251,7 +250,7 @@ export class ContentAssetReadService {
     };
   }
 
-  private mapManifest(raw: Record<string, unknown>): ArtifactManifest {
+  private mapManifest(raw: any): ArtifactManifest {
     return {
       id: raw.id as string,
       assetId: raw.assetId as string,
@@ -272,7 +271,7 @@ export class ContentAssetReadService {
     };
   }
 
-  private mapRevision(raw: Record<string, unknown>): ContentAssetRevision {
+  private mapRevision(raw: any): ContentAssetRevision {
     return {
       id: raw.id as string,
       assetId: raw.assetId as string,

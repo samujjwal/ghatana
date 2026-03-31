@@ -91,7 +91,7 @@ export function AuditPage() {
       
       // Transform to match expected format
       return {
-        logs: result.items.map((item: any) => ({
+        logs: result.items.map((item) => ({
           id: item.id,
           timestamp: item.timestamp,
           actorId: item.actorId,

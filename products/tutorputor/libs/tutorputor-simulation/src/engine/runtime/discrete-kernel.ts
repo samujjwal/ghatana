@@ -122,7 +122,7 @@ export function createDiscreteKernel(
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        ...(warnings.length > 0 ? { warnings } : {})
       };
     },
 
@@ -138,6 +138,7 @@ export function createDiscreteKernel(
       for (let i = 0; i < keyframes.length - 1; i++) {
         const current = keyframes[i];
         const next = keyframes[i + 1];
+        if (!current || !next) continue;
         const duration = next.timestamp - current.timestamp;
         const frameCount = Math.ceil(duration / frameInterval);
 
@@ -162,7 +163,10 @@ export function createDiscreteKernel(
       }
 
       // Add final keyframe
-      interpolated.push(keyframes[keyframes.length - 1]);
+      const finalKeyframe = keyframes[keyframes.length - 1];
+      if (finalKeyframe) {
+        interpolated.push(finalKeyframe);
+      }
 
       return interpolated;
     },
@@ -206,6 +210,7 @@ export function createDiscreteKernel(
 
       currentStepIndex++;
       const step = currentManifest.steps[currentStepIndex];
+      if (!step) return;
 
       for (const action of step.actions) {
         processAction(action, currentEntities, currentAnnotations);
@@ -421,7 +426,9 @@ function processAction(
         position: target
           ? { x: target.x, y: target.y - 30 }
           : { x: 400, y: 50 },
-        targetId: annotateAction.targetId
+        ...(annotateAction.targetId !== undefined
+          ? { targetId: annotateAction.targetId }
+          : {}),
       });
       break;
     }

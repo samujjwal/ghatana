@@ -4,6 +4,7 @@ import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.encryption.EncryptionService;
 import com.ghatana.security.eventcloud.EnhancedEventSecurityManager;
 import com.ghatana.security.keys.KeyManager;
+import com.ghatana.platform.security.rbac.Policy;
 import com.ghatana.platform.security.rbac.PolicyService;
 import com.ghatana.security.storage.EncryptedStorageService;
 import com.ghatana.platform.observability.Metrics;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 // java.util.concurrent.TimeUnit intentionally not imported; fully-qualified usage kept where needed
 
 /**
@@ -491,13 +493,38 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
     }
     
     private Principal getPrincipal(String userId) {
-        // This would typically load from a user service or cache
-        // For now, return a placeholder implementation
+        // Load from cache; if absent, build a minimal Principal for the user.
+        // The tenantId is extracted from the cache key pattern "tenantId:userId"
+        // when the caller pre-populates the cache via registerPrincipal().
+        // For uncached users the principal falls back to the userId-scoped tenant,
+        // which will be access-denied by policyService for cross-tenant operations.
         return principalCache.computeIfAbsent(userId, id -> {
-            // Load principal from user service
-            // Load principal from user service
-            return new Principal("tenant-1", List.of("user"));
+            // Determine user's roles from available policies with a "user" resource
+            // that matches this userId, falling back to the minimal "user" role.
+            List<Policy> userPolicies = policyService.getPoliciesByResource(id);
+            List<String> roles = userPolicies.stream()
+                    .map(Policy::getRole)
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (roles.isEmpty()) {
+                roles = List.of("user");
+            }
+            log.debug("Built principal for user {} with roles {} (no pre-registered entry found)", id, roles);
+            // Use userId as both name and tenantId anchor; tenant isolation is enforced
+            // by policyService.isAuthorized checks at call sites.
+            return new Principal(id, roles);
         });
+    }
+
+    /**
+     * Register a principal in the cache so that security checks resolve the correct
+     * identity. Called at authentication time with a fully-resolved Principal.
+     *
+     * @param userId    the user ID (cache key)
+     * @param principal the authenticated principal
+     */
+    public void registerPrincipal(String userId, Principal principal) {
+        principalCache.put(userId, principal);
     }
     
     private boolean isSensitiveEventType(String eventType) {
@@ -509,8 +536,16 @@ public class EnhancedEventSecurityManagerImpl implements EnhancedEventSecurityMa
     }
     
     private Set<String> getUserAllowedTenants(String userId) {
-        // Implementation would query user's tenant permissions
-        return Set.of("default"); // Placeholder
+        // Determine tenant scope from the cached principal.
+        // A principal with tenantId constrains the user to that tenant only.
+        // Admins bypass this filter via the "tenant:cross_access" policy check in the caller.
+        Principal principal = principalCache.get(userId);
+        if (principal != null && principal.getTenantId() != null
+                && !principal.getTenantId().isEmpty()) {
+            return Set.of(principal.getTenantId());
+        }
+        // Fall back to the user's own ID scope if tenantId is not set
+        return Set.of(userId);
     }
     
     private Set<String> getUserAllowedEventTypes(String userId) {

@@ -56,22 +56,22 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
     pattern: /add\s+(a\s+)?(?:new\s+)?(\w+)(?:\s+(?:at|to)\s+(?:position\s+)?(\d+),?\s*(\d+))?/i,
     intent: 'add_entity',
     extractor: (match) => ({
-      entityType: match[2],
-      position: match[3] ? { x: parseInt(match[3]), y: parseInt(match[4] ?? '0') } : undefined,
+      ...(match[2] ? { entityType: match[2] } : {}),
+      ...(match[3] ? { position: { x: parseInt(match[3]), y: parseInt(match[4] ?? '0') } } : {}),
     }),
   },
   {
     pattern: /(?:remove|delete)\s+(?:the\s+)?(\w+)/i,
     intent: 'remove_entity',
-    extractor: (match) => ({ targetEntity: match[1] }),
+    extractor: (match) => ({ ...(match[1] ? { targetEntity: match[1] } : {}) }),
   },
   {
     pattern: /(?:change|modify|update|set)\s+(?:the\s+)?(\w+)(?:'s)?\s+(\w+)\s+to\s+(.+)/i,
     intent: 'modify_entity',
     extractor: (match) => ({
-      targetEntity: match[1],
-      property: match[2],
-      newValue: match[3].trim(),
+      ...(match[1] ? { targetEntity: match[1] } : {}),
+      ...(match[2] ? { property: match[2] } : {}),
+      ...(match[3] ? { newValue: match[3].trim() } : {}),
     }),
   },
 
@@ -79,17 +79,20 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
   {
     pattern: /add\s+(?:a\s+)?(?:new\s+)?step\s+(?:for\s+)?(.+)/i,
     intent: 'add_step',
-    extractor: (match) => ({ text: match[1] }),
+    extractor: (match) => ({ ...(match[1] ? { text: match[1] } : {}) }),
   },
   {
     pattern: /(?:remove|delete)\s+step\s+(\d+)/i,
     intent: 'remove_step',
-    extractor: (match) => ({ targetStep: parseInt(match[1]) }),
+    extractor: (match) => ({ ...(match[1] ? { targetStep: parseInt(match[1]) } : {}) }),
   },
   {
     pattern: /(?:change|modify)\s+step\s+(\d+)\s+(.+)/i,
     intent: 'modify_step',
-    extractor: (match) => ({ targetStep: parseInt(match[1]), text: match[2] }),
+    extractor: (match) => ({
+      ...(match[1] ? { targetStep: parseInt(match[1]) } : {}),
+      ...(match[2] ? { text: match[2] } : {}),
+    }),
   },
 
   // Speed control
@@ -97,7 +100,7 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
     pattern: /(?:make\s+it\s+)?(?:go\s+)?(?:run\s+)?(\d+(?:\.\d+)?x?)\s*(?:faster|slower|speed)/i,
     intent: 'change_speed',
     extractor: (match) => ({
-      duration: parseFloat(match[1].replace('x', '')),
+      ...(match[1] ? { duration: parseFloat(match[1].replace('x', '')) } : {}),
     }),
   },
   {
@@ -113,8 +116,8 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
     pattern: /(?:make|change|set)\s+(?:the\s+)?(\w+)\s+(?:to\s+)?(?:be\s+)?(?:color\s+)?(red|blue|green|yellow|orange|purple|pink|black|white|#[0-9a-fA-F]{6})/i,
     intent: 'change_visual',
     extractor: (match) => ({
-      targetEntity: match[1],
-      visual: { color: match[2] },
+      ...(match[1] ? { targetEntity: match[1] } : {}),
+      visual: { ...(match[2] ? { color: match[2] } : {}) },
     }),
   },
   {
@@ -129,8 +132,8 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
         huge: 3,
       };
       return {
-        targetEntity: match[1],
-        visual: { size: sizeMap[match[2].toLowerCase()] ?? 1 },
+        ...(match[1] ? { targetEntity: match[1] } : {}),
+        visual: { size: sizeMap[match[2]?.toLowerCase() ?? ''] ?? 1 },
       };
     },
   },
@@ -139,14 +142,14 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
   {
     pattern: /(?:add|show)\s+(?:a\s+)?(?:text\s+)?annotation\s+(?:saying\s+)?["']?(.+?)["']?$/i,
     intent: 'add_annotation',
-    extractor: (match) => ({ text: match[1] }),
+    extractor: (match) => ({ ...(match[1] ? { text: match[1] } : {}) }),
   },
   {
     pattern: /(?:label|annotate)\s+(?:the\s+)?(\w+)\s+(?:as|with)\s+["']?(.+?)["']?$/i,
     intent: 'add_annotation',
     extractor: (match) => ({
-      targetEntity: match[1],
-      text: match[2],
+      ...(match[1] ? { targetEntity: match[1] } : {}),
+      ...(match[2] ? { text: match[2] } : {}),
     }),
   },
 
@@ -154,7 +157,7 @@ const INTENT_PATTERNS: Array<{ pattern: RegExp; intent: IntentType; extractor?: 
   {
     pattern: /(?:explain|what\s+is|how\s+does|why\s+does|tell\s+me\s+about)/i,
     intent: 'explain',
-    extractor: (match) => ({ text: match[0] }),
+    extractor: (match) => ({ ...(match[0] ? { text: match[0] } : {}) }),
   },
 
   // Clarification

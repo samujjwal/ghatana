@@ -47,7 +47,7 @@ class FeatureStoreClient {
    * Errors are swallowed and logged as warnings so the caller is never blocked.
    */
   ingestAsync(tenantId: string, entityId: string, features: Record<string, unknown>): void {
-    this.ingest(tenantId, entityId, features).catch((err: unknown) => {
+    this.ingest(tenantId, entityId, features).catch((err: any) => {
       logger.warn({
         message: 'ingestAsync failed',
         entityId,
@@ -113,7 +113,7 @@ class FeatureStoreClient {
         return {};
       }
       return (await res.json()) as Record<string, unknown>;
-    } catch (err: unknown) {
+    } catch (err: any) {
       logger.warn({
         message: 'getFeatures exception',
         tenantId,

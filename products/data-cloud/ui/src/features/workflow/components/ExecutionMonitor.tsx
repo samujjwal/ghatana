@@ -29,6 +29,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Badge } from '@ghatana/design-system';
 import { cn } from '../../../lib/theme';
 
 // ============================================================================
@@ -139,26 +140,43 @@ function formatLogTime(timestamp: string): string {
   });
 }
 
+const statusTone: Record<ExecutionStatus, 'info' | 'success' | 'danger' | 'warning' | 'neutral'> = {
+  running: 'info',
+  completed: 'success',
+  failed: 'danger',
+  pending: 'warning',
+  cancelled: 'neutral',
+};
+
+const statusIcon: Record<ExecutionStatus, React.ElementType> = {
+  running: Play,
+  completed: CheckCircle,
+  failed: XCircle,
+  pending: Clock,
+  cancelled: Pause,
+};
+
+const statusLabel: Record<ExecutionStatus, string> = {
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+  pending: 'Pending',
+  cancelled: 'Cancelled',
+};
+
 /**
  * Status badge component
  */
 function StatusBadge({ status }: { status: ExecutionStatus }) {
-  const configs: Record<ExecutionStatus, { icon: React.ElementType; color: string; bg: string; label: string }> = {
-    running: { icon: Play, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Running' },
-    completed: { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30', label: 'Completed' },
-    failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Failed' },
-    pending: { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30', label: 'Pending' },
-    cancelled: { icon: Pause, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', label: 'Cancelled' },
-  };
-
-  const config = configs[status];
-  const Icon = config.icon;
-
+  const Icon = statusIcon[status];
   return (
-    <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium', config.bg, config.color)}>
-      <Icon className={cn('h-4 w-4', status === 'running' && 'animate-pulse')} />
-      {config.label}
-    </span>
+    <Badge
+      tone={statusTone[status]}
+      variant="soft"
+      startIcon={<Icon className={cn('h-4 w-4', status === 'running' && 'animate-pulse')} />}
+    >
+      {statusLabel[status]}
+    </Badge>
   );
 }
 

@@ -80,7 +80,7 @@ export class CMSServiceImpl implements CMSService {
     }): Promise<{ items: ModuleSummary[]; nextCursor: ModuleId | null }> {
         const limit = args.limit ?? 20;
         const take = Math.min(limit, 50);
-        const where: any = { tenantId: args.tenantId };
+        const where: Record<string, unknown> = { tenantId: args.tenantId };
         if (args.status) {
             where.status = args.status;
         }
@@ -227,7 +227,7 @@ export class CMSServiceImpl implements CMSService {
                 })),
             },
             contentBlocks: {
-                create: input.contentBlocks.map((block: any, index: number) => ({
+                create: input.contentBlocks.map((block: any, index: any) => ({
                     id: block.id || `${input.slug}-block-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,
@@ -243,7 +243,7 @@ export class CMSServiceImpl implements CMSService {
     }
 
     private buildModuleUpdateInput(patch: ModuleDraftPatch, userId: string): any {
-        const data: any = {
+        const data: Record<string, unknown> = {
             updatedBy: userId,
             updatedAt: new Date(),
         };
@@ -274,7 +274,7 @@ export class CMSServiceImpl implements CMSService {
         if (patch.contentBlocks) {
             data.contentBlocks = {
                 deleteMany: {},
-                create: patch.contentBlocks.map((block: any, index: number) => ({
+                create: patch.contentBlocks.map((block: any, index: any) => ({
                     id: block.id ?? `${Date.now()}-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,

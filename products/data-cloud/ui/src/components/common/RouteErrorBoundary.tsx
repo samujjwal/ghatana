@@ -1,3 +1,11 @@
+/**
+ * RouteErrorBoundary component.
+ *
+ * @doc.type component
+ * @doc.purpose Displays a formatted error page for React Router route-level errors including 404 and server errors
+ * @doc.layer product
+ * @doc.pattern Error Boundary
+ */
 import React from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router';
 

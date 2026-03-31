@@ -18,12 +18,52 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  EvaluationRecord,
-  EvaluationScorecard,
-  EvaluationIssue,
-  PublishRecommendation,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type PublishRecommendation = "block" | "manual_review" | "auto_publish";
+
+interface EvaluationIssue {
+  dimension: string;
+  severity: "warning" | "error";
+  message: string;
+  detail?: string;
+}
+
+interface EvaluationRecord {
+  id: string;
+  tenantId: string;
+  assetId?: string;
+  generationJobId?: string;
+  generationRequestId?: string;
+  coherenceScore?: number;
+  completenessScore?: number;
+  safetyScore?: number;
+  accessibilityScore?: number;
+  manifestValidityScore?: number;
+  overallScore?: number;
+  status: "passed" | "failed";
+  recommendation: PublishRecommendation;
+  issues?: EvaluationIssue[];
+  diagnostics?: Record<string, unknown>;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface EvaluationScorecard {
+  evaluationId: string;
+  generationRequestId: string;
+  overallScore: number;
+  recommendation: PublishRecommendation;
+  dimensions: {
+    coherence: number;
+    completeness: number;
+    safety: number;
+    accessibility: number;
+    manifestValidity: number;
+  };
+  issues: EvaluationIssue[];
+  blockedReasons: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Internal scorer helpers
@@ -34,8 +74,8 @@ function scoreCoherence(outputData: Record<string, unknown>): {
   issues: EvaluationIssue[];
 } {
   const issues: EvaluationIssue[] = [];
-  const claims = (outputData["claims"] as unknown[] | undefined) ?? [];
-  const examples = (outputData["examples"] as unknown[] | undefined) ?? [];
+  const claims = (outputData["claims"] as any[] | undefined) ?? [];
+  const examples = (outputData["examples"] as any[] | undefined) ?? [];
 
   // Each example and assessment should map to at least one claim
   if (claims.length === 0) {
@@ -155,11 +195,11 @@ function scoreManifestValidity(
   }
 
   const manifests =
-    (outputData["simulations"] as unknown[]) ??
-    (outputData["animations"] as unknown[]) ??
+    (outputData["simulations"] as any[]) ??
+    (outputData["animations"] as any[]) ??
     [];
 
-  manifests.forEach((m: any, idx: number) => {
+  manifests.forEach((m, idx) => {
     if (!m.id) {
       issues.push({
         dimension: "manifest_validity",
@@ -194,7 +234,7 @@ function deriveRecommendation(
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapRecord(row: any): EvaluationRecord {
+function mapRecord(row: Record<string, unknown>): EvaluationRecord {
   return {
     id: row.id,
     tenantId: row.tenantId,

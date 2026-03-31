@@ -153,7 +153,7 @@ export const tracingPlugin: FastifyPluginAsync<TracingConfig> = async (
 /**
  * Database query tracing decorator
  */
-export function traceQuery<T extends (...args: any[]) => Promise<any>>(
+export function traceQuery<T extends (...args: any[]) => Promise<unknown>>(
   operation: string,
   fn: T
 ): T {
@@ -187,7 +187,7 @@ export function traceQuery<T extends (...args: any[]) => Promise<any>>(
 /**
  * AI service call tracing
  */
-export function traceAIRequest<T extends (...args: any[]) => Promise<any>>(
+export function traceAIRequest<T extends (...args: any[]) => Promise<unknown>>(
   model: string,
   fn: T
 ): T {
@@ -209,8 +209,8 @@ export function traceAIRequest<T extends (...args: any[]) => Promise<any>>(
       
       span.setAttributes({
         'ai.response_time_ms': duration,
-        'ai.tokens_input': (result as any)?.usage?.prompt_tokens || 0,
-        'ai.tokens_output': (result as any)?.usage?.completion_tokens || 0,
+        'ai.tokens_input': (result as Record<string, unknown>)?.usage?.prompt_tokens || 0,
+        'ai.tokens_output': (result as Record<string, unknown>)?.usage?.completion_tokens || 0,
       });
       span.setStatus({ code: SpanStatusCode.OK });
       
@@ -232,8 +232,8 @@ export function traceAIRequest<T extends (...args: any[]) => Promise<any>>(
 declare module 'fastify' {
   interface FastifyRequest {
     tracing?: {
-      span: any;
-      tracer: any;
+      span: unknown;
+      tracer: unknown;
     };
   }
 

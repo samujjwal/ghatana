@@ -101,7 +101,7 @@ export class SimulationGenerationProcessor {
                     title: response.manifest.name, // Mapped name -> title
                     description: response.manifest.description,
                     version: '1.0.0',
-                    domain: domain as any, // Enum cast
+                    domain: domain as unknown, // Enum cast
                     // gradeLevel: removed as not in schema
                     manifest: response.manifest as any, // Store full manifest as JSON
                     // status: 'DRAFT', // status not in schema for SimulationManifest?
@@ -112,7 +112,7 @@ export class SimulationGenerationProcessor {
                     title: response.manifest.name,
                     description: response.manifest.description,
                     version: '1.0.0',
-                    domain: domain as any,
+                    domain: domain as unknown,
                     manifest: response.manifest as any,
                 },
             });

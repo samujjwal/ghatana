@@ -32,7 +32,7 @@ interface LearnerSignalAsset {
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapEvent(row: any): ExplorerEvent {
+function mapEvent(row: Record<string, unknown>): ExplorerEvent {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -130,9 +130,9 @@ export class TelemetryService {
     await this.markRecommendationStateStale(
       tenantId,
       input.events
-        .map((evt) => evt.assetId)
+        .map((evt: any) => evt.assetId)
         .filter((assetId): assetId is string => typeof assetId === "string"),
-      input.events.map((evt) => evt.eventType),
+      input.events.map((evt: any) => evt.eventType),
     );
     await this.applyLearnerFeedbackSignals(tenantId, input.events);
 
@@ -147,9 +147,9 @@ export class TelemetryService {
     assetId: string,
     eventTypes?: string[],
   ): Promise<ExplorerEvent[]> {
-    const where: any = { tenantId, assetId };
+    const where: Record<string, unknown> = { tenantId, assetId };
     if (eventTypes && eventTypes.length > 0) {
-      where.eventType = { in: eventTypes.map((t) => t.toUpperCase()) };
+      where.eventType = { in: eventTypes.map((t: any) => t.toUpperCase()) };
     }
 
     const rows = await (this.prisma as any).explorerEvent.findMany({
@@ -175,7 +175,7 @@ export class TelemetryService {
 
     if (
       assetIds.length === 0 ||
-      !eventTypes.some((eventType) => relevantTypes.has(eventType))
+      !eventTypes.some((eventType: any) => relevantTypes.has(eventType))
     ) {
       return;
     }
@@ -196,7 +196,7 @@ export class TelemetryService {
     events: TrackExplorerEventInput[],
   ): Promise<void> {
     const actionable = events.filter(
-      (event) =>
+      (event: any) =>
         typeof event.userId === "string" &&
         typeof event.assetId === "string" &&
         (event.eventType === "asset_complete" ||
@@ -210,7 +210,7 @@ export class TelemetryService {
     const assets = (await (this.prisma as any).contentAsset.findMany({
       where: {
         tenantId,
-        id: { in: actionable.map((event) => event.assetId) },
+        id: { in: actionable.map((event: any) => event.assetId) },
       },
       select: {
         id: true,
@@ -219,7 +219,7 @@ export class TelemetryService {
       },
     })) as LearnerSignalAsset[];
     const assetMap = new Map<string, LearnerSignalAsset>(
-      assets.map((asset) => [asset.id, asset]),
+      assets.map((asset: any) => [asset.id, asset]),
     );
 
     for (const event of actionable) {

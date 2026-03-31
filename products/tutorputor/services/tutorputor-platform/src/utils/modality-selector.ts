@@ -30,7 +30,7 @@ export interface ModalityAvailability {
     simulationManifest: {
       id: string;
       title: string;
-      manifest: any;
+      manifest: unknown;
     } | null;
   }>;
   animations: Array<{
@@ -38,13 +38,13 @@ export interface ModalityAvailability {
     type: string;
     title: string;
     duration: number;
-    config: any;
+    config: unknown;
   }>;
   examples: Array<{
     id: string;
     type: string;
     title: string;
-    content: any;
+    content: unknown;
   }>;
 }
 

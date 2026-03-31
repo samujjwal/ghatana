@@ -41,14 +41,14 @@ export interface AIProxyService {
         context?: string;
     }): Promise<ParsedIntent>;
     explainSimulation(args: {
-        manifest: any;
+        manifest: unknown;
         query: string;
     }): Promise<string>;
     generateLearningUnitDraft(args: {
         topic: string;
         targetAudience: string;
         learningObjectives?: string[];
-    }): Promise<any>;
+    }): Promise<unknown>;
     parseContentQuery(query: string): Promise<{
         domain?: string;
         difficulty?: string;

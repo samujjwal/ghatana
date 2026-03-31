@@ -41,7 +41,10 @@ export const aiModule: FastifyPluginAsync = async (app) => {
   }
 
   // Register AI routes with the service and optional registry client
-  await registerAIRoutes(app, { aiProxyService, aiRegistryClient });
+  await registerAIRoutes(app, {
+    aiProxyService: aiProxyService as any,
+    aiRegistryClient,
+  });
 
   app.log.info("✅ AI module routes registered");
 };

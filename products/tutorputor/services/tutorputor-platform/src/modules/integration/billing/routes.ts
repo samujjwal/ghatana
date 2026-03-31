@@ -29,7 +29,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
   // Create circuit breakers for external services
   const stripeCircuitBreaker = createPaymentCircuitBreaker(
     "stripe-webhook",
-    async (...args: unknown[]) => {
+    async (...args: any[]) => {
       const [stripeSecretKey, bodyString, signature, webhookSecret] = args as [
         string,
         string,

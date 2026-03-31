@@ -190,12 +190,12 @@ export class BKTProcessor implements EvidenceProcessor {
                 durationMs: Date.now() - startTime,
                 data: { ...result },
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 pluginId,
                 status: 'error',
                 durationMs: Date.now() - startTime,
-                error: error.message,
+                error: { pluginId, code: 'BKT_ERROR', message: (error as Error).message },
             };
         }
     }
@@ -252,7 +252,7 @@ export class BKTProcessor implements EvidenceProcessor {
         return this.config.defaultParams;
     }
 
-    private extractCorrectness(payload: Record<string, unknown>): boolean {
+    private extractCorrectness(payload: any): boolean {
         if ('correct' in payload) return Boolean(payload.correct);
         if ('isCorrect' in payload) return Boolean(payload.isCorrect);
         if ('success' in payload) return Boolean(payload.success);

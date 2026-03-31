@@ -22,7 +22,7 @@ declare module 'opossum' {
     opened: boolean;
     closed: boolean;
     halfOpen: boolean;
-    stats: any;
+    stats: unknown;
   }
 
   export default CircuitBreaker;

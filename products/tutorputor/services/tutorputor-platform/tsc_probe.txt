@@ -1,1 +1,454 @@
-probe
+../../libs/tutorputor-core/src/db/index.ts(154,19): error TS2532: Object is possibly 'undefined'.
+../../libs/tutorputor-core/src/db/index.ts(171,19): error TS2532: Object is possibly 'undefined'.
+../../libs/tutorputor-core/src/db/index.ts(185,21): error TS2532: Object is possibly 'undefined'.
+../../libs/tutorputor-core/src/db/index.ts(192,21): error TS2532: Object is possibly 'undefined'.
+../../libs/tutorputor-core/src/kernel/engine/analytics/ClaimMasteryAggregator.ts(172,9): error TS2375: Type '{ evidenceId: string; claimId: string; type: "explanation_quality"; rubricScore: number | undefined; maxRubricScore: number | undefined; learnerId: string; sessionId: string; timestamp: Date; sourceEventType: "assess.answer.submit"; ecd: { ...; }; }' is not assignable to type 'EnrichedEvidenceRecord' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'rubricScore' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+../../libs/tutorputor-core/src/kernel/engine/analytics/ClaimMasteryAggregator.ts(201,7): error TS2375: Type '{ evidenceId: string; claimId: string; type: "prediction_vs_outcome"; correct: boolean | undefined; confidence: ConfidenceLevel; learnerId: string; sessionId: string; timestamp: Date; sourceEventType: string; ecd: { ...; }; }' is not assignable to type 'EnrichedEvidenceRecord' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'correct' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.
+../../libs/tutorputor-core/src/kernel/path/simulation-adapter.ts(415,5): error TS2322: Type '{ stepId: LearningPathStepId; type: "required" | "recommended"; minScore: number | undefined; }[]' is not assignable to type '{ stepId: string; type: string; minScore?: number; }[]'.
+  Type '{ stepId: LearningPathStepId; type: "required" | "recommended"; minScore: number | undefined; }' is not assignable to type '{ stepId: string; type: string; minScore?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'minScore' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+../../libs/tutorputor-core/src/kernel/pipeline/PipelineRunner.ts(281,19): error TS2375: Type '{ pluginId: string; success: boolean; result: ProcessingResult; durationMs: number; skipped: boolean; skipReason: string | undefined; }' is not assignable to type 'PluginExecutionResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'skipReason' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+../../libs/tutorputor-core/src/logger.ts(8,37): error TS2307: Cannot find module 'fastify' or its corresponding type declarations.
+../../libs/tutorputor-simulation/src/engine/author/service.ts(10,40): error TS2307: Cannot find module '@tutorputor/db' or its corresponding type declarations.
+../../libs/tutorputor-simulation/src/engine/author/service.ts(286,11): error TS2375: Type '{ id: any; version: any; title: any; description: any; domain: any; domainMetadata: any; authorId: UserId; tenantId: TenantId; needsReview: any; moduleId: undefined; canvas: any; ... 6 more ...; schemaVersion: string; }' is not assignable to type 'SimulationManifest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'moduleId' are incompatible.
+    Type 'undefined' is not assignable to type 'ModuleId'.
+      Type 'undefined' is not assignable to type 'string'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(79,5): error TS2412: Type 'AIProxyService | undefined' is not assignable to type 'AIProxyService' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'AIProxyService'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(129,47): error TS2339: Property 'entities' does not exist on type 'SimulationManifest'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(203,5): error TS2375: Type '{ success: boolean; manifest: SimulationManifest | undefined; response: string; suggestions: string[]; intent: ParsedIntent; confidence: number; }' is not assignable to type 'NLRefinementResponse' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'manifest' are incompatible.
+    Type 'SimulationManifest | undefined' is not assignable to type 'SimulationManifest'.
+      Type 'undefined' is not assignable to type 'SimulationManifest'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(234,22): error TS2379: Argument of type '{ success: boolean; manifest: SimulationManifest | undefined; response: string; suggestions: string[]; intent: ParsedIntent; confidence: number; }' is not assignable to parameter of type 'NLRefinementResponse' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'manifest' are incompatible.
+    Type 'SimulationManifest | undefined' is not assignable to type 'SimulationManifest'.
+      Type 'undefined' is not assignable to type 'SimulationManifest'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(355,31): error TS2339: Property 'entities' does not exist on type 'SimulationManifest'.
+../../libs/tutorputor-simulation/src/engine/nl/service.ts(384,31): error TS2339: Property 'entities' does not exist on type 'SimulationManifest'.
+../../libs/tutorputor-simulation/src/engine/runtime/easing.ts(206,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+../../libs/tutorputor-simulation/src/engine/runtime/easing.ts(207,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+../../libs/tutorputor-simulation/src/engine/runtime/easing.ts(208,21): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+../../libs/tutorputor-simulation/src/renderer/primitives.ts(499,13): error TS2375: Type '{ color: string; fontSize: number; fontFamily: string; fontWeight: string; align: CanvasTextAlign | undefined; }' is not assignable to type 'TextStyle' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'align' are incompatible.
+    Type 'CanvasTextAlign | undefined' is not assignable to type 'CanvasTextAlign'.
+      Type 'undefined' is not assignable to type 'CanvasTextAlign'.
+../../libs/tutorputor-simulation/src/renderer/primitives.ts(501,13): error TS2375: Type '{ color: string; fontSize: number; fontFamily: string; align: CanvasTextAlign | undefined; }' is not assignable to type 'TextStyle' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'align' are incompatible.
+    Type 'CanvasTextAlign | undefined' is not assignable to type 'CanvasTextAlign'.
+      Type 'undefined' is not assignable to type 'CanvasTextAlign'.
+../../libs/tutorputor-simulation/src/renderer/primitives.ts(503,13): error TS2375: Type '{ color: string; fontSize: number; align: CanvasTextAlign | undefined; }' is not assignable to type 'TextStyle' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'align' are incompatible.
+    Type 'CanvasTextAlign | undefined' is not assignable to type 'CanvasTextAlign'.
+      Type 'undefined' is not assignable to type 'CanvasTextAlign'.
+../../libs/tutorputor-simulation/src/renderer/renderers/Chemistry3DRenderer.tsx(257,35): error TS7030: Not all code paths return a value.
+../../libs/tutorputor-simulation/src/renderer/renderers/Chemistry3DRenderer.tsx(262,38): error TS2307: Cannot find module 'ngl' or its corresponding type declarations.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(202,5): error TS2412: Type '((manifest: SimulationManifest, config?: unknown) => void) | undefined' is not assignable to type '(manifest: SimulationManifest, config?: unknown) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(manifest: SimulationManifest, config?: unknown) => void'.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(210,5): error TS2412: Type '(() => void) | undefined' is not assignable to type '() => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '() => void'.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(218,5): error TS2412: Type '((stepIndex: number) => void) | undefined' is not assignable to type '(stepIndex: number) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(stepIndex: number) => void'.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(226,5): error TS2412: Type '((stepIndex: number) => void) | undefined' is not assignable to type '(stepIndex: number) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(stepIndex: number) => void'.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(234,5): error TS2412: Type '(() => void) | undefined' is not assignable to type '() => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '() => void'.
+../../libs/tutorputor-simulation/src/sdk/kernel-builder.ts(242,5): error TS2412: Type '((error: Error) => void) | undefined' is not assignable to type '(error: Error) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(error: Error) => void'.
+src/core/middleware/consent-enforcement.ts(172,38): error TS2339: Property 'userConsent' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/core/middleware/input-sanitizer.ts(214,43): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, unknown>'.
+src/core/middleware/input-sanitizer.ts(290,57): error TS2345: Argument of type 'object' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type '{}'.
+src/core/observability/metrics.ts(181,19): error TS2339: Property 'ping' does not exist on type 'Redis'.
+src/core/observability/metrics.ts(235,19): error TS2339: Property 'ping' does not exist on type 'Redis'.
+src/modules/ai/index.ts(44,33): error TS2322: Type 'OllamaAIProxyService' is not assignable to type 'AIProxyService & { [key: string]: unknown; generateQuestionsFromContent?: (args: { tenantId: string; moduleId: string; count: number; difficulty: "medium" | "easy" | "hard"; }) => Promise<...>; }'.
+  Type 'OllamaAIProxyService' is not assignable to type '{ [key: string]: unknown; generateQuestionsFromContent?: (args: { tenantId: string; moduleId: string; count: number; difficulty: "medium" | "easy" | "hard"; }) => Promise<{ question: string; options?: string[]; correctAnswer: string; explanation: string; }[]>; }'.
+    Index signature for type 'string' is missing in type 'OllamaAIProxyService'.
+src/modules/ai/routes.ts(22,15): error TS2724: '"../../clients/ai-registry.client.js"' has no exported member named 'AiRegistryClient'. Did you mean 'aiRegistryClient'?
+src/modules/ai/routes.ts(165,65): error TS2379: Argument of type '{ tenantId: TenantId; userId: UserId; moduleId: ModuleId | undefined; question: string; locale: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; userId: UserId; moduleId?: ModuleId; question: string; locale?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'moduleId' are incompatible.
+    Type 'ModuleId | undefined' is not assignable to type 'ModuleId'.
+      Type 'undefined' is not assignable to type 'ModuleId'.
+        Type 'undefined' is not assignable to type 'string'.
+src/modules/animation-runtime/service.ts(412,56): error TS2345: Argument of type 'string' is not assignable to parameter of type 'EasingFunction'.
+src/modules/animation-runtime/service.ts(461,57): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{}'.
+  No index signature with a parameter of type 'string' was found on type '{}'.
+src/modules/animation-runtime/service.ts(478,34): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, unknown>'.
+src/modules/animation-runtime/service.ts(583,5): error TS2322: Type '{ timeMs: number; description: string; properties: Record<string, any>; easing: string | undefined; }[]' is not assignable to type 'AnimationKeyframe[]'.
+  Type '{ timeMs: number; description: string; properties: Record<string, any>; easing: string | undefined; }' is not assignable to type 'AnimationKeyframe' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'easing' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/modules/audit/hash-chain.ts(70,42): error TS2339: Property 'auditHashChain' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/audit/hash-chain.ts(79,41): error TS2339: Property 'auditHashChain' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/audit/hash-chain.ts(111,43): error TS2339: Property 'auditHashChain' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/audit/hash-chain.ts(159,42): error TS2339: Property 'auditHashChain' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/modules/audit/routes.ts(60,9): error TS2375: Type '{ cursor: string | undefined; limit: number | undefined; sortBy: string | undefined; sortOrder: "asc" | "desc" | undefined; }' is not assignable to type '{ cursor?: string; limit?: number; sortBy?: string; sortOrder?: "asc" | "desc"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cursor' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/audit/routes.ts(92,58): error TS2379: Argument of type '{ tenantId: TenantId; days: number | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; days?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'days' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/auth/index.ts(17,19): error TS2339: Property 'jwt' does not exist on type 'FastifyInstance<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, FastifyBaseLogger, FastifyTypeProviderDefault>'.
+src/modules/auth/index.ts(160,53): error TS2379: Argument of type '{ tenantId: TenantId; providerId: string; redirectUri: string | undefined; }' is not assignable to parameter of type 'SsoLoginRequest & { tenantId: TenantId; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ tenantId: TenantId; providerId: string; redirectUri: string | undefined; }' is not assignable to type 'SsoLoginRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'redirectUri' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/modules/auto-revision/module.ts(94,16): error TS2551: Property 'abExperiment' does not exist on type 'TutorPrismaClient'. Did you mean 'aBExperiment'?
+src/modules/auto-revision/service.ts(412,39): error TS2551: Property 'abExperiment' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'aBExperiment'?
+src/modules/auto-revision/service.ts(445,43): error TS2551: Property 'abExperiment' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'aBExperiment'?
+src/modules/auto-revision/service.ts(473,25): error TS2551: Property 'abExperiment' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'aBExperiment'?
+src/modules/auto-revision/service.ts(507,24): error TS2551: Property 'abExperiment' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'. Did you mean 'aBExperiment'?
+src/modules/collaboration/real-time-cursor.ts(356,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/collaboration/real-time-cursor.ts(364,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/modules/collaboration/routes.ts(316,44): error TS2379: Argument of type '{ tenantId: TenantId; userId: UserId; studyGroupId: string | undefined; moduleId: ModuleId | undefined; pagination: { limit: number; cursor?: string; }; }' is not assignable to parameter of type '{ tenantId: TenantId; userId: UserId; moduleId?: string; studyGroupId?: string; pagination: PaginationArgs; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'moduleId' are incompatible.
+    Type 'ModuleId | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/compliance/exporter.ts(187,22): error TS2339: Property 'score' does not exist on type '{ assessment: { id: string; title: string; }; } & { tenantId: string; id: string; status: AssessmentAttemptStatus; userId: string; startedAt: Date; timeSpentSeconds: number | null; ... 5 more ...; gradedAt: Date | null; }'.
+src/modules/compliance/exporter.ts(188,25): error TS2339: Property 'maxScore' does not exist on type '{ assessment: { id: string; title: string; }; } & { tenantId: string; id: string; status: AssessmentAttemptStatus; userId: string; startedAt: Date; timeSpentSeconds: number | null; ... 5 more ...; gradedAt: Date | null; }'.
+src/modules/compliance/exporter.ts(190,28): error TS2339: Property 'completedAt' does not exist on type '{ assessment: { id: string; title: string; }; } & { tenantId: string; id: string; status: AssessmentAttemptStatus; userId: string; startedAt: Date; timeSpentSeconds: number | null; ... 5 more ...; gradedAt: Date | null; }'.
+src/modules/compliance/exporter.ts(241,38): error TS2322: Type 'unknown' is not assignable to type 'string | Error'.
+src/modules/compliance/service.ts(58,9): error TS2416: Property 'requestUserExport' in type 'ComplianceServiceImpl' is not assignable to the same property in base type 'ComplianceService'.
+  Type '(params: { userId: UserId; tenantId: TenantId; requestedBy: UserId; }) => Promise<DataExportRequest>' is not assignable to type '(args: { tenantId: TenantId; userId: UserId; requestedBy: UserId; }) => Promise<DataExportRequest>'.
+    Type 'Promise<DataExportRequest>' is not assignable to type 'Promise<import("/Users/samujjwal/Development/ghatana/products/tutorputor/contracts/dist/types").DataExportRequest>'.
+      Type 'DataExportRequest' is not assignable to type 'import("/Users/samujjwal/Development/ghatana/products/tutorputor/contracts/dist/types").DataExportRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+        Types of property 'status' are incompatible.
+          Type 'unknown' is not assignable to type 'ExportStatus'.
+src/modules/compliance/service.ts(96,9): error TS2416: Property 'getExportStatus' in type 'ComplianceServiceImpl' is not assignable to the same property in base type 'ComplianceService'.
+  Type '(args: { requestId: string; tenantId: TenantId; }) => Promise<DataExportRequest>' is not assignable to type '(args: { tenantId: TenantId; requestId: string; }) => Promise<DataExportRequest>'.
+    Type 'Promise<DataExportRequest>' is not assignable to type 'Promise<import("/Users/samujjwal/Development/ghatana/products/tutorputor/contracts/dist/types").DataExportRequest>'.
+      Type 'DataExportRequest' is not assignable to type 'import("/Users/samujjwal/Development/ghatana/products/tutorputor/contracts/dist/types").DataExportRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+        Types of property 'status' are incompatible.
+          Type 'unknown' is not assignable to type 'ExportStatus'.
+src/modules/compliance/service.ts(110,12): error TS2352: Conversion of type '{ id: string; userId: UserId; tenantId: TenantId; status: string; requestedAt: string; estimatedCompletionAt: string; completedAt: undefined; downloadUrl: undefined; error: string; }' to type 'DataExportRequest' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: string; userId: UserId; tenantId: TenantId; status: string; requestedAt: string; estimatedCompletionAt: string; completedAt: undefined; downloadUrl: undefined; error: string; }' is not comparable to type '{ requestedAt: unknown; completedAt?: unknown; downloadUrl?: string; error?: string; estimatedCompletionAt: string; }'.
+    Types of property 'downloadUrl' are incompatible.
+      Type 'undefined' is not comparable to type 'string'.
+src/modules/content-needs/module.ts(28,65): error TS2345: Argument of type 'HealthAwareContentStudioService' is not assignable to parameter of type 'ContentStudioService'.
+  Types of property 'publishExperience' are incompatible.
+    Type '(id: string, userId: string) => Promise<LearningExperience | null>' is not assignable to type '(request: PublishExperienceRequest) => Promise<ExperienceOperationResult>'.
+      Target signature provides too few arguments. Expected 2 or more, but got 1.
+src/modules/content-needs/service.ts(487,34): error TS18046: 'example' is of type 'unknown'.
+src/modules/content-needs/service.ts(488,28): error TS18046: 'example' is of type 'unknown'.
+src/modules/content-needs/service.ts(489,37): error TS18046: 'example' is of type 'unknown'.
+src/modules/content-needs/service.ts(493,31): error TS18046: 'example' is of type 'unknown'.
+src/modules/content/animation-integration.ts(229,5): error TS2375: Type '{ contentId: string; claimId: string; animationId: string; animationType: "assessment" | "demonstration" | "exploration"; autoGenerated: boolean; metadata: { concept: string; difficulty: string; estimatedDuration: number; }; spec: AnimationSpec | undefined; }' is not assignable to type 'AnimationContentLink' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'spec' are incompatible.
+    Type 'AnimationSpec | undefined' is not assignable to type 'AnimationSpec'.
+      Type 'undefined' is not assignable to type 'AnimationSpec'.
+src/modules/content/asset/manifest-validator.ts(21,8): error TS2307: Cannot find module '@tutorputor/contracts/v1/artifact-manifests' or its corresponding type declarations.
+src/modules/content/asset/manifest-validator.ts(22,43): error TS2307: Cannot find module '@tutorputor/contracts/v1/artifact-manifests' or its corresponding type declarations.
+src/modules/content/asset/routes.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAssetType'.
+src/modules/content/asset/routes.ts(18,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAssetStatus'.
+src/modules/content/asset/routes.ts(81,47): error TS2379: Argument of type '{ tenantId: string; assetType: any; status: any; domain: string | undefined; authorId: string | undefined; search: string | undefined; limit: number | undefined; offset: number | undefined; }' is not assignable to parameter of type 'AssetListFilters' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'domain' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/content/candidates/candidate-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'RegenerationCandidate'.
+src/modules/content/candidates/candidate-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'CreateRegenerationCandidateInput'.
+src/modules/content/candidates/routes.ts(20,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'CreateRegenerationCandidateInput'.
+src/modules/content/candidates/routes.ts(53,69): error TS2379: Argument of type '{ assetId: string | undefined; trigger: string | undefined; }' is not assignable to parameter of type '{ assetId?: string; trigger?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'assetId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/content/cms/routes.ts(101,30): error TS2379: Argument of type '{ tenantId: TenantId; status: ModuleSummary["status"] | undefined; cursor: ModuleId | null | undefined; limit: number | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; status?: ModuleStatus; cursor?: ModuleId | null; limit?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'status' are incompatible.
+    Type 'ModuleStatus | undefined' is not assignable to type 'ModuleStatus'.
+      Type 'undefined' is not assignable to type 'ModuleStatus'.
+src/modules/content/evaluation/evaluation-service.ts(22,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'EvaluationRecord'.
+src/modules/content/evaluation/evaluation-service.ts(23,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'EvaluationScorecard'.
+src/modules/content/evaluation/evaluation-service.ts(24,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'EvaluationIssue'.
+src/modules/content/evaluation/evaluation-service.ts(25,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'PublishRecommendation'.
+src/modules/content/evaluation/search-validator.ts(14,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAssetType'.
+src/modules/content/evaluation/search-validator.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'HybridSearchResult'.
+src/modules/content/generation/execution-stream.ts(14,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationExecutionSnapshot'.
+src/modules/content/generation/execution-stream.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationExecutionWorkerTelemetry'.
+src/modules/content/generation/queue-dispatcher.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationJob'.
+src/modules/content/generation/queue-dispatcher.ts(16,3): error TS2724: '"@tutorputor/contracts/v1/content-studio"' has no exported member named 'GenerationRequestWithJobs'. Did you mean 'AIGenerationRequest'?
+src/modules/content/generation/routes.ts(29,15): error TS2724: '"@tutorputor/contracts/v1/content-studio"' has no exported member named 'GenerationRequestConfig'. Did you mean 'AIGenerationRequest'?
+src/modules/content/generation/routes.ts(208,37): error TS2339: Property 'duplicate' does not exist on type 'Redis'.
+src/modules/content/generation/routes.ts(228,39): error TS7006: Parameter '_channel' implicitly has an 'any' type.
+src/modules/content/generation/routes.ts(228,49): error TS7006: Parameter 'rawMessage' implicitly has an 'any' type.
+src/modules/content/modality-conversion/service.ts(15,8): error TS2307: Cannot find module '@tutorputor/contracts/v1/artifact-manifests' or its corresponding type declarations.
+src/modules/content/modality-conversion/service.ts(16,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ArtifactManifest'.
+src/modules/content/modality-conversion/service.ts(22,8): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+src/modules/content/publish/publish-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'PublishAssetInput'.
+src/modules/content/publish/publish-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'PublishResult'.
+src/modules/content/publish/routes.ts(20,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'PublishAssetInput'.
+src/modules/content/recommendation/asset-outcome-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'AssetOutcomeSummary'.
+src/modules/content/recommendation/asset-outcome-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationReviewDecisionStatus'.
+src/modules/content/recommendation/asset-outcome-service.ts(18,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'PublishRecommendation'.
+src/modules/content/recommendation/recommendation-engine.ts(14,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'NextStepSuggestion'.
+src/modules/content/recommendation/recommendation-engine.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'RelatedAssetsResponse'.
+src/modules/content/review/quality-loop-service.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'EvaluationRecord'.
+src/modules/content/review/quality-loop-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationQualityLoopSummary'.
+src/modules/content/review/quality-loop-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'RegenerationTrigger'.
+src/modules/content/review/quality-loop-service.ts(18,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ReviewPath'.
+src/modules/content/review/review-service.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationReviewDecision'.
+src/modules/content/review/review-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'SubmitReviewDecisionInput'.
+src/modules/content/review/routes.ts(19,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationQualityLoopSummary'.
+src/modules/content/review/routes.ts(22,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'SubmitReviewDecisionInput'.
+src/modules/content/routes.ts(26,58): error TS2379: Argument of type '{ tenantId: TenantId; domain: string | undefined; status: "PUBLISHED"; cursor: string | undefined; limit: number; userId: UserId | undefined; query: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; domain?: string; status?: "PUBLISHED"; cursor?: string; limit?: number; userId?: UserId; query?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'domain' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/content/routing/cost-aware-router.ts(11,3): error TS2724: '"@tutorputor/contracts/v1/content-studio"' has no exported member named 'GenerationRequestConfig'. Did you mean 'AIGenerationRequest'?
+src/modules/content/routing/cost-aware-router.ts(12,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationRoutingDecision'.
+src/modules/content/semantic/chunk-service.ts(16,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'SemanticIndexResult'.
+src/modules/content/semantic/chunk-service.ts(198,24): error TS2379: Argument of type '{ chunkRef: string; source: "MANIFEST"; sourceRef: any; sequenceIdx: number; text: string; tokenCount: number; contentHash: string; domain: any; claimRefs: any[] | undefined; }' is not assignable to parameter of type 'RawChunk' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'claimRefs' are incompatible.
+    Type 'any[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/modules/content/semantic/routes.ts(17,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAssetType'.
+src/modules/content/semantic/semantic-search-service.ts(15,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAsset'.
+src/modules/content/semantic/semantic-search-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ContentAssetType'.
+src/modules/content/semantic/semantic-search-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'HybridSearchResult'.
+src/modules/content/service.ts(69,5): error TS2375: Type '{ module: ModuleDetail; enrollment: Enrollment | undefined; }' is not assignable to type '{ module: ModuleDetail; enrollment?: Enrollment; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'enrollment' are incompatible.
+    Type 'Enrollment | undefined' is not assignable to type 'Enrollment'.
+      Type 'undefined' is not assignable to type 'Enrollment'.
+src/modules/content/service.ts(129,55): error TS2379: Argument of type '{ where: Record<string, unknown>; take: number; orderBy: { title: "asc"; }; cursor: { id: string; } | undefined; skip: number; include: any; }' is not assignable to parameter of type '{ select?: ModuleSelect<DefaultArgs> | null; omit?: ModuleOmit<DefaultArgs> | null; include?: ModuleInclude<DefaultArgs> | null; ... 5 more ...; distinct?: ModuleScalarFieldEnum | ModuleScalarFieldEnum[]; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cursor' are incompatible.
+    Type '{ id: string; } | undefined' is not assignable to type 'ModuleWhereUniqueInput'.
+      Type 'undefined' is not assignable to type 'ModuleWhereUniqueInput'.
+src/modules/content/service.ts(345,5): error TS2375: Type '{ id: Enrollment["id"]; moduleId: ModuleId; userId: UserId; status: Enrollment["status"]; progressPercent: number; startedAt: string | undefined; completedAt: string | undefined; timeSpentSeconds: number; }' is not assignable to type 'Enrollment' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'startedAt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/content/telemetry/routes.ts(21,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'TrackExplorerEventInput'.
+src/modules/content/telemetry/routes.ts(22,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'TrackBatchEventsInput'.
+src/modules/content/telemetry/telemetry-service.ts(16,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ExplorerEvent'.
+src/modules/content/telemetry/telemetry-service.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'TrackExplorerEventInput'.
+src/modules/content/telemetry/telemetry-service.ts(18,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'TrackBatchEventsInput'.
+src/modules/content/telemetry/telemetry-service.ts(134,18): error TS7006: Parameter 'assetId' implicitly has an 'any' type.
+src/modules/content/variation/service.ts(12,15): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'ArtifactManifest'.
+src/modules/credentials/index.ts(6,36): error TS2345: Argument of type '(fastify: FastifyInstance) => Promise<void>' is not assignable to parameter of type 'FastifyPluginCallback<Record<never, never>, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger> | FastifyPluginAsync<...>'.
+  Type '(fastify: FastifyInstance) => Promise<void>' is not assignable to type 'FastifyPluginCallback<Record<never, never>, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+    Types of parameters 'fastify' and 'instance' are incompatible.
+      Type 'FastifyInstance<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, FastifyBaseLogger, FastifyTypeProviderDefault>' is missing the following properties from type 'FastifyInstance<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, FastifyBaseLogger, FastifyTypeProviderDefault>': getDecorator, propfind, proppatch, mkcalendar, and 13 more.
+src/modules/credentials/models/credential.ts(281,9): error TS2375: Type '{ category: "collaboration" | "problem_solving" | "simulation_mastery" | "domain_expertise" | "learning_streak" | "speed_run" | "perfectionist" | "explorer"; points: number | undefined; tier: "gold" | ... 3 more ... | undefined; rarity: "common" | ... 4 more ... | undefined; tags: string[] | undefined; customData: R...' is not assignable to type 'CredentialMetadata' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'points' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/credentials/models/credential.ts(289,9): error TS2412: Type '{ simulationId: string | undefined; simulationName: string | undefined; domainPackId: string | undefined; score: number | undefined; maxScore: number | undefined; completionTime: number | undefined; attempts: number | undefined; criteria: AchievementCriteria[]; } | undefined' is not assignable to type 'AchievementDetails | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/modules/credentials/models/credential.ts(299,9): error TS2412: Type '{ skillId: string; skillName: string; level: "advanced" | "beginner" | "intermediate" | "expert"; domain: string; subDomain: string | undefined; endorsements: never[]; assessmentResults: never[]; } | undefined' is not assignable to type 'SkillDetails | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/modules/credentials/models/credential.ts(308,9): error TS2412: Type '{ courseId: string | undefined; courseName: string | undefined; curriculum: string | undefined; completionDate: Date; grade: string | undefined; hoursCompleted: number | undefined; } | undefined' is not assignable to type 'CertificateDetails | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/modules/credentials/routes.ts(80,43): error TS2379: Argument of type '{ tenantId: string; type: "badge" | "certificate" | "skill" | "achievement"; userId: string; name: string; description: string; metadata: { category?: "collaboration" | "problem_solving" | ... 6 more ... | undefined; ... 4 more ...; customData?: Record<...> | undefined; }; ... 4 more ...; expiresAt?: Date | undefine...' is not assignable to parameter of type 'IssueCredentialDTO' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'imageUrl' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/credentials/routes.ts(134,13): error TS2375: Type '{ category: any; tier: any; rarity: any; points: number; customData: Record<string, unknown> | undefined; }' is not assignable to type 'Partial<CredentialMetadata>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'customData' are incompatible.
+    Type 'Record<string, unknown> | undefined' is not assignable to type 'Record<string, unknown>'.
+      Type 'undefined' is not assignable to type 'Record<string, unknown>'.
+src/modules/credentials/routes.ts(141,13): error TS2375: Type '{ simulationId: string; simulationName: string; domainPackId: string | undefined; score: number; maxScore: number; completionTime: number; attempts: number; criteria: AchievementCriteria[]; }' is not assignable to type 'Partial<AchievementDetails>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'domainPackId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/engagement/credentials/routes.ts(51,43): error TS2339: Property 'userBadge' does not exist on type 'TutorPrismaClient'.
+src/modules/engagement/credentials/routes.ts(87,42): error TS2339: Property 'userBadge' does not exist on type 'TutorPrismaClient'.
+src/modules/engagement/credentials/routes.ts(116,45): error TS2339: Property 'certificate' does not exist on type 'TutorPrismaClient'.
+src/modules/engagement/credentials/routes.ts(147,44): error TS2339: Property 'certificate' does not exist on type 'TutorPrismaClient'.
+src/modules/engagement/gamification/routes.ts(132,9): error TS2322: Type 'unknown' is not assignable to type 'UserId'.
+  Type 'unknown' is not assignable to type 'string'.
+src/modules/engagement/gamification/routes.ts(133,9): error TS2322: Type 'unknown' is not assignable to type 'number'.
+src/modules/engagement/gamification/routes.ts(134,9): error TS2322: Type '{}' is not assignable to type 'string'.
+src/modules/engagement/gamification/routes.ts(135,9): error TS2322: Type '{}' is not assignable to type '"assessment" | "module_complete" | "streak" | "daily_login" | "bonus"'.
+src/modules/engagement/gamification/service.ts(259,9): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/modules/engagement/gamification/service.ts(287,7): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/modules/engagement/gamification/service.ts(307,5): error TS2322: Type '{ id: string; badge: Badge; earnedAt: Date; }[]' is not assignable to type 'Achievement[]'.
+  Type '{ id: string; badge: Badge; earnedAt: Date; }' is missing the following properties from type 'Achievement': badgeId, userId, tenantId
+src/modules/engagement/gamification/service.ts(385,7): error TS2322: Type '{ id: string; badge: Badge; earnedAt: Date; }[]' is not assignable to type 'Achievement[]'.
+  Type '{ id: string; badge: Badge; earnedAt: Date; }' is missing the following properties from type 'Achievement': badgeId, userId, tenantId
+src/modules/engagement/social/chat.ts(251,49): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/modules/integration/billing/routes.ts(50,5): error TS2345: Argument of type 'FastifyBaseLogger' is not assignable to parameter of type 'Logger'.
+  Property 'msgPrefix' is missing in type 'FastifyBaseLogger' but required in type 'BaseLogger'.
+src/modules/integration/billing/routes.ts(71,44): error TS2379: Argument of type '{ tenantId: TenantId; userId: UserId; listingId: MarketplaceListingId; successUrl: string | undefined; cancelUrl: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; userId: UserId; listingId: MarketplaceListingId; successUrl?: string; cancelUrl?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'successUrl' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/integration/billing/routes.ts(114,36): error TS2379: Argument of type '{ tenantId: TenantId; userId: UserId; cursor: string | undefined; limit: number; }' is not assignable to parameter of type '{ tenantId: TenantId; userId: UserId; cursor?: string | null; limit?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cursor' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+src/modules/integration/marketplace/routes.ts(35,60): error TS2379: Argument of type '{ tenantId: TenantId; status: any; visibility: any; cursor: any; limit: number | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; status?: "DRAFT" | "ARCHIVED" | "ACTIVE"; visibility?: "PUBLIC" | "PRIVATE"; cursor?: MarketplaceListingId | null; limit?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'limit' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/integration/marketplace/routes.ts(81,54): error TS2379: Argument of type '{ tenantId: TenantId; listingId: MarketplaceListingId; status: "DRAFT" | "ARCHIVED" | "ACTIVE" | undefined; visibility: "PUBLIC" | "PRIVATE" | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; listingId: MarketplaceListingId; status?: "DRAFT" | "ARCHIVED" | "ACTIVE"; visibility?: "PUBLIC" | "PRIVATE"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'status' are incompatible.
+    Type '"DRAFT" | "ARCHIVED" | "ACTIVE" | undefined' is not assignable to type '"DRAFT" | "ARCHIVED" | "ACTIVE"'.
+      Type 'undefined' is not assignable to type '"DRAFT" | "ARCHIVED" | "ACTIVE"'.
+src/modules/integration/marketplace/routes.ts(89,47): error TS2379: Argument of type '{ tenantId: TenantId; listingId: MarketplaceListingId; userId: UserId; status: "DRAFT" | "ARCHIVED" | "ACTIVE" | undefined; visibility: "PUBLIC" | "PRIVATE" | undefined; priceCents: number | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; listingId: MarketplaceListingId; userId: UserId; status?: "DRAFT" | "ARCHIVED" | "ACTIVE"; visibility?: "PUBLIC" | "PRIVATE"; priceCents?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'status' are incompatible.
+    Type '"DRAFT" | "ARCHIVED" | "ACTIVE" | undefined' is not assignable to type '"DRAFT" | "ARCHIVED" | "ACTIVE"'.
+      Type 'undefined' is not assignable to type '"DRAFT" | "ARCHIVED" | "ACTIVE"'.
+src/modules/integration/marketplace/routes.ts(118,50): error TS2379: Argument of type '{ tenantId: TenantId; page: number; pageSize: number; domains: string[] | undefined; difficulties: any[] | undefined; tags: string[] | undefined; isPremium: boolean; isVerified: boolean; minRating: number | undefined; search: any; sortBy: any; sortOrder: any; }' is not assignable to parameter of type '{ tenantId: TenantId; domains?: string[]; difficulties?: SimulationTemplateDifficulty[]; tags?: string[]; isPremium?: boolean; isVerified?: boolean; minRating?: number; ... 5 more ...; pageSize?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'domains' are incompatible.
+    Type 'string[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+src/modules/kernel-registry/fastify-routes.ts(12,10): error TS2724: '"./validation/plugin-policy.js"' has no exported member named 'validatePluginMetadata'. Did you mean 'validateMetadata'?
+src/modules/knowledge-base/module.ts(9,10): error TS2724: '"./service"' has no exported member named 'KnowledgeBaseService'. Did you mean 'KnowledgeBaseServiceImpl'?
+src/modules/knowledge-base/routes.ts(9,15): error TS2724: '"./service"' has no exported member named 'KnowledgeBaseService'. Did you mean 'KnowledgeBaseServiceImpl'?
+src/modules/learning/analytics-service.ts(71,23): error TS2339: Property 'xadd' does not exist on type 'Redis'.
+src/modules/learning/analytics-service.ts(172,34): error TS2379: Argument of type '{ tenantId: TenantId; classroomId: ClassroomId | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; classroomId?: ClassroomId; minRiskLevel?: "high" | "medium" | "low" | "critical"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'classroomId' are incompatible.
+    Type 'ClassroomId | undefined' is not assignable to type 'ClassroomId'.
+      Type 'undefined' is not assignable to type 'ClassroomId'.
+        Type 'undefined' is not assignable to type 'string'.
+src/modules/learning/assessment-service.ts(497,3): error TS2375: Type '{ metadata?: {}; rubric?: {}; modelAnswer?: {}; choices?: AssessmentItemChoice[]; stimulus?: {}; id: AssessmentItem["id"]; type: AssessmentItem["type"]; prompt: string; points: number; }' is not assignable to type 'AssessmentItem' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'stimulus' are incompatible.
+    Type '{}' is not assignable to type 'string'.
+src/modules/learning/pathways-service.ts(408,3): error TS2375: Type '{ id: ModuleId; slug: string; title: string; domain: "MATH" | "SCIENCE" | "TECH"; difficulty: "INTRO" | "INTERMEDIATE" | "ADVANCED"; estimatedTimeMinutes: number; tags: string[]; status: "DRAFT" | "PUBLISHED" | "ARCHIVED"; publishedAt: string | undefined; }' is not assignable to type 'ModuleSummary' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'publishedAt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/learning/service.ts(82,11): error TS2322: Type '(tenantId: TenantId, userId: UserId) => Promise<{ user: { id: UserId; email: string; displayName: string; role: string; }; currentEnrollments: Enrollment[]; recommendedModules: ModuleSummary[]; }>' is not assignable to type '(tenantId: TenantId, userId: UserId) => Promise<DashboardSummary>'.
+  Type 'Promise<{ user: { id: UserId; email: string; displayName: string; role: string; }; currentEnrollments: Enrollment[]; recommendedModules: ModuleSummary[]; }>' is not assignable to type 'Promise<DashboardSummary>'.
+    Type '{ user: { id: UserId; email: string; displayName: string; role: string; }; currentEnrollments: Enrollment[]; recommendedModules: ModuleSummary[]; }' is not assignable to type 'DashboardSummary'.
+      The types of 'user.role' are incompatible between these types.
+        Type 'string' is not assignable to type 'UserRole'.
+src/modules/learning/service.ts(221,3): error TS2375: Type '{ id: Enrollment["id"]; userId: UserId; moduleId: ModuleId; status: EnrollmentStatus; progressPercent: number; startedAt: string | undefined; completedAt: string | undefined; timeSpentSeconds: number; }' is not assignable to type 'Enrollment' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'startedAt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/learning/service.ts(235,3): error TS2375: Type '{ id: ModuleSummary["id"]; slug: string; title: string; domain: ModuleSummary["domain"]; difficulty: ModuleSummary["difficulty"]; estimatedTimeMinutes: number; tags: string[]; status: "PUBLISHED"; progressPercent: number | undefined; }' is not assignable to type 'ModuleSummary' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'progressPercent' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/monitoring/health-check.ts(310,44): error TS2554: Expected 0-1 arguments, but got 2.
+src/modules/monitoring/health-check.ts(317,24): error TS2339: Property 'connect' does not exist on type 'Redis'.
+src/modules/monitoring/health-check.ts(318,37): error TS2339: Property 'ping' does not exist on type 'Redis'.
+src/modules/monitoring/health-check.ts(325,24): error TS2339: Property 'quit' does not exist on type 'Redis'.
+src/modules/monitoring/performance-monitor.ts(548,9): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/modules/payments/routes.ts(53,61): error TS2379: Argument of type '{ tenantId: TenantId; planId: any; billingInterval: "monthly" | "quarterly" | "annual"; paymentMethodId: any; trialDays: number | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; planId: string; billingInterval: BillingInterval; paymentMethodId?: PaymentMethodId; trialDays?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'trialDays' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/payments/routes.ts(97,43): error TS2379: Argument of type '{ tenantId: TenantId; subscriptionId: SubscriptionId; cancelImmediately: boolean; reason: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; subscriptionId: SubscriptionId; cancelImmediately?: boolean; reason?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'reason' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/search/routes.ts(64,7): error TS2375: Type '{ min: number | undefined; max: number | undefined; free: boolean | undefined; }' is not assignable to type '{ min?: number; max?: number; free?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'min' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/search/routes.ts(72,50): error TS2379: Argument of type '{ tenantId: TenantId; query: string; limit: number | undefined; offset: number | undefined; sortBy: "popularity" | "newest" | "rating" | "relevance" | undefined; filters: SearchFilters; }' is not assignable to parameter of type 'SearchOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'limit' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/modules/simulation/authoring-routes.ts(1202,11): error TS2322: Type 'unknown' is not assignable to type 'SimulationDomain'.
+src/modules/tenant/routes.ts(102,7): error TS2375: Type '{ name: string; version: string; domain: "PHYSICS" | "BIOLOGY" | "CS_DISCRETE" | "CHEMISTRY" | "MEDICINE" | "ECONOMICS" | "ENGINEERING" | "MATHEMATICS"; tags: string[]; description: string | undefined; thumbnailUrl: string | undefined; author: string | undefined; license: string | undefined; }' is not assignable to type '{ name: string; description?: string; version: string; domain: "PHYSICS" | "BIOLOGY" | "CS_DISCRETE" | "CHEMISTRY" | "MEDICINE" | "ECONOMICS" | "ENGINEERING" | "MATHEMATICS"; tags: string[]; thumbnailUrl?: string; author?: string; license?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'description' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/tenant/service.ts(203,9): error TS2322: Type '{ allowPublicRegistration: boolean; requireEmailVerification: boolean; defaultUserRole: string; maxUsersPerClassroom: number; enabledFeatures: string[]; enabledDomainPacks: string[]; simulationQuotas: { maxConcurrentSessions: number; monthlyRuns: number; }; tenantId: TenantId; }' is not assignable to type '(Without<TenantSettingsCreateInput, TenantSettingsUncheckedCreateInput> & TenantSettingsUncheckedCreateInput) | (Without<...> & TenantSettingsCreateInput)'.
+  Type '{ allowPublicRegistration: boolean; requireEmailVerification: boolean; defaultUserRole: string; maxUsersPerClassroom: number; enabledFeatures: string[]; enabledDomainPacks: string[]; simulationQuotas: { maxConcurrentSessions: number; monthlyRuns: number; }; tenantId: TenantId; }' is not assignable to type 'Without<TenantSettingsCreateInput, TenantSettingsUncheckedCreateInput> & TenantSettingsUncheckedCreateInput'.
+    Type '{ allowPublicRegistration: boolean; requireEmailVerification: boolean; defaultUserRole: string; maxUsersPerClassroom: number; enabledFeatures: string[]; enabledDomainPacks: string[]; simulationQuotas: { maxConcurrentSessions: number; monthlyRuns: number; }; tenantId: TenantId; }' is not assignable to type 'TenantSettingsUncheckedCreateInput'.
+      Types of property 'enabledFeatures' are incompatible.
+        Type 'string[]' is not assignable to type 'string'.
+src/modules/user/admin/routes.ts(15,8): error TS2307: Cannot find module '../../core/http/requestContext.js' or its corresponding type declarations.
+src/modules/user/admin/routes.ts(62,57): error TS2379: Argument of type '{ tenantId: TenantId; role: string | undefined; searchQuery: string | undefined; pagination: { cursor: string | undefined; limit: number | undefined; sortBy: string | undefined; sortOrder: "asc" | ... 1 more ... | undefined; }; }' is not assignable to parameter of type '{ tenantId: TenantId; role?: string; searchQuery?: string; pagination: unknown; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'role' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/user/admin/routes.ts(137,57): error TS2379: Argument of type '{ tenantId: TenantId; importedBy: UserId; users: any[]; sendInvites: boolean | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; importedBy: UserId; users: any[]; sendInvites?: boolean; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'sendInvites' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.
+src/modules/user/teacher/routes.ts(7,8): error TS2307: Cannot find module '../../core/http/requestContext.js' or its corresponding type declarations.
+src/modules/user/teacher/routes.ts(70,62): error TS2379: Argument of type '{ tenantId: TenantId; teacherId: UserId; name: string; description: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; teacherId: UserId; name: string; description?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'description' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/user/teacher/routes.ts(135,68): error TS2379: Argument of type '{ tenantId: TenantId; classroomId: ClassroomId; studentId: UserId; displayName: string; email: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; classroomId: ClassroomId; studentId: UserId; displayName: string; email?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'email' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/modules/user/teacher/routes.ts(208,59): error TS2379: Argument of type '{ tenantId: TenantId; classroomId: ClassroomId; moduleId: ModuleId; dueAt: string | undefined; }' is not assignable to parameter of type '{ tenantId: TenantId; classroomId: ClassroomId; moduleId: ModuleId; dueAt?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'dueAt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/resilience/circuit-breaker.ts(64,5): error TS2375: Type '{ state: CircuitBreakerState; failures: number; successes: number; totalRequests: number; failureRate: number; lastFailureTime: Date | undefined; lastSuccessTime: Date | undefined; nextAttemptTime: Date | undefined; }' is not assignable to type 'CircuitBreakerMetrics' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lastFailureTime' are incompatible.
+    Type 'Date | undefined' is not assignable to type 'Date'.
+      Type 'undefined' is not assignable to type 'Date'.
+src/resilience/circuit-breaker.ts(140,5): error TS2412: Type 'undefined' is not assignable to type 'Date' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/resilience/circuit-breaker.ts(141,5): error TS2412: Type 'undefined' is not assignable to type 'Date' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/resilience/circuit-breaker.ts(142,5): error TS2412: Type 'undefined' is not assignable to type 'Date' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/security/scanner.ts(577,19): error TS2379: Argument of type '{ id: string; severity: Severity; type: string; description: string; file: string; line: number; recommendation: string; cwe: string | undefined; owasp: string | undefined; }' is not assignable to parameter of type 'SecurityIssue' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cwe' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/security/scanner.ts(635,19): error TS2379: Argument of type '{ id: string; severity: Severity; type: string; description: string; recommendation: string; cwe: string | undefined; owasp: string; }' is not assignable to parameter of type 'SecurityIssue' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cwe' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/setup.ts(171,58): error TS2554: Expected 0-1 arguments, but got 2.
+src/setup.ts(411,20): error TS2339: Property 'disconnect' does not exist on type 'Redis'.
+src/utils/logger.ts(218,5): error TS2322: Type '{ name: string; message: string; stack: string | undefined; }' is not assignable to type 'string | Error'.
+  Type '{ name: string; message: string; stack: string | undefined; }' is not assignable to type 'Error' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'stack' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/utils/logger.ts(252,43): error TS2345: Argument of type 'object' is not assignable to parameter of type 'Record<string, unknown>'.
+  Index signature for type 'string' is missing in type '{}'.
+src/utils/modality-selector.ts(172,7): error TS2375: Type '{ simulation: { id: string; simulationManifestId: string; interactionType: string; goal: string; simulationManifest: { id: string; title: string; manifest: unknown; } | null; } | undefined; animation: { ...; } | undefined; example: { ...; } | undefined; }' is not assignable to type '{ simulation?: { id: string; simulationManifestId: string; interactionType: string; goal: string; simulationManifest: { id: string; title: string; manifest: unknown; } | null; }; animation?: { id: string; type: string; title: string; duration: number; config: unknown; }; example?: { ...; }; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'simulation' are incompatible.
+    Type '{ id: string; simulationManifestId: string; interactionType: string; goal: string; simulationManifest: { id: string; title: string; manifest: unknown; } | null; } | undefined' is not assignable to type '{ id: string; simulationManifestId: string; interactionType: string; goal: string; simulationManifest: { id: string; title: string; manifest: unknown; } | null; }'.
+      Type 'undefined' is not assignable to type '{ id: string; simulationManifestId: string; interactionType: string; goal: string; simulationManifest: { id: string; title: string; manifest: unknown; } | null; }'.
+src/utils/pagination.ts(135,5): error TS2375: Type '{ limit: number; hasNextPage: boolean; hasPreviousPage: boolean; nextCursor: string | undefined; previousCursor: string | undefined; }' is not assignable to type 'PaginationMetadata' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'nextCursor' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/utils/pagination.ts(233,5): error TS2375: Type '{ limit: number; cursor: string | undefined; direction: "forward" | "backward"; }' is not assignable to type '{ limit: number; cursor?: string; direction: "forward" | "backward"; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'cursor' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/validation/input-validator.ts(444,5): error TS2412: Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'string'.
+src/validation/input-validator.ts(445,5): error TS2412: Type 'ValidationContext | undefined' is not assignable to type 'ValidationContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'ValidationContext'.
+src/validation/simplified-validator.ts(471,5): error TS2412: Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'string'.
+src/validation/simplified-validator.ts(472,5): error TS2412: Type 'ValidationContext | undefined' is not assignable to type 'ValidationContext' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'ValidationContext'.
+src/workers/compliance/data-retention-worker.ts(240,71): error TS2353: Object literal may only specify known properties, and 'archived' does not exist in type 'AuditLogWhereInput'.
+src/workers/compliance/data-retention-worker.ts(262,29): error TS2353: Object literal may only specify known properties, and 'archivedAt' does not exist in type 'UserWhereInput'.
+src/workers/compliance/data-retention-worker.ts(283,17): error TS2353: Object literal may only specify known properties, and 'archivedAt' does not exist in type '(Without<UserUpdateInput, UserUncheckedUpdateInput> & UserUncheckedUpdateInput) | (Without<...> & UserUpdateInput)'.
+src/workers/content/generation-telemetry.ts(17,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationExecutionWorkerTelemetry'.
+src/workers/content/generation-telemetry.ts(18,3): error TS2305: Module '"@tutorputor/contracts/v1/content-studio"' has no exported member 'GenerationJobStatus'.
+src/workers/content/index.ts(75,38): error TS2345: Argument of type '{ host: string; port: number; password: string | undefined; db: number; maxRetriesPerRequest: null; }' is not assignable to parameter of type 'string'.
+src/workers/content/index.ts(288,34): error TS2339: Property 'quit' does not exist on type 'Redis'.
+src/workers/content/orchestrator.ts(432,9): error TS2375: Type '{ status: "success"; jobId: string | undefined; durationMs: number; }' is not assignable to type 'GenerationOutcome' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'jobId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/workers/content/orchestrator.ts(444,9): error TS2375: Type '{ status: "timeout" | "failed"; jobId: string | undefined; error: any; durationMs: number; }' is not assignable to type 'GenerationOutcome' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'jobId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/workers/content/processors/SimulationGenerationProcessor.ts(104,21): error TS2322: Type 'unknown' is not assignable to type 'SimulationDomain'.
+src/workers/content/processors/SimulationGenerationProcessor.ts(115,21): error TS2322: Type 'unknown' is not assignable to type 'EnumSimulationDomainFieldUpdateOperationsInput | SimulationDomain'.

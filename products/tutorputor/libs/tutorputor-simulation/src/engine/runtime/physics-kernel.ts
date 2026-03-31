@@ -28,6 +28,19 @@ import type {
  */
 export type IntegrationMethod = 'euler' | 'verlet' | 'rk4';
 
+function toNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function toIntegrationMethod(
+  value: unknown,
+  fallback: IntegrationMethod,
+): IntegrationMethod {
+  return value === "euler" || value === "verlet" || value === "rk4"
+    ? value
+    : fallback;
+}
+
 // ============================================================================
 // Seeded PRNG (xoshiro128** — fast, deterministic, good distribution)
 // ============================================================================
@@ -61,15 +74,25 @@ export class SeededRandom {
   /** Returns a float in [0, 1) */
   next(): number {
     const s = this.s;
-    const result = Math.imul(this.rotl(Math.imul(s[1], 5), 7), 9) >>> 0;
-    const t = (s[1] << 9) >>> 0;
+    let s0 = s[0] ?? 0;
+    let s1 = s[1] ?? 0;
+    let s2 = s[2] ?? 0;
+    let s3 = s[3] ?? 0;
 
-    s[2] = (s[2] ^ s[0]) >>> 0;
-    s[3] = (s[3] ^ s[1]) >>> 0;
-    s[1] = (s[1] ^ s[2]) >>> 0;
-    s[0] = (s[0] ^ s[3]) >>> 0;
-    s[2] = (s[2] ^ t) >>> 0;
-    s[3] = this.rotl(s[3], 11) >>> 0;
+    const result = Math.imul(this.rotl(Math.imul(s1, 5), 7), 9) >>> 0;
+    const t = (s1 << 9) >>> 0;
+
+    s2 = (s2 ^ s0) >>> 0;
+    s3 = (s3 ^ s1) >>> 0;
+    s1 = (s1 ^ s2) >>> 0;
+    s0 = (s0 ^ s3) >>> 0;
+    s2 = (s2 ^ t) >>> 0;
+    s3 = this.rotl(s3, 11) >>> 0;
+
+    s[0] = s0;
+    s[1] = s1;
+    s[2] = s2;
+    s[3] = s3;
 
     return result / 0x100000000;
   }
@@ -94,16 +117,16 @@ export class SeededRandom {
 
   /** Serialize state for session persistence */
   serialize(): number[] {
-    return [this.s[0], this.s[1], this.s[2], this.s[3]];
+    return [this.s[0] ?? 0, this.s[1] ?? 0, this.s[2] ?? 0, this.s[3] ?? 0];
   }
 
   /** Restore state from serialized form */
   static deserialize(state: number[]): SeededRandom {
     const rng = new SeededRandom(0);
-    rng.s[0] = state[0] >>> 0;
-    rng.s[1] = state[1] >>> 0;
-    rng.s[2] = state[2] >>> 0;
-    rng.s[3] = state[3] >>> 0;
+    rng.s[0] = (state[0] ?? 0) >>> 0;
+    rng.s[1] = (state[1] ?? 0) >>> 0;
+    rng.s[2] = (state[2] ?? 0) >>> 0;
+    rng.s[3] = (state[3] ?? 0) >>> 0;
     return rng;
   }
 
@@ -203,15 +226,18 @@ export class PhysicsKernel implements SimKernelService {
   readonly domain = "PHYSICS" as const;
 
   constructor(config?: PhysicsConfig) {
-    const seed = (config as any)?.seed ?? Date.now();
+    const rawConfig = config as (Record<string, unknown> & {
+      gravity?: { x: number; y: number };
+    }) | undefined;
+    const seed = toNumber(rawConfig?.seed, Date.now());
     this.worldConfig = {
       gravity: config?.gravity ?? { x: 0, y: 9.81 },
-      timeStep: (config as any)?.timeStep ?? 1 / 60,
+      timeStep: toNumber(rawConfig?.timeStep, 1 / 60),
       velocityIterations: 8,
       positionIterations: 3,
-      integrationMethod: (config as any)?.integrationMethod ?? 'euler',
-      maxSteps: (config as any)?.maxSteps ?? 10000,
-      maxRuntimeMs: (config as any)?.maxRuntimeMs ?? 30000,
+      integrationMethod: toIntegrationMethod(rawConfig?.integrationMethod, "euler"),
+      maxSteps: toNumber(rawConfig?.maxSteps, 10000),
+      maxRuntimeMs: toNumber(rawConfig?.maxRuntimeMs, 30000),
       seed,
     };
     this.rng = new SeededRandom(seed);
@@ -256,7 +282,8 @@ export class PhysicsKernel implements SimKernelService {
     keyframes.push({
       stepIndex: -1,
       timestamp: 0,
-      entities: Array.from(this.entities.values()).map(e => ({ ...e }))
+      entities: Array.from(this.entities.values()).map(e => ({ ...e })),
+      annotations: [],
     });
 
     // Run simulation steps
@@ -266,7 +293,8 @@ export class PhysicsKernel implements SimKernelService {
         keyframes.push({
           stepIndex: i,
           timestamp: this.currentTime,
-          entities: Array.from(this.entities.values()).map(e => ({ ...e }))
+          entities: Array.from(this.entities.values()).map(e => ({ ...e })),
+          annotations: [],
         });
       }
     }
@@ -336,11 +364,11 @@ export class PhysicsKernel implements SimKernelService {
         const spring = entity as PhysicsSpringEntity;
         this.springs.push({
           id: entity.id,
-          anchorId: spring.anchorId,
-          attachId: spring.attachId,
+            anchorId: spring.anchorId ?? spring.body1Id ?? entity.id,
+            attachId: spring.attachId ?? spring.body2Id ?? entity.id,
           stiffness: spring.stiffness,
-          damping: spring.damping,
-          restLength: spring.restLength
+            damping: spring.damping ?? 0,
+            restLength: spring.restLength
         });
       }
     }
@@ -351,6 +379,7 @@ export class PhysicsKernel implements SimKernelService {
     if (this.currentStepIndex >= this.manifest.steps.length) return;
 
     const step = this.manifest.steps[this.currentStepIndex];
+    if (!step) return;
 
     // Reset forces/acceleration for this step
     for (const body of this.bodies.values()) {
@@ -823,6 +852,7 @@ function resolveCollisions(bodies: Map<SimEntityId, PhysicsBody>): void {
     for (let j = i + 1; j < len; j++) {
       const a = bodyList[i];
       const b = bodyList[j];
+      if (!a || !b) continue;
 
       // Skip if both fixed
       if (a.fixed && b.fixed) continue;

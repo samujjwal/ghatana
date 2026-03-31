@@ -57,8 +57,8 @@ export function createBillingService(
                     amountCents: listing.priceCents,
                     status: "PENDING",
                     paymentUrl: generateMockPaymentUrl(tenantId, listingId),
-                    successUrl,
-                    cancelUrl
+                    ...(successUrl ? { successUrl } : {}),
+                    ...(cancelUrl ? { cancelUrl } : {})
                 }
             });
 
@@ -132,7 +132,7 @@ export function createBillingService(
 
             return {
                 items: trimmed.map(mapToPurchase),
-                nextCursor: hasMore ? trimmed[trimmed.length - 1]?.id : null
+                ...(hasMore ? { nextCursor: trimmed[trimmed.length - 1]?.id ?? null } : {})
             };
         },
 
@@ -160,28 +160,33 @@ function generateMockPaymentUrl(tenantId: string, listingId: string): string {
     return `https://pay.mock.tutorputor.com/checkout?tenant=${tenantId}&listing=${listingId}`;
 }
 
-function mapToCheckoutSession(session: any): CheckoutSession {
-    return {
+function mapToCheckoutSession(session: Record<string, unknown>): CheckoutSession {
+    const mapped: CheckoutSession = {
         id: session.id as CheckoutSessionId,
         tenantId: session.tenantId as TenantId,
         listingId: session.listingId as MarketplaceListingId,
         userId: session.userId as UserId,
-        amountCents: session.amountCents,
+        amountCents: Number(session.amountCents ?? 0),
         status: session.status as CheckoutStatus,
-        createdAt: session.createdAt.toISOString(),
-        completedAt: session.completedAt?.toISOString(),
-        paymentUrl: session.paymentUrl ?? undefined
+        createdAt: (session.createdAt as Date).toISOString(),
     };
+    if (session.completedAt instanceof Date) {
+        mapped.completedAt = session.completedAt.toISOString();
+    }
+    if (typeof session.paymentUrl === 'string') {
+        mapped.paymentUrl = session.paymentUrl;
+    }
+    return mapped;
 }
 
-function mapToPurchase(purchase: any): Purchase {
+function mapToPurchase(purchase: Record<string, unknown>): Purchase {
     return {
         id: purchase.id as PurchaseId,
         tenantId: purchase.tenantId as TenantId,
         userId: purchase.userId as UserId,
         listingId: purchase.listingId as MarketplaceListingId,
         moduleId: purchase.moduleId as ModuleId,
-        amountCents: purchase.amountCents,
-        purchasedAt: purchase.purchasedAt.toISOString()
+        amountCents: Number(purchase.amountCents ?? 0),
+        purchasedAt: (purchase.purchasedAt as Date).toISOString()
     };
 }

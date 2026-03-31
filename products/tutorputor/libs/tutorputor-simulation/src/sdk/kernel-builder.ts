@@ -199,7 +199,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add before-init hook.
    */
   onBeforeInit(handler: KernelHooks<unknown>["onBeforeInit"]): this {
-    this.hooks.onBeforeInit = handler;
+    if (handler) {
+      this.hooks.onBeforeInit = handler;
+    }
     return this;
   }
 
@@ -207,7 +209,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add after-init hook.
    */
   onAfterInit(handler: KernelHooks<unknown>["onAfterInit"]): this {
-    this.hooks.onAfterInit = handler;
+    if (handler) {
+      this.hooks.onAfterInit = handler;
+    }
     return this;
   }
 
@@ -215,7 +219,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add before-step hook.
    */
   onBeforeStep(handler: KernelHooks<unknown>["onBeforeStep"]): this {
-    this.hooks.onBeforeStep = handler;
+    if (handler) {
+      this.hooks.onBeforeStep = handler;
+    }
     return this;
   }
 
@@ -223,7 +229,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add after-step hook.
    */
   onAfterStep(handler: KernelHooks<unknown>["onAfterStep"]): this {
-    this.hooks.onAfterStep = handler;
+    if (handler) {
+      this.hooks.onAfterStep = handler;
+    }
     return this;
   }
 
@@ -231,7 +239,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add reset hook.
    */
   onReset(handler: KernelHooks<unknown>["onReset"]): this {
-    this.hooks.onReset = handler;
+    if (handler) {
+      this.hooks.onReset = handler;
+    }
     return this;
   }
 
@@ -239,7 +249,9 @@ export class KernelBuilder<TState = Record<string, unknown>> {
    * Add error hook.
    */
   onError(handler: KernelHooks<unknown>["onError"]): this {
-    this.hooks.onError = handler;
+    if (handler) {
+      this.hooks.onError = handler;
+    }
     return this;
   }
 

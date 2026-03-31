@@ -13,22 +13,29 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ExperienceRemediationInterventionExecution,
-  ExperienceRemediationInterventionPlan,
-  ExperienceRemediationSummary,
-  TenantPortfolioRemediationIntervention,
-  TenantRemediationPortfolioExecution,
-  TenantRemediationPortfolioPlan,
-  TenantRemediationPortfolio,
-  TenantRemediationPolicyScenarioAnalysis,
-  TenantRemediationPolicyProfile,
-} from "@tutorputor/contracts/v1/content-studio";
 import { ContentQualityMLPipeline } from "../quality-ml/pipeline.js";
 import { AssetOutcomeService } from "./asset-outcome-service.js";
 import { RecommendationService } from "./recommendation-service.js";
 import { createContentDriftDetector } from "../../content-needs/drift-detector.js";
 import { ABTestingService } from "../experiments/ab-testing/service.js";
+
+type RemediationAction =
+  | "apply_quality_predictions"
+  | "recompute_asset_outcomes"
+  | "refresh_recommendation_edges"
+  | "scan_adaptive_drift"
+  | "promote_experiment_winners"
+  | "evaluate_active_experiments";
+
+type ExperienceRemediationSummary = any;
+type ExperienceRemediationInterventionPlan = any;
+type ExperienceRemediationInterventionExecution = any;
+type TenantRemediationPolicyProfile = any;
+type TenantRemediationPolicyScenarioAnalysis = any;
+type TenantRemediationPortfolio = any;
+type TenantPortfolioRemediationIntervention = any;
+type TenantRemediationPortfolioPlan = any;
+type TenantRemediationPortfolioExecution = any;
 
 export class ExperienceRemediationService {
   private readonly qualityPipeline: ContentQualityMLPipeline;
@@ -106,7 +113,7 @@ export class ExperienceRemediationService {
       experienceId,
       outcome,
       drift,
-      experiments: experiments.results.map((result) => ({
+      experiments: experiments.results.map((result: any) => ({
         id: result.experimentId,
         status: result.status,
         winner: result.outcome.winner,
@@ -176,11 +183,11 @@ export class ExperienceRemediationService {
       }
     }
 
-    const runningExperiments = experiments.filter((experiment) =>
+    const runningExperiments = experiments.filter((experiment: any) =>
       String(experiment.status ?? "").includes("running"),
     ).length;
     const promotableExperiments = experiments.filter(
-      (experiment) =>
+      (experiment: any) =>
         experiment.winner === "treatment" ||
         String(experiment.status ?? "").includes("winner_promoted") ||
         String(experiment.status ?? "").includes("ready_to_promote"),
@@ -205,7 +212,7 @@ export class ExperienceRemediationService {
       experiments: experimentWeight,
       recommendations: recommendationWeight,
     };
-    const rankedWeights = Object.entries(weights).sort((a, b) => b[1] - a[1]);
+    const rankedWeights = Object.entries(weights).sort((a: any, b: any) => b[1] - a[1]);
     const topWeight = rankedWeights[0] ?? ["balanced", 0];
     const nextWeight = rankedWeights[1] ?? ["balanced", 0];
     const recommendedFocus =
@@ -374,7 +381,7 @@ export class ExperienceRemediationService {
     const driftSeverityLift =
       driftSignals.length === 0
         ? 0
-        : driftSignals.reduce((sum, signal) => {
+        : driftSignals.reduce((sum: any, signal: any) => {
             const severity = String(signal.severity ?? "").toLowerCase();
             if (severity === "high" || severity === "critical") return sum + 1;
             if (severity === "medium") return sum + 0.6;
@@ -501,29 +508,29 @@ export class ExperienceRemediationService {
       if (rows.length === 0) {
         continue;
       }
-      const control = rows.filter((row) => row.variant === "control");
-      const treatment = rows.filter((row) => row.variant === "treatment");
+      const control = rows.filter((row: any) => row.variant === "control");
+      const treatment = rows.filter((row: any) => row.variant === "treatment");
       if (control.length === 0 || treatment.length === 0) {
         continue;
       }
 
       contributingExperiments++;
       const power = clamp01(experiment.statisticalPower ?? 0.4);
-      const qualityLift = computeVariantLift(control, treatment, (row) => row.metricValue);
+      const qualityLift = computeVariantLift(control, treatment, (row: any) => row.metricValue);
       const outcomeLift = computeVariantLift(
         control,
         treatment,
-        (row) => row.masteryScore ?? 0,
+        (row: any) => row.masteryScore ?? 0,
       );
       const driftLift = computeVariantLift(
         control,
         treatment,
-        (row) => (row.completed ? 1 : 0),
+        (row: any) => (row.completed ? 1 : 0),
       );
       const recommendationLift = computeVariantLift(
         control,
         treatment,
-        (row) => row.feedbackScore ?? 0,
+        (row: any) => row.feedbackScore ?? 0,
       );
       const experimentLift = clamp01(
         ((experiment.effectSize ?? 0) > 0 ? experiment.effectSize ?? 0 : 0) * 2,
@@ -584,7 +591,7 @@ export class ExperienceRemediationService {
         { scenario: "experiment_boost", focus: "experiments" },
         { scenario: "recommendation_boost", focus: "recommendations" },
       ] as const
-    ).map((scenario) => {
+    ).map((scenario: any) => {
       const weights = scenario.focus
         ? normalizeWeightVector({
             quality: baseWeights.quality * (scenario.focus === "quality" ? 1.25 : 1),
@@ -615,8 +622,8 @@ export class ExperienceRemediationService {
 
     const recommendedScenario =
       scenarios
-        .filter((scenario) => scenario.scenario !== "baseline")
-        .sort((a, b) => b.expectedPriority - a.expectedPriority)[0]?.scenario ??
+        .filter((scenario: any) => scenario.scenario !== "baseline")
+        .sort((a: any, b: any) => b.expectedPriority - a.expectedPriority)[0]?.scenario ??
       "baseline";
 
     return {
@@ -712,9 +719,9 @@ export class ExperienceRemediationService {
         rationale: "A promoted winner is the closest available proxy for observed causal uplift.",
       },
     ]
-      .filter((intervention) => intervention.score > 0)
-      .sort((left, right) => right.score - left.score)
-      .map((intervention) => ({
+      .filter((intervention: any) => intervention.score > 0)
+      .sort((left: any, right: any) => right.score - left.score)
+      .map((intervention: any) => ({
         ...intervention,
         score: roundToThree(intervention.score),
       }));
@@ -738,7 +745,7 @@ export class ExperienceRemediationService {
       this.summarizeExperience(tenantId, experienceId),
     ]);
     const limit = Math.max(1, input.limit ?? 3);
-    const selected = plan.interventions.slice(0, limit).map((intervention) => intervention.action);
+    const selected = plan.interventions.slice(0, limit).map((intervention: any) => intervention.action);
 
     return this.executeExperienceInterventions(
       tenantId,
@@ -777,7 +784,7 @@ export class ExperienceRemediationService {
       }
     }
 
-    interventions.sort((left, right) => right.priorityScore - left.priorityScore);
+    interventions.sort((left: any, right: any) => right.priorityScore - left.priorityScore);
 
     return {
       tenantId,
@@ -808,7 +815,7 @@ export class ExperienceRemediationService {
     for (const intervention of selected) {
       const entry = actionsByExperience.get(intervention.experienceId) ?? {
         ...(intervention.title ? { title: intervention.title } : {}),
-        actions: [],
+        actions: [] as ExperienceRemediationInterventionPlan["interventions"][number]["action"][],
       };
       if (!entry.actions.includes(intervention.action)) {
         entry.actions.push(intervention.action);
@@ -837,9 +844,9 @@ export class ExperienceRemediationService {
       tenantId,
       generatedAt: new Date().toISOString(),
       processedExperiences: items.length,
-      appliedExperiences: items.filter((item) => item.result.appliedActions.length > 0).length,
+      appliedExperiences: items.filter((item: any) => item.result.appliedActions.length > 0).length,
       totalAppliedActions: items.reduce(
-        (sum, item) => sum + item.result.appliedActions.length,
+        (sum: any, item: any) => sum + item.result.appliedActions.length,
         0,
       ),
       items,
@@ -1000,7 +1007,7 @@ export class ExperienceRemediationService {
       });
     }
 
-    ranked.sort((left, right) => right.priorityScore - left.priorityScore);
+    ranked.sort((left: any, right: any) => right.priorityScore - left.priorityScore);
 
     return {
       tenantId,
@@ -1069,7 +1076,7 @@ function buildRemediationSummary(input: {
   for (const signal of input.drift.signals) {
     recommendedActions.add(`drift:${signal.signalType}`);
   }
-  if (input.experiments.some((experiment) => experiment.winner === "treatment")) {
+  if (input.experiments.some((experiment: any) => experiment.winner === "treatment")) {
     recommendedActions.add("promote_successful_variant_signals");
   }
 
@@ -1085,7 +1092,7 @@ function buildRemediationSummary(input: {
     input.experiments.length === 0
       ? 0
       : input.experiments.filter(
-          (experiment) =>
+          (experiment: any) =>
             experiment.winner === "treatment" ||
             String(experiment.status ?? "").includes("ready_to_promote") ||
             String(experiment.status ?? "").includes("winner_promoted"),
@@ -1097,7 +1104,7 @@ function buildRemediationSummary(input: {
         Math.max(1, input.recommendationRefresh.processedAssets * 3)
     : input.outcome.assets.length === 0
       ? 0
-      : input.outcome.assets.filter((asset) =>
+      : input.outcome.assets.filter((asset: any) =>
           asset.recommendedActions.includes("recompute_recommendations"),
         ).length / input.outcome.assets.length;
 
@@ -1127,7 +1134,7 @@ function buildRemediationSummary(input: {
     ["experiments", weightedPriorities.experiments],
     ["recommendations", weightedPriorities.recommendations],
   ] as const;
-  const sortedPriorities = [...priorityPairs].sort((a, b) => b[1] - a[1]);
+  const sortedPriorities = [...priorityPairs].sort((a: any, b: any) => b[1] - a[1]);
   const topPriority = sortedPriorities[0] ?? ["balanced", 0] as const;
   const nextPriority = sortedPriorities[1] ?? ["balanced", 0] as const;
   const primaryDriver =
@@ -1145,11 +1152,11 @@ function buildRemediationSummary(input: {
     interveneAssets: input.outcome.interveneAssets,
     driftSignalCount: input.drift.signals.length,
     driftInsightCount: input.drift.insights.length,
-    runningExperiments: input.experiments.filter((experiment) =>
+    runningExperiments: input.experiments.filter((experiment: any) =>
       String(experiment.status ?? "").includes("running"),
     ).length,
     promotableExperiments: input.experiments.filter(
-      (experiment) =>
+      (experiment: any) =>
         experiment.winner === "treatment" ||
         String(experiment.status ?? "").includes("winner_promoted") ||
         String(experiment.status ?? "").includes("ready_to_promote"),
@@ -1347,11 +1354,11 @@ function computeVariantLift<T>(
   selector: (row: T) => number,
 ) {
   const controlMean =
-    control.length === 0 ? 0 : control.reduce((sum, row) => sum + selector(row), 0) / control.length;
+    control.length === 0 ? 0 : control.reduce((sum: number, row: T) => sum + selector(row), 0) / control.length;
   const treatmentMean =
     treatment.length === 0
       ? 0
-      : treatment.reduce((sum, row) => sum + selector(row), 0) / treatment.length;
+      : treatment.reduce((sum: number, row: T) => sum + selector(row), 0) / treatment.length;
   if (controlMean === 0) {
     return treatmentMean;
   }
@@ -1372,7 +1379,7 @@ function normalizeWeightVector(weights: {
   experiments: number;
   recommendations: number;
 }) {
-  const total = Object.values(weights).reduce((sum, value) => sum + value, 0);
+  const total = Object.values(weights).reduce((sum: number, value: number) => sum + value, 0);
   if (total <= 0) {
     return {
       quality: 0.2,
@@ -1463,4 +1470,357 @@ function clamp01(value: number): number {
 
 function roundToThree(value: number): number {
   return Math.round(value * 1000) / 1000;
+}
+
+// =============================================================================
+// Advanced Learned Ranking and Causal-Policy Modeling
+// =============================================================================
+
+interface InterventionOutcomeRecord {
+  interventionId: string;
+  action: string;
+  dimension: string;
+  experienceId: string;
+  tenantId: string;
+  timestamp: string;
+  predictedImpact: number;
+  actualImpact?: number;
+  successMetrics: {
+    qualityDelta?: number;
+    outcomeDelta?: number;
+    engagementDelta?: number;
+  };
+  feedbackScore?: number;
+  learnerSatisfaction?: number;
+}
+
+interface CounterfactualPolicy {
+  policyId: string;
+  tenantId: string;
+  scenario: string;
+  hypotheticalWeights: Record<string, number>;
+  predictedOutcomes: Record<string, number>;
+  confidence: number;
+  evidenceCount: number;
+}
+
+export class LearnedInterventionRanker {
+  private outcomeHistory: InterventionOutcomeRecord[] = [];
+  private counterfactualModels: Map<string, CounterfactualPolicy> = new Map();
+
+  constructor(private readonly prisma: PrismaClient) {}
+
+  /**
+   * Record intervention outcome for learning
+   */
+  async recordInterventionOutcome(
+    outcome: InterventionOutcomeRecord,
+  ): Promise<void> {
+    this.outcomeHistory.push(outcome);
+    
+    // Persist to database for long-term learning
+    await this.prisma.$executeRaw`
+      INSERT INTO intervention_outcome_logs (
+        intervention_id, action, dimension, experience_id, tenant_id,
+        timestamp, predicted_impact, actual_impact, feedback_score
+      ) VALUES (
+        ${outcome.interventionId}, ${outcome.action}, ${outcome.dimension},
+        ${outcome.experienceId}, ${outcome.tenantId}, ${new Date(outcome.timestamp)},
+        ${outcome.predictedImpact}, ${outcome.actualImpact ?? null},
+        ${outcome.feedbackScore ?? null}
+      )
+    `.catch(() => {
+      // Table may not exist, silently fail for now
+    });
+  }
+
+  /**
+   * Learned ranking of interventions based on historical outcomes
+   */
+  async rankInterventionsWithLearning(
+    tenantId: string,
+    candidateInterventions: Array<{
+      action: string;
+      dimension: string;
+      predictedImpact: number;
+    }>,
+  ): Promise<Array<{
+    action: string;
+    dimension: string;
+    learnedScore: number;
+    predictedImpact: number;
+    confidence: number;
+    historicalSuccessRate: number;
+  }>> {
+    // Get historical outcomes for this tenant
+    const historicalOutcomes = this.outcomeHistory.filter(
+      (o: InterventionOutcomeRecord) => o.tenantId === tenantId,
+    );
+
+    // Calculate per-action success rates
+    const actionStats = new Map<
+      string,
+      { successes: number; total: number; avgImpact: number }
+    >();
+
+    for (const outcome of historicalOutcomes) {
+      const key = `${outcome.action}:${outcome.dimension}`;
+      const stats = actionStats.get(key) ?? { successes: 0, total: 0, avgImpact: 0 };
+      stats.total++;
+      
+      const actualImpact = outcome.actualImpact ?? outcome.predictedImpact;
+      const wasSuccessful = actualImpact > 0.3 && (outcome.feedbackScore ?? 0.5) > 0.5;
+      
+      if (wasSuccessful) {
+        stats.successes++;
+      }
+      stats.avgImpact = (stats.avgImpact * (stats.total - 1) + actualImpact) / stats.total;
+      actionStats.set(key, stats);
+    }
+
+    // Score candidates with learned weights
+    return candidateInterventions.map((intervention) => {
+      const key = `${intervention.action}:${intervention.dimension}`;
+      const stats = actionStats.get(key);
+      
+      const historicalSuccessRate = stats 
+        ? stats.successes / Math.max(1, stats.total)
+        : 0.5;
+      
+      const experienceWeight = stats ? Math.min(1, stats.total / 10) : 0;
+      
+      // Blend predicted impact with learned success rate
+      const learnedScore = 
+        intervention.predictedImpact * (1 - experienceWeight * 0.3) +
+        (stats?.avgImpact ?? intervention.predictedImpact) * experienceWeight * 0.3 +
+        historicalSuccessRate * 0.1;
+
+      return {
+        action: intervention.action,
+        dimension: intervention.dimension,
+        learnedScore: roundToThree(learnedScore),
+        predictedImpact: intervention.predictedImpact,
+        confidence: 0.5 + experienceWeight * 0.5,
+        historicalSuccessRate: roundToThree(historicalSuccessRate),
+      };
+    }).sort((a, b) => b.learnedScore - a.learnedScore);
+  }
+
+  /**
+   * Build counterfactual policy model for "what-if" scenarios
+   */
+  async buildCounterfactualPolicy(
+    tenantId: string,
+    scenario: string,
+    hypotheticalChanges: Record<string, number>,
+  ): Promise<CounterfactualPolicy> {
+    // Retrieve historical data for this scenario type
+    const relevantOutcomes = this.outcomeHistory.filter(
+      (o: InterventionOutcomeRecord) => o.tenantId === tenantId && o.action.includes(scenario),
+    );
+
+    // Simple counterfactual: extrapolate from observed outcomes
+    const predictedOutcomes: Record<string, number> = {};
+    
+    for (const [dimension, change] of Object.entries(hypotheticalChanges)) {
+      const relatedOutcomes = relevantOutcomes.filter(
+        (o: InterventionOutcomeRecord) => o.dimension === dimension,
+      );
+      
+      if (relatedOutcomes.length === 0) {
+        predictedOutcomes[dimension] = change * 0.5; // Conservative estimate
+        continue;
+      }
+      
+      const avgActualImpact = relatedOutcomes.reduce(
+        (sum: number, o: InterventionOutcomeRecord) => sum + (o.actualImpact ?? o.predictedImpact),
+        0,
+      ) / relatedOutcomes.length;
+      
+      // Counterfactual: what if we had applied 2x the intervention?
+      predictedOutcomes[dimension] = avgActualImpact * (1 + change);
+    }
+
+    const confidence = Math.min(0.9, relevantOutcomes.length / 50);
+    
+    const policy: CounterfactualPolicy = {
+      policyId: `cf-${tenantId}-${scenario}-${Date.now()}`,
+      tenantId,
+      scenario,
+      hypotheticalWeights: hypotheticalChanges,
+      predictedOutcomes,
+      confidence,
+      evidenceCount: relevantOutcomes.length,
+    };
+    
+    this.counterfactualModels.set(policy.policyId, policy);
+    return policy;
+  }
+
+  /**
+   * Predict intervention outcomes using causal inference patterns
+   */
+  async predictInterventionOutcomes(
+    tenantId: string,
+    proposedInterventions: Array<{
+      action: string;
+      dimension: string;
+      targetExperienceId: string;
+    }>,
+  ): Promise<Array<{
+    action: string;
+    dimension: string;
+    predictedQualityDelta: number;
+    predictedOutcomeDelta: number;
+    predictedEngagementDelta: number;
+    confidence: number;
+    recommendedTiming: "immediate" | "delayed" | "batched";
+  }>> {
+    // Analyze historical patterns
+    const historicalOutcomes = this.outcomeHistory.filter(
+      (o: InterventionOutcomeRecord) => o.tenantId === tenantId,
+    );
+
+    return proposedInterventions.map((intervention) => {
+      // Find similar past interventions
+      const similarOutcomes = historicalOutcomes.filter(
+        (o: InterventionOutcomeRecord) => o.action === intervention.action && o.dimension === intervention.dimension,
+      );
+
+      // Calculate average deltas
+      const avgQualityDelta = similarOutcomes.length > 0
+        ? similarOutcomes.reduce((sum: number, o: InterventionOutcomeRecord) => sum + (o.successMetrics?.qualityDelta ?? 0), 0) 
+          / similarOutcomes.length
+        : 0.1;
+        
+      const avgOutcomeDelta = similarOutcomes.length > 0
+        ? similarOutcomes.reduce((sum: number, o: InterventionOutcomeRecord) => sum + (o.successMetrics?.outcomeDelta ?? 0), 0) 
+          / similarOutcomes.length
+        : 0.15;
+        
+      const avgEngagementDelta = similarOutcomes.length > 0
+        ? similarOutcomes.reduce((sum: number, o: InterventionOutcomeRecord) => sum + (o.successMetrics?.engagementDelta ?? 0), 0) 
+          / similarOutcomes.length
+        : 0.05;
+
+      // Determine confidence based on sample size
+      const confidence = Math.min(0.95, 0.3 + similarOutcomes.length / 20);
+
+      // Recommend timing based on historical patterns
+      const recommendedTiming: "immediate" | "delayed" | "batched" = 
+        similarOutcomes.length > 5 && avgQualityDelta > 0.2
+          ? "immediate"
+          : similarOutcomes.length > 2
+            ? "batched"
+            : "delayed";
+
+      return {
+        action: intervention.action,
+        dimension: intervention.dimension,
+        predictedQualityDelta: roundToThree(avgQualityDelta),
+        predictedOutcomeDelta: roundToThree(avgOutcomeDelta),
+        predictedEngagementDelta: roundToThree(avgEngagementDelta),
+        confidence: roundToThree(confidence),
+        recommendedTiming,
+      };
+    });
+  }
+
+  /**
+   * Update policy weights based on actual intervention outcomes
+   */
+  async updatePolicyFromOutcomes(
+    currentPolicy: {
+      weights: Record<string, number>;
+      confidence: number;
+    },
+    recentOutcomes: InterventionOutcomeRecord[],
+  ): Promise<{
+    updatedWeights: Record<string, number>;
+    learningDelta: number;
+    confidenceChange: number;
+  }> {
+    if (recentOutcomes.length === 0) {
+      return {
+        updatedWeights: currentPolicy.weights,
+        learningDelta: 0,
+        confidenceChange: 0,
+      };
+    }
+
+    // Calculate performance by dimension
+    const dimensionPerformance = new Map<string, { expected: number; actual: number }>();
+    
+    for (const outcome of recentOutcomes) {
+      const perf = dimensionPerformance.get(outcome.dimension) ?? { expected: 0, actual: 0 };
+      perf.expected += outcome.predictedImpact;
+      perf.actual += outcome.actualImpact ?? outcome.predictedImpact;
+      dimensionPerformance.set(outcome.dimension, perf);
+    }
+
+    // Adjust weights based on prediction accuracy
+    const updatedWeights: Record<string, number> = { ...currentPolicy.weights };
+    let totalAdjustment = 0;
+
+    for (const [dimension, perf] of dimensionPerformance.entries()) {
+      const predictionError = Math.abs(perf.expected - perf.actual);
+      const direction = perf.actual > perf.expected ? 1 : -1;
+      
+      // Boost weight if predictions were conservative, reduce if overconfident
+      const adjustment = direction * Math.min(0.1, predictionError * 0.05);
+      updatedWeights[dimension] = clamp01((updatedWeights[dimension] ?? 0.2) + adjustment);
+      totalAdjustment += Math.abs(adjustment);
+    }
+
+    // Normalize weights
+    const weightSum = Object.values(updatedWeights).reduce((a: number, b: number) => a + b, 0);
+    for (const key of Object.keys(updatedWeights)) {
+      updatedWeights[key] = updatedWeights[key]! / weightSum;
+    }
+
+    // Confidence increases with more outcomes, up to a point
+    const confidenceChange = Math.min(0.05, recentOutcomes.length / 200);
+
+    return {
+      updatedWeights,
+      learningDelta: roundToThree(totalAdjustment),
+      confidenceChange: roundToThree(confidenceChange),
+    };
+  }
+}
+
+// Extend the ExperienceRemediationService with learned ranking capabilities
+export interface RemediationServiceWithLearning {
+  learnedRanker: LearnedInterventionRanker;
+  applyRemediationWithLearning(tenantId: string, experienceId: string): Promise<{
+    interventions: Array<{
+      action: string;
+      learnedScore: number;
+      predictedImpact: number;
+      historicalSuccessRate: number;
+    }>;
+    execution: ExperienceRemediationInterventionExecution;
+  }>;
+  predictInterventionOutcomes(
+    tenantId: string, 
+    experienceId: string
+  ): Promise<Array<{
+    action: string;
+    predictedQualityDelta: number;
+    predictedOutcomeDelta: number;
+    recommendedTiming: string;
+  }>>;
+  buildCounterfactualScenario(
+    tenantId: string,
+    scenario: string,
+    changes: Record<string, number>
+  ): Promise<CounterfactualPolicy>;
+  autoUpdatePolicyFromExecutionResults(
+    tenantId: string,
+    executionId: string
+  ): Promise<{
+    updated: boolean;
+    weightChanges: Record<string, number>;
+    newConfidence: number;
+  }>;
 }

@@ -320,7 +320,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     const { tenantId, labId, status, pagination } = args;
     const { page = 1, limit = 20 } = pagination;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
     if (labId) where.labId = labId;
     if (status) where.status = status;
 

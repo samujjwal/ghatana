@@ -71,7 +71,7 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
         tenantId,
         teacherId,
         name,
-        description,
+        ...(description ? { description } : {}),
       });
       return reply.code(201).send(classroom);
     } catch (error) {
@@ -137,7 +137,7 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
         classroomId,
         studentId,
         displayName,
-        email,
+        ...(email ? { email } : {}),
       });
       return reply.code(200).send(classroom);
     } catch (error) {
@@ -205,11 +205,12 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
+      const dueAtIso = dueAt ? new Date(dueAt).toISOString() : undefined;
       const classroom = await teacherService.assignModule({
         tenantId,
         classroomId,
         moduleId,
-        dueAt,
+        ...(dueAtIso ? { dueAt: dueAtIso } : {}),
       });
       return reply.code(200).send(classroom);
     } catch (error) {

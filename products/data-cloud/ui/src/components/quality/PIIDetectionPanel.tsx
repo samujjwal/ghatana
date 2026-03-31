@@ -13,7 +13,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, Eye, EyeOff, AlertTriangle, CheckCircle } from 'lucide-react';
 import { qualityService, PIIDetection } from '../../api/quality.service';
-import BaseCard from '../cards/BaseCard';
+import { Card } from '@ghatana/design-system';
 import { Button } from '../common/Button';
 
 interface PIIDetectionPanelProps {
@@ -95,13 +95,13 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
 
   if (isLoading) {
     return (
-      <BaseCard title="PII Detection">
+      <Card title="PII Detection">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-12 bg-gray-200 rounded"></div>
           ))}
         </div>
-      </BaseCard>
+      </Card>
     );
   }
 
@@ -109,10 +109,10 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
   const maskedDetections = detections?.filter((d) => d.masked) || [];
 
   return (
-    <BaseCard
+    <Card
       title="PII Detection"
       subtitle={`${unmaskedDetections.length} unmasked, ${maskedDetections.length} masked`}
-      actions={
+      headerActions={
         <div className="flex items-center gap-2">
           {datasetId && (
             <Button
@@ -247,7 +247,7 @@ export function PIIDetectionPanel({ datasetId }: PIIDetectionPanelProps) {
           </div>
         )}
       </div>
-    </BaseCard>
+    </Card>
   );
 }
 

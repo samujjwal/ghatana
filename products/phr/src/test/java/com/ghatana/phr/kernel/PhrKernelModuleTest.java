@@ -91,6 +91,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertDoesNotThrow(() -> module.initialize(mockContext));
         assertNotNull(module.getServiceCatalog());
         assertNotNull(module.getServiceCatalog().clinical().patientRecords());
+        assertNotNull(module.getServiceCatalog().clinical().clinicalDecisionSupport());
         assertNotNull(module.getServiceCatalog().administrative().appointments());
         assertNotNull(module.getServiceCatalog().patient().consent());
         assertNotNull(module.getServiceCatalog().emergency().emergencyAccess());
@@ -156,7 +157,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(14, status.getChecks().size()); // 14 implemented services
+        assertEquals(15, status.getChecks().size()); // 15 implemented services
     }
 
     @Test
@@ -181,6 +182,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertTrue(status.getChecks().containsKey("consent-management"));
         assertTrue(status.getChecks().containsKey("document"));
         assertTrue(status.getChecks().containsKey("appointment"));
+        assertTrue(status.getChecks().containsKey("clinical-decision-support"));
 
         // All should be healthy after start
         status.getChecks().values().forEach(check ->

@@ -132,7 +132,7 @@ type ExperienceAnalyticsSummary = {
     accuracyScore: number | null;
     usefulnessScore: number | null;
     harmlessnessScore: number | null;
-    suggestions: unknown[];
+    suggestions: any[];
   } | null;
   recentEvents: ExperienceTimelineEvent[];
 } & Record<string, unknown>;
@@ -175,7 +175,7 @@ export type HealthAwareContentStudioService = Omit<
     experienceId: string,
     claimId: string,
     request: Record<string, never>,
-  ) => Promise<{ tasks: unknown[] }>;
+  ) => Promise<{ tasks: any[] }>;
   refineContent: (
     id: string,
     request: RefineContentInput,
@@ -194,24 +194,24 @@ export type HealthAwareContentStudioService = Omit<
     reason?: string,
   ) => Promise<LearningExperience | null>;
   archiveExperience: (id: string) => Promise<LearningExperience | null>;
-  addClaim: (id: string, claim: AddClaimInput) => Promise<unknown>;
+  addClaim: (id: string, claim: AddClaimInput) => Promise<any>;
   updateClaim: (
     experienceId: string,
     claimId: string,
     data: UpdateClaimInput,
-  ) => Promise<unknown>;
+  ) => Promise<any>;
   deleteClaim: (experienceId: string, claimId: string) => Promise<void>;
   addTask: (
     experienceId: string,
     claimId: string,
     task: AddTaskInput,
-  ) => Promise<unknown>;
+  ) => Promise<any>;
   updateTask: (
     experienceId: string,
     claimId: string,
     taskId: string,
     data: UpdateTaskInput,
-  ) => Promise<unknown>;
+  ) => Promise<any>;
   deleteTask: (
     experienceId: string,
     claimId: string,
@@ -300,6 +300,8 @@ function toPrismaStatus(status: ContractExperienceStatus): string {
   const map: Record<ContractExperienceStatus, string> = {
     draft: "DRAFT",
     review: "REVIEW",
+    validating: "REVIEW",
+    approved: "REVIEW",
     published: "PUBLISHED",
     archived: "ARCHIVED",
   };
@@ -412,7 +414,7 @@ function defaultGradeAdaptation(gradeRange: GradeRange): GradeAdaptation {
   return defaults[gradeRange];
 }
 
-function safeJsonArray(value: unknown): unknown[] {
+function safeJsonArray(value: any): any[] {
   return Array.isArray(value) ? value : [];
 }
 
@@ -620,10 +622,13 @@ export function createContentStudioService(
           status: experience.status,
         },
       );
-      return {
+        const result: ExperienceOperationResult = {
         success: true,
-        experience: mapped || undefined,
       };
+        if (mapped) {
+          result.experience = mapped;
+        }
+        return result;
     } catch (error) {
       return {
         success: false,
@@ -731,10 +736,10 @@ export function createContentStudioService(
       prisma,
       id,
       "UPDATED",
-      updateData.lastEditedBy || "system",
+        String(updateData.lastEditedBy ?? "system"),
       {
         changedFields: Object.keys(updateData).filter(
-          (key) => key !== "lastEditedBy",
+          (key: any) => key !== "lastEditedBy",
         ),
         status: updated.status,
       },
@@ -805,7 +810,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     _request: Record<string, never>,
-  ): Promise<{ tasks: unknown[] }> {
+  ): Promise<{ tasks: any[] }> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -1029,7 +1034,7 @@ export function createContentStudioService(
     //   - Overall score >= 60
     // --------------------------------------------------------------------------
     const allClaimsMeetBaseline = claimChecks.every(
-      (c) => c.hasTasks || c.hasArtifacts,
+      (c: any) => c.hasTasks || c.hasArtifacts,
     );
     const canPublish =
       claimCount > 0 && allClaimsMeetBaseline && overallScore >= 60;
@@ -1068,12 +1073,12 @@ export function createContentStudioService(
     }
 
     if (claimCount > 0) {
-      const missingTasks = claimChecks.filter((c) => !c.hasTasks).length;
+      const missingTasks = claimChecks.filter((c: any) => !c.hasTasks).length;
       const missingArtifacts = claimChecks.filter(
-        (c) => !c.hasArtifacts,
+        (c: any) => !c.hasArtifacts,
       ).length;
 
-      checks.push({
+        const taskCheck: ValidationCheck = {
         checkId: "claim-tasks",
         pillar: "educational",
         name: "Claim Tasks Coverage",
@@ -1083,13 +1088,13 @@ export function createContentStudioService(
           missingTasks === 0
             ? "All claims have associated practice tasks."
             : `${missingTasks} claim${missingTasks > 1 ? "s are" : " is"} missing tasks.`,
-        suggestion:
-          missingTasks > 0
-            ? "Generate tasks for claims without coverage."
-            : undefined,
-      });
+        };
+        if (missingTasks > 0) {
+          taskCheck.suggestion = "Generate tasks for claims without coverage.";
+        }
+        checks.push(taskCheck);
 
-      checks.push({
+        const artifactCheck: ValidationCheck = {
         checkId: "claim-artifacts",
         pillar: "experiential",
         name: "Concrete Learning Artifacts",
@@ -1099,14 +1104,15 @@ export function createContentStudioService(
           missingArtifacts === 0
             ? "All claims have at least one concrete learning artifact."
             : `${missingArtifacts} claim${missingArtifacts > 1 ? "s lack" : " lacks"} examples, simulations, or animations.`,
-        suggestion:
-          missingArtifacts > 0
-            ? "Run the content generation pipeline to create examples and simulations."
-            : undefined,
-      });
+        };
+        if (missingArtifacts > 0) {
+          artifactCheck.suggestion =
+            "Run the content generation pipeline to create examples and simulations.";
+        }
+        checks.push(artifactCheck);
     }
 
-    checks.push({
+      const gradeCheck: ValidationCheck = {
       checkId: "grade-adaptation",
       pillar: "accessibility",
       name: "Grade Adaptation",
@@ -1115,10 +1121,12 @@ export function createContentStudioService(
       message: hasGradeAdaptation
         ? "Grade adaptation profile is set."
         : "No grade adaptation profile found.",
-      suggestion: hasGradeAdaptation
-        ? undefined
-        : "Set a target grade range to enable grade-appropriate content.",
-    });
+      };
+      if (!hasGradeAdaptation) {
+        gradeCheck.suggestion =
+          "Set a target grade range to enable grade-appropriate content.";
+      }
+      checks.push(gradeCheck);
 
     await prisma.validationRecord.create({
       data: {
@@ -1131,11 +1139,11 @@ export function createContentStudioService(
         gradefitScore: accessibilityScore,
         overallStatus,
         issues: checks
-          .filter((c) => !c.passed)
-          .map((c) => ({ severity: c.severity, message: c.message })),
+          .filter((c: any) => !c.passed)
+          .map((c: any) => ({ severity: c.severity, message: c.message })),
         suggestions: checks
-          .filter((c) => c.suggestion)
-          .map((c) => c.suggestion as string),
+          .filter((c: any) => c.suggestion)
+          .map((c: any) => c.suggestion as string),
       } as any,
     });
 
@@ -1187,8 +1195,8 @@ export function createContentStudioService(
       throw new Error(
         `Cannot publish: validation failed (score ${validation.score}/100). ` +
           `Fix the following issues: ${validation.checks
-            .filter((c) => !c.passed && c.severity === "error")
-            .map((c) => c.message)
+            .filter((c: any) => !c.passed && c.severity === "error")
+            .map((c: any) => c.message)
             .join("; ")}`,
       );
     }
@@ -1249,7 +1257,7 @@ export function createContentStudioService(
     return mapExperience(prisma, id);
   }
 
-  async function addClaim(id: string, claim: AddClaimInput): Promise<unknown> {
+  async function addClaim(id: string, claim: AddClaimInput): Promise<any> {
     const latest = await prisma.learningClaim.findFirst({
       where: { experienceId: id },
       orderBy: { orderIndex: "desc" },
@@ -1288,7 +1296,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     data: UpdateClaimInput,
-  ): Promise<unknown> {
+  ): Promise<any> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -1360,7 +1368,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     task: AddTaskInput,
-  ): Promise<unknown> {
+  ): Promise<any> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -1414,7 +1422,7 @@ export function createContentStudioService(
     _claimId: string,
     taskId: string,
     data: UpdateTaskInput,
-  ): Promise<unknown> {
+  ): Promise<any> {
     const task = await prisma.experienceTask.findFirst({
       where: {
         experienceId,
@@ -1586,7 +1594,7 @@ export function createContentStudioService(
     }
 
     const totalClaims = exp.claims.length;
-    const claimsProcessed = exp.claims.filter((claim: any) => {
+    const claimsProcessed = exp.claims.filter((claim) => {
       return (
         (claim.examples?.length || 0) > 0 ||
         (claim.simulations?.length || 0) > 0 ||
@@ -1595,7 +1603,7 @@ export function createContentStudioService(
     }).length;
 
     const contentCounts = exp.claims.reduce(
-      (acc: any, claim: any) => {
+      (acc, claim) => {
         acc.examples += claim.examples?.length || 0;
         acc.simulations += claim.simulations?.length || 0;
         acc.animations += claim.animations?.length || 0;

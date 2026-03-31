@@ -263,7 +263,7 @@ ${context || "No context provided."}
   }
 
   async explainSimulation(args: {
-    manifest: any;
+    manifest: unknown;
     query: string;
   }): Promise<string> {
     if (!this.openai) return "AI service unavailable.";
@@ -299,7 +299,7 @@ Be concise and helpful.`;
     topic: string;
     targetAudience: string;
     learningObjectives?: string[];
-  }): Promise<any> {
+  }): Promise<unknown> {
     if (!this.openai) throw new Error("AI service unavailable");
 
     const systemPrompt = `You are an expert instructional designer using the Evidence-Based Learning framework.

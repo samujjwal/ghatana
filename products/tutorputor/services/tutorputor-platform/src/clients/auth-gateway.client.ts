@@ -90,7 +90,7 @@ class AuthGatewayClient {
 
       const body = (await res.json()) as PlatformIdentity;
       return body;
-    } catch (err: unknown) {
+    } catch (err: any) {
       const msg = err instanceof Error ? err.message : String(err);
       logWarning(`Auth-gateway request failed: ${msg}`);
       return { valid: false, error: msg };

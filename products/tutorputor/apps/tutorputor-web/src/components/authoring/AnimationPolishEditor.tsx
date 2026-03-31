@@ -10,8 +10,8 @@
 import { useState } from "react";
 
 interface AnimationPolishEditorProps {
-    manifest: any;
-    onComplete: (updatedManifest: any) => void;
+    manifest: unknown;
+    onComplete: (updatedManifest: unknown) => void;
     onBack: () => void;
 }
 
@@ -140,7 +140,7 @@ export function AnimationPolishEditor({ manifest, onComplete, onBack }: Animatio
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {editedManifest.timeline.keyframes.map((kf: any, idx: number) => (
+                                {editedManifest.timeline.keyframes.map((kf, idx) => (
                                     <div key={idx} className="bg-white border rounded-lg p-3">
                                         <div className="flex items-center justify-between">
                                             <span className="font-medium">Keyframe {idx + 1}</span>

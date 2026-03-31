@@ -13,6 +13,11 @@ import Stripe from 'stripe';
 import { prisma } from '../../lib/prisma.js';
 import type { TierName } from './usage-limits.js';
 
+// In-memory idempotency set for webhook event IDs.
+// Prevents duplicate processing when Stripe retries delivery.
+// Production deployments should persist this in Redis with a TTL of ~24 hours.
+const processedWebhookEventIds = new Set<string>();
+
 // Lazy initialization
 let stripe: Stripe | null = null;
 
@@ -306,6 +311,13 @@ export class StripeBillingService {
      * Handle Stripe webhook event
      */
     static async handleWebhookEvent(event: Stripe.Event): Promise<void> {
+        // Idempotency guard — Stripe may retry delivery, so skip already-processed events.
+        if (processedWebhookEventIds.has(event.id)) {
+            console.log(`Webhook event ${event.id} already processed, skipping.`);
+            return;
+        }
+        processedWebhookEventIds.add(event.id);
+
         const db = prisma;
 
         switch (event.type) {

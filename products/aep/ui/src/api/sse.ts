@@ -12,7 +12,7 @@
  */
 import { API_BASE_URL } from '@/lib/http-client';
 
-const KNOWN_EVENTS = ['connected', 'heartbeat', 'run.update', 'hitl.new', 'hitl.update', 'agent.output'] as const;
+const KNOWN_EVENTS = ['connected', 'heartbeat', 'run.update', 'hitl_request_created', 'hitl.update', 'agent.output'] as const;
 const RECONNECT_BASE_MS = 3_000;
 const RECONNECT_MAX_MS = 30_000;
 

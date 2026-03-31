@@ -72,9 +72,10 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     };
   }
 
-  async function getOidcClient(provider: any): Promise<OidcClient> {
-    if (oidcClientCache.has(provider.id)) {
-      return oidcClientCache.get(provider.id)!;
+  async function getOidcClient(provider: Record<string, unknown>): Promise<OidcClient> {
+    const providerId = String(provider.id ?? "");
+    if (oidcClientCache.has(providerId)) {
+      return oidcClientCache.get(providerId)!;
     }
 
     const config = getProviderRuntimeConfig(provider);
@@ -83,31 +84,31 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       discoveryEndpoint: config.discoveryEndpoint,
       clientId: config.clientId,
       clientSecret: config.clientSecret,
-      redirectUri: `${baseUrl}/api/auth/sso/callback/${provider.id}`,
+      redirectUri: `${baseUrl}/api/auth/sso/callback/${providerId}`,
       scopes: ["openid", "profile", "email"],
       expectedAudience: config.clientId,
     });
 
-    oidcClientCache.set(provider.id, client);
+    oidcClientCache.set(providerId, client);
     return client;
   }
 
   // --- Mappers ---
 
-  function mapDbProviderToConfig(dbProvider: any): IdentityProviderConfig {
+  function mapDbProviderToConfig(dbProvider: Record<string, unknown>): IdentityProviderConfig {
     const config = getProviderRuntimeConfig(dbProvider);
 
     return {
-      id: dbProvider.id,
-      tenantId: dbProvider.tenantId,
-      displayName: dbProvider.displayName,
+      id: String(dbProvider.id ?? ""),
+      tenantId: String(dbProvider.tenantId ?? "") as TenantId,
+      displayName: String(dbProvider.displayName ?? ""),
       type: dbProvider.type as "oidc" | "saml",
-      enabled: dbProvider.enabled,
+      enabled: Boolean(dbProvider.enabled),
       config,
       attributeMapping: {},
       roleMapping: config.roleMapping,
-      createdAt: dbProvider.createdAt.toISOString(),
-      updatedAt: dbProvider.updatedAt.toISOString(),
+      createdAt: (dbProvider.createdAt as Date).toISOString(),
+      updatedAt: (dbProvider.updatedAt as Date).toISOString(),
     } as unknown as IdentityProviderConfig;
   }
 
@@ -167,7 +168,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       });
       if (!current) throw new Error("Provider not found");
 
-      const data: any = {};
+      const data: Record<string, unknown> = {};
       if (updates.displayName) data.displayName = updates.displayName;
       if (updates.enabled !== undefined) data.enabled = updates.enabled;
       if (updates.config?.discoveryEndpoint)
@@ -247,14 +248,24 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         );
 
         // Store state
-        stateCache.set(state, {
+        const stateEntry: {
+          providerId: string;
+          tenantId: TenantId;
+          codeVerifier: string;
+          nonce: string;
+          redirectUri?: string;
+          expiresAt: number;
+        } = {
           providerId,
           tenantId,
           codeVerifier: codeVerifier || "",
           nonce,
-          redirectUri,
           expiresAt: Date.now() + 600000, // 10 mins
-        });
+        };
+        if (redirectUri) {
+          stateEntry.redirectUri = redirectUri;
+        }
+        stateCache.set(state, stateEntry);
 
         return { redirectUrl: url, state };
       }
@@ -403,7 +414,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     },
     // @ts-ignore
     async handleSamlCallback(_ignored: any) {
-      return {} as any;
+      return {} as unknown;
     },
     // @ts-ignore
     async getUserLinks(_ignored: any) {
@@ -411,11 +422,11 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     },
     // @ts-ignore
     async syncUserFromIdp(_ignored: any) {
-      return {} as any;
+      return {} as unknown;
     },
     // @ts-ignore
     async handleOidcCallback(_ignored: any) {
-      return {} as any;
+      return {} as unknown;
     },
     // @ts-ignore
     async validateToken(_ignored: any) {

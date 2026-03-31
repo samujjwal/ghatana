@@ -195,12 +195,12 @@ async function seedDomain(
     );
 
     if (existingDomainsRes.ok && existingDomainsRes.data?.domains) {
-        const existingDomain = existingDomainsRes.data.domains.find((d: any) => d.domain === domain.domain);
+        const existingDomain = existingDomainsRes.data.domains.find((d) => d.domain === domain.domain);
         if (existingDomain) {
             console.log(`⚠️  Domain already exists: ${domain.name} (${existingDomain.id})`);
             return {
                 domainId: existingDomain.id,
-                concepts: existingDomain.concepts?.map((c: any) => ({ id: c.id, name: c.name })) || []
+                concepts: existingDomain.concepts?.map((c) => ({ id: c.id, name: c.name })) || []
             };
         }
     }

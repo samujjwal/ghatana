@@ -19,7 +19,7 @@
 
 import { createPrismaClient, seedLearningUnits, seedSimulations, DEFAULT_TENANT_ID } from "../src/index.js";
 
-let prisma: any;
+let prisma: unknown;
 
 // =============================================================================
 // Constants

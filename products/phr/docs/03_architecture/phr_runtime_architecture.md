@@ -13,6 +13,8 @@
 
 > **📌 What changed in v2.0:** Added Section 14 (Multi-Tenancy Architecture), Section 15 (Caching Strategy), Section 16 (Resilience & Circuit Breaking), Section 17 (Deployment Architecture with Mermaid diagrams), hardened security context propagation, added encryption key management, enhanced runtime risks table.
 
+> Runtime correction (2026-03-30): This document is preserved as architecture planning context. The live backend runtime in this repository is Java 21 + ActiveJ under `products/phr/src/main/java`, not a deployed NestJS API application. Use this document for domain boundaries and non-functional intent, but rely on the current code, [products/phr/README.md](../../README.md), and [products/phr/PHR_KERNEL_INTEGRATION_README.md](../../PHR_KERNEL_INTEGRATION_README.md) for the implemented runtime shape.
+
 This document formalizes the runtime architecture for the active PHR document set.
 
 It covers:

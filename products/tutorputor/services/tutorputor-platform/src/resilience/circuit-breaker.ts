@@ -44,9 +44,9 @@ export class CircuitBreaker extends EventEmitter {
   private failures = 0;
   private successes = 0;
   private totalRequests = 0;
-  private lastFailureTime?: Date;
-  private lastSuccessTime?: Date;
-  private nextAttemptTime?: Date;
+  private lastFailureTime: Date | undefined;
+  private lastSuccessTime: Date | undefined;
+  private nextAttemptTime: Date | undefined;
   private failureThreshold: number;
   private resetTimeout: number;
   private monitoringPeriod: number;
@@ -68,9 +68,9 @@ export class CircuitBreaker extends EventEmitter {
       totalRequests: this.totalRequests,
       failureRate:
         this.totalRequests > 0 ? this.failures / this.totalRequests : 0,
-      lastFailureTime: this.lastFailureTime,
-      lastSuccessTime: this.lastSuccessTime,
-      nextAttemptTime: this.nextAttemptTime,
+      ...(this.lastFailureTime ? { lastFailureTime: this.lastFailureTime } : {}),
+      ...(this.lastSuccessTime ? { lastSuccessTime: this.lastSuccessTime } : {}),
+      ...(this.nextAttemptTime ? { nextAttemptTime: this.nextAttemptTime } : {}),
     };
   }
 
@@ -202,9 +202,9 @@ export class Bulkhead extends EventEmitter {
   private rejectedExecutions = 0;
   private totalExecutions = 0;
   private queue: Array<{
-    resolve: (value: unknown) => void;
+    resolve: (value: any) => void;
     reject: (reason?: unknown) => void;
-    operation: () => Promise<unknown>;
+    operation: () => Promise<any>;
   }> = [];
   private maxConcurrent: number;
   private maxQueue: number;
@@ -343,7 +343,7 @@ export class Retry {
   }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
       try {

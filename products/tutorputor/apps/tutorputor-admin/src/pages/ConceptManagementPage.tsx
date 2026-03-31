@@ -41,8 +41,8 @@ interface Concept {
     version: number;
     createdAt: string;
     updatedAt: string;
-    simulation?: any;
-    visualization?: any;
+    simulation?: unknown;
+    visualization?: unknown;
 }
 
 export function ConceptManagementPage() {

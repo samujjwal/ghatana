@@ -28,6 +28,9 @@ public enum ReviewStatus {
     /** Rejected by a human reviewer. */
     REJECTED,
 
+    /** Escalated due to SLA breach or manual escalation request. */
+    ESCALATED,
+
     /** Automatically expired after exceeding review SLA. */
     EXPIRED
 }

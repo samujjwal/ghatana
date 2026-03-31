@@ -1199,7 +1199,7 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
           title,
           description,
           version,
-          domain: domain as any,
+          domain: domain as unknown,
           manifest: toInputJsonValue(body),
         },
       });

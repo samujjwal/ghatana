@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static io.activej.http.HttpMethod.*;
 
@@ -55,6 +56,9 @@ public class AuthService extends HttpServerLauncher {
 
     /** JWT TTL for the platform-issued cross-product token (15 minutes). */
     private static final long PLATFORM_TOKEN_TTL_MS = 15 * 60 * 1000L;
+
+    /** HTTP header used to propagate correlation IDs across service boundaries. */
+    static final HttpHeader CORRELATION_ID_HEADER = HttpHeaders.of("X-Correlation-ID");
 
     // ─── Providers ───────────────────────────────────────────────────────────
 
@@ -131,7 +135,8 @@ public class AuthService extends HttpServerLauncher {
 
             // ── Initiate OIDC flow ────────────────────────────────────────────
             .with(POST, "/auth/login", request -> {
-                String nonce = java.util.UUID.randomUUID().toString();
+                String correlationId = extractCorrelationId(request);
+                String nonce = UUID.randomUUID().toString();
                 String redirectUri = oauth2Config.getRedirectUri() != null
                         ? oauth2Config.getRedirectUri().toString()
                         : "http://localhost:8080/auth/callback";
@@ -142,8 +147,11 @@ public class AuthService extends HttpServerLauncher {
                     authResponse.getAuthorizationUrl(),
                     authResponse.getState(),
                     authResponse.getNonce());
-                log.info("OIDC flow initiated — state={}", authResponse.getState());
-                return HttpResponse.ok200().withJson(json).build().toPromise();
+                log.info("OIDC flow initiated correlationId={} state={}", correlationId, authResponse.getState());
+                return HttpResponse.ok200()
+                        .withJson(json)
+                        .withHeader(CORRELATION_ID_HEADER, correlationId)
+                        .build().toPromise();
             })
 
             // ── OIDC Callback — the heart of SSO ─────────────────────────────
@@ -158,6 +166,7 @@ public class AuthService extends HttpServerLauncher {
             //   5. Redirect the browser to the product with the session cookie
             //      and a `token` query param the UI can store.
             .with(GET, "/auth/callback", request -> {
+                String correlationId = extractCorrelationId(request);
                 String code  = request.getQueryParameter("code");
                 String state = request.getQueryParameter("state");
                 String error = request.getQueryParameter("error");
@@ -166,7 +175,7 @@ public class AuthService extends HttpServerLauncher {
                 // IdP reported an error (user denied, etc.)
                 if (error != null && !error.isEmpty()) {
                     String desc = request.getQueryParameter("error_description");
-                    log.warn("OIDC callback error: {} — {}", error, desc);
+                    log.warn("OIDC callback error correlationId={} error={} desc={}", correlationId, error, desc);
                     return HttpResponse.ofCode(400)
                             .withJson(errorJson(400, "OIDC_CALLBACK_ERROR", sanitize(error), sanitize(desc == null ? "" : desc)))
                             .build()
@@ -217,7 +226,7 @@ public class AuthService extends HttpServerLauncher {
                             )
                         );
 
-                        log.info("OIDC login success — userId={} sessionId={}", user.getUserId(), sessionId);
+                        log.info("OIDC login success correlationId={} userId={} sessionId={}", correlationId, user.getUserId(), sessionId);
 
                         // Determine where to send the browser.
                         // Products may pass a `post_login_redirect` query param before starting
@@ -238,13 +247,13 @@ public class AuthService extends HttpServerLauncher {
                                 .build();
                     } catch (IllegalArgumentException | IllegalStateException e) {
                         // OAuth2 protocol validation errors (bad state, invalid code, expired token, etc.)
-                        log.warn("OIDC authentication validation failed: {}", e.getMessage());
+                        log.warn("OIDC authentication validation failed correlationId={} reason={}", correlationId, e.getMessage());
                         return HttpResponse.ofCode(401)
                                 .withJson(errorJson(401, "AUTHENTICATION_FAILED", "Authentication failed"))
                                 .build();
                     } catch (Exception e) {
                         // Unexpected system error — do not leak details to the caller
-                        log.error("Unexpected error during OIDC callback", e);
+                        log.error("Unexpected error during OIDC callback correlationId={}", correlationId, e);
                         return HttpResponse.ofCode(500)
                                 .withJson(errorJson(500, "INTERNAL_ERROR", "Authentication service unavailable"))
                                 .build();
@@ -255,6 +264,7 @@ public class AuthService extends HttpServerLauncher {
             // ── Token introspection ───────────────────────────────────────────
             .with(POST, "/auth/token/introspect", request ->
                 request.loadBody().then(body -> {
+                    String correlationId = extractCorrelationId(request);
                     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
                     String token;
                     if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -274,16 +284,24 @@ public class AuthService extends HttpServerLauncher {
                                 .build());
                     }
                     return tokenIntrospector.introspect(token)
-                        .map(user -> HttpResponse.ok200()
-                            .withJson(String.format(
-                                "{\"active\":true,\"subject\":\"%s\",\"email\":\"%s\"}",
-                                user.getUserId(),
-                                user.getEmail() == null ? "" : user.getEmail()))
-                            .build())
+                        .map(user -> {
+                            log.info("Token introspection success correlationId={} userId={}", correlationId, user.getUserId());
+                            return HttpResponse.ok200()
+                                .withJson(String.format(
+                                    "{\"active\":true,\"subject\":\"%s\",\"email\":\"%s\"}",
+                                    user.getUserId(),
+                                    user.getEmail() == null ? "" : user.getEmail()))
+                                .withHeader(CORRELATION_ID_HEADER, correlationId)
+                                .build();
+                        })
                         .then(Promise::of,
-                            error -> Promise.of(HttpResponse.ofCode(401)
-                                .withJson("{\"active\":false}")
-                                .build()));
+                            error -> {
+                                log.warn("Token introspection failed correlationId={}", correlationId);
+                                return Promise.of(HttpResponse.ofCode(401)
+                                    .withJson("{\"active\":false}")
+                                    .withHeader(CORRELATION_ID_HEADER, correlationId)
+                                    .build());
+                            });
                 })
             )
 
@@ -329,6 +347,7 @@ public class AuthService extends HttpServerLauncher {
             // ── Session logout ────────────────────────────────────────────────
             .with(POST, "/auth/logout", request ->
                 request.loadBody().then(body -> {
+                    String correlationId = extractCorrelationId(request);
                     // Try session cookie first, then request body
                     String cookieHeader = request.getHeader(HttpHeaders.COOKIE);
                     String sessionId = extractCookieValue(cookieHeader, "ghatana_session");
@@ -343,11 +362,12 @@ public class AuthService extends HttpServerLauncher {
                     }
                     if (sessionId != null && !sessionId.isEmpty()) {
                         sessionManager.invalidateSession(sessionId);
-                        log.info("Session invalidated: {}", sessionId);
+                        log.info("Session invalidated correlationId={} sessionId={}", correlationId, sessionId);
                     }
                     return Promise.of(HttpResponse.ok200()
                             .withHeader(HttpHeaders.SET_COOKIE,
                                 "ghatana_session=; Path=/; HttpOnly; Max-Age=0")
+                            .withHeader(CORRELATION_ID_HEADER, correlationId)
                             .withJson("{\"status\":\"logged_out\"}")
                             .build());
                 })
@@ -381,6 +401,15 @@ public class AuthService extends HttpServerLauncher {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Extracts the {@code X-Correlation-ID} header from an incoming request, or generates
+     * a new UUID if absent. The returned value is safe to log and return in response headers.
+     */
+    static String extractCorrelationId(HttpRequest request) {
+        String id = request.getHeader(CORRELATION_ID_HEADER);
+        return (id != null && !id.isBlank()) ? id : UUID.randomUUID().toString();
+    }
 
     /** Extract a named cookie value from a raw Cookie header string. */
     private static String extractCookieValue(String cookieHeader, String cookieName) {

@@ -12,6 +12,8 @@
 
 > **📌 What changed in v2.0:** Added ConsentService interface specification, multi-tenancy enforcement notes per module, cache integration points, circuit breaker configuration for external-facing modules, and security hardening notes.
 
+> Runtime correction (2026-03-30): This document is a historical module-planning artifact. The live backend implementation is Java 21 + ActiveJ under `products/phr/src/main/java`, and the module/service wiring is centered on `PhrKernelModule` rather than a NestJS module tree. Keep this document only as a legacy design reference until the architecture set is fully rewritten around the implemented runtime.
+
 This document translates the PHR platform into a **modular NestJS architecture**. It follows Nest's modular structure, where modules organize application structure and providers are injected as dependencies.
 
 ## 1. Architecture stance

@@ -26,7 +26,7 @@
 | Billing (PHR-side)                                    | ✅ Complete       | Encounter + insurance claim baseline; EDI clearinghouse out of scope for v1 |
 | FHIR Server Endpoint                                  | ❌ Planned        | Only transformation engine exists today                                     |
 | Mobile App                                            | ❌ Planned        | React Native scaffold not started                                           |
-| AI/ML Anomaly Detection                               | ⚠️ Framework only | Lab anomaly and readmission agents in development                           |
+| AI/ML Clinical Decision Support                       | ✅ Complete       | Lab anomaly, medication interaction, and readmission agents exposed via kernel service |
 | Nepal HIE Integration                                 | ❌ Planned        | Interface design pending                                                    |
 
 ## Architecture
@@ -45,7 +45,7 @@
 ```
 src/main/java/com/ghatana/phr/
   kernel/              — PhrKernelModule, service catalog, consent, events, retention
-    service/           — 14 registered services (patient records, billing, lab, medication, …)
+    service/           — 15 registered services (patient records, billing, lab, medication, clinical decision support, …)
     consent/           — ConsentService interface (single source of truth)
     module/            — Sub-modules: Patient, Clinical, Administrative, Emergency
   security/            — PHRSecurityManagerImpl, PHRPrivacyManagerImpl, HIPAAPrivacyPolicy

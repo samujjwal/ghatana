@@ -17,7 +17,11 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -32,10 +36,32 @@ public class HitlController {
 
     private static final Logger log = LoggerFactory.getLogger(HitlController.class);
 
+    /** Default HITL review SLA: 30 minutes. */
+    public static final long DEFAULT_ESCALATION_TIMEOUT_SECONDS = 1800L;
+
     @Nullable
     private final HumanReviewQueue humanReviewQueue;
-    /** Callback to publish SSE events: (tenantId, eventType, payload). */
+    /** Callback to publish SSE events: (tenantId, payload). */
     private final BiConsumer<String, Map<String, Object>> ssePublisher;
+    private final long escalationTimeoutSeconds;
+    @Nullable
+    private ScheduledExecutorService scheduler;
+
+    /**
+     * @param humanReviewQueue        HITL queue; may be null if not configured
+     * @param ssePublisher            callback invoked as {@code (tenantId, payload)} to publish SSE events
+     * @param escalationTimeoutSeconds seconds before a PENDING/IN_REVIEW item is auto-escalated
+     */
+    public HitlController(@Nullable HumanReviewQueue humanReviewQueue,
+                           BiConsumer<String, Map<String, Object>> ssePublisher,
+                           long escalationTimeoutSeconds) {
+        this.humanReviewQueue = humanReviewQueue;
+        this.ssePublisher = ssePublisher;
+        this.escalationTimeoutSeconds = escalationTimeoutSeconds;
+        if (humanReviewQueue != null) {
+            startEscalationScheduler();
+        }
+    }
 
     /**
      * @param humanReviewQueue   HITL queue; may be null if not configured
@@ -43,8 +69,61 @@ public class HitlController {
      */
     public HitlController(@Nullable HumanReviewQueue humanReviewQueue,
                            BiConsumer<String, Map<String, Object>> ssePublisher) {
-        this.humanReviewQueue = humanReviewQueue;
-        this.ssePublisher = ssePublisher;
+        this(humanReviewQueue, ssePublisher, DEFAULT_ESCALATION_TIMEOUT_SECONDS);
+    }
+
+    /**
+     * Starts the background scheduler that polls for overdue review items and auto-escalates them.
+     * Runs every 60 seconds. Safe to call only once per instance.
+     */
+    private void startEscalationScheduler() {
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "hitl-escalation-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        scheduler.scheduleAtFixedRate(this::runEscalationCheck, 60, 60, TimeUnit.SECONDS);
+        log.info("[hitl] auto-escalation scheduler started; timeout={}s", escalationTimeoutSeconds);
+    }
+
+    /** Polls the queue for overdue items and escalates them, firing hitl_escalated SSE events. */
+    private void runEscalationCheck() {
+        if (humanReviewQueue == null) return;
+        try {
+            humanReviewQueue.findOverdue(escalationTimeoutSeconds, null)
+                .whenComplete((items, e) -> {
+                    if (e != null) {
+                        log.warn("[hitl] escalation check failed: {}", e.getMessage());
+                        return;
+                    }
+                    for (var item : items) {
+                        humanReviewQueue.escalate(item.getReviewId())
+                            .whenComplete((escalated, err) -> {
+                                if (err != null) {
+                                    log.warn("[hitl] escalate failed reviewId={}: {}", item.getReviewId(), err.getMessage());
+                                    return;
+                                }
+                                Map<String, Object> event = new HashMap<>();
+                                event.put("reviewId", escalated.getReviewId());
+                                event.put("status", escalated.getStatus().name());
+                                event.put("agentId", escalated.getSkillId());
+                                event.put("escalatedAt", Instant.now().toString());
+                                event.put("reason", "sla_breach");
+                                ssePublisher.accept(escalated.getTenantId(), event);
+                                log.info("[hitl] auto-escalated reviewId={} tenantId={}", escalated.getReviewId(), escalated.getTenantId());
+                            });
+                    }
+                });
+        } catch (Exception ex) {
+            log.warn("[hitl] escalation check error: {}", ex.getMessage());
+        }
+    }
+
+    /** Stops the escalation scheduler. Call on server shutdown to avoid thread leaks. */
+    public void shutdown() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
     }
 
     public Promise<HttpResponse> handleListPending(HttpRequest request) {
@@ -164,5 +243,39 @@ public class HitlController {
                 return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
             }
         }, e -> Promise.of(HttpHelper.errorResponse(400, "Failed to read request body")));
+    }
+
+    /**
+     * POST /api/v1/hitl/:reviewId/escalate — manually escalate a review item.
+     * Fires a {@code hitl_escalated} SSE event on success.
+     */
+    public Promise<HttpResponse> handleEscalate(HttpRequest request) {
+        if (humanReviewQueue == null) {
+            return Promise.of(HttpHelper.errorResponse(501, "HITL queue not configured"));
+        }
+        String reviewId = request.getPathParameter("reviewId");
+        if (reviewId == null || reviewId.isBlank()) {
+            return Promise.of(HttpHelper.errorResponse(400, "reviewId path parameter is required"));
+        }
+        return humanReviewQueue.escalate(reviewId)
+            .map(escalated -> {
+                Map<String, Object> resp = new HashMap<>();
+                resp.put("reviewId", escalated.getReviewId());
+                resp.put("status", escalated.getStatus().name());
+                resp.put("escalatedAt", Instant.now().toString());
+                resp.put("reason", "manual");
+
+                Map<String, Object> ssePayload = new HashMap<>(resp);
+                ssePayload.put("agentId", escalated.getSkillId());
+                ssePublisher.accept(escalated.getTenantId(), ssePayload);
+                log.info("[hitl] manually escalated reviewId={}", reviewId);
+
+                return HttpHelper.jsonResponse(resp);
+            })
+            .then(Promise::of, e -> {
+                log.warn("[hitl] escalate failed for reviewId={}: {}", reviewId, e.getMessage());
+                return Promise.of(HttpHelper.errorResponse(404,
+                    "Review item not found or cannot be escalated: " + reviewId));
+            });
     }
 }

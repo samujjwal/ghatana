@@ -90,7 +90,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
           const comp = entity as BioCompartmentEntity;
           compartments.set(entity.id, {
             id: entity.id,
-            volume: comp.volume,
+            volume: comp.volume ?? 1,
             concentrations: new Map(Object.entries(comp.concentration || {})),
             permeability: new Map(Object.entries(comp.permeability || {}))
           });
@@ -124,7 +124,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
       const dt = 0.1; // Time step in seconds
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
-        const step = stepsToProcess[stepIndex];
+        const step = stepsToProcess[stepIndex]!;
 
         // Apply step actions
         for (const action of step.actions) {
@@ -180,7 +180,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        ...(warnings.length > 0 ? { warnings } : {})
       };
     },
 
@@ -197,15 +197,15 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
       }));
 
       if (compartments.length >= 2) {
-        const c1 = compartments[0];
-        const c2 = compartments[1];
+        const c1 = compartments[0]!;
+        const c2 = compartments[1]!;
 
         // Calculate flux
         const flux = permeability * (c1.concentration - c2.concentration) * timeStep;
 
         // Update concentrations based on volumes
-        result[0].concentration = c1.concentration - flux / c1.volume;
-        result[1].concentration = c2.concentration + flux / c2.volume;
+        result[0]!.concentration = c1.concentration - flux / c1.volume;
+        result[1]!.concentration = c2.concentration + flux / c2.volume;
       }
 
       return result;
@@ -413,8 +413,8 @@ function simulateAllDiffusion(
 
   for (let i = 0; i < compArray.length; i++) {
     for (let j = i + 1; j < compArray.length; j++) {
-      const c1 = compArray[i];
-      const c2 = compArray[j];
+      const c1 = compArray[i]!;
+      const c2 = compArray[j]!;
 
       // Diffuse each molecule
       for (const [molecule, conc1] of c1.concentrations) {

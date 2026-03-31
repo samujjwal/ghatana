@@ -259,7 +259,7 @@ export class ContentServiceImpl implements ContentService {
   // ===========================================================================
 
   private buildSummaryInclude(tenantId: TenantId, userId?: UserId): any {
-    const include: any = {
+    const include: Record<string, unknown> = {
       tags: true,
     };
     if (userId) {
@@ -271,7 +271,7 @@ export class ContentServiceImpl implements ContentService {
   }
 
   private buildDetailInclude(tenantId: TenantId, userId?: UserId): any {
-    const include: any = {
+    const include: Record<string, unknown> = {
       tags: true,
       learningObjectives: true,
       contentBlocks: true,
@@ -285,7 +285,7 @@ export class ContentServiceImpl implements ContentService {
     return include;
   }
 
-  private mapModuleSummary(module: Record<string, unknown>): ModuleSummary {
+  private mapModuleSummary(module: any): ModuleSummary {
     const enrollment = (
       module.enrollments as unknown as Array<Record<string, unknown>>
     )?.[0];
@@ -304,7 +304,7 @@ export class ContentServiceImpl implements ContentService {
     };
   }
 
-  private mapModuleDetail(module: Record<string, unknown>): ModuleDetail {
+  private mapModuleDetail(module: any): ModuleDetail {
     const contentBlocks =
       (module.contentBlocks as Array<Record<string, unknown>> | undefined) ??
       [];
@@ -341,7 +341,7 @@ export class ContentServiceImpl implements ContentService {
     };
   }
 
-  private mapEnrollment(record: Record<string, unknown>): Enrollment {
+  private mapEnrollment(record: any): Enrollment {
     return {
       id: record.id as Enrollment["id"],
       moduleId: record.moduleId as ModuleId,

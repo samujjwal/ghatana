@@ -353,7 +353,7 @@ export class RealTimeCollaboration extends EventEmitter {
     ];
 
     if (!userId) {
-      return colors[0];
+      return colors[0] ?? "#4ECDC4";
     }
 
     let hash = 0;
@@ -361,7 +361,7 @@ export class RealTimeCollaboration extends EventEmitter {
       hash = userId.charCodeAt(i) + ((hash << 5) - hash);
     }
 
-    return colors[Math.abs(hash) % colors.length];
+    return colors[Math.abs(hash) % colors.length] ?? "#4ECDC4";
   }
 
   /**

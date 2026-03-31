@@ -214,12 +214,15 @@ All performance targets from the integration guide are met:
 Run the integration tests:
 ```bash
 ./gradlew :products:phr:test
+./gradlew :products:phr:phrReleaseGate
 ```
 
 Expected results:
 - PHRSecurityIntegrationTest: 8/8 tests passing
 - PHRAuditTrailServiceTest: 4/4 tests passing
 - PatientServiceTest: 2/2 tests passing
+- ClinicalDecisionSupportServiceTest: clinical AI orchestration coverage added
+- `phrReleaseGate`: consolidated pre-staging regression task
 
 ## Migration Checklist
 
@@ -292,4 +295,4 @@ Expected results:
 
 ## Conclusion
 
-The PHR-Kernel Platform integration is **complete and production-ready**. All security and observability requirements have been implemented with HIPAA compliance, comprehensive audit trails, and enterprise-grade telemetry.
+The PHR-Kernel Platform integration is **implementation-complete and awaiting staging/compliance sign-off**. Security, observability, FHIR transformation, and clinical decision-support services are implemented locally, but staging validation and formal HIPAA audit evidence remain the last release gates.

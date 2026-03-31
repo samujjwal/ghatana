@@ -170,8 +170,8 @@ export function migrateManifest(
   // Handle v1.0 format (from SimulationBuilderPage)
   if (oldManifest.version === "1.0" && Array.isArray(oldManifest.entities)) {
     const migratedEntities: PhysicsEntity[] = (
-      oldManifest.entities as any[]
-    ).map((e: any, index: number) => ({
+      oldManifest.entities as unknown[]
+    ).map((e, index) => ({
       id: `migrated-${Date.now()}-${index}`,
       type: e.type,
       x: e.position?.x ?? e.x ?? 0,

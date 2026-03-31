@@ -12,6 +12,7 @@ import com.ghatana.kernel.service.KernelLifecycleAware;
 import com.ghatana.phr.kernel.service.AppointmentService;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.phr.kernel.service.CaregiverService;
+import com.ghatana.phr.kernel.service.ClinicalDecisionSupportService;
 import com.ghatana.phr.kernel.service.ClinicalNoteService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
@@ -120,6 +121,7 @@ public class PhrKernelModule extends AbstractKernelModule {
         LabResultService labResults = new LabResultService(context);
         ImmunizationService immunizations = new ImmunizationService(context);
         ClinicalNoteService clinicalNotes = new ClinicalNoteService(context);
+        ClinicalDecisionSupportService clinicalDecisionSupport = new ClinicalDecisionSupportService();
         ImagingService imaging = new ImagingService(context);
         ReferralService referrals = new ReferralService(context);
         BillingService billing = new BillingService(context);
@@ -128,7 +130,14 @@ public class PhrKernelModule extends AbstractKernelModule {
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context);
 
         serviceCatalog = new PhrServiceCatalog(
-            new PhrServiceCatalog.ClinicalServices(patientRecords, clinicalNotes, labResults, imaging, documents),
+            new PhrServiceCatalog.ClinicalServices(
+                patientRecords,
+                clinicalNotes,
+                labResults,
+                imaging,
+                documents,
+                clinicalDecisionSupport
+            ),
             new PhrServiceCatalog.AdministrativeServices(appointments, billing, referrals, telemedicine),
             new PhrServiceCatalog.PatientServices(consent, medications, immunizations, caregivers),
             new PhrServiceCatalog.EmergencyServices(emergencyAccess)
@@ -142,6 +151,7 @@ public class PhrKernelModule extends AbstractKernelModule {
         services.add(labResults);
         services.add(immunizations);
         services.add(clinicalNotes);
+        services.add(clinicalDecisionSupport);
         services.add(imaging);
         services.add(referrals);
         services.add(billing);

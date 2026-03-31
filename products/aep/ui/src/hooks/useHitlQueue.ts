@@ -2,7 +2,7 @@
  * useHitlQueue — combined TanStack Query + SSE hook for the HITL review queue.
  *
  * 1. Initial data from REST: `GET /api/v1/hitl/pending`
- * 2. Live updates via SSE: `hitl.new` events add items to the local cache without
+ * 2. Live updates via SSE: `hitl_request_created` events add items to the local cache without
  *    a full refetch.
  * 3. Approve/reject mutations update the cache optimistically.
  *
@@ -10,7 +10,7 @@
  * @doc.purpose Manage the HITL review queue with REST + live SSE updates
  * @doc.layer frontend
  */
-import { useEffect } from 'react';
+import { useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
@@ -21,6 +21,7 @@ import {
   type ReviewItem,
 } from '@/api/aep.api';
 import { subscribeToAepStream } from '@/api/sse';
+import { useSSESubscription } from '@ghatana/realtime';
 
 export const HITL_QUEUE_QUERY_KEY = 'hitl-queue';
 
@@ -35,31 +36,36 @@ export function useHitlQueue() {
     staleTime: 60_000,
   });
 
+  // Keep callbacks stable in refs so the subscription only restarts when tenantId changes.
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
+
   // Live push: new HITL items arrive via SSE
-  useEffect(() => {
-    const sub = subscribeToAepStream(
-      tenantId,
-      (msg) => {
-        if (msg.type !== 'hitl.new') return;
-        const item = msg.data as ReviewItem | undefined;
-        if (!item) return;
+  useSSESubscription(
+    () =>
+      subscribeToAepStream(
+        tenantId,
+        (msg) => {
+          if (msg.type !== 'hitl_request_created') return;
+          const item = msg.data as ReviewItem | undefined;
+          if (!item) return;
 
-        queryClient.setQueryData<ReviewItem[]>(
-          [HITL_QUEUE_QUERY_KEY, tenantId],
-          (prev = []) => {
-            // Deduplicate if the item already exists
-            if (prev.some((r) => r.reviewId === item.reviewId)) return prev;
-            return [item, ...prev];
-          },
-        );
-      },
-      () => {
-        queryClient.invalidateQueries({ queryKey: [HITL_QUEUE_QUERY_KEY, tenantId] });
-      },
-    );
-
-    return () => sub.close();
-  }, [tenantId, queryClient]);
+          queryClientRef.current.setQueryData<ReviewItem[]>(
+            [HITL_QUEUE_QUERY_KEY, tenantId],
+            (prev = []) => {
+              if (prev.some((r) => r.reviewId === item.reviewId)) return prev;
+              return [item, ...prev];
+            },
+          );
+        },
+        () => {
+          queryClientRef.current.invalidateQueries({
+            queryKey: [HITL_QUEUE_QUERY_KEY, tenantId],
+          });
+        },
+      ),
+    [tenantId],
+  );
 
   return query;
 }

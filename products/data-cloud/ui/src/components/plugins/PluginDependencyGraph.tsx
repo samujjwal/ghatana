@@ -180,6 +180,18 @@ export function PluginDependencyGraph({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Resolve CSS custom properties so canvas colours track the active theme.
+    const style = getComputedStyle(document.documentElement);
+    const cssVar = (name: string) => style.getPropertyValue(name).trim();
+
+    const colorSuccess  = cssVar('--color-success');   // #10b981 in globals.css
+    const colorError    = cssVar('--color-error');     // #ef4444
+    const colorWarning  = cssVar('--color-warning');   // #f59e0b
+    const colorInfo     = cssVar('--color-info');      // #3b82f6
+    const colorMuted    = cssVar('--color-text-muted');// #6b7280
+    const colorSurface  = cssVar('--color-bg-surface');// #ffffff
+    const colorBorder   = cssVar('--color-border');    // #e5e7eb
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
@@ -201,21 +213,21 @@ export function PluginDependencyGraph({
       // Color by dependency type
       switch (dep.type) {
         case 'requires':
-          ctx.strokeStyle = dep.resolved ? '#10b981' : '#ef4444';
+          ctx.strokeStyle = dep.resolved ? colorSuccess : colorError;
           ctx.lineWidth = 2;
           break;
         case 'optional':
-          ctx.strokeStyle = '#6b7280';
+          ctx.strokeStyle = colorMuted;
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
           break;
         case 'conflicts':
-          ctx.strokeStyle = '#f59e0b';
+          ctx.strokeStyle = colorWarning;
           ctx.lineWidth = 2;
           ctx.setLineDash([2, 2]);
           break;
         case 'provides':
-          ctx.strokeStyle = '#3b82f6';
+          ctx.strokeStyle = colorInfo;
           ctx.lineWidth = 1;
           break;
       }
@@ -252,13 +264,13 @@ export function PluginDependencyGraph({
       // Color by status
       switch (node.status) {
         case 'active':
-          ctx.fillStyle = '#10b981';
+          ctx.fillStyle = colorSuccess;
           break;
         case 'inactive':
-          ctx.fillStyle = '#6b7280';
+          ctx.fillStyle = colorMuted;
           break;
         case 'error':
-          ctx.fillStyle = '#ef4444';
+          ctx.fillStyle = colorError;
           break;
       }
 
@@ -271,12 +283,12 @@ export function PluginDependencyGraph({
       ctx.shadowBlur = 0;
 
       // Border
-      ctx.strokeStyle = isSelected ? '#ffffff' : '#e5e7eb';
+      ctx.strokeStyle = isSelected ? colorSurface : colorBorder;
       ctx.lineWidth = isSelected ? 3 : 1;
       ctx.stroke();
 
       // Label
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = colorSurface;
       ctx.font = 'bold 10px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';

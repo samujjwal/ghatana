@@ -1,3 +1,11 @@
+/**
+ * SpotlightRing component.
+ *
+ * @doc.type component
+ * @doc.purpose Renders an auto-scrolling spotlight carousel of AI-surfaced insight items inside a DashboardCard
+ * @doc.layer product
+ * @doc.pattern Display Card
+ */
 import React, { useEffect, useState } from 'react';
 import { DashboardCard } from './DashboardCard';
 

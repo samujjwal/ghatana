@@ -500,7 +500,7 @@ export function UnifiedContentStudio() {
 
   // Experience creation handler
   const handleExperienceCreated = useCallback(
-    async (request: any) => {
+    async (request: unknown) => {
       setIsGenerating(true);
       try {
         const result = await contentStudioApi.generateContent(request);

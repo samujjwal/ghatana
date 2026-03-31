@@ -306,7 +306,7 @@ function mergeDiagnostics(
   };
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
+function asRecord(value: any): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
@@ -316,7 +316,7 @@ function clampProgress(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function toFiniteNumber(value: unknown): number | undefined {
+function toFiniteNumber(value: any): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 

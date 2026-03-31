@@ -77,6 +77,10 @@ export interface SearchResponse {
 export class SearchServiceImpl {
   constructor(private readonly prisma: PrismaClient) {}
 
+  private toText(value: unknown): string {
+    return typeof value === "string" ? value : "";
+  }
+
   private normalizeTerms(value: string): string[] {
     return value
       .toLowerCase()
@@ -187,25 +191,41 @@ export class SearchServiceImpl {
     });
 
     // Search threads if type filter allows
-    let threads: Array<Record<string, unknown>> = [];
+    type ThreadRecord = { id: string; title: string; content: string | null };
+    let threads: ThreadRecord[] = [];
     if (!filters?.type || filters.type.includes("thread")) {
       try {
-        threads = await (this.prisma as Record<string, unknown>).thread.findMany({
-          where: {
-            tenantId,
-            OR: [
-              { title: { contains: query } },
-              { content: { contains: query } },
-            ],
-          },
-        });
+        const threadDelegate = (this.prisma as unknown as {
+          thread?: {
+            findMany: (args: {
+              where: {
+                tenantId: TenantId;
+                OR: Array<{ title: { contains: string } } | { content: { contains: string } }>;
+              };
+            }) => Promise<ThreadRecord[]>;
+          };
+        }).thread;
+
+        if (threadDelegate) {
+          threads = await threadDelegate.findMany({
+            where: {
+              tenantId,
+              OR: [{ title: { contains: query } }, { content: { contains: query } }],
+            },
+          });
+        }
       } catch (e) {
         // Ignore
       }
     }
 
     // Search learning paths
-    let paths: Array<Record<string, unknown>> = [];
+    type PathRecord = {
+      id: string;
+      title: string;
+      goal: string | null;
+    };
+    let paths: PathRecord[] = [];
     if (!filters?.type || filters.type.includes("learning_path")) {
       try {
         paths = await this.prisma.learningPath.findMany({
@@ -224,16 +244,15 @@ export class SearchServiceImpl {
 
     if (!filters?.type || filters.type.includes("module")) {
       results.push(
-        ...modules.map((m: Record<string, unknown>) => ({
+        ...modules.map((m) => ({
           id: m.id,
           type: "module" as const,
           title: m.title,
           description: m.description ?? "",
-          thumbnail: undefined,
           metadata: {
             price: 0,
             slug: m.slug,
-            category: m.category,
+            category: m.domain,
             difficulty: m.difficulty,
           },
           score:
@@ -243,8 +262,7 @@ export class SearchServiceImpl {
                 m.title,
                 m.description,
                 m.slug,
-                m.category,
-                ...(Array.isArray(m.tags) ? m.tags : []),
+                m.domain,
               ],
               query,
             ) *
@@ -256,30 +274,41 @@ export class SearchServiceImpl {
 
     if (!filters?.type || filters.type.includes("thread")) {
       results.push(
-        ...threads.map((t: Record<string, unknown>) => ({
+        ...threads.map((t) => ({
           id: t.id,
           type: "thread" as const,
-          title: t.title,
-          description: t.content ?? "",
-          thumbnail: undefined,
+          title: this.toText(t.title),
+          description: this.toText(t.content),
           metadata: {},
-          score: this.matchScore(`${t.title} ${t.content}`, query),
-          highlights: [this.createHighlight(t.content ?? t.title, query)],
+          score: this.matchScore(`${this.toText(t.title)} ${this.toText(t.content)}`, query),
+          highlights: [
+            this.createHighlight(
+              this.toText(t.content) || this.toText(t.title),
+              query,
+            ),
+          ],
         })),
       );
     }
 
     if (!filters?.type || filters.type.includes("learning_path")) {
       results.push(
-        ...paths.map((p: Record<string, unknown>) => ({
+        ...paths.map((p) => ({
           id: p.id,
           type: "learning_path" as const,
-          title: p.title,
-          description: p.description ?? "",
-          thumbnail: undefined,
+          title: this.toText(p.title),
+          description: this.toText(p.goal),
           metadata: {},
-          score: this.matchScore(`${p.title} ${p.description}`, query),
-          highlights: [this.createHighlight(p.description ?? p.title, query)],
+          score: this.matchScore(
+            `${this.toText(p.title)} ${this.toText(p.goal)}`,
+            query,
+          ),
+          highlights: [
+            this.createHighlight(
+              this.toText(p.goal) || this.toText(p.title),
+              query,
+            ),
+          ],
         })),
       );
     }
@@ -343,10 +372,10 @@ export class SearchServiceImpl {
       select: { id: true, slug: true, title: true },
     });
 
-    return modules.map((m: Record<string, unknown>) => ({
+    return modules.map((m) => ({
       text: m.title,
       type: "module" as const,
-      id: m.slug || m.id,
+      id: m.slug ?? m.id,
     }));
   }
 
@@ -358,7 +387,7 @@ export class SearchServiceImpl {
       select: { title: true },
     });
 
-    return modules.map((m: Record<string, unknown>) => m.title as string);
+    return modules.map((m) => m.title);
   }
 
   async getSimilar(
@@ -384,12 +413,11 @@ export class SearchServiceImpl {
       take: limit,
     });
 
-    return similar.map((m: Record<string, unknown>) => ({
+    return similar.map((m) => ({
       id: m.id,
       type: "module" as const,
       title: m.title,
       description: m.description ?? "",
-      thumbnail: undefined,
       metadata: { price: 0, slug: m.slug },
       score:
         this.matchScore(m.title, module.title) * 0.7 +

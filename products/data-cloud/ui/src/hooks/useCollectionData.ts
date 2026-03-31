@@ -1,3 +1,11 @@
+/**
+ * useCollectionData hook.
+ *
+ * @doc.type hook
+ * @doc.purpose Fetches and manages collection data state for a given collection ID or all collections
+ * @doc.layer product
+ * @doc.pattern Data Hook
+ */
 import { useState, useEffect } from 'react';
 import { dataCloudApi } from '../lib/api/data-cloud-api';
 import type { Collection } from '../lib/api/collections';

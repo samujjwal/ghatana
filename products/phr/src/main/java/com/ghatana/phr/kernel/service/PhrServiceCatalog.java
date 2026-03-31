@@ -45,7 +45,8 @@ public final class PhrServiceCatalog {
         ClinicalNoteService clinicalNotes,
         LabResultService labResults,
         ImagingService imaging,
-        DocumentService documents
+        DocumentService documents,
+        ClinicalDecisionSupportService clinicalDecisionSupport
     ) {
     }
 

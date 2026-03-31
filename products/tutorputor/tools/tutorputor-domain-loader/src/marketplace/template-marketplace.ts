@@ -821,13 +821,13 @@ export class TemplateMarketplace {
   private getReportCount(templateId: string): number {
     return 0;
   }
-  private getTopAuthors(templates: MarketplaceTemplate[]): any[] {
+  private getTopAuthors(templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
-  private getPopularCategories(templates: MarketplaceTemplate[]): any[] {
+  private getPopularCategories(templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
-  private getRecentActivity(templates: MarketplaceTemplate[]): any[] {
+  private getRecentActivity(templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
 }

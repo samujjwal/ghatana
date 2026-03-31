@@ -147,11 +147,18 @@ export async function seedBaseData(
   }
 
   if (modules.length > 0) {
+    const firstModule = modules[0];
+    if (!firstModule) {
+      await seedLearningUnits(prisma, { tenantId, createdBy: seedUserId });
+      await seedSimulations(prisma, { tenantId });
+      return;
+    }
+
     await prisma.enrollment.create({
       data: {
         tenantId,
         userId: seedUserId,
-        moduleId: modules[0].id,
+        moduleId: firstModule.id,
         status: "IN_PROGRESS",
         progressPercent: 30,
         startedAt: new Date(),
@@ -160,7 +167,7 @@ export async function seedBaseData(
     });
 
     await createSeedAssessment(prisma, {
-      module: modules[0]!,
+      module: firstModule,
       tenantId,
       createdBy: seedUserId,
     });
@@ -168,7 +175,7 @@ export async function seedBaseData(
     await prisma.marketplaceListing.create({
       data: {
         tenantId,
-        moduleId: modules[0].id,
+        moduleId: firstModule.id,
         creatorId: seedUserId,
         priceCents: 0,
         status: "ACTIVE",
@@ -182,14 +189,14 @@ export async function seedBaseData(
         {
           tenantId,
           userId: seedUserId,
-          moduleId: modules[0].id,
+          moduleId: firstModule.id,
           eventType: "module_viewed",
           timestamp: new Date(),
         },
         {
           tenantId,
           userId: seedUserId,
-          moduleId: modules[0].id,
+          moduleId: firstModule.id,
           eventType: "module_completed",
           timestamp: new Date(),
         },

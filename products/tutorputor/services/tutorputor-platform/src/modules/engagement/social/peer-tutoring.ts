@@ -45,7 +45,9 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
 
   constructor(config: PeerTutoringServiceConfig) {
     this.prisma = config.prisma;
-    this.redis = config.redis;
+    if (config.redis) {
+      this.redis = config.redis;
+    }
     this.defaultMaxSessionsPerWeek = config.defaultMaxSessionsPerWeek ?? 5;
     this.requestExpirationDays = config.requestExpirationDays ?? 7;
   }
@@ -123,7 +125,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     searchQuery?: string;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutorProfile>> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
       status: "ACTIVE",
       isAvailable: true,
@@ -154,22 +156,22 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     ]);
 
     // Client-side filtering for JSON fields
-    let filteredItems = items.map((p: any) => this.mapProfileFromDb(p));
+    let filteredItems = items.map((p) => this.mapProfileFromDb(p));
 
     if (args.subject) {
-      filteredItems = filteredItems.filter((p: any) =>
+      filteredItems = filteredItems.filter((p) =>
         p.subjects.includes(args.subject!),
       );
     }
 
     if (args.moduleId) {
-      filteredItems = filteredItems.filter((p: any) =>
+      filteredItems = filteredItems.filter((p) =>
         p.modules.includes(args.moduleId!),
       );
     }
 
     if (args.sessionType) {
-      filteredItems = filteredItems.filter((p: any) =>
+      filteredItems = filteredItems.filter((p) =>
         p.sessionTypes.includes(args.sessionType!),
       );
     }
@@ -221,12 +223,12 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         tenantId: args.tenantId,
         studentId: args.studentId,
         subject: args.subject,
-        moduleId: args.moduleId,
-        lessonId: args.lessonId,
+        ...(args.moduleId ? { moduleId: args.moduleId } : {}),
+        ...(args.lessonId ? { lessonId: args.lessonId } : {}),
         title: args.title,
         description: args.description,
         preferredTypes: JSON.stringify(args.preferredTypes),
-        preferredTime: args.preferredTime,
+        ...(args.preferredTime ? { preferredTime: args.preferredTime } : {}),
         estimatedDuration: args.estimatedDuration ?? 60,
         urgency: args.urgency ?? "medium",
         status: "OPEN",
@@ -265,7 +267,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     tutorId?: UserId;
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutoringRequest>> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
       status: "OPEN",
     };
@@ -292,7 +294,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     ]);
 
     return {
-      items: items.map((r: any) => this.mapRequestFromDb(r)),
+      items: items.map((r) => this.mapRequestFromDb(r)),
       totalCount: total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
     };
@@ -305,7 +307,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     status?: TutoringRequest["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutoringRequest>> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
     };
 
@@ -330,7 +332,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     ]);
 
     return {
-      items: items.map((r: any) => this.mapRequestFromDb(r)),
+      items: items.map((r) => this.mapRequestFromDb(r)),
       totalCount: total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
     };
@@ -398,7 +400,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       data: {
         status: "CANCELLED",
         cancelledAt: new Date(),
-        cancellationReason: args.reason,
+        ...(args.reason ? { cancellationReason: args.reason } : {}),
       },
     });
 
@@ -440,9 +442,9 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         type: args.type,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
-        meetingUrl: args.meetingUrl,
-        moduleId: request.moduleId,
-        lessonId: request.lessonId,
+        ...(args.meetingUrl ? { meetingUrl: args.meetingUrl } : {}),
+        ...(request.moduleId ? { moduleId: request.moduleId } : {}),
+        ...(request.lessonId ? { lessonId: request.lessonId } : {}),
         status: "SCHEDULED",
       },
     });
@@ -490,7 +492,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     status?: TutoringSession["status"];
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<TutoringSession>> {
-    const where: any = {
+    const where: Record<string, unknown> = {
       tenantId: args.tenantId,
     };
 
@@ -520,7 +522,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     ]);
 
     return {
-      items: items.map((s: any) => this.mapSessionFromDb(s)),
+      items: items.map((s) => this.mapSessionFromDb(s)),
       totalCount: total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
     };
@@ -576,7 +578,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         status: "COMPLETED",
         endedAt: now,
         actualDuration,
-        notes: args.notes,
+        ...(args.notes ? { notes: args.notes } : {}),
       },
     });
 
@@ -652,7 +654,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         helpfulness: args.helpfulness,
         communication: args.communication,
         knowledge: args.knowledge,
-        comment: args.comment,
+        ...(args.comment ? { comment: args.comment } : {}),
       },
     });
 
@@ -746,7 +748,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     ]);
 
     return {
-      items: items.map((r: any) => this.mapReviewFromDb(r)),
+      items: items.map((r) => this.mapReviewFromDb(r)),
       totalCount: total,
       hasMore: (args.pagination.offset ?? 0) + items.length < total,
     };
@@ -836,9 +838,9 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       type: notification.type,
       title: notification.title,
       body: notification.body,
-      targetType: notification.targetType,
-      targetId: notification.targetId,
-      actorId: notification.actorId,
+      ...(notification.targetType ? { targetType: notification.targetType } : {}),
+      ...(notification.targetId ? { targetId: notification.targetId } : {}),
+      ...(notification.actorId ? { actorId: notification.actorId } : {}),
     });
 
     if (this.redis) {

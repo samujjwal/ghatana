@@ -5,6 +5,7 @@
 
 package com.ghatana.finance.ai;
 
+import com.ghatana.agent.spi.AgentLogicProvider;
 import com.ghatana.kernel.ai.*;
 import io.activej.inject.module.ModuleBuilder;
 import io.activej.inject.module.Module;
@@ -36,7 +37,11 @@ public final class FinanceAIModule {
             .bind(AgentOrchestrator.class).to(FinanceAgentOrchestratorImpl::new)
             .bind(AutonomyManager.class).to(FinanceAutonomyManagerImpl::new)
             .bind(AIEvaluationFramework.class).to(FinanceAIEvaluationImpl::new)
-
+            // Agent logic provider wired with real services
+            .bind(AgentLogicProvider.class).to(
+                FinanceAgentLogicProvider::new,
+                AlertService.class
+            )
             .build();
     }
 }

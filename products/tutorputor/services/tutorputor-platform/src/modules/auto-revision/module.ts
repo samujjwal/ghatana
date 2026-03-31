@@ -91,7 +91,7 @@ export const autoRevisionModule: FastifyPluginAsync = async (fastify) => {
         prisma.experienceAutoRefinement.count({
           where: { status: { in: ["reviewed", "accepted"] } },
         }),
-        prisma.abExperiment.count({
+        prisma.aBExperiment.count({
           where: { status: "running" },
         }),
         prisma.experienceAutoRefinement.count({

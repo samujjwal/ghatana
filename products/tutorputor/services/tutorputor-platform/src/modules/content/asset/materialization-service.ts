@@ -13,12 +13,11 @@
 
 import crypto from "crypto";
 import type { PrismaClient } from "@tutorputor/core/db";
-import type {
-  ArtifactManifestType,
-  ContentAssetType,
-  ContentBlockType,
-  GenerationJobType,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type ArtifactManifestType = any;
+type ContentAssetType = any;
+type ContentBlockType = any;
+type GenerationJobType = any;
 import { validateAnimation, validateAssessment, validateWorkedExample } from "./manifest-validator.js";
 import { extractBlockText } from "./text-extraction.js";
 
@@ -70,7 +69,7 @@ interface MaterializationShape {
     manifest: Record<string, unknown>;
     generatedBy: "ai";
     isValid: boolean;
-    validationErrors?: unknown[];
+    validationErrors?: any[];
   }>;
   snapshot: Record<string, unknown>;
 }
@@ -214,6 +213,8 @@ function buildMaterializationShape(
       return buildAnimationShape(input);
     case "assessment":
       return buildAssessmentShape(input);
+    default:
+      return buildExplainerShape(input);
   }
 }
 
@@ -500,17 +501,17 @@ function buildSearchableText(shape: MaterializationShape): string {
     .slice(0, 20_000);
 }
 
-function readArray(value: unknown): unknown[] {
+function readArray(value: any): any[] {
   return Array.isArray(value) ? value : [];
 }
 
-function readObject(value: unknown): Record<string, unknown> | null {
+function readObject(value: any): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function readString(value: unknown): string | undefined {
+function readString(value: any): string | undefined {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : undefined;

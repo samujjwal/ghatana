@@ -177,7 +177,7 @@ export class AssetBackfillService {
             { moduleId: mod.id, assetId: asset.id },
             "Backfilled module to canonical asset",
           );
-        } catch (err: unknown) {
+        } catch (err: any) {
           result.failed++;
           const message = err instanceof Error ? err.message : String(err);
           result.failures.push({
@@ -354,7 +354,7 @@ export class AssetBackfillService {
             { experienceId: exp.id, assetId: asset.id },
             "Backfilled experience to canonical asset",
           );
-        } catch (err: unknown) {
+        } catch (err: any) {
           result.failed++;
           const message = err instanceof Error ? err.message : String(err);
           result.failures.push({

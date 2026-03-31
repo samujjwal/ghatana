@@ -224,7 +224,7 @@ export function TemplateSelection({
                             className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">All Domains</option>
-                            {categories.domains.map((d: any) => (
+                            {categories.domains.map((d) => (
                                 <option key={d.value} value={d.value}>
                                     {d.label} ({d.count})
                                 </option>
@@ -243,7 +243,7 @@ export function TemplateSelection({
                             className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">All Levels</option>
-                            {categories.difficulties.map((d: any) => (
+                            {categories.difficulties.map((d) => (
                                 <option key={d.value} value={d.value}>
                                     {d.label} ({d.count})
                                 </option>

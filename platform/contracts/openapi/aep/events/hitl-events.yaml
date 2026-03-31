@@ -1,0 +1,109 @@
+openapi: "3.1.0"
+info:
+  title: AEP HITL (Human-in-the-Loop) SSE Event Contracts
+  description: |
+    Canonical schema definitions for all AEP HITL-related Server-Sent Events.
+    These event types are published by the AEP backend over the SSE stream
+    (`/events/stream`) and consumed by the AEP UI.
+
+    ## Naming Convention
+    Event types use `snake_case` to match the broader platform event naming standard.
+    Legacy dot-notation aliases (e.g. `hitl.new`) have been removed.
+
+  version: "1.0.0"
+
+# ─── Canonical HITL SSE Event Types ─────────────────────────────────────────
+#
+# Backend publishes these via AepHttpServer.broadcastSseEvent(tenantId, type, payload).
+# Frontend consumes these in useHitlQueue / useLivePipelineRuns.
+#
+# Schema version: BACKWARD compatible — new optional fields may be added.
+# Breaking changes require a new event type (e.g. hitl_request_created_v2).
+
+components:
+  schemas:
+    HitlRequestCreatedEvent:
+      description: |
+        Emitted when a new HITL review item is enqueued.
+        Canonical replacement for the deprecated `hitl.new` event type.
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          const: hitl_request_created
+          description: Canonical event type identifier.
+        data:
+          $ref: "#/components/schemas/HitlRequestCreatedPayload"
+
+    HitlRequestCreatedPayload:
+      type: object
+      required:
+        - itemId
+        - skillId
+        - itemType
+        - confidence
+      properties:
+        itemId:
+          type: string
+          description: Unique identifier of the HITL review item.
+        skillId:
+          type: string
+          description: The skill or pipeline that triggered this review request.
+        itemType:
+          type: string
+          description: Type of the review item (e.g. OUTPUT_REVIEW, SAFETY_CHECK).
+        confidence:
+          type: number
+          format: double
+          description: Model confidence score that triggered the HITL request (0.0–1.0).
+        reviewId:
+          type: string
+          description: Alias for itemId provided for backwards compatibility with UI cache keys.
+
+    HitlUpdatedEvent:
+      description: Emitted when a HITL review item is approved or rejected.
+      type: object
+      required:
+        - type
+        - data
+      properties:
+        type:
+          type: string
+          const: hitl.update
+          description: Event type for HITL item status updates (approved/rejected).
+        data:
+          $ref: "#/components/schemas/HitlUpdatedPayload"
+
+    HitlUpdatedPayload:
+      type: object
+      required:
+        - itemId
+        - status
+      properties:
+        itemId:
+          type: string
+        status:
+          type: string
+          enum: [APPROVED, REJECTED]
+        reviewedBy:
+          type: string
+          description: Actor who performed the review action.
+        reviewedAt:
+          type: string
+          format: date-time
+
+    # ─── Deprecated (for reference only, do not use in new code) ─────────────
+    DeprecatedHitlNewEvent:
+      description: |
+        DEPRECATED — replaced by `hitl_request_created`.
+        Kept here for documentation purposes only. Do not emit this event type
+        from any new code. All consumers must migrate to `hitl_request_created`.
+      deprecated: true
+      type: object
+      properties:
+        type:
+          type: string
+          const: hitl.new

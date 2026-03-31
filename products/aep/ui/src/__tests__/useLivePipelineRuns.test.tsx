@@ -160,7 +160,7 @@ describe('useLivePipelineRuns', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     await waitFor(() => expect(vi.mocked(sseModule.subscribeToAepStream)).toHaveBeenCalled());
 
-    capturedOnMessage({ type: 'hitl.new', data: { reviewId: 'rev-999' } });
+    capturedOnMessage({ type: 'hitl_request_created', data: { reviewId: 'rev-999' } });
 
     // Cache should remain unchanged
     const cached = getCacheRuns(client);

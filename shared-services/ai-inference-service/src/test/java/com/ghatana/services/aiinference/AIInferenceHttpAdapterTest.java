@@ -297,4 +297,73 @@ class AIInferenceHttpAdapterTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200);
     }
+
+    // ─── Correlation ID propagation (SS-02) ──────────────────────────────────
+
+    @Test
+    @DisplayName("extractCorrelationId returns provided X-Correlation-ID header value")
+    void extractCorrelationIdReturnsProvidedHeader() {
+        String expectedId = "test-correlation-123";
+        HttpRequest request = HttpRequest.get("http://localhost/health")
+                .withHeader("X-Correlation-ID", expectedId)
+                .build();
+
+        String result = AIInferenceHttpAdapter.extractCorrelationId(request);
+
+        assertThat(result).isEqualTo(expectedId);
+    }
+
+    @Test
+    @DisplayName("extractCorrelationId generates UUID when header is absent")
+    void extractCorrelationIdGeneratesUuidWhenAbsent() {
+        HttpRequest request = HttpRequest.get("http://localhost/health").build();
+
+        String result = AIInferenceHttpAdapter.extractCorrelationId(request);
+
+        assertThat(result).isNotNull().isNotBlank();
+        // Must be a valid UUID
+        assertThat(result).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
+
+    @Test
+    @DisplayName("POST /ai/infer/embedding echoes X-Correlation-ID in response")
+    void embeddingEndpointEchoesCorrelationId() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+        float[] vector = new float[]{0.1f, 0.2f};
+        when(mockGateway.generateEmbedding("t1", "hello"))
+                .thenReturn(Promise.of(EmbeddingResult.of(vector)));
+
+        String correlationId = "embed-corr-abc";
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withHeader("X-Correlation-ID", correlationId)
+                .withBody("{\"tenant\":\"t1\",\"text\":\"hello\"}".getBytes())
+                .build();
+
+        HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(response.getHeader(AIInferenceHttpAdapter.CORRELATION_ID_HEADER)).isEqualTo(correlationId);
+    }
+
+    @Test
+    @DisplayName("POST /ai/infer/embedding generates X-Correlation-ID when none provided")
+    void embeddingEndpointGeneratesCorrelationIdWhenAbsent() {
+        when(mockJwt.validateToken("valid.token")).thenReturn(true);
+        float[] vector = new float[]{0.1f, 0.2f};
+        when(mockGateway.generateEmbedding("t1", "hello"))
+                .thenReturn(Promise.of(EmbeddingResult.of(vector)));
+
+        HttpRequest request = HttpRequest.post("http://localhost/ai/infer/embedding")
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid.token")
+                .withBody("{\"tenant\":\"t1\",\"text\":\"hello\"}".getBytes())
+                .build();
+
+        HttpResponse response = runPromise(() -> adapter.buildServlet().serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+        String returnedId = response.getHeader(AIInferenceHttpAdapter.CORRELATION_ID_HEADER);
+        assertThat(returnedId).isNotNull().isNotBlank();
+        assertThat(returnedId).matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+    }
 }

@@ -9,10 +9,11 @@
  * @doc.pattern Container Component
  */
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useAtom } from "jotai";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadingState } from '../../../components/common/LoadingState';
 import {
   allStorageProfilesAtom,
@@ -42,27 +43,22 @@ export const StorageProfilesPage: React.FC<StorageProfilesPageProps> = ({
   const [profiles] = useAtom(allStorageProfilesAtom);
   const [, deleteProfile] = useAtom(deleteStorageProfileAtom);
   const [, setDefault] = useAtom(setDefaultStorageProfileAtom);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await storageProfileApi.getAll();
-        await loadProfiles(data);
-      } catch (error) {
-        toast.error(
-          `Failed to load storage profiles: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { isLoading, isError } = useQuery({
+    queryKey: ['storage-profiles'],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const data = await storageProfileApi.getAll();
+      await loadProfiles(data);
+      return data;
+    },
+    throwOnError: false,
+  });
 
-    loadData();
-  }, [loadProfiles]);
+  if (isError) {
+    toast.error('Failed to load storage profiles');
+  }
 
   const handleDelete = async (profileId: string) => {
     if (
@@ -76,6 +72,7 @@ export const StorageProfilesPage: React.FC<StorageProfilesPageProps> = ({
     try {
       await storageProfileApi.delete(profileId);
       await deleteProfile(profileId);
+      queryClient.invalidateQueries({ queryKey: ['storage-profiles'] });
       toast.success("Storage profile deleted successfully");
     } catch (error) {
       toast.error(

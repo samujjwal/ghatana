@@ -390,14 +390,14 @@ export const SimulationPreview: React.FC = () => {
   ]);
 
   const applyStep = useCallback(
-    (step: any) => {
+    (step: unknown) => {
       const newState = { ...simulationState };
 
-      step.actions.forEach((action: any) => {
+      step.actions.forEach((action) => {
         // Ensure the entity exists in state
         if (!newState[action.entity]) {
           const entity = currentDemo.entities.find(
-            (e: any) => e.id === action.entity,
+            (e: unknown) => e.id === action.entity,
           );
           if (entity) {
             newState[action.entity] = { ...entity };

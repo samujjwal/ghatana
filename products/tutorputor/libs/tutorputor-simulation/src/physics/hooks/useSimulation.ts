@@ -49,7 +49,7 @@ export interface UseSimulationResult {
     // Import/Export
     exportManifest: (filename?: string) => void;
     importManifest: (file: File) => Promise<{ success: boolean; error?: string }>;
-    loadManifest: (manifest: any) => void;
+    loadManifest: (manifest: unknown) => void;
 }
 
 /**
@@ -170,7 +170,7 @@ export function useSimulation(): UseSimulationResult {
 
     // Load manifest from object
     const loadManifest = useCallback(
-        (manifest: any) => {
+        (manifest: unknown) => {
             dispatchLoadEntities({
                 entities: manifest.entities,
                 physics: manifest.physics,

@@ -37,6 +37,7 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #3b82f6;
+  --color-transform: #8b5cf6;
 
   /* Surface colors mapped to CSS variables for dark mode support */
   --color-bg-page: var(--color-bg-page);

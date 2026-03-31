@@ -12,3 +12,7 @@ Files:
 - `phr_nonfunctional_and_compliance_testcases.md` — Quality, security, and compliance tests including OWASP Top 10 suite, DPIA validation, pen test requirements, load/stress specs, data retention, Nepali ASR accuracy, and breach notification
 - `phr_test_automation_mapping.md` — Planned suite paths and owners for every testcase family
 - `phr_seed_data_and_test_fixture_plan.md` — Shared fixture tenants, actor seeds, external stubs, and deterministic reset rules
+
+Release-gate automation:
+
+- `./gradlew :products:phr:phrReleaseGate` runs the current backend release-gate regression set used before staging sign-off.

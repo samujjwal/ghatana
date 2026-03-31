@@ -39,7 +39,7 @@ export interface ForumServiceConfig {
  */
 export class ForumServiceImpl implements ForumService {
   private readonly prisma: PrismaClient;
-  private readonly redis?: Redis;
+  private readonly redis: Redis | undefined;
 
   constructor(config: ForumServiceConfig) {
     this.prisma = config.prisma;
@@ -71,15 +71,16 @@ export class ForumServiceImpl implements ForumService {
       color: c.color,
       order: i,
     }));
+    const studyGroupId = args.scope === "study_group" ? (args.scopeId ?? null) : null;
 
     const forum = await this.prisma.forum.create({
       data: {
         tenantId: args.tenantId,
         name: args.name,
         description: args.description,
-        scope: this.mapScopeToDb(args.scope),
-        scopeId: args.scopeId,
-        studyGroupId: args.scope === "study_group" ? args.scopeId : null,
+        scope: this.mapScopeToDb(args.scope) as any,
+        ...(args.scopeId !== undefined ? { scopeId: args.scopeId } : {}),
+        studyGroupId,
         categories: categories ? JSON.stringify(categories) : null,
         allowAnonymousPosts: args.settings?.allowAnonymousPosts ?? false,
         requireModeration: args.settings?.requireModeration ?? false,
@@ -171,7 +172,7 @@ export class ForumServiceImpl implements ForumService {
     const topic = await this.prisma.forumTopic.create({
       data: {
         forumId: args.forumId,
-        categoryId: args.categoryId,
+        ...(args.categoryId !== undefined ? { categoryId: args.categoryId } : {}),
         title: args.title,
         slug,
         authorId: args.authorId,
@@ -417,7 +418,7 @@ export class ForumServiceImpl implements ForumService {
         isAnonymous: args.isAnonymous ?? false,
         content: args.content,
         contentFormat: args.contentFormat ?? "markdown",
-        parentId: args.parentId,
+        ...(args.parentId !== undefined ? { parentId: args.parentId } : {}),
         depth,
         attachments: args.attachments ? JSON.stringify(args.attachments) : null,
         status,
@@ -445,13 +446,14 @@ export class ForumServiceImpl implements ForumService {
 
     // Notify topic author
     if (topic.authorId !== args.authorId) {
+      const actorId = args.isAnonymous ? undefined : args.authorId;
       await this.createNotification(args.tenantId, topic.authorId, {
         type: "TOPIC_REPLY",
         title: "New reply to your topic",
         body: `Someone replied to "${topic.title}"`,
         targetType: "forum_topic",
         targetId: args.topicId,
-        actorId: args.isAnonymous ? undefined : args.authorId,
+        ...(actorId !== undefined ? { actorId } : {}),
       });
     }
 
@@ -619,7 +621,7 @@ export class ForumServiceImpl implements ForumService {
       where: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction),
+        type: this.mapReactionToDb(args.reaction) as any,
       },
     });
 
@@ -631,7 +633,7 @@ export class ForumServiceImpl implements ForumService {
       data: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction),
+        type: this.mapReactionToDb(args.reaction) as any,
       },
     });
 
@@ -676,7 +678,7 @@ export class ForumServiceImpl implements ForumService {
       where: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction),
+        type: this.mapReactionToDb(args.reaction) as any,
       },
     });
 
@@ -750,7 +752,7 @@ export class ForumServiceImpl implements ForumService {
           status: newStatus,
           moderatedBy: args.moderatorId,
           moderatedAt: new Date(),
-          moderationNote: args.note,
+          ...(args.note !== undefined ? { moderationNote: args.note } : {}),
         },
       });
     } else {
@@ -908,9 +910,15 @@ export class ForumServiceImpl implements ForumService {
       type: notification.type,
       title: notification.title,
       body: notification.body,
-      targetType: notification.targetType,
-      targetId: notification.targetId,
-      actorId: notification.actorId,
+      ...(notification.targetType !== undefined
+        ? { targetType: notification.targetType }
+        : {}),
+      ...(notification.targetId !== undefined
+        ? { targetId: notification.targetId }
+        : {}),
+      ...(notification.actorId !== undefined
+        ? { actorId: notification.actorId }
+        : {}),
     });
 
     if (this.redis) {
@@ -964,7 +972,7 @@ export class ForumServiceImpl implements ForumService {
     return map[reaction] ?? "like";
   }
 
-  private mapForumFromDb(forum: Record<string, unknown>): Forum {
+  private mapForumFromDb(forum: any): Forum {
     return {
       id: forum.id,
       tenantId: forum.tenantId,
@@ -987,7 +995,7 @@ export class ForumServiceImpl implements ForumService {
     };
   }
 
-  private mapTopicFromDb(topic: Record<string, unknown>): ForumTopic {
+  private mapTopicFromDb(topic: any): ForumTopic {
     return {
       id: topic.id,
       forumId: topic.forumId,
@@ -1019,7 +1027,7 @@ export class ForumServiceImpl implements ForumService {
     };
   }
 
-  private mapPostFromDb(post: Record<string, unknown>): ForumPost {
+  private mapPostFromDb(post: any): ForumPost {
     return {
       id: post.id,
       topicId: post.topicId,

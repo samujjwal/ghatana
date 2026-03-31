@@ -39,7 +39,7 @@ function getFieldValue(obj: Record<string, unknown>, path: string): unknown {
 // Rule evaluator
 // ---------------------------------------------------------------------------
 
-function evaluateRule(value: unknown, rule: ManifestValidationRule): boolean {
+function evaluateRule(value: any, rule: ManifestValidationRule): boolean {
   switch (rule.rule) {
     case "required":
       return value !== undefined && value !== null && value !== "";
@@ -85,7 +85,7 @@ export function validateManifest<T extends keyof ManifestPayloadMap>(
   }
 
   return {
-    isValid: violations.filter((v) => v.severity === "error").length === 0,
+    isValid: violations.filter((v: any) => v.severity === "error").length === 0,
     manifestType,
     violations,
     validatedAt: new Date().toISOString(),

@@ -1,3 +1,11 @@
+/**
+ * TransformNode component.
+ *
+ * @doc.type component
+ * @doc.purpose React Flow node that represents a data transformation step with configurable source-to-target field mappings
+ * @doc.layer product
+ * @doc.pattern Flow Node
+ */
 import React from 'react';
 import { Handle, Position, NodeProps } from '@ghatana/flow-canvas';
 import type { Node } from '@ghatana/flow-canvas';

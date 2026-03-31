@@ -267,7 +267,7 @@ async function generateItems(
 
   const objectiveCandidates =
     args.objectiveIds.length > 0
-      ? module.learningObjectives.filter((objective: any) =>
+      ? module.learningObjectives.filter((objective) =>
         args.objectiveIds.includes(objective.id.toString()),
       )
       : module.learningObjectives;
@@ -295,7 +295,7 @@ async function generateItems(
           moduleId: args.moduleId,
           count: simulationItemTarget,
           difficulty: targetDifficulty,
-          objectiveLabels: objectiveCandidates.map((objective: any) => objective.label),
+          objectiveLabels: objectiveCandidates.map((objective) => objective.label),
         })
       : [];
 
@@ -303,7 +303,7 @@ async function generateItems(
   try {
     const aiResponse = await aiClient.generateAssessmentItems({
       topic: module.title,
-      objectives: objectiveCandidates.map((o: any) => o.label),
+      objectives: objectiveCandidates.map((o) => o.label),
       difficulty: targetDifficulty,
       count: count,
       learner_level: personalization.adjustedDifficulty,
@@ -311,7 +311,7 @@ async function generateItems(
 
     if (aiResponse && aiResponse.items && aiResponse.items.length > 0) {
       const items = rankAdaptiveItems(
-        aiResponse.items.map((aiItem: any, index: number) => {
+        aiResponse.items.map((aiItem, index) => {
           const adaptiveParams = {
             source: "ai-service",
             moduleSlug: module.slug,
@@ -320,7 +320,7 @@ async function generateItems(
             difficulty: targetDifficulty,
             prompt: aiItem.prompt,
             points: aiItem.points || 10,
-            choiceSeed: (aiItem.choices ?? []).map((c: any) => ({
+            choiceSeed: (aiItem.choices ?? []).map((c) => ({
               label: c.label,
               isCorrect: c.is_correct,
               rationale: c.rationale,
@@ -365,7 +365,7 @@ async function generateItems(
   const items = buildDeterministicItems({
     moduleTitle: module.title,
     moduleSlug: module.slug,
-    objectives: objectiveCandidates.map((objective: any) => ({
+    objectives: objectiveCandidates.map((objective) => ({
       label: objective.label,
       taxonomyLevel: objective.taxonomyLevel,
     })),
@@ -456,17 +456,18 @@ function buildDeterministicItems(params: {
   return items;
 }
 
-function mapAssessmentSummary(record: any): AssessmentSummary {
+function mapAssessmentSummary(record: Record<string, unknown>): AssessmentSummary {
   return {
     id: record.id as AssessmentSummary["id"],
     moduleId: record.moduleId as ModuleId,
-    title: record.title,
+    title: String(record.title ?? ""),
     type: record.type as AssessmentSummary["type"],
     status: record.status as AssessmentSummary["status"],
-    version: record.version,
-    passingScore: record.passingScore,
-    attemptsAllowed: record.attemptsAllowed,
-    timeLimitMinutes: record.timeLimitMinutes,
+    version: Number(record.version ?? 1),
+    passingScore: Number(record.passingScore ?? 0),
+    attemptsAllowed: Number(record.attemptsAllowed ?? 1),
+    timeLimitMinutes:
+      record.timeLimitMinutes == null ? null : Number(record.timeLimitMinutes),
   };
 }
 
@@ -477,7 +478,7 @@ function mapAssessment(record: AssessmentRecord): Assessment {
     updatedBy: record.updatedBy as UserId,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-    objectives: record.objectives.map((objective: any) => ({
+    objectives: record.objectives.map((objective) => ({
       id: `${record.id}-${objective.id}`,
       label: objective.label,
       taxonomyLevel:
@@ -485,19 +486,19 @@ function mapAssessment(record: AssessmentRecord): Assessment {
     })),
     items: record.items
       .slice()
-      .sort((a: any, b: any) => a.orderIndex - b.orderIndex)
+      .sort((a, b) => a.orderIndex - b.orderIndex)
       .map(mapAssessmentItem),
   };
 }
 
-function mapAssessmentItem(item: any): AssessmentItem {
+function mapAssessmentItem(item: Record<string, unknown>): AssessmentItem {
   const choices = parseChoices(item.choices);
 
   return {
     id: item.id as AssessmentItem["id"],
     type: item.itemType as AssessmentItem["type"],
-    prompt: item.prompt,
-    points: item.points,
+    prompt: String(item.prompt ?? ""),
+    points: Number(item.points ?? 0),
     ...(item.stimulus ? { stimulus: item.stimulus } : {}),
     ...(choices ? { choices } : {}),
     ...(item.modelAnswer ? { modelAnswer: item.modelAnswer } : {}),
@@ -529,7 +530,7 @@ function mapAttempt(record: AssessmentAttemptRecord): AssessmentAttempt {
   };
 }
 
-function parseChoices(value: any): AssessmentItemChoice[] | undefined {
+function parseChoices(value: unknown): AssessmentItemChoice[] | undefined {
   if (!value) {
     return undefined;
   }
@@ -539,7 +540,7 @@ function parseChoices(value: any): AssessmentItemChoice[] | undefined {
   return undefined;
 }
 
-function parseFeedback(value: any): AssessmentFeedback[] | undefined {
+function parseFeedback(value: unknown): AssessmentFeedback[] | undefined {
   if (!value) {
     return undefined;
   }
@@ -784,7 +785,7 @@ function parseItemMetadata(value: AssessmentItem["metadata"]): Record<string, un
   return {};
 }
 
-function parseIRTParameters(value: unknown) {
+function parseIRTParameters(value: any) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const irt = value as Record<string, unknown>;
     return {

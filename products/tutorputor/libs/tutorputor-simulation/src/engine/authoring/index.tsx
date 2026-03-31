@@ -28,7 +28,7 @@ export interface SimulationParameter {
   id: string;
   name: string;
   type: 'number' | 'slider' | 'select' | 'boolean' | 'color';
-  defaultValue: any;
+  defaultValue: unknown;
   min?: number;
   max?: number;
   step?: number;

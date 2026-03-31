@@ -69,10 +69,10 @@ interface ChartData {
  */
 export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDynamicsKernel {
   return {
-    domain: "SYSTEM_DYNAMICS" as any,
+    domain: "ECONOMICS",
 
     canExecute(manifest: SimulationManifest): boolean {
-      return manifest.domain === "SYSTEM_DYNAMICS" as any;
+      return manifest.domain === "ECONOMICS";
     },
 
     async run(request: SimulationRunRequest): Promise<SimulationRunResult> {
@@ -92,7 +92,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not SYSTEM_DYNAMICS"]
+          errors: ["Manifest domain is not ECONOMICS"]
         };
       }
 
@@ -124,8 +124,8 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
           stocks.set(entity.id, {
             id: entity.id,
             value: stock.value,
-            minValue: stock.minValue,
-            maxValue: stock.maxValue,
+            ...(stock.minValue !== undefined ? { minValue: stock.minValue } : {}),
+            ...(stock.maxValue !== undefined ? { maxValue: stock.maxValue } : {}),
             history: [stock.value]
           });
         } else if (entity.type === "flow") {
@@ -135,8 +135,8 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
             sourceId: flow.sourceId,
             targetId: flow.targetId,
             rate: flow.rate,
-            equation: flow.equation,
-            delay: flow.delay,
+            ...(flow.equation !== undefined ? { equation: flow.equation } : {}),
+            ...(flow.delay !== undefined ? { delay: flow.delay } : {}),
             delayBuffer: []
           });
         } else if (entity.type === "agent") {
@@ -162,6 +162,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
         const step = stepsToProcess[stepIndex];
+        if (!step) continue;
 
         // Apply step actions
         for (const action of step.actions) {
@@ -198,10 +199,11 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
               for (const sourceId of chart.dataSourceIds) {
                 const stock = stocks.get(sourceId);
                 if (stock) {
+                  const label = (entities.get(sourceId) as EconStockEntity | undefined)?.label;
                   data.push({
                     x: currentTime,
                     y: stock.value,
-                    label: (entities.get(sourceId) as EconStockEntity)?.label
+                    ...(label !== undefined ? { label } : {}),
                   });
                 }
               }
@@ -228,7 +230,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        ...(warnings.length > 0 ? { warnings } : {})
       };
     },
 
@@ -242,6 +244,12 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
       if (result.keyframes.length >= 2) {
         const first = result.keyframes[0];
         const last = result.keyframes[result.keyframes.length - 1];
+        if (!first || !last) {
+          return {
+            valid: true,
+            violations,
+          };
+        }
 
         // Sum all stock values
         const firstTotal = first.entities
@@ -368,8 +376,8 @@ function applyEconomicsAction(
         stocks.set(entity.id, {
           id: entity.id,
           value: stock.value,
-          minValue: stock.minValue,
-          maxValue: stock.maxValue,
+          ...(stock.minValue !== undefined ? { minValue: stock.minValue } : {}),
+          ...(stock.maxValue !== undefined ? { maxValue: stock.maxValue } : {}),
           history: [stock.value]
         });
       } else if (entity.type === "flow") {
@@ -379,8 +387,8 @@ function applyEconomicsAction(
           sourceId: flow.sourceId,
           targetId: flow.targetId,
           rate: flow.rate,
-          equation: flow.equation,
-          delay: flow.delay,
+          ...(flow.equation !== undefined ? { equation: flow.equation } : {}),
+          ...(flow.delay !== undefined ? { delay: flow.delay } : {}),
           delayBuffer: []
         });
       }

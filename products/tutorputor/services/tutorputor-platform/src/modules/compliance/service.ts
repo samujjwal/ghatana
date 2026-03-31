@@ -22,13 +22,13 @@ interface DataRequest {
   id: string;
   userId: UserId;
   tenantId: TenantId;
-  status: any;
+  status: unknown;
 }
 
 // Add missing DataExportRequest type if needed or use DataRequest
 type DataExportRequest = DataRequest & {
-  requestedAt: any;
-  completedAt?: any;
+  requestedAt: unknown;
+  completedAt?: unknown;
   downloadUrl?: string;
   error?: string;
   estimatedCompletionAt: string;
@@ -261,7 +261,7 @@ export class ComplianceServiceImpl implements ComplianceService {
     return true;
   }
 
-  async queryAuditEvents(_args: any): Promise<any> {
+  async queryAuditEvents(_args: Record<string, unknown>): Promise<any> {
     return { items: [], totalCount: 0, hasMore: false };
   }
 }

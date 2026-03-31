@@ -81,8 +81,8 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         return marketplaceService.adminUpdateListing({
           tenantId: tenantId as TenantId,
           listingId: listingId as MarketplaceListingId,
-          status: body.status,
-          visibility: body.visibility,
+          ...(body.status ? { status: body.status } : {}),
+          ...(body.visibility ? { visibility: body.visibility } : {}),
         });
       }
 
@@ -90,9 +90,9 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         tenantId: tenantId as TenantId,
         listingId: listingId as MarketplaceListingId,
         userId: userId as UserId,
-        status: body.status,
-        visibility: body.visibility,
-        priceCents: body.priceCents,
+        ...(body.status ? { status: body.status } : {}),
+        ...(body.visibility ? { visibility: body.visibility } : {}),
+        ...(typeof body.priceCents === "number" ? { priceCents: body.priceCents } : {}),
       });
     });
   });

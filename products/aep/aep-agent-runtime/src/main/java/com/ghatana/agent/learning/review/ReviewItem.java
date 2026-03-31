@@ -89,6 +89,15 @@ public final class ReviewItem {
         this.decidedAt = Instant.now();
     }
 
+    /**
+     * Escalates this item due to SLA breach or explicit escalation request.
+     * Valid from PENDING or IN_REVIEW states.
+     */
+    void markEscalated() {
+        this.status = ReviewStatus.ESCALATED;
+        this.decidedAt = Instant.now();
+    }
+
     /** Assigns this item to a reviewer. */
     void assignTo(@NotNull String reviewer) {
         this.assignedTo = reviewer;

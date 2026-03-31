@@ -180,7 +180,10 @@ public class AepLauncher {
 
     /**
      * Creates an in-memory {@link HumanReviewQueue} wired with a {@link ReviewNotificationSpi}
-     * that broadcasts {@code hitl.new} SSE events to all connected UI clients.
+     * that broadcasts {@code hitl_request_created} SSE events to all connected UI clients.
+     *
+     * <p>The canonical event type is {@code hitl_request_created} (snake_case) as defined in
+     * {@code platform/contracts/openapi/aep/events/hitl-events.yaml}.
      *
      * <p>The {@code httpServerRef} is resolved lazily so the queue can be created before
      * the HTTP server (which gets the queue as a constructor argument).
@@ -197,7 +200,7 @@ public class AepLauncher {
                 if (srv != null) {
                     srv.broadcastSseEvent(
                         item.getTenantId(),
-                        "hitl.new",
+                        "hitl_request_created",
                         java.util.Map.of(
                             "itemId",    item.getReviewId(),
                             "skillId",   item.getSkillId(),

@@ -142,7 +142,7 @@ export class DataExporter {
             orderBy: { updatedAt: 'desc' },
         });
 
-        const data = enrollments.map((e: any) => ({
+        const data = enrollments.map((e) => ({
             moduleId: e.module.id,
             moduleTitle: e.module.title,
             status: e.status,
@@ -181,7 +181,7 @@ export class DataExporter {
             orderBy: { startedAt: 'desc' },
         });
 
-        const data = attempts.map((a: any) => ({
+        const data = attempts.map((a) => ({
             assessmentId: a.assessment.id,
             assessmentTitle: a.assessment.title,
             score: a.score,

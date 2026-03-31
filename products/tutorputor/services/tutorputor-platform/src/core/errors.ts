@@ -83,6 +83,6 @@ export class RateLimitError extends TutorputorError {
 
 // ─── Type Guard ───────────────────────────────────────────────────────────────
 
-export function isTutorputorError(err: unknown): err is TutorputorError {
+export function isTutorputorError(err: any): err is TutorputorError {
   return err instanceof TutorputorError;
 }

@@ -97,7 +97,7 @@ export interface ValidationCheck {
   score: number;
   message: string;
   suggestions: string[];
-  evidence?: any;
+  evidence?: unknown;
 }
 
 type WikipediaSearchResponse = {
@@ -127,14 +127,19 @@ type KhanAcademySearchResponse = {
   }>;
 };
 
+type CacheEntry<T> = {
+  result: T;
+  timestamp: number;
+};
+
 // ============================================================================
 // Knowledge Base Service
 // ============================================================================
 
-export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
+export class KnowledgeBaseServiceImpl {
   private prisma: PrismaClient;
   private logger = createStandaloneLogger({ service: 'KnowledgeBaseService' });
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
 
   constructor(
@@ -145,7 +150,26 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
       khanAcademyApiUrl?: string;
       enableCaching?: boolean;
     } = {},
-  ) {}
+  ) {
+    this.prisma = prisma;
+  }
+
+  private getCached<T>(key: string): T | undefined {
+    const cached = this.cache.get(key) as CacheEntry<T> | undefined;
+    if (!cached) return undefined;
+    if (Date.now() - cached.timestamp >= this.cacheTimeoutMs) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    return cached.result;
+  }
+
+  private setCached<T>(key: string, result: T): void {
+    this.cache.set(key, {
+      result,
+      timestamp: Date.now(),
+    });
+  }
 
   // ===========================================================================
   // Fact Checking
@@ -158,11 +182,9 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     const startTime = Date.now();
     const cacheKey = `fact:${request.claim}:${request.domain}`;
 
-    if (this.config.enableCaching !== false && this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey);
-      if (Date.now() - cached.timestamp < this.cacheTimeoutMs) {
-        return cached.result;
-      }
+    if (this.config.enableCaching !== false) {
+      const cached = this.getCached<FactCheckResult>(cacheKey);
+      if (cached) return cached;
     }
 
     // Extract factual assertions from the claim
@@ -196,10 +218,7 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     // Cache the result
     if (this.config.enableCaching !== false) {
-      this.cache.set(cacheKey, {
-        result,
-        timestamp: Date.now(),
-      });
+      this.setCached(cacheKey, result);
     }
 
     return result;
@@ -214,11 +233,9 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
   ): Promise<KnowledgeBaseEntry[]> {
     const cacheKey = `concept:${query}:${domain}`;
 
-    if (this.config.enableCaching !== false && this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey);
-      if (Date.now() - cached.timestamp < this.cacheTimeoutMs) {
-        return cached.result;
-      }
+    if (this.config.enableCaching !== false) {
+      const cached = this.getCached<KnowledgeBaseEntry[]>(cacheKey);
+      if (cached) return cached;
     }
 
     const results: KnowledgeBaseEntry[] = [];
@@ -235,10 +252,7 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     // Cache the results
     if (this.config.enableCaching !== false) {
-      this.cache.set(cacheKey, {
-        result: results,
-        timestamp: Date.now(),
-      });
+      this.setCached(cacheKey, results);
     }
 
     return results;
@@ -283,11 +297,9 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
   ): Promise<CurriculumStandard[]> {
     const cacheKey = `curriculum:${concept}:${domain}`;
 
-    if (this.config.enableCaching !== false && this.cache.has(cacheKey)) {
-      const cached = this.cache.get(cacheKey);
-      if (Date.now() - cached.timestamp < this.cacheTimeoutMs) {
-        return cached.result;
-      }
+    if (this.config.enableCaching !== false) {
+      const cached = this.getCached<CurriculumStandard[]>(cacheKey);
+      if (cached) return cached;
     }
 
     const standards: CurriculumStandard[] = [];
@@ -301,10 +313,7 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
 
     // Cache the results
     if (this.config.enableCaching !== false) {
-      this.cache.set(cacheKey, {
-        result: standards,
-        timestamp: Date.now(),
-      });
+      this.setCached(cacheKey, standards);
     }
 
     return standards;
@@ -421,7 +430,7 @@ export class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
           }
         }
       } catch (error) {
-        this.logger.warn({ error, query }, "Wikipedia query failed");
+        this.logger.warn({ error, assertion }, "Wikipedia query failed");
       }
     }
 

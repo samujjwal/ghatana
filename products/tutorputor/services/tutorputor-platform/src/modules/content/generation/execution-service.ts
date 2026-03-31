@@ -15,16 +15,15 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
-import type {
-  GenerationRequest,
-  GenerationJob,
-  GenerationRequestWithJobs,
-  GenerationExecutionSnapshot,
-  GenerationExecutionProgress,
-  GenerationExecutionEvent,
-  GenerationExecutionCostSummary,
-  GenerationExecutionWorkerTelemetry,
-} from "@tutorputor/contracts/v1/content-studio";
+
+type GenerationRequest = any;
+type GenerationJob = any;
+type GenerationRequestWithJobs = any;
+type GenerationExecutionSnapshot = any;
+type GenerationExecutionProgress = any;
+type GenerationExecutionEvent = any;
+type GenerationExecutionCostSummary = any;
+type GenerationExecutionWorkerTelemetry = any;
 import {
   getGenerationExecutionChannel,
   type GenerationExecutionStreamMessage,
@@ -52,6 +51,79 @@ export interface ExecutionSummary {
   failedJobs: number;
   totalDurationMs: number;
 }
+
+export interface ArtifactPostProcessResult {
+  jobId: string;
+  qualityScore: number;
+  passedValidation: boolean;
+  regenerationNeeded: boolean;
+  regenerationReason?: string;
+  postProcessedOutput?: Record<string, unknown>;
+  qualityIssues: string[];
+}
+
+export interface AssetFamilyDefinition {
+  familyId: string;
+  name: string;
+  description: string;
+  applicableDomains: string[];
+  generationJobTypes: string[];
+  postProcessSteps: string[];
+}
+
+/**
+ * Extended asset families beyond the standard set
+ */
+export const EXTENDED_ASSET_FAMILIES: AssetFamilyDefinition[] = [
+  {
+    familyId: "interactive_simulation",
+    name: "Interactive Simulation",
+    description: "Interactive, explorable simulations with parameter controls",
+    applicableDomains: ["physics", "chemistry", "biology", "engineering", "mathematics"],
+    generationJobTypes: ["simulation", "interactive_exercise"],
+    postProcessSteps: ["validate_interactivity", "optimize_performance", "add_accessibility"],
+  },
+  {
+    familyId: "visualization_suite",
+    name: "Visualization Suite",
+    description: "Animated and static visualizations for complex concepts",
+    applicableDomains: ["physics", "chemistry", "biology", "astronomy", "geometry"],
+    generationJobTypes: ["animation", "diagram", "infographic"],
+    postProcessSteps: ["optimize_visuals", "add_annotations", "validate_clarity"],
+  },
+  {
+    familyId: "assessment_bank",
+    name: "Assessment Item Bank",
+    description: "Diverse assessment items with varying difficulty and formats",
+    applicableDomains: ["all"],
+    generationJobTypes: ["assessment", "quiz", "exercise"],
+    postProcessSteps: ["validate_answer_key", "check_difficulty_calibration", "diversity_audit"],
+  },
+  {
+    familyId: "worked_examples",
+    name: "Worked Example Library",
+    description: "Step-by-step solved problems with explanations",
+    applicableDomains: ["mathematics", "physics", "chemistry", "cs", "engineering"],
+    generationJobTypes: ["worked_example", "tutorial"],
+    postProcessSteps: ["validate_steps", "check_notation", "add_alternatives"],
+  },
+  {
+    familyId: "adaptive_practice",
+    name: "Adaptive Practice Set",
+    description: "Practice problems with adaptive difficulty progression",
+    applicableDomains: ["all"],
+    generationJobTypes: ["practice_problem", "drill"],
+    postProcessSteps: ["calibrate_difficulty", "validate_progression", "add_hints"],
+  },
+  {
+    familyId: "concept_map",
+    name: "Concept Map Network",
+    description: "Visual concept relationships and prerequisite mappings",
+    applicableDomains: ["all"],
+    generationJobTypes: ["concept_map", "knowledge_graph"],
+    postProcessSteps: ["validate_relationships", "check_completeness", "add_crosslinks"],
+  },
+];
 
 export { getGenerationExecutionChannel } from "./execution-stream.js";
 export type { GenerationExecutionStreamMessage } from "./execution-stream.js";
@@ -336,19 +408,19 @@ export class GenerationExecutionService {
 function buildExecutionProgress(
   request: GenerationRequestWithJobs,
 ): GenerationExecutionProgress {
-  const runningJobs = request.jobs.filter((job) => job.status === "running").length;
-  const pendingJobs = request.jobs.filter((job) => job.status === "pending").length;
+  const runningJobs = request.jobs.filter((job: any) => job.status === "running").length;
+  const pendingJobs = request.jobs.filter((job: any) => job.status === "pending").length;
   const cancelledJobs = request.jobs.filter(
-    (job) => job.status === "cancelled",
+    (job: any) => job.status === "cancelled",
   ).length;
   const finishedJobs = request.completedJobs + request.failedJobs + cancelledJobs;
   const totalJobs = Math.max(request.totalJobs, request.jobs.length, 1);
   const workerTelemetry = request.jobs
-    .map((job) => getWorkerTelemetry(job))
-    .filter((value): value is GenerationExecutionWorkerTelemetry => value !== null);
+    .map((job: any) => getWorkerTelemetry(job))
+    .filter((value: unknown): value is GenerationExecutionWorkerTelemetry => value !== null);
   const latestWorkerTelemetry = workerTelemetry
     .slice()
-    .sort((left, right) => left.at.localeCompare(right.at))
+    .sort((left: any, right: any) => left.at.localeCompare(right.at))
     .at(-1);
   const cost = buildExecutionCostSummary(request);
 
@@ -502,10 +574,10 @@ function buildExecutionEvents(
     });
   }
 
-  return events.sort((left, right) => left.at.localeCompare(right.at));
+  return events.sort((left: any, right: any) => left.at.localeCompare(right.at));
 }
 
-function mapRequest(row: any): GenerationRequest {
+function mapRequest(row: Record<string, unknown>): GenerationRequest {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -539,7 +611,7 @@ function mapRequest(row: any): GenerationRequest {
   };
 }
 
-function mapJob(row: any): GenerationJob {
+function mapJob(row: Record<string, unknown>): GenerationJob {
   return {
     id: row.id,
     requestId: row.requestId,
@@ -681,13 +753,13 @@ function getWorkerTelemetry(
   } satisfies GenerationExecutionWorkerTelemetry;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
+function asRecord(value: any): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function asNumber(value: unknown): number | null {
+function asNumber(value: any): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 

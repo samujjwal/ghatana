@@ -102,7 +102,7 @@ interface NaturalLanguageRequest {
 class AIServiceManager {
   private config: AIServiceConfig;
   private context: AIContext;
-  private cache: Map<string, any> = new Map();
+  private cache: Map<string, Record<string, unknown>> = new Map();
 
   constructor(config: AIServiceConfig) {
     this.config = config;
@@ -125,7 +125,7 @@ class AIServiceManager {
   }
 
   // Content Intelligence Services
-  async analyzeContent(content: any): Promise<ContentIntelligence> {
+  async analyzeContent(content: Record<string, unknown>): Promise<ContentIntelligence> {
     const cacheKey = `content-analysis-${JSON.stringify(content)}`;
 
     if (this.cache.has(cacheKey)) {
@@ -196,7 +196,7 @@ class AIServiceManager {
   }
 
   // AI Content Generation (enhanced existing wizard)
-  async generateContent(request: any): Promise<any> {
+  async generateContent(request: Record<string, unknown>): Promise<unknown> {
     try {
       // Enhance existing content generation with AI intelligence
       const baseContent = await contentStudioApi.generateContent(request);

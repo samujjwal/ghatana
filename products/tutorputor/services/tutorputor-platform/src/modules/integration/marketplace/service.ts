@@ -81,7 +81,7 @@ export function createMarketplaceService(
     const currentPage = Math.max(page, 1);
     const skip = (currentPage - 1) * take;
 
-    const where: any = { tenantId };
+    const where: Record<string, unknown> = { tenantId };
 
     if (domains && domains.length > 0) {
       where.domain = { in: domains };
@@ -109,7 +109,7 @@ export function createMarketplaceService(
       const tagFilters = tags.map((tag) => ({
         tags: { contains: `"${tag}"` },
       }));
-      where.AND = [...(where.AND ?? []), ...tagFilters];
+      where.AND = [...(((where.AND as any[]) ?? [])), ...tagFilters];
     }
 
     if (status) {
@@ -156,7 +156,7 @@ export function createMarketplaceService(
   return {
     async listListings({ tenantId, status, visibility, cursor, limit = 20 }) {
       const take = Math.min(limit, 50);
-      const where: any = { tenantId };
+      const where: Record<string, unknown> = { tenantId };
       if (status) where.status = status;
       if (visibility) where.visibility = visibility;
 
@@ -181,7 +181,9 @@ export function createMarketplaceService(
 
       return {
         items: trimmed.map(mapListing),
-        nextCursor: hasMore ? (records[records.length - 1]?.id ?? null) : null,
+        nextCursor: hasMore
+          ? (records[records.length - 1]!.id as MarketplaceListingId)
+          : null,
       };
     },
 
@@ -267,9 +269,9 @@ export function createMarketplaceService(
           isVerified: input.isVerified ?? false,
           version: input.version ?? "1.0.0",
           authorId: createdBy,
-          authorName: input.authorName,
-          authorAvatarUrl: input.authorAvatarUrl,
-          organization: input.organization,
+          ...(input.authorName ? { authorName: input.authorName } : {}),
+          ...(input.authorAvatarUrl ? { authorAvatarUrl: input.authorAvatarUrl } : {}),
+          ...(input.organization ? { organization: input.organization } : {}),
           statsViews: 0,
           statsUses: 0,
           statsFavorites: 0,
@@ -296,7 +298,7 @@ export function createMarketplaceService(
         throw notFoundError("Template not found");
       }
 
-      const data: any = {
+      const data: Record<string, unknown> = {
         ...(patch.title ? { title: patch.title } : {}),
         ...(patch.description ? { description: patch.description } : {}),
         ...(patch.difficulty ? { difficulty: patch.difficulty } : {}),
@@ -379,7 +381,7 @@ export function createMarketplaceService(
 
       return {
         deleted: true,
-        warnings: warnings.length ? warnings : undefined,
+        ...(warnings.length ? { warnings } : {}),
       };
     },
 
@@ -439,7 +441,7 @@ export function createMarketplaceService(
         draftListings: stats["draft"] ?? 0,
         archivedListings: stats["archived"] ?? 0,
         totalRevenueCents: totalRevenue._sum.amountCents ?? 0,
-        topListings: topListings.map((l: any) => ({
+        topListings: topListings.map((l) => ({
           listingId: l.listingId,
           purchaseCount: l._count.id,
         })),
@@ -495,11 +497,7 @@ export function createMarketplaceService(
   };
 }
 
-function mapListing(record: any): MarketplaceListing & {
-  moduleTitle?: string;
-  moduleSlug?: string;
-  description?: string;
-} {
+function mapListing(record: any): MarketplaceListing {
   return {
     id: record.id as MarketplaceListingId,
     tenantId: record.tenantId as TenantId,
@@ -507,14 +505,10 @@ function mapListing(record: any): MarketplaceListing & {
     creatorId: record.creatorId as UserId,
     status: record.status as MarketplaceListing["status"],
     visibility: record.visibility as MarketplaceListing["visibility"],
-    priceCents: record.priceCents,
+    priceCents: Number(record.priceCents ?? 0),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-    publishedAt: record.publishedAt?.toISOString(),
-    moduleTitle: record.module?.title ?? undefined,
-    moduleSlug: record.module?.slug ?? undefined,
-    description: record.module?.description ?? undefined,
-    performance: undefined,
+    ...(record.publishedAt ? { publishedAt: record.publishedAt.toISOString() } : {}),
   };
 }
 
@@ -530,7 +524,7 @@ function forbiddenError(
   return createHttpError(403, "MARKETPLACE_FORBIDDEN", message);
 }
 
-function safeParseTags(raw: unknown): string[] {
+function safeParseTags(raw: any): string[] {
   if (!raw) return [];
   try {
     const value = typeof raw === "string" ? raw : String(raw);
@@ -566,39 +560,39 @@ function mapDbTemplateToContract(record: any): SimulationTemplate {
   const tags = safeParseTags(record.tags);
 
   return {
-    id: record.id,
-    tenantId: record.tenantId,
-    slug: record.slug,
-    title: record.title,
-    description: record.description,
-    domain: record.domain,
-    difficulty: record.difficulty,
+    id: record.id as string,
+    tenantId: record.tenantId as TenantId,
+    slug: record.slug as string,
+    title: record.title as string,
+    description: record.description as string,
+    domain: record.domain as SimulationTemplate["domain"],
+    difficulty: record.difficulty as SimulationTemplateDifficulty,
     tags,
-    thumbnailUrl: record.thumbnailUrl ?? undefined,
-    license: record.license,
+    ...(record.thumbnailUrl ? { thumbnailUrl: record.thumbnailUrl as string } : {}),
+    license: record.license as SimulationTemplateLicense,
     isPremium: Boolean(record.isPremium),
     isVerified: Boolean(record.isVerified),
-    version: record.version,
-    authorId: record.authorId,
-    authorName: record.authorName ?? undefined,
-    authorAvatarUrl: record.authorAvatarUrl ?? undefined,
-    organization: record.organization ?? undefined,
+    version: record.version as string,
+    authorId: record.authorId as UserId,
+    ...(record.authorName ? { authorName: record.authorName as string } : {}),
+    ...(record.authorAvatarUrl ? { authorAvatarUrl: record.authorAvatarUrl as string } : {}),
+    ...(record.organization ? { organization: record.organization as string } : {}),
     stats: {
-      views: record.statsViews ?? 0,
-      uses: record.statsUses ?? 0,
-      favorites: record.statsFavorites ?? 0,
-      rating: record.statsRating ?? 0,
-      ratingCount: record.statsRatingCount ?? 0,
-      completionRate: record.statsCompletionRate ?? 0,
-      avgTimeMinutes: record.statsAvgTimeMinutes ?? 0,
+      views: Number(record.statsViews ?? 0),
+      uses: Number(record.statsUses ?? 0),
+      favorites: Number(record.statsFavorites ?? 0),
+      rating: Number(record.statsRating ?? 0),
+      ratingCount: Number(record.statsRatingCount ?? 0),
+      completionRate: Number(record.statsCompletionRate ?? 0),
+      avgTimeMinutes: Number(record.statsAvgTimeMinutes ?? 0),
     },
-    status: record.status,
-    publishedAt: record.publishedAt?.toISOString(),
+    status: record.status as SimulationTemplateStatus,
+    ...(record.publishedAt ? { publishedAt: record.publishedAt.toISOString() } : {}),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-    moduleId: record.moduleId ?? undefined,
-    manifestId: record.manifestId ?? undefined,
-    conceptId: record.conceptId ?? undefined,
+    ...(record.moduleId ? { moduleId: record.moduleId as ModuleId } : {}),
+    ...(record.manifestId ? { manifestId: record.manifestId as string } : {}),
+    ...(record.conceptId ? { conceptId: record.conceptId as string } : {}),
   };
 }
 

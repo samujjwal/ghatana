@@ -58,7 +58,7 @@ function validateStripeKey(key: string): void {
 }
 
 function isPublicLtiRoute(method: string, url: string): boolean {
-  const routePath = url.split("?")[0];
+  const routePath = url.split("?")[0] ?? url;
 
   if (method === "GET") {
     return (
@@ -101,7 +101,7 @@ export async function setupPlatform(
   options: PlatformOptions = {},
 ) {
   // Security
-  await app.register(helmet, {
+  await app.register(helmet as any, {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -115,14 +115,14 @@ export async function setupPlatform(
   // CORS might be handled by gateway if preferred, but safe to default here
   // If gateway registers it first, this might conflict or be skipped
   if (!app.hasPlugin("@fastify/cors")) {
-    await app.register(cors, {
+    await app.register(cors as any, {
       origin: process.env.CORS_ORIGIN || "*",
       credentials: true,
     });
   }
 
   if (!app.hasPlugin("@fastify/jwt")) {
-    await app.register(jwt, {
+    await app.register(jwt as any, {
       secret:
         options.jwtSecret ||
         requireEnv("JWT_SECRET", "test-secret-do-not-use-in-prod"),
@@ -164,7 +164,7 @@ export async function setupPlatform(
         maxLifetime: parseInt(process.env.DATABASE_MAX_LIFETIME || "1800", 10),
       },
     },
-  });
+  } as any);
   app.decorate("prisma", prisma);
 
   // Redis
@@ -218,7 +218,7 @@ export async function setupPlatform(
     if (url === "/api/content-studio/health") return;
 
     try {
-      await req.jwtVerify();
+      await (req as typeof req & { jwtVerify: () => Promise<void> }).jwtVerify();
     } catch {
       reply.code(401).send({
         error: "Unauthorized",
@@ -236,7 +236,7 @@ export async function setupPlatform(
 
   // Learning: dashboard, enrollments, pathways, assessments
   // Routes within module use /learning/dashboard, /enrollments, /pathways etc.
-  await app.register(learningModule, { prefix: "/api/v1" });
+  await app.register(learningModule as any, { prefix: "/api/v1" });
 
   const shouldStartLearnerProfileGrpcServer =
     options.startLearnerProfileGrpcServer ??
@@ -338,7 +338,7 @@ export async function setupPlatform(
   const stripeKey = requireEnv("STRIPE_SECRET_KEY");
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
-    apiVersion: "2023-10-16" as const,
+    apiVersion: "2026-02-25.clover",
   });
   const subscriptionService = new SubscriptionServiceImpl(prisma, stripe);
   await app.register(
@@ -367,7 +367,7 @@ export async function setupPlatform(
       redis: {
         host: redisUrlObj.hostname,
         port: parseInt(redisUrlObj.port || "6379", 10),
-        password: redisUrlObj.password || undefined,
+        ...(redisUrlObj.password ? { password: redisUrlObj.password } : {}),
         db: redisDb ? parseInt(redisDb, 10) || 0 : 0,
       },
       grpc: {
@@ -377,7 +377,7 @@ export async function setupPlatform(
           "localhost:50051",
         useTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
       },
-      logger: app.log,
+      logger: app.log as any,
       prisma,
     });
 
@@ -405,7 +405,7 @@ export async function setupPlatform(
     };
 
     if (instanceWithDecorators.hasDecorator?.("autoRevisionWorkerManager")) {
-      await instanceWithDecorators.autoRevisionWorkerManager.stop();
+      await instanceWithDecorators.autoRevisionWorkerManager?.stop();
     }
     await instance.prisma.$disconnect();
     instance.redis.disconnect();

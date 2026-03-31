@@ -13,7 +13,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle, Info, TrendingDown } from 'lucide-react';
 import { qualityService, QualityMetric } from '../../api/quality.service';
-import BaseCard from '../cards/BaseCard';
+import { Card } from '@ghatana/design-system';
 
 interface QualityHeatmapProps {
   onDatasetClick?: (datasetId: string) => void;
@@ -48,21 +48,21 @@ export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
 
   if (isLoading) {
     return (
-      <BaseCard title="Data Quality Heatmap">
+      <Card title="Data Quality Heatmap">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-16 bg-gray-200 rounded"></div>
           ))}
         </div>
-      </BaseCard>
+      </Card>
     );
   }
 
   return (
-    <BaseCard
+    <Card
       title="Data Quality Heatmap"
       subtitle="Quality scores across all datasets"
-      actions={
+      headerActions={
         <button className="text-sm text-primary-600 hover:text-primary-700">
           Refresh
         </button>
@@ -126,7 +126,7 @@ export function QualityHeatmap({ onDatasetClick }: QualityHeatmapProps) {
           </div>
         )}
       </div>
-    </BaseCard>
+    </Card>
   );
 }
 

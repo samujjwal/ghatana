@@ -14,7 +14,7 @@ import type { TutorPrismaClient } from "@tutorputor/core/db";
  */
 export const authModule: FastifyPluginAsync = async (app) => {
   const prisma = app.prisma as TutorPrismaClient;
-  const jwt = app.jwt; // fastify-jwt used in platform setup
+  const jwt = (app as any).jwt; // fastify-jwt used in platform setup
 
   // Dependencies
   const ssoService = createSsoService({
@@ -160,7 +160,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
       const result = await ssoService.initiateLogin({
         tenantId,
         providerId,
-        redirectUri: redirect_uri,
+        ...(redirect_uri ? { redirectUri: redirect_uri } : {}),
       });
       // If redirectUrl is returned, we redirect the user
       if (result.redirectUrl) {

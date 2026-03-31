@@ -20,7 +20,7 @@ import type {
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapDecision(row: any): GenerationReviewDecision {
+function mapDecision(row: Record<string, unknown>): GenerationReviewDecision {
   return {
     id: row.id,
     tenantId: row.tenantId,

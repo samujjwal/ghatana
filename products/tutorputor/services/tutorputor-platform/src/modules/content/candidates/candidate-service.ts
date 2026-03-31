@@ -21,7 +21,7 @@ import type {
 // Mapper
 // ---------------------------------------------------------------------------
 
-function mapCandidate(row: any): RegenerationCandidate {
+function mapCandidate(row: Record<string, unknown>): RegenerationCandidate {
   return {
     id: row.id,
     tenantId: row.tenantId,
@@ -87,7 +87,7 @@ export class RegenerationCandidateService {
     tenantId: string,
     filter?: { assetId?: string; trigger?: string },
   ): Promise<RegenerationCandidate[]> {
-    const where: any = { tenantId, status: "OPEN" };
+    const where: Record<string, unknown> = { tenantId, status: "OPEN" };
     if (filter?.assetId) where.assetId = filter.assetId;
     if (filter?.trigger)
       where.trigger = filter.trigger.toUpperCase().replace(/-/g, "_");

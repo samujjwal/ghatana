@@ -219,8 +219,8 @@ export function createCompositeHealthCheck(
 export function createServiceHealthCheck(
   serviceName: string,
   dependencies: {
-    prisma?: any;
-    redis?: any;
+    prisma?: unknown;
+    redis?: unknown;
     externalApis?: Record<string, string>;
   },
   config: HealthCheckConfig = {},
