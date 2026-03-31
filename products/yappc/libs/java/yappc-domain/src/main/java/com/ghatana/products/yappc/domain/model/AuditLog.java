@@ -42,7 +42,6 @@ import java.util.UUID;
  * change (for creates/updates) - metadata: Request context (IP, user agent,
  * session)
  *
- * @see Workspace
  * @see User
  * @doc.type class
  * @doc.purpose System audit trail entity

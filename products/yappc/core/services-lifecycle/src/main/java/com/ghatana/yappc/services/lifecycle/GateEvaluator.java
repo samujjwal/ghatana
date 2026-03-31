@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  *   <li>Whether all required criteria passed (i.e., the gate is open)</li>
  * </ul>
  *
- * <h2>Key design decisions</h2>
+ * <p><b>Key design decisions</b></p>
  * <ul>
  *   <li>Criterion matching is <em>keyword-based</em>: a verdict key is considered to
  *       match a criterion if any word from the key appears in the criterion text.</li>

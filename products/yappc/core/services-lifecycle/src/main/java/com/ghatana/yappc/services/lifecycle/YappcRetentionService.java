@@ -25,7 +25,7 @@ import java.util.Objects;
  * retention service inspects that stamp and purges any artifact whose age exceeds the
  * configured maximum age.
  *
- * <h3>Lifecycle</h3>
+ * <p><b>Lifecycle</b></p>
  * <ol>
  *   <li>Store an artifact with its creation timestamp in metadata via
  *       {@link YappcArtifactRepository#storeMetadata}.</li>

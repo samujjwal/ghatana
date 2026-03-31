@@ -21,7 +21,7 @@ import java.util.*;
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
  * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
- * <h3>Implementation Checklist:</h3>
+ * <p><b>Implementation Checklist:</b></p>
  *
  * <ol>
  *   <li>Validate input against JSON schema (contract.inputSchemaRef) – fail fast.

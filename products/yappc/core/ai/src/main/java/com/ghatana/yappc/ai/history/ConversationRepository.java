@@ -29,7 +29,7 @@ import java.util.UUID;
  *   <li>Quality and cost metrics can be computed over time</li>
  * </ul>
  *
- * <h2>Collection Schema</h2>
+ * <p><b>Collection Schema</b></p>
  * <pre>
  * ai-conversations/{tenantId}/{conversationId}:
  *   conversationId : UUID

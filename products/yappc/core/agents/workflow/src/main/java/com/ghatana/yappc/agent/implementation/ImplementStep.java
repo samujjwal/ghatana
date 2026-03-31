@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * implementation status, blockers, and provides hooks for optional LLM-assisted code generation
  * while maintaining human control.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load scaffolded units from previous step

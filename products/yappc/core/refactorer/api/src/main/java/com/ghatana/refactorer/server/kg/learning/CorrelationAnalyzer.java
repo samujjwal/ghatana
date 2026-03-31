@@ -37,7 +37,7 @@ import java.util.*;
 
  * analyzer.recordEvent("data-access", 2000); // 2 seconds after login
 
- * List<Correlation> correlations = analyzer.getCorrelations();
+ * List&lt;Correlation&gt; correlations = analyzer.getCorrelations();
 
  * // Returns: Correlation(login -> data-access, confidence=0.95, support=0.87)
 

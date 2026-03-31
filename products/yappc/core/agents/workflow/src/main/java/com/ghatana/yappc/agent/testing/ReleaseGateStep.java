@@ -14,12 +14,12 @@ import java.util.*;
  * <p>Determines release readiness based on test results, coverage, defects, and NFR compliance.
  * This is the PASS/BLOCK gate that prevents production deployment if quality standards are not met.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load all test results (functional, security, performance)
  *   <li>Check coverage thresholds (unit 80%, integration 70%, E2E 50%)
- *   <li>Check critical/high defect counts (0 critical, <3 high allowed)
+ *   <li>Check critical/high defect counts (0 critical, &lt;3 high allowed)
  *   <li>Validate NFR compliance (latency, throughput, availability)
  *   <li>Make PASS/BLOCK decision based on gate rules
  *   <li>Persist release gate decision to Data-Cloud

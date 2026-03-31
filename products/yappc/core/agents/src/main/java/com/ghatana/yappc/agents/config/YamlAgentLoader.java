@@ -146,8 +146,11 @@ public class YamlAgentLoader {
         YamlAgentConfig.Builder builder = YamlAgentConfig.builder()
             .id(dto.agent.id)
             .name(dto.agent.name)
-            .description(dto.agent.description)
-            .version(dto.agent.version)
+            .description(dto.agent.description);
+        if (dto.agent.version != null) {
+            builder.version(dto.agent.version);
+        }
+        builder
             .tags(Set.copyOf(dto.agent.tags))
             .capabilities(Set.copyOf(dto.agent.capabilities))
             .metadata(dto.agent.metadata != null ? dto.agent.metadata : Map.of());

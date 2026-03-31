@@ -11,9 +11,9 @@ import io.activej.promise.Promise;
  * Embedded clients run YAPPC services in-process, while remote clients connect to
  * a running YAPPC server via HTTP/gRPC.
  *
- * <h2>Usage Examples:</h2>
+ * <p><b>Usage Examples:</b></p>
  *
- * <h3>Embedded Mode (In-Process):</h3>
+ * <p><b>Embedded Mode (In-Process):</b></p>
  * <pre>{@code
  * // Create embedded client with default configuration
  * YAPPCClient yappc = YAPPCClientFactory.embedded(
@@ -34,7 +34,7 @@ import io.activej.promise.Promise;
  * yappc.stop().getResult();
  * }</pre>
  *
- * <h3>Remote Mode (Client-Server):</h3>
+ * <p><b>Remote Mode (Client-Server):</b></p>
  * <pre>{@code
  * // Create remote client with default options
  * YAPPCClient yappc = YAPPCClientFactory.remote(

@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
  * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
- * <h3>Policy Actions:</h3>
+ * <p><b>Policy Actions:</b></p>
  *
  * <ul>
  *   <li>PASS - Requirement meets all policies

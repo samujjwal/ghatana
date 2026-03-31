@@ -26,13 +26,13 @@ import java.util.function.Function;
  * Agent that coordinates human-in-the-loop approval gates within the YAPPC
  * lifecycle pipeline.
  *
- * <h2>Contract</h2>
+ * <p><b>Contract</b></p>
  * <ul>
  *   <li>Input: {@link ApprovalRequest} — describes the gate requiring human sign-off</li>
  *   <li>Output: {@link ApprovalDecision} — the final APPROVED or REJECTED decision</li>
  * </ul>
  *
- * <h2>Behaviour</h2>
+ * <p><b>Behaviour</b></p>
  * <ol>
  *   <li>The agent receives an {@link ApprovalRequest} from an upstream pipeline operator.</li>
  *   <li>It delegates creation of the request to an {@link ApprovalGateway} — an
@@ -43,7 +43,7 @@ import java.util.function.Function;
  *   <li>It returns an {@link AgentResult} whose output is the final {@link ApprovalDecision}.</li>
  * </ol>
  *
- * <h2>Polling Strategy</h2>
+ * <p><b>Polling Strategy</b></p>
  * <p>The agent uses an ActiveJ-compatible, promise-chained polling loop with
  * configurable intervals. All waiting is non-blocking and no threads are held.
  *

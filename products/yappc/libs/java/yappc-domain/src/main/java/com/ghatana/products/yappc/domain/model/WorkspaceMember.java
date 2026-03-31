@@ -33,7 +33,6 @@ import java.util.UUID;
  * <p><b>Thread Safety</b><br>
  * Entity class is NOT thread-safe. Instances should not be shared across threads.
  *
- * @see Workspace
  * @see User
  * @doc.type class
  * @doc.purpose Workspace membership with role/persona

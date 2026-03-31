@@ -16,7 +16,7 @@ import java.util.List;
  * This base class provides the infrastructure for collecting and flushing domain events
  * that are raised during aggregate state transitions.
  *
- * <h2>Usage Pattern</h2>
+ * <p><b>Usage Pattern</b></p>
  * <pre>{@code
  * public class ProjectEntity extends AggregateRoot<String> {
  *
@@ -35,7 +35,7 @@ import java.util.List;
  * projectRepository.save(project);
  * }</pre>
  *
- * <h2>Thread Safety</h2>
+ * <p><b>Thread Safety</b></p>
  * The uncommitted-event list is NOT thread-safe. Aggregate roots are intended to be
  * used within a single request/command context and should not be shared across threads.
  *

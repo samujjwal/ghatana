@@ -33,12 +33,12 @@ import java.util.UUID;
  *   <li>Teams can roll back to a previous version instantly</li>
  * </ul>
  *
- * <h2>Version Identity</h2>
+ * <p><b>Version Identity</b></p>
  * <p>Each version is identified by the SHA-256 hash of its content. Storing the same
  * content a second time is a no-op — the existing version is returned. Versions are
  * immutable once stored.
  *
- * <h2>Collection Schema</h2>
+ * <p><b>Collection Schema</b></p>
  * <pre>
  * prompt-versions/{tenantId}/{versionId}:
  *   versionId   : UUID (surrogate key)

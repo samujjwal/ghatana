@@ -16,7 +16,7 @@ import java.util.Optional;
  * {@code yappc_agent_registry} table) and are called by
  * {@link RegistryReadThroughDispatcher} on cache misses.
  *
- * <h2>Contract</h2>
+ * <p><b>Contract</b></p>
  * <ul>
  *   <li>Returns {@code Optional.empty()} when no matching active agent is found.</li>
  *   <li>Never returns {@code null} — wrap database exceptions in a failed Promise.</li>

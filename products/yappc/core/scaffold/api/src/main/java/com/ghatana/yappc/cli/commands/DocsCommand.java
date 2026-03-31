@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 /**
  * CLI command for auto-generating project documentation.
  *
- * <p>Week 10 Day 47: Auto-doc & diagram generator CLI.
+ * <p>Week 10 Day 47: Auto-doc &amp; diagram generator CLI.
  */
 @Command(
         name = "docs",

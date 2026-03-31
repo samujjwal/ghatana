@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Approves prioritized enhancements for implementation based on governance criteria. Ensures
  * alignment with business objectives, resource availability, and risk tolerance.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Review prioritized enhancements against approval criteria
@@ -24,7 +24,7 @@ import java.util.*;
  *   <li>Create approved backlog for implementation
  * </ul>
  *
- * <h3>Approval Criteria:</h3>
+ * <p><b>Approval Criteria:</b></p>
  *
  * <ul>
  *   <li><b>Business Value</b>: Positive ROI, strategic alignment

@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  * loaders).  Concrete subclasses only need to implement {@link #parseFile} to deserialize
  * a single file's {@link InputStream} into a list of domain objects.
  *
- * <h3>Resolution order:</h3>
+ * <p><b>Resolution order:</b></p>
  * <ol>
  *   <li>External directory: {@code ${yappc.config.dir}/<relativePath>}</li>
  *   <li>Classpath fallback: {@code /<classpathPath>} (supports running inside a JAR)</li>

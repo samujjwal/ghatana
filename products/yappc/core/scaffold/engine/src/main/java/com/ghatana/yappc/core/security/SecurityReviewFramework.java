@@ -631,7 +631,7 @@ public class SecurityReviewFramework {
         // Vulnerability Summary
         if (assessment.vulnerabilityReport != null) {
             html.append("<div class='section'>\n");
-            html.append("<h2>Vulnerabilities</h2>\n");
+            html.append("<p><b>Vulnerabilities</b></p>\n");
             html.append("<p>Total: ")
                     .append(assessment.vulnerabilityReport.totalVulnerabilities)
                     .append("</p>\n");

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * <p>All agents receive the same input concurrently. No agent failure blocks the others;
  * each result is captured in its own {@link AgentResult} wrapper.
  *
- * <h2>Aggregation strategies</h2>
+ * <p><b>Aggregation strategies</b></p>
  * <ul>
  *   <li>{@link AggregationStrategy#FIRST_WINS} — return the first successful result</li>
  *   <li>{@link AggregationStrategy#MAJORITY_VOTE} — return the most common output</li>

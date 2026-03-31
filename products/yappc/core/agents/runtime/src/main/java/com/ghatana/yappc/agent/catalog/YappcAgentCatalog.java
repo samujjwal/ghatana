@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  * is unavailable (e.g., in unit tests), all query methods return empty results
  * gracefully without throwing.
  *
- * <h2>ServiceLoader Registration</h2>
+ * <p><b>ServiceLoader Registration</b></p>
  * <p>This class is registered in
  * {@code META-INF/services/com.ghatana.agent.catalog.AgentCatalog}.
  *

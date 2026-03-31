@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * GDPR compliance controller providing tenant-scoped data deletion and export endpoints.
  *
- * <h2>Endpoints</h2>
+ * <p><b>Endpoints</b></p>
  * <ul>
  *   <li>{@code DELETE /api/v1/gdpr/tenant/:tenantId} — purge all data for a tenant</li>
  *   <li>{@code GET    /api/v1/gdpr/tenant/:tenantId/export} — export all tenant data (JSON)</li>

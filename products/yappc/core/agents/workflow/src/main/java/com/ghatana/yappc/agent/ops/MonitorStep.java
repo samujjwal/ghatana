@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Continuous monitoring of production environment with alerting and anomaly detection. Tracks
  * SLIs, SLOs, and triggers alerts based on threshold violations.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Collect metrics (latency, error rate, throughput, saturation)

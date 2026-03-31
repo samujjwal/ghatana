@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *   <li><b>Fallback</b> — how often the AI fallback path triggers</li>
  * </ul>
  *
- * <h2>Metric Naming Convention (OBS-001)</h2>
+ * <p><b>Metric Naming Convention (OBS-001)</b></p>
  * {@code yappc.ai.<domain>.<operation>}, lowercase, dot-separated.
  * <ul>
  *   <li>{@code yappc.ai.llm.requests.total} (counter)</li>

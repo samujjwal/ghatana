@@ -205,7 +205,7 @@ class PolicyLearningServiceTest extends EventloopTestBase {
     private static EnhancedProcedure buildProcedure(String id, double confidence,
                                                       List<String> stepActions) {
         List<ProcedureStep> steps = stepActions.stream()
-                .map(ProcedureStep::new)
+                .map(s -> ProcedureStep.builder().description(s).build())
                 .collect(Collectors.toList());
         return EnhancedProcedure.builder()
                 .id(id)

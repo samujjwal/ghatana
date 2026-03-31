@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * units, estimates complexity, and persists the unit plan for downstream scaffolding and
  * implementation.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load architecture baseline (architecture_published)

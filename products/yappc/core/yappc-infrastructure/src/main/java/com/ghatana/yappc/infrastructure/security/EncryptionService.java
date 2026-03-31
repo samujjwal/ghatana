@@ -24,13 +24,13 @@ import java.util.Objects;
  * random IV, so callers do not need to manage IV storage separately. The format
  * stored is: {@code IV (12 bytes) || GCM ciphertext+tag}.
  *
- * <h2>Key Management</h2>
+ * <p><b>Key Management</b></p>
  * <p>The encryption key is expected as a Base64-encoded 256-bit value supplied
  * via the {@code YAPPC_ENCRYPTION_KEY} environment variable. In development the
  * service can be constructed with a randomly-generated key (use
  * {@link #generateKey()} and store the result securely before first use).
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * EncryptionService enc = EncryptionService.fromEnvironment();
  * String ciphertext = enc.encrypt("sensitive-data");

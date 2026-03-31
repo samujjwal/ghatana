@@ -19,7 +19,7 @@ import java.util.*;
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
  * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
- * <h3>Review States:</h3>
+ * <p><b>Review States:</b></p>
  *
  * <ul>
  *   <li>PENDING_REVIEW - Waiting for reviewer assignment

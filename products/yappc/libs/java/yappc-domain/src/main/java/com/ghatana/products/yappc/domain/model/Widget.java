@@ -44,7 +44,6 @@ import java.util.UUID;
  * corner - width, height: Widget dimensions in grid units
  *
  * @see Dashboard
- * @see WidgetType
  * @doc.type class
  * @doc.purpose Dashboard widget definition entity
  * @doc.layer product

@@ -5,6 +5,8 @@ import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.products.yappc.domain.Identifiable;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
 import com.ghatana.yappc.infrastructure.cache.EntityCache;
+import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginatedResult;
+import com.ghatana.yappc.infrastructure.datacloud.pagination.PaginationConfig;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

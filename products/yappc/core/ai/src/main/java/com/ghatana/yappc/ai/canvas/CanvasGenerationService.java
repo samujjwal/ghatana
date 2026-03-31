@@ -438,7 +438,7 @@ public class CanvasGenerationService {
             export const %s: React.FC = () => {
               return (
                 <div className="p-4">
-                  <h2 className="text-2xl font-bold">%s</h2>
+                  <h2 className="text-2xl font-bold">%s</b></p>
                   {/* TODO: Add component logic */}
                 </div>
               );

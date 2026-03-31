@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Analyzes functional/non-functional requirements, maps to test types (unit, integration, E2E,
  * security, performance), and creates test scope with NFR targets.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load requirements baseline and implementation baseline

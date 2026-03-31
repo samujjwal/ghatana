@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * human review activities, tracks review status, and optionally provides LLM-assisted review
  * suggestions.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load quality gate results from previous step

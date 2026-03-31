@@ -20,7 +20,7 @@ import java.util.Set;
  * {@link YappcEnvironmentConfigException} with a descriptive message, preventing the
  * service from starting in a misconfigured state.
  *
- * <h3>Variables Validated</h3>
+ * <p><b>Variables Validated</b></p>
  * <ul>
  *   <li>{@code YAPPC_API_KEYS} — must be set; must not be the insecure default
  *       {@code dev-key} when running in production mode</li>
@@ -30,7 +30,7 @@ import java.util.Set;
  *   <li>{@code YAPPC_TENANT_ID} — required to prevent cross-tenant data leaks</li>
  * </ul>
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * // In service launcher or DI module configure():
  * YappcEnvironmentConfig.validate();

@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Validates the deployed release in production environment using comprehensive checks. Verifies
  * functional correctness, performance, and business metrics.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Run production validation tests

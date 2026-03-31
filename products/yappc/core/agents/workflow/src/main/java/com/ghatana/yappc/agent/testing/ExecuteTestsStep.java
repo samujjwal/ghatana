@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Executes unit, integration, and E2E test cases and collects results. Runs test automation,
  * tracks pass/fail rates, generates coverage reports, and opens defects for failures.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load test cases from previous step

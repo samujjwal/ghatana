@@ -16,7 +16,7 @@ import java.util.*;
  * <p>Performs gradual canary deployment to production with traffic shifting. Monitors metrics and
  * automatically progresses or rolls back based on health signals.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Deploy canary version (v2) alongside stable version (v1)

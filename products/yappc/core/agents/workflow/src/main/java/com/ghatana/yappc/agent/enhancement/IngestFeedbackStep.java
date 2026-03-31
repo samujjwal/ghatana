@@ -15,7 +15,7 @@ import java.util.*;
  * <p>Ingests user feedback, bug reports, and usage patterns from production for enhancement
  * analysis. This step collects multi-source feedback data to drive continuous improvement.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Ingest user feedback from multiple channels (in-app, support tickets, surveys)
@@ -25,7 +25,7 @@ import java.util.*;
  *   <li>Store structured feedback for analysis
  * </ul>
  *
- * <h3>Data Sources:</h3>
+ * <p><b>Data Sources:</b></p>
  *
  * <ul>
  *   <li>ops_baselines - Production verification and incidents

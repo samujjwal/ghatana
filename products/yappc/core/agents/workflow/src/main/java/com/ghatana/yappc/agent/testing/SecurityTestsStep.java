@@ -15,14 +15,14 @@ import java.util.stream.Collectors;
  * <p>Runs security-focused testing including OWASP Top 10 checks, SAST/DAST scans, dependency
  * vulnerability scanning, and penetration testing.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>OWASP ZAP dynamic security scanning
  *   <li>SAST (Static Application Security Testing)
  *   <li>DAST (Dynamic Application Security Testing)
  *   <li>Dependency vulnerability scanning (CVE detection)
- *   <li>Authentication & authorization testing
+ *   <li>Authentication &amp; authorization testing
  *   <li>SQL injection, XSS, CSRF vulnerability checks
  *   <li>Persist security scan results to Data-Cloud
  *   <li>Emit workflow events for tracking

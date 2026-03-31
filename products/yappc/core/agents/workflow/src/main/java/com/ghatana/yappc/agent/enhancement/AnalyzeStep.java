@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Analyzes ingested feedback to identify patterns, trends, and actionable insights. Uses
  * ML/LLM-assisted analysis to extract themes and prioritize issues.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Analyze feedback sentiment and themes
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  *   <li>Generate actionable insights for enhancement proposals
  * </ul>
  *
- * <h3>Analysis Dimensions:</h3>
+ * <p><b>Analysis Dimensions:</b></p>
  *
  * <ul>
  *   <li><b>Frequency</b>: How often is this issue/request mentioned?

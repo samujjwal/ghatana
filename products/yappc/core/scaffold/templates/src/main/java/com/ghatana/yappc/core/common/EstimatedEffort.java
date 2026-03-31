@@ -16,7 +16,7 @@ package com.ghatana.yappc.core.common;
  */
 public enum EstimatedEffort {
     /**
-     * Minimal effort - quick fixes, simple changes (< 1 hour).
+     * Minimal effort - quick fixes, simple changes (&lt; 1 hour).
      */
     MINIMAL,
     

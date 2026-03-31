@@ -112,24 +112,24 @@ public final class DocumentationController {
                     <h1>AI Requirements Tool API Documentation</h1>
                     
                     <div class="info">
-                        <h2>Available Documentation</h2>
+                        <p><b>Available Documentation</b></p>
                         <p>This API provides comprehensive project and requirements management capabilities with AI-powered features.</p>
                         
-                        <h3>Authentication</h3>
+                        <p><b>Authentication</b></p>
                         <p>All endpoints (except health checks) require JWT authentication:</p>
                         <code>Authorization: Bearer {jwt-token}</code>
                         
-                        <h3>Base URL</h3>
+                        <p><b>Base URL</b></p>
                         <p><code>https://api.ghatana.com/api/v1</code></p>
                     </div>
                     
-                    <h2>API Specification</h2>
+                    <p><b>API Specification</b></p>
                     <a href="/api/docs" class="spec-link">Download OpenAPI Specification (YAML)</a>
                     <br>
                     <a href="/api/docs" class="spec-link" download="openapi.yaml">Download OpenAPI Specification (YAML)</a>
                     
                     <div class="info">
-                        <h2>Using the Specification</h2>
+                        <p><b>Using the Specification</b></p>
                         <p>You can use the OpenAPI specification with:</p>
                         <ul>
                             <li><a href="https://swagger.io/tools/swagger-ui/" target="_blank">Swagger UI</a></li>
@@ -138,7 +138,7 @@ public final class DocumentationController {
                             <li><a href="https://github.com/OpenAPITools/openapi-generator" target="_blank">OpenAPI Generator</a></li>
                         </ul>
                         
-                        <h3>Quick Start</h3>
+                        <p><b>Quick Start</b></p>
                         <ol>
                             <li>Download the OpenAPI specification using the link above</li>
                             <li>Import it into your favorite API client (Swagger UI, Postman, etc.)</li>
@@ -148,7 +148,7 @@ public final class DocumentationController {
                     </div>
                     
                     <div class="info">
-                        <h2>Key Features</h2>
+                        <p><b>Key Features</b></p>
                         <ul>
                             <li><strong>Workspace Management:</strong> Create and manage collaborative workspaces</li>
                             <li><strong>Project Management:</strong> Full project lifecycle with status tracking</li>

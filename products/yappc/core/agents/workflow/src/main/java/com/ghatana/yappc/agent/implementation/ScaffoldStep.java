@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * templates following
  * Ghatana patterns (Hexagonal architecture, ActiveJ, Data-Cloud integration).
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  * <li>Load planned implementation units from previous step

@@ -16,7 +16,7 @@ import java.util.*;
  * <p>Publishes immutable enhancement baseline with complete trace through the SDLC cycle. Creates
  * auditable record of all enhancement activities, experiments, and outcomes.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Aggregate all enhancement phase data (feedback, analysis, proposals, experiments)
@@ -26,7 +26,7 @@ import java.util.*;
  *   <li>Publish baseline for audit and compliance
  * </ul>
  *
- * <h3>Enhancement Baseline Contents:</h3>
+ * <p><b>Enhancement Baseline Contents:</b></p>
  *
  * <ul>
  *   <li><b>Feedback</b>: User feedback, bug reports, usage patterns

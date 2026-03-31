@@ -29,7 +29,7 @@ import java.util.UUID;
  *   <li>Per-tenant execution isolation is enforced via {@link TenantContext}</li>
  * </ul>
  *
- * <h2>Collection Schema</h2>
+ * <p><b>Collection Schema</b></p>
  * <pre>
  * agent-executions/{tenantId}/{executionId}:
  *   executionId    : UUID

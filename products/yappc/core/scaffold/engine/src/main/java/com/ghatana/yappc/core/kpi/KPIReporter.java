@@ -109,14 +109,14 @@ public class KPIReporter {
         // Summary cards
         html.append("        <div class=\"summary-cards\">\n");
         html.append("            <div class=\"card\">\n");
-        html.append("                <h3>Total Metrics</h3>\n");
+        html.append("                <p><b>Total Metrics</b></p>\n");
         html.append("                <div class=\"metric-value\">")
                 .append(report.getMetricSummaries().size())
                 .append("</div>\n");
         html.append("            </div>\n");
 
         html.append("            <div class=\"card\">\n");
-        html.append("                <h3>Data Points</h3>\n");
+        html.append("                <p><b>Data Points</b></p>\n");
         html.append("                <div class=\"metric-value\">")
                 .append(
                         report.getMetricSummaries().values().stream()
@@ -132,7 +132,7 @@ public class KPIReporter {
 
         // Detailed metrics table
         html.append("        <div class=\"metrics-table\">\n");
-        html.append("            <h2>Detailed Metrics</h2>\n");
+        html.append("            <p><b>Detailed Metrics</b></p>\n");
         html.append("            <table>\n");
         html.append("                <thead>\n");
         html.append("                    <tr>\n");
@@ -283,7 +283,7 @@ public class KPIReporter {
                 .ifPresent(
                         summary -> {
                             html.append("            <div class=\"card performance\">\n");
-                            html.append("                <h3>Build Success Rate</h3>\n");
+                            html.append("                <p><b>Build Success Rate</b></p>\n");
                             html.append("                <div class=\"metric-value\">")
                                     .append(String.format("%.1f%%", summary.getMean() * 100))
                                     .append("</div>\n");
@@ -297,7 +297,7 @@ public class KPIReporter {
                 .ifPresent(
                         summary -> {
                             html.append("            <div class=\"card performance\">\n");
-                            html.append("                <h3>Test Success Rate</h3>\n");
+                            html.append("                <p><b>Test Success Rate</b></p>\n");
                             html.append("                <div class=\"metric-value\">")
                                     .append(String.format("%.1f%%", summary.getMean() * 100))
                                     .append("</div>\n");

@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Runs performance and load testing using Gatling, validates NFR targets for latency (P95/P99),
  * throughput, and availability.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load test plan and NFR targets from test_plans

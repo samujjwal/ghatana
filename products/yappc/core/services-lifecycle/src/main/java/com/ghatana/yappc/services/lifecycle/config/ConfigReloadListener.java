@@ -12,7 +12,7 @@ package com.ghatana.yappc.services.lifecycle.config;
  * is used to route change events to the correct listener without coupling
  * {@link ConfigWatchService} to individual loader implementations.
  *
- * <h2>Example — policy reload</h2>
+ * <p><b>Example — policy reload</b></p>
  * <pre>{@code
  * public class PolicyReloadListener implements ConfigReloadListener {
  *     @Override public boolean accepts(String relativePath) {

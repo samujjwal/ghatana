@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * AEP {@link OperatorProvider} SPI implementation that exposes all YAPPC lifecycle
  * operators to the AEP {@code OperatorCatalog} and {@code PipelineMaterializer}.
  *
- * <h2>Type Bridge</h2>
+ * <p><b>Type Bridge</b></p>
  * YAPPC operators extend {@code com.ghatana.platform.workflow.operator.UnifiedOperator}
  * while the AEP type system expects {@code com.ghatana.core.operator.UnifiedOperator}.
  * The inner {@link PlatformOperatorBridge} class translates between these two parallel
@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * both directions. Both hierarchies share the same {@code Event} type so event data
  * passes through without conversion.
  *
- * <h2>Instantiation Model</h2>
+ * <p><b>Instantiation Model</b></p>
  * <p>Operators are created in two ways:
  * <ol>
  *   <li><b>On-demand (simple operators)</b>: Operators with no external dependencies
@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *       configuration an {@link IllegalStateException} is thrown immediately.</li>
  * </ol>
  *
- * <h2>ServiceLoader Discovery</h2>
+ * <p><b>ServiceLoader Discovery</b></p>
  * <p>This class is registered in
  * {@code META-INF/services/com.ghatana.core.operator.spi.OperatorProvider}. When
  * {@code OperatorProviderRegistry.discoverProviders()} runs, it discovers and registers

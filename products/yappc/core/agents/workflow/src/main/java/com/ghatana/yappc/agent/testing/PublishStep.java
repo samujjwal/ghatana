@@ -18,7 +18,7 @@ import java.util.*;
  * implementation. This baseline is used by downstream phases (Ops, Enhancement) to verify
  * production readiness.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Aggregate all test results (functional, security, performance, gate decision)

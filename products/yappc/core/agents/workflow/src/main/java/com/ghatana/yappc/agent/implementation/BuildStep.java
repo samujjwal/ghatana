@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Executes CI/CD builds for implementation units. Compiles code, runs unit tests, collects
  * coverage metrics, and produces build artifacts.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load implementation progress from previous step

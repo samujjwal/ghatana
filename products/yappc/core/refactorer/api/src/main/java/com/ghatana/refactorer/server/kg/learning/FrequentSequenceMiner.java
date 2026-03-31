@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
  * miner.addSequence(List.of(\"login\", \"access\", \"error\"));
 
- * List<Pattern> patterns = miner.mine();
+ * List&lt;Pattern&gt; patterns = miner.mine();
 
  * // Returns: [Pattern(\"login->access\", support=0.66, confidence=0.66)]
 

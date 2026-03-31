@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Runs controlled experiments (A/B tests, canary deployments) to validate approved enhancements
  * before full production rollout. Measures impact on key metrics.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Design experiment methodology (A/B test, canary, feature flag)
@@ -24,7 +24,7 @@ import java.util.*;
  *   <li>Determine statistical significance and business impact
  * </ul>
  *
- * <h3>Experiment Types:</h3>
+ * <p><b>Experiment Types:</b></p>
  *
  * <ul>
  *   <li><b>A/B Test</b>: Random user assignment, measure conversion/engagement
@@ -32,10 +32,10 @@ import java.util.*;
  *   <li><b>Feature Flag</b>: Targeted rollout, measure adoption and satisfaction
  * </ul>
  *
- * <h3>Success Criteria:</h3>
+ * <p><b>Success Criteria:</b></p>
  *
  * <ul>
- *   <li>Statistical significance (p-value < 0.05)
+ *   <li>Statistical significance (p-value &lt; 0.05)
  *   <li>Positive impact on key metrics (>5% improvement)
  *   <li>No regression in baseline metrics
  *   <li>User satisfaction maintained or improved

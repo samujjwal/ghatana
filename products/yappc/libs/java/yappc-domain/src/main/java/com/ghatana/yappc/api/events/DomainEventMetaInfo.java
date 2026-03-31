@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * {@link #schemaVersion()} from this annotation rather than inferring them from the class name
  * and the default value.
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * @DomainEventMetaInfo(eventType = "ProjectCreated", schemaVersion = 2)
  * public final class ProjectCreatedEvent extends DomainEvent {

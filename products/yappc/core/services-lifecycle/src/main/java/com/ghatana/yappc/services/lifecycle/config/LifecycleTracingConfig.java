@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code lifecycle.http} — inbound HTTP request spans</li>
  * </ul>
  *
- * <h2>Configuration</h2>
+ * <p><b>Configuration</b></p>
  * <p>Tracing is configured via environment variables:
  * <ul>
  *   <li>{@code OTEL_EXPORTER_OTLP_ENDPOINT} — OTLP collector endpoint (default: {@code http://localhost:4317})</li>

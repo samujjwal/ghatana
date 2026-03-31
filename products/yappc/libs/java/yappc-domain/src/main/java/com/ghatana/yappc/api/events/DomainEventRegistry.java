@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code onStart()} hook or a dedicated bootstrap class). The registry validates that every
  * registered event type has a valid schema version (≥&nbsp;1) and logs a summary on startup.
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * // In service bootstrap or DI module:
  * DomainEventRegistry.INSTANCE.register(ProjectCreatedEvent.class);
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * DomainEventRegistry.INSTANCE.validate(); // throws if any event is invalid
  * }</pre>
  *
- * <h2>Validation Rules</h2>
+ * <p><b>Validation Rules</b></p>
  * <ul>
  *   <li>Schema version must be ≥ 1 (a value of 0 indicates the event forgot to set it).</li>
  *   <li>Event type string must be non-blank (caught by DomainEvent constructor).</li>

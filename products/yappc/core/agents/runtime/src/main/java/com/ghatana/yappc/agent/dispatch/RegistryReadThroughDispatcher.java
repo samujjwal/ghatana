@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * Read-through decorator over {@link CatalogAgentDispatcher} that falls back
  * to the persistent agent registry on a local cache miss.
  *
- * <h2>Read-Through Semantics</h2>
+ * <p><b>Read-Through Semantics</b></p>
  * <pre>
  *   resolve(agentId, tenantId)
  *       │
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * same {@code agentId} will be served from the local cache without a database
  * round trip.
  *
- * <h2>ActiveJ Threading</h2>
+ * <p><b>ActiveJ Threading</b></p>
  * All JDBC work is delegated to {@link AgentRegistryLookup}, whose contract
  * requires it to use {@code Promise.ofBlocking(executor, ...)} internally.
  * This dispatcher therefore remains non-blocking and safe to call from the

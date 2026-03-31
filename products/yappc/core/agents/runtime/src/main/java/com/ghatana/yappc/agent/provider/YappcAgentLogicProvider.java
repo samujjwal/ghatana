@@ -23,7 +23,7 @@ import java.util.function.Function;
  * with YAPPC's in-memory agent creation. Products register agent factories
  * via {@link #registerFactory(String, Function)} at bootstrap time.
  *
- * <h3>Supported refs</h3>
+ * <p><b>Supported refs</b></p>
  * <pre>
  *   yappc-java:agent.yappc.java-expert
  *   yappc-java:agent.yappc.code-reviewer

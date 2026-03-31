@@ -32,7 +32,7 @@ import java.util.Optional;
  * Handles {@code POST /api/auth/login} and {@code POST /api/auth/logout} in the lifecycle
  * service, completing the frontend authentication flow alongside {@link JwtAuthController}.
  *
- * <h2>Credential store</h2>
+ * <p><b>Credential store</b></p>
  * <p>Users are loaded from the {@code YAPPC_AUTH_USERS} environment variable at startup.
  * The value must be a JSON array of user objects:
  * <pre>{@code
@@ -52,7 +52,7 @@ import java.util.Optional;
  * <p>If the env var is absent a single dev-only user is bootstrapped automatically with
  * email {@code dev@yappc.io} and password {@code change-me-in-production}.
  *
- * <h2>Password hashing</h2>
+ * <p><b>Password hashing</b></p>
  * <p>Passwords are verified using PBKDF2WithHmacSHA256 (65 536 iterations, 256-bit key).
  * Stored hashes must be created with the same parameters via
  * {@link #hashPassword(String, byte[])}.

@@ -40,7 +40,6 @@ import java.util.UUID;
  * tracks when rollback was executed.
  *
  * @see PipelineRun
- * @see Release
  * @doc.type class
  * @doc.purpose Deployment tracking entity
  * @doc.layer product

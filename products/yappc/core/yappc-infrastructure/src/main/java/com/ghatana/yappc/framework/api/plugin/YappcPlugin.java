@@ -9,7 +9,7 @@ package com.ghatana.yappc.framework.api.plugin;
  * from a separate {@link java.net.URLClassLoader}, so they execute in a
  * ClassLoader-isolated environment with an enforced {@code PermissionSet}.
  *
- * <h2>Minimal implementation</h2>
+ * <p><b>Minimal implementation</b></p>
  * <pre>{@code
  * public class MyPlugin implements YappcPlugin {
  *     @Override public String getName()        { return "my-plugin"; }
@@ -18,7 +18,7 @@ package com.ghatana.yappc.framework.api.plugin;
  * }
  * }</pre>
  *
- * <h2>Loading a plugin via the sandbox</h2>
+ * <p><b>Loading a plugin via the sandbox</b></p>
  * <pre>{@code
  * PluginDescriptor descriptor = PluginDescriptor.restrictedOf(
  *     "my-plugin", "1.0.0", "2.0.0",

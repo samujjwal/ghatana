@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * YAPPC product — beyond infrastructure-level counters. These feed the Grafana
  * YAPPC Business Dashboard and the Alertmanager SLA rules.
  *
- * <h2>Tracked KPIs</h2>
+ * <p><b>Tracked KPIs</b></p>
  * <ul>
  *   <li><b>Active projects</b> — gauge of projects in an active phase</li>
  *   <li><b>Phase transitions</b> — counter of lifecycle phase advances</li>
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li><b>Active tenants</b> — gauge of tenants that have had activity in the last hour</li>
  * </ul>
  *
- * <h2>Metric Naming Convention (OBS-001)</h2>
+ * <p><b>Metric Naming Convention (OBS-001)</b></p>
  * {@code yappc.lifecycle.<domain>}, lowercase, dot-separated.
  *
  * @doc.type class

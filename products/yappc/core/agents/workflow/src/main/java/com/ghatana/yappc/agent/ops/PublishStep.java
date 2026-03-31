@@ -17,7 +17,7 @@ import java.util.*;
  * <p>Creates an immutable ops baseline with deployment records, monitoring data, and incident
  * history. This baseline documents the production state for audit and compliance.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Aggregate all ops data (deployments, monitoring, incidents)

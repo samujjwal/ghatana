@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Proposes concrete enhancements based on analyzed feedback and insights. Creates detailed
  * enhancement proposals with effort estimates, ROI projections, and implementation plans.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Convert insights into actionable enhancement proposals
@@ -24,10 +24,10 @@ import java.util.*;
  *   <li>Create implementation roadmap
  * </ul>
  *
- * <h3>Proposal Structure:</h3>
+ * <p><b>Proposal Structure:</b></p>
  *
  * <ul>
- *   <li><b>Title & Description</b>: Clear, concise enhancement definition
+ *   <li><b>Title &amp; Description</b>: Clear, concise enhancement definition
  *   <li><b>Objectives</b>: Measurable goals (e.g., reduce errors by 50%)
  *   <li><b>Effort</b>: Story points, person-days, complexity
  *   <li><b>ROI</b>: Expected value vs. cost

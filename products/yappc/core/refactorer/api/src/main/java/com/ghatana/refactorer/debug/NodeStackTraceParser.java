@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 public final class NodeStackTraceParser implements StackTraceParser {
     /**
      * Default pattern for matching Node.js stack trace frames. Matches both formats: at
-     * Object.<anonymous> (/path/to/file.js:10:5) at /path/to/file.js:10:5
+     * Object.&lt;anonymous&gt; (/path/to/file.js:10:5) at /path/to/file.js:10:5
      */
     public static final Pattern DEFAULT_FRAME_PATTERN =
             Pattern.compile(

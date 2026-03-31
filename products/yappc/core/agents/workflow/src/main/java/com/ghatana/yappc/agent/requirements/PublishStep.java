@@ -19,7 +19,7 @@ import java.util.*;
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
  * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
- * <h3>Publish Actions:</h3>
+ * <p><b>Publish Actions:</b></p>
  *
  * <ul>
  *   <li>Verify approval status from HITL review

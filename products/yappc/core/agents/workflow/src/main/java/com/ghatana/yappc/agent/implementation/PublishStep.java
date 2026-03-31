@@ -15,7 +15,7 @@ import java.util.*;
  * implementation artifacts, build results, and metadata for consumption by downstream phases
  * (Testing, Ops).
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Verify all reviews are approved

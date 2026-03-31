@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Generates comprehensive test cases from test plan with optional LLM assistance. Creates unit,
  * integration, E2E, security, and performance test cases mapped to requirements.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load test plan from previous step

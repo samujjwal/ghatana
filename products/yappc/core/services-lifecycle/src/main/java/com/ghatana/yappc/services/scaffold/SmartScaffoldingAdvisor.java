@@ -25,7 +25,7 @@ import java.util.Set;
  * Recommendations are deterministic within the supplied context because a low temperature
  * (0.2) is used, making the output stable and appropriate for automated tooling.
  *
- * <h3>Typical Usage</h3>
+ * <p><b>Typical Usage</b></p>
  * <pre>{@code
  * SmartScaffoldingAdvisor advisor = new SmartScaffoldingAdvisor(completionService);
  * ProjectContext ctx = new ProjectContext(

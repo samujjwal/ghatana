@@ -15,7 +15,7 @@ import java.util.*;
  *
  * <p>Publishes approved architecture artifacts to downstream consumers.
  *
- * <h3>Implementation Checklist:</h3>
+ * <p><b>Implementation Checklist:</b></p>
  *
  * <ol>
  *   <li>Validate input against JSON schema (contract.inputSchemaRef) – fail fast.

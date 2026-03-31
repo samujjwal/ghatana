@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Prioritizes enhancement proposals using weighted scoring across multiple dimensions. Creates a
  * ranked backlog for implementation planning.
  *
- * <h3>Core Responsibilities:</h3>
+ * <p><b>Core Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Score proposals across multiple dimensions (ROI, effort, risk, urgency)
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  *   <li>Identify quick wins vs. strategic initiatives
  * </ul>
  *
- * <h3>Prioritization Framework (RICE):</h3>
+ * <p><b>Prioritization Framework (RICE):</b></p>
  *
  * <ul>
  *   <li><b>Reach</b>: How many users will benefit?

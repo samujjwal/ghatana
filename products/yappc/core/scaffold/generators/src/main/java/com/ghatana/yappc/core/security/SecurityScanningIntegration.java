@@ -26,7 +26,7 @@ import java.util.*;
  * Enhanced security scanning integration for CI/CD pipelines. Provides comprehensive Semgrep and
  * Gitleaks integration with advanced configuration.
  *
- * <p>Week 9 Day 44: Semgrep & Gitleaks CI integration with advanced security policies.
+ * <p>Week 9 Day 44: Semgrep &amp; Gitleaks CI integration with advanced security policies.
  *
  * @doc.type class
  * @doc.purpose Enhanced security scanning integration for CI/CD pipelines. Provides comprehensive Semgrep and

@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Deploys the tested release to staging environment for final validation. Performs health
  * checks, smoke tests, and prepares for canary deployment.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load test baseline and release artifacts

@@ -26,7 +26,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  * Watches the {@code yappc.config.dir} directory tree for file changes and triggers
  * hot reload for supported configuration families.
  *
- * <h2>Reload Contract</h2>
+ * <p><b>Reload Contract</b></p>
  * <ul>
  *   <li><b>PolicyDefinitions</b> — hot reload (low risk, stateless evaluation)</li>
  *   <li><b>AgentDefinitions</b> — hot add / update (no downtime)</li>
@@ -36,7 +36,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  *       and ignores the change (requires restart)</li>
  * </ul>
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * ConfigWatchService watcher = new ConfigWatchService(configDir, listeners);
  * watcher.start();

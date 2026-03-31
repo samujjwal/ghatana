@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Handles incidents and outages in production with automated remediation. Detects incidents,
  * triages severity, executes runbooks, and tracks resolution.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Detect incidents from alerts and monitoring

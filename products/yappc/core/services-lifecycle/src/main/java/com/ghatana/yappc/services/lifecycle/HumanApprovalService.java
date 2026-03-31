@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * Manages human-approval gates in the YAPPC lifecycle pipeline.
  *
- * <h2>Lifecycle</h2>
+ * <p><b>Lifecycle</b></p>
  * <ol>
  *   <li>{@link #requestApproval} — creates a new {@link ApprovalRequest} (PENDING) and
  *       publishes an {@code approval.requested} AEP event so the frontend can push a
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *       show a review queue.</li>
  * </ol>
  *
- * <h2>Persistence</h2>
+ * <p><b>Persistence</b></p>
  * <p>The current implementation uses an in-memory {@link ConcurrentHashMap} indexed
  * by tenant. This is sufficient for single-node deployments. A future
  * {@code JdbcHumanApprovalService} should extend this class and override the mutation

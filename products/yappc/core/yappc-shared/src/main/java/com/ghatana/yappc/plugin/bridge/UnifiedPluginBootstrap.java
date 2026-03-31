@@ -21,7 +21,7 @@ import java.util.ServiceLoader;
  * <p>All discovered plugins are wrapped in a {@link PlatformPluginBridge} and
  * registered with the platform-wide {@link PluginRegistry}.</p>
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * PluginRegistry registry = new PluginRegistry();
  * UnifiedPluginBootstrap bootstrap = new UnifiedPluginBootstrap(registry);

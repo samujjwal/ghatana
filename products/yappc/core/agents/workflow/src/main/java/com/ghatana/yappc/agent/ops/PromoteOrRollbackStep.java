@@ -14,7 +14,7 @@ import java.util.*;
  * <p>Makes the final decision to promote the release to 100% traffic or rollback. Based on
  * validation results, monitoring data, and business approval.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load validation and monitoring results

@@ -32,7 +32,7 @@ import java.util.concurrent.Executor;
  * <p>All JDBC calls run on the supplied {@link Executor} (never the ActiveJ event loop)
  * via {@link Promise#ofBlocking(Executor, java.util.concurrent.Callable)}.
  *
- * <h2>Schema (see {@code V14__yappc_dlq.sql})</h2>
+ * <p><b>Schema (see {@code V14__yappc_dlq.sql})</b></p>
  * <pre>{@code
  * CREATE TABLE IF NOT EXISTS yappc_dlq (
  *   id              UUID         DEFAULT gen_random_uuid() PRIMARY KEY,

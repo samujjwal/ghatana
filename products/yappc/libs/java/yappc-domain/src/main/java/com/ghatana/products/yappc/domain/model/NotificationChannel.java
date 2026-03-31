@@ -35,8 +35,6 @@ import java.util.UUID;
  * CRITICAL alerts → PagerDuty + Slack + Email - HIGH alerts → Slack + Email -
  * MEDIUM/LOW alerts → Email only
  *
- * @see NotificationRule
- * @see NotificationAlert
  * @doc.type class
  * @doc.purpose Notification channel configuration entity
  * @doc.layer product

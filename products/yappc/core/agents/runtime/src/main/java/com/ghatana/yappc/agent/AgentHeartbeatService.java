@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *       {@code FAILED} after three consecutive cycles.</li>
  * </ol>
  *
- * <p>This service is an {@link io.activej.net.socket.tcp.ReactiveSocketServer EventloopService}
+ * <p>This service is an {@code EventloopService}
  * analogue — it must be started via {@link #start()} and cleanly stopped via
  * {@link #stop()}.
  *

@@ -33,12 +33,12 @@ import static org.mockito.Mockito.when;
 /**
  * Behavioral tests for {@link GovernedMemoryPlane} — covers plan items 2.7.4 and 2.7.5.
  *
- * <h2>2.7.4 — PII Redaction</h2>
+ * <p><b>2.7.4 — PII Redaction</b></p>
  * Episodes containing PII (emails, phone numbers, etc.) must have those fields
  * replaced with {@code [REDACTED]} before the payload reaches the delegate store.
  * The caller-visible return value should reflect the redacted content.
  *
- * <h2>2.7.5 — Tenant Isolation</h2>
+ * <p><b>2.7.5 — Tenant Isolation</b></p>
  * Episodes owned by tenant-A must not be visible to tenant-B queries, even if the
  * underlying delegate store returns them. The {@link GovernedMemoryPlane} applies
  * post-read filtering via {@link TenantIsolatingMemorySecurityManager}.

@@ -42,7 +42,7 @@ import java.util.Set;
  * <p>The combined result is returned as a {@link ValidationResult} that indicates whether
  * all gates are open and provides actionable diagnostics for any that are not.
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * PhaseGateValidator validator = new PhaseGateValidator(stageLoader, gateEvaluator, artifactRepo);
  *

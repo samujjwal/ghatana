@@ -437,15 +437,15 @@ public class CacheTunerCommand implements Callable<Integer> {
             html.append("<p><strong>Generated:</strong> ")
                     .append(recommendations.analysisTime())
                     .append("</p>\n");
-            html.append("<h2>Efficiency Score: ")
+            html.append("<p><b>Efficiency Score: ")
                     .append(String.format("%.1f%%", recommendations.efficiency().score() * 100))
-                    .append("</h2>\n");
+                    .append("</b></p>\n");
             html.append("<p>")
                     .append(recommendations.efficiency().interpretation())
                     .append("</p>\n");
-            html.append("<h2>Recommendations (")
+            html.append("<p><b>Recommendations (")
                     .append(recommendations.recommendations().size())
-                    .append(")</h2>\n");
+                    .append(")</b></p>\n");
             html.append("<ul>\n");
             for (CacheRecommendation rec : recommendations.recommendations()) {
                 html.append("<li><strong>")

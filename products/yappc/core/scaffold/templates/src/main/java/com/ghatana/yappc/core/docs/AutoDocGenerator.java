@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Auto-documentation and diagram generator for projects.
  *
- * <p>Week 10 Day 47: Auto-doc & diagram generator (`docs generate` → README/ADR/Mermaid).
+ * <p>Week 10 Day 47: Auto-doc &amp; diagram generator (`docs generate` → README/ADR/Mermaid).
  *
  * @doc.type class
  * @doc.purpose Auto-documentation and diagram generator for projects.

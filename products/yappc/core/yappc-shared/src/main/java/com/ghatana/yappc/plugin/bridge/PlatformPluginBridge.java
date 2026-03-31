@@ -30,10 +30,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * {@code com.ghatana.yappc.framework.api.plugin.YappcPlugin}), this bridge
  * operates on the current {@code com.ghatana.yappc.plugin.YAPPCPlugin} SPI.</p>
  *
- * <h3>Thread Safety</h3>
+ * <p><b>Thread Safety</b></p>
  * Thread-safe. State transitions are atomic via {@link AtomicReference}.
  *
- * <h3>Usage</h3>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * YAPPCPlugin yappcPlugin = new MyValidatorPlugin();
  * Plugin platformPlugin = new PlatformPluginBridge(yappcPlugin);

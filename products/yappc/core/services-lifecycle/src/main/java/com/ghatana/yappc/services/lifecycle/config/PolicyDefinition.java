@@ -15,7 +15,7 @@ import java.util.Objects;
  * Immutable representation of a YAPPC policy definition loaded from
  * {@code config/policies/*.yaml}.
  *
- * <h2>YAML Format</h2>
+ * <p><b>YAML Format</b></p>
  * <pre>{@code
  * policies:
  *   - id: "phase_advance_policy"

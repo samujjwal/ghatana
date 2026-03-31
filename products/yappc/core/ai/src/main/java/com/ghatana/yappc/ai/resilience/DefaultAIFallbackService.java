@@ -23,7 +23,7 @@ import java.util.function.Supplier;
  * Default implementation of {@link AIFallbackService} providing in-process circuit breaker,
  * exponential-backoff retry, and multi-provider fallback.
  *
- * <h2>Circuit Breaker State Machine</h2>
+ * <p><b>Circuit Breaker State Machine</b></p>
  * <pre>
  *   CLOSED ──(failure threshold exceeded)──► OPEN
  *   OPEN   ──(cooldown expired)           ──► HALF_OPEN

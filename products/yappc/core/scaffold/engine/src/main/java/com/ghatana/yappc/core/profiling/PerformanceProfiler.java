@@ -622,7 +622,7 @@ public class PerformanceProfiler {
         // Memory Analysis
         if (report.memoryAnalysis != null) {
             html.append("<div class='section'>\n");
-            html.append("<h2>Memory Analysis</h2>\n");
+            html.append("<p><b>Memory Analysis</b></p>\n");
             if (report.memoryAnalysis.heapUsageStats != null) {
                 html.append("<div class='metric'>Heap Usage - Avg: ")
                         .append(formatBytes(report.memoryAnalysis.heapUsageStats.mean))
@@ -640,15 +640,15 @@ public class PerformanceProfiler {
         // Recommendations
         if (!report.recommendations.isEmpty()) {
             html.append("<div class='section'>\n");
-            html.append("<h2>Recommendations</h2>\n");
+            html.append("<p><b>Recommendations</b></p>\n");
             for (PerformanceRecommendation rec : report.recommendations) {
                 String cssClass = rec.priority.toLowerCase();
                 html.append("<div class='").append(cssClass).append("'>\n");
-                html.append("<h3>")
+                html.append("<p><b>")
                         .append(rec.title)
                         .append(" (")
                         .append(rec.priority)
-                        .append(")</h3>\n");
+                        .append(")</b></p>\n");
                 html.append("<p>").append(rec.description).append("</p>\n");
                 html.append("<p><em>").append(rec.suggestion).append("</em></p>\n");
                 html.append("</div>\n");

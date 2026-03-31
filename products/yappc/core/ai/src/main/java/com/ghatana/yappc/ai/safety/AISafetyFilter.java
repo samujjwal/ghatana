@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  *       {@code ignore previous instructions}) are rejected before reaching the caller.</li>
  * </ol>
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * AISafetyFilter filter = new AISafetyFilter(AISafetyFilter.Config.defaults());
  * filter.check(aiResponse)

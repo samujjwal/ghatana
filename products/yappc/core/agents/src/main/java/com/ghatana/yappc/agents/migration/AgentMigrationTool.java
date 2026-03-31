@@ -375,12 +375,25 @@ public class AgentMigrationTool {
         Files.writeString(file, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
     
+    private static final Set<String> LANGUAGE_TOKENS = Set.of(
+            "java", "python", "go", "rust", "kotlin", "scala",
+            "ruby", "swift", "typescript", "javascript", "cpp", "csharp");
+
     String generateAgentId(String agentName) {
         // Convert JavaExpertAgent -> expert.java
         String base = agentName.replace("Agent", "");
-        base = base.replaceAll("([A-Z])", ".$1").toLowerCase();
-        base = base.startsWith(".") ? base.substring(1) : base;
-        return base;
+        String[] parts = base.split("(?=[A-Z])");
+        List<String> words = new ArrayList<>();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                words.add(part.toLowerCase());
+            }
+        }
+        // Language tokens used as prefix become domain qualifiers (move to end)
+        if (words.size() > 1 && LANGUAGE_TOKENS.contains(words.get(0))) {
+            words.add(words.remove(0));
+        }
+        return String.join(".", words);
     }
     
     private String toDisplayName(String className) {

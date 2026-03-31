@@ -16,7 +16,7 @@ import java.util.Set;
  * <p>This plugin is intentionally minimal — it demonstrates the required plugin contract,
  * public no-arg constructor, and XML string generation without external template engines.
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox(PlatformVersion.CURRENT);
  * PluginDescriptor desc = PluginDescriptor.restrictedOf(

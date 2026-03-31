@@ -20,7 +20,7 @@ import java.util.*;
  * <p>✅ Implements WorkflowStep from libs:workflow-api (EXISTING) ✅ Uses DatabaseClient from
  * libs:database (EXISTING) ✅ Uses EventPublisher (product-owned facade over EventLogStore)
  *
- * <h3>Key Responsibilities:</h3>
+ * <p><b>Key Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Verify requirements baseline is approved and published

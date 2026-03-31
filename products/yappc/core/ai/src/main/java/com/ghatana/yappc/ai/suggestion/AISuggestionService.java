@@ -30,7 +30,7 @@ import java.util.UUID;
  * a lightweight parse step to extract structured {@link Suggestion} items from the
  * raw LLM output.
  *
- * <h2>Suggestion types</h2>
+ * <p><b>Suggestion types</b></p>
  * <ul>
  *   <li>{@link SuggestionType#REQUIREMENT} — refinements/gaps in requirements</li>
  *   <li>{@link SuggestionType#DESIGN} — architectural or design improvements</li>
@@ -39,7 +39,7 @@ import java.util.UUID;
  *   <li>{@link SuggestionType#ACTION} — concrete next steps</li>
  * </ul>
  *
- * <h2>Usage</h2>
+ * <p><b>Usage</b></p>
  * <pre>{@code
  * AISuggestionService suggestions = new AISuggestionService(aiModelRouter);
  *

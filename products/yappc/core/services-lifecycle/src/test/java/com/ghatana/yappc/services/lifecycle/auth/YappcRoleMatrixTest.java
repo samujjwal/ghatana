@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * YAPPC Role Matrix Test — validates the complete permission matrix across all
  * YAPPC service resources and roles.
  *
- * <h2>Role Matrix</h2>
+ * <p><b>Role Matrix</b></p>
  * <pre>
  * Role     | yappc:lifecycle-api    | yappc:ai-api           | yappc:scaffold-api
  * ---------+------------------------+------------------------+-------------------

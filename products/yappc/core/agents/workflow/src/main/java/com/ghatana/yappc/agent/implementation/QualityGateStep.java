@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * <p>Enforces quality gates on build artifacts. Validates coverage thresholds, static analysis
  * results, security scans, and other quality metrics.
  *
- * <h3>Responsibilities:</h3>
+ * <p><b>Responsibilities:</b></p>
  *
  * <ul>
  *   <li>Load build runs from previous step

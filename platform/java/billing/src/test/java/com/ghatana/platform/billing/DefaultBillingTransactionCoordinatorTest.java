@@ -33,7 +33,7 @@ class DefaultBillingTransactionCoordinatorTest extends EventloopTestBase {
         DefaultBillingTransactionCoordinator coordinator = new DefaultBillingTransactionCoordinator(ledger);
 
         BillingTransactionCoordinator.CoordinationResult result = runPromise(
-            () -> coordinator.coordinate("wf-1", List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00")));
+            () -> coordinator.coordinate("wf-1", List.of(tx("tx-1", "100.00"), tx("tx-2", "200.00"))));
 
         assertThat(result.succeeded()).isTrue();
         assertThat(result.postedTransactionIds()).containsExactly("tx-1", "tx-2");

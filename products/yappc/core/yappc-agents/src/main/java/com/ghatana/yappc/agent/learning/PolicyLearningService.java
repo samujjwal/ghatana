@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * Extracts generalizable action patterns from high-confidence agent executions and
  * persists them as {@link LearnedPolicy} records in {@link LearnedPolicyRepository}.
  *
- * <h2>Learning Contract (plan 9.5.3)</h2>
+ * <p><b>Learning Contract (plan 9.5.3)</b></p>
  * After each agent turn, if the result confidence ≥ {@link #DEFAULT_CONFIDENCE_THRESHOLD},
  * the turn episode is converted to an {@link EnhancedProcedure}-compatible JSON payload
  * and stored as a learned policy.

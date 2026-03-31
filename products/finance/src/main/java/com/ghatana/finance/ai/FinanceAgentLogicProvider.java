@@ -6,6 +6,7 @@ package com.ghatana.finance.ai;
 
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
+import com.ghatana.agent.migration.BaseAgentAdapter;
 import com.ghatana.agent.spi.AgentLogicProvider;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -74,7 +75,7 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
                         alertService.sendAlert("Risk Update", update.toString());
                         return Promise.complete();
                     };
-            return new RiskAssessmentAgent(modelRegistry, inferenceService, riskAlertService);
+            return new BaseAgentAdapter<>(new RiskAssessmentAgent(modelRegistry, inferenceService, riskAlertService));
         });
 
         // FraudDetectionAgent requires external wiring since FraudDetectionResult

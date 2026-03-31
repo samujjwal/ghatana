@@ -104,7 +104,7 @@ public final class MemoryModels {
         }
 
         /**
- * Returns true if this is a low confidence score (<= 0.4). */
+ * Returns true if this is a low confidence score (&lt;= 0.4). */
         public boolean isLow() {
             return score <= 0.4;
         }

@@ -156,16 +156,16 @@ public class ReportGenerator {
         html.append(
                 """
             <div class="chart-container">
-                <h2>Performance by File Count</h2>
+                <p><b>Performance by File Count</b></p>
                 <canvas id="performanceChart"></canvas>
             </div>
 
             <div class="chart-container">
-                <h2>Memory Usage</h2>
+                <p><b>Memory Usage</b></p>
                 <canvas id="memoryChart"></canvas>
             </div>
 
-            <h2>Detailed Results</h2>
+            <p><b>Detailed Results</b></p>
             <table>
                 <thead>
                     <tr>
