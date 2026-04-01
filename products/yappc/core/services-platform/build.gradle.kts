@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("jacoco")
+    id("com.ghatana.jacoco-conventions")
 }
 
 group = "com.ghatana.products.yappc.services"
@@ -68,22 +69,5 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         html.required.set(true)
         csv.required.set(false)
-    }
-}
-
-tasks.jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                counter = "BRANCH"
-                value   = "COVEREDRATIO"
-                minimum = "0.00".toBigDecimal()
-            }
-            limit {
-                counter = "LINE"
-                value   = "COVEREDRATIO"
-                minimum = "0.00".toBigDecimal()
-            }
-        }
     }
 }

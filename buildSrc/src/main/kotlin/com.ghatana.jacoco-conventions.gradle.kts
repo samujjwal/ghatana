@@ -44,7 +44,7 @@ pluginManager.withPlugin("java") {
         }
     }
 
-    project.tasks.register("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java) {
+    project.tasks.named("jacocoTestCoverageVerification", JacocoCoverageVerification::class.java).configure {
         dependsOn(project.tasks.named("jacocoTestReport"))
         violationRules {
             rule {

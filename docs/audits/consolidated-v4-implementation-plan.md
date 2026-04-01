@@ -1,11 +1,13 @@
 # Consolidated V4 Implementation Plan
 
 ## Scope
+
 - products: `data-cloud`, `audio-video`, `security-gateway`, `aep`, `yappc`, `tutorputor`
 - shared layers: `platform`, `libs`, `shared-services`
 - intent: convert the audit findings into a day-by-day execution plan with concrete file targets, test additions, and cleanup work
 
 ## Execution Principles
+
 - fix correctness and security before new feature work
 - eliminate duplicate contracts and helper code before extending surfaces
 - prefer moving code to canonical shared modules instead of adding more product-local wrappers
@@ -13,6 +15,7 @@
 - do not keep backward-compatibility shims unless they are explicitly required for rollout
 
 ## Day 1
+
 - objective: lock down shared auth and security contract ownership
 - primary files:
   - `shared-services/auth-gateway/src/main/java/com/ghatana/services/auth/AuthService.java`
@@ -31,6 +34,7 @@
 - exit criteria: one documented shared auth runtime contract and a failing test added for any overlap not yet removed
 
 ## Day 2
+
 - objective: eliminate platform-level auth and utility duplication
 - primary files:
   - `platform/java/security/src/main/java/com/ghatana/platform/security/port/JwtTokenProvider.java`
@@ -47,6 +51,7 @@
 - exit criteria: canonical package usage enforced by lint for targeted duplicated helpers
 
 ## Day 3
+
 - objective: harden shared-services posture and remove historical ambiguity
 - primary files:
   - `shared-services/README.md`
@@ -63,6 +68,7 @@
 - exit criteria: no ambiguity in shared-services ownership or runtime purpose
 
 ## Day 4
+
 - objective: break up Data-Cloud launcher concentration and narrow storage contracts
 - primary files:
   - `products/data-cloud/platform-launcher/build.gradle.kts`
@@ -79,6 +85,7 @@
 - exit criteria: feature-store ingest no longer depends on the full launcher graph for warm-tier access
 
 ## Day 5
+
 - objective: unify Data-Cloud client contracts and query correctness
 - primary files:
   - `products/data-cloud/ui/src/api/**`
@@ -96,6 +103,7 @@
 - exit criteria: one canonical Data-Cloud client surface with contract verification in CI
 
 ## Day 6
+
 - objective: secure and unify Audio-Video protobuf and auth behavior
 - primary files:
   - `products/audio-video/modules/**/src/main/proto/*.proto`
@@ -112,6 +120,7 @@
 - exit criteria: desktop and services consume the same generated schema source and JWT permissive production mode is impossible
 
 ## Day 7
+
 - objective: add Audio-Video desktop resilience and UX correctness coverage
 - primary files:
   - `products/audio-video/apps/desktop/src/App.tsx`
@@ -127,6 +136,7 @@
 - exit criteria: major desktop panels have working state coverage for success, loading, and failure
 
 ## Day 8
+
 - objective: simplify AEP public-edge topology and auth guarantees
 - primary files:
   - `products/aep/README.md`
@@ -143,6 +153,7 @@
 - exit criteria: one documented and tested public API topology
 
 ## Day 9
+
 - objective: harden AEP orchestrator durability and runtime invariants
 - primary files:
   - `products/aep/orchestrator/src/main/java/**/PostgresqlCheckpointStore.java`
@@ -158,6 +169,7 @@
 - exit criteria: queue backpressure, restart, and replay correctness are covered by automated tests
 
 ## Day 10
+
 - objective: remove YAPPC refactorer runtime violations and duplicate DTOs
 - primary files:
   - `products/yappc/core/refactorer/**`
@@ -173,6 +185,7 @@
 - exit criteria: no raw-thread refactorer execution remains and duplicate DTOs are removed
 
 ## Day 11
+
 - objective: complete YAPPC domain contracts and strengthen error handling
 - primary files:
   - `products/yappc/libs/java/yappc-domain/src/main/java/**/model/**`
@@ -189,6 +202,7 @@
 - exit criteria: core domain types are complete and error propagation is explicit
 
 ## Day 12
+
 - objective: build TutorPutor learner profile and mastery backbone
 - primary files:
   - `products/tutorputor/libs/**/prisma/schema.prisma`
@@ -205,6 +219,7 @@
 - exit criteria: adaptive decisions are backed by real persisted learner data
 
 ## Day 13
+
 - objective: remove TutorPutor high-value `any` usage and consolidate repeated local patterns
 - primary files:
   - `products/tutorputor/services/tutorputor-platform/src/modules/**`
@@ -218,6 +233,7 @@
 - exit criteria: critical TutorPutor modules compile without `any` escape hatches and repeated patterns are centralized
 
 ## Day 14
+
 - objective: harden TutorPutor security and adaptive correctness
 - primary files:
   - `products/tutorputor/services/tutorputor-lti/src/routes/launch.ts`
@@ -232,6 +248,7 @@
 - exit criteria: LTI launch is cryptographically validated and adaptive assessment flows are covered by tests
 
 ## Day 15
+
 - objective: repo-wide tenant isolation and policy consistency pass
 - primary files:
   - `products/data-cloud/**/repository or query files`
@@ -247,6 +264,7 @@
 - exit criteria: each product has at least one automated tenant isolation proof on critical data paths
 
 ## Day 16
+
 - objective: repo-wide observability and alerting normalization
 - primary files:
   - `platform/java/observability/**`
@@ -260,6 +278,7 @@
 - exit criteria: every audited product has a documented critical-path telemetry set
 
 ## Day 17
+
 - objective: deployment and runtime hardening pass
 - primary files:
   - `products/data-cloud/helm/**`, `products/data-cloud/k8s/**`, `products/data-cloud/terraform/**`
@@ -273,6 +292,7 @@
 - exit criteria: each product has one clear deployment path and no known unsafe defaults remain in manifests
 
 ## Day 18
+
 - objective: deletion and cleanup day
 - primary files:
   - stale duplicate DTOs, utilities, protos, controllers, and historical service residue identified in the audits
@@ -283,6 +303,7 @@
 - exit criteria: the highest-priority duplicate and dead-code findings are removed, and the remaining backlog is smaller and clearly documented
 
 ## Cross-Cutting Test Matrix
+
 - Data-Cloud: contract drift, query semantics, event ingestion to UI visibility, registry/storage decoupling
 - Audio-Video: proto sync, desktop error states, client/server breaker parity, JWT startup validation
 - Security-Gateway: dynamic policy changes, key rotation windows, WAF plus IP blocking, auth-gateway compatibility
@@ -291,6 +312,7 @@
 - TutorPutor: learner profile persistence, assessment scoring, LTI security, recommendation correctness, content generation failover
 
 ## Acceptance Criteria for the Full Plan
+
 - every P0/P1 blocker called out in the audits is either fixed or reduced to a bounded, documented rollout risk
 - duplicated contract surfaces are removed where canonical shared or product-local shared modules already exist
 - each audited product has at least one end-to-end or integration suite covering its most critical workflow
@@ -298,6 +320,7 @@
 - deployment paths no longer rely on silent permissive defaults for auth, secrets, or tenancy
 
 ## Sequencing Notes
+
 - do not start broad feature additions during this plan
 - complete Days 1 through 5 before expanding product-specific scope, because shared auth, contract, and platform cleanup reduce downstream rework
 - complete Days 6 through 14 in parallel by product only after shared guardrails are in place
