@@ -153,12 +153,12 @@ export class CollaborationServiceImpl implements CollaborationService {
 
     const paged = await paginate<ThreadWithPosts, Prisma.ThreadWhereInput>(
       {
-        findMany: (input: any) =>
+        findMany: (input) =>
           this.prisma.thread.findMany({
             ...input,
             include: { posts: true },
           }) as Promise<ThreadWithPosts[]>,
-        count: (input: any) => this.prisma.thread.count(input),
+        count: (input) => this.prisma.thread.count(input),
       },
       where,
       {
@@ -170,15 +170,15 @@ export class CollaborationServiceImpl implements CollaborationService {
       },
     );
 
-    const trimmed = paged.items.map((thread: any) => ({
+    const trimmed = paged.items.map((thread) => ({
       ...thread,
       posts: [...thread.posts]
-        .sort((left: any, right: any) => left.createdAt.getTime() - right.createdAt.getTime())
+        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
         .slice(0, 3),
     }));
 
     return {
-      items: trimmed.map((thread: any) => this.mapToThread(thread)),
+      items: trimmed.map((thread) => this.mapToThread(thread)),
       nextCursor: paged.hasMore ? ((paged.nextCursor ?? null) as ThreadId | null) : null,
     };
   }
@@ -320,7 +320,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     lessonId?: string;
     studyGroupId?: string;
   }): Promise<SharedNote> {
-    const note = await (this.prisma as any).sharedNote.create({
+    const note = await this.prisma.sharedNote.create({
       data: {
         tenantId: args.tenantId,
         createdBy: args.createdBy,
@@ -343,7 +343,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     tenantId: TenantId;
     userId: UserId;
   }): Promise<SharedNote> {
-    const note = await (this.prisma as any).sharedNote.findFirst({
+    const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
       include: { sharedWith: true },
     });
@@ -358,7 +358,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     const canAccess =
       note.createdBy === args.userId ||
       (note.sharedWith ?? []).some(
-        (entry: any) => entry.userId === args.userId,
+        (entry) => entry.userId === args.userId,
       );
     if (!canAccess) {
       throw createHttpError(
@@ -376,7 +376,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     userId: UserId;
     content: string;
   }): Promise<SharedNote> {
-    const note = await (this.prisma as any).sharedNote.findFirst({
+    const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
       include: { sharedWith: true },
     });
@@ -392,7 +392,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       note.createdBy === args.userId ||
       (note.allowEditing &&
         (note.sharedWith ?? []).some(
-          (entry: any) =>
+          (entry) =>
             entry.userId === args.userId && entry.permission === "edit",
         ));
     if (!canEdit) {
@@ -403,7 +403,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       );
     }
 
-    const updatedNote = await (this.prisma as any).sharedNote.update({
+    const updatedNote = await this.prisma.sharedNote.update({
       where: { id: args.noteId },
       data: {
         content: args.content,
@@ -425,7 +425,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       permission: "view" | "comment" | "edit";
     }>;
   }): Promise<SharedNote> {
-    const note = await (this.prisma as any).sharedNote.findFirst({
+    const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
       include: { sharedWith: true },
     });
@@ -445,8 +445,8 @@ export class CollaborationServiceImpl implements CollaborationService {
     );
 
     await Promise.all(
-      args.shareWith.map((shareTarget: any) =>
-        (this.prisma as any).sharedNoteAccess.upsert({
+      args.shareWith.map((shareTarget) =>
+        this.prisma.sharedNoteAccess.upsert({
           where: {
             noteId_userId: { noteId: args.noteId, userId: shareTarget.userId },
           },
@@ -461,7 +461,7 @@ export class CollaborationServiceImpl implements CollaborationService {
         }),
       ),
     );
-    const updatedNote = await (this.prisma as any).sharedNote.findUniqueOrThrow(
+    const updatedNote = await this.prisma.sharedNote.findUniqueOrThrow(
       {
         where: { id: args.noteId },
         include: { sharedWith: true },
@@ -487,17 +487,17 @@ export class CollaborationServiceImpl implements CollaborationService {
       { sharedWith: { some: { userId: args.userId } } },
     ];
     const [items, total] = await Promise.all([
-      (this.prisma as any).sharedNote.findMany({
+      this.prisma.sharedNote.findMany({
         where,
         skip,
         take,
         orderBy: { updatedAt: "desc" },
         include: { sharedWith: true },
       }),
-      (this.prisma as any).sharedNote.count({ where }),
+      this.prisma.sharedNote.count({ where }),
     ]);
     return {
-      items: items.map((n: any) => this.mapToNote(n)),
+      items: items.map((n) => this.mapToNote(n)),
       totalCount: total,
       total,
       hasMore: skip + items.length < total,
@@ -541,7 +541,7 @@ export class CollaborationServiceImpl implements CollaborationService {
       status: thread.status as ThreadStatus,
       authorId: thread.authorId as UserId,
       authorName: thread.authorName,
-      posts: thread.posts.map((post: any) => this.mapToPost(post)),
+      posts: thread.posts.map((post) => this.mapToPost(post)),
       createdAt: thread.createdAt.toISOString(),
       ...(thread.moduleId ? { moduleId: thread.moduleId as ModuleId } : {}),
       ...(thread.resolvedAt

@@ -12,13 +12,14 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-
-type ContentAssetType = any;
-type ContentAssetStatus = any;
-type ContentAsset = any;
-type ContentAssetRevision = any;
-type ContentBlock = any;
-type ArtifactManifest = any;
+import type {
+  ContentAssetType,
+  ContentAssetStatus,
+  ContentAsset,
+  ContentAssetRevision,
+  ContentBlock,
+  ArtifactManifest,
+} from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Query types
@@ -66,21 +67,21 @@ export class ContentAssetReadService {
     tenantId: string,
     assetId: string,
   ): Promise<AssetDetail | null> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId, tenantId },
     });
 
     if (!asset) return null;
 
     const [blocks, manifests, revision] = await Promise.all([
-      (this.prisma as any).contentBlock.findMany({
+      this.prisma.contentBlock.findMany({
         where: { assetId },
         orderBy: { orderIndex: "asc" },
       }),
-      (this.prisma as any).artifactManifest.findMany({
+      this.prisma.artifactManifest.findMany({
         where: { assetId },
       }),
-      (this.prisma as any).contentAssetRevision.findFirst({
+      this.prisma.contentAssetRevision.findFirst({
         where: { assetId, version: asset.currentVersion },
       }),
     ]);
@@ -113,13 +114,13 @@ export class ContentAssetReadService {
     }
 
     const [assets, total] = await Promise.all([
-      (this.prisma as any).contentAsset.findMany({
+      this.prisma.contentAsset.findMany({
         where,
         take: filters.limit ?? 20,
         skip: filters.offset ?? 0,
         orderBy: { updatedAt: "desc" },
       }),
-      (this.prisma as any).contentAsset.count({ where }),
+      this.prisma.contentAsset.count({ where }),
     ]);
 
     return {
@@ -136,13 +137,13 @@ export class ContentAssetReadService {
     assetId: string,
     limit = 10,
   ): Promise<RelatedAsset[]> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId, tenantId },
     });
 
     if (!asset) return [];
 
-    const related = await (this.prisma as any).contentAsset.findMany({
+    const related = await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
         id: { not: assetId },
@@ -172,13 +173,13 @@ export class ContentAssetReadService {
     tenantId: string,
     assetId: string,
   ): Promise<ContentAssetRevision[]> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId, tenantId },
     });
 
     if (!asset) return [];
 
-    const revisions = await (this.prisma as any).contentAssetRevision.findMany({
+    const revisions = await this.prisma.contentAssetRevision.findMany({
       where: { assetId },
       orderBy: { version: "desc" },
     });

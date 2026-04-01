@@ -6,6 +6,7 @@
  * @module @tutorputor/platform/performance
  */
 
+import type { FastifyRequest, FastifyReply } from "fastify";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger("performance-optimizer");
@@ -163,7 +164,7 @@ export class QueryOptimizer {
 
     // Simple heuristic: multiple similar queries in short timeframe
     const recentQueries = this.queryLog.filter(
-      (q: any) => q.query === query && Date.now() - q.timestamp.getTime() < 1000,
+      (q) => q.query === query && Date.now() - q.timestamp.getTime() < 1000,
     );
 
     if (recentQueries.length > 5) {
@@ -214,13 +215,13 @@ export class QueryOptimizer {
       count: number;
     }>;
   } {
-    const slowQueries = this.queryLog.filter((q: any) => q.duration > 500);
-    const totalDuration = this.queryLog.reduce((sum: any, q: any) => sum + q.duration, 0);
+    const slowQueries = this.queryLog.filter((q) => q.duration > 500);
+    const totalDuration = this.queryLog.reduce((sum: number, q) => sum + q.duration, 0);
 
     // Group by query pattern
     const queryGroups: Record<string, { durations: number[]; count: number }> =
       {};
-    this.queryLog.forEach((q: any) => {
+    this.queryLog.forEach((q) => {
       const key = q.query.substring(0, 50);
       if (!queryGroups[key]) {
         queryGroups[key] = { durations: [], count: 0 };
@@ -233,11 +234,11 @@ export class QueryOptimizer {
       .map(([query, data]) => ({
         query,
         avgDuration:
-          data.durations.reduce((a: any, b: any) => a + b, 0) / data.durations.length,
+          data.durations.reduce((a: number, b) => a + b, 0) / data.durations.length,
         count: data.count,
       }))
-      .filter((q: any) => q.avgDuration > 100)
-      .sort((a: any, b: any) => b.avgDuration - a.avgDuration)
+      .filter((q) => q.avgDuration > 100)
+      .sort((a, b) => b.avgDuration - a.avgDuration)
       .slice(0, 10);
 
     return {
@@ -295,7 +296,7 @@ export class BundleOptimizer {
       suggestions.push("Replace moment with date-fns (smaller bundle)");
     }
 
-    if (modules.filter((m: any) => m.includes("chart")).length > 1) {
+    if (modules.filter((m) => m.includes("chart")).length > 1) {
       suggestions.push(
         "Multiple charting libraries detected - consolidate to one",
       );
@@ -459,7 +460,7 @@ export class ConnectionPoolOptimizer {
  * Performance Middleware for Fastify
  */
 export function performanceMiddleware() {
-  return async (request: any, reply: any) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     const startTime = Date.now();
 
     // Add cache headers

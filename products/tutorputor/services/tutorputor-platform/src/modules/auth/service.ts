@@ -56,7 +56,7 @@ const stateCache = new Map<
 export function createSsoService(deps: SsoServiceDeps): SsoService {
   const { prisma, baseUrl, generateAccessToken, generateRefreshToken } = deps;
 
-  function getProviderRuntimeConfig(provider: any) {
+  function getProviderRuntimeConfig(provider: Record<string, unknown>) {
     return {
       discoveryEndpoint: provider.discoveryEndpoint,
       clientId: provider.clientId,
@@ -138,11 +138,11 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         where: { tenantId: tenant.id, enabled: true },
         select: { id: true, displayName: true, type: true },
       });
-      return providers as any[];
+      return providers as unknown[];
     },
 
     async createProvider({ tenantId, config }) {
-      const providerConfig = (config as any).config ?? {};
+      const providerConfig = (config as { config?: Record<string, unknown> }).config ?? {};
 
       // @ts-ignore
       const created = await prisma.identityProvider.create({
@@ -155,13 +155,13 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           clientId: providerConfig.clientId ?? "",
           clientSecret: providerConfig.clientSecret ?? null,
           allowedDomains: JSON.stringify(providerConfig.allowedDomains ?? []),
-          roleMapping: JSON.stringify((config as any).roleMapping || {}),
+          roleMapping: JSON.stringify((config as { roleMapping?: unknown }).roleMapping || {}),
         },
       });
       return mapDbProviderToConfig(created);
     },
 
-    async updateProvider({ tenantId, providerId, updates }: any) {
+    async updateProvider({ tenantId, providerId, updates }: { tenantId: string; providerId: string; updates: Record<string, unknown> }) {
       // @ts-ignore
       const current = await prisma.identityProvider.findFirst({
         where: { id: providerId, tenantId },
@@ -218,8 +218,8 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           const client = await getOidcClient(provider);
           await client.initialize();
           return { success: true, message: "Discovery successful" };
-        } catch (e: any) {
-          return { success: false, message: e.message };
+        } catch (e: unknown) {
+          return { success: false, message: e instanceof Error ? e.message : String(e) };
         }
       }
       return { success: true, message: "SAML test not implemented" };
@@ -382,7 +382,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           id: user.id as UserId,
           email: user.email,
           displayName: user.displayName,
-          role: (user as any).role as UserRole,
+          role: (user as { role?: UserRole }).role as UserRole,
           tenantId: user.tenantId as TenantId,
         },
         redirectUri: storedState.redirectUri,
@@ -409,31 +409,31 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
 
     // Stubs for missing interface methods
     // @ts-ignore
-    async getProvider(_ignored: any) {
+    async getProvider(_ignored: unknown) {
       return null;
     },
     // @ts-ignore
-    async handleSamlCallback(_ignored: any) {
+    async handleSamlCallback(_ignored: unknown) {
       return {} as unknown;
     },
     // @ts-ignore
-    async getUserLinks(_ignored: any) {
+    async getUserLinks(_ignored: unknown) {
       return [];
     },
     // @ts-ignore
-    async syncUserFromIdp(_ignored: any) {
+    async syncUserFromIdp(_ignored: unknown) {
       return {} as unknown;
     },
     // @ts-ignore
-    async handleOidcCallback(_ignored: any) {
+    async handleOidcCallback(_ignored: unknown) {
       return {} as unknown;
     },
     // @ts-ignore
-    async validateToken(_ignored: any) {
+    async validateToken(_ignored: unknown) {
       return true;
     },
     // @ts-ignore
-    async getLogoutUrl(_ignored: any) {
+    async getLogoutUrl(_ignored: unknown) {
       return "";
     },
   };

@@ -78,7 +78,7 @@ export class GenerationQualityLoopService {
       actorId?: string;
     },
   ): Promise<GenerationQualityLoopSummary> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: generationRequestId, tenantId },
       select: { id: true, reviewPath: true },
     });
@@ -102,18 +102,18 @@ export class GenerationQualityLoopService {
     const eligibleAssetIds = unique(
       records
         .filter(
-          (record: any) =>
+          (record) =>
             record.assetId != null && record.recommendation !== "block",
         )
-        .map((record: any) => record.assetId as string),
+        .map((record) => record.assetId as string),
     );
     const blockedAssetIds = unique(
       records
         .filter(
-          (record: any) =>
+          (record) =>
             record.assetId != null && record.recommendation === "block",
         )
-        .map((record: any) => record.assetId as string),
+        .map((record) => record.assetId as string),
     );
 
     let latestDecision = await this.reviewService.getLatestDecision(
@@ -158,7 +158,7 @@ export class GenerationQualityLoopService {
         evaluation as unknown as GenerationQualityLoopSummary["evaluation"],
       ...(latestDecision ? { latestDecision } : {}),
       openCandidates: openCandidates.filter(
-        (candidate: any) =>
+        (candidate) =>
           candidate.generationRequestId === generationRequestId ||
           blockedAssetIds.includes(candidate.assetId) ||
           eligibleAssetIds.includes(candidate.assetId),
@@ -174,8 +174,8 @@ export class GenerationQualityLoopService {
       ...(publishResult ? { publishResult } : {}),
       publishedAssetIds: publishResult
         ? publishResult.results
-            .filter((result: any) => result.published)
-            .map((result: any) => result.assetId)
+            .filter((result) => result.published)
+            .map((result) => result.assetId)
         : [],
       eligibleAssetIds,
       blockedAssetIds,
@@ -196,7 +196,7 @@ export class GenerationQualityLoopService {
         continue;
       }
 
-      const existing = await (this.prisma as any).regenerationCandidate.findFirst(
+      const existing = await this.prisma.regenerationCandidate.findFirst(
         {
           where: {
             tenantId,
@@ -260,7 +260,7 @@ function buildCandidateConfig(record: EvaluationRecord):
   }
 
   const issues = record.issues ?? [];
-  const safetyIssue = issues.find((issue: any) => issue.dimension === "safety");
+  const safetyIssue = issues.find((issue) => issue.dimension === "safety");
 
   if (record.recommendation === "block") {
     return {

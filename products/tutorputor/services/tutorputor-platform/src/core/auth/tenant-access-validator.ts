@@ -545,7 +545,7 @@ export class TenantAccessValidator {
    * Middleware function for Fastify routes
    */
   createMiddleware(requiredAction: string) {
-    return async (request: any, reply: any) => {
+    return async (request: import("fastify").FastifyRequest, reply: import("fastify").FastifyReply) => {
       const tenantId = request.user?.tenantId;
       const userId = request.user?.userId;
 

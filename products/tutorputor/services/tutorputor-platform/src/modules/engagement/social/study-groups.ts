@@ -77,7 +77,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         name: args.name,
         description: args.description,
         createdBy: args.createdBy,
-        visibility: this.mapVisibilityToDb(args.visibility) as any,
+        visibility: this.mapVisibilityToDb(args.visibility),
         subjects: JSON.stringify(args.subjects),
         modules: args.moduleIds ? JSON.stringify(args.moduleIds) : null,
         maxMembers: args.maxMembers ?? this.defaultMaxMembers,
@@ -116,9 +116,10 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     }
 
     const mapped = this.mapGroupFromDb(group);
+    const groupWithMembers = group as { members?: Record<string, unknown>[] };
     const membership =
-      args.userId && (group as any).members?.[0]
-        ? this.mapMemberFromDb((group as any).members[0])
+      args.userId && groupWithMembers.members?.[0]
+        ? this.mapMemberFromDb(groupWithMembers.members[0])
         : undefined;
 
     if (group.visibility !== "PUBLIC" && !membership) {
@@ -548,7 +549,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
 
     const updatedMember = await this.prisma.studyGroupMember.update({
       where: { id: member.id },
-      data: { role: this.mapRoleToDb(args.newRole) as any },
+      data: { role: this.mapRoleToDb(args.newRole) },
     });
 
     return this.mapMemberFromDb(updatedMember);
@@ -648,7 +649,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         createdBy: args.createdBy,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
-        type: this.mapSessionTypeToDb(args.type) as any,
+        type: this.mapSessionTypeToDb(args.type),
         ...(args.moduleId !== undefined ? { moduleId: args.moduleId } : {}),
         lessonIds: args.lessonIds ? JSON.stringify(args.lessonIds) : null,
         ...(args.maxParticipants !== undefined
@@ -744,11 +745,11 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       create: {
         sessionId: args.sessionId,
         userId: args.userId,
-        status: this.mapRsvpStatusToDb(args.status) as any,
+        status: this.mapRsvpStatusToDb(args.status),
         ...(args.note !== undefined ? { note: args.note } : {}),
       },
       update: {
-        status: this.mapRsvpStatusToDb(args.status) as any,
+        status: this.mapRsvpStatusToDb(args.status),
         ...(args.note !== undefined ? { note: args.note } : {}),
       },
     });
@@ -965,7 +966,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
   private async publishActivity(
     tenantId: string,
     activity: {
-      type: string;
+      type: "JOINED_GROUP" | "CREATED_TOPIC" | "REPLIED_TOPIC" | "LIKED_POST" | "SCHEDULED_SESSION" | "COMPLETED_SESSION" | "SHARED_NOTE" | "EARNED_BADGE" | "HELPED_PEER";
       actorId: string;
       targetType: string;
       targetId: string;
@@ -978,7 +979,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         tenantId,
         actorId: activity.actorId,
         actorName: "", // Would be populated from user service
-        type: activity.type as any,
+        type: activity.type,
         targetType: activity.targetType,
         targetId: activity.targetId,
         targetTitle: activity.targetTitle,
@@ -1035,8 +1036,8 @@ export class StudyGroupServiceImpl implements StudyGroupService {
   }
 
   // Mapping helpers
-  private mapVisibilityToDb(visibility: StudyGroupVisibility): string {
-    const map: Record<StudyGroupVisibility, string> = {
+  private mapVisibilityToDb(visibility: StudyGroupVisibility): "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY" {
+    const map: Record<StudyGroupVisibility, "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY"> = {
       public: "PUBLIC",
       private: "PRIVATE",
       classroom_only: "CLASSROOM_ONLY",
@@ -1053,8 +1054,8 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[visibility] ?? "public";
   }
 
-  private mapRoleToDb(role: StudyGroupRole): string {
-    const map: Record<StudyGroupRole, string> = {
+  private mapRoleToDb(role: StudyGroupRole): "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER" {
+    const map: Record<StudyGroupRole, "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER"> = {
       owner: "OWNER",
       admin: "ADMIN",
       moderator: "MODERATOR",
@@ -1073,8 +1074,8 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[role] ?? "member";
   }
 
-  private mapSessionTypeToDb(type: StudySessionType): string {
-    const map: Record<StudySessionType, string> = {
+  private mapSessionTypeToDb(type: StudySessionType): "DISCUSSION" | "REVIEW" | "QUIZ_PRACTICE" | "VIDEO_CALL" | "COLLABORATIVE" {
+    const map: Record<StudySessionType, "DISCUSSION" | "REVIEW" | "QUIZ_PRACTICE" | "VIDEO_CALL" | "COLLABORATIVE"> = {
       discussion: "DISCUSSION",
       review: "REVIEW",
       quiz_practice: "QUIZ_PRACTICE",
@@ -1095,8 +1096,8 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[type] ?? "discussion";
   }
 
-  private mapRsvpStatusToDb(status: SessionRsvp["status"]): string {
-    const map: Record<SessionRsvp["status"], string> = {
+  private mapRsvpStatusToDb(status: SessionRsvp["status"]): "ATTENDING" | "MAYBE" | "NOT_ATTENDING" {
+    const map: Record<SessionRsvp["status"], "ATTENDING" | "MAYBE" | "NOT_ATTENDING"> = {
       attending: "ATTENDING",
       maybe: "MAYBE",
       not_attending: "NOT_ATTENDING",
@@ -1131,7 +1132,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       modules: JSON.parse(group.modules || "[]"),
       memberCount: group.memberCount,
       lastActivityAt: group.lastActivityAt,
-      status: group.status.toLowerCase() as any,
+      status: group.status.toLowerCase() as "active" | "archived" | "suspended",
       archivedAt: group.archivedAt ?? undefined,
     };
   }
@@ -1160,7 +1161,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       userId: request.userId,
       message: request.message ?? undefined,
       createdAt: request.createdAt,
-      status: request.status.toLowerCase() as any,
+      status: request.status.toLowerCase() as "pending" | "approved" | "rejected",
       reviewedBy: request.reviewedBy ?? undefined,
       reviewedAt: request.reviewedAt ?? undefined,
       rejectionReason: request.rejectionReason ?? undefined,
@@ -1175,7 +1176,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       invitedBy: invite.invitedBy,
       createdAt: invite.createdAt,
       expiresAt: invite.expiresAt,
-      status: invite.status.toLowerCase() as any,
+      status: invite.status.toLowerCase() as "pending" | "accepted" | "declined" | "expired",
       acceptedAt: invite.acceptedAt ?? undefined,
     };
   }
@@ -1200,7 +1201,7 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       attachments: session.attachments
         ? JSON.parse(session.attachments)
         : undefined,
-      status: session.status.toLowerCase() as any,
+      status: session.status.toLowerCase() as "scheduled" | "in_progress" | "completed" | "cancelled",
       startedAt: session.startedAt ?? undefined,
       endedAt: session.endedAt ?? undefined,
       notes: session.notes ?? undefined,

@@ -23,9 +23,9 @@ import type { FastifyPluginAsync } from "fastify";
  * - tutorputor-analytics (Done)
  */
 export const learningModule = fp(
-  async (fastify: any) => {
-    const prisma = (fastify as any).prisma as TutorPrismaClient;
-    const redis = (fastify as any).redis as Redis;
+  async (fastify: import("fastify").FastifyInstance) => {
+    const prisma = fastify.prisma;
+    const redis = fastify.redis;
 
     if (!prisma) {
       throw new Error(

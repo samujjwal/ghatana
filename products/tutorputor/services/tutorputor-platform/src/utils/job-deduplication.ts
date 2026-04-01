@@ -68,7 +68,7 @@ export class JobDeduplicator {
 
     // Fast distributed duplicate check via Redis lock.
     if (this.redis) {
-      const lockResult = await (this.redis as any).set(
+      const lockResult = await this.redis.set(
         lockKey,
         "1",
         "NX",
@@ -84,7 +84,7 @@ export class JobDeduplicator {
     }
 
     // Check in database for recent jobs with same fingerprint
-    const recentJob = await (this.prisma as any).jobTracking.findFirst({
+    const recentJob = await this.prisma.jobTracking.findFirst({
       where: {
         fingerprint,
         createdAt: {
@@ -120,7 +120,7 @@ export class JobDeduplicator {
     jobType: string,
     metadata: Record<string, any>,
   ): Promise<void> {
-    await (this.prisma as any).jobTracking.create({
+    await this.prisma.jobTracking.create({
       data: {
         jobId,
         fingerprint,
@@ -140,7 +140,7 @@ export class JobDeduplicator {
     jobId: string,
     status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED",
   ): Promise<void> {
-    const updated = await (this.prisma as any).jobTracking.update({
+    const updated = await this.prisma.jobTracking.update({
       where: { jobId },
       data: {
         status,
@@ -160,7 +160,7 @@ export class JobDeduplicator {
   async cleanupOldJobs(
     olderThanMs: number = this.dedupWindowMs,
   ): Promise<number> {
-    const result = await (this.prisma as any).jobTracking.deleteMany({
+    const result = await this.prisma.jobTracking.deleteMany({
       where: {
         createdAt: {
           lt: new Date(Date.now() - olderThanMs),

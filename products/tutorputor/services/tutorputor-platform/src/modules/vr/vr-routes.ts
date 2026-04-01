@@ -5,6 +5,7 @@
  * @doc.pattern REST API
  */
 
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import type { TenantId, UserId } from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
@@ -29,11 +30,9 @@ function asUserId(value: string): UserId {
 /**
  * VR module routes. Registered at prefix /api/v1/vr.
  */
-type RouteRequest = any;
-type RouteReply = any;
 
-export const vrRoutes = async (app: any) => {
-  const prisma = app.prisma as any;
+export const vrRoutes = async (app: FastifyInstance) => {
+  const prisma = app.prisma;
   const labService = new VRLabServiceImpl(prisma);
   const sessionService = new VRSessionServiceImpl(prisma);
   const analyticsService = new VRAnalyticsServiceImpl(prisma);
@@ -46,7 +45,7 @@ export const vrRoutes = async (app: any) => {
    * POST /labs
    * Create a new VR lab. Admin or content_creator only.
    */
-  app.post("/labs", async (req: RouteRequest, reply: RouteReply) => {
+  app.post("/labs", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
@@ -63,7 +62,7 @@ export const vrRoutes = async (app: any) => {
    * GET /labs
    * List VR labs for the current tenant.
    */
-  app.get("/labs", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/labs", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const query = (req.query ?? {}) as any;
 
@@ -89,7 +88,7 @@ export const vrRoutes = async (app: any) => {
    * GET /labs/:labId
    * Get a single VR lab by ID.
    */
-  app.get("/labs/:labId", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/labs/:labId", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const { labId } = req.params as { labId: string };
 
@@ -102,7 +101,7 @@ export const vrRoutes = async (app: any) => {
    * PUT /labs/:labId
    * Update VR lab metadata. Admin or content_creator only.
    */
-  app.put("/labs/:labId", async (req: RouteRequest, reply: RouteReply) => {
+  app.put("/labs/:labId", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
@@ -117,7 +116,7 @@ export const vrRoutes = async (app: any) => {
    * DELETE /labs/:labId
    * Delete a VR lab. Admin only.
    */
-  app.delete("/labs/:labId", async (req: RouteRequest, reply: RouteReply) => {
+  app.delete("/labs/:labId", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "superadmin"]);
@@ -133,7 +132,7 @@ export const vrRoutes = async (app: any) => {
    * POST /labs/:labId/publish
    * Publish a VR lab. Admin or content_creator only.
    */
-  app.post("/labs/:labId/publish", async (req: RouteRequest, reply: RouteReply) => {
+  app.post("/labs/:labId/publish", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
@@ -152,7 +151,7 @@ export const vrRoutes = async (app: any) => {
    * POST /labs/:labId/scenes
    * Add a scene to a lab. Admin or content_creator only.
    */
-  app.post("/labs/:labId/scenes", async (req: RouteRequest, reply: RouteReply) => {
+  app.post("/labs/:labId/scenes", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
@@ -175,7 +174,7 @@ export const vrRoutes = async (app: any) => {
    */
   app.put(
     "/labs/:labId/scenes/:sceneId",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
       const userId = asUserId(getUserId(req));
       requireRole(req, ["admin", "content_creator", "superadmin"]);
@@ -198,7 +197,7 @@ export const vrRoutes = async (app: any) => {
    */
   app.delete(
     "/labs/:labId/scenes/:sceneId",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
       const userId = asUserId(getUserId(req));
       requireRole(req, ["admin", "superadmin"]);
@@ -220,7 +219,7 @@ export const vrRoutes = async (app: any) => {
    * Get analytics for a VR lab. Admin or content_creator only.
    * Query: ?period=day|week|month|all (default: all)
    */
-  app.get("/labs/:labId/analytics", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/labs/:labId/analytics", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     requireRole(req, ["admin", "content_creator", "superadmin"]);
     const { labId } = req.params as { labId: string };
@@ -241,7 +240,7 @@ export const vrRoutes = async (app: any) => {
    * POST /sessions
    * Start a new VR session for the current user.
    */
-  app.post("/sessions", async (req: RouteRequest, reply: RouteReply) => {
+  app.post("/sessions", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
 
@@ -261,7 +260,7 @@ export const vrRoutes = async (app: any) => {
    * List sessions for the current user.
    * Query: ?labId=&status=&page=&limit=
    */
-  app.get("/sessions", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/sessions", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = asTenantId(getTenantId(req));
     const userId = asUserId(getUserId(req));
     const query = (req.query ?? {}) as any;
@@ -286,7 +285,7 @@ export const vrRoutes = async (app: any) => {
    */
   app.get(
     "/sessions/:sessionId",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
       const { sessionId } = req.params as { sessionId: string };
 
@@ -303,7 +302,7 @@ export const vrRoutes = async (app: any) => {
    */
   app.patch(
     "/sessions/:sessionId",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
       const userId = asUserId(getUserId(req));
       const { sessionId } = req.params as { sessionId: string };
@@ -325,7 +324,7 @@ export const vrRoutes = async (app: any) => {
    */
   app.post(
     "/sessions/:sessionId/end",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = asTenantId(getTenantId(req));
       const userId = asUserId(getUserId(req));
       const { sessionId } = req.params as { sessionId: string };

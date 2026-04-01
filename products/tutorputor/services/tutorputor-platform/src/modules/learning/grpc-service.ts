@@ -259,7 +259,7 @@ function loadLearnerProfileServiceDefinition(): LearnerProfileServiceDefinition 
   return descriptor.tutorputor.learner_profile.LearnerProfileService;
 }
 
-function toGrpcError(error: any): grpc.ServiceError {
+function toGrpcError(error: unknown): grpc.ServiceError {
   const message = error instanceof Error ? error.message : "Unknown gRPC failure";
   return {
     name: "LearnerProfileGrpcError",

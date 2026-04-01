@@ -108,7 +108,7 @@ export class AssetBackfillService {
     let cursor: string | undefined;
 
     while (true) {
-      const modules = await (this.prisma as any).module.findMany({
+      const modules = await this.prisma.module.findMany({
         where: { tenantId: options.tenantId },
         take: batchSize,
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -124,7 +124,7 @@ export class AssetBackfillService {
         try {
           // Check for existing migration
           if (skipExisting) {
-            const existing = await (this.prisma as any).contentAsset.findFirst({
+            const existing = await this.prisma.contentAsset.findFirst({
               where: { legacyModuleId: mod.id },
             });
             if (existing) {
@@ -147,7 +147,7 @@ export class AssetBackfillService {
             continue;
           }
 
-          const asset = await (this.prisma as any).contentAsset.create({
+          const asset = await this.prisma.contentAsset.create({
             data: {
               tenantId: mod.tenantId,
               slug,
@@ -177,7 +177,7 @@ export class AssetBackfillService {
             { moduleId: mod.id, assetId: asset.id },
             "Backfilled module to canonical asset",
           );
-        } catch (err: any) {
+        } catch (err: unknown) {
           result.failed++;
           const message = err instanceof Error ? err.message : String(err);
           result.failures.push({
@@ -215,7 +215,7 @@ export class AssetBackfillService {
 
     while (true) {
       const experiences = await (
-        this.prisma as any
+        this.prisma
       ).learningExperience.findMany({
         where: { tenantId: options.tenantId },
         take: batchSize,
@@ -236,7 +236,7 @@ export class AssetBackfillService {
 
         try {
           if (skipExisting) {
-            const existing = await (this.prisma as any).contentAsset.findFirst({
+            const existing = await this.prisma.contentAsset.findFirst({
               where: { legacyExperienceId: exp.id },
             });
             if (existing) {
@@ -259,7 +259,7 @@ export class AssetBackfillService {
             continue;
           }
 
-          const asset = await (this.prisma as any).contentAsset.create({
+          const asset = await this.prisma.contentAsset.create({
             data: {
               tenantId: exp.tenantId,
               slug,
@@ -282,7 +282,7 @@ export class AssetBackfillService {
           });
 
           // Create initial revision snapshot
-          await (this.prisma as any).contentAssetRevision.create({
+          await this.prisma.contentAssetRevision.create({
             data: {
               assetId: asset.id,
               version: 1,
@@ -307,7 +307,7 @@ export class AssetBackfillService {
           // Backfill simulation manifests as ArtifactManifest
           for (const claimSim of exp.claimSimulations ?? []) {
             if (claimSim.simulationManifest) {
-              await (this.prisma as any).artifactManifest.create({
+              await this.prisma.artifactManifest.create({
                 data: {
                   assetId: asset.id,
                   manifestType: "SIMULATION",
@@ -323,7 +323,7 @@ export class AssetBackfillService {
 
           // Backfill animations as ArtifactManifest
           for (const anim of exp.claimAnimations ?? []) {
-            await (this.prisma as any).artifactManifest.create({
+            await this.prisma.artifactManifest.create({
               data: {
                 assetId: asset.id,
                 manifestType: "ANIMATION",
@@ -354,7 +354,7 @@ export class AssetBackfillService {
             { experienceId: exp.id, assetId: asset.id },
             "Backfilled experience to canonical asset",
           );
-        } catch (err: any) {
+        } catch (err: unknown) {
           result.failed++;
           const message = err instanceof Error ? err.message : String(err);
           result.failures.push({

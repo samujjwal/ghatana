@@ -10,7 +10,7 @@ import { createTenantService, type DomainPack } from "./service.js";
 import { randomUUID } from "node:crypto";
 
 /** Mask the clientSecret field so it never leaks in API responses. */
-function maskSecret(provider: any) {
+function maskSecret(provider: Record<string, unknown>) {
   const { clientSecret: _secret, ...safe } = provider;
   return {
     ...safe,
@@ -27,7 +27,7 @@ function maskSecret(provider: any) {
  * @doc.pattern REST API
  */
 export const tenantRoutes: FastifyPluginAsync = async (app) => {
-  const prisma = app.prisma as any;
+  const prisma = app.prisma;
   const tenantService = createTenantService(prisma);
 
   // ===========================================================================

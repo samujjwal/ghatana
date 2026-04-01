@@ -25,10 +25,10 @@ export const gamificationRoutes: FastifyPluginAsync = async (app) => {
     badgeEarned: GamificationServicePrisma["badgeEarned"];
     userPoints: GamificationServicePrisma["userPoints"];
     userAchievement: {
-      create(args: any): Promise<any>;
+      create(args: unknown): Promise<unknown>;
     };
     learningStreak: {
-      findFirst(args: any): Promise<any>;
+      findFirst(args: unknown): Promise<unknown>;
     };
   };
 

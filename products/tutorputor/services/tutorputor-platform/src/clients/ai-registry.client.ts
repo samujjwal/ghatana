@@ -92,7 +92,7 @@ class AiRegistryClient {
       const data = (await res.json()) as T;
       this.cacheSet(cacheKey, data);
       return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.warn({ message: 'GET request exception', path, error: err instanceof Error ? err.message : String(err) });
       return null;
     } finally {

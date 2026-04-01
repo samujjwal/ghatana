@@ -3,7 +3,7 @@ import fp from "fastify-plugin";
 import { CredentialService } from "./service";
 import { credentialRoutes } from "./routes";
 
-export const credentialModule = fp(async (fastify: any) => {
+export const credentialModule = fp(async (fastify: FastifyInstance) => {
     const service = new CredentialService(fastify.prisma);
 
     fastify.register(credentialRoutes as any, { service } as any);

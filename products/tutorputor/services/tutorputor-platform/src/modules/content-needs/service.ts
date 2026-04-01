@@ -44,6 +44,14 @@ export type InteractionType =
     | 'assessment'
     | 'demonstration';
 
+type ClaimForGeneration = {
+    id: string;
+    claimRef: string;
+    text: string;
+    experienceId: string;
+    experience?: { tenantId: string; domain: string } | null;
+};
+
 export type AnimationType =
     | 'process_visualization'
     | 'timeline'
@@ -155,7 +163,7 @@ export class ContentNeedsAnalyzer {
         claimId: string,
         needs: ContentNeeds
     ): Promise<{
-        examples: any[];
+        examples: unknown[];
         simulation?: unknown;
         animation?: unknown;
     }> {
@@ -169,7 +177,7 @@ export class ContentNeedsAnalyzer {
         }
 
         const result: {
-            examples: any[];
+            examples: unknown[];
             simulation?: unknown;
             animation?: unknown;
         } = {
@@ -209,8 +217,8 @@ export class ContentNeedsAnalyzer {
         });
 
         return claims
-            .filter((claim: { contentNeeds: any }) => claim.contentNeeds !== null)
-            .map((claim: { id: string; claimRef: string; text: string; bloomLevel: string; contentNeeds: any; updatedAt: Date }) => ({
+            .filter((claim) => claim.contentNeeds !== null)
+            .map((claim) => ({
                 claimId: claim.id,
                 claimRef: claim.claimRef,
                 claimText: claim.text,
@@ -467,7 +475,7 @@ export class ContentNeedsAnalyzer {
     // Content Generation Methods
     // ===========================================================================
 
-    private async persistExamples(claim: any, needs: ContentNeeds): Promise<unknown[]> {
+    private async persistExamples(claim: ClaimForGeneration, needs: ContentNeeds): Promise<unknown[]> {
         const generated = await this.generateExamples(claim, needs);
 
         await this.prisma.claimExample.deleteMany({
@@ -477,7 +485,7 @@ export class ContentNeedsAnalyzer {
             },
         });
 
-        const created: any[] = [];
+        const created: unknown[] = [];
         let orderIndex = 0;
         for (const example of generated as Array<Record<string, unknown>>) {
             const exampleType = String(example.type ?? 'worked');
@@ -506,7 +514,7 @@ export class ContentNeedsAnalyzer {
         return created;
     }
 
-    private async persistSimulation(claim: any, needs: ContentNeeds): Promise<any> {
+    private async persistSimulation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<unknown> {
         const generated = await this.generateSimulation(claim, needs);
         const manifestId = generated.id;
 
@@ -515,7 +523,7 @@ export class ContentNeedsAnalyzer {
             create: {
                 id: manifestId,
                 tenantId: claim.experience.tenantId,
-                domain: claim.experience.domain as any,
+                domain: claim.experience?.domain as string,
                 version: '1.0.0',
                 title: generated.config.title,
                 description: generated.config.description,
@@ -554,7 +562,7 @@ export class ContentNeedsAnalyzer {
         });
     }
 
-    private async persistAnimation(claim: any, needs: ContentNeeds): Promise<any> {
+    private async persistAnimation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<unknown> {
         const generated = await this.generateAnimation(claim, needs);
 
         return this.prisma.claimAnimation.upsert({
@@ -583,8 +591,8 @@ export class ContentNeedsAnalyzer {
         });
     }
 
-    private async generateExamples(claim: any, needs: ContentNeeds): Promise<unknown[]> {
-        const examples: any[] = [];
+    private async generateExamples(claim: ClaimForGeneration, needs: ContentNeeds): Promise<unknown[]> {
+        const examples: unknown[] = [];
 
         for (let i = 0; i < needs.examples.count; i++) {
             const type = needs.examples.types[i % needs.examples.types.length];
@@ -603,7 +611,7 @@ export class ContentNeedsAnalyzer {
         return examples;
     }
 
-    private async generateSimulation(claim: any, needs: ContentNeeds): Promise<any> {
+    private async generateSimulation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<Record<string, unknown>> {
         return {
             id: `simulation-${claim.id}`,
             type: 'physics_simulation',
@@ -618,7 +626,7 @@ export class ContentNeedsAnalyzer {
         };
     }
 
-    private async generateAnimation(claim: any, needs: ContentNeeds): Promise<any> {
+    private async generateAnimation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<Record<string, unknown>> {
         return {
             id: `animation-${claim.id}`,
             type: needs.animation.type,
@@ -639,7 +647,7 @@ export class ContentNeedsAnalyzer {
     // Utility Methods
     // ===========================================================================
 
-    private extractGradeRange(experience: any): string {
+    private extractGradeRange(experience: { gradeAdaptations?: Array<{ gradeRange?: string }> }): string {
         // Extract grade range from experience data
         return experience.gradeAdaptations?.[0]?.gradeRange || 'grade_9_12';
     }

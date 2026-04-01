@@ -18,8 +18,18 @@ type ContentAssetType =
   | "simulation"
   | "animation";
 
-type SimulationManifest = Record<string, any>;
-type AnimationConfig = Record<string, any>;
+type SimulationManifest = {
+  parameters?: Array<{ type: string; min?: number; max?: number }>;
+  controls?: unknown[];
+  realTime?: boolean;
+  safetyWarnings?: unknown;
+  [key: string]: unknown;
+};
+type AnimationConfig = {
+  keyframes?: Array<{ time: number }>;
+  assets?: unknown[];
+  [key: string]: unknown;
+};
 
 // ============================================================================
 // Types
@@ -180,7 +190,7 @@ export class AutomatedContentReviewService {
       recommendations: this.generateClaimRecommendations(issues, modalities),
       reviewedAt: new Date(),
       claimRef,
-      claimText: (claim as any).claimText || claim.claimRef,
+      claimText: (claim as { claimText?: string }).claimText || claim.claimRef,
       modalities,
       completenessScore,
       qualityScore,
@@ -195,7 +205,7 @@ export class AutomatedContentReviewService {
    * Review a content example for quality and alignment
    */
   async reviewExample(exampleId: string): Promise<ExampleReviewResult> {
-    const example = await (this.prisma.contentExample as any).findUnique({
+    const example = await this.prisma.contentExample.findUnique({
       where: { id: exampleId },
       include: {
         claim: true,
@@ -222,8 +232,8 @@ export class AutomatedContentReviewService {
 
     // Quality checks
     if (
-      !(example as any).explanation ||
-      (example as any).explanation.length < 50
+      !(example as { explanation?: string }).explanation ||
+      (example as { explanation?: string }).explanation!.length < 50
     ) {
       issues.push({
         severity: "error",
@@ -400,7 +410,7 @@ export class AutomatedContentReviewService {
    * Review an animation configuration for completeness and renderability
    */
   async reviewAnimation(animationId: string): Promise<AnimationReviewResult> {
-    const animation = await (this.prisma as any).animationConfig.findUnique({
+    const animation = await this.prisma.animationConfig.findUnique({
       where: { id: animationId },
     });
 
@@ -565,28 +575,28 @@ export class AutomatedContentReviewService {
       claims.map((claim) => this.reviewClaim(experienceId, claim.claimRef)),
     );
 
-    const examples = await (this.prisma.contentExample as any).findMany({
+    const examples = await this.prisma.contentExample.findMany({
       where: { experienceId },
     });
 
     const exampleReviews = await Promise.all(
-      examples.map((example: any) => this.reviewExample(example.id)),
+      examples.map((example) => this.reviewExample(example.id)),
     );
 
-    const simulations = await (this.prisma.simulationManifest as any).findMany({
+    const simulations = await this.prisma.simulationManifest.findMany({
       where: { experienceId },
     });
 
     const simulationReviews = await Promise.all(
-      simulations.map((sim: any) => this.reviewSimulation(sim.id)),
+      simulations.map((sim) => this.reviewSimulation(sim.id)),
     );
 
-    const animations = await (this.prisma as any).animationConfig.findMany({
+    const animations = await this.prisma.animationConfig.findMany({
       where: { experienceId },
     });
 
     const animationReviews = await Promise.all(
-      animations.map((animation: any) => this.reviewAnimation(animation.id)),
+      animations.map((animation) => this.reviewAnimation(animation.id)),
     );
 
     const allReviews = [
@@ -615,7 +625,7 @@ export class AutomatedContentReviewService {
   // Helper Methods - Private
   // ---------------------------------------------------------------------------
 
-  private async scoreClaimQuality(claim: any): Promise<number> {
+  private async scoreClaimQuality(claim: Record<string, unknown>): Promise<number> {
     let score = 0;
 
     // Check claim text quality
@@ -651,7 +661,7 @@ export class AutomatedContentReviewService {
 
   private generateClaimRecommendations(
     issues: ReviewIssue[],
-    modalities: any,
+    modalities: { examples: number; simulations: number; animations: number },
   ): string[] {
     const recommendations: string[] = [];
 
@@ -678,7 +688,7 @@ export class AutomatedContentReviewService {
     return recommendations;
   }
 
-  private async scoreClaimAlignment(example: any): Promise<number> {
+  private async scoreClaimAlignment(example: Record<string, unknown> & { claim?: { claimText?: string } | null }): Promise<number> {
     // Simple heuristic-based scoring
     let score = 50; // Base score
 
@@ -695,7 +705,7 @@ export class AutomatedContentReviewService {
     return Math.min(score, 100);
   }
 
-  private async scoreGradeAppropriateness(example: any): Promise<number> {
+  private async scoreGradeAppropriateness(example: Record<string, unknown>): Promise<number> {
     // Simple heuristic based on complexity
     let score = 70; // Default to appropriate
 
@@ -716,24 +726,24 @@ export class AutomatedContentReviewService {
     return Math.max(0, Math.min(score, 100));
   }
 
-  private async scoreUniqueness(_example: any): Promise<number> {
+  private async scoreUniqueness(_example: Record<string, unknown>): Promise<number> {
     // Simplified uniqueness scoring - return default score
     // In real implementation would check against other examples
     return 85;
   }
 
-  private async scoreDomainRelevance(example: any): Promise<number> {
+  private async scoreDomainRelevance(example: Record<string, unknown> & { claim?: { domain?: string } | null }): Promise<number> {
     // Check if example uses domain-specific terminology
     const domainKeywords = await this.getDomainKeywords(
-      (example.claim as any)?.domain || "general",
+      example.claim?.domain || "general",
     );
     const text = (
-      (example as any).explanation ||
-      example.description ||
+      (example.explanation as string | undefined) ||
+      (example.description as string | undefined) ||
       ""
     ).toLowerCase();
 
-    const keywordMatches = domainKeywords.filter((keyword: any) =>
+    const keywordMatches = domainKeywords.filter((keyword) =>
       text.includes(keyword.toLowerCase()),
     ).length;
     const relevanceScore = Math.min(
@@ -766,7 +776,7 @@ export class AutomatedContentReviewService {
     }
 
     // Check for valid types
-    manifest.parameters?.forEach((param: any) => {
+    manifest.parameters?.forEach((param) => {
       if (
         !param.type ||
         !["number", "string", "boolean", "range"].includes(param.type)
@@ -787,7 +797,7 @@ export class AutomatedContentReviewService {
     }
 
     // Bonus for different parameter types
-    const paramTypes = new Set(manifest.parameters?.map((p: any) => p.type));
+    const paramTypes = new Set(manifest.parameters?.map((p) => p.type));
     score += paramTypes.size * 10;
 
     // Bonus for controls
@@ -809,7 +819,7 @@ export class AutomatedContentReviewService {
     let score = 100;
 
     // Check for potentially unsafe parameter ranges
-    manifest.parameters?.forEach((param: any) => {
+    manifest.parameters?.forEach((param) => {
       if (param.type === "range") {
         if (param.min !== undefined && param.max !== undefined) {
           // Check for reasonable ranges
@@ -823,7 +833,7 @@ export class AutomatedContentReviewService {
     // Check for safety warnings
     if (
       !manifest.safetyWarnings &&
-      manifest.parameters?.some((p: any) => p.type === "range")
+      manifest.parameters?.some((p) => p.type === "range")
     ) {
       score -= 20;
     }
@@ -848,7 +858,7 @@ export class AutomatedContentReviewService {
     }
 
     // Check for valid timing
-    config.keyframes?.forEach((keyframe: any) => {
+    config.keyframes?.forEach((keyframe) => {
       if (typeof keyframe.time !== "number" || keyframe.time < 0) {
         score -= 10;
       }

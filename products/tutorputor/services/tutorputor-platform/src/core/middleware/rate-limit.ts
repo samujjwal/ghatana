@@ -1,4 +1,4 @@
-import { type FastifyInstance } from "fastify";
+import { type FastifyInstance, type FastifyRequest, type FastifyReply } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import type { Redis } from "ioredis";
 
@@ -13,14 +13,14 @@ export async function setupRateLimit(app: FastifyInstance) {
     nameSpace: "tutorputor:rate-limit:",
 
     // Custom key generator for tenant-aware rate limiting
-    keyGenerator: (request: any) => {
+    keyGenerator: (request: FastifyRequest) => {
       const tenantId = (request.headers["x-tenant-id"] as string) || "default";
       const userId = (request as any).user?.id || request.ip;
       return `${tenantId}:${userId}`;
     },
 
     // Custom error response
-    errorResponseBuilder: (request: any, context: any) => {
+    errorResponseBuilder: (request: FastifyRequest, context: { max: number; after: string; ttl?: number }) => {
       return {
         error: "Too Many Requests",
         message: `Rate limit exceeded. Maximum ${context.max} requests per ${context.after}`,
@@ -32,13 +32,13 @@ export async function setupRateLimit(app: FastifyInstance) {
     },
 
     // Skip rate limiting for health checks
-    skip: (request: any) => {
+    skip: (request: FastifyRequest) => {
       return request.url.startsWith("/health") || request.url === "/metrics";
     },
   } as any);
 
   // Add rate limit headers to responses
-  app.addHook("onResponse", async (request: any, reply: any) => {
+  app.addHook("onResponse", async (request: FastifyRequest, reply: FastifyReply) => {
     const remaining = reply.getHeader("x-ratelimit-remaining");
     const limit = reply.getHeader("x-ratelimit-limit");
     const reset = reply.getHeader("x-ratelimit-reset");

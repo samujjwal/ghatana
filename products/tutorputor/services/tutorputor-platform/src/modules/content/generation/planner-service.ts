@@ -18,6 +18,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma } from "@tutorputor/core/db";
 import type { RiskLevel } from "@tutorputor/contracts/v1/types";
 import {
   IntelligentContentCache,
@@ -26,26 +27,19 @@ import {
 import { CostAwareGenerationRouter } from "../routing/cost-aware-router.js";
 import type Redis from "ioredis";
 
-type GenerationJobType =
-  | "claim"
-  | "explainer"
-  | "worked_example"
-  | "simulation"
-  | "animation"
-  | "assessment"
-  | "evaluation";
-
-type ReviewPath = "auto_publish" | "human_review" | "expert_review";
-
-type GenerationRequestConfig = any;
-type CreateGenerationRequestInput = any;
-type PlannedAssetDescriptor = any;
-type GenerationCostEstimate = any;
-type GenerationRoutingDecision = any;
-type GenerationJob = any;
-type GenerationRequest = any;
-type GenerationRequestWithJobs = any;
-type PlanningResult = any;
+import type {
+  GenerationJobType,
+  GenerationRequestConfig,
+  CreateGenerationRequestInput,
+  PlannedAssetDescriptor,
+  GenerationCostEstimate,
+  GenerationRoutingDecision,
+  GenerationJob,
+  GenerationRequest,
+  GenerationRequestWithJobs,
+  PlanningResult,
+  ReviewPath,
+} from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -128,16 +122,16 @@ export class GenerationPlannerService {
   async createRequest(
     input: CreateGenerationRequestInput,
   ): Promise<GenerationRequest> {
-    const row = await (this.prisma as any).generationRequest.create({
+    const row = await this.prisma.generationRequest.create({
       data: {
         tenantId: input.tenantId,
         title: input.title,
         description: input.description ?? null,
         domain: input.domain,
         conceptId: input.conceptId ?? null,
-        targetGrades: input.targetGrades ?? null,
+        targetGrades: input.targetGrades ?? Prisma.JsonNull,
         requestedBy: input.requestedBy,
-        requestConfig: input.requestConfig ?? null,
+        requestConfig: input.requestConfig != null ? (input.requestConfig as Prisma.InputJsonValue) : Prisma.JsonNull,
         status: "DRAFT",
       },
     });
@@ -151,7 +145,7 @@ export class GenerationPlannerService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationRequestWithJobs | null> {
-    const row = await (this.prisma as any).generationRequest.findFirst({
+    const row = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
       include: { jobs: true },
     });
@@ -173,13 +167,13 @@ export class GenerationPlannerService {
     if (options.status) where.status = options.status.toUpperCase();
 
     const [rows, total] = await Promise.all([
-      (this.prisma as any).generationRequest.findMany({
+      this.prisma.generationRequest.findMany({
         where,
         orderBy: { createdAt: "desc" },
         take: options.limit ?? 20,
         skip: options.offset ?? 0,
       }),
-      (this.prisma as any).generationRequest.count({ where }),
+      this.prisma.generationRequest.count({ where }),
     ]);
 
     return {
@@ -205,7 +199,7 @@ export class GenerationPlannerService {
     tenantId: string,
     requestId: string,
   ): Promise<PlanningResult> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
     });
 
@@ -220,7 +214,7 @@ export class GenerationPlannerService {
     }
 
     // Update status to PLANNING
-    await (this.prisma as any).generationRequest.update({
+    await this.prisma.generationRequest.update({
       where: { id: requestId },
       data: { status: "PLANNING" },
     });
@@ -273,20 +267,20 @@ export class GenerationPlannerService {
     };
 
     // Create jobs for each planned asset
-    const jobData = plannedAssets.map((planned: any) => ({
+    const jobData = plannedAssets.map((planned) => ({
       requestId,
-      jobType: planned.jobType.toUpperCase(),
+      jobType: planned.jobType.toUpperCase() as "CLAIM" | "EXPLAINER" | "WORKED_EXAMPLE" | "SIMULATION" | "ANIMATION" | "ASSESSMENT" | "EVALUATION",
       targetRef: planned.targetRef,
       inputPrompt: planned.description,
       parameters: {
         estimatedTokens: planned.estimatedTokens,
         dependsOn: planned.dependsOn ?? [],
       },
-      status: "PENDING",
+      status: "PENDING" as "PENDING",
     }));
 
     // Persist jobs and update request atomically
-    await (this.prisma as any).$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx) => {
       for (const job of jobData) {
         await tx.generationJob.create({ data: job });
       }
@@ -296,9 +290,9 @@ export class GenerationPlannerService {
           status: "PLANNED",
           plannedAssets: JSON.parse(JSON.stringify(plannedAssets)),
           artifactNeeds: JSON.parse(JSON.stringify(artifactNeeds)),
-          riskLevel: riskAssessment.riskLevel.toUpperCase(),
+          riskLevel: riskAssessment.riskLevel.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
           riskFactors: riskAssessment.riskFactors,
-          reviewPath: reviewPathToEnum(reviewPath),
+          reviewPath: reviewPathToEnum(reviewPath) as "AUTO_PUBLISH" | "HUMAN_REVIEW" | "EXPERT_REVIEW",
           estimatedCost: JSON.parse(JSON.stringify(estimatedCost)),
           routingDecision: JSON.parse(JSON.stringify(routingDecision)),
           totalJobs: plannedAssets.length,
@@ -343,7 +337,7 @@ export class GenerationPlannerService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationRequest> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
     });
 
@@ -358,13 +352,13 @@ export class GenerationPlannerService {
       );
     }
 
-    const row = await (this.prisma as any).generationRequest.update({
+    const row = await this.prisma.generationRequest.update({
       where: { id: requestId },
       data: { status: "CANCELLED" },
     });
 
     // Cancel any pending/running jobs
-    await (this.prisma as any).generationJob.updateMany({
+    await this.prisma.generationJob.updateMany({
       where: {
         requestId,
         status: { in: ["PENDING", "RUNNING"] },
@@ -382,7 +376,13 @@ export class GenerationPlannerService {
   /**
    * Determine which assets/artifacts should be generated.
    */
-  private determinePlannedAssets(request: any): PlannedAssetDescriptor[] {
+  private determinePlannedAssets(request: {
+      id: string;
+      domain?: string | null;
+      title?: string | null;
+      description?: string | null;
+      targetGrades?: unknown;
+  }): PlannedAssetDescriptor[] {
     const assets: PlannedAssetDescriptor[] = [];
     const domain = (request.domain ?? "").toLowerCase();
     const title = request.title ?? "";
@@ -393,7 +393,7 @@ export class GenerationPlannerService {
         jobType,
         targetRef: `${request.id}/${jobType}`,
         description: `Generate ${jobType} for "${title}" in ${domain}`,
-        estimatedTokens: TOKEN_ESTIMATES[jobType],
+        estimatedTokens: TOKEN_ESTIMATES[jobType] ?? 0,
       });
     }
 
@@ -403,25 +403,25 @@ export class GenerationPlannerService {
         jobType: "simulation",
         targetRef: `${request.id}/simulation`,
         description: `Generate interactive simulation for "${title}" in ${domain}`,
-        estimatedTokens: TOKEN_ESTIMATES.simulation,
+        estimatedTokens: TOKEN_ESTIMATES.simulation ?? 0,
         dependsOn: [`${request.id}/claim`],
       });
       assets.push({
         jobType: "animation",
         targetRef: `${request.id}/animation`,
         description: `Generate animation for "${title}" in ${domain}`,
-        estimatedTokens: TOKEN_ESTIMATES.animation,
+        estimatedTokens: TOKEN_ESTIMATES.animation ?? 0,
         dependsOn: [`${request.id}/claim`],
       });
     }
 
     // Evaluation job always comes last (depends on all others)
-    const dependsOn = assets.map((a: any) => a.targetRef);
+    const dependsOn = assets.map((a) => a.targetRef);
     assets.push({
       jobType: "evaluation",
       targetRef: `${request.id}/evaluation`,
       description: `Evaluate generated content for "${title}"`,
-      estimatedTokens: TOKEN_ESTIMATES.evaluation,
+      estimatedTokens: TOKEN_ESTIMATES.evaluation ?? 0,
       dependsOn,
     });
 
@@ -445,7 +445,13 @@ export class GenerationPlannerService {
    * Assess the risk level of a generation request based on domain,
    * title content, and grade targeting.
    */
-  private assessRisk(request: any): {
+  private assessRisk(request: {
+      id?: string;
+      domain?: string | null;
+      title?: string | null;
+      description?: string | null;
+      targetGrades?: unknown;
+  }): {
     riskLevel: RiskLevel;
     riskFactors: string[];
   } {
@@ -479,8 +485,8 @@ export class GenerationPlannerService {
 
     // Determine level based on factors
     let riskLevel: RiskLevel = "low";
-    const highCount = factors.filter((f: any) => f.includes("high-risk")).length;
-    const medCount = factors.filter((f: any) => f.includes("sensitive")).length;
+    const highCount = factors.filter((f) => f.includes("high-risk")).length;
+    const medCount = factors.filter((f) => f.includes("sensitive")).length;
 
     if (highCount >= 2) {
       riskLevel = "critical";
@@ -619,12 +625,12 @@ export class GenerationPlannerService {
   } {
     return {
       ...cachedBlueprint,
-      plannedAssets: cachedBlueprint.plannedAssets.map((asset: any) => ({
+      plannedAssets: cachedBlueprint.plannedAssets.map((asset) => ({
         ...asset,
         targetRef: this.restoreRequestScopedRef(requestId, asset.targetRef),
         ...(asset.dependsOn
           ? {
-              dependsOn: asset.dependsOn.map((dependency: any) =>
+              dependsOn: asset.dependsOn.map((dependency) =>
                 this.restoreRequestScopedRef(requestId, dependency),
               ),
             }
@@ -636,7 +642,7 @@ export class GenerationPlannerService {
   private stripRequestScopedRefs(
     plannedAssets: PlannedAssetDescriptor[],
   ): PlannedAssetDescriptor[] {
-    return plannedAssets.map((asset: any) => ({
+    return plannedAssets.map((asset) => ({
       ...asset,
       targetRef: stripRequestRef(asset.targetRef),
       ...(asset.dependsOn
@@ -694,26 +700,26 @@ function stripRequestRef(ref: string): string {
 
 function mapRequest(row: Record<string, unknown>): GenerationRequest {
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    title: row.title,
-    ...(row.description ? { description: row.description } : {}),
-    domain: row.domain,
-    ...(row.conceptId ? { conceptId: row.conceptId } : {}),
-    ...(row.targetGrades ? { targetGrades: row.targetGrades } : {}),
-    requestedBy: row.requestedBy,
-    ...(row.requestConfig ? { requestConfig: row.requestConfig } : {}),
+    id: row.id as string,
+    tenantId: row.tenantId as string,
+    title: row.title as string,
+    ...(row.description ? { description: row.description as string } : {}),
+    domain: row.domain as string,
+    ...(row.conceptId ? { conceptId: row.conceptId as string } : {}),
+    ...(row.targetGrades ? { targetGrades: row.targetGrades as string[] } : {}),
+    requestedBy: row.requestedBy as string,
+    ...(row.requestConfig ? { requestConfig: row.requestConfig as GenerationRequestConfig } : {}),
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    ...(row.plannedAssets ? { plannedAssets: row.plannedAssets } : {}),
-    ...(row.artifactNeeds ? { artifactNeeds: row.artifactNeeds } : {}),
+    ...(row.plannedAssets ? { plannedAssets: row.plannedAssets as PlannedAssetDescriptor[] } : {}),
+    ...(row.artifactNeeds ? { artifactNeeds: row.artifactNeeds as Record<string, number> } : {}),
     riskLevel: (row.riskLevel as string).toLowerCase() as RiskLevel,
-    ...(row.riskFactors ? { riskFactors: row.riskFactors } : {}),
+    ...(row.riskFactors ? { riskFactors: row.riskFactors as string[] } : {}),
     reviewPath: enumToReviewPath(row.reviewPath as string),
-    ...(row.estimatedCost ? { estimatedCost: row.estimatedCost } : {}),
-    ...(row.routingDecision ? { routingDecision: row.routingDecision } : {}),
-    totalJobs: row.totalJobs,
-    completedJobs: row.completedJobs,
-    failedJobs: row.failedJobs,
+    ...(row.estimatedCost ? { estimatedCost: row.estimatedCost as GenerationCostEstimate } : {}),
+    ...(row.routingDecision ? { routingDecision: row.routingDecision as GenerationRoutingDecision } : {}),
+    totalJobs: row.totalJobs as number,
+    completedJobs: row.completedJobs as number,
+    failedJobs: row.failedJobs as number,
     ...(row.plannedAt
       ? { plannedAt: (row.plannedAt as Date).toISOString() }
       : {}),
@@ -730,20 +736,20 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
 
 function mapJob(row: Record<string, unknown>): GenerationJob {
   return {
-    id: row.id,
-    requestId: row.requestId,
+    id: row.id as string,
+    requestId: row.requestId as string,
     jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
-    ...(row.targetRef ? { targetRef: row.targetRef } : {}),
-    ...(row.inputPrompt ? { inputPrompt: row.inputPrompt } : {}),
-    ...(row.parameters ? { parameters: row.parameters } : {}),
+    ...(row.targetRef ? { targetRef: row.targetRef as string } : {}),
+    ...(row.inputPrompt ? { inputPrompt: row.inputPrompt as string } : {}),
+    ...(row.parameters ? { parameters: row.parameters as Record<string, unknown> } : {}),
     status: (row.status as string).toLowerCase() as GenerationJob["status"],
-    progress: row.progress,
-    ...(row.outputAssetId ? { outputAssetId: row.outputAssetId } : {}),
-    ...(row.outputData ? { outputData: row.outputData } : {}),
-    ...(row.diagnostics ? { diagnostics: row.diagnostics } : {}),
-    ...(row.errorMessage ? { errorMessage: row.errorMessage } : {}),
-    retryCount: row.retryCount,
-    maxRetries: row.maxRetries,
+    progress: row.progress as number,
+    ...(row.outputAssetId ? { outputAssetId: row.outputAssetId as string } : {}),
+    ...(row.outputData ? { outputData: row.outputData as Record<string, unknown> } : {}),
+    ...(row.diagnostics ? { diagnostics: row.diagnostics as Record<string, unknown> } : {}),
+    ...(row.errorMessage ? { errorMessage: row.errorMessage as string } : {}),
+    retryCount: row.retryCount as number,
+    maxRetries: row.maxRetries as number,
     ...(row.startedAt
       ? { startedAt: (row.startedAt as Date).toISOString() }
       : {}),

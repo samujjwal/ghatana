@@ -553,7 +553,7 @@ function parseFeedback(value: unknown): AssessmentFeedback[] | undefined {
 }
 
 function gradeAttempt(
-  items: any[],
+  items: Array<{ id: string; points: number; [key: string]: unknown }>,
   responses: AssessmentAttempt["responses"],
 ): { scorePercent: number; feedback: AssessmentFeedback[] } {
   const normalizedResponses = responses ?? {};
@@ -787,7 +787,7 @@ function parseItemMetadata(value: AssessmentItem["metadata"]): Record<string, un
   return {};
 }
 
-function parseIRTParameters(value: any) {
+function parseIRTParameters(value: unknown) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const irt = value as Record<string, unknown>;
     return {

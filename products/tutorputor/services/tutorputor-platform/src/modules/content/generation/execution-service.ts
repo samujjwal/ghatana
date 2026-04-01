@@ -15,15 +15,16 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
-
-type GenerationRequest = any;
-type GenerationJob = any;
-type GenerationRequestWithJobs = any;
-type GenerationExecutionSnapshot = any;
-type GenerationExecutionProgress = any;
-type GenerationExecutionEvent = any;
-type GenerationExecutionCostSummary = any;
-type GenerationExecutionWorkerTelemetry = any;
+import type {
+  GenerationRequest,
+  GenerationJob,
+  GenerationRequestWithJobs,
+  GenerationExecutionSnapshot,
+  GenerationExecutionProgress,
+  GenerationExecutionEvent,
+  GenerationExecutionCostSummary,
+  GenerationExecutionWorkerTelemetry,
+} from "../types.js";
 import {
   getGenerationExecutionChannel,
   type GenerationExecutionStreamMessage,
@@ -142,7 +143,7 @@ export class GenerationExecutionService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationExecutionSnapshot | null> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
       include: { jobs: true },
     });
@@ -173,7 +174,7 @@ export class GenerationExecutionService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationRequestWithJobs> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
       include: { jobs: true },
     });
@@ -189,7 +190,7 @@ export class GenerationExecutionService {
     }
 
     // Transition to EXECUTING
-    await (this.prisma as any).$transaction(async (tx: any) => {
+    await this.prisma.$transaction(async (tx) => {
       await tx.generationRequest.update({
         where: { id: requestId },
         data: { status: "EXECUTING", startedAt: new Date() },
@@ -197,7 +198,7 @@ export class GenerationExecutionService {
     });
 
     // Re-fetch with updated statuses
-    const updated = await (this.prisma as any).generationRequest.findFirst({
+    const updated = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
       include: { jobs: true },
     });
@@ -223,7 +224,7 @@ export class GenerationExecutionService {
   ): Promise<GenerationJob> {
     const jobStatus = result.status === "completed" ? "COMPLETED" : "FAILED";
 
-    const updatedJob = await (this.prisma as any).generationJob.update({
+    const updatedJob = await this.prisma.generationJob.update({
       where: { id: result.jobId },
       data: {
         status: jobStatus,
@@ -244,7 +245,7 @@ export class GenerationExecutionService {
         ? { completedJobs: { increment: 1 } }
         : { failedJobs: { increment: 1 } };
 
-    await (this.prisma as any).generationRequest.update({
+    await this.prisma.generationRequest.update({
       where: { id: requestId },
       data: increment,
     });
@@ -270,7 +271,7 @@ export class GenerationExecutionService {
       await this.recordJobResult(requestId, result);
     }
 
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId },
     });
 
@@ -293,15 +294,15 @@ export class GenerationExecutionService {
    * the request status accordingly.
    */
   private async maybeCompleteRequest(requestId: string): Promise<void> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId },
       include: { jobs: true },
     });
 
     if (!request || request.status !== "EXECUTING") return;
 
-    const allDone = (request.jobs as any[]).every(
-      (j: any) =>
+    const allDone = request.jobs.every(
+      (j) =>
         j.status === "COMPLETED" ||
         j.status === "FAILED" ||
         j.status === "CANCELLED",
@@ -309,11 +310,11 @@ export class GenerationExecutionService {
 
     if (!allDone) return;
 
-    const anyFailed = (request.jobs as any[]).some(
-      (j: any) => j.status === "FAILED",
+    const anyFailed = request.jobs.some(
+      (j) => j.status === "FAILED",
     );
 
-    await (this.prisma as any).generationRequest.update({
+    await this.prisma.generationRequest.update({
       where: { id: requestId },
       data: {
         status: anyFailed ? "FAILED" : "COMPLETED",
@@ -358,7 +359,7 @@ export class GenerationExecutionService {
       jobResult: result,
     });
 
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId },
       select: { tenantId: true, status: true, totalJobs: true, completedJobs: true, failedJobs: true },
     });
@@ -408,19 +409,19 @@ export class GenerationExecutionService {
 function buildExecutionProgress(
   request: GenerationRequestWithJobs,
 ): GenerationExecutionProgress {
-  const runningJobs = request.jobs.filter((job: any) => job.status === "running").length;
-  const pendingJobs = request.jobs.filter((job: any) => job.status === "pending").length;
+  const runningJobs = request.jobs.filter((job) => job.status === "running").length;
+  const pendingJobs = request.jobs.filter((job) => job.status === "pending").length;
   const cancelledJobs = request.jobs.filter(
-    (job: any) => job.status === "cancelled",
+    (job) => job.status === "cancelled",
   ).length;
   const finishedJobs = request.completedJobs + request.failedJobs + cancelledJobs;
   const totalJobs = Math.max(request.totalJobs, request.jobs.length, 1);
   const workerTelemetry = request.jobs
-    .map((job: any) => getWorkerTelemetry(job))
+    .map((job) => getWorkerTelemetry(job))
     .filter((value: unknown): value is GenerationExecutionWorkerTelemetry => value !== null);
   const latestWorkerTelemetry = workerTelemetry
     .slice()
-    .sort((left: any, right: any) => left.at.localeCompare(right.at))
+    .sort((left, right) => left.at.localeCompare(right.at))
     .at(-1);
   const cost = buildExecutionCostSummary(request);
 
@@ -574,7 +575,7 @@ function buildExecutionEvents(
     });
   }
 
-  return events.sort((left: any, right: any) => left.at.localeCompare(right.at));
+  return events.sort((left, right) => left.at.localeCompare(right.at));
 }
 
 function mapRequest(row: Record<string, unknown>): GenerationRequest {
@@ -585,7 +586,7 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
     domain: row.domain,
     requestedBy: row.requestedBy,
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    riskLevel: (row.riskLevel as string).toLowerCase() as any,
+    riskLevel: (row.riskLevel as string).toLowerCase() as GenerationRequest["riskLevel"],
     reviewPath: enumToReviewPath(row.reviewPath as string),
     totalJobs: row.totalJobs,
     completedJobs: row.completedJobs,
@@ -638,7 +639,7 @@ function mapJob(row: Record<string, unknown>): GenerationJob {
   };
 }
 
-function enumToReviewPath(value: string): any {
+function enumToReviewPath(value: string): GenerationRequest["reviewPath"] {
   switch (value) {
     case "AUTO_PUBLISH":
       return "auto_publish";
@@ -753,13 +754,13 @@ function getWorkerTelemetry(
   } satisfies GenerationExecutionWorkerTelemetry;
 }
 
-function asRecord(value: any): Record<string, unknown> | null {
+function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function asNumber(value: any): number | null {
+function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 

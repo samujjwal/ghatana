@@ -275,7 +275,7 @@ export class SearchSystemValidator {
   }
 
   private async loadValidationAssets(tenantId: string): Promise<ValidationAsset[]> {
-    const rows = await (this.prisma as any).contentAsset.findMany({
+    const rows = await this.prisma.contentAsset.findMany({
       where: { tenantId, status: "PUBLISHED" },
       orderBy: [{ qualityScore: "desc" }, { updatedAt: "desc" }],
       take: 6,
@@ -301,7 +301,7 @@ export class SearchSystemValidator {
     tenantId: string,
     query: string,
   ): Promise<Array<{ text: string; type: string }>> {
-    const rows = await (this.prisma as any).contentAsset.findMany({
+    const rows = await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
         status: "PUBLISHED",

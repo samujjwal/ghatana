@@ -202,7 +202,7 @@ export class Bulkhead extends EventEmitter {
   private rejectedExecutions = 0;
   private totalExecutions = 0;
   private queue: Array<{
-    resolve: (value: any) => void;
+    resolve: (value: unknown) => void;
     reject: (reason?: unknown) => void;
     operation: () => Promise<any>;
   }> = [];
@@ -284,7 +284,7 @@ export interface RetryOptions {
   maxDelay?: number;
   backoffMultiplier?: number;
   jitter?: boolean;
-  retryableErrors?: (error: any) => boolean;
+  retryableErrors?: (error: unknown) => boolean;
   name?: string;
 }
 
@@ -294,7 +294,7 @@ export class Retry {
   private maxDelay: number;
   private backoffMultiplier: number;
   private jitter: boolean;
-  private retryableErrors: (error: any) => boolean;
+  private retryableErrors: (error: unknown) => boolean;
   private name: string;
 
   constructor(options: RetryOptions = {}) {
@@ -308,17 +308,19 @@ export class Retry {
     this.name = options.name || "unnamed";
   }
 
-  private defaultRetryableErrors(error: any): boolean {
+  private defaultRetryableErrors(error: unknown): boolean {
     if (!error) return false;
 
+    const e = error as { code?: string; status?: number };
+
     // Network errors
-    if (error.code === "ECONNRESET" || error.code === "ECONNREFUSED")
-      return true;
-    if (error.code === "ETIMEDOUT" || error.code === "ENOTFOUND") return true;
+    if (e.code === "ECONNRESET" || e.code === "ECONNREFUSED") return true;
+    if (e.code === "ETIMEDOUT" || e.code === "ENOTFOUND") return true;
 
     // HTTP errors
-    if (error.status >= 500 && error.status < 600) return true;
-    if (error.status === 408 || error.status === 429) return true;
+    if (typeof e.status === "number" && e.status >= 500 && e.status < 600)
+      return true;
+    if (e.status === 408 || e.status === 429) return true;
 
     // Database errors
     if (

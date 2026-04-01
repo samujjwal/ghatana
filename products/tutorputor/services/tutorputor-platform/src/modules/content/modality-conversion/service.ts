@@ -38,7 +38,7 @@ type SimulationManifest = {
   blockId?: string;
   canvas?: Record<string, unknown>;
   playback?: Record<string, unknown>;
-  initialEntities: Array<{ id: any; type: string; [key: string]: unknown }>;
+  initialEntities: Array<{ id: string | number; type: string; [key: string]: unknown }>;
   steps: Array<{ id: string; actions: unknown[]; [key: string]: unknown }>;
   accessibility?: Record<string, unknown>;
   safety?: Record<string, unknown>;
@@ -187,16 +187,16 @@ export class ModalityConversionService {
     const simulationManifest = findSimulationManifest(detail.manifests);
 
     const blocks = simulationManifest
-      ? simulationManifest.steps.map((step: any, index: any) => ({
+      ? simulationManifest.steps.map((step, index) => ({
           blockRef: step.id,
           title: step.title ?? `Step ${index + 1}`,
           content:
             step.narration ??
             step.description ??
             `Step ${index + 1}: ${detail.asset.title}`,
-          cues: step.annotations?.map((annotation: any) => annotation.text) ?? [],
+          cues: step.annotations?.map((annotation) => annotation.text) ?? [],
         }))
-      : detail.blocks.map((block: any, index: any) => ({
+      : detail.blocks.map((block, index) => ({
           blockRef: block.blockRef,
           title: block.title ?? `Section ${index + 1}`,
           content: extractBlockText(block.payload),
@@ -227,7 +227,7 @@ export class ModalityConversionService {
     const animationManifest = findAnimationManifest(detail.manifests);
 
     const blocks = animationManifest
-      ? (animationManifest.keyframes ?? []).map((keyframe: any, index: any) => ({
+      ? (animationManifest.keyframes ?? []).map((keyframe, index) => ({
           blockRef: `frame-${index + 1}`,
           title: `Storyboard frame ${index + 1}`,
           content:
@@ -238,7 +238,7 @@ export class ModalityConversionService {
             `pause:${String(Boolean(keyframe.pause))}`,
           ],
         }))
-      : detail.blocks.map((block: any, index: any) => {
+      : detail.blocks.map((block, index) => {
           const text = extractBlockText(block.payload);
           const keySentences = splitIntoSentences(text).slice(0, 2);
 
@@ -246,7 +246,7 @@ export class ModalityConversionService {
             blockRef: block.blockRef,
             title: block.title ?? `Visual panel ${index + 1}`,
             content: keepFirstSentences(text, 2),
-            cues: keySentences.map((sentence: any, sentenceIndex: any) =>
+            cues: keySentences.map((sentence, sentenceIndex) =>
               `panel-${sentenceIndex + 1}:${sentence}`,
             ),
           };
@@ -274,7 +274,7 @@ export class ModalityConversionService {
   ): ConversionResult {
     const animationManifest = findAnimationManifest(detail.manifests);
 
-    const blocks = detail.blocks.map((block: any, index: any) => {
+    const blocks = detail.blocks.map((block, index) => {
       const text = extractBlockText(block.payload);
       const intro = index === 0 ? `Lesson title: ${detail.asset.title}. ` : "";
       return {
@@ -323,15 +323,15 @@ export class ModalityConversionService {
 
     const simulation = {
       manifest: simulationManifest,
-      inferredDifficulty: String(inferDifficulty(simulationManifest as any)),
+      inferredDifficulty: String(inferDifficulty(simulationManifest as unknown as Parameters<typeof inferDifficulty>[0])),
       estimatedTimeMinutes: Math.max(
         1,
-        Math.ceil(estimateCompletionTime(simulationManifest as any) / 60),
+        Math.ceil(estimateCompletionTime(simulationManifest as unknown as Parameters<typeof estimateCompletionTime>[0]) / 60),
       ),
-      skillNames: inferSkills(simulationManifest as any).map((skill: any) => skill.name),
+      skillNames: inferSkills(simulationManifest as unknown as Parameters<typeof inferSkills>[0]).map((skill) => skill.name),
     };
 
-    const blocks = simulationManifest.steps.map((step: any, index: any) => ({
+    const blocks = simulationManifest.steps.map((step, index) => ({
       blockRef: step.id,
       title: step.title ?? `Simulation step ${index + 1}`,
       content:
@@ -394,7 +394,7 @@ export class ModalityConversionService {
 }
 
 function getManifestTypes(manifests: ArtifactManifest[]): string[] {
-  return manifests.map((manifest: any) => manifest.manifestType);
+  return manifests.map((manifest) => manifest.manifestType);
 }
 
 function inferSourceModalities(
@@ -423,7 +423,7 @@ function inferSourceModalities(
     }
   }
 
-  if (blocks.some((block: any) => typeof block.payload.narration === "string")) {
+  if (blocks.some((block) => typeof (block as { payload?: { narration?: unknown } }).payload?.narration === "string")) {
     modalities.add("audio");
   }
 
@@ -433,14 +433,14 @@ function inferSourceModalities(
 function findSimulationManifest(
   manifests: ArtifactManifest[],
 ): SimulationManifest | undefined {
-  const manifest = manifests.find((item: any) => item.manifestType === "simulation");
+  const manifest = manifests.find((item) => item.manifestType === "simulation");
   return manifest?.manifest as SimulationManifest | undefined;
 }
 
 function findAnimationManifest(
   manifests: ArtifactManifest[],
 ): AnimationManifest | undefined {
-  const manifest = manifests.find((item: any) => item.manifestType === "animation");
+  const manifest = manifests.find((item) => item.manifestType === "animation");
   return manifest?.manifest as AnimationManifest | undefined;
 }
 
@@ -448,7 +448,7 @@ function ensureSimulationManifest(
   manifests: ArtifactManifest[],
   simulationManifest: SimulationManifest,
 ): ArtifactManifest[] {
-  if (manifests.some((manifest: any) => manifest.manifestType === "simulation")) {
+  if (manifests.some((manifest) => manifest.manifestType === "simulation")) {
     return manifests;
   }
 
@@ -474,7 +474,7 @@ function buildDerivedSimulationManifest(
   const domain = mapAssetDomainToSimulationDomain(detail.asset.domain);
   const entityId = `${detail.asset.id}-entity` as SimulationManifest["initialEntities"][number]["id"];
   const initialEntity = createSeedEntity(domain, entityId, detail.asset.title);
-  const text = detail.blocks.map((block: any) => extractBlockText(block.payload)).join(" ");
+  const text = detail.blocks.map((block) => extractBlockText((block as { payload: unknown }).payload)).join(" ");
   const steps = splitIntoSentences(text).slice(0, 4);
 
   return {
@@ -492,7 +492,7 @@ function buildDerivedSimulationManifest(
     ...(detail.asset.legacyModuleId
       ? { moduleId: String(detail.asset.legacyModuleId) }
       : {}),
-    blockId: detail.blocks[0]?.id,
+    blockId: detail.blocks[0]?.id ?? `${detail.asset.id}-block`,
     canvas: {
       width: 1280,
       height: 720,
@@ -512,7 +512,7 @@ function buildDerivedSimulationManifest(
     },
     initialEntities: [initialEntity],
     steps: (steps.length > 0 ? steps : [`Explore ${detail.asset.title}.`]).map(
-      (sentence: any, index: any) => ({
+    (sentence, index) => ({
         id: `${detail.asset.id}-step-${index + 1}` as SimulationManifest["steps"][number]["id"],
         orderIndex: index,
         title: `Step ${index + 1}`,
@@ -591,7 +591,7 @@ function createSeedEntity(
   domain: SimulationDomain,
   entityId: SimulationManifest["initialEntities"][number]["id"],
   title: string,
-): any {
+): Record<string, unknown> {
   switch (domain) {
     case "BIOLOGY":
       return {

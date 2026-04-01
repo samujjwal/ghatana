@@ -18,7 +18,7 @@ export interface LogContext {
   operation?: string;
   duration?: number;
   error?: Error | string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Logger {
@@ -223,7 +223,7 @@ export function correlateError(error: Error, context: LogContext = {}): LogConte
 /**
  * Log sanitization for security
  */
-export function sanitizeForLogging(obj: Record<string, unknown>): any {
+export function sanitizeForLogging(obj: Record<string, unknown>): Record<string, unknown> {
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }

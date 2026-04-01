@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import type { FastifyRequest, FastifyReply } from "fastify";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger("input-validation");
@@ -68,7 +69,7 @@ export const baseSchemas = {
   safeText: z
     .string()
     .max(10000, "Text too long")
-    .transform((val: any) =>
+    .transform((val) =>
       val
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // Remove scripts
         .replace(/javascript:/gi, "") // Remove javascript: URLs
@@ -318,7 +319,7 @@ export const simulationSchemas = {
     configuration: z
       .record(z.string(), z.unknown())
       .refine(
-        (val: any) => typeof val === "object" && val !== null,
+        (val) => typeof val === "object" && val !== null,
         "Configuration must be an object",
       ),
     parameters: z
@@ -451,7 +452,7 @@ export class ValidationError extends Error {
 }
 
 export class InputValidator {
-  private static sanitizeInput(input: any): unknown {
+  private static sanitizeInput(input: unknown): unknown {
     if (typeof input === "string") {
       return input
         .trim()
@@ -460,7 +461,7 @@ export class InputValidator {
     }
 
     if (Array.isArray(input)) {
-      return input.map((item: any) => InputValidator.sanitizeInput(item));
+      return input.map((item) => InputValidator.sanitizeInput(item));
     }
 
     if (typeof input === "object" && input !== null) {
@@ -507,7 +508,7 @@ export class InputValidator {
       /binding\s*\(/gi,
     ];
 
-    return suspiciousPatterns.some((pattern: any) => pattern.test(input));
+    return suspiciousPatterns.some((pattern) => pattern.test(input));
   }
 
   static validate<T>(
@@ -594,7 +595,7 @@ export class InputValidator {
 
   static validateBatch<T>(
     schema: z.ZodSchema<T>,
-    dataArray: any[],
+    dataArray: unknown[],
     context?: ValidationContext,
   ): T[] {
     if (!Array.isArray(dataArray)) {
@@ -615,7 +616,7 @@ export class InputValidator {
       );
     }
 
-    return dataArray.map((data: any, index: any) => {
+    return dataArray.map((data, index) => {
       try {
         return this.validate(schema, data, {
           ...context,
@@ -644,7 +645,7 @@ export function createValidationMiddleware<T>(
   schema: z.ZodSchema<T>,
   source: "body" | "query" | "params" = "body",
 ) {
-  return async (request: any, reply: any) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const context: ValidationContext = {
         requestId: request.id,

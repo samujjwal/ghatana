@@ -13,11 +13,12 @@
 
 import crypto from "crypto";
 import type { PrismaClient } from "@tutorputor/core/db";
-
-type ArtifactManifestType = any;
-type ContentAssetType = any;
-type ContentBlockType = any;
-type GenerationJobType = any;
+import type {
+  ArtifactManifestType,
+  ContentAssetType,
+  ContentBlockType,
+  GenerationJobType,
+} from "../types.js";
 import { validateAnimation, validateAssessment, validateWorkedExample } from "./manifest-validator.js";
 import { extractBlockText } from "./text-extraction.js";
 
@@ -69,7 +70,7 @@ interface MaterializationShape {
     manifest: Record<string, unknown>;
     generatedBy: "ai";
     isValid: boolean;
-    validationErrors?: any[];
+    validationErrors?: unknown[];
   }>;
   snapshot: Record<string, unknown>;
 }
@@ -82,7 +83,7 @@ export class AssetMaterializationService {
   ): Promise<MaterializedGenerationAsset> {
     const shape = buildMaterializationShape(input);
     const existingAsset = input.existingAssetId
-      ? await (this.prisma as any).contentAsset.findFirst({
+      ? await this.prisma.contentAsset.findFirst({
           where: { id: input.existingAssetId, tenantId: input.tenantId },
           select: { id: true, currentVersion: true, slug: true },
         })
@@ -94,7 +95,7 @@ export class AssetMaterializationService {
     const searchableText = buildSearchableText(shape);
 
     if (assetId) {
-      await (this.prisma as any).contentAsset.update({
+      await this.prisma.contentAsset.update({
         where: { id: assetId },
         data: {
           slug,
@@ -115,17 +116,17 @@ export class AssetMaterializationService {
         },
       });
 
-      await (this.prisma as any).contentBlock.deleteMany({
+      await this.prisma.contentBlock.deleteMany({
         where: { assetId },
       });
-      await (this.prisma as any).artifactManifest.deleteMany({
+      await this.prisma.artifactManifest.deleteMany({
         where: { assetId },
       });
     }
 
     const asset =
       existingAsset ??
-      (await (this.prisma as any).contentAsset.create({
+      (await this.prisma.contentAsset.create({
         data: {
           tenantId: input.tenantId,
           slug,
@@ -148,7 +149,7 @@ export class AssetMaterializationService {
       }));
 
     for (const block of shape.blocks) {
-      await (this.prisma as any).contentBlock.create({
+      await this.prisma.contentBlock.create({
         data: {
           assetId: asset.id,
           blockRef: block.blockRef,
@@ -162,7 +163,7 @@ export class AssetMaterializationService {
     }
 
     for (const manifest of shape.manifests) {
-      await (this.prisma as any).artifactManifest.create({
+      await this.prisma.artifactManifest.create({
         data: {
           assetId: asset.id,
           manifestType: manifest.manifestType.toUpperCase(),
@@ -177,7 +178,7 @@ export class AssetMaterializationService {
       });
     }
 
-    await (this.prisma as any).contentAssetRevision.create({
+    await this.prisma.contentAssetRevision.create({
       data: {
         assetId: asset.id,
         version,
@@ -501,17 +502,17 @@ function buildSearchableText(shape: MaterializationShape): string {
     .slice(0, 20_000);
 }
 
-function readArray(value: any): any[] {
+function readArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function readObject(value: any): Record<string, unknown> | null {
+function readObject(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function readString(value: any): string | undefined {
+function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : undefined;

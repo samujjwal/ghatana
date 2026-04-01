@@ -16,20 +16,15 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-
-type ContentAsset = any;
-type ContentAssetType = any;
-type HybridSearchOptions = any;
-type HybridSearchResponse = any;
-type HybridSearchResult = any;
-type RankingExplanation = any;
-type RankingSignal =
-  | "lexical"
-  | "semantic"
-  | "quality"
-  | "recency"
-  | "popularity"
-  | "learner_fit";
+import type {
+  ContentAsset,
+  ContentAssetType,
+  HybridSearchOptions,
+  HybridSearchResponse,
+  HybridSearchResult,
+  RankingExplanation,
+  RankingSignal,
+} from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Default weights
@@ -74,7 +69,7 @@ function lexicalScore(
   if (!corpus) return 0;
 
   const corpusTerms = new Set(normalizeTerms(corpus));
-  const matched = queryTerms.filter((t: any) => corpusTerms.has(t)).length;
+  const matched = queryTerms.filter((t) => corpusTerms.has(t)).length;
   const coverage = matched / queryTerms.length;
 
   // Phrase bonus: full query as substring
@@ -102,7 +97,7 @@ function semanticOverlapScore(chunkTexts: string[], query: string): number {
   let bestScore = 0;
   for (const text of chunkTexts) {
     const chunkTerms = new Set(normalizeTerms(text));
-    const intersection = [...queryTerms].filter((t: any) =>
+    const intersection = [...queryTerms].filter((t) =>
       chunkTerms.has(t),
     ).length;
     const score = intersection / queryTerms.size;
@@ -144,11 +139,11 @@ function createHighlights(
   for (const [field, text] of Object.entries(fields)) {
     if (!text) continue;
     const lower = text.toLowerCase();
-    const matched = terms.some((t: any) => lower.includes(t));
+    const matched = terms.some((t) => lower.includes(t));
     if (!matched) continue;
 
     // Extract snippet around first match
-    const firstTerm = terms.find((t: any) => lower.includes(t))!;
+    const firstTerm = terms.find((t) => lower.includes(t))!;
     const idx = lower.indexOf(firstTerm);
     const start = Math.max(0, idx - 60);
     const end = Math.min(text.length, idx + firstTerm.length + 60);
@@ -196,19 +191,19 @@ export class HybridSearchService {
     };
 
     if (assetTypes && assetTypes.length > 0) {
-      where.assetType = { in: assetTypes.map((t: any) => t.toUpperCase()) };
+      where.assetType = { in: assetTypes.map((t) => t.toUpperCase()) };
     }
     if (domain) {
       where.domain = domain;
     }
 
     const [candidates, total] = await Promise.all([
-      (this.prisma as any).contentAsset.findMany({
+      this.prisma.contentAsset.findMany({
         where,
         take: Math.min(limit * 3, 100), // over-fetch for re-ranking
         orderBy: { updatedAt: "desc" },
       }),
-      (this.prisma as any).contentAsset.count({ where }),
+      this.prisma.contentAsset.count({ where }),
     ]);
 
     if (candidates.length === 0) {
@@ -221,8 +216,8 @@ export class HybridSearchService {
     }
 
     // 2. Fetch semantic chunks for candidates (for overlap scoring)
-    const candidateIds = candidates.map((c: any) => c.id);
-    const chunks = await (this.prisma as any).semanticChunk.findMany({
+    const candidateIds = candidates.map((c) => c.id);
+    const chunks = await this.prisma.semanticChunk.findMany({
       where: {
         assetId: { in: candidateIds },
         embeddingStatus: { in: ["READY", "PENDING"] },
@@ -238,7 +233,7 @@ export class HybridSearchService {
     }
 
     // 3. Score and rank
-    const scored: Array<{ raw: any; ranking: RankingExplanation }> = [];
+    const scored: Array<{ raw: typeof candidates[number]; ranking: RankingExplanation }> = [];
 
     for (const candidate of candidates) {
       const lex = lexicalScore(
@@ -294,9 +289,9 @@ export class HybridSearchService {
         },
       ];
 
-      const score = signals.reduce((sum: any, s: any) => sum + s.contribution, 0);
+      const score = signals.reduce((sum: number, s) => sum + s.contribution, 0);
 
-      const topSignal = signals.reduce((a: any, b: any) =>
+      const topSignal = signals.reduce((a, b) =>
         b.contribution > a.contribution ? b : a,
       );
 
@@ -311,7 +306,7 @@ export class HybridSearchService {
     }
 
     // Sort by combined score desc
-    scored.sort((a: any, b: any) => b.ranking.score - a.ranking.score);
+    scored.sort((a, b) => b.ranking.score - a.ranking.score);
 
     // 4. Paginate and build response
     const paged = scored.slice(offset, offset + limit);

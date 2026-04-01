@@ -24,7 +24,7 @@ import { createMarketplaceService } from "./service.js";
  * @doc.pattern Modular Plugin
  */
 export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
-  const prisma = app.prisma as any;
+  const prisma = app.prisma;
   const marketplaceService = createMarketplaceService(prisma);
 
   // GET /listings
@@ -121,7 +121,7 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         pageSize: pageSize ? Number(pageSize) : 12,
         ...(domains ? { domains: (domains as string).split(",") } : {}),
         ...(difficulties
-          ? { difficulties: (difficulties as string).split(",") as any[] }
+          ? { difficulties: (difficulties as string).split(",") as string[] }
           : {}),
         ...(tags ? { tags: (tags as string).split(",") } : {}),
         ...(isPremium === "true" ? { isPremium: true } : {}),

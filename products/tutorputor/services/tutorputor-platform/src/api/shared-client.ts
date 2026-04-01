@@ -405,7 +405,7 @@ export class SharedApiClient {
     return result;
   }
 
-  private enhanceError(error: any, config: RequestConfig): ApiError {
+  private enhanceError(error: unknown, config: RequestConfig): ApiError {
     if (error instanceof Error && this.isApiError(error)) {
       return error;
     }
@@ -500,7 +500,7 @@ export class AIServiceClient extends SharedApiClient {
     return this.post("/ai/generate", { prompt, ...options });
   }
 
-  async validateContent(content: any) {
+  async validateContent(content: unknown) {
     return this.post("/ai/validate", content);
   }
 }
@@ -515,7 +515,7 @@ export class SimulationServiceClient extends SharedApiClient {
     });
   }
 
-  async runSimulation(simulationId: string, parameters: any) {
+  async runSimulation(simulationId: string, parameters: Record<string, unknown>) {
     return this.post(`/simulations/${simulationId}/run`, parameters);
   }
 

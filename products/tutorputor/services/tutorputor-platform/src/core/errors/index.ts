@@ -630,7 +630,7 @@ export class PaymentProcessingFailedError extends TutorPutorError {
  * Error factory functions for common scenarios
  */
 export class ErrorFactory {
-  static fromUnknown(error: any, context?: ErrorContext): TutorPutorError {
+  static fromUnknown(error: unknown, context?: ErrorContext): TutorPutorError {
     if (error instanceof TutorPutorError) {
       return error;
     }
@@ -677,18 +677,18 @@ export class ErrorFactory {
 /**
  * Utility functions for error handling
  */
-export function isTutorPutorError(error: any): error is TutorPutorError {
+export function isTutorPutorError(error: unknown): error is TutorPutorError {
   return error instanceof TutorPutorError;
 }
 
-export function getErrorCode(error: any): ErrorCode | null {
+export function getErrorCode(error: unknown): ErrorCode | null {
   return isTutorPutorError(error) ? error.code : null;
 }
 
-export function getErrorCategory(error: any): ErrorCategory | null {
+export function getErrorCategory(error: unknown): ErrorCategory | null {
   return isTutorPutorError(error) ? error.category : null;
 }
 
-export function getErrorStatusCode(error: any): number {
+export function getErrorStatusCode(error: unknown): number {
   return isTutorPutorError(error) ? error.statusCode : 500;
 }

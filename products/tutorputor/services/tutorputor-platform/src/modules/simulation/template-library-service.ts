@@ -120,7 +120,7 @@ interface CoverageBacklogExecutionSummary {
   templateIds: string[];
 }
 
-type SimulationTemplateWithManifest = any;
+import type { SimulationTemplateWithManifest } from "../content/types.js";
 
 interface TemplateCoverageActionPlan {
   starters: Array<{
@@ -1551,8 +1551,8 @@ export class SimulationTemplateLibraryService {
     
     // Manifest structure validation
     const steps = Array.isArray(manifest.steps) ? manifest.steps : [];
-    const entities = Array.isArray((manifest as { entities?: any[] }).entities) 
-      ? (manifest as { entities: any[] }).entities 
+    const entities = Array.isArray((manifest as { entities?: unknown[] }).entities) 
+      ? (manifest as { entities: unknown[] }).entities 
       : [];
     
     if (steps.length === 0) {

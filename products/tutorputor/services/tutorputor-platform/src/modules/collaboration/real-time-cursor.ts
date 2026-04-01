@@ -205,7 +205,7 @@ export class RealTimeCollaboration extends EventEmitter {
   /**
    * Send message to specific user
    */
-  sendToUser(userId: string, message: any): void {
+  sendToUser(userId: string, message: unknown): void {
     const ws = this.webSockets.get(userId);
     if (ws && ws.readyState === 1) {
       // WebSocket.OPEN = 1
@@ -271,7 +271,7 @@ export class RealTimeCollaboration extends EventEmitter {
   /**
    * Broadcast message to all participants in a session
    */
-  private broadcastToSession(sessionId: string, message: any): void {
+  private broadcastToSession(sessionId: string, message: unknown): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
 

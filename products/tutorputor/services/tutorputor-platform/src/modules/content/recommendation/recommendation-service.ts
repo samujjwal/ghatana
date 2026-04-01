@@ -12,14 +12,15 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-
-type ContentAsset = any;
-type ContentAssetType = any;
-type RecommendationEdgeType = any;
-type RecommendationSource = any;
-type RecommendationEdge = any;
-type NextStepSuggestion = any;
-type RelatedAssetsResponse = any;
+import type {
+  ContentAsset,
+  ContentAssetType,
+  RecommendationEdgeType,
+  RecommendationSource,
+  RecommendationEdge,
+  NextStepSuggestion,
+  RelatedAssetsResponse,
+} from "../types.js";
 
 // ---------------------------------------------------------------------------
 // Difficulty ordering for progression rules
@@ -158,7 +159,7 @@ export class RecommendationService {
       sourceWhere.id = options.sourceAssetId;
     }
 
-    const sourceAssets = await (this.prisma as any).contentAsset.findMany({
+    const sourceAssets = await this.prisma.contentAsset.findMany({
       where: sourceWhere,
       take: options.limit ?? 25,
       orderBy: { updatedAt: "desc" },
@@ -184,26 +185,26 @@ export class RecommendationService {
         candidateWhere.domain = sourceAsset.domain;
       }
 
-      const candidates = await (this.prisma as any).contentAsset.findMany({
+      const candidates = await this.prisma.contentAsset.findMany({
         where: candidateWhere,
         take: 12,
         orderBy: { qualityScore: "desc" },
       });
 
-      const candidateIds = candidates.map((candidate: any) => candidate.id);
+      const candidateIds = candidates.map((candidate) => candidate.id);
       const [events, evaluations, existingEdges] = await Promise.all([
         candidateIds.length === 0
           ? []
-          : (this.prisma as any).explorerEvent.findMany({
+          : this.prisma.explorerEvent.findMany({
               where: { tenantId, assetId: { in: candidateIds } },
             }),
         candidateIds.length === 0
           ? []
-          : (this.prisma as any).evaluationRecord.findMany({
+          : this.prisma.evaluationRecord.findMany({
               where: { tenantId, assetId: { in: candidateIds } },
               orderBy: { createdAt: "desc" },
             }),
-        (this.prisma as any).recommendationEdge.findMany({
+        this.prisma.recommendationEdge.findMany({
           where: { sourceAssetId: sourceAsset.id },
         }),
       ]);
@@ -227,7 +228,7 @@ export class RecommendationService {
       for (const candidate of candidates) {
         const edgeType = inferEdgeType(sourceAsset, candidate);
         const existingEdge = existingEdges.find(
-          (edge: any) =>
+          (edge) =>
             edge.targetAssetId === candidate.id && edge.edgeType === edgeType,
         );
         const telemetry = summarizeTelemetry(
@@ -288,18 +289,18 @@ export class RecommendationService {
         };
 
         if (existingEdge) {
-          await (this.prisma as any).recommendationEdge.update({
+          await this.prisma.recommendationEdge.update({
             where: { id: existingEdge.id },
             data,
           });
         } else {
-          await (this.prisma as any).recommendationEdge.create({ data });
+          await this.prisma.recommendationEdge.create({ data });
         }
 
         updatedEdges++;
       }
 
-      await (this.prisma as any).contentAsset.update({
+      await this.prisma.contentAsset.update({
         where: { id: sourceAsset.id },
         data: { recommendationStatus: "COMPUTED" },
       });
@@ -318,7 +319,7 @@ export class RecommendationService {
     updatedEdges: number;
     skippedEdges: number;
   }> {
-    const assets = await (this.prisma as any).contentAsset.findMany({
+    const assets = await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
         legacyExperienceId: experienceId,
@@ -353,7 +354,7 @@ export class RecommendationService {
     assetId: string,
     limit = 10,
   ): Promise<RelatedAssetsResponse> {
-    const edges = await (this.prisma as any).recommendationEdge.findMany({
+    const edges = await this.prisma.recommendationEdge.findMany({
       where: {
         sourceAssetId: assetId,
         sourceAsset: { tenantId },
@@ -404,7 +405,7 @@ export class RecommendationService {
     assetId: string,
     limit = 5,
   ): Promise<NextStepSuggestion[]> {
-    const edges = await (this.prisma as any).recommendationEdge.findMany({
+    const edges = await this.prisma.recommendationEdge.findMany({
       where: {
         sourceAssetId: assetId,
         sourceAsset: { tenantId },
@@ -416,8 +417,8 @@ export class RecommendationService {
     });
 
     return edges
-      .filter((e: any) => e.targetAsset)
-      .map((edge: any) => ({
+      .filter((e) => e.targetAsset)
+      .map((edge) => ({
         asset: this.mapAsset(edge.targetAsset),
         edge: this.mapEdge(edge),
         reason:
@@ -433,7 +434,7 @@ export class RecommendationService {
     tenantId: string,
     assetId: string,
   ): Promise<{ created: number; skipped: number }> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId, tenantId },
     });
 
@@ -443,7 +444,7 @@ export class RecommendationService {
     let skipped = 0;
 
     // Strategy 1: Same domain → RELATED edges
-    const sameDomain = await (this.prisma as any).contentAsset.findMany({
+    const sameDomain = await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
         domain: asset.domain,
@@ -469,7 +470,7 @@ export class RecommendationService {
 
     // Strategy 2: Same concept → RELATED + ALTERNATIVE edges
     if (asset.conceptId) {
-      const sameConcept = await (this.prisma as any).contentAsset.findMany({
+      const sameConcept = await this.prisma.contentAsset.findMany({
         where: {
           tenantId,
           conceptId: asset.conceptId,
@@ -509,7 +510,7 @@ export class RecommendationService {
           .map(([k]) => k.toUpperCase());
 
         if (easierLevels.length > 0) {
-          const prereqs = await (this.prisma as any).contentAsset.findMany({
+          const prereqs = await this.prisma.contentAsset.findMany({
             where: {
               tenantId,
               domain: asset.domain,
@@ -541,7 +542,7 @@ export class RecommendationService {
           .map(([k]) => k.toUpperCase());
 
         if (harderLevels.length > 0) {
-          const followUps = await (this.prisma as any).contentAsset.findMany({
+          const followUps = await this.prisma.contentAsset.findMany({
             where: {
               tenantId,
               domain: asset.domain,
@@ -584,13 +585,13 @@ export class RecommendationService {
     weight: number,
     reason: string,
   ): Promise<"created" | "skipped"> {
-    const existing = await (this.prisma as any).recommendationEdge.findFirst({
+    const existing = await this.prisma.recommendationEdge.findFirst({
       where: { sourceAssetId, targetAssetId, edgeType },
     });
 
     if (existing) return "skipped";
 
-    await (this.prisma as any).recommendationEdge.create({
+    await this.prisma.recommendationEdge.create({
       data: {
         sourceAssetId,
         targetAssetId,

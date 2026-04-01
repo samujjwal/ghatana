@@ -16,7 +16,7 @@ import {
  * @doc.pattern REST API
  */
 export const credentialsRoutes: FastifyPluginAsync = async (app) => {
-  const prisma = app.prisma as any;
+  const prisma = app.prisma;
   /**
    * GET /badges
    * List available badges

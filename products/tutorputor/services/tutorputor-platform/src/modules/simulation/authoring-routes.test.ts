@@ -11,8 +11,13 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import Fastify, { type FastifyInstance } from "fastify";
 
-const buildTestApp = async (): Promise<FastifyInstance> => {
-  const app = Fastify({ logger: false }) as FastifyInstance & {
+const buildTestApp = async (): Promise<FastifyInstance & {
+  prisma: {
+    simulationTemplate: { deleteMany: (args: unknown) => Promise<unknown> };
+    simulationManifest: { deleteMany: (args: unknown) => Promise<unknown> };
+  };
+}> => {
+  const app = Fastify({ logger: false }) as unknown as FastifyInstance & {
     prisma: {
       simulationTemplate: { deleteMany: (args: unknown) => Promise<unknown> };
       simulationManifest: { deleteMany: (args: unknown) => Promise<unknown> };
@@ -284,7 +289,12 @@ const buildTestApp = async (): Promise<FastifyInstance> => {
 };
 
 describe("simulationAuthoringRoutes", () => {
-  let app: FastifyInstance;
+  let app: FastifyInstance & {
+    prisma: {
+      simulationTemplate: { deleteMany: (args: unknown) => Promise<unknown> };
+      simulationManifest: { deleteMany: (args: unknown) => Promise<unknown> };
+    };
+  };
   const testTenantId = "test-tenant-123";
   const testUserId = "test-user-456";
 

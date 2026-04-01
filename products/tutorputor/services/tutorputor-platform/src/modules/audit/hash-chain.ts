@@ -67,7 +67,7 @@ export class AuditHashChain {
         const serialized = JSON.stringify(payload, Object.keys(payload).sort());
 
         // Get latest chain entry for this tenant
-        const latest = await (this.prisma as any).auditHashChain.findFirst({
+        const latest = await this.prisma.auditHashChain.findFirst({
             where: { tenantId },
             orderBy: { sequenceNumber: 'desc' },
         });
@@ -76,7 +76,7 @@ export class AuditHashChain {
         const sequenceNumber = (latest?.sequenceNumber ?? 0) + 1;
         const entryHash = this.computeHash(serialized, previousHash);
 
-        const entry = await (this.prisma as any).auditHashChain.create({
+        const entry = await this.prisma.auditHashChain.create({
             data: {
                 entryId,
                 tenantId,
@@ -108,7 +108,7 @@ export class AuditHashChain {
     ): Promise<HashVerificationResult> {
         const { limit = 10000 } = options;
 
-        const entries = await (this.prisma as any).auditHashChain.findMany({
+        const entries = await this.prisma.auditHashChain.findMany({
             where: { tenantId },
             orderBy: { sequenceNumber: 'asc' },
             take: limit,
@@ -156,7 +156,7 @@ export class AuditHashChain {
      * Get the latest hash for a tenant (for external verification).
      */
     async getLatestHash(tenantId: string): Promise<string | null> {
-        const latest = await (this.prisma as any).auditHashChain.findFirst({
+        const latest = await this.prisma.auditHashChain.findFirst({
             where: { tenantId },
             orderBy: { sequenceNumber: 'desc' },
         });

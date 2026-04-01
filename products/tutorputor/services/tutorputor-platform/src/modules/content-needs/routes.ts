@@ -61,7 +61,7 @@ export function registerContentNeedsRoutes(
   // Generate content based on analyzed needs
   fastify.post("/generate-content/:claimId", async (request, reply) => {
     const { claimId } = request.params as { claimId: string };
-    const { needs } = request.body as { needs: any };
+    const { needs } = request.body as { needs: unknown };
 
     try {
       const content = await contentNeedsAnalyzer.generateContentForClaim(

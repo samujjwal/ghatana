@@ -18,6 +18,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma } from "@tutorputor/core/db";
 
 type PublishRecommendation = "block" | "manual_review" | "auto_publish";
 
@@ -279,7 +280,7 @@ export class EvaluationService {
     generationRequestId: string,
   ): Promise<EvaluationScorecard> {
     // Fetch the request and all COMPLETED jobs
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: generationRequestId, tenantId },
       include: { jobs: { where: { status: "COMPLETED" } } },
     });
@@ -289,7 +290,7 @@ export class EvaluationService {
     }
 
     // Delete any previous evaluation records for this request
-    await (this.prisma as any).evaluationRecord.deleteMany({
+    await this.prisma.evaluationRecord.deleteMany({
       where: { generationRequestId },
     });
 
@@ -356,12 +357,12 @@ export class EvaluationService {
    */
   async evaluateJob(
     tenantId: string,
-    job: any,
+    job: { outputData: unknown; jobType: string; parameters: unknown },
     generationRequestId?: string,
   ): Promise<EvaluationRecord> {
     const outputData = (job.outputData as Record<string, unknown> | null) ?? {};
     const jobType = (job.jobType as string).toLowerCase();
-    const gradeLevel = (job.parameters as any)?.gradeLevel as
+    const gradeLevel = (job.parameters as Record<string, unknown> | null | undefined)?.gradeLevel as
       | string
       | undefined;
 
@@ -391,7 +392,7 @@ export class EvaluationService {
       recommendation === "block" ? "failed" : "passed";
     const assetId = resolveAssetId(job);
 
-    const created = await (this.prisma as any).evaluationRecord.create({
+    const created = await this.prisma.evaluationRecord.create({
       data: {
         tenantId,
         assetId,
@@ -403,15 +404,15 @@ export class EvaluationService {
         accessibilityScore: accessibility.score,
         manifestValidityScore: manifestValidity.score,
         overallScore: overall,
-        status: status.toUpperCase(),
-        recommendation: recommendation.toUpperCase().replace(/-/g, "_"),
-        issues: allIssues.length > 0 ? allIssues : null,
+        status: status.toUpperCase() as "PENDING" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED",
+        recommendation: recommendation.toUpperCase().replace(/-/g, "_") as "AUTO_PUBLISH" | "MANUAL_REVIEW" | "BLOCK",
+        issues: allIssues.length > 0 ? (allIssues as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
         diagnostics: { jobType, jobId: job.id },
       },
     });
 
     if (assetId) {
-      await (this.prisma as any).contentAsset.update({
+      await this.prisma.contentAsset.update({
         where: { id: assetId },
         data: {
           qualityScore: overall,
@@ -436,7 +437,7 @@ export class EvaluationService {
     tenantId: string,
     generationRequestId: string,
   ): Promise<EvaluationRecord[]> {
-    const records = await (this.prisma as any).evaluationRecord.findMany({
+    const records = await this.prisma.evaluationRecord.findMany({
       where: { tenantId, generationRequestId },
       orderBy: { createdAt: "desc" },
     });
@@ -450,7 +451,7 @@ export class EvaluationService {
     tenantId: string,
     evaluationId: string,
   ): Promise<EvaluationRecord | null> {
-    const record = await (this.prisma as any).evaluationRecord.findFirst({
+    const record = await this.prisma.evaluationRecord.findFirst({
       where: { id: evaluationId, tenantId },
     });
     return record ? mapRecord(record) : null;

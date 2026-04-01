@@ -23,13 +23,13 @@ import { createPaymentCircuitBreaker } from "../../../utils/circuit-breaker.js";
  * @doc.pattern Modular Plugin
  */
 export const billingRoutes: FastifyPluginAsync = async (app) => {
-  const prisma = app.prisma as any;
+  const prisma = app.prisma;
   const billingService = createBillingService(prisma);
 
   // Create circuit breakers for external services
   const stripeCircuitBreaker = createPaymentCircuitBreaker(
     "stripe-webhook",
-    async (...args: any[]) => {
+    async (...args: unknown[]) => {
       const [stripeSecretKey, bodyString, signature, webhookSecret] = args as [
         string,
         string,
@@ -194,7 +194,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
         ? rawBody.toString("utf8")
         : rawBody;
 
-      let event: { type: string; data: { object: any } };
+      let event: { id: string; type: string; data: { object: unknown } };
       try {
         const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
         if (!stripeSecretKey) {
@@ -215,13 +215,13 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
         );
 
         app.log.info(
-          { eventType: event.type, eventId: (event as any).id },
+          { eventType: event.type, eventId: event.id },
           "Stripe webhook signature verified successfully",
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         app.log.warn(
           {
-            err: err.message,
+            err: err instanceof Error ? err.message : String(err),
             signature: signature.substring(0, 20) + "...",
           },
           "Stripe webhook signature verification failed",
@@ -248,7 +248,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
 
             if (!tenantId) {
               app.log.error(
-                { sessionId, eventId: (event as any).id },
+                { sessionId, eventId: event.id },
                 "Stripe webhook: missing tenantId in metadata",
               );
               break;
@@ -261,8 +261,6 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
                 data: {
                   status: "COMPLETED",
                   completedAt: new Date(),
-                  stripeSessionId: session.id,
-                  stripeCustomerId: session.customer,
                 },
               });
 
@@ -298,7 +296,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
             if (tenantId && sessionId) {
               await prisma.checkoutSession.updateMany({
                 where: { id: sessionId, tenantId, status: "PENDING" },
-                data: { status: "EXPIRED" },
+                data: { status: "CANCELLED" },
               });
 
               app.log.info(
@@ -323,26 +321,10 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
 
             const tenantId = sub.metadata?.tenantId;
             if (tenantId) {
-              await prisma.subscription.upsert({
-                where: { tenantId },
-                update: {
-                  status: sub.status as any,
-                  stripeSubscriptionId: sub.id,
-                  currentPeriodStart: new Date(sub.current_period_start * 1000),
-                  currentPeriodEnd: new Date(sub.current_period_end * 1000),
-                  trialStart: sub.trial_start
-                    ? new Date(sub.trial_start * 1000)
-                    : null,
-                  trialEnd: sub.trial_end
-                    ? new Date(sub.trial_end * 1000)
-                    : null,
-                },
-                create: {
-                  tenantId,
-                  planId: "pro", // Default plan - should be configurable
-                  tier: "pro",
-                  status: sub.status as any,
-                  stripeSubscriptionId: sub.id,
+              await prisma.subscription.updateMany({
+                where: { stripeSubscriptionId: sub.id },
+                data: {
+                  status: sub.status as "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "INCOMPLETE_EXPIRED" | "TRIALING" | "UNPAID",
                   currentPeriodStart: new Date(sub.current_period_start * 1000),
                   currentPeriodEnd: new Date(sub.current_period_end * 1000),
                   trialStart: sub.trial_start
@@ -372,7 +354,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
             if (tenantId) {
               await prisma.subscription.updateMany({
                 where: { tenantId },
-                data: { status: "canceled", canceledAt: new Date() },
+                data: { status: "CANCELED", canceledAt: new Date() },
               });
 
               app.log.info(
@@ -401,8 +383,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
                   stripeSubscriptionId: invoice.subscription,
                 },
                 data: {
-                  lastPaymentStatus: invoice.status,
-                  lastPaymentAt: new Date(),
+                  updatedAt: new Date(),
                 },
               });
 
@@ -416,16 +397,16 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
 
           default:
             app.log.debug(
-              { type: event.type, eventId: (event as any).id },
+              { type: event.type, eventId: event.id },
               "Unhandled Stripe webhook event",
             );
         }
-      } catch (processingErr: any) {
+      } catch (processingErr: unknown) {
         app.log.error(
           {
-            processingErr: processingErr.message,
+            processingErr: processingErr instanceof Error ? processingErr.message : String(processingErr),
             eventType: event.type,
-            eventId: (event as any).id,
+            eventId: event.id,
           },
           "Error processing Stripe webhook event",
         );

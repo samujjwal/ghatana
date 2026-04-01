@@ -170,9 +170,9 @@ export class SimulationGenerationProcessor {
                 },
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error(
-                { jobId: job.id, experienceId, claimRef, error: error.message },
+                { jobId: job.id, experienceId, claimRef, error: error instanceof Error ? error.message : String(error) },
                 'Simulation generation job failed'
             );
             throw error;

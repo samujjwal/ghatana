@@ -74,7 +74,7 @@ export class SimulationAssessmentIntegration {
       },
     });
 
-    return manifests.slice(0, args.count).map((manifest: any, index: any) =>
+    return manifests.slice(0, args.count).map((manifest, index) =>
       this.createSimulationAssessmentItem({
         manifest,
         itemIndex: index,
@@ -101,7 +101,7 @@ export class SimulationAssessmentIntegration {
 
     return {
       id: itemId as AssessmentItem["id"],
-      type: "simulation_interaction" as any,
+      type: "simulation_interaction",
       prompt: buildPrompt(
         questionType,
         args.manifest.title,
@@ -131,7 +131,7 @@ export class SimulationAssessmentIntegration {
 
 export function scoreSimulationAssessmentResponse(args: {
   item: { id: string; points: number; metadata?: Record<string, unknown> | null };
-  response: { trace?: any } | undefined;
+  response: { trace?: Record<string, unknown> } | undefined;
 }): { earnedPoints: number; feedback: AssessmentFeedback } {
   const defaultFeedback: AssessmentFeedback = {
     itemId: args.item.id as AssessmentItem["id"],
@@ -152,23 +152,23 @@ export function scoreSimulationAssessmentResponse(args: {
   const interactions = args.response.trace.interactions ?? [];
   const touchedParameters = new Set(
     interactions
-      .filter((entry: any) => entry.type === "parameter_change" && entry.parameterId)
-      .map((entry: any) => String(entry.parameterId)),
+      .filter((entry) => (entry as Record<string, unknown>).type === "parameter_change" && (entry as Record<string, unknown>).parameterId)
+      .map((entry) => String((entry as Record<string, unknown>).parameterId)),
   );
   const matchedParameters =
     metadata.expectedParameters.length === 0
       ? 1
-      : metadata.expectedParameters.filter((parameterId: any) =>
+      : metadata.expectedParameters.filter((parameterId) =>
           touchedParameters.has(parameterId),
         ).length / metadata.expectedParameters.length;
-  const predictionMatches = interactions.filter((entry: any) => {
-    const predicted = String(entry.predictedOutcome ?? "").toLowerCase();
-    const observed = String(entry.observedOutcome ?? "").toLowerCase();
+  const predictionMatches = interactions.filter((entry) => {
+    const predicted = String((entry as Record<string, unknown>).predictedOutcome ?? "").toLowerCase();
+    const observed = String((entry as Record<string, unknown>).observedOutcome ?? "").toLowerCase();
     if (!predicted || !observed) return false;
     return predicted === observed;
   }).length;
   const predictionOpportunities = interactions.filter(
-    (entry: any) => entry.predictedOutcome || entry.observedOutcome,
+    (entry) => (entry as Record<string, unknown>).predictedOutcome || (entry as Record<string, unknown>).observedOutcome,
   ).length;
   const predictionScore =
     predictionOpportunities === 0
@@ -177,7 +177,7 @@ export function scoreSimulationAssessmentResponse(args: {
         : 0.7
       : predictionMatches / predictionOpportunities;
   const summaryText = String(args.response.trace.summary ?? "").trim().toLowerCase();
-  const explanationHits = metadata.expectedOutcomeKeywords.filter((keyword: any) =>
+  const explanationHits = metadata.expectedOutcomeKeywords.filter((keyword) =>
     summaryText.includes(keyword.toLowerCase()),
   ).length;
   const explanationScore =
@@ -237,12 +237,12 @@ export function summarizeSimulationAttempt(args: {
   feedback?: AssessmentFeedback[];
 }) {
   const simulationItems = args.items.filter(
-    (item: any) => item.type === "simulation_interaction",
+    (item) => item.type === "simulation_interaction",
   );
 
-  const insights = simulationItems.map((item: any) => {
+  const insights = simulationItems.map((item) => {
     const response = args.responses[item.id] as
-      | { trace?: any }
+      | { trace?: Record<string, unknown> }
       | undefined;
     const metadata = parseSimulationMetadata(item.metadata);
     const scoring = scoreSimulationAssessmentResponse({
@@ -253,7 +253,7 @@ export function summarizeSimulationAttempt(args: {
       },
       response,
     });
-    const storedFeedback = args.feedback?.find((entry: any) => entry.itemId === item.id);
+    const storedFeedback = args.feedback?.find((entry) => entry.itemId === item.id);
 
     return {
       itemId: item.id,
@@ -272,13 +272,13 @@ export function summarizeSimulationAttempt(args: {
 
   return {
     totalSimulationItems: simulationItems.length,
-    completedSimulationItems: insights.filter((insight: any) => insight.interactionCount > 0)
+    completedSimulationItems: insights.filter((insight) => insight.interactionCount > 0)
       .length,
     averageScorePercent:
       insights.length === 0
         ? 0
         : Math.round(
-            insights.reduce((sum: any, insight: any) => sum + insight.scorePercent, 0) /
+            insights.reduce((sum: number, insight) => sum + insight.scorePercent, 0) /
               insights.length,
           ),
     insights,
@@ -323,7 +323,7 @@ function buildRubric(
   ].join(" ");
 }
 
-function deriveManifestProfile(manifest: any): {
+function deriveManifestProfile(manifest: unknown): {
   interactionType?: string;
   parameterIds: string[];
   outcomeKeywords: string[];
@@ -333,13 +333,13 @@ function deriveManifestProfile(manifest: any): {
   }
   const record = manifest as Record<string, unknown>;
   const steps = Array.isArray(record.steps) ? record.steps : [];
-  const actions = steps.flatMap((step: any) => {
+  const actions = steps.flatMap((step: unknown) => {
     if (!step || typeof step !== "object") return [];
     const candidate = (step as Record<string, unknown>).actions;
     return Array.isArray(candidate) ? candidate : [];
   });
   const parameterIds = actions
-    .map((action: any) => {
+    .map((action: unknown) => {
       if (!action || typeof action !== "object") return null;
       const entry = action as Record<string, unknown>;
       return entry.parameterId ?? entry.target ?? entry.entityId ?? null;
@@ -348,13 +348,13 @@ function deriveManifestProfile(manifest: any): {
   const outcomeKeywords = [
     ...new Set(
       actions
-        .map((action: any) => {
+        .map((action: unknown) => {
           if (!action || typeof action !== "object") return null;
           const entry = action as Record<string, unknown>;
           return entry.action ?? entry.description ?? entry.type ?? null;
         })
         .filter((value): value is string => typeof value === "string")
-        .map((value: any) => value.replace(/[_-]+/g, " ").trim())
+        .map((value) => value.replace(/[_-]+/g, " ").trim())
         .filter(Boolean),
     ),
   ];
@@ -686,7 +686,7 @@ export class SimulationTracePersistenceService {
  */
 export function scoreWithDomainRubric(args: {
   item: { id: string; points: number; metadata?: Record<string, unknown> | null };
-  response: { trace?: any } | undefined;
+  response: { trace?: Record<string, unknown> } | undefined;
   domain: string;
 }): { earnedPoints: number; feedback: AssessmentFeedback; rubricLevel: string } {
   const baseScoring = scoreSimulationAssessmentResponse({
@@ -706,7 +706,7 @@ export function scoreWithDomainRubric(args: {
   const level = domainRubric.scoringLevels
     .slice()
     .reverse()
-    .find((l: any) => baseScoring.feedback.scorePercent >= l.minScore);
+    .find((l) => baseScoring.feedback.scorePercent >= l.minScore);
 
     const feedback: AssessmentFeedback = {
       ...baseScoring.feedback,

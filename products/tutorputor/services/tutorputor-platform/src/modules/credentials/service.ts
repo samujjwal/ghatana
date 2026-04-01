@@ -39,10 +39,10 @@ export class CredentialService {
     async findById(id: string): Promise<Credential | null> {
         // Use Prisma raw query to search JSON payload field for matching credential id.
         // Postgres: payload->>'id' = id; SQLite: JSON_EXTRACT(payload,'$.id') = id
-        const isPostgres = (this.prisma as any)._engineConfig?.activeProvider === 'postgresql'
+        const isPostgres = this.prisma._engineConfig?.activeProvider === 'postgresql'
             || process.env.DATABASE_URL?.startsWith('postgresql');
 
-        let events: any[];
+        let events: unknown[];
         if (isPostgres) {
             events = await this.prisma.$queryRaw`
                 SELECT * FROM "LearningEvent"

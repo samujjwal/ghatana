@@ -51,7 +51,7 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
 
     const filters: SearchFilters = {};
     if (type) {
-      filters.type = type.split(",") as any[];
+      filters.type = type.split(",") as string[];
     }
     if (category) {
       filters.category = category.split(",");

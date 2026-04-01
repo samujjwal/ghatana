@@ -106,7 +106,7 @@ export class AutoRevisionService {
 
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly contentStudio: any,
+    private readonly contentStudio: unknown,
   ) {}
 
   async detectDrift(
@@ -241,8 +241,8 @@ export class AutoRevisionService {
 
     for (const experience of experiences) {
       const analytics =
-        (experience as any).experienceAnalytics ??
-        (experience as any).analytics;
+      (experience as Record<string, unknown>).experienceAnalytics ??
+        (experience as Record<string, unknown>).analytics;
       if (!analytics) {
         continue;
       }
@@ -344,7 +344,7 @@ export class AutoRevisionService {
 
     for (const item of queue) {
       try {
-        const snapshot = item.analyticsSnapshot as any;
+        const snapshot = item.analyticsSnapshot as Record<string, unknown>;
         const insights: RegenerationInsight[] = Array.isArray(
           snapshot?.insights,
         )
@@ -432,8 +432,8 @@ export class AutoRevisionService {
         treatment: created.treatmentSampleSize,
       },
       metrics: {
-        control: (created.controlMetrics as any) || {},
-        treatment: (created.treatmentMetrics as any) || {},
+        control: (created.controlMetrics as Record<string, unknown>) || {},
+        treatment: (created.treatmentMetrics as Record<string, unknown>) || {},
       },
       createdAt: created.createdAt,
       ...(created.startedAt ? { startedAt: created.startedAt } : {}),
@@ -520,7 +520,7 @@ export class AutoRevisionService {
     return "low";
   }
 
-  private analyzeStruggles(analytics: any): RegenerationInsight[] {
+  private analyzeStruggles(analytics: unknown): RegenerationInsight[] {
     const insights: RegenerationInsight[] = [];
     const normalized = this.normalizeAnalytics(analytics);
 
@@ -585,7 +585,7 @@ export class AutoRevisionService {
   }
 
   private createImprovementPrompt(
-    experience: any,
+    experience: { title: string },
     insights: RegenerationInsight[],
   ): string {
     const lines = insights
@@ -599,14 +599,14 @@ export class AutoRevisionService {
     ].join("\n");
   }
 
-  private extractMetricScore(metrics: any, key: string): number {
+  private extractMetricScore(metrics: unknown, key: string): number {
     if (!metrics || typeof metrics !== "object") return 0;
-    const value = metrics[key];
+    const value = (metrics as Record<string, unknown>)[key];
     if (typeof value === "number") return value;
     return 0;
   }
 
-  private toNumber(value: any, fallback = 0): number {
+  private toNumber(value: unknown, fallback = 0): number {
     if (typeof value === "number" && Number.isFinite(value)) return value;
     if (typeof value === "string" && value.trim().length > 0) {
       const parsed = Number(value);
@@ -615,7 +615,7 @@ export class AutoRevisionService {
     return fallback;
   }
 
-  private normalizeAnalytics(raw: any): {
+  private normalizeAnalytics(raw: unknown): {
     completionRate: number;
     dropOffRate: number;
     avgTimeMinutes: number;

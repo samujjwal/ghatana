@@ -88,13 +88,13 @@ function splitText(text: string, maxChars: number): string[] {
     remaining = remaining.slice(splitIdx).trim();
   }
 
-  return chunks.filter((c: any) => c.length > 0);
+  return chunks.filter((c) => c.length > 0);
 }
 
 /**
  * Extracts plain text from a JSON payload (recursively).
  */
-function extractText(value: any): string {
+function extractText(value: unknown): string {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
@@ -124,7 +124,7 @@ export class SemanticChunkService {
     assetId: string,
     options?: { force?: boolean },
   ): Promise<SemanticIndexResult> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId },
       include: { blocks: true, artifactManifests: true },
     });
@@ -167,7 +167,7 @@ export class SemanticChunkService {
 
     // 2. Block chunks
     const blocks = (asset.blocks ?? []).sort(
-      (a: any, b: any) => a.orderIndex - b.orderIndex,
+      (a, b) => a.orderIndex - b.orderIndex,
     );
 
     for (const block of blocks) {
@@ -217,7 +217,7 @@ export class SemanticChunkService {
     }
 
     // 4. Persist chunks, detect staleness
-    const existingChunks = await (this.prisma as any).semanticChunk.findMany({
+    const existingChunks = await this.prisma.semanticChunk.findMany({
       where: { assetId },
     });
 
@@ -237,7 +237,7 @@ export class SemanticChunkService {
 
       if (!existing) {
         // New chunk
-        await (this.prisma as any).semanticChunk.create({
+        await this.prisma.semanticChunk.create({
           data: {
             assetId,
             chunkRef: raw.chunkRef,
@@ -256,7 +256,7 @@ export class SemanticChunkService {
         chunksCreated++;
       } else if (existing.contentHash !== raw.contentHash || options?.force) {
         // Content changed — update and mark stale
-        await (this.prisma as any).semanticChunk.update({
+        await this.prisma.semanticChunk.update({
           where: { id: existing.id },
           data: {
             text: raw.text,
@@ -276,7 +276,7 @@ export class SemanticChunkService {
     // Mark orphaned chunks as stale
     for (const [ref, existing] of existingMap) {
       if (!processedRefs.has(ref) && existing.embeddingStatus !== "STALE") {
-        await (this.prisma as any).semanticChunk.update({
+        await this.prisma.semanticChunk.update({
           where: { id: existing.id },
           data: { embeddingStatus: "STALE" },
         });
@@ -285,12 +285,12 @@ export class SemanticChunkService {
     }
 
     // Update asset semantic index status
-    await (this.prisma as any).contentAsset.update({
+    await this.prisma.contentAsset.update({
       where: { id: assetId },
       data: { semanticIndexStatus: "INDEXED" },
     });
 
-    const pendingCount = await (this.prisma as any).semanticChunk.count({
+    const pendingCount = await this.prisma.semanticChunk.count({
       where: {
         assetId,
         embeddingStatus: { in: ["PENDING", "STALE"] },
@@ -310,12 +310,12 @@ export class SemanticChunkService {
    * Mark chunks as stale when an asset is updated.
    */
   async markAssetStale(assetId: string): Promise<void> {
-    await (this.prisma as any).semanticChunk.updateMany({
+    await this.prisma.semanticChunk.updateMany({
       where: { assetId, embeddingStatus: "READY" },
       data: { embeddingStatus: "STALE" },
     });
 
-    await (this.prisma as any).contentAsset.update({
+    await this.prisma.contentAsset.update({
       where: { id: assetId },
       data: { semanticIndexStatus: "stale" },
     });
@@ -330,7 +330,7 @@ export class SemanticChunkService {
   ): Promise<
     Array<{ id: string; assetId: string; chunkRef: string; text: string }>
   > {
-    return (this.prisma as any).semanticChunk.findMany({
+    return this.prisma.semanticChunk.findMany({
       where: {
         asset: { tenantId },
         embeddingStatus: { in: ["PENDING", "STALE"] },

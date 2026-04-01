@@ -232,9 +232,9 @@ export class DataExporter {
     ): Promise<ExportedFile> {
         // Check if models exist (assuming based on previous grep)
         // If not, we wrap in try-catch or skip
-        let threads: any[] = [];
+        let threads: unknown[] = [];
         try {
-            threads = await (this.prisma as any).thread.findMany({
+            threads = await this.prisma.thread.findMany({
                 where: { authorId: userId, tenantId },
                 select: { id: true, title: true, content: true, createdAt: true }
             });
@@ -268,7 +268,7 @@ export class DataExporter {
             });
 
             output.on('close', () => resolve());
-            archive.on('error', (err: any) => reject(err));
+            archive.on('error', (err: unknown) => reject(err));
 
             archive.pipe(output);
             archive.directory(sourceDir, false);

@@ -472,7 +472,7 @@ describe("ChatServiceImpl", () => {
   // =========================================================================
   describe("without Redis", () => {
     it("sends message without Redis publish", async () => {
-      const noRedisService = new ChatServiceImpl({ prisma });
+      const noRedisService = new ChatServiceImpl({ prisma: prisma as any });
 
       (prisma.chatRoom.findFirst as any).mockResolvedValue(makeRoomRow());
       (prisma.chatMessage.create as any).mockResolvedValue(makeMessageRow());
@@ -496,19 +496,19 @@ describe("ChatServiceImpl", () => {
   // =========================================================================
   describe("configuration", () => {
     it("defaults retention to 90 days", () => {
-      const svc = new ChatServiceImpl({ prisma });
+      const svc = new ChatServiceImpl({ prisma: prisma as any });
       // Access via room creation
       expect(svc["defaultRetentionDays"]).toBe(90);
     });
 
     it("defaults max message length to 10000", () => {
-      const svc = new ChatServiceImpl({ prisma });
+      const svc = new ChatServiceImpl({ prisma: prisma as any });
       expect(svc["maxMessageLength"]).toBe(10000);
     });
 
     it("respects custom config", () => {
       const svc = new ChatServiceImpl({
-        prisma,
+        prisma: prisma as any,
         defaultRetentionDays: 30,
         maxMessageLength: 500,
       });

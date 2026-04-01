@@ -73,9 +73,9 @@ export class ABTestingService {
   private get assignmentStore() {
     return (this.prisma as PrismaClient & {
       aBExperimentAssignment: {
-        findUnique: (...args: any[]) => Promise<any>;
-        update: (...args: any[]) => Promise<any>;
-        create: (...args: any[]) => Promise<any>;
+        findUnique: (...args: unknown[]) => Promise<unknown>;
+        update: (...args: unknown[]) => Promise<unknown>;
+        create: (...args: unknown[]) => Promise<unknown>;
       };
     }).aBExperimentAssignment;
   }
@@ -83,8 +83,8 @@ export class ABTestingService {
   private get observationStore() {
     return (this.prisma as PrismaClient & {
       aBExperimentObservation: {
-        findMany: (...args: any[]) => Promise<unknown[]>;
-        create: (...args: any[]) => Promise<any>;
+        findMany: (...args: unknown[]) => Promise<unknown[]>;
+        create: (...args: unknown[]) => Promise<unknown>;
       };
     }).aBExperimentObservation;
   }

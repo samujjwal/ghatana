@@ -186,7 +186,7 @@ function resolveProtoPath(file: string): string {
         path.resolve(process.cwd(), 'services/tutorputor-ai-agents/src/main/proto', file),
     ];
 
-    const found = candidates.find((candidate: any) => fs.existsSync(candidate));
+    const found = candidates.find((candidate) => fs.existsSync(candidate));
     if (!found) {
         throw new Error(`Proto file not found: ${file}. Checked: ${candidates.join(', ')}`);
     }
@@ -397,7 +397,7 @@ export class RealContentGenerationClient {
         let attempt = 0;
         while (attempt <= this.maxRetries) {
             try {
-                return await new Promise((resolve: any, reject: any) => {
+                return await new Promise((resolve, reject) => {
                     method(
                         request,
                         { deadline: Date.now() + this.timeout },

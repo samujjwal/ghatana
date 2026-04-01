@@ -31,6 +31,13 @@ import type {
   AssessmentStatus,
   TenantId,
   UserId,
+  Difficulty,
+  RiskLevel,
+  AssessmentFeedback,
+  AssessmentAttempt,
+  AssessmentResponse,
+  PathwayConstraints,
+  LearningEventInput,
 } from "@tutorputor/contracts/v1/types";
 import {
   getTenantId,
@@ -177,9 +184,9 @@ async function learningRoutes(
           timeSpentSecondsDelta: timeSpentSecondsDelta ?? 0,
         });
         return reply.send(updated);
-      } catch (e: any) {
-        if (e.message.includes("not found")) {
-          return reply.status(404).send({ message: e.message });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("not found")) {
+          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
         }
         throw e;
       }
@@ -376,7 +383,7 @@ async function learningRoutes(
   // Pathways
   // ---------------------------------------------------------------------------
 
-  fastify.post<{ Body: { goal: string; constraints?: any } }>(
+  fastify.post<{ Body: { goal: string; constraints?: PathwayConstraints } }>(
     "/pathways/generate",
     {
       schema: {
@@ -400,7 +407,7 @@ async function learningRoutes(
         tenantId,
         userId,
         goal,
-        constraints,
+        ...(constraints !== undefined ? { constraints } : {}),
       });
       return reply.send(result);
     },
@@ -488,8 +495,8 @@ async function learningRoutes(
           completedModuleId: completedModuleId as ModuleId,
         });
         return reply.send(updated);
-      } catch (e: any) {
-        return reply.status(400).send({ message: e.message });
+      } catch (e: unknown) {
+        return reply.status(400).send({ message: e instanceof Error ? e.message : String(e) });
       }
     },
   );
@@ -567,9 +574,9 @@ async function learningRoutes(
           userId,
         });
         return reply.send(assessment);
-      } catch (e: any) {
-        if (e.message.includes("not found"))
-          return reply.status(404).send({ message: e.message });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("not found"))
+          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
@@ -610,7 +617,7 @@ async function learningRoutes(
         userId,
         moduleId: moduleId as ModuleId,
         count: count ?? 5,
-        difficulty: (difficulty as any) ?? "INTERMEDIATE",
+        difficulty: (difficulty as Difficulty | undefined) ?? "INTERMEDIATE",
         objectiveIds: objectiveIds ?? [],
       });
       return reply.send(result);
@@ -706,17 +713,17 @@ async function learningRoutes(
           userId,
         });
         return reply.status(201).send(attempt);
-      } catch (e: any) {
-        if (e.message.includes("not found"))
-          return reply.status(404).send({ message: e.message });
-        if (e.message.includes("validation"))
-          return reply.status(400).send({ message: e.message });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("not found"))
+          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
+        if (e instanceof Error && e.message.includes("validation"))
+          return reply.status(400).send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
   );
 
-  fastify.post<{ Params: { id: string }; Body: { responses: any } }>(
+  fastify.post<{ Params: { id: string }; Body: { responses: Record<string, unknown> } }>(
     "/attempts/:id/submit",
     {
       schema: {
@@ -737,12 +744,12 @@ async function learningRoutes(
           tenantId,
           attemptId: request.params.id as AssessmentAttemptId,
           userId,
-          responses: request.body.responses,
+          responses: request.body.responses as unknown as AssessmentAttempt["responses"],
         });
         return reply.send(attempt);
-      } catch (e: any) {
-        if (e.message.includes("not found"))
-          return reply.status(404).send({ message: e.message });
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("not found"))
+          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
@@ -776,10 +783,10 @@ async function learningRoutes(
 
       const responses =
         attempt.responses && typeof attempt.responses === "object" && !Array.isArray(attempt.responses)
-          ? (attempt.responses as Record<string, any>)
+          ? (attempt.responses as unknown as Record<string, AssessmentResponse | undefined>)
           : {};
       const feedback = Array.isArray(attempt.feedback)
-        ? (attempt.feedback as any[])
+        ? (attempt.feedback as unknown as AssessmentFeedback[])
         : undefined;
 
       const summary = summarizeSimulationAttempt({
@@ -804,7 +811,7 @@ async function learningRoutes(
   // Analytics
   // ---------------------------------------------------------------------------
 
-  fastify.post<{ Body: { event: any } }>(
+  fastify.post<{ Body: { event: Omit<LearningEventInput, 'userId'> } }>(
     "/events",
     {
       schema: {
@@ -1030,7 +1037,7 @@ async function learningRoutes(
       const result = await analyticsService.getAdvancedAnalytics({
         tenantId,
         classroomId: classroomId as ClassroomId,
-        period: (period as any) ?? "weekly",
+        period: (period as "daily" | "weekly" | "monthly" | undefined) ?? "weekly",
       });
       return reply.send(result);
     },
@@ -1051,7 +1058,7 @@ async function learningRoutes(
       const result = await analyticsService.getAtRiskStudents({
         tenantId,
         classroomId: classroomId as ClassroomId,
-        minRiskLevel: (minRiskLevel as any) ?? "low",
+        minRiskLevel: (minRiskLevel as RiskLevel | undefined) ?? "low",
       });
       return reply.send(result);
     },

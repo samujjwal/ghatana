@@ -455,7 +455,7 @@ export class DatabaseHealthCheck implements HealthCheck {
   name = "database";
   timeout = 5000;
 
-  constructor(private db: any) {}
+  constructor(private db: { $queryRaw: (template: TemplateStringsArray, ...values: unknown[]) => Promise<unknown> }) {}
 
   async check(): Promise<HealthCheckResult> {
     try {
@@ -479,7 +479,7 @@ export class RedisHealthCheck implements HealthCheck {
   name = "redis";
   timeout = 3000;
 
-  constructor(private redis: any) {}
+  constructor(private redis: { ping: () => Promise<unknown> }) {}
 
   async check(): Promise<HealthCheckResult> {
     try {

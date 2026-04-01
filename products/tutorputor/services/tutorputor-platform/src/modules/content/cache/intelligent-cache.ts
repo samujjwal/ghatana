@@ -12,11 +12,13 @@
 import crypto from "node:crypto";
 import type Redis from "ioredis";
 
-type GenerationRequestConfig = any;
-type PlannedAssetDescriptor = any;
-type ReviewPath = any;
-type GenerationCostEstimate = any;
-type GenerationRoutingDecision = any;
+import type {
+  GenerationRequestConfig,
+  PlannedAssetDescriptor,
+  ReviewPath,
+  GenerationCostEstimate,
+  GenerationRoutingDecision,
+} from "../types.js";
 import type { RiskLevel } from "@tutorputor/contracts/v1/types";
 
 export interface PlanningCacheRequest {

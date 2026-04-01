@@ -129,7 +129,7 @@ export class ExampleGenerationProcessor {
                 },
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error(
                 { jobId: job.id, experienceId, claimRef, error: error.message },
                 'Example generation job failed'

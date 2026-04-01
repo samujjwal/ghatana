@@ -78,7 +78,7 @@ export class ForumServiceImpl implements ForumService {
         tenantId: args.tenantId,
         name: args.name,
         description: args.description,
-        scope: this.mapScopeToDb(args.scope) as any,
+        scope: this.mapScopeToDb(args.scope),
         ...(args.scopeId !== undefined ? { scopeId: args.scopeId } : {}),
         studyGroupId,
         categories: categories ? JSON.stringify(categories) : null,
@@ -621,7 +621,7 @@ export class ForumServiceImpl implements ForumService {
       where: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction) as any,
+        type: this.mapReactionToDb(args.reaction),
       },
     });
 
@@ -633,7 +633,7 @@ export class ForumServiceImpl implements ForumService {
       data: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction) as any,
+        type: this.mapReactionToDb(args.reaction),
       },
     });
 
@@ -678,7 +678,7 @@ export class ForumServiceImpl implements ForumService {
       where: {
         postId: args.postId,
         userId: args.userId,
-        type: this.mapReactionToDb(args.reaction) as any,
+        type: this.mapReactionToDb(args.reaction),
       },
     });
 
@@ -716,7 +716,7 @@ export class ForumServiceImpl implements ForumService {
     reason: string;
     details?: string;
   }): Promise<{ reportId: string }> {
-    const report = await (this.prisma as any).contentReport.create({
+    const report = await this.prisma.contentReport.create({
       data: {
         tenantId: args.tenantId,
         contentType: args.contentType,
@@ -865,7 +865,7 @@ export class ForumServiceImpl implements ForumService {
   private async publishActivity(
     tenantId: string,
     activity: {
-      type: string;
+      type: "JOINED_GROUP" | "CREATED_TOPIC" | "REPLIED_TOPIC" | "LIKED_POST" | "SCHEDULED_SESSION" | "COMPLETED_SESSION" | "SHARED_NOTE" | "EARNED_BADGE" | "HELPED_PEER";
       actorId: string;
       targetType: string;
       targetId: string;
@@ -877,7 +877,7 @@ export class ForumServiceImpl implements ForumService {
         tenantId,
         actorId: activity.actorId,
         actorName: "",
-        type: activity.type as any,
+        type: activity.type,
         targetType: activity.targetType,
         targetId: activity.targetId,
         targetTitle: activity.targetTitle,
@@ -904,7 +904,7 @@ export class ForumServiceImpl implements ForumService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma as any, {
+    await createSocialNotification(this.prisma, {
       tenantId,
       userId,
       type: notification.type,
@@ -930,8 +930,8 @@ export class ForumServiceImpl implements ForumService {
   }
 
   // Mapping helpers
-  private mapScopeToDb(scope: ForumScope): string {
-    const map: Record<ForumScope, string> = {
+  private mapScopeToDb(scope: ForumScope): "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE" {
+    const map: Record<ForumScope, "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE"> = {
       global: "GLOBAL",
       study_group: "STUDY_GROUP",
       classroom: "CLASSROOM",
@@ -950,8 +950,8 @@ export class ForumServiceImpl implements ForumService {
     return map[scope] ?? "global";
   }
 
-  private mapReactionToDb(reaction: ReactionType): string {
-    const map: Record<ReactionType, string> = {
+  private mapReactionToDb(reaction: ReactionType): "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE" {
+    const map: Record<ReactionType, "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE"> = {
       like: "LIKE",
       helpful: "HELPFUL",
       insightful: "INSIGHTFUL",
@@ -989,7 +989,7 @@ export class ForumServiceImpl implements ForumService {
       topicCount: forum.topicCount,
       postCount: forum.postCount,
       lastPostAt: forum.lastPostAt ?? undefined,
-      status: forum.status.toLowerCase() as any,
+      status: (forum.status as string).toLowerCase() as "active" | "archived" | "locked",
       createdAt: forum.createdAt,
       updatedAt: forum.updatedAt,
     };
@@ -1005,9 +1005,9 @@ export class ForumServiceImpl implements ForumService {
       authorId: topic.authorId,
       authorName: topic.authorName,
       content: topic.content,
-      contentFormat: topic.contentFormat as any,
+      contentFormat: topic.contentFormat as "markdown" | "html" | "plain",
       attachments: topic.attachments
-        ? JSON.parse(topic.attachments)
+        ? JSON.parse(topic.attachments as string)
         : undefined,
       viewCount: topic.viewCount,
       replyCount: topic.replyCount,
@@ -1016,7 +1016,7 @@ export class ForumServiceImpl implements ForumService {
       isLocked: topic.isLocked,
       isAnswered: topic.isAnswered,
       answerId: topic.answerId ?? undefined,
-      status: topic.status.toLowerCase() as any,
+      status: (topic.status as string).toLowerCase() as "draft" | "pending" | "published" | "hidden" | "deleted",
       moderatedBy: topic.moderatedBy ?? undefined,
       moderatedAt: topic.moderatedAt ?? undefined,
       moderationNote: topic.moderationNote ?? undefined,
@@ -1035,13 +1035,13 @@ export class ForumServiceImpl implements ForumService {
       authorName: post.authorName,
       isAnonymous: post.isAnonymous,
       content: post.content,
-      contentFormat: post.contentFormat as any,
-      attachments: post.attachments ? JSON.parse(post.attachments) : undefined,
+      contentFormat: post.contentFormat as "markdown" | "html" | "plain",
+      attachments: post.attachments ? JSON.parse(post.attachments as string) : undefined,
       parentId: post.parentId ?? undefined,
       depth: post.depth,
       likeCount: post.likeCount,
       isAcceptedAnswer: post.isAcceptedAnswer,
-      status: post.status.toLowerCase() as any,
+      status: (post.status as string).toLowerCase() as "draft" | "pending" | "published" | "hidden" | "deleted",
       moderatedBy: post.moderatedBy ?? undefined,
       moderatedAt: post.moderatedAt ?? undefined,
       isEdited: post.isEdited,

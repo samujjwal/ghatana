@@ -425,7 +425,7 @@ export function createMarketplaceService(
       ]);
 
       const stats = statusCounts.reduce(
-        (acc: Record<string, number>, s: any) => {
+        (acc: Record<string, number>, s) => {
           acc[s.status.toLowerCase()] = s._count.id;
           return acc;
         },
@@ -470,7 +470,7 @@ export function createMarketplaceService(
         verifiedTemplates: verifiedCount,
         premiumTemplates: premiumCount,
         byDomain: domainCounts.reduce(
-          (acc: Record<string, number>, d: any) => {
+          (acc: Record<string, number>, d) => {
             acc[d.domain] = d._count.id;
             return acc;
           },
@@ -538,7 +538,7 @@ function safeParseTags(raw: any): string[] {
 function buildTemplatesOrderBy(
   sortBy: TemplateSortField,
   sortOrder: TemplateSortOrder,
-): any[] {
+): Array<Record<string, string>> {
   const direction = sortOrder === "asc" ? "asc" : "desc";
 
   switch (sortBy) {

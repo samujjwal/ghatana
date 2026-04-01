@@ -72,7 +72,7 @@ export class ContentWorkerService {
       maxRetries: 3,
     });
 
-    this.redisConnection = new (Redis as unknown as new (...args: any[]) => any)({
+    this.redisConnection = new (Redis as unknown as new (...args: unknown[]) => Redis)({
       host: config.redis.host,
       port: config.redis.port,
       password: config.redis.password,
@@ -226,7 +226,7 @@ export class ContentWorkerService {
           await this.telemetryPublisher.publishCompleted(job as any, {
             deduplicationJobId: trackedJobId,
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           await this.jobDeduplicator.updateJobStatus(trackedJobId, "FAILED");
           await this.telemetryPublisher.publishFailed(
             job as any,
@@ -285,7 +285,7 @@ export class ContentWorkerService {
       await this.dlqManager.close();
     }
     if (this.redisConnection) {
-      await (this.redisConnection as any).quit();
+      await this.redisConnection.quit();
     }
     // We do not close prisma here as it might be shared
   }

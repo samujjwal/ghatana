@@ -258,7 +258,7 @@ export class ContentServiceImpl implements ContentService {
   // Helpers
   // ===========================================================================
 
-  private buildSummaryInclude(tenantId: TenantId, userId?: UserId): any {
+  private buildSummaryInclude(tenantId: TenantId, userId?: UserId): Record<string, unknown> {
     const include: Record<string, unknown> = {
       tags: true,
     };
@@ -270,7 +270,7 @@ export class ContentServiceImpl implements ContentService {
     return include;
   }
 
-  private buildDetailInclude(tenantId: TenantId, userId?: UserId): any {
+  private buildDetailInclude(tenantId: TenantId, userId?: UserId): Record<string, unknown> {
     const include: Record<string, unknown> = {
       tags: true,
       learningObjectives: true,

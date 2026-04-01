@@ -206,16 +206,16 @@ export class AuditServiceImpl {
 
         return {
             totalEvents: totalEvents as number,
-            uniqueActors: (actors as any[]).length,
-            topActions: (topActions as any[]).map((a: any) => ({
+            uniqueActors: actors.length,
+            topActions: topActions.map((a) => ({
                 action: a.action,
                 count: a._count.action,
             })),
-            topResourceTypes: (topResources as any[]).map((r: any) => ({
+            topResourceTypes: topResources.map((r) => ({
                 resourceType: r.resourceType,
                 count: r._count.resourceType,
             })),
-            recentEvents: (recent as any[]).map((e: any) => this.toAuditLogEntry(e)),
+            recentEvents: recent.map((e) => this.toAuditLogEntry(e as any)),
         };
     }
 

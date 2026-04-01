@@ -16,6 +16,52 @@ export type {
   LearnerPacingPreference,
   KnowledgeGapSeverity,
   KnowledgeGapDetectionMethod,
+  // Models used across content, generation, and recommendation services
+  ContentAsset,
+  ContentAssetRevision,
+  ContentBlock,
+  ArtifactManifest,
+  GenerationRequest,
+  GenerationJob,
+  RecommendationEdge,
+  SimulationTemplate,
+  SemanticChunk,
+  EmbeddingVector,
+  LearningExperience,
+  LearningClaim,
+  LearningEvidence,
+  ExperienceTask,
+  ExplorerEvent,
+  EvaluationRecord,
+  DriftSignal,
+  ABExperiment,
+  ReviewQueue,
+  ReviewDecision,
+  GenerationReviewDecision,
+  RegenerationCandidate,
+  // Enums used across services
+  ContentAssetType,
+  ContentAssetStatus,
+  ContentBlockType,
+  ArtifactManifestType,
+  GenerationJobType,
+  GenerationJobStatus,
+  GenerationRequestStatus,
+  RecommendationEdgeType,
+  RecommendationSource,
+  ReviewPath,
+  ReviewDecisionType,
+  PublishRecommendation,
+  ContentStatus,
+  ExperienceStatus,
+  EvaluationStatus,
+  SimulationTemplateStatus,
+  SimulationTemplateDifficulty,
+  SimulationTemplateLicense,
+  EmbeddingStatus,
+  ChunkSource,
+  RegenerationCandidateStatus,
+  RegenerationTrigger,
 } from "../../generated/prisma/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,7 +69,7 @@ const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 
 // Load Prisma dynamically at module initialization
-let PrismaClientImpl: any = PrismaClient;
+let PrismaClientImpl: typeof PrismaClient = PrismaClient;
 
 // Lazy-loaded on first use
 async function getPrismaClientImpl() {

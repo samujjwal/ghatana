@@ -115,7 +115,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
   app.post("/deep-linking", async (request, reply) => {
     const { content_items, deployment_id, moduleIds, baseUrl } =
       request.body as {
-        content_items: any[];
+        content_items: unknown[];
         deployment_id: string;
         moduleIds?: string[];
         baseUrl?: string;

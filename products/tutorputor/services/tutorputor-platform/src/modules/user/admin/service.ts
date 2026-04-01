@@ -314,7 +314,7 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
         const moduleMap = new Map(modules.map((m) => [m.id, m.title]));
 
         const totalEnrollments = completionStats.reduce(
-            (sum: number, s: any) => sum + s._count.status,
+            (sum: number, s) => sum + s._count.status,
             0
         );
         const completedEnrollments =
@@ -352,7 +352,7 @@ export class InstitutionAdminServiceImpl implements InstitutionAdminService {
     async bulkImportUsers(args: {
         tenantId: TenantId;
         importedBy: UserId;
-        users: any[];
+        users: Array<{ email: string; role: string; displayName?: string; classroomIds?: string[] }>;
         sendInvites?: boolean;
     }): Promise<{
         imported: number;

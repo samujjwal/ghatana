@@ -149,7 +149,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
 
     let tenantId: TenantId;
     try {
-      tenantId = getTenantId(req as any) as TenantId;
+      tenantId = getTenantId(req) as TenantId;
     } catch {
       return reply
         .code(400)
@@ -167,8 +167,8 @@ export const authModule: FastifyPluginAsync = async (app) => {
         return reply.redirect(result.redirectUrl);
       }
       return reply.send(result);
-    } catch (e: any) {
-      return reply.code(400).send({ error: e.message });
+    } catch (e: unknown) {
+      return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
     }
   });
 
@@ -188,15 +188,15 @@ export const authModule: FastifyPluginAsync = async (app) => {
         state,
       });
 
-      const target = (result as any).redirectUri || "/dashboard";
+      const target = result.redirectUri || "/dashboard";
       const separator = target.includes("?") ? "&" : "?";
       return reply.redirect(
         `${target}${separator}accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`,
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       return reply
         .code(400)
-        .send({ error: "Login Failed", details: e.message });
+        .send({ error: "Login Failed", details: e instanceof Error ? e.message : String(e) });
     }
   });
 };

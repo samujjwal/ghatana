@@ -132,7 +132,7 @@ type ExperienceAnalyticsSummary = {
     accuracyScore: number | null;
     usefulnessScore: number | null;
     harmlessnessScore: number | null;
-    suggestions: any[];
+    suggestions: unknown[];
   } | null;
   recentEvents: ExperienceTimelineEvent[];
 } & Record<string, unknown>;
@@ -175,7 +175,7 @@ export type HealthAwareContentStudioService = Omit<
     experienceId: string,
     claimId: string,
     request: Record<string, never>,
-  ) => Promise<{ tasks: any[] }>;
+  ) => Promise<{ tasks: unknown[] }>;
   refineContent: (
     id: string,
     request: RefineContentInput,
@@ -414,7 +414,7 @@ function defaultGradeAdaptation(gradeRange: GradeRange): GradeAdaptation {
   return defaults[gradeRange];
 }
 
-function safeJsonArray(value: any): any[] {
+function safeJsonArray(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
@@ -739,7 +739,7 @@ export function createContentStudioService(
         String(updateData.lastEditedBy ?? "system"),
       {
         changedFields: Object.keys(updateData).filter(
-          (key: any) => key !== "lastEditedBy",
+          (key) => key !== "lastEditedBy",
         ),
         status: updated.status,
       },
@@ -810,7 +810,7 @@ export function createContentStudioService(
     experienceId: string,
     claimId: string,
     _request: Record<string, never>,
-  ): Promise<{ tasks: any[] }> {
+  ): Promise<{ tasks: unknown[] }> {
     const claim = await prisma.learningClaim.findFirst({
       where: {
         experienceId,
@@ -945,7 +945,7 @@ export function createContentStudioService(
       throw new Error("Experience not found");
     }
 
-    const claims = experience.claims as any[];
+    const claims = experience.claims as Array<Record<string, unknown>>;
     const claimCount = claims.length;
 
     // --------------------------------------------------------------------------
@@ -964,12 +964,12 @@ export function createContentStudioService(
 
     const tasksByClaimRef = new Map<string, number>();
     for (const task of experience.experienceTasks) {
-      const ref = (task as any).claimRef ?? "";
+      const ref = (task as { claimRef?: string }).claimRef ?? "";
       tasksByClaimRef.set(ref, (tasksByClaimRef.get(ref) ?? 0) + 1);
     }
 
     for (const claim of claims) {
-      const claimRef = (claim as any).claimRef ?? (claim as any).id ?? "";
+      const claimRef = (claim as { claimRef?: string; id?: string }).claimRef ?? (claim as { claimRef?: string; id?: string }).id ?? "";
       const taskCount = tasksByClaimRef.get(claimRef) ?? 0;
       const exampleCount = claim.examples?.length ?? 0;
       const simCount = claim.simulations?.length ?? 0;
@@ -1006,7 +1006,7 @@ export function createContentStudioService(
     // Technical: schema validity — grade adaptation present + version set
     const hasGradeAdaptation =
       Array.isArray(experience.gradeAdaptations) &&
-      (experience.gradeAdaptations as any[]).length > 0;
+      (experience.gradeAdaptations as unknown[]).length > 0;
     const technicalScore =
       claimCount === 0
         ? 20
@@ -1034,7 +1034,7 @@ export function createContentStudioService(
     //   - Overall score >= 60
     // --------------------------------------------------------------------------
     const allClaimsMeetBaseline = claimChecks.every(
-      (c: any) => c.hasTasks || c.hasArtifacts,
+      (c) => c.hasTasks || c.hasArtifacts,
     );
     const canPublish =
       claimCount > 0 && allClaimsMeetBaseline && overallScore >= 60;
@@ -1073,9 +1073,9 @@ export function createContentStudioService(
     }
 
     if (claimCount > 0) {
-      const missingTasks = claimChecks.filter((c: any) => !c.hasTasks).length;
+      const missingTasks = claimChecks.filter((c) => !c.hasTasks).length;
       const missingArtifacts = claimChecks.filter(
-        (c: any) => !c.hasArtifacts,
+        (c) => !c.hasArtifacts,
       ).length;
 
         const taskCheck: ValidationCheck = {
@@ -1139,11 +1139,11 @@ export function createContentStudioService(
         gradefitScore: accessibilityScore,
         overallStatus,
         issues: checks
-          .filter((c: any) => !c.passed)
-          .map((c: any) => ({ severity: c.severity, message: c.message })),
+          .filter((c) => !c.passed)
+          .map((c) => ({ severity: c.severity, message: c.message })),
         suggestions: checks
-          .filter((c: any) => c.suggestion)
-          .map((c: any) => c.suggestion as string),
+          .filter((c) => c.suggestion)
+          .map((c) => c.suggestion as string),
       } as any,
     });
 
@@ -1195,8 +1195,8 @@ export function createContentStudioService(
       throw new Error(
         `Cannot publish: validation failed (score ${validation.score}/100). ` +
           `Fix the following issues: ${validation.checks
-            .filter((c: any) => !c.passed && c.severity === "error")
-            .map((c: any) => c.message)
+            .filter((c) => !c.passed && c.severity === "error")
+            .map((c) => c.message)
             .join("; ")}`,
       );
     }
@@ -1504,7 +1504,7 @@ export function createContentStudioService(
     ]);
 
     const timeline: ExperienceTimelineEvent[] = (recentEvents || []).map(
-      (event: any) => ({
+      (event) => ({
         id: event.id,
         type: event.eventType,
         actorId: event.actorId,

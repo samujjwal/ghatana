@@ -70,7 +70,7 @@ export class AssetOutcomeService {
       recomputeRecommendations?: boolean;
     },
   ): Promise<AssetOutcomeSummary> {
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: assetId, tenantId },
     });
 
@@ -79,25 +79,25 @@ export class AssetOutcomeService {
     }
 
     const [events, latestEvaluation, openCandidates] = await Promise.all([
-      (this.prisma as any).explorerEvent.findMany({
+      this.prisma.explorerEvent.findMany({
         where: { tenantId, assetId },
         orderBy: { occurredAt: "desc" },
         take: 500,
       }),
-      (this.prisma as any).evaluationRecord.findFirst({
+      this.prisma.evaluationRecord.findFirst({
         where: { tenantId, assetId },
         orderBy: { createdAt: "desc" },
       }),
       this.candidateService.listOpenCandidates(tenantId, { assetId }),
     ]);
-    const experimentObservations = await (this.prisma as any).aBExperimentObservation.findMany({
+    const experimentObservations = await this.prisma.aBExperimentObservation.findMany({
       where: { tenantId, assetId },
       orderBy: { observedAt: "desc" },
       take: 500,
     });
 
     const latestReview = latestEvaluation?.generationRequestId
-      ? await (this.prisma as any).generationReviewDecision.findFirst({
+      ? await this.prisma.generationReviewDecision.findFirst({
           where: {
             tenantId,
             requestId: latestEvaluation.generationRequestId,
@@ -216,7 +216,7 @@ export class AssetOutcomeService {
     evaluationRecommendation?: PublishRecommendation,
     latestReviewStatus?: GenerationReviewDecisionStatus,
   ): Promise<void> {
-    await (this.prisma as any).contentAsset.update({
+    await this.prisma.contentAsset.update({
       where: { id: assetId },
       data: {
         confidenceScore,
@@ -285,7 +285,7 @@ export class AssetOutcomeService {
       recomputeRecommendations?: boolean;
     },
   ) {
-    const assets = await (this.prisma as any).contentAsset.findMany({
+    const assets = await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
         legacyExperienceId: experienceId,
@@ -315,7 +315,7 @@ export class AssetOutcomeService {
   }
 }
 
-function summarizeTelemetry(events: any[]): AssetOutcomeSummary["telemetry"] {
+function summarizeTelemetry(events: unknown[]): AssetOutcomeSummary["telemetry"] {
   const summary = {
     impressions: 0,
     clicks: 0,

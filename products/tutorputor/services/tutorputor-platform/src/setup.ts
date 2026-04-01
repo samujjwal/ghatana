@@ -168,7 +168,7 @@ export async function setupPlatform(
   app.decorate("prisma", prisma);
 
   // Redis
-  const redis = new (Redis as unknown as new (...args: any[]) => any)(options.redisUrl || REDIS_URL, {
+  const redis = new (Redis as unknown as new (...args: unknown[]) => Redis)(options.redisUrl || REDIS_URL, {
     maxRetriesPerRequest: 3,
     enableReadyCheck: true,
     lazyConnect: false,

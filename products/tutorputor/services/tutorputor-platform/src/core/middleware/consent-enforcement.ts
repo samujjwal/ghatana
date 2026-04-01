@@ -169,7 +169,7 @@ export function createConsentEnforcement(options: ConsentEnforcementOptions) {
             if (cached) return cached;
         }
 
-        const records = await (prisma as any).userConsent.findMany({
+        const records = await prisma.userConsent.findMany({
             where: { tenantId, userId, granted: true },
             select: { category: true },
         });

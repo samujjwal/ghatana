@@ -349,7 +349,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
 
   async subscribeToSession(
     sessionId: string,
-    callback: (message: any) => void
+    callback: (message: unknown) => void
   ): Promise<() => void> {
     const channel = `vr:session:${sessionId}:state`;
 
@@ -381,7 +381,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
   // Private helper methods
   // ============================================
 
-  private async broadcastSessionUpdate(sessionId: string, event: any): Promise<void> {
+  private async broadcastSessionUpdate(sessionId: string, event: Record<string, unknown>): Promise<void> {
     await this.publisher.publish(
       `vr:session:${sessionId}:events`,
       JSON.stringify({

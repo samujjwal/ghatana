@@ -199,8 +199,8 @@ export class KnowledgeBaseServiceImpl {
 
     const results = await Promise.allSettled(sourceQueries);
     const sources = results
-      .filter((result) => result.status === "fulfilled")
-      .flatMap((result) => (result as any).value);
+      .filter((result): result is PromiseFulfilledResult<unknown[]> => result.status === "fulfilled")
+      .flatMap((result) => result.value);
 
     // Analyze results for verification
     const analysis = this.analyzeFactCheckResults(assertions, sources, request);

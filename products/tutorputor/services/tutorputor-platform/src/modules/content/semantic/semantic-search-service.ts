@@ -123,7 +123,7 @@ export class SemanticSearchService {
       where.domain = options.domain;
     }
 
-    const rows = await (this.prisma as any).contentAsset.findMany({
+    const rows = await this.prisma.contentAsset.findMany({
       where,
       orderBy: { updatedAt: "desc" },
       take: options.limit ?? 20,

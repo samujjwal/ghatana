@@ -191,7 +191,7 @@ export class ContentValidationProcessor {
                 },
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error(
                 { jobId: job.id, experienceId, error: error.message },
                 'Content validation job failed'

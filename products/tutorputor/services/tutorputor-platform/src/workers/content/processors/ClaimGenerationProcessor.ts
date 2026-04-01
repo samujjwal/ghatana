@@ -217,13 +217,13 @@ export class ClaimGenerationProcessor {
                     experienceId,
                 },
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error({ err: error, jobId: job.id }, 'Failed to process claim generation');
             throw error;
         }
     }
 
-    private mapBloomLevel(value: any): string {
+    private mapBloomLevel(value: unknown): string {
         if (typeof value === 'number') {
             const byIndex = [
                 'REMEMBER',

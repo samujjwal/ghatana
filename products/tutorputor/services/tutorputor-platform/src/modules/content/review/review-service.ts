@@ -73,7 +73,7 @@ export class GenerationReviewService {
     reviewedBy: string,
     input: SubmitReviewDecisionInput,
   ): Promise<GenerationReviewDecision> {
-    const request = await (this.prisma as any).generationRequest.findFirst({
+    const request = await this.prisma.generationRequest.findFirst({
       where: { id: input.requestId, tenantId },
     });
 
@@ -88,7 +88,7 @@ export class GenerationReviewService {
       );
     }
 
-    const decision = await (this.prisma as any).generationReviewDecision.create(
+    const decision = await this.prisma.generationReviewDecision.create(
       {
         data: {
           tenantId,
@@ -104,7 +104,7 @@ export class GenerationReviewService {
 
     // If approved, transition request to COMPLETED (if it wasn't already)
     if (input.status === "approved" && request.status !== "COMPLETED") {
-      await (this.prisma as any).generationRequest.update({
+      await this.prisma.generationRequest.update({
         where: { id: input.requestId },
         data: { status: "COMPLETED", completedAt: new Date() },
       });
@@ -120,7 +120,7 @@ export class GenerationReviewService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationReviewDecision[]> {
-    const decisions = await (this.prisma as any).generationReviewDecision.findMany(
+    const decisions = await this.prisma.generationReviewDecision.findMany(
       {
         where: { tenantId, requestId },
         orderBy: { createdAt: "desc" },
@@ -136,7 +136,7 @@ export class GenerationReviewService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationReviewDecision | null> {
-    const decision = await (this.prisma as any).generationReviewDecision.findFirst(
+    const decision = await this.prisma.generationReviewDecision.findFirst(
       {
         where: { tenantId, requestId },
         orderBy: { createdAt: "desc" },
@@ -154,7 +154,7 @@ export class GenerationReviewService {
     requestId: string,
     decisionNote?: string,
   ): Promise<GenerationReviewDecision> {
-    const existing = await (this.prisma as any).generationReviewDecision.findFirst(
+    const existing = await this.prisma.generationReviewDecision.findFirst(
       {
         where: { tenantId, requestId, status: "PENDING" },
         orderBy: { createdAt: "desc" },
@@ -165,7 +165,7 @@ export class GenerationReviewService {
       return mapDecision(existing);
     }
 
-    const created = await (this.prisma as any).generationReviewDecision.create({
+    const created = await this.prisma.generationReviewDecision.create({
       data: {
         tenantId,
         requestId,

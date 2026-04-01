@@ -27,7 +27,7 @@ export interface LTILaunchValidationResult {
 export class LTIValidator {
   constructor(private readonly launchService: LtiLaunchService) {}
 
-  parseLaunchRequest(input: any): LTILaunchRequest {
+  parseLaunchRequest(input: unknown): LTILaunchRequest {
     const parsed = launchRequestSchema.safeParse(input);
     if (!parsed.success) {
       throw new ValidationError("ID token and state are required");

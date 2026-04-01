@@ -124,7 +124,7 @@ export class GenerationRequestJobProcessor {
           generationJobType: job.data.generationJobType,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       const asError =
         error instanceof Error ? error : new Error(String(error));
 
@@ -307,7 +307,7 @@ export class GenerationRequestJobProcessor {
     const cost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(
       response.metadata,
     );
-    const explainers = (response.examples ?? []).map((example: any, index: any) => ({
+    const explainers = (response.examples ?? []).map((example, index) => ({
       id: example.example_id ?? `${job.data.generationJobId}-explainer-${index + 1}`,
       title: example.title ?? `Explainer for ${job.data.requestTitle}`,
       description: example.description ?? "",
@@ -455,7 +455,7 @@ export class GenerationRequestJobProcessor {
       count: 3,
     });
 
-    const assessments = (response.examples ?? []).map((example: any, index: any) => ({
+    const assessments = (response.examples ?? []).map((example, index) => ({
       id: example.example_id ?? `${job.data.generationJobId}-assessment-${index + 1}`,
       prompt: example.title ?? `Assessment item ${index + 1}`,
       guidance: example.description ?? "",

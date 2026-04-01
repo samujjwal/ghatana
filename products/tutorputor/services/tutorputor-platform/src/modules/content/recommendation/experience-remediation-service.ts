@@ -19,23 +19,18 @@ import { RecommendationService } from "./recommendation-service.js";
 import { createContentDriftDetector } from "../../content-needs/drift-detector.js";
 import { ABTestingService } from "../experiments/ab-testing/service.js";
 
-type RemediationAction =
-  | "apply_quality_predictions"
-  | "recompute_asset_outcomes"
-  | "refresh_recommendation_edges"
-  | "scan_adaptive_drift"
-  | "promote_experiment_winners"
-  | "evaluate_active_experiments";
-
-type ExperienceRemediationSummary = any;
-type ExperienceRemediationInterventionPlan = any;
-type ExperienceRemediationInterventionExecution = any;
-type TenantRemediationPolicyProfile = any;
-type TenantRemediationPolicyScenarioAnalysis = any;
-type TenantRemediationPortfolio = any;
-type TenantPortfolioRemediationIntervention = any;
-type TenantRemediationPortfolioPlan = any;
-type TenantRemediationPortfolioExecution = any;
+import type {
+  RemediationAction,
+  ExperienceRemediationSummary,
+  ExperienceRemediationInterventionPlan,
+  ExperienceRemediationInterventionExecution,
+  TenantRemediationPolicyProfile,
+  TenantRemediationPolicyScenarioAnalysis,
+  TenantRemediationPortfolio,
+  TenantPortfolioRemediationIntervention,
+  TenantRemediationPortfolioPlan,
+  TenantRemediationPortfolioExecution,
+} from "../types.js";
 
 export class ExperienceRemediationService {
   private readonly qualityPipeline: ContentQualityMLPipeline;
@@ -113,7 +108,7 @@ export class ExperienceRemediationService {
       experienceId,
       outcome,
       drift,
-      experiments: experiments.results.map((result: any) => ({
+      experiments: experiments.results.map((result) => ({
         id: result.experimentId,
         status: result.status,
         winner: result.outcome.winner,
@@ -183,11 +178,11 @@ export class ExperienceRemediationService {
       }
     }
 
-    const runningExperiments = experiments.filter((experiment: any) =>
+    const runningExperiments = experiments.filter((experiment) =>
       String(experiment.status ?? "").includes("running"),
     ).length;
     const promotableExperiments = experiments.filter(
-      (experiment: any) =>
+      (experiment) =>
         experiment.winner === "treatment" ||
         String(experiment.status ?? "").includes("winner_promoted") ||
         String(experiment.status ?? "").includes("ready_to_promote"),
@@ -212,7 +207,7 @@ export class ExperienceRemediationService {
       experiments: experimentWeight,
       recommendations: recommendationWeight,
     };
-    const rankedWeights = Object.entries(weights).sort((a: any, b: any) => b[1] - a[1]);
+    const rankedWeights = Object.entries(weights).sort((a, b) => b[1] - a[1]);
     const topWeight = rankedWeights[0] ?? ["balanced", 0];
     const nextWeight = rankedWeights[1] ?? ["balanced", 0];
     const recommendedFocus =
@@ -301,7 +296,7 @@ export class ExperienceRemediationService {
       }),
       (this.prisma as PrismaClient & {
         driftSignal?: {
-          findMany: (...args: any[]) => Promise<Array<{ severity?: string | null }>>;
+          findMany: (...args: unknown[]) => Promise<Array<{ severity?: string | null }>>;
         };
       }).driftSignal?.findMany({
         where: { tenantId },
@@ -381,7 +376,7 @@ export class ExperienceRemediationService {
     const driftSeverityLift =
       driftSignals.length === 0
         ? 0
-        : driftSignals.reduce((sum: any, signal: any) => {
+        : driftSignals.reduce((sum: number, signal) => {
             const severity = String(signal.severity ?? "").toLowerCase();
             if (severity === "high" || severity === "critical") return sum + 1;
             if (severity === "medium") return sum + 0.6;
@@ -452,7 +447,7 @@ export class ExperienceRemediationService {
       (
         this.prisma as PrismaClient & {
           aBExperimentObservation: {
-            findMany: (...args: any[]) => Promise<
+            findMany: (...args: unknown[]) => Promise<
               Array<{
                 experimentId: string;
                 variant: string;
@@ -508,29 +503,29 @@ export class ExperienceRemediationService {
       if (rows.length === 0) {
         continue;
       }
-      const control = rows.filter((row: any) => row.variant === "control");
-      const treatment = rows.filter((row: any) => row.variant === "treatment");
+      const control = rows.filter((row) => row.variant === "control");
+      const treatment = rows.filter((row) => row.variant === "treatment");
       if (control.length === 0 || treatment.length === 0) {
         continue;
       }
 
       contributingExperiments++;
       const power = clamp01(experiment.statisticalPower ?? 0.4);
-      const qualityLift = computeVariantLift(control, treatment, (row: any) => row.metricValue);
+      const qualityLift = computeVariantLift(control, treatment, (row) => row.metricValue);
       const outcomeLift = computeVariantLift(
         control,
         treatment,
-        (row: any) => row.masteryScore ?? 0,
+        (row) => row.masteryScore ?? 0,
       );
       const driftLift = computeVariantLift(
         control,
         treatment,
-        (row: any) => (row.completed ? 1 : 0),
+        (row) => (row.completed ? 1 : 0),
       );
       const recommendationLift = computeVariantLift(
         control,
         treatment,
-        (row: any) => row.feedbackScore ?? 0,
+        (row) => row.feedbackScore ?? 0,
       );
       const experimentLift = clamp01(
         ((experiment.effectSize ?? 0) > 0 ? experiment.effectSize ?? 0 : 0) * 2,
@@ -591,7 +586,7 @@ export class ExperienceRemediationService {
         { scenario: "experiment_boost", focus: "experiments" },
         { scenario: "recommendation_boost", focus: "recommendations" },
       ] as const
-    ).map((scenario: any) => {
+    ).map((scenario) => {
       const weights = scenario.focus
         ? normalizeWeightVector({
             quality: baseWeights.quality * (scenario.focus === "quality" ? 1.25 : 1),
@@ -622,8 +617,8 @@ export class ExperienceRemediationService {
 
     const recommendedScenario =
       scenarios
-        .filter((scenario: any) => scenario.scenario !== "baseline")
-        .sort((a: any, b: any) => b.expectedPriority - a.expectedPriority)[0]?.scenario ??
+        .filter((scenario) => scenario.scenario !== "baseline")
+        .sort((a, b) => b.expectedPriority - a.expectedPriority)[0]?.scenario ??
       "baseline";
 
     return {
@@ -719,9 +714,9 @@ export class ExperienceRemediationService {
         rationale: "A promoted winner is the closest available proxy for observed causal uplift.",
       },
     ]
-      .filter((intervention: any) => intervention.score > 0)
-      .sort((left: any, right: any) => right.score - left.score)
-      .map((intervention: any) => ({
+      .filter((intervention) => intervention.score > 0)
+      .sort((left, right) => right.score - left.score)
+      .map((intervention) => ({
         ...intervention,
         score: roundToThree(intervention.score),
       }));
@@ -745,7 +740,7 @@ export class ExperienceRemediationService {
       this.summarizeExperience(tenantId, experienceId),
     ]);
     const limit = Math.max(1, input.limit ?? 3);
-    const selected = plan.interventions.slice(0, limit).map((intervention: any) => intervention.action);
+    const selected = plan.interventions.slice(0, limit).map((intervention) => intervention.action);
 
     return this.executeExperienceInterventions(
       tenantId,
@@ -784,7 +779,7 @@ export class ExperienceRemediationService {
       }
     }
 
-    interventions.sort((left: any, right: any) => right.priorityScore - left.priorityScore);
+    interventions.sort((left, right) => right.priorityScore - left.priorityScore);
 
     return {
       tenantId,
@@ -844,9 +839,9 @@ export class ExperienceRemediationService {
       tenantId,
       generatedAt: new Date().toISOString(),
       processedExperiences: items.length,
-      appliedExperiences: items.filter((item: any) => item.result.appliedActions.length > 0).length,
+      appliedExperiences: items.filter((item) => item.result.appliedActions.length > 0).length,
       totalAppliedActions: items.reduce(
-        (sum: any, item: any) => sum + item.result.appliedActions.length,
+        (sum: number, item) => sum + item.result.appliedActions.length,
         0,
       ),
       items,
@@ -1007,7 +1002,7 @@ export class ExperienceRemediationService {
       });
     }
 
-    ranked.sort((left: any, right: any) => right.priorityScore - left.priorityScore);
+    ranked.sort((left, right) => right.priorityScore - left.priorityScore);
 
     return {
       tenantId,
@@ -1076,7 +1071,7 @@ function buildRemediationSummary(input: {
   for (const signal of input.drift.signals) {
     recommendedActions.add(`drift:${signal.signalType}`);
   }
-  if (input.experiments.some((experiment: any) => experiment.winner === "treatment")) {
+  if (input.experiments.some((experiment) => experiment.winner === "treatment")) {
     recommendedActions.add("promote_successful_variant_signals");
   }
 
@@ -1092,7 +1087,7 @@ function buildRemediationSummary(input: {
     input.experiments.length === 0
       ? 0
       : input.experiments.filter(
-          (experiment: any) =>
+          (experiment) =>
             experiment.winner === "treatment" ||
             String(experiment.status ?? "").includes("ready_to_promote") ||
             String(experiment.status ?? "").includes("winner_promoted"),
@@ -1104,7 +1099,7 @@ function buildRemediationSummary(input: {
         Math.max(1, input.recommendationRefresh.processedAssets * 3)
     : input.outcome.assets.length === 0
       ? 0
-      : input.outcome.assets.filter((asset: any) =>
+      : input.outcome.assets.filter((asset) =>
           asset.recommendedActions.includes("recompute_recommendations"),
         ).length / input.outcome.assets.length;
 
@@ -1134,7 +1129,7 @@ function buildRemediationSummary(input: {
     ["experiments", weightedPriorities.experiments],
     ["recommendations", weightedPriorities.recommendations],
   ] as const;
-  const sortedPriorities = [...priorityPairs].sort((a: any, b: any) => b[1] - a[1]);
+  const sortedPriorities = [...priorityPairs].sort((a, b) => b[1] - a[1]);
   const topPriority = sortedPriorities[0] ?? ["balanced", 0] as const;
   const nextPriority = sortedPriorities[1] ?? ["balanced", 0] as const;
   const primaryDriver =
@@ -1152,11 +1147,11 @@ function buildRemediationSummary(input: {
     interveneAssets: input.outcome.interveneAssets,
     driftSignalCount: input.drift.signals.length,
     driftInsightCount: input.drift.insights.length,
-    runningExperiments: input.experiments.filter((experiment: any) =>
+    runningExperiments: input.experiments.filter((experiment) =>
       String(experiment.status ?? "").includes("running"),
     ).length,
     promotableExperiments: input.experiments.filter(
-      (experiment: any) =>
+      (experiment) =>
         experiment.winner === "treatment" ||
         String(experiment.status ?? "").includes("winner_promoted") ||
         String(experiment.status ?? "").includes("ready_to_promote"),

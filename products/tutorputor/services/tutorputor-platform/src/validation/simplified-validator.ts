@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import type { FastifyRequest, FastifyReply } from "fastify";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger("input-validation");
@@ -57,7 +58,7 @@ function detectSuspiciousPatterns(input: string): boolean {
     /binding\s*\(/gi,
   ];
 
-  return suspiciousPatterns.some((pattern: any) => pattern.test(input));
+  return suspiciousPatterns.some((pattern) => pattern.test(input));
 }
 
 // ============================================================================
@@ -336,7 +337,7 @@ export const simulationSchemas = {
     configuration: z
       .record(z.string(), z.unknown())
       .refine(
-        (val: any) => typeof val === "object" && val !== null,
+        (val) => typeof val === "object" && val !== null,
         "Configuration must be an object",
       ),
     parameters: z
@@ -478,13 +479,13 @@ export class ValidationError extends Error {
 }
 
 export class InputValidator {
-  private static sanitizeInput(input: any): unknown {
+  private static sanitizeInput(input: unknown): unknown {
     if (typeof input === "string") {
       return sanitizeText(input);
     }
 
     if (Array.isArray(input)) {
-      return input.map((item: any) => InputValidator.sanitizeInput(item));
+      return input.map((item) => InputValidator.sanitizeInput(item));
     }
 
     if (typeof input === "object" && input !== null) {
@@ -527,7 +528,7 @@ export class InputValidator {
       if (typeof result === "object" && result !== null) {
         for (const [key, value] of Object.entries(result)) {
           if (typeof value === "string") {
-            (result as any)[key] = sanitizeText(value);
+            (result as Record<string, unknown>)[key] = sanitizeText(value);
           }
         }
       }
@@ -591,7 +592,7 @@ export class InputValidator {
 
   static validateBatch<T>(
     schema: z.ZodSchema<T>,
-    dataArray: any[],
+    dataArray: unknown[],
     context?: ValidationContext,
   ): T[] {
     if (!Array.isArray(dataArray)) {
@@ -612,7 +613,7 @@ export class InputValidator {
       );
     }
 
-    return dataArray.map((data: any, index: any) => {
+    return dataArray.map((data, index) => {
       try {
         return this.validate(schema, data, {
           ...context,
@@ -641,7 +642,7 @@ export function createValidationMiddleware<T>(
   schema: z.ZodSchema<T>,
   source: "body" | "query" | "params" = "body",
 ) {
-  return async (request: any, reply: any) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const context: ValidationContext = {
         requestId: request.id,

@@ -102,7 +102,7 @@ export class CMSServiceImpl implements CMSService {
         const hasMore = modules.length > take;
         const trimmed = modules.slice(0, take);
         return {
-            items: trimmed.map((module: any) => this.mapModuleSummary(module)),
+            items: trimmed.map((module) => this.mapModuleSummary(module)),
             nextCursor: hasMore ? (modules[modules.length - 1]?.id as ModuleId) ?? null : null,
         };
     }
@@ -203,9 +203,7 @@ export class CMSServiceImpl implements CMSService {
         tenantId: TenantId,
         authorId: string,
         input: ModuleDraftInput
-    ): any {
-        return {
-            id: input.slug,
+    ): Record<string, unknown> {
             tenantId,
             slug: input.slug,
             title: input.title,
@@ -221,13 +219,13 @@ export class CMSServiceImpl implements CMSService {
                 create: input.tags.map((label: string) => ({ label })),
             },
             learningObjectives: {
-                create: input.learningObjectives.map((objective: any) => ({
+                create: input.learningObjectives.map((objective) => ({
                     label: objective.label,
                     taxonomyLevel: objective.taxonomyLevel,
                 })),
             },
             contentBlocks: {
-                create: input.contentBlocks.map((block: any, index: any) => ({
+                create: input.contentBlocks.map((block, index) => ({
                     id: block.id || `${input.slug}-block-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,
@@ -242,7 +240,7 @@ export class CMSServiceImpl implements CMSService {
         };
     }
 
-    private buildModuleUpdateInput(patch: ModuleDraftPatch, userId: string): any {
+    private buildModuleUpdateInput(patch: ModuleDraftPatch, userId: string): Record<string, unknown> {
         const data: Record<string, unknown> = {
             updatedBy: userId,
             updatedAt: new Date(),
@@ -264,7 +262,7 @@ export class CMSServiceImpl implements CMSService {
         if (patch.learningObjectives) {
             data.learningObjectives = {
                 deleteMany: {},
-                create: patch.learningObjectives.map((objective: any) => ({
+                create: patch.learningObjectives.map((objective) => ({
                     label: objective.label,
                     taxonomyLevel: objective.taxonomyLevel,
                 })),
@@ -274,7 +272,7 @@ export class CMSServiceImpl implements CMSService {
         if (patch.contentBlocks) {
             data.contentBlocks = {
                 deleteMany: {},
-                create: patch.contentBlocks.map((block: any, index: any) => ({
+                create: patch.contentBlocks.map((block, index) => ({
                     id: block.id ?? `${Date.now()}-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,

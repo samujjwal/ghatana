@@ -140,7 +140,7 @@ export class AnimationGenerationProcessor {
                     type: persistedType,
                 },
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             this.logger.error(
                 { jobId: job.id, experienceId, claimRef, error: error?.message },
                 'Animation generation job failed'
@@ -149,7 +149,7 @@ export class AnimationGenerationProcessor {
         }
     }
 
-    private resolveDuration(animation: any, fallback: number): number {
+    private resolveDuration(animation: Record<string, unknown>, fallback: number): number {
         const raw = animation.duration_seconds ?? animation.durationSeconds ?? fallback;
         const parsed = Number(raw);
         return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : Math.max(1, fallback);

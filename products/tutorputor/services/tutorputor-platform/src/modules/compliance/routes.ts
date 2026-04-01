@@ -90,8 +90,8 @@ export const complianceRoutes: FastifyPluginAsync = async (app) => {
           token,
         });
         return reply.send(result);
-      } catch (e: any) {
-        return reply.code(400).send({ error: e.message });
+      } catch (e: unknown) {
+        return reply.code(400).send({ error: e instanceof Error ? e.message : String(e) });
       }
     },
   );

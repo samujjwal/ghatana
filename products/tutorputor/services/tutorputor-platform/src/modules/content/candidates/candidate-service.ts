@@ -89,7 +89,7 @@ export class RegenerationCandidateService {
     tenantId: string,
     input: CreateRegenerationCandidateInput,
   ): Promise<RegenerationCandidate> {
-    const row = await (this.prisma as any).regenerationCandidate.create({
+    const row = await this.prisma.regenerationCandidate.create({
       data: {
         tenantId,
         assetId: input.assetId,
@@ -118,7 +118,7 @@ export class RegenerationCandidateService {
     if (filter?.trigger)
       where.trigger = filter.trigger.toUpperCase().replace(/-/g, "_");
 
-    const rows = await (this.prisma as any).regenerationCandidate.findMany({
+    const rows = await this.prisma.regenerationCandidate.findMany({
       where,
       orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     });
@@ -134,7 +134,7 @@ export class RegenerationCandidateService {
     candidateId: string,
     resolvedBy: string,
   ): Promise<RegenerationCandidate> {
-    const existing = await (this.prisma as any).regenerationCandidate.findFirst(
+    const existing = await this.prisma.regenerationCandidate.findFirst(
       {
         where: { id: candidateId, tenantId },
       },
@@ -144,7 +144,7 @@ export class RegenerationCandidateService {
       throw new Error(`Regeneration candidate ${candidateId} not found`);
     }
 
-    const row = await (this.prisma as any).regenerationCandidate.update({
+    const row = await this.prisma.regenerationCandidate.update({
       where: { id: candidateId },
       data: {
         status: "DISMISSED",
@@ -164,7 +164,7 @@ export class RegenerationCandidateService {
     candidateId: string,
     generationRequestId: string,
   ): Promise<RegenerationCandidate> {
-    const existing = await (this.prisma as any).regenerationCandidate.findFirst(
+    const existing = await this.prisma.regenerationCandidate.findFirst(
       {
         where: { id: candidateId, tenantId },
       },
@@ -174,7 +174,7 @@ export class RegenerationCandidateService {
       throw new Error(`Regeneration candidate ${candidateId} not found`);
     }
 
-    const row = await (this.prisma as any).regenerationCandidate.update({
+    const row = await this.prisma.regenerationCandidate.update({
       where: { id: candidateId },
       data: {
         status: "QUEUED",
@@ -191,7 +191,7 @@ export class RegenerationCandidateService {
    */
   async detectFromFeedback(tenantId: string): Promise<number> {
     // Find assets with recent negative feedback (>=3 negative signals)
-    const negativeEvents = await (this.prisma as any).explorerEvent.groupBy({
+    const negativeEvents = await this.prisma.explorerEvent.groupBy({
       by: ["assetId"],
       where: {
         tenantId,
@@ -209,7 +209,7 @@ export class RegenerationCandidateService {
 
       // Skip if already has an open candidate for this trigger
       const existing = await (
-        this.prisma as any
+        this.prisma
       ).regenerationCandidate.findFirst({
         where: {
           tenantId,

@@ -12,6 +12,7 @@ import type {
     ClassroomId,
     ClassroomProgress,
     LearningEventInput,
+    LearningEventType,
     ModuleId,
     RosterEntry,
     TeacherDashboardSummary,
@@ -59,7 +60,7 @@ export class TeacherServiceImpl implements TeacherService {
         });
 
         // Fetch recent learning events for students in teacher's classrooms
-        const studentIds = classrooms.flatMap((c: any) => c.roster.map((s: any) => s.userId));
+        const studentIds = classrooms.flatMap((c) => c.roster.map((s) => s.userId));
         const recentEvents =
             studentIds.length > 0
                 ? await this.prisma.learningEvent.findMany({
@@ -81,13 +82,13 @@ export class TeacherServiceImpl implements TeacherService {
                     where: {
                         tenantId,
                         userId: student.userId,
-                        moduleId: { in: classroom.assignments.map((a: any) => a.moduleId) },
+                        moduleId: { in: classroom.assignments.map((a) => a.moduleId) },
                     },
                 });
 
                 const avgProgress =
                     enrollments.length > 0
-                        ? enrollments.reduce((sum: number, e: any) => sum + e.progressPercent, 0) /
+                        ? enrollments.reduce((sum: number, e) => sum + e.progressPercent, 0) /
                         enrollments.length
                         : 0;
 
@@ -108,7 +109,7 @@ export class TeacherServiceImpl implements TeacherService {
 
         // Calculate totals
         const totalStudents = new Set(
-            classrooms.flatMap((c: any) => c.roster.map((s: any) => s.userId))
+            classrooms.flatMap((c) => c.roster.map((s) => s.userId))
         ).size;
 
         const averageClassProgress =
@@ -118,8 +119,8 @@ export class TeacherServiceImpl implements TeacherService {
 
         return {
             teacher: this.buildTeacherSummary(teacherId),
-            classrooms: classrooms.map((c: any) => this.mapToClassroom(c)),
-            recentActivity: recentEvents.map((e: any) => this.mapToLearningEvent(e)),
+            classrooms: classrooms.map((c) => this.mapToClassroom(c)),
+            recentActivity: recentEvents.map((e) => this.mapToLearningEvent(e)),
             atRiskStudents,
             totalStudents,
             averageClassProgress,
@@ -307,7 +308,7 @@ export class TeacherServiceImpl implements TeacherService {
         }
 
         const progress: ClassroomProgress[] = [];
-        const studentIds = classroom.roster.map((s: any) => s.userId);
+        const studentIds = classroom.roster.map((s) => s.userId);
 
         for (const assignment of classroom.assignments) {
             // Get module details
@@ -328,21 +329,21 @@ export class TeacherServiceImpl implements TeacherService {
 
             const avgProgress =
                 enrollments.length > 0
-                    ? enrollments.reduce((sum: number, e: any) => sum + e.progressPercent, 0) /
+                    ? enrollments.reduce((sum: number, e) => sum + e.progressPercent, 0) /
                     enrollments.length
                     : 0;
 
             const completed = enrollments.filter(
-                (e: any) => e.status === 'COMPLETED'
+                (e) => e.status === 'COMPLETED'
             ).length;
             const completionRate =
                 studentIds.length > 0 ? (completed / studentIds.length) * 100 : 0;
 
             // Find struggling students (progress < 30%)
             const struggling = enrollments
-                .filter((e: any) => e.progressPercent < 30)
-                .map((e: any) => {
-                    const student = classroom.roster.find((r: any) => r.userId === e.userId);
+                .filter((e) => e.progressPercent < 30)
+                .map((e) => {
+                    const student = classroom.roster.find((r) => r.userId === e.userId);
                     if (!student) return null;
                     const entry: RosterEntry = {
                         userId: student.userId as UserId,
@@ -409,7 +410,7 @@ export class TeacherServiceImpl implements TeacherService {
                 }
             ),
             assignedModules: classroom.assignments.map(
-                (a: any) => a.moduleId as ModuleId
+                (a) => a.moduleId as ModuleId
             ),
             createdAt: classroom.createdAt.toISOString(),
             updatedAt: classroom.updatedAt.toISOString(),
@@ -422,9 +423,9 @@ export class TeacherServiceImpl implements TeacherService {
         return mapped;
     }
 
-    private mapToLearningEvent(event: any): LearningEventInput {
+    private mapToLearningEvent(event: { eventType: string; userId: string; timestamp: Date; moduleId?: string | null; payload?: unknown }): LearningEventInput {
         const mapped: LearningEventInput = {
-            type: event.eventType as any,
+            type: event.eventType as LearningEventType,
             userId: event.userId as UserId,
             timestamp: event.timestamp.toISOString(),
         };

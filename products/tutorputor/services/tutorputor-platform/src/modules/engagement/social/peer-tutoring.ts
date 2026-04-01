@@ -427,8 +427,8 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     );
 
     if (
-      !(request as any).tutor ||
-      (request as any).tutor.userId !== args.tutorId
+      !(request as { tutor?: { id: string; userId: string } }).tutor ||
+      (request as { tutor: { id: string; userId: string } }).tutor.userId !== args.tutorId
     ) {
       throw new Error("Request not found or tutor mismatch");
     }
@@ -438,7 +438,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
         tenantId: args.tenantId,
         requestId: args.requestId,
         studentId: request.studentId,
-        tutorId: (request as any).tutor.id,
+        tutorId: (request as { tutor: { id: string } }).tutor.id,
         type: args.type,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
@@ -540,7 +540,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     );
 
     // Only tutor can start session
-    if ((session as any).tutor.userId !== args.userId) {
+    if ((session as { tutor: { userId: string } }).tutor.userId !== args.userId) {
       throw new Error("Only the tutor can start the session");
     }
 
@@ -679,7 +679,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     // Notify tutor
     await this.createNotification(
       args.tenantId,
-      (session as any).tutor.userId,
+      (session as { tutor: { userId: string } }).tutor.userId,
       {
         type: "REVIEW_RECEIVED",
         title: "New review received",
@@ -701,7 +701,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
   }): Promise<TutoringReview> {
     const review = await this.requireReview(args.tenantId, args.reviewId, true);
 
-    if ((review as any).tutor.userId !== args.tutorId) {
+    if ((review as { tutor: { userId: string } }).tutor.userId !== args.tutorId) {
       throw new Error("Review not found or not authorized");
     }
 
@@ -832,7 +832,7 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma as any, {
+    await createSocialNotification(this.prisma, {
       tenantId,
       userId,
       type: notification.type,

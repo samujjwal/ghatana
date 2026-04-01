@@ -205,7 +205,7 @@ export function registerGenerationRoutes(
         return;
       }
 
-      const subscriber = (deps.redis as any).duplicate() as any;
+      const subscriber = deps.redis!.duplicate();
       const channel = getGenerationExecutionChannel(requestId);
       const heartbeat = setInterval(() => {
         writeSseEvent(reply.raw, "heartbeat", {
@@ -284,7 +284,7 @@ export function registerGenerationRoutes(
       try {
         const result = await service.planRequest(tenantId, requestId);
         return reply.send(result);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Planning failed";
         return reply.status(400).send({ error: message });
       }
@@ -306,7 +306,7 @@ export function registerGenerationRoutes(
       try {
         const result = await service.cancelRequest(tenantId, requestId);
         return reply.send(result);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Cancellation failed";
         return reply.status(400).send({ error: message });
@@ -337,7 +337,7 @@ export function registerGenerationRoutes(
           request: updated,
           dispatch,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Execution start failed";
         return reply.status(400).send({ error: message });
@@ -368,7 +368,7 @@ export function registerGenerationRoutes(
           results,
         );
         return reply.send(summary);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Recording results failed";
         return reply.status(400).send({ error: message });

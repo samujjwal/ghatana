@@ -434,7 +434,7 @@ export class ContentGenerationOrchestrator {
           ...(job.id ? { jobId: String(job.id) } : {}),
           durationMs: Date.now() - start,
         };
-      } catch (error: any) {
+      } catch (error: unknown) {
         const isTimeout = error?.message === "timeout";
         this.logger.warn(
           { jobId: job.id, label, error: error?.message },

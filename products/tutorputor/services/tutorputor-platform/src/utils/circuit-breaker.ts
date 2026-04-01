@@ -27,7 +27,7 @@ export interface CircuitBreakerOptions {
 export interface ServiceWrapper<T> {
   name: string;
   circuitBreaker: CircuitBreaker;
-  execute: (...args: any[]) => Promise<T>;
+  execute: (...args: unknown[]) => Promise<T>;
   healthCheck: () => Promise<boolean>;
 }
 
@@ -43,7 +43,7 @@ const DEFAULT_OPTIONS: CircuitBreakerOptions = {
  */
 export function createCircuitBreaker<T>(
   serviceName: string,
-  action: (...args: any[]) => Promise<T>,
+  action: (...args: unknown[]) => Promise<T>,
   options: CircuitBreakerOptions = {},
   logger?: Logger,
 ): ServiceWrapper<T> {
@@ -82,7 +82,7 @@ export function createCircuitBreaker<T>(
       logger.info({ serviceName }, `Circuit breaker closed for ${serviceName}`);
     });
 
-    breaker.on("fallback", (result: any) => {
+    breaker.on("fallback", (result: unknown) => {
       logger.warn(
         {
           serviceName,
@@ -106,7 +106,7 @@ export function createCircuitBreaker<T>(
   return {
     name: serviceName,
     circuitBreaker: breaker,
-    execute: async (...args: any[]): Promise<T> => {
+    execute: async (...args: unknown[]): Promise<T> => {
       try {
         return await breaker.fire(...args);
       } catch (error) {
@@ -125,8 +125,8 @@ export function createCircuitBreaker<T>(
  */
 export function createAICircuitBreaker<T>(
   serviceName: string,
-  action: (...args: any[]) => Promise<T>,
-  fallbackAction?: (...args: any[]) => Promise<T>,
+  action: (...args: unknown[]) => Promise<T>,
+  fallbackAction?: (...args: unknown[]) => Promise<T>,
   logger?: Logger,
 ): ServiceWrapper<T> {
   const wrapper = createCircuitBreaker<T>(
@@ -153,7 +153,7 @@ export function createAICircuitBreaker<T>(
  */
 export function createPaymentCircuitBreaker<T>(
   serviceName: string,
-  action: (...args: any[]) => Promise<T>,
+  action: (...args: unknown[]) => Promise<T>,
   logger?: Logger,
 ): ServiceWrapper<T> {
   return createCircuitBreaker<T>(

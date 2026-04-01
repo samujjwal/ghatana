@@ -306,7 +306,7 @@ describe("CollaborationServiceImpl", () => {
         service.updateSharedNote({
           noteId: "note-1",
           tenantId: "tenant-1" as any,
-          editorId: "user-9" as any,
+          userId: "user-9" as any,
           content: "Updated",
         }),
       ).rejects.toThrow("Insufficient permissions to edit this note");
@@ -336,9 +336,8 @@ describe("CollaborationServiceImpl", () => {
         service.shareNote({
           noteId: "note-1",
           tenantId: "tenant-1" as any,
-          sharedById: "user-9" as any,
-          userId: "user-2" as any,
-          permission: "view",
+          sharedBy: "user-9" as any,
+          shareWith: [{ userId: "user-2" as any, permission: "view" }],
         }),
       ).rejects.toThrow("Only the note owner can share this note");
     });
@@ -348,6 +347,7 @@ describe("CollaborationServiceImpl", () => {
     it("returns paginated notes", async () => {
       const result = await service.listSharedNotes({
         tenantId: "tenant-1" as any,
+        userId: "user-1" as any,
         pagination: { limit: 10, offset: 0 },
       });
       expect(result.items).toHaveLength(1);
@@ -359,6 +359,7 @@ describe("CollaborationServiceImpl", () => {
       await service.listSharedNotes({
         tenantId: "tenant-1" as any,
         userId: "user-1" as any,
+        pagination: { limit: 20, offset: 0 },
       });
       const callArg = prisma.sharedNote.findMany.mock.calls[0][0];
       expect(callArg.where.OR).toBeDefined();

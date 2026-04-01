@@ -8,6 +8,7 @@
  */
 
 import { EventEmitter } from "events";
+import type { FastifyRequest, FastifyReply } from "fastify";
 import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger("ai-cost-tracking");
@@ -155,7 +156,7 @@ export class AICostTracker extends EventEmitter {
     }
 
     // Find matching model (partial match for versions like gpt-4-0613)
-    const modelKey = Object.keys(pricing).find((key: any) =>
+    const modelKey = Object.keys(pricing).find((key) =>
       model.toLowerCase().includes(key),
     );
     if (!modelKey) {
@@ -249,24 +250,24 @@ export class AICostTracker extends EventEmitter {
     topOperations: Array<{ operation: string; cost: number; count: number }>;
   } {
     const cutoff = new Date(Date.now() - timeWindowHours * 60 * 60 * 1000);
-    const windowMetrics = this.metrics.filter((m: any) => m.timestamp > cutoff);
+    const windowMetrics = this.metrics.filter((m) => m.timestamp > cutoff);
 
-    const totalCost = windowMetrics.reduce((sum: any, m: any) => sum + m.costUsd, 0);
+    const totalCost = windowMetrics.reduce((sum: number, m) => sum + m.costUsd, 0);
     const totalTokens = windowMetrics.reduce(
-      (sum: any, m: any) => sum + m.totalTokens,
+      (sum: number, m) => sum + m.totalTokens,
       0,
     );
     const requestCount = windowMetrics.length;
     const averageLatency =
-      windowMetrics.reduce((sum: any, m: any) => sum + m.latencyMs, 0) / requestCount ||
+      windowMetrics.reduce((sum: number, m) => sum + m.latencyMs, 0) / requestCount ||
       0;
-    const successfulRequests = windowMetrics.filter((m: any) => m.success).length;
+    const successfulRequests = windowMetrics.filter((m) => m.success).length;
     const successRate =
       requestCount > 0 ? (successfulRequests / requestCount) * 100 : 0;
 
     // Aggregate by operation
     const operationCosts: Record<string, { cost: number; count: number }> = {};
-    windowMetrics.forEach((m: any) => {
+    windowMetrics.forEach((m) => {
       if (!operationCosts[m.operation]) {
         operationCosts[m.operation] = { cost: 0, count: 0 };
       }
@@ -280,7 +281,7 @@ export class AICostTracker extends EventEmitter {
 
     const topOperations = Object.entries(operationCosts)
       .map(([operation, data]) => ({ operation, ...data }))
-      .sort((a: any, b: any) => b.cost - a.cost)
+      .sort((a, b) => b.cost - a.cost)
       .slice(0, 5);
 
     return {
@@ -311,7 +312,7 @@ export class AICostTracker extends EventEmitter {
     const stats = this.getStats(24);
 
     // Check for expensive operations
-    const expensiveOps = stats.topOperations.filter((op: any) => op.cost > 5);
+    const expensiveOps = stats.topOperations.filter((op) => op.cost > 5);
     if (expensiveOps.length > 0) {
       recommendations.push({
         type: "model_downgrade",
@@ -446,7 +447,7 @@ export const globalAICostTracker = new AICostTracker();
 
 // Middleware for tracking AI calls in Fastify
 export function aiCostTrackingMiddleware() {
-  return async (request: any, reply: any) => {
+  return async (request: FastifyRequest, reply: FastifyReply) => {
     if (request.body?.provider && request.body?.model) {
       const startTime = Date.now();
 

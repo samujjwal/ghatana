@@ -215,7 +215,7 @@ export class ContentWorkerTelemetryPublisher {
     const existingJob =
       generationJobId == null
         ? null
-        : await (this.prisma as any).generationJob.findUnique({
+        : await this.prisma.generationJob.findUnique({
             where: { id: generationJobId },
             select: {
               id: true,
@@ -287,7 +287,7 @@ export class ContentWorkerTelemetryPublisher {
           ? clampProgress(input.progressPercent)
           : existingJob.progress;
 
-      await (this.prisma as any).generationJob.update({
+      await this.prisma.generationJob.update({
         where: { id: generationJobId },
         data: {
           progress: progressPercent,
@@ -323,7 +323,7 @@ function mergeDiagnostics(
   };
 }
 
-function asRecord(value: any): Record<string, unknown> | null {
+function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
@@ -333,7 +333,7 @@ function clampProgress(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function toFiniteNumber(value: any): number | undefined {
+function toFiniteNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 

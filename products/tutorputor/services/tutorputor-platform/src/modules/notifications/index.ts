@@ -5,20 +5,18 @@
  * @doc.pattern REST API
  */
 
+import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import {
   getTenantId,
   getUserId,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 
-type RouteRequest = any;
-type RouteReply = any;
-
 /**
  * Notification routes. Registered at prefix /api/v1/notifications.
  */
-export const notificationRoutes = async (app: any) => {
-  const prisma = app.prisma as any;
+export const notificationRoutes = async (app: FastifyInstance) => {
+  const prisma = app.prisma;
 
   // ===========================================================================
   // Notification Listing & State
@@ -29,7 +27,7 @@ export const notificationRoutes = async (app: any) => {
    * List notifications for the current user.
    * Query: ?unreadOnly=true&page=1&limit=20
    */
-  app.get("/", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const query = (req.query ?? {}) as Record<string, unknown>;
@@ -67,7 +65,7 @@ export const notificationRoutes = async (app: any) => {
    * PATCH /:id/read
    * Mark a single notification as read.
    */
-  app.patch("/:id/read", async (req: RouteRequest, reply: RouteReply) => {
+  app.patch("/:id/read", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const { id } = req.params as { id: string };
@@ -92,7 +90,7 @@ export const notificationRoutes = async (app: any) => {
    * PATCH /read-all
    * Mark all notifications for the current user as read.
    */
-  app.patch("/read-all", async (req: RouteRequest, reply: RouteReply) => {
+  app.patch("/read-all", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
 
@@ -109,7 +107,7 @@ export const notificationRoutes = async (app: any) => {
    * DELETE /:id
    * Delete a single notification.
    */
-  app.delete("/:id", async (req: RouteRequest, reply: RouteReply) => {
+  app.delete("/:id", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const { id } = req.params as { id: string };
@@ -136,7 +134,7 @@ export const notificationRoutes = async (app: any) => {
    * GET /preferences
    * Get notification preferences for the current user.
    */
-  app.get("/preferences", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/preferences", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
 
@@ -162,7 +160,7 @@ export const notificationRoutes = async (app: any) => {
    * PATCH /preferences
    * Upsert notification preferences for the current user.
    */
-  app.patch("/preferences", async (req: RouteRequest, reply: RouteReply) => {
+  app.patch("/preferences", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const body = (req.body ?? {}) as any;
@@ -203,7 +201,7 @@ export const notificationRoutes = async (app: any) => {
    * Register or refresh a device token for push notifications.
    * Body: { token, platform, endpoint?, p256dhKey?, authKey? }
    */
-  app.post("/device-tokens", async (req: RouteRequest, reply: RouteReply) => {
+  app.post("/device-tokens", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
     const body = (req.body ?? {}) as {
@@ -255,7 +253,7 @@ export const notificationRoutes = async (app: any) => {
    * GET /device-tokens
    * List all active device tokens for the current user.
    */
-  app.get("/device-tokens", async (req: RouteRequest, reply: RouteReply) => {
+  app.get("/device-tokens", async (req: FastifyRequest, reply: FastifyReply) => {
     const tenantId = getTenantId(req);
     const userId = getUserId(req);
 
@@ -280,7 +278,7 @@ export const notificationRoutes = async (app: any) => {
    */
   app.delete(
     "/device-tokens/:tokenId",
-    async (req: RouteRequest, reply: RouteReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
       const tenantId = getTenantId(req);
       const userId = getUserId(req);
       const { tokenId } = req.params as { tokenId: string };

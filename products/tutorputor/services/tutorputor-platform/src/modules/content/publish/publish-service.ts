@@ -74,7 +74,7 @@ export class PublishService {
     input: PublishAssetInput,
   ): Promise<PublishResult> {
     // Fetch the asset
-    const asset = await (this.prisma as any).contentAsset.findFirst({
+    const asset = await this.prisma.contentAsset.findFirst({
       where: { id: input.assetId, tenantId },
     });
 
@@ -88,7 +88,7 @@ export class PublishService {
 
     // Validate that there is a passing evaluation (if not bypassed)
     if (!input.bypassEvaluationCheck) {
-      const latestEval = await (this.prisma as any).evaluationRecord.findFirst({
+      const latestEval = await this.prisma.evaluationRecord.findFirst({
         where: { tenantId, assetId: input.assetId },
         orderBy: { createdAt: "desc" },
       });
@@ -115,7 +115,7 @@ export class PublishService {
     // Validate manifests for structured content types
     const MANIFEST_TYPES = ["simulation", "animation", "assessment", "example_set"];
     if (MANIFEST_TYPES.includes((asset.assetType ?? "").toLowerCase())) {
-      const manifests = await (this.prisma as any).artifactManifest.findMany({
+      const manifests = await this.prisma.artifactManifest.findMany({
         where: { assetId: input.assetId },
       });
       if (manifests.length === 0) {
@@ -125,7 +125,7 @@ export class PublishService {
           reason: `${asset.assetType} assets require a valid manifest before publishing.`,
         };
       }
-      const invalidManifest = manifests.find((manifest: any) => !manifest.isValid);
+      const invalidManifest = manifests.find((manifest) => !manifest.isValid);
       if (invalidManifest) {
         return {
           assetId: input.assetId,
@@ -138,7 +138,7 @@ export class PublishService {
     await this.qualityPipeline.applyPrediction(tenantId, input.assetId);
 
     // Publish
-    await (this.prisma as any).contentAsset.update({
+    await this.prisma.contentAsset.update({
       where: { id: input.assetId },
       data: {
         status: "PUBLISHED",
@@ -192,7 +192,7 @@ export class PublishService {
     generationRequestId: string,
   ): Promise<{ published: number; skipped: number; results: PublishResult[] }> {
     // Find all passing evaluation records for this request that have an assetId
-    const evaluations = await (this.prisma as any).evaluationRecord.findMany({
+    const evaluations = await this.prisma.evaluationRecord.findMany({
       where: {
         tenantId,
         generationRequestId,

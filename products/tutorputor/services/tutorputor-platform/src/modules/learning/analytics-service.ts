@@ -29,6 +29,7 @@ import type {
   ClassroomId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
+import { Prisma } from "@tutorputor/core/db";
 import type { Redis } from "ioredis";
 import { createStandaloneLogger } from '@tutorputor/core/logger';
 
@@ -59,7 +60,7 @@ export function createAnalyticsService(
           userId: event.userId,
           moduleId: event.moduleId ?? null,
           eventType: event.type,
-          payload: event.payload as any,
+          payload: event.payload ? (event.payload as Prisma.InputJsonValue) : Prisma.JsonNull,
           timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
         },
       });
@@ -138,7 +139,7 @@ export function createAnalyticsService(
 
       const eventsByType: AnalyticsSummary["eventsByType"] =
         groupedEvents.reduce(
-          (acc: AnalyticsSummary["eventsByType"], group: any) => {
+          (acc: AnalyticsSummary["eventsByType"], group: { eventType: string; _count: { eventType: number } }) => {
             acc[group.eventType as LearningEventType] = group._count.eventType;
             return acc;
           },
@@ -226,7 +227,7 @@ export function createAnalyticsService(
             userId: enrollment.userId,
             startedAt: { gte: thirtyDaysAgo },
           },
-          orderBy: { startedAt: "desc" as any },
+          orderBy: { startedAt: "desc" },
           take: 10,
         });
 
@@ -265,7 +266,7 @@ export function createAnalyticsService(
 
         // Factor 3: Failing assessments
         const failedAttempts = assessmentAttempts.filter(
-          (a: any) => (a.scorePercent ?? 0) < 60,
+          (a) => (a.scorePercent ?? 0) < 60,
         ).length;
         if (failedAttempts >= 3) {
           factors.push({
@@ -349,12 +350,12 @@ export function createAnalyticsService(
         if (enrollments.length === 0) continue;
 
         const completedEnrollments = enrollments.filter(
-          (e: any) => e.status === "COMPLETED",
+          (e) => e.status === "COMPLETED",
         );
         const avgCompletionTime =
           completedEnrollments.length > 0
             ? completedEnrollments.reduce(
-              (sum: number, e: any) => sum + e.timeSpentSeconds,
+              (sum, e) => sum + e.timeSpentSeconds,
               0,
             ) /
             completedEnrollments.length /
@@ -375,13 +376,13 @@ export function createAnalyticsService(
             : 1;
 
         const failedAttempts = attempts.filter(
-          (a: any) => (a.scorePercent ?? 0) < 60,
+          (a) => (a.scorePercent ?? 0) < 60,
         ).length;
         const failureRate =
           attempts.length > 0 ? (failedAttempts / attempts.length) * 100 : 0;
 
         const startedNotCompleted = enrollments.filter(
-          (e: any) => e.status === "IN_PROGRESS" && e.progressPercent < 50,
+          (e) => e.status === "IN_PROGRESS" && e.progressPercent < 50,
         ).length;
         const dropOffRate =
           enrollments.length > 0
@@ -443,13 +444,13 @@ export function createAnalyticsService(
 
         const activeUsers = new Set(events.map((e) => e.userId)).size;
         const completions = events.filter(
-          (e: any) => e.eventType === "module_completed",
+          (e) => e.eventType === "module_completed",
         ).length;
         const assessmentAttempts = events.filter(
-          (e: any) => e.eventType === "assessment_completed",
+          (e) => e.eventType === "assessment_completed",
         ).length;
         const aiTutorQueries = events.filter(
-          (e: any) => e.eventType === "ai_tutor_message",
+          (e) => e.eventType === "ai_tutor_message",
         ).length;
 
         data.push({

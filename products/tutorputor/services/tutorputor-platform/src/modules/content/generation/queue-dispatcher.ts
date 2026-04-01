@@ -127,7 +127,7 @@ export class GenerationQueueDispatcher {
         },
       );
 
-      await (this.prisma as any).generationJob.update({
+      await this.prisma.generationJob.update({
         where: { id: job.id },
         data: {
           status: "RUNNING",
@@ -200,7 +200,7 @@ export class GenerationQueueDispatcher {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationRequestWithJobs | null> {
-    const row = await (this.prisma as any).generationRequest.findFirst({
+    const row = await this.prisma.generationRequest.findFirst({
       where: { id: requestId, tenantId },
       include: { jobs: true },
     });
@@ -237,7 +237,7 @@ export class GenerationQueueDispatcher {
       ...(row.completedAt ? { completedAt: row.completedAt.toISOString() } : {}),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
-      jobs: (row.jobs ?? []).map((job: any) => ({
+      jobs: (row.jobs ?? []).map((job) => ({
         id: job.id,
         requestId: job.requestId,
         jobType: String(job.jobType).toLowerCase(),
@@ -310,7 +310,7 @@ function getDependencyState(
   let waiting = false;
 
   for (const dependencyRef of dependencyRefs) {
-    const dependencyJob = jobs.find((candidate: any) => candidate.targetRef === dependencyRef);
+    const dependencyJob = jobs.find((candidate) => candidate.targetRef === dependencyRef);
     if (!dependencyJob) {
       waiting = true;
       continue;
@@ -330,8 +330,8 @@ function getFailedDependencyRefs(
   jobs: GenerationJob[],
   job: GenerationJob,
 ): string[] {
-  return getDependencyRefs(job).filter((dependencyRef: any) => {
-    const dependencyJob = jobs.find((candidate: any) => candidate.targetRef === dependencyRef);
+  return getDependencyRefs(job).filter((dependencyRef) => {
+    const dependencyJob = jobs.find((candidate) => candidate.targetRef === dependencyRef);
     return (
       dependencyJob != null &&
       (dependencyJob.status === "failed" || dependencyJob.status === "cancelled")
@@ -360,7 +360,7 @@ function mergeJobDiagnostics(
   };
 }
 
-function asRecord(value: any): Record<string, unknown> | null {
+function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
