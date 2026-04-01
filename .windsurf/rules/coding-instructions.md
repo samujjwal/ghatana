@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # AI Agent Instructions for the Ghatana Repository
 
 > **Purpose**: This file is the repo-specific source of truth for AI-assisted changes in Ghatana.
@@ -975,6 +979,3 @@ function withPerformanceTracking<T extends object>(
 - **Subscriptions**: Unsubscribe from observables
 - **Large objects**: Use WeakMap/WeakSet for temporary storage
 
----
-
-**Last Updated:** 2026-03-31
