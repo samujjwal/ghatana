@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude all test classes from SpotBugs analysis -->
+    <Match>
+        <Class name="~.*Test$" />
+    </Match>
+    <Match>
+        <Class name="~.*Test\$.*$" />
+    </Match>
+    <Match>
+        <Class name="~.*Tests$" />
+    </Match>
+    <Match>
+        <Class name="~.*IT$" />
+    </Match>
+    <!-- Exclude JMH generated benchmark classes -->
+    <Match>
+        <Class name="~.*\.jmh_generated\..*" />
+    </Match>
+    <Match>
+        <Class name="~.*_jmhTest.*" />
+    </Match>
+    <Match>
+        <Class name="~.*\.jmh_generated\..*_jmhTest" />
+    </Match>
+    <!-- Exclude benchmark classes -->
+    <Match>
+        <Class name="~.*\.performance\..*" />
+    </Match>
+    <Match>
+        <Class name="~.*Benchmark.*" />
+    </Match>
+    <!-- Exclude low-priority patterns -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
+    </Match>
+</FindBugsFilter>

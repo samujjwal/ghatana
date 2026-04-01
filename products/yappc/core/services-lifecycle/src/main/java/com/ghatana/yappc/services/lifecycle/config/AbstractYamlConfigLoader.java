@@ -28,9 +28,8 @@ import java.util.stream.Stream;
  * Base class for YAML-file-based configuration loaders.
  *
  * <p>Provides the common directory-walking, classpath-fallback, and file-filtering logic
- * shared by {@link PolicyConfigLoader} and {@link StageConfigLoader} (and any future config
- * loaders).  Concrete subclasses only need to implement {@link #parseFile} to deserialize
- * a single file's {@link InputStream} into a list of domain objects.
+ * shared by concrete config loaders. Concrete subclasses only need to implement
+ * {@link #parseFile} to deserialize a single file's {@link InputStream} into a list of domain objects.
  *
  * <p><b>Resolution order:</b></p>
  * <ol>

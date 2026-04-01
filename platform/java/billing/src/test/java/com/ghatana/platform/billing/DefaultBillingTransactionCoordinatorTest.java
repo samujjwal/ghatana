@@ -79,7 +79,7 @@ class DefaultBillingTransactionCoordinatorTest extends EventloopTestBase {
         BillingTransactionCoordinator.CoordinationResult second = runPromise(
             () -> coordinator.coordinate("wf-open-2", List.of(tx("tx-2", "100.00"))));
         assertThat(second.succeeded()).isFalse();
-        assertThat(second.failureReason()).contains("Circuit breaker is OPEN");
+        assertThat(second.failureReason()).contains("is OPEN");
         assertThat(ledger.postAttempts).isEqualTo(1);
     }
 

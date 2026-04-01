@@ -75,8 +75,8 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
                     runPromise(() -> agent.doProcess(ctx, snapshot));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().state()).isEqualTo(EngagementMonitorAgent.EngagementState.ENGAGED);
-            assertThat(result.output().intervention()).isEqualTo(EngagementMonitorAgent.Intervention.NONE);
+            assertThat(result.getOutput().state()).isEqualTo(EngagementMonitorAgent.EngagementState.ENGAGED);
+            assertThat(result.getOutput().intervention()).isEqualTo(EngagementMonitorAgent.Intervention.NONE);
         }
 
         @Test
@@ -95,8 +95,8 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
                     runPromise(() -> agent.doProcess(ctx, snapshot));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().state()).isEqualTo(EngagementMonitorAgent.EngagementState.DISENGAGED);
-            assertThat(result.output().intervention()).isNotEqualTo(EngagementMonitorAgent.Intervention.NONE);
+            assertThat(result.getOutput().state()).isEqualTo(EngagementMonitorAgent.EngagementState.DISENGAGED);
+            assertThat(result.getOutput().intervention()).isNotEqualTo(EngagementMonitorAgent.Intervention.NONE);
         }
 
         @Test
@@ -115,7 +115,7 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
                     runPromise(() -> agent.doProcess(ctx, snapshot));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().state()).isEqualTo(EngagementMonitorAgent.EngagementState.AT_RISK);
+            assertThat(result.getOutput().state()).isEqualTo(EngagementMonitorAgent.EngagementState.AT_RISK);
         }
     }
 
@@ -145,7 +145,7 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
                 );
                 AgentResult<EngagementMonitorAgent.EngagementDecision> result =
                         runPromise(() -> agent.doProcess(ctx, snapshot));
-                if (result.output().intervention() == EngagementMonitorAgent.Intervention.GAMIFY) {
+                if (result.getOutput().intervention() == EngagementMonitorAgent.Intervention.GAMIFY) {
                     gamifyCount++;
                 }
             }
@@ -165,7 +165,7 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
             AgentResult<EngagementMonitorAgent.EngagementDecision> result =
                     runPromise(() -> agent.doProcess(ctx, snapshot));
 
-            assertThat(result.output().intervention()).isEqualTo(EngagementMonitorAgent.Intervention.NONE);
+            assertThat(result.getOutput().intervention()).isEqualTo(EngagementMonitorAgent.Intervention.NONE);
         }
     }
 
@@ -184,10 +184,10 @@ class EngagementMonitorAgentTest extends EventloopTestBase {
             AgentResult<EngagementMonitorAgent.EngagementDecision> result =
                     runPromise(() -> agent.doProcess(ctx, snapshot));
 
-            assertThat(result.metadata()).containsKey("learnerId");
-            assertThat(result.metadata()).containsKey("engagementScore");
-            assertThat(result.metadata()).containsKey("state");
-            assertThat(result.metadata()).containsKey("intervention");
+            assertThat(result.getMetrics()).containsKey("learnerId");
+            assertThat(result.getMetrics()).containsKey("engagementScore");
+            assertThat(result.getMetrics()).containsKey("state");
+            assertThat(result.getMetrics()).containsKey("intervention");
         }
     }
 }

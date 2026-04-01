@@ -1,5 +1,6 @@
 plugins {
     id("java-library")
+    id("com.github.spotbugs")
 }
 
 group = "com.ghatana.products.yappc.services"
@@ -116,3 +117,12 @@ tasks.register("validateConfigSchemas") {
 
 // Integrate validation into build lifecycle (optional - can be disabled if too strict)
 // tasks.named("compileJava") { dependsOn("validateConfigSchemas") }
+
+// SpotBugs configuration - exclude JMH generated classes
+spotbugs {
+    ignoreFailures = false
+    showStackTraces = true
+    showProgress = false
+    reportLevel = com.github.spotbugs.snom.Confidence.DEFAULT
+    excludeFilter.set(file("config/spotbugs-exclude.xml"))
+}

@@ -42,6 +42,7 @@ description = """
 dependencies {
     // ── Agent contracts (SPI, TypedAgent, AgentConfig, AgentDescriptor, etc.) ─
     api(project(":platform:java:agent-core"))
+    api(project(":platform:java:agent-memory"))
 
     // ── Core platform dependencies ─────────────────────────────────────────────
     api(project(":platform:java:core"))

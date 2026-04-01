@@ -6,7 +6,7 @@ package com.ghatana.yappc.agent.learning;
 
 import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
 import com.ghatana.agent.memory.model.procedure.ProcedureStep;
-import com.ghatana.agent.memory.model.procedure.EnhancedProcedure.Provenance;
+import com.ghatana.agent.memory.model.Provenance;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.api.domain.LearnedPolicy;
 import com.ghatana.yappc.api.repository.LearnedPolicyRepository;
@@ -124,11 +124,11 @@ class PolicyLearningServiceTest extends EventloopTestBase {
                     .confidence(0.94)
                     .version(1)
                     .steps(List.of(
-                            new ProcedureStep("Parse user story text"),
-                            new ProcedureStep("Identify actors"),
-                            new ProcedureStep("List acceptance criteria")
+                            ProcedureStep.builder().ordinal(1).description("Parse user story text").build(),
+                            ProcedureStep.builder().ordinal(2).description("Identify actors").build(),
+                            ProcedureStep.builder().ordinal(3).description("List acceptance criteria").build()
                     ))
-                    .provenance(new Provenance("agent_reflection"))
+                    .provenance(Provenance.builder().source("agent_reflection").build())
                     .build();
 
             // WHEN: PolicyLearningService processes the turn result
@@ -205,7 +205,10 @@ class PolicyLearningServiceTest extends EventloopTestBase {
     private static EnhancedProcedure buildProcedure(String id, double confidence,
                                                       List<String> stepActions) {
         List<ProcedureStep> steps = stepActions.stream()
-                .map(s -> ProcedureStep.builder().description(s).build())
+                .map(action -> ProcedureStep.builder()
+                        .ordinal(1)
+                        .description(action)
+                        .build())
                 .collect(Collectors.toList());
         return EnhancedProcedure.builder()
                 .id(id)
@@ -215,7 +218,6 @@ class PolicyLearningServiceTest extends EventloopTestBase {
                 .confidence(confidence)
                 .steps(steps)
                 .version(1)
-                .provenance(new Provenance("test_reflection"))
                 .build();
     }
 

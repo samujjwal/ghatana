@@ -37,6 +37,7 @@ dependencies {
     api(libs.activej.promise)
 
     // Test dependencies
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
 }

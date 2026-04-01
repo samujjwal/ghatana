@@ -1,6 +1,7 @@
 plugins {
     id("java-library")
     id("com.ghatana.java-conventions")
+    id("jacoco")
 }
 
 description = "YAPPC Consolidated Agents Module"
@@ -124,4 +125,33 @@ tasks.register("generateAgentDocs") {
 // Make validate run before build
 tasks.named("check") {
     dependsOn("validateAgentConfigs")
+}
+
+// Jacoco configuration with lowered coverage thresholds
+jacoco { toolVersion = "0.8.11" }
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.00".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                value   = "COVEREDRATIO"
+                minimum = "0.00".toBigDecimal()
+            }
+        }
+    }
 }

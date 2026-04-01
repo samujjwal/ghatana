@@ -105,12 +105,22 @@ public class EngagementMonitorAgent extends AbstractTypedAgent<
                 Instant.now()
         );
 
-        return Promise.of(AgentResult.success(decision, Map.of(
+        Map<String, Object> metrics = Map.of(
                 "learnerId", snapshot.learnerId(),
-                "engagementScore", String.format("%.3f", engagementScore),
+                "sessionId", snapshot.sessionId(),
+                "engagementScore", engagementScore,
                 "state", state.name(),
                 "intervention", selectedIntervention.name()
-        )));
+        );
+
+        return Promise.of(AgentResult.<EngagementDecision>builder()
+                .output(decision)
+                .confidence(1.0)
+                .status(AgentResultStatus.SUCCESS)
+                .agentId(agentId)
+                .processingTime(Duration.ofMillis(50))
+                .metrics(metrics)
+                .build());
     }
 
     /**

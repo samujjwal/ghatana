@@ -43,8 +43,7 @@ package com.ghatana.yappc.ai.requirements.ai.persona;
  * <p>
  * <b>Thread Safety:</b> Enums are inherently thread-safe and immutable.
  *
- * @see PersonaPromptBuilder
- * @see RequirementGenerationPrompt
+ * @see PersonaRepository
  * @doc.type enum
  * @doc.purpose Stakeholder personas for multi-perspective requirement
  * generation

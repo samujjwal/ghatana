@@ -138,25 +138,24 @@ public class FeatureDriftDetector {
         double maxDiff = 0.0;
 
         while (i < n1 && j < n2) {
-            double cdf1 = (double) (i + 1) / n1;
-            double cdf2 = (double) (j + 1) / n2;
-
-            if (refSorted[i] <= curSorted[j]) {
-                maxDiff = Math.max(maxDiff, Math.abs(cdf1 - (double) j / n2));
+            if (refSorted[i] < curSorted[j]) {
                 i++;
+            } else if (refSorted[i] > curSorted[j]) {
+                j++;
             } else {
-                maxDiff = Math.max(maxDiff, Math.abs((double) i / n1 - cdf2));
+                i++;
                 j++;
             }
+            maxDiff = Math.max(maxDiff, Math.abs((double) i / n1 - (double) j / n2));
         }
 
         while (i < n1) {
-            maxDiff = Math.max(maxDiff, Math.abs((double) (i + 1) / n1 - 1.0));
             i++;
+            maxDiff = Math.max(maxDiff, Math.abs((double) i / n1 - (double) j / n2));
         }
         while (j < n2) {
-            maxDiff = Math.max(maxDiff, Math.abs(1.0 - (double) (j + 1) / n2));
             j++;
+            maxDiff = Math.max(maxDiff, Math.abs((double) i / n1 - (double) j / n2));
         }
 
         return maxDiff;

@@ -10,11 +10,11 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.feedback.SuggestionFeedback} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.feedback.SuggestionFeedback} -
  * Feedback value object</li>
- * <li>{@link com.ghatana.requirements.ai.feedback.FeedbackType} - Feedback type
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackType} - Feedback type
  * enum</li>
- * <li>{@link com.ghatana.requirements.ai.feedback.FeedbackLearningService} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService} -
  * Learning service</li>
  * </ul>
  *
@@ -65,8 +65,8 @@
  * All components are thread-safe and can be safely shared across threads.
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.feedback.SuggestionFeedback
- * @see com.ghatana.requirements.ai.feedback.FeedbackLearningService
+ * @see com.ghatana.yappc.ai.requirements.ai.feedback.SuggestionFeedback
+ * @see com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackLearningService
  * @doc.type package
  * @doc.purpose User feedback collection and learning for AI improvement
  * @doc.layer product

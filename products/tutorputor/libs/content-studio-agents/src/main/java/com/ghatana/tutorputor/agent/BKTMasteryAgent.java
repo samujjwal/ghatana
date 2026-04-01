@@ -6,6 +6,7 @@ import com.ghatana.agent.framework.runtime.AbstractTypedAgent;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 
+import com.ghatana.agent.AgentResultStatus;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
@@ -99,12 +100,21 @@ public class BKTMasteryAgent extends AbstractTypedAgent<BKTMasteryAgent.BKTInput
                 MASTERY_THRESHOLD
         );
 
-        return Promise.of(AgentResult.success(output, Map.of(
+        Map<String, Object> metrics = Map.of(
                 "skillId", input.skillId(),
-                "posteriorPL", String.valueOf(pL),
-                "mastered", String.valueOf(mastered),
-                "observations", String.valueOf(input.observations().length)
-        )));
+                "posteriorPL", pL,
+                "mastered", mastered,
+                "observationCount", input.observations().length
+        );
+
+        return Promise.of(AgentResult.<BKTOutput>builder()
+                .output(output)
+                .confidence(1.0)
+                .status(AgentResultStatus.SUCCESS)
+                .agentId(agentId)
+                .processingTime(Duration.ofMillis(50))
+                .metrics(metrics)
+                .build());
     }
 
     // ──────────── Input/Output Records ────────────

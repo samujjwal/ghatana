@@ -245,4 +245,22 @@ public class SecurityAuditLogger {
                 .detail("message", message)
                 .build());
     }
+
+    /**
+     * Logs a generic security event.
+     *
+     * @param eventType the type of security event (e.g., "WAF_BLOCKED")
+     * @param request the request that triggered the event (can be null)
+     * @param reason the reason or classification for the event
+     */
+    public void logSecurityEvent(String eventType, Object request, String reason) {
+        logEvent(AuditEvent.builder()
+                .eventType(eventType)
+                .timestamp(Instant.now())
+                .principal(request != null ? request.toString() : "unknown")
+                .success(false)
+                .detail("action", eventType)
+                .detail("reason", reason)
+                .build());
+    }
 }

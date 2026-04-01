@@ -30,7 +30,7 @@ import java.util.Objects;
  * {@code lifecycle.phase.transition.validated} events (emitted by
  * {@link PhaseTransitionValidatorOperator}) and:
  * <ul>
- *   <li>Runs a policy check via {@link YappcPolicyEngine} for the target stage</li>
+ *   <li>Runs a policy check via {@link PolicyEngine} for the target stage</li>
  *   <li>If gate is already open ⟶ emits {@code lifecycle.gate.passed}</li>
  *   <li>If gate has unmet criteria ⟶ requests human approval via
  *       {@link HumanApprovalService} and emits {@code lifecycle.approval.requested}</li>

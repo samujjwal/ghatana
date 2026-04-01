@@ -70,6 +70,7 @@ public final class LifecycleLoginController {
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int ITERATIONS = 65_536;
     private static final int KEY_LENGTH_BITS = 256;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final JwtTokenProvider tokenProvider;
     private final List<UserRecord> users;
@@ -220,7 +221,7 @@ public final class LifecycleLoginController {
     /** Generates a new cryptographically-random 16-byte salt. */
     public static byte[] generateSalt() {
         byte[] salt = new byte[16];
-        new SecureRandom().nextBytes(salt);
+        SECURE_RANDOM.nextBytes(salt);
         return salt;
     }
 

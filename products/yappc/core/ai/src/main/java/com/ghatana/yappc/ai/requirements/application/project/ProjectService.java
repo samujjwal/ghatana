@@ -109,7 +109,7 @@ public class ProjectService {
    * @param templateId template ID (optional)
    * @return promise completing with created project
    * @throws IllegalArgumentException if validation fails
-   * @throws UnauthorizedException if user lacks permissions
+   * @throws IllegalArgumentException if user lacks permissions
    */
   public Promise<Project> createProject(
       User creator,
@@ -187,7 +187,7 @@ public class ProjectService {
    * @param projectId project identifier
    * @return promise completing with project
    * @throws IllegalArgumentException if project not found
-   * @throws UnauthorizedException if user lacks access
+   * @throws IllegalArgumentException if user lacks access
    */
   public Promise<Project> getProject(User requester, String projectId) {
     logger.debug("Fetching project: projectId={}, requester={}", projectId, requester.getUserId());
@@ -258,7 +258,7 @@ public class ProjectService {
    * @param newStatus new project status
    * @return promise completing with updated project
    * @throws IllegalArgumentException if project not found or invalid transition
-   * @throws UnauthorizedException if user lacks permissions
+   * @throws IllegalArgumentException if user lacks permissions
    */
   public Promise<Project> updateStatus(
       User requester, String projectId, ProjectStatus newStatus) {

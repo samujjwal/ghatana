@@ -3,6 +3,7 @@ package com.ghatana.security.interceptor;
 import com.ghatana.security.audit.SecurityAuditLogger;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -89,7 +90,7 @@ public class WafInterceptor {
         }
 
         String path = request.getPath();
-        String queryString = request.getQueryString();
+        String queryString = request.getQuery() != null ? request.getQuery().toString() : null;
         String inspectable = path + (queryString != null ? "?" + queryString : "");
 
         for (RuleEntry rule : RULES) {
@@ -100,6 +101,7 @@ public class WafInterceptor {
                 return Promise.of(
                         HttpResponse.ofCode(403)
                                 .withBody("Forbidden: request blocked by security policy".getBytes())
+                                .build()
                 );
             }
         }
@@ -108,7 +110,7 @@ public class WafInterceptor {
     }
 
     private static String getClientIp(HttpRequest request) {
-        String forwarded = request.getHeader(io.activej.http.HttpHeaders.ofString("X-Forwarded-For"));
+        String forwarded = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
         if (forwarded != null && !forwarded.isBlank()) {
             return forwarded.split(",")[0].trim();
         }

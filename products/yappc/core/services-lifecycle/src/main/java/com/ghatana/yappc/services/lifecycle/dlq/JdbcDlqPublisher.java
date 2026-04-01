@@ -29,8 +29,8 @@ import java.util.concurrent.Executor;
  * <p>Inserts failed pipeline events into the {@code yappc_dlq} PostgreSQL table so they
  * can be inspected, retried, or alarmed on by operations teams.
  *
- * <p>All JDBC calls run on the supplied {@link Executor} (never the ActiveJ event loop)
- * via {@link Promise#ofBlocking(Executor, java.util.concurrent.Callable)}.
+ * <p>All JDBC calls run on the supplied {@code Executor} (never the ActiveJ event loop)
+ * via {@code Promise.ofBlocking()}.
  *
  * <p><b>Schema (see {@code V14__yappc_dlq.sql})</b></p>
  * <pre>{@code

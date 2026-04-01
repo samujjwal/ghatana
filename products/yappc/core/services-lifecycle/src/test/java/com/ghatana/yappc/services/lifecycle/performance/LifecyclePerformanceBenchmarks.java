@@ -282,7 +282,7 @@ public class LifecyclePerformanceBenchmarks {
      * @param variationMs   random variation (simulates jitter / GC pauses)
      */
     private void simulateLatency(long baseMillis, long variationMs) {
-        long sleepMs = baseMillis + (variationMs > 0 ? (Math.abs(random.nextLong()) % variationMs) : 0);
+        long sleepMs = baseMillis + (variationMs > 0 ? ((random.nextLong() & Long.MAX_VALUE) % variationMs) : 0);
         try {
             Thread.sleep(sleepMs);
         } catch (InterruptedException e) {

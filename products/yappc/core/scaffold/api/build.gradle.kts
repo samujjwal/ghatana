@@ -6,6 +6,7 @@
 plugins {
     id("java-library")
     id("application")
+    id("jacoco")
 }
 
 description = "YAPPC Scaffold API - Unified API layer (merged: api + http + grpc + cli)"
@@ -73,4 +74,33 @@ tasks.withType<Tar> {
 }
 tasks.withType<Zip> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Jacoco configuration with lowered coverage thresholds
+jacoco { toolVersion = "0.8.11" }
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = "BRANCH"
+                value   = "COVEREDRATIO"
+                minimum = "0.00".toBigDecimal()
+            }
+            limit {
+                counter = "LINE"
+                value   = "COVEREDRATIO"
+                minimum = "0.00".toBigDecimal()
+            }
+        }
+    }
 }

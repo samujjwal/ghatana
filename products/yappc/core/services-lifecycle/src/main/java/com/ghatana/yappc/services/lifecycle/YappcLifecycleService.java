@@ -51,20 +51,20 @@ import static io.activej.http.HttpMethod.POST;
  * <p>Manages the complete software development lifecycle:
  * Intent → Shape → Generate → Run → Observe → Evolve → Learn → Validate</p>
  *
- * <p>Security: All {@code /api/*} routes are protected by {@link ApiKeyAuthFilter}.
+ * <p>Security: All {@code /api/*} routes are protected by authentication.
  * The {@code /health} endpoint is public. API keys are loaded from the
  * {@code YAPPC_API_KEYS} environment variable (comma-separated list).</p>
  *
  * <p>Components wired via {@link LifecycleServiceModule}:
  * <ul>
- *   <li>{@link IntentService} — AI-assisted intent capture</li>
- *   <li>{@link ShapeService} — Architecture and domain modeling</li>
- *   <li>{@link GenerationService} — Code and artifact generation</li>
- *   <li>{@link RunService} — Build execution and orchestration</li>
- *   <li>{@link ObserveService} — Runtime monitoring</li>
- *   <li>{@link EvolutionService} — Progressive evolution planning</li>
- *   <li>{@link LearningService} — Pattern extraction and learning</li>
- *   <li>{@link ValidationService} — Security and policy compliance</li>
+ *   <li>{@code IntentService} — AI-assisted intent capture</li>
+ *   <li>{@code ShapeService} — Architecture and domain modeling</li>
+ *   <li>{@code GenerationService} — Code and artifact generation</li>
+ *   <li>{@code RunService} — Build execution and orchestration</li>
+ *   <li>{@code ObserveService} — Runtime monitoring</li>
+ *   <li>{@code EvolutionService} — Progressive evolution planning</li>
+ *   <li>{@code LearningService} — Pattern extraction and learning</li>
+ *   <li>{@code ValidationService} — Security and policy compliance</li>
  * </ul>
  *
  * @doc.type class

@@ -11,22 +11,20 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.llm.LLMService} - LLM API integration
- * for text generation</li>
- * <li>{@link com.ghatana.requirements.ai.llm.OpenAILLMService} -
- * OpenAI-specific LLM implementation</li>
- * <li>{@link com.ghatana.requirements.ai.llm.LLMConfigurationProvider} -
- * Dynamic configuration with key rotation</li>
- * <li>{@link com.ghatana.requirements.ai.RequirementEmbeddingService} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.RequirementAIService} - AI-powered
+ * requirement generation and analysis</li>
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.RequirementEmbeddingService} -
  * High-level requirements embedding service</li>
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.persona.Persona} -
+ * User persona management for personalized generation</li>
  * </ul>
  *
  * <p>
  * <b>Architecture</b><br>
  * Follows Port/Adapter (Hexagonal) pattern:
  * <ul>
- * <li><b>Ports</b>: Service interfaces ({@code LLMService},
- * {@code EmbeddingService}, {@code VectorStore})</li>
+ * <li><b>Ports</b>: Service interfaces ({@code RequirementAIService},
+ * {@code EmbeddingService})</li>
  * <li><b>Adapters</b>: Implementations for OpenAI API and pgvector</li>
  * <li><b>Configuration</b>: Dynamic providers for zero-downtime updates</li>
  * <li><b>Observability</b>: Micrometer metrics + JFR profiling events</li>
@@ -35,17 +33,15 @@
  * <p>
  * <b>Sub-packages</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.llm} - LLM services and
- * configuration</li>
- * <li>{@link com.ghatana.requirements.ai.profiling} - JFR profiling events for
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.profiling} - JFR profiling events for
  * performance monitoring</li>
- * <li>{@link com.ghatana.requirements.ai.persona} - User persona
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.persona} - User persona
  * management</li>
- * <li>{@link com.ghatana.requirements.ai.suggestions} - Requirement suggestions
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.suggestions} - Requirement suggestions
  * and recommendations</li>
- * <li>{@link com.ghatana.requirements.ai.prompts} - Prompt templates and
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.prompts} - Prompt templates and
  * management</li>
- * <li>{@link com.ghatana.requirements.ai.feedback} - User feedback collection
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.feedback} - User feedback collection
  * and analysis</li>
  * </ul>
  *
@@ -137,8 +133,7 @@
  *
  * <p>
  * <b>Configuration</b><br>
- * Environment variables (via
- * {@link com.ghatana.requirements.ai.llm.EnvironmentConfigurationProvider}):
+ * Environment variables:
  * <ul>
  * <li>{@code OPENAI_API_KEY} - Required: API key for OpenAI</li>
  * <li>{@code OPENAI_MODEL} - Default: gpt-4</li>
@@ -156,7 +151,7 @@
  * <li>Integration tests: Require valid OpenAI API key and PostgreSQL with
  * pgvector</li>
  * <li>Test utilities:
- * {@link com.ghatana.requirements.ai.test.TestDataBuilders}</li>
+ * {@code TestDataBuilders}</li>
  * <li>Base class: {@code EventloopTestBase} from
  * {@code core/testing/activej-test-utils}</li>
  * </ul>
@@ -178,7 +173,6 @@
  * }</pre>
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.llm
  * @doc.type package
  * @doc.purpose AI requirements generation and analysis with LLM, embeddings,
  * and vector search

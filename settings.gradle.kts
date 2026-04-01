@@ -48,6 +48,7 @@ include(":platform:java:ai-integration")  // Merged: registry + observability + 
 include(":platform:java:governance")
 include(":platform:java:security")
 include(":platform:java:agent-core")
+include(":platform:java:agent-memory")
 // agent-runtime RELOCATED to products:aep:aep-agent-runtime (Sprint 4, 2026-03-25 — see audit report Phase 5)
 // agent-registry DELETED (merged into agent-core in Sprint 1, 2026-03-24 — see audit report Phase 1)
 // schema-registry merged into platform:java:domain (SCHM-1, 2026)

@@ -10,9 +10,9 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.persona.Persona} - User persona value
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.persona.Persona} - User persona value
  * object</li>
- * <li>{@link com.ghatana.requirements.ai.persona.PersonaPromptBuilder} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.persona.PersonaPromptBuilder} -
  * Persona-aware prompt generation</li>
  * </ul>
  *
@@ -62,8 +62,8 @@
  * {@code PersonaPromptBuilder} is stateless and safe for concurrent use.
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.persona.Persona
- * @see com.ghatana.requirements.ai.persona.PersonaPromptBuilder
+ * @see com.ghatana.yappc.ai.requirements.ai.persona.Persona
+ * @see com.ghatana.yappc.ai.requirements.ai.persona.PersonaPromptBuilder
  * @doc.type package
  * @doc.purpose User persona management for personalized requirement generation
  * @doc.layer product

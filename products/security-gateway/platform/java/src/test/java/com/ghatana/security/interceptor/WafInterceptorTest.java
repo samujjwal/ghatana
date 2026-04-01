@@ -28,7 +28,7 @@ class WafInterceptorTest extends EventloopTestBase {
     private final WafInterceptor waf = new WafInterceptor(auditLogger, true);
 
     private final SecurityInterceptor.NextHandler passThrough =
-            req -> io.activej.promise.Promise.of(HttpResponse.ok200());
+            req -> io.activej.promise.Promise.of(HttpResponse.ok200().build());
 
     @Test
     @DisplayName("should allow clean requests")
@@ -43,8 +43,9 @@ class WafInterceptorTest extends EventloopTestBase {
     @Test
     @DisplayName("should block SQL injection in query string")
     void shouldBlockSqlInjection() {
+        // Pattern matches: ' or '1'='1  (SQL boolean tautology)
         HttpRequest sqli = HttpRequest.builder(HttpMethod.GET,
-                "http://localhost/api/v1/search?q=1'+OR+'1'%3D'1").build();
+                "http://localhost/api/v1/search?q=' OR '1'='1").build();
         HttpResponse response = runPromise(() -> waf.intercept(sqli, passThrough));
         assertThat(response.getCode()).isEqualTo(403);
         verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("SQL_INJECTION"));
@@ -85,7 +86,7 @@ class WafInterceptorTest extends EventloopTestBase {
     void shouldPassThroughWhenDisabled() {
         WafInterceptor disabled = new WafInterceptor(auditLogger, false);
         HttpRequest sqli = HttpRequest.builder(HttpMethod.GET,
-                "http://localhost/api?q=1'+OR+'1'%3D'1").build();
+                "http://localhost/api?q=' OR '1'='1").build();
         HttpResponse response = runPromise(() -> disabled.intercept(sqli, passThrough));
         assertThat(response.getCode()).isEqualTo(200);
     }

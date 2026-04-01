@@ -25,23 +25,22 @@ import java.util.Objects;
  * <p><b>Pipeline: {@code lifecycle-management-v1}</b>
  * <pre>
  * lifecycle.phase.transition.requested
- *   │
- *   ▼
- * [phase-transition-validator]  ─── validates transition rule + entry gate
- *   │ lifecycle.phase.transition.validated
- *   ▼
- * [gate-orchestrator]           ─── runs policy evaluation; routes to human approval if needed
- *   │ lifecycle.gate.passed  OR  lifecycle.approval.requested
- *   ▼
- * [agent-dispatch]              ─── reads stage agent assignments; emits dispatch events
- *   │ lifecycle.agent.dispatched (one per agent)
- *   ▼
- * [lifecycle-state-publisher]   ─── emits lifecycle.phase.advanced to AEP stream
+ *   |
+ *   v
+ * [phase-transition-validator]  --- validates transition rule + entry gate
+ *   | lifecycle.phase.transition.validated
+ *   v
+ * [gate-orchestrator]           --- runs policy evaluation; routes to human approval if needed
+ *   | lifecycle.gate.passed  OR  lifecycle.approval.requested
+ *   v
+ * [agent-dispatch]              --- reads stage agent assignments; emits dispatch events
+ *   | lifecycle.agent.dispatched (one per agent)
+ *   v
+ * [lifecycle-state-publisher]   --- emits lifecycle.phase.advanced to AEP stream
  * </pre>
  *
  * <p><b>Usage</b><br>
- * Call {@link #start()} once at service startup (e.g., from
- * {@link io.activej.boot.ServiceGraphModule} or {@link LifecycleServiceModule}).
+ * Call {@link #start()} once at service startup.
  * The returned {@link Pipeline} can be used to route incoming events.
  *
  * @doc.type class

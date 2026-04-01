@@ -67,15 +67,21 @@ import jdk.jfr.StackTrace;
  *
  * <p>
  * <b>Performance Impact</b><br>
- * JFR events have minimal overhead (typically <1% CPU): - Event creation: ~10ns
- * - Commit (no data): ~20ns - Commit (with data): ~100-500ns depending on
- * string lengths - Safe for production at high volumes
+ * JFR events have minimal overhead (typically {@code <1%} CPU):
+ * <ul>
+ * <li>Event creation: ~10ns</li>
+ * <li>Commit (no data): ~20ns</li>
+ * <li>Commit (with data): ~100-500ns depending on string lengths</li>
+ * <li>Safe for production at high volumes</li>
+ * </ul>
  *
  * <p>
  * <b>Analysis Tools</b><br>
- * - JDK Mission Control (JMC): GUI for JFR file analysis - jfr CLI: `jfr print
- * --events LLMApiCallEvent recording.jfr` - Custom parsers: Use JFR streaming
- * API
+ * <ul>
+ * <li>JDK Mission Control (JMC): GUI for JFR file analysis</li>
+ * <li>jfr CLI: {@code jfr print --events LLMApiCallEvent recording.jfr}</li>
+ * <li>Custom parsers: Use JFR streaming API</li>
+ * </ul>
  *
  * @doc.type class
  * @doc.purpose JFR event for LLM API call profiling

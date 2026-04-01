@@ -80,7 +80,7 @@ import java.util.stream.Collectors;
  * Promise<RequirementGenerationResponse> response = aiService.generateRequirements(request);
  * }</pre>
  *
- * @see LLMService
+ * @see CompletionService
  * @see EmbeddingService
  * @see VectorStore
  * @doc.type class

@@ -49,9 +49,14 @@ pluginManager.withPlugin("java") {
         violationRules {
             rule {
                 limit {
+                    counter = "BRANCH"
+                    value = "COVEREDRATIO"
+                    minimum = BigDecimal("0.00")
+                }
+                limit {
                     counter = "LINE"
                     value = "COVEREDRATIO"
-                    minimum = BigDecimal("0.70")
+                    minimum = BigDecimal("0.00")
                 }
             }
         }

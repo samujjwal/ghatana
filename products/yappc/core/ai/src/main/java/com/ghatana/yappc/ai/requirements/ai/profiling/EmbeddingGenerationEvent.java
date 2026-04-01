@@ -62,10 +62,22 @@ import jdk.jfr.StackTrace;
  * }</pre>
  *
  * <p>
- * <b>Performance Characteristics</b><br>
- * - Event overhead: <100ns per embedding - Negligible impact on embedding
- * latency - Safe for production batch processing - Captures both sync and async
- * embedding calls
+ * <b>Performance Impact</b><br>
+ * JFR events have minimal overhead (typically &lt;1% CPU):
+ * <ul>
+ * <li>Event creation: ~10ns</li>
+ * <li>Commit (no data): ~20ns</li>
+ * <li>Commit (with data): ~100-500ns depending on string lengths</li>
+ * <li>Safe for production at high volumes</li>
+ * </ul>
+ *
+ * <p>
+ * <b>Analysis Tools</b><br>
+ * <ul>
+ * <li>JDK Mission Control (JMC): GUI for JFR file analysis</li>
+ * <li>jfr CLI: {@code jfr print --events LLMApiCallEvent recording.jfr}</li>
+ * <li>Custom parsers: Use JFR streaming API</li>
+ * </ul>
  *
  * @doc.type class
  * @doc.purpose JFR event for embedding generation profiling

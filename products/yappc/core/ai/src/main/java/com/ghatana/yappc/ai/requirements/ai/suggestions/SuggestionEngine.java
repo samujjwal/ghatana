@@ -68,8 +68,7 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  *
  * @see Persona
- * @see PersonaPromptBuilder
- * @see LLMService
+ * @see CompletionService
  * @see EmbeddingService
  * @doc.type class
  * @doc.purpose Multi-persona requirement suggestion engine

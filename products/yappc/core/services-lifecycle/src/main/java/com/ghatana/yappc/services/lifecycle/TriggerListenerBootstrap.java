@@ -26,15 +26,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <p><b>Event Flow:</b><br>
  * <pre>
  * YAPPC Event Cloud
- *   │ (phase.transition.requested)
- *   ▼
+ *   | (phase.transition.requested)
+ *   v
  * [TriggerListenerBootstrap]
- *   │ (matches pattern: phase.transition.*)
- *   ▼
+ *   | (matches pattern: phase.transition.*)
+ *   v
  * [AEP Pipeline]
- *   │ (YappcAepPipelineBootstrapper)
- *   ▼
- * Phase transition processed & state updated
+ *   | (YappcAepPipelineBootstrapper)
+ *   v
+ * Phase transition processed &amp; state updated
  * </pre>
  *
  * <p><b>Startup Sequence:</b>

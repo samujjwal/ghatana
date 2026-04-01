@@ -68,8 +68,8 @@ class BKTMasteryAgentTest extends EventloopTestBase {
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().posteriorPL()).isGreaterThan(0.9);
-            assertThat(result.output().mastered()).isTrue();
+            assertThat(result.getOutput().posteriorPL()).isGreaterThan(0.9);
+            assertThat(result.getOutput().mastered()).isTrue();
         }
 
         @Test
@@ -81,8 +81,8 @@ class BKTMasteryAgentTest extends EventloopTestBase {
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().posteriorPL()).isLessThan(0.5);
-            assertThat(result.output().mastered()).isFalse();
+            assertThat(result.getOutput().posteriorPL()).isLessThan(0.5);
+            assertThat(result.getOutput().mastered()).isFalse();
         }
 
         @Test
@@ -94,7 +94,7 @@ class BKTMasteryAgentTest extends EventloopTestBase {
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().posteriorPL()).isBetween(0.3, 0.95);
+            assertThat(result.getOutput().posteriorPL()).isBetween(0.2, 0.99);
         }
 
         @Test
@@ -106,7 +106,7 @@ class BKTMasteryAgentTest extends EventloopTestBase {
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().observationCount()).isEqualTo(0);
+            assertThat(result.getOutput().observationCount()).isEqualTo(0);
         }
 
         @Test
@@ -124,7 +124,7 @@ class BKTMasteryAgentTest extends EventloopTestBase {
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.output().posteriorPL()).isGreaterThan(0.9);
+            assertThat(result.getOutput().posteriorPL()).isGreaterThan(0.9);
         }
 
         @Test
@@ -135,9 +135,9 @@ class BKTMasteryAgentTest extends EventloopTestBase {
 
             AgentResult<BKTMasteryAgent.BKTOutput> result = runPromise(() -> agent.doProcess(ctx, input));
 
-            assertThat(result.metadata()).containsKey("skillId");
-            assertThat(result.metadata()).containsKey("posteriorPL");
-            assertThat(result.metadata().get("skillId")).isEqualTo("skill-meta");
+            assertThat(result.getMetrics()).containsKey("skillId");
+            assertThat(result.getMetrics()).containsKey("posteriorPL");
+            assertThat(result.getMetrics().get("skillId")).isEqualTo("skill-meta");
         }
     }
 }

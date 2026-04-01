@@ -37,7 +37,6 @@ import java.util.UUID;
  *
  * @see ProjectEntity
  * @see TaskEntity
- * @see com.ghatana.yappc.config.lifecycle.stages
  *
  * @author Ghatana AI Platform
  * @since 2.0.0

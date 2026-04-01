@@ -26,7 +26,7 @@ class IpBlockingInterceptorTest extends EventloopTestBase {
 
     private final SecurityAuditLogger auditLogger = mock(SecurityAuditLogger.class);
     private final SecurityInterceptor.NextHandler passThrough =
-            req -> io.activej.promise.Promise.of(HttpResponse.ok200());
+            req -> io.activej.promise.Promise.of(HttpResponse.ok200().build());
 
     @Test
     @DisplayName("should block permanently listed IPs")

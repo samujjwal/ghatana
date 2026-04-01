@@ -11,11 +11,11 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.profiling.LLMApiCallEvent} - LLM
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.profiling.LLMApiCallEvent} - LLM
  * completion profiling</li>
- * <li>{@link com.ghatana.requirements.ai.profiling.EmbeddingGenerationEvent} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.profiling.EmbeddingGenerationEvent} -
  * Embedding profiling</li>
- * <li>{@link com.ghatana.requirements.ai.profiling.VectorSearchEvent} - Vector
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.profiling.VectorSearchEvent} - Vector
  * search profiling</li>
  * </ul>
  *
@@ -79,7 +79,7 @@
  *
  * <p>
  * <b>LLM API Call Events</b><br>
- * {@link com.ghatana.requirements.ai.profiling.LLMApiCallEvent} captures:
+ * {@link com.ghatana.yappc.ai.requirements.ai.profiling.LLMApiCallEvent} captures:
  * <ul>
  * <li>Model name (gpt-4, gpt-3.5-turbo, etc.)</li>
  * <li>Token usage (prompt, completion, total)</li>
@@ -119,7 +119,7 @@
  *
  * <p>
  * <b>Embedding Generation Events</b><br>
- * {@link com.ghatana.requirements.ai.profiling.EmbeddingGenerationEvent}
+ * {@link com.ghatana.yappc.ai.requirements.ai.profiling.EmbeddingGenerationEvent}
  * captures:
  * <ul>
  * <li>Model name (text-embedding-ada-002, etc.)</li>
@@ -160,7 +160,7 @@
  *
  * <p>
  * <b>Vector Search Events</b><br>
- * {@link com.ghatana.requirements.ai.profiling.VectorSearchEvent} captures:
+ * {@link com.ghatana.yappc.ai.requirements.ai.profiling.VectorSearchEvent} captures:
  * <ul>
  * <li>Collection name (table name)</li>
  * <li>Vector dimensions</li>
@@ -404,9 +404,9 @@
  * </ul>
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.profiling.LLMApiCallEvent
- * @see com.ghatana.requirements.ai.profiling.EmbeddingGenerationEvent
- * @see com.ghatana.requirements.ai.profiling.VectorSearchEvent
+ * @see com.ghatana.yappc.ai.requirements.ai.profiling.LLMApiCallEvent
+ * @see com.ghatana.yappc.ai.requirements.ai.profiling.EmbeddingGenerationEvent
+ * @see com.ghatana.yappc.ai.requirements.ai.profiling.VectorSearchEvent
  * @see <a href="https://docs.oracle.com/en/java/javase/17/jfapi/">JFR API
  * Documentation</a>
  * @doc.type package

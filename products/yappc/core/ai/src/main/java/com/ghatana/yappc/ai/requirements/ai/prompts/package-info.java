@@ -10,10 +10,10 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.prompts.PromptTemplate} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.prompts.PromptTemplate} -
  * Parameterized prompt template</li>
- * <li>{@link com.ghatana.requirements.ai.prompts.RequirementGenerationPrompt} -
- * Requirements-specific prompts</li>
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.prompts.PromptTemplateManager} -
+ * Template management and loading</li>
  * </ul>
  *
  * <p>
@@ -61,8 +61,8 @@
  * Template formatting is stateless and safe for concurrent use.
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.prompts.PromptTemplate
- * @see com.ghatana.requirements.ai.prompts.RequirementGenerationPrompt
+ * @see com.ghatana.yappc.ai.requirements.ai.prompts.PromptTemplate
+ * @see com.ghatana.yappc.ai.requirements.ai.prompts.PromptTemplateManager
  * @doc.type package
  * @doc.purpose Prompt templates and generation for LLM interactions
  * @doc.layer product

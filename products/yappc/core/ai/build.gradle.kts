@@ -2,6 +2,8 @@ plugins {
     id("java-library")
 }
 
+import org.gradle.external.javadoc.CoreJavadocOptions
+
 group = "com.ghatana.products.yappc"
 version = rootProject.version
 
@@ -91,4 +93,11 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.jmh.core)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
+}
+
+// Javadoc configuration
+tasks.javadoc {
+    (options as CoreJavadocOptions).addStringOption("Xdoclint:none", "-quiet")
+    // Disable if no sources to avoid failures
+    enabled = sourceSets.main.get().allJava.files.isNotEmpty()
 }

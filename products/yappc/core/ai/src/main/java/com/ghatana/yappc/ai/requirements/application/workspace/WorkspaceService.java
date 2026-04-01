@@ -51,7 +51,7 @@ import java.util.UUID;
  * @doc.pattern Service
  * @see Workspace
  * @see WorkspaceRepository
- * @see AuthorizationService
+ * @see SyncAuthorizationService
  */
 public class WorkspaceService {
     private static final Logger logger = LoggerFactory.getLogger(WorkspaceService.class);

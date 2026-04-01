@@ -2,7 +2,7 @@ package com.ghatana.phr.security;
 
 import com.ghatana.phr.security.BreachNotificationWorkflow.*;
 import io.activej.promise.Promise;
-import io.activej.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

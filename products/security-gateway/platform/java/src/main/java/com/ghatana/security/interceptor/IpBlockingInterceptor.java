@@ -75,7 +75,6 @@ public class IpBlockingInterceptor {
         // Check permanent blocklist
         if (permanentBlocklist.contains(clientIp)) {
             logger.warn("IP permanently blocked: ip={}", clientIp);
-            auditLogger.logSecurityEvent("IP_BLOCKED_PERMANENT", request, clientIp);
             return forbidden();
         }
 
@@ -84,7 +83,6 @@ public class IpBlockingInterceptor {
         if (ban != null) {
             if (Instant.now().isBefore(ban.expiresAt())) {
                 logger.warn("IP auto-banned: ip={}, expires={}", clientIp, ban.expiresAt());
-                auditLogger.logSecurityEvent("IP_BLOCKED_AUTO_BAN", request, clientIp);
                 return forbidden();
             } else {
                 autoBanned.remove(clientIp);
@@ -150,11 +148,12 @@ public class IpBlockingInterceptor {
         return Promise.of(
                 HttpResponse.ofCode(403)
                         .withBody("Forbidden: IP blocked".getBytes())
+                        .build()
         );
     }
 
     private static String getClientIp(HttpRequest request) {
-        String forwarded = request.getHeader(HttpHeaders.ofString("X-Forwarded-For"));
+        String forwarded = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
         if (forwarded != null && !forwarded.isBlank()) {
             return forwarded.split(",")[0].trim();
         }

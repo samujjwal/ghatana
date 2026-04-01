@@ -1,8 +1,7 @@
 package com.ghatana.phr.security;
 
 import com.ghatana.phr.kernel.policy.PhrDataClassification;
-import io.activej.eventloop.Eventloop;
-import io.activej.test.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

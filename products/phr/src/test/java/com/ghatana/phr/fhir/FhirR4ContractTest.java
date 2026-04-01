@@ -209,7 +209,7 @@ class FhirR4ContractTest {
                     "500mg every 8 hours",
                     "Upper respiratory infection",
                     Instant.now(), Instant.now().plus(java.time.Duration.ofDays(30)),
-                    2, "10 days",
+                    2, java.time.Duration.ofDays(10),
                     PrescriptionStatus.ACTIVE
             );
             return MAPPER.readTree(FhirR4TransformationEngine.toFhir(rx, "MedicationRequest"));
@@ -301,7 +301,7 @@ class FhirR4ContractTest {
             LabObservation obs = new LabObservation(
                     "obs-001", "patient-1", "enc-1", "order-1",
                     "26515-7", "Platelets", "Platelet count",
-                    new BigDecimal("245"), new BigDecimal("150"),
+                    new BigDecimal("245"), 150.0,
                     "10*3/uL", "150-400 10*3/uL",
                     "lab-central",
                     Instant.now(), Instant.now(),

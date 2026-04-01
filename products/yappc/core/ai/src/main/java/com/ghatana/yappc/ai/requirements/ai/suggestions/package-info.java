@@ -11,13 +11,13 @@
  * <p>
  * <b>Key Components</b><br>
  * <ul>
- * <li>{@link com.ghatana.requirements.ai.suggestions.AISuggestion} - Suggestion
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion} - Suggestion
  * value object</li>
- * <li>{@link com.ghatana.requirements.ai.suggestions.SuggestionEngine} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionEngine} -
  * Suggestion generation engine</li>
- * <li>{@link com.ghatana.requirements.ai.suggestions.SuggestionRanker} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionRanker} -
  * Suggestion ranking service</li>
- * <li>{@link com.ghatana.requirements.ai.suggestions.SuggestionStatus} -
+ * <li>{@link com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionStatus} -
  * Suggestion lifecycle status</li>
  * </ul>
  *
@@ -79,8 +79,8 @@
  * All components are thread-safe and can be safely shared across threads.
  *
  * @since 1.0.0
- * @see com.ghatana.requirements.ai.suggestions.AISuggestion
- * @see com.ghatana.requirements.ai.suggestions.SuggestionEngine
+ * @see com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion
+ * @see com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionEngine
  * @doc.type package
  * @doc.purpose AI-powered requirement suggestions and recommendations
  * @doc.layer product

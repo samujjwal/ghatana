@@ -241,8 +241,8 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
         String tenantId = resolveTenantId();
         int validatedPageSize = PaginationConfig.clampPageSize(pageSize);
 
-        // Decode cursor to get offset - use final variable for lambda capture
-        final int offset;
+        // Decode cursor to get offset - use mutable variable for conditional assignment
+        int offset;
         if (cursor != null && !cursor.isBlank()) {
             try {
                 PaginationConfig.CursorData cursorData = PaginationConfig.decodeCursor(cursor);
@@ -266,6 +266,9 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                 .limit(validatedPageSize + 1) // Fetch one extra to detect hasMore
                 .build();
 
+        // Capture offset as final for lambda
+        final int currentOffset = offset;
+
         return client.query(tenantId, collectionName, query)
                 .map(entities -> {
                     boolean hasMore = entities.size() > validatedPageSize;
@@ -278,7 +281,7 @@ public class YappcDataCloudRepository<T extends Identifiable<UUID>> {
                     if (hasMore) {
                         // Encode next offset as cursor
                         nextCursor = PaginationConfig.encodeCursor(
-                            String.valueOf(offset + validatedPageSize), null);
+                            String.valueOf(currentOffset + validatedPageSize), null);
                     }
 
                     return PaginatedResult.<T>builder()

@@ -26,26 +26,25 @@ import java.util.Objects;
  * <p><b>Pipeline: {@code agent-orchestration-v1}</b>
  * <pre>
  * agent.dispatch.requested
- *   │
- *   ▼
- * [agent-dispatch-validator]   ─── validates required fields (agentId, fromStage, toStage)
- *   │ agent.dispatch.validated
- *   ▼
- * [backpressure-handler]       ─── bounded queue (2048, DROP_OLDEST) for rate spikes
- *   │ agent.dispatch.validated (rate-limited)
- *   ▼
- * [agent-executor]             ─── executes agent; emits agent.result.produced
- *   │ agent.result.produced
- *   ▼
- * [result-aggregator]          ─── aggregates by correlation_id; emits workflow.step.completed
- *   │ workflow.step.completed
- *   ▼
- * [metrics-collector]          ─── side-effect: emits agent.metrics.updated
+ *   |
+ *   v
+ * [agent-dispatch-validator]   --- validates required fields (agentId, fromStage, toStage)
+ *   | agent.dispatch.validated
+ *   v
+ * [backpressure-handler]       --- bounded queue (2048, DROP_OLDEST) for rate spikes
+ *   | agent.dispatch.validated (rate-limited)
+ *   v
+ * [agent-executor]             --- executes agent; emits agent.result.produced
+ *   | agent.result.produced
+ *   v
+ * [result-aggregator]          --- aggregates by correlation_id; emits workflow.step.completed
+ *   | workflow.step.completed
+ *   v
+ * [metrics-collector]          --- side-effect: emits agent.metrics.updated
  * </pre>
  *
  * <p><b>Usage</b><br>
- * Call {@link #start()} once at service startup (e.g., from
- * {@link io.activej.boot.ServiceGraphModule} or {@link LifecycleServiceModule}).
+ * Call {@link #start()} once at service startup.
  * The returned {@link Promise}{@code <}{@link Pipeline}{@code >} resolves when the
  * pipeline is ready to route agent dispatch events.
  *
