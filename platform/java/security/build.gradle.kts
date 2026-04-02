@@ -64,6 +64,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(libs.wiremock.jre8.standalone)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

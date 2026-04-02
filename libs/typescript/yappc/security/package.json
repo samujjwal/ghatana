@@ -1,0 +1,47 @@
+{
+  "name": "@ghatana/security",
+  "version": "0.1.0",
+  "description": "Security utilities and middleware for YAPPC (CSP, headers, etc.)",
+  "private": false,
+  "license": "Proprietary",
+  "types": "./dist/src/index.d.ts",
+  "main": "./dist/src/index.js",
+  "files": [
+    "dist",
+    "src",
+    "package.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write src"
+  },
+  "dependencies": {
+    "fastify": "^4.24.0",
+    "fastify-plugin": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/ui": "^0.34.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.2.0",
+    "vitest": "^0.34.0"
+  },
+  "peerDependencies": {
+    "fastify": "^4.0.0"
+  },
+  "keywords": [
+    "security",
+    "csp",
+    "content-security-policy",
+    "middleware",
+    "fastify"
+  ]
+}

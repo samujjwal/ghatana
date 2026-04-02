@@ -38,4 +38,12 @@ dependencies {
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
