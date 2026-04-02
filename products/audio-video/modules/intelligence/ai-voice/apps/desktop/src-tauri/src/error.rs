@@ -126,4 +126,93 @@ mod tests {
         assert_eq!(error.code(), "python.bridge_failed");
         assert!(error.is_retryable());
     }
+
+    // ─── Additional coverage for all variants ─────────────────────────────────
+
+    #[test]
+    fn audio_error_has_correct_category_and_code() {
+        let e = AppError::Audio("device busy".to_string());
+        assert_eq!(e.category(), AppErrorCategory::AudioProcessing);
+        assert_eq!(e.code(), "audio.processing_failed");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn file_not_found_has_correct_category() {
+        let e = AppError::FileNotFound("/tmp/missing.wav".to_string());
+        assert_eq!(e.category(), AppErrorCategory::InputValidation);
+        assert_eq!(e.code(), "input.file_not_found");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn model_error_is_retryable() {
+        let e = AppError::Model("model load timeout".to_string());
+        assert_eq!(e.category(), AppErrorCategory::ModelLifecycle);
+        assert_eq!(e.code(), "model.lifecycle_failed");
+        assert!(e.is_retryable());
+    }
+
+    #[test]
+    fn training_error_has_correct_code() {
+        let e = AppError::Training("epoch failed".to_string());
+        assert_eq!(e.code(), "model.training_failed");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn separation_error_is_audio_processing() {
+        let e = AppError::Separation("stem separation failed".to_string());
+        assert_eq!(e.category(), AppErrorCategory::AudioProcessing);
+        assert_eq!(e.code(), "audio.separation_failed");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn conversion_error_is_audio_processing() {
+        let e = AppError::Conversion("codec error".to_string());
+        assert_eq!(e.category(), AppErrorCategory::AudioProcessing);
+        assert_eq!(e.code(), "audio.conversion_failed");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn python_error_legacy_variant_is_retryable() {
+        let e = AppError::Python("interpreter crash".to_string());
+        assert_eq!(e.category(), AppErrorCategory::PythonBridge);
+        assert_eq!(e.code(), "python.bridge_failed");
+        assert!(e.is_retryable());
+    }
+
+    #[test]
+    fn not_initialized_error_is_internal() {
+        let e = AppError::NotInitialized("model store not ready".to_string());
+        assert_eq!(e.category(), AppErrorCategory::Internal);
+        assert_eq!(e.code(), "internal.not_initialized");
+        assert!(!e.is_retryable());
+    }
+
+    #[test]
+    fn io_error_is_retryable() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::TimedOut, "timeout");
+        let e = AppError::Io(io_err);
+        assert_eq!(e.category(), AppErrorCategory::Internal);
+        assert_eq!(e.code(), "internal.io_failed");
+        assert!(e.is_retryable());
+    }
+
+    #[test]
+    fn display_includes_message() {
+        let e = AppError::Audio("device overloaded".to_string());
+        let msg = format!("{}", e);
+        assert!(msg.contains("device overloaded"), "Display should include the inner message");
+    }
+
+    #[test]
+    fn serialize_produces_string_representation() {
+        let e = AppError::InvalidRequest("bad param".to_string());
+        // Serialize via JSON — should produce a JSON string value
+        let json = serde_json::to_string(&e).expect("should serialize");
+        assert!(json.contains("bad param"));
+    }
 }

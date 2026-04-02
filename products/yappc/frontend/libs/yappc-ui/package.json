@@ -34,6 +34,26 @@
       "import": "./dist/components/theme/index.mjs",
       "require": "./dist/components/theme/index.js",
       "types": "./dist/components/theme/index.d.ts"
+    },
+    "./base-ui": {
+      "import": "./dist/components/base-ui/index.mjs",
+      "require": "./dist/components/base-ui/index.js",
+      "types": "./dist/components/base-ui/index.d.ts"
+    },
+    "./development-ui": {
+      "import": "./dist/components/development-ui/index.mjs",
+      "require": "./dist/components/development-ui/index.js",
+      "types": "./dist/components/development-ui/index.d.ts"
+    },
+    "./initialization-ui": {
+      "import": "./dist/components/initialization-ui/index.mjs",
+      "require": "./dist/components/initialization-ui/index.js",
+      "types": "./dist/components/initialization-ui/index.d.ts"
+    },
+    "./navigation-ui": {
+      "import": "./dist/components/navigation-ui/index.mjs",
+      "require": "./dist/components/navigation-ui/index.js",
+      "types": "./dist/components/navigation-ui/index.d.ts"
     }
   },
   "files": [

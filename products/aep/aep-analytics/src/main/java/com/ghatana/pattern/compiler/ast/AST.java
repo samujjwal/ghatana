@@ -87,7 +87,7 @@ public class AST {
      * @return the maximum depth of the tree
      */
     public int getDepth() {
-        return root != null ? root.getDepth() : 0;
+        return root != null ? root.getMaxDepth() : 0;
     }
     
     /**

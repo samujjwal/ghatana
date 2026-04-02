@@ -95,15 +95,15 @@ tasks.jacocoTestCoverageVerification {
             limit {
                 counter = "INSTRUCTION"
                 value = "COVEREDRATIO"
-                // Starting point – increase incrementally as tests are added
-                minimum = "0.050".toBigDecimal()
+                // Config + exception hierarchy fully tested; raised from 0.050 (2026-04-02)
+                minimum = "0.150".toBigDecimal()
             }
         }
         rule {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.040".toBigDecimal()
+                minimum = "0.100".toBigDecimal()
             }
         }
     }

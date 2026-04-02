@@ -33,14 +33,31 @@
       // Library packages
       "@yappc/ui": ["libs/yappc-ui/src"],
       "@yappc/ui/*": ["libs/yappc-ui/src/*"],
+      // @yappc/ui compat exports
+      "@yappc/base-ui": ["libs/yappc-ui/src/components/base-ui"],
+      "@yappc/base-ui/*": ["libs/yappc-ui/src/components/base-ui/*"],
+      "@yappc/development-ui": ["libs/yappc-ui/src/components/development-ui"],
+      "@yappc/development-ui/*": ["libs/yappc-ui/src/components/development-ui/*"],
+      "@yappc/initialization-ui": ["libs/yappc-ui/src/components/initialization-ui"],
+      "@yappc/initialization-ui/*": ["libs/yappc-ui/src/components/initialization-ui/*"],
+      "@yappc/navigation-ui": ["libs/yappc-ui/src/components/navigation-ui"],
+      "@yappc/navigation-ui/*": ["libs/yappc-ui/src/components/navigation-ui/*"],
       "@yappc/state": ["libs/yappc-state/src"],
       "@yappc/state/*": ["libs/yappc-state/src/*"],
+      // @yappc/state compat exports
+      "@yappc/config-hooks": ["libs/yappc-state/src/store/config-hooks"],
+      "@yappc/config-hooks/*": ["libs/yappc-state/src/store/config-hooks/*"],
       "@yappc/shortcuts": ["libs/shortcuts/src"],
       "@yappc/shortcuts/*": ["libs/shortcuts/src/*"],
 
 
       "@yappc/ai": ["libs/yappc-ai/src"],
       "@yappc/ai/*": ["libs/yappc-ai/src/*"],
+      // @yappc/ai compat exports
+      "@yappc/messaging": ["libs/yappc-ai/src/messaging"],
+      "@yappc/messaging/*": ["libs/yappc-ai/src/messaging/*"],
+      "@yappc/notifications": ["libs/yappc-ai/src/notifications"],
+      "@yappc/notifications/*": ["libs/yappc-ai/src/notifications/*"],
       "@ghatana/yappc-ai-requirements-service": ["libs/ai-requirements-service/src"],
       "@ghatana/yappc-ai-requirements-service/*": ["libs/ai-requirements-service/src/*"],
       "@yappc/canvas": ["libs/yappc-canvas/src"],

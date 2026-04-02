@@ -15,9 +15,12 @@
         "./devsecops/websocket": "./src/devsecops/websocket.ts"
     },
     "scripts": {
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "devDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18"
     }
 }

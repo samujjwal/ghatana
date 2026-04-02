@@ -227,7 +227,7 @@ public class ASTBuilder {
     private Map<String, Object> createASTMetadata(OperatorSpec operatorSpec) {
         return Map.of(
             "rootType", operatorSpec.getType(),
-            "rootId", operatorSpec.getId(),
+            "rootId", operatorSpec.getId() != null ? operatorSpec.getId() : "unknown",
             "operandCount", operatorSpec.getOperandCount(),
             "buildTime", System.currentTimeMillis()
         );

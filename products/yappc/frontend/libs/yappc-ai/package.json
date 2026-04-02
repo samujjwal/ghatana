@@ -30,6 +30,16 @@
       "import": "./dist/chat/index.mjs",
       "require": "./dist/chat/index.js",
       "types": "./dist/chat/index.d.ts"
+    },
+    "./messaging": {
+      "import": "./dist/messaging/index.mjs",
+      "require": "./dist/messaging/index.js",
+      "types": "./dist/messaging/index.d.ts"
+    },
+    "./notifications": {
+      "import": "./dist/notifications/index.mjs",
+      "require": "./dist/notifications/index.js",
+      "types": "./dist/notifications/index.d.ts"
     }
   },
   "files": [

@@ -148,14 +148,15 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
 
         // Optionally persist to DataCloud (v2.5+)
         if (persistenceRegistry != null) {
-            return persistenceRegistry.register(agent, config)
+            Promise<TypedAgent<?, ?>> persistencePromise = persistenceRegistry.register(agent, config)
                     .map(v -> {
                         log.debug("Persisted agent '{}' to DataCloud registry", agentId);
                         return agent;
-                    })
-                    .whenException(e -> log.warn(
-                            "Failed to persist agent '{}' to DataCloud (continuing anyway): {}",
-                            agentId, e.getMessage()));
+                    });
+            persistencePromise.whenException(e -> log.warn(
+                    "Failed to persist agent '{}' to DataCloud (continuing anyway): {}",
+                    agentId, e.getMessage()));
+            return persistencePromise;
         }
 
         return Promise.of(agent);
