@@ -90,4 +90,54 @@ class WafInterceptorTest extends EventloopTestBase {
         HttpResponse response = runPromise(() -> disabled.intercept(sqli, passThrough));
         assertThat(response.getCode()).isEqualTo(200);
     }
+
+    @Test
+    @DisplayName("should block OS command injection with semicolon pipe")
+    void shouldBlockCommandInjection() {
+        HttpRequest cmd = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/v1/exec?cmd=ls&&cat /etc/passwd").build();
+        HttpResponse response = runPromise(() -> waf.intercept(cmd, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("COMMAND_INJECTION"));
+    }
+
+    @Test
+    @DisplayName("should block JNDI env variable injection")
+    void shouldBlockLog4ShellEnvInjection() {
+        HttpRequest jndi = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/log?msg=${env:AWS_SECRET_ACCESS_KEY}").build();
+        HttpResponse response = runPromise(() -> waf.intercept(jndi, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("LOG4SHELL"));
+    }
+
+    @Test
+    @DisplayName("should block UNION SELECT SQL injection")
+    void shouldBlockUnionSelectInjection() {
+        HttpRequest sqli = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/search?q=1 UNION SELECT * FROM users").build();
+        HttpResponse response = runPromise(() -> waf.intercept(sqli, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("SQL_INJECTION"));
+    }
+
+    @Test
+    @DisplayName("should block XSS via onerror event handler")
+    void shouldBlockXssEventHandler() {
+        HttpRequest xss = HttpRequest.builder(HttpMethod.GET,
+                "http://localhost/api/img?src=x&onerror=alert(1)").build();
+        HttpResponse response = runPromise(() -> waf.intercept(xss, passThrough));
+        assertThat(response.getCode()).isEqualTo(403);
+        verify(auditLogger).logSecurityEvent(eq("WAF_BLOCKED"), any(), eq("XSS"));
+    }
+
+    @Test
+    @DisplayName("request without query string → clean path only inspected, no NPE")
+    void shouldHandleRequestWithNoQueryString() {
+        HttpRequest clean = HttpRequest.builder(HttpMethod.DELETE,
+                "http://localhost/api/v1/collections/col-123").build();
+        HttpResponse response = runPromise(() -> waf.intercept(clean, passThrough));
+        assertThat(response.getCode()).isEqualTo(200);
+        verify(auditLogger, never()).logSecurityEvent(any(), any(), any());
+    }
 }

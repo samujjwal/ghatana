@@ -133,10 +133,9 @@ public final class RefactorerHttpServer {
                 .withHealthCheck("/healthz")
                 .withMetrics("/internal/metrics")
                 // Security filter (JWT authentication)
-                // Wrap AsyncServlet-based filters to the core FilterChain.Filter functional interface
-                .addFilter((request, next) -> jwtAuthFilter.serve(request))
+                .addFilter((request, next) -> jwtAuthFilter.filter(request, next))
                 // Tenant context extraction (runs AFTER JWT auth to use tenant from JWT if available)
-                .addFilter((request, next) -> tenantContextFilter.serve(request))
+                .addFilter((request, next) -> tenantContextFilter.filter(request, next))
                 // Global error handler filter
                 .addFilter((request, next)
                         -> // Execute next in chain and map exceptions to a friendly HTTP response.

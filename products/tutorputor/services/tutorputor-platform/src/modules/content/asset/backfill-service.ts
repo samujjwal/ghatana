@@ -11,6 +11,7 @@
  * @doc.pattern Service
  */
 
+import { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type { Logger } from "pino";
 
@@ -67,18 +68,18 @@ function slugify(text: string): string {
 // Domain mapping helpers
 // ---------------------------------------------------------------------------
 
-const MODULE_STATUS_TO_ASSET: Record<string, string> = {
+const MODULE_STATUS_TO_ASSET = {
   DRAFT: "DRAFT",
   PUBLISHED: "PUBLISHED",
   ARCHIVED: "ARCHIVED",
-};
+} as const;
 
-const EXPERIENCE_STATUS_TO_ASSET: Record<string, string> = {
+const EXPERIENCE_STATUS_TO_ASSET = {
   DRAFT: "DRAFT",
   REVIEW: "REVIEW",
   PUBLISHED: "PUBLISHED",
   ARCHIVED: "ARCHIVED",
-};
+} as const;
 
 // ---------------------------------------------------------------------------
 // Service
@@ -134,7 +135,10 @@ export class AssetBackfillService {
           }
 
           const slug = slugify(mod.title);
-          const assetStatus = MODULE_STATUS_TO_ASSET[mod.status] ?? "DRAFT";
+          const assetStatus =
+            MODULE_STATUS_TO_ASSET[
+              mod.status as keyof typeof MODULE_STATUS_TO_ASSET
+            ] ?? "DRAFT";
 
           if (options.dryRun) {
             result.succeeded++;
@@ -246,7 +250,10 @@ export class AssetBackfillService {
           }
 
           const slug = slugify(exp.title);
-          const assetStatus = EXPERIENCE_STATUS_TO_ASSET[exp.status] ?? "DRAFT";
+          const assetStatus =
+            EXPERIENCE_STATUS_TO_ASSET[
+              exp.status as keyof typeof EXPERIENCE_STATUS_TO_ASSET
+            ] ?? "DRAFT";
 
           if (options.dryRun) {
             result.succeeded++;
@@ -298,7 +305,7 @@ export class AssetBackfillService {
                   })) ?? [],
                 intentProblem: exp.intentProblem,
                 intentMotivation: exp.intentMotivation,
-              },
+              } as Prisma.InputJsonValue,
               qualityScore: exp.confidenceScore,
               createdBy: exp.createdBy,
             },
@@ -313,7 +320,9 @@ export class AssetBackfillService {
                   manifestType: "SIMULATION",
                   version: claimSim.simulationManifest.version ?? "1.0.0",
                   claimRef: claimSim.claimRef,
-                  manifest: claimSim.simulationManifest.manifest ?? {},
+                  manifest:
+                    (claimSim.simulationManifest.manifest as Prisma.InputJsonValue) ??
+                    Prisma.JsonNull,
                   isValid: true,
                   generatedBy: "ai",
                 },

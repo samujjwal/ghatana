@@ -80,9 +80,6 @@ sourceSets.test {
         // ── DataCloudEventCloudClient / InMemoryEventLogStore not in SPI ─────
         "com/ghatana/aep/integration/events/DataCloudEventCloudClientTest.java",
 
-        // ── DeadLetterOperator helper StubTypedAgent missing ─────────────────
-        "com/ghatana/aep/operator/DeadLetterOperatorTest.java",
-
         // ── ClusterState missing from aep-scaling ────────────────────────────
         "com/ghatana/aep/scaling/cluster/ClusterManagementSystemTest.java",
         "com/ghatana/aep/scaling/loadbalancer/AdvancedLoadBalancerTest.java",

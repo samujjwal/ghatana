@@ -3,8 +3,8 @@ kind: Kustomization
 
 namespace: yappc-staging
 
-bases:
-  - ../base
+resources:
+  - ../../base
 
 namePrefix: staging-
 

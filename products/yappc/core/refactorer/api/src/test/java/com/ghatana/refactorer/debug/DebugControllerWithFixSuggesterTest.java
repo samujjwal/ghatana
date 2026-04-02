@@ -1,9 +1,11 @@
 package com.ghatana.refactorer.debug;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,13 +25,14 @@ import org.junit.jupiter.api.Test;
 class DebugControllerWithFixSuggesterTest {
     private DebugController debugController;
     private FixSuggester fixSuggester;
+        private ErrorPatternManager errorPatternManager;
 
     @BeforeEach
-    void setUp() throws IOException {
-        // Create a custom FixSuggester for testing
+        void setUp() {
         this.fixSuggester = new FixSuggester();
+                this.errorPatternManager = mock(ErrorPatternManager.class);
+                when(errorPatternManager.findMatches(anyString(), anyString())).thenReturn(List.of());
 
-        // Register a test suggestion
         fixSuggester.registerSuggestion(
                 "TestError: (.+?)",
                 FixSuggestion.builder()
@@ -39,15 +42,6 @@ class DebugControllerWithFixSuggesterTest {
                         .language("test")
                         .confidence(0.9)
                         .build());
-
-        // Get the path to the test configuration file
-        String testConfigPath =
-                getClass().getClassLoader().getResource("stacktrace.patterns.test.json").getPath();
-
-        // Create an ErrorPatternManager with the test configuration
-        ErrorPatternManager errorPatternManager = new ErrorPatternManager(Path.of(testConfigPath));
-
-        // Create a DebugController with our test FixSuggester and ErrorPatternManager
         this.debugController =
                 new DebugController(
                         List.of(new TestStackTraceParser()), errorPatternManager, fixSuggester);
@@ -56,44 +50,53 @@ class DebugControllerWithFixSuggesterTest {
     @Test
     void testParseWithFixSuggestions() {
         String errorMessage = "TestError: Something went wrong";
+        ErrorPatternManager.MatchedPattern testMatch =
+                matchedPattern("test_error", errorMessage, "Test fix");
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
+                .thenReturn(List.of(testMatch));
 
-        // Parse the error message
         DebugController.ParseResult result = debugController.parse(errorMessage);
 
-        // Verify we got suggestions
+        assertTrue(result.success(), "Should have parsed a test stack frame");
+        assertFalse(result.fixSuggestions().isEmpty(), "Should have fix suggestions for test error");
         assertTrue(
-                result.fixSuggestions().isEmpty(),
-                "Should not have fix suggestions for test error");
+                result.fixSuggestions().stream().anyMatch(s -> "test.fix".equals(s.getId())),
+                "Should include the registered test fix suggestion");
     }
 
     @Test
     void testLanguageSpecificSuggestions() {
-        // Register a language-specific suggestion
         fixSuggester.registerSuggestion(
-                "JavaError: (.+?)",
+                "java\\.lang\\.NullPointerException.*",
                 FixSuggestion.builder()
                         .id("java.specific.fix")
                         .description("Java-specific fix")
-                        .fixPattern("// Java fix for ${1}")
+                        .fixPattern("// Java null-safety fix")
                         .language("java")
                         .confidence(0.9)
                         .build());
 
-        // Create a Java error that will be recognized by our test patterns
-        String javaError = "JavaError: Something went wrong";
+        String javaError =
+                "java.lang.NullPointerException: Cannot invoke \"String.length()\" because"
+                        + " \"str\" is null\n"
+                        + "    at com.example.Test.main(Test.java:10)";
+        ErrorPatternManager.MatchedPattern javaMatch =
+                matchedPattern("java_npe", javaError, "Add null checks");
+        when(errorPatternManager.findMatches(anyString(), eq("java")))
+                .thenReturn(List.of(javaMatch));
 
-        // Parse the error message
         DebugController.ParseResult result = debugController.parse(javaError);
 
-        // Should not include our Java-specific fix since the error pattern is not recognized
         assertTrue(
-                result.fixSuggestions().isEmpty(),
-                "Should not have suggestions for Java error without matching pattern");
+                result.fixSuggestions().stream()
+                        .anyMatch(s -> "java.specific.fix".equals(s.getId())),
+                "Should include Java-specific suggestions when the Java pattern matches");
     }
 
     @Test
     void testNoSuggestionsForUnmatchedErrors() {
         String unknownError = "SomeUnknownError: This error has no registered fixes";
+        when(errorPatternManager.findMatches(anyString(), anyString())).thenReturn(List.of());
         DebugController.ParseResult result = debugController.parse(unknownError);
 
         assertTrue(
@@ -102,51 +105,99 @@ class DebugControllerWithFixSuggesterTest {
     }
 
     @Test
-    void testLanguageDetectionFromStackTrace() {
-        // Parse a Java stack trace
-        String javaStackTrace =
-                "java.lang.NullPointerException: Cannot invoke \"String.length()\" because \"str\""
-                        + " is null\n"
-                        + "    at com.example.Test.main(Test.java:10)";
+    void testAggregatesSuggestionsAcrossMultipleMatches() {
+        fixSuggester.registerSuggestion(
+                "SecondaryError: (.+?)",
+                FixSuggestion.builder()
+                        .id("secondary.fix")
+                        .description("Secondary fix")
+                        .fixPattern("// Secondary fix for ${1}")
+                        .language("test")
+                        .confidence(0.8)
+                        .build());
 
-        DebugController.ParseResult result = debugController.parse(javaStackTrace);
+        String combinedError = "PrimaryError: first\nSecondaryError: second";
+        ErrorPatternManager.MatchedPattern primaryMatch =
+                matchedPattern("primary_error", "PrimaryError: first", "Primary");
+        ErrorPatternManager.MatchedPattern secondaryMatch =
+                matchedPattern("secondary_error", "SecondaryError: second", "Secondary");
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
+                .thenReturn(List.of(primaryMatch, secondaryMatch));
 
-        // Should have matched the Java NPE pattern from the default patterns
+        DebugController.ParseResult result = debugController.parse(combinedError);
+
+        assertFalse(result.fixSuggestions().isEmpty(), "Should aggregate suggestions across matches");
         assertTrue(
-                result.matches().isEmpty(),
-                "Should not have matched Java NPE pattern from default patterns in test"
-                        + " environment");
+                result.fixSuggestions().stream()
+                        .anyMatch(s -> "secondary.fix".equals(s.getId())),
+                "Should include suggestions contributed by later matched patterns");
     }
 
     @Test
-    void testMultipleSuggestions() {
-        // This test is not applicable in the current implementation since we don't have
-        // a way to register suggestions without a matching error pattern
-        // The test is kept as a placeholder for future implementation
-        assertTrue(
-                true, "Test for multiple suggestions is not applicable in current implementation");
+    void testKeepsHighestConfidenceSuggestionWhenMatchesProduceDuplicateIds() {
+        fixSuggester.registerSuggestion(
+                "DuplicateError: (.+?)",
+                FixSuggestion.builder()
+                        .id("duplicate.fix")
+                        .description("Lower-confidence duplicate fix")
+                        .fixPattern("// duplicate fix")
+                        .language("test")
+                        .confidence(0.4)
+                        .build());
+        fixSuggester.registerSuggestion(
+                "DuplicateSecondaryError: (.+?)",
+                FixSuggestion.builder()
+                        .id("duplicate.fix")
+                        .description("Higher-confidence duplicate fix")
+                        .fixPattern("// duplicate fix improved")
+                        .language("test")
+                        .confidence(0.95)
+                        .build());
+
+        String combinedError = "DuplicateError: first\nDuplicateSecondaryError: second";
+        ErrorPatternManager.MatchedPattern duplicateMatch =
+                matchedPattern("duplicate_error", "DuplicateError: first", "Duplicate");
+        ErrorPatternManager.MatchedPattern duplicateSecondaryMatch =
+                matchedPattern(
+                        "duplicate_secondary_error",
+                        "DuplicateSecondaryError: second",
+                        "Duplicate secondary");
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
+                .thenReturn(List.of(duplicateMatch, duplicateSecondaryMatch));
+
+        DebugController.ParseResult result = debugController.parse(combinedError);
+
+        List<FixSuggestion> duplicateSuggestions =
+                result.fixSuggestions().stream()
+                        .filter(suggestion -> "duplicate.fix".equals(suggestion.getId()))
+                        .toList();
+
+        assertEquals(1, duplicateSuggestions.size(), "Duplicate suggestion IDs should be merged");
+        assertEquals(
+                "Higher-confidence duplicate fix",
+                duplicateSuggestions.get(0).getDescription(),
+                "Merged suggestion should keep the highest-confidence candidate");
     }
 
-    @Test
-    void testConfidenceThreshold() {
-        // This test is not applicable in the current implementation since we don't have
-        // a way to register suggestions without a matching error pattern
-        // The test is kept as a placeholder for future implementation
-        assertTrue(
-                true, "Test for confidence threshold is not applicable in current implementation");
+    private static ErrorPatternManager.MatchedPattern matchedPattern(
+            String name, String matchedText, String suggestion) {
+        ErrorPatternManager.ErrorPattern pattern = mock(ErrorPatternManager.ErrorPattern.class);
+        when(pattern.getName()).thenReturn(name);
+        when(pattern.getSuggestion()).thenReturn(suggestion);
+        return new ErrorPatternManager.MatchedPattern(pattern, matchedText);
     }
 
     /** A test stack trace parser that recognizes a simple pattern for testing. */
     private static class TestStackTraceParser implements StackTraceParser {
         @Override
         public List<TraceFrame> parse(String content) {
-            // For testing, we'll just return a simple frame if we see a test pattern
-            if (content.contains("TestError:")) {
-                return List.of(
-                        new TraceFrame("test.js", 10, "testMethod", "Test error in test.js"));
-            } else if (content.contains("java.lang.NullPointerException")) {
+            if (content.contains("NullPointerException")) {
                 return List.of(
                         new TraceFrame("Test.java", 10, "main", "NullPointerException in main"));
+            }
+            if (content.contains("Error:")) {
+                return List.of(
+                        new TraceFrame("test.js", 10, "testMethod", "Test error in test.js"));
             }
             return List.of();
         }

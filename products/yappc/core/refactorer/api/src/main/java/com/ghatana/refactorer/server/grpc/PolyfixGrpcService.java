@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.server.grpc;
 
+import com.ghatana.platform.core.exception.ErrorCode;
 import com.ghatana.refactorer.api.v1.DiagnoseRequest;
 import com.ghatana.refactorer.api.v1.DiagnoseResponse;
 import com.ghatana.refactorer.api.v1.HealthRequest;
@@ -12,10 +13,13 @@ import com.ghatana.refactorer.api.v1.RunRequest;
 import com.ghatana.refactorer.api.v1.RunStatus;
 import com.ghatana.refactorer.api.v1.UnifiedDiagnostic;
 import com.ghatana.refactorer.server.auth.TenantContext;
+import com.ghatana.refactorer.server.error.ExceptionHandler;
 import com.ghatana.refactorer.server.jobs.JobMappers;
 import com.ghatana.refactorer.server.jobs.JobRecord;
 import com.ghatana.refactorer.server.jobs.JobService;
 import com.ghatana.refactorer.server.jobs.JobSubmission;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -75,7 +79,7 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error processing diagnose request", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
     }
 
@@ -97,7 +101,7 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error processing run request", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
     }
 
@@ -119,7 +123,7 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error getting job status", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
     }
 
@@ -141,7 +145,7 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error generating report", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
     }
 
@@ -170,7 +174,7 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error streaming progress", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
     }
 
@@ -192,7 +196,63 @@ public final class PolyfixGrpcService extends PolyfixServiceGrpc.PolyfixServiceI
 
         } catch (Exception e) {
             logger.error("Error processing health check", e);
-            responseObserver.onError(e);
+            responseObserver.onError(toGrpcException(e));
         }
+    }
+
+    static StatusRuntimeException toGrpcException(Exception exception) {
+        if (exception instanceof StatusRuntimeException statusRuntimeException) {
+            return statusRuntimeException;
+        }
+
+        if (exception instanceof ExceptionHandler.ValidationException) {
+            return Status.INVALID_ARGUMENT.withDescription(exception.getMessage()).withCause(exception)
+                    .asRuntimeException();
+        }
+
+        if (exception instanceof ExceptionHandler.AuthenticationException) {
+            return Status.UNAUTHENTICATED.withDescription(exception.getMessage()).withCause(exception)
+                    .asRuntimeException();
+        }
+
+        if (exception instanceof ExceptionHandler.AuthorizationException) {
+            return Status.PERMISSION_DENIED.withDescription(exception.getMessage()).withCause(exception)
+                    .asRuntimeException();
+        }
+
+        if (exception instanceof ExceptionHandler.ResourceNotFoundException) {
+            return Status.NOT_FOUND.withDescription(exception.getMessage()).withCause(exception)
+                    .asRuntimeException();
+        }
+
+        if (exception instanceof IllegalArgumentException) {
+            return Status.INVALID_ARGUMENT.withDescription(exception.getMessage()).withCause(exception)
+                    .asRuntimeException();
+        }
+
+        if (exception instanceof ExceptionHandler.ServiceException serviceException) {
+            return statusFromErrorCode(serviceException.getErrorCode())
+                    .withDescription(serviceException.getMessage())
+                    .withCause(serviceException)
+                    .asRuntimeException();
+        }
+
+        return Status.INTERNAL.withDescription(exception.getMessage()).withCause(exception)
+                .asRuntimeException();
+    }
+
+    private static Status statusFromErrorCode(ErrorCode errorCode) {
+        return switch (errorCode.getHttpStatus()) {
+            case 400, 422 -> Status.INVALID_ARGUMENT;
+            case 401 -> Status.UNAUTHENTICATED;
+            case 403 -> Status.PERMISSION_DENIED;
+            case 404 -> Status.NOT_FOUND;
+            case 409 -> Status.ALREADY_EXISTS;
+            case 429 -> Status.RESOURCE_EXHAUSTED;
+            case 501 -> Status.UNIMPLEMENTED;
+            case 503 -> Status.UNAVAILABLE;
+            case 504 -> Status.DEADLINE_EXCEEDED;
+            default -> Status.INTERNAL;
+        };
     }
 }

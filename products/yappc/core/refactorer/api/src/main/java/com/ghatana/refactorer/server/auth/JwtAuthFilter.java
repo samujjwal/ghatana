@@ -54,8 +54,12 @@ public final class JwtAuthFilter implements AsyncServlet {
 
     @Override
     public Promise<HttpResponse> serve(HttpRequest request) throws Exception {
+        return filter(request, delegate);
+    }
+
+    public Promise<HttpResponse> filter(HttpRequest request, AsyncServlet next) throws Exception {
         if (!shouldAuthenticate(request)) {
-            return delegate.serve(request);
+            return next.serve(request);
         }
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -68,7 +72,7 @@ public final class JwtAuthFilter implements AsyncServlet {
             TenantContext context = verifyAndResolve(token);
             TenantResolver.attach(request, context);
             accessPolicy.ensureAuthenticated(context);
-            return delegate.serve(request);
+            return next.serve(request);
         } catch (SecurityException e) {
             logger.debug("JWT rejected: {}", e.getMessage());
             return unauthorized(e.getMessage());

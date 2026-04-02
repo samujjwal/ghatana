@@ -49,7 +49,10 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Adapter, Client
  * @see com.ghatana.aep.config.EnvConfig#aepDcBaseUrl()
  * @since 1.0.0
+ * @deprecated As of v2.5, use the unified AepAgentRegistryController (HTTP) or AepCentralRegistryService (in-process) instead.
+ * @scheduled-for-removal 2026-05-01
  */
+@Deprecated(since = "2.5.0", forRemoval = true)
 public final class DataCloudAgentRegistryClient implements AgentRegistryClient {
 
     private static final Logger log = LoggerFactory.getLogger(DataCloudAgentRegistryClient.class);

@@ -4,6 +4,14 @@ global:
   namespace: audio-video
   existingSecret: audio-video-secrets
 
+serviceAccount:
+  create: true
+  name: audio-video-sa
+
+networkPolicy:
+  enabled: true
+  monitoringNamespace: monitoring
+
 # ── STT Service ────────────────────────────────────────────────────────────
 stt:
   enabled: true
@@ -149,3 +157,12 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

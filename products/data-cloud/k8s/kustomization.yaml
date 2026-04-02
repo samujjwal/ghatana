@@ -16,6 +16,7 @@ namespace: data-cloud
 
 resources:
   - namespace.yaml
+  - serviceaccount.yaml
   - configmap.yaml
   - secret-store.yaml
   - external-secret.yaml

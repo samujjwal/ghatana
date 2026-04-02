@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:ai-integration"))
     implementation(project(":platform:java:governance"))
+    implementation(project(":platform:java:security"))
     
     // YAPPC domain (both core and libs versions)
     implementation(project(":products:yappc:core:yappc-domain-impl"))

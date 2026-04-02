@@ -2,6 +2,7 @@
 package com.ghatana.refactorer.cli;
 
 import com.ghatana.refactorer.shared.FS;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import picocli.CommandLine;
@@ -64,7 +65,9 @@ public final class InitCommand implements Runnable {
                 log.info("Initialized TS/JS config: {}", tsConfigDir);
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RefactorerOperationException(
+                    "Failed to initialize Polyfix starter config in " + root,
+                    e);
         }
     }
 }

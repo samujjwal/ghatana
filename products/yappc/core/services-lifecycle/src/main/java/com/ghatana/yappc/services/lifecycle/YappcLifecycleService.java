@@ -10,6 +10,7 @@ import com.ghatana.audit.AuditLogger;
 import com.ghatana.core.activej.launcher.UnifiedApplicationLauncher;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
 import com.ghatana.yappc.api.GenerationApiController;
 import com.ghatana.yappc.api.IntentApiController;
@@ -34,7 +35,6 @@ import io.activej.http.RoutingServlet;
 import io.activej.inject.Injector;
 import io.activej.inject.module.ModuleBuilder;
 import io.activej.promise.Promise;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,8 +93,9 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         builder.bind(io.activej.eventloop.Eventloop.class)
                 .toInstance(io.activej.eventloop.Eventloop.create());
 
-        // Prometheus-backed metrics collector (scrape via GET /metrics)
-        PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        // Prometheus-backed metrics collector — use the canonical shared platform registry
+        // so platform-level metrics are included in the /metrics scrape endpoint.
+        PrometheusMeterRegistry prometheusRegistry = MetricsProvider.getRegistry();
         MetricsCollector metrics = new SimpleMetricsCollector(prometheusRegistry);
         builder.bind(MetricsCollector.class).toInstance(metrics);
         builder.bind(PrometheusMeterRegistry.class).toInstance(prometheusRegistry);
@@ -201,10 +202,9 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 injector.getInstance(com.ghatana.yappc.services.lifecycle.gdpr.GdprController.class);
 
         // ── Distributed Tracing (Dimension 7.1) ──────────────────────────
-        // Initialize OpenTelemetry tracing; LifecycleTracingConfig is eagerly constructed
-        // so the TracingManager is ready before any spans are emitted.
-        com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig tracingConfig =
-                injector.getInstance(com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig.class);
+        // Eagerly instantiate LifecycleTracingConfig so the TracingManager is ready
+        // before any spans are emitted. Assignment intentionally omitted to avoid DLS.
+        injector.getInstance(com.ghatana.yappc.services.lifecycle.config.LifecycleTracingConfig.class);
 
         // ── Config hot-reload watcher (Dimension 8.3) ─────────────────────
         // Eagerly instantiating ConfigWatchService starts its background thread.

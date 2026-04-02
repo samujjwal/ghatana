@@ -4,7 +4,7 @@
 package com.ghatana.core.pipeline.benchmark;
 
 import com.ghatana.core.operator.*;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.pipeline.*;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public class PipelineExecutionBenchmark {
 
     private PipelineExecutionEngine engine;
-    private DefaultOperatorCatalog catalog;
+    private UnifiedOperatorCatalog catalog;
     private Pipeline singleStagePipeline;
     private Pipeline threeStageLinear;
     private Pipeline fiveStageDAG;
@@ -49,7 +49,7 @@ public class PipelineExecutionBenchmark {
     @Setup(Level.Trial)
     public void setup() {
         engine = new PipelineExecutionEngine();
-        catalog = new DefaultOperatorCatalog();
+        catalog = new UnifiedOperatorCatalog();
 
         // Register fast pass-through operators (initialize + start each)
         for (int i = 1; i <= 5; i++) {

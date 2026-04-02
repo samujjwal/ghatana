@@ -19,9 +19,9 @@ groups:
       - alert: TutorputorHighErrorRate
         expr: |
           (
-            rate(http_requests_total{job="tutorputor-app", status=~"5.."}[5m])
+            rate(tutorputor_http_request_total{job="tutorputor-app", status_code=~"5.."}[5m])
             /
-            rate(http_requests_total{job="tutorputor-app"}[5m])
+            rate(tutorputor_http_request_total{job="tutorputor-app"}[5m])
           ) > 0.05
         for: 5m
         labels:
@@ -34,9 +34,9 @@ groups:
       - alert: TutorputorHighErrorRateCritical
         expr: |
           (
-            rate(http_requests_total{job="tutorputor-app", status=~"5.."}[5m])
+            rate(tutorputor_http_request_total{job="tutorputor-app", status_code=~"5.."}[5m])
             /
-            rate(http_requests_total{job="tutorputor-app"}[5m])
+            rate(tutorputor_http_request_total{job="tutorputor-app"}[5m])
           ) > 0.15
         for: 3m
         labels:
@@ -49,7 +49,7 @@ groups:
       - alert: TutorputorHighLatencyP99
         expr: |
           histogram_quantile(0.99,
-            rate(http_request_duration_seconds_bucket{job="tutorputor-app"}[5m])
+            sum(rate(tutorputor_http_request_duration_seconds_bucket{job="tutorputor-app"}[5m])) by (le)
           ) > 3
         for: 5m
         labels:

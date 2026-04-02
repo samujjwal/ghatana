@@ -126,6 +126,80 @@ class ConfidenceScorerTest {
         assertTrue(confidence < 0.6, "Confidence should be lower for language mismatch");
     }
 
+    @Test
+    void testParsedStackTraceContextImprovesConfidence() {
+        FixSuggestion suggestion =
+                FixSuggestion.builder()
+                        .id("test.node")
+                        .description("Node suggestion")
+                        .fixPattern("${statement}")
+                        .language("node")
+                        .errorPattern("TypeError")
+                        .confidence(0.8)
+                        .build();
+
+        FixContext parsedContext = new FixContext("node", "file:///app/dist/index.mjs");
+        parsedContext.setMetadata("stackTraceParsed", true);
+        parsedContext.setMetadata("parsedFrameCount", 3);
+
+        FixContext unparsedContext = new FixContext("node", "");
+
+        double parsedConfidence =
+                scorer.calculateConfidence(
+                        suggestion,
+                        "TypeError: x is not a function",
+                        parsedContext);
+        double unparsedConfidence =
+                scorer.calculateConfidence(
+                        suggestion,
+                        "TypeError: x is not a function",
+                        unparsedContext);
+
+        assertTrue(
+                parsedConfidence > unparsedConfidence,
+                "Parsed stack trace context should improve confidence");
+    }
+
+    @Test
+    void testNodeTypeScriptModuleExtensionsAreTreatedAsMatchingContext() {
+        FixSuggestion suggestion =
+                FixSuggestion.builder()
+                        .id("test.node.ts")
+                        .description("Node TypeScript suggestion")
+                        .fixPattern("${statement}")
+                        .language("node")
+                        .errorPattern("TypeError")
+                        .confidence(0.8)
+                        .build();
+
+        FixContext mtsContext = new FixContext("node", "file:///app/dist/index.mts");
+        FixContext ctsContext = new FixContext("node", "file:///app/dist/index.cts");
+        FixContext javaContext = new FixContext("node", "Test.java");
+
+        double mtsConfidence =
+                scorer.calculateConfidence(
+                        suggestion,
+                        "TypeError: x is not a function",
+                        mtsContext);
+        double ctsConfidence =
+                scorer.calculateConfidence(
+                        suggestion,
+                        "TypeError: x is not a function",
+                        ctsContext);
+        double mismatchedConfidence =
+                scorer.calculateConfidence(
+                        suggestion,
+                        "TypeError: x is not a function",
+                        javaContext);
+
+        assertTrue(
+                mtsConfidence > mismatchedConfidence,
+                "MTS files should be treated as matching Node/TypeScript context");
+        assertTrue(
+                ctsConfidence > mismatchedConfidence,
+                "CTS files should be treated as matching Node/TypeScript context");
+    }
+
     private FixSuggestion createTestSuggestion(String id) {
         return FixSuggestion.builder()
                 .id(id)

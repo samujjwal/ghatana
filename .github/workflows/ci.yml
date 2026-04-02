@@ -147,6 +147,14 @@ jobs:
         with:
           fail_ci_if_error: false
 
+      - name: Upload JaCoCo HTML coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-reports
+          path: "**/build/reports/jacoco/**"
+          retention-days: 14
+
   # ─────────────────────────────────────────────
   # Code Quality
   # ─────────────────────────────────────────────

@@ -78,8 +78,7 @@ class TaskServiceImplTest extends EventloopTestBase {
 
         // WHEN
         TaskResult<Map<String, Object>> result = runPromise(() ->
-                taskService.<Map<String, Object>, Map<String, Object>>executeTask(root.id(), input, context)
-                        .map(r -> (TaskResult<Map<String, Object>>) r)
+            taskService.<Map<String, Object>, Map<String, Object>>executeTask(root.id(), input, context)
         );
 
         // THEN
@@ -95,6 +94,62 @@ class TaskServiceImplTest extends EventloopTestBase {
         assertThat(depOutput).isInstanceOf(Map.class);
         assertThat(((Map<?, ?>) depOutput).get("taskId")).isEqualTo(dep.id());
     }
+
+        @Test
+        void shouldFilterTaskHistoryByTenantId() {
+        String capability = "sdlc.execute";
+
+        AgentRegistry agentRegistry = new AgentRegistry(new NoopMetricsCollector());
+        agentRegistry.register(new EchoAgent(capability));
+
+        TaskDefinition task = TaskDefinition.builder()
+            .id("tenant-task")
+            .name("Tenant Task")
+            .description("Tenant-scoped history validation")
+            .domain("testing")
+            .phase(SDLCPhase.IMPLEMENTATION)
+            .requiredCapabilities(List.of(capability))
+            .parameters(Map.of())
+            .complexity(TaskComplexity.SIMPLE)
+            .dependencies(List.of())
+            .metadata(Map.of())
+            .build();
+
+        TaskRegistry registry = new TaskRegistry(List.of());
+        registry.register(task);
+
+        TaskOrchestrator orchestrator = new TaskOrchestrator(agentRegistry, new CapabilityMatcher());
+        TaskServiceImpl taskService = new TaskServiceImpl(registry, orchestrator, new TaskValidator());
+
+        TaskExecutionContext tenantAContext = TaskExecutionContext.builder()
+            .userId("shared-user")
+            .tenantId("tenant-a")
+            .traceId("trace-a")
+            .metadata(Map.of())
+            .build();
+
+        TaskExecutionContext tenantBContext = TaskExecutionContext.builder()
+            .userId("shared-user")
+            .tenantId("tenant-b")
+            .traceId("trace-b")
+            .metadata(Map.of())
+            .build();
+
+        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-a"), tenantAContext));
+        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-b"), tenantBContext));
+
+        TaskHistoryFilter tenantAFilter = TaskHistoryFilter.builder()
+            .tenantId("tenant-a")
+            .userId("shared-user")
+            .limit(50)
+            .build();
+
+        List<TaskExecution> filtered = runPromise(() -> taskService.getTaskHistory(tenantAFilter));
+
+        assertThat(filtered).isNotEmpty();
+        assertThat(filtered).allMatch(execution -> "tenant-a".equals(execution.metadata().get("tenantId")));
+        assertThat(filtered).noneMatch(execution -> "tenant-b".equals(execution.metadata().get("tenantId")));
+        }
 
     /**
      * Simple deterministic agent for testing task orchestration.

@@ -1,0 +1,86 @@
+# Springdoc OpenAPI Configuration for TutorPutor API
+# Exposes OpenAPI specification and Swagger UI at /api/v1/docs
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api/v1/docs
+    show-actuator: true
+    
+  swagger-ui:
+    enabled: true
+    path: /api/v1/swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    show-extensions: false
+    display-operation-id: true
+    doc-expansion: list
+    filter: true
+    deep-linking: true
+    presets: apis,swaggerui
+    layout: StandaloneLayout
+    
+  use-fqn: true
+  
+  spring-doc-enabled: true
+  
+  show-login-endpoint: true
+
+spring:
+  application:
+    name: tutorputor-api
+    description: "TutorPutor Content Generation API"
+    version: 1.0.0
+    
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  
+# API Documentation
+info:
+  title: TutorPutor Content Generation API
+  description: >
+    AI-powered content generation service for educational applications.
+    Supports content generation, library management, and personalized learning paths.
+  version: 1.0.0
+  contact:
+    name: TutorPutor Engineering Team
+    email: tutorputor@ghatana.io
+    url: https://github.com/ghatana/tutorputor
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+# OpenAPI Security Schemes
+springdoc:
+  security-schemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearer-format: JWT
+      description: "JWT token for API authentication"
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: "Optional API Key for enhanced rate limits"
+
+# Actuator Configuration (for health checks)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+logging:
+  level:
+    org.springdoc: DEBUG

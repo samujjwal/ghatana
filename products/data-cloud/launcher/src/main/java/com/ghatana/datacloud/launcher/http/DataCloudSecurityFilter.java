@@ -5,6 +5,7 @@ import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyAuthFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.governance.security.TenantIsolationHttpFilter;
 import io.activej.http.AsyncServlet;
@@ -135,7 +136,19 @@ public final class DataCloudSecurityFilter {
             // If auth fails, authedServlet returns 401 before reaching tenantWrapped.
             // We intercept the response to also emit audit on 401.
             return authedServlet.serve(request)
-                .then(response -> handlePostAuth(request, response, path, method, sensitivity));
+                .then(response -> {
+                    Principal authenticatedPrincipal = request.getAttachment(Principal.class);
+                    String tenantId = resolveTenantId(request, authenticatedPrincipal);
+                    String principalName = resolvePrincipalName(authenticatedPrincipal);
+                    return handlePostAuth(
+                            request,
+                            response,
+                            path,
+                            method,
+                            sensitivity,
+                            tenantId,
+                            principalName);
+                });
         };
     }
 
@@ -148,28 +161,46 @@ public final class DataCloudSecurityFilter {
             HttpResponse response,
             String path,
             String method,
-            EndpointSensitivity sensitivity) {
+            EndpointSensitivity sensitivity,
+            String tenantId,
+            String principalName) {
 
         int statusCode = response.getCode();
         String requestId = ensureRequestId(request, response);
 
         // Auth failed — emit audit and return immediately.
         if (statusCode == 401 || statusCode == 403) {
-            emitAudit(request, path, method, sensitivity, false, statusCode, requestId);
+            emitAudit(request, path, method, sensitivity, false, statusCode, requestId, tenantId, principalName);
             return Promise.of(response);
         }
 
         // (4) Policy engine check for CRITICAL routes (unless excluded).
         if (sensitivity == EndpointSensitivity.CRITICAL && policyEngine != null) {
-            String tenantId = resolveTenantFromContext();
             if (!policyExcludedTenants.contains(tenantId)) {
-                return evaluatePolicy(request, response, path, method, sensitivity, requestId, tenantId);
+                return evaluatePolicy(
+                        request,
+                        response,
+                        path,
+                        method,
+                        sensitivity,
+                        requestId,
+                        tenantId,
+                        principalName);
             }
         }
 
         // (5) Fire-and-forget audit for SENSITIVE and CRITICAL.
         if (sensitivity == EndpointSensitivity.SENSITIVE || sensitivity == EndpointSensitivity.CRITICAL) {
-            emitAudit(request, path, method, sensitivity, statusCode < 400, statusCode, requestId);
+            emitAudit(
+                    request,
+                    path,
+                    method,
+                    sensitivity,
+                    statusCode < 400,
+                    statusCode,
+                    requestId,
+                    tenantId,
+                    principalName);
         }
 
         return Promise.of(response);
@@ -182,7 +213,8 @@ public final class DataCloudSecurityFilter {
             String method,
             EndpointSensitivity sensitivity,
             String requestId,
-            String tenantId) {
+            String tenantId,
+            String principalName) {
 
         Map<String, Object> ctx = Map.of(
             "tenantId",    tenantId,
@@ -199,20 +231,20 @@ public final class DataCloudSecurityFilter {
                     if (enforcing) {
                         log.warn("[DC-SEC] Policy denied {} {} for tenant={} requestId={}",
                                  method, path, tenantId, requestId);
-                        emitAudit(request, path, method, sensitivity, false, 403, requestId);
+                        emitAudit(request, path, method, sensitivity, false, 403, requestId, tenantId, principalName);
                         return Promise.of(policyDenyResponse(requestId));
                     } else {
                         log.warn("[DC-SEC][AUDIT-ONLY] Policy would deny {} {} for tenant={} requestId={}",
                                  method, path, tenantId, requestId);
                     }
                 }
-                emitAudit(request, path, method, sensitivity, true, response.getCode(), requestId);
+                emitAudit(request, path, method, sensitivity, true, response.getCode(), requestId, tenantId, principalName);
                 return Promise.of(response);
             }, e -> {
                 // Fail-closed: any policy engine error blocks the request in enforcing mode.
                 log.error("[DC-SEC] Policy evaluation error for {} {} requestId={}: {}",
                           method, path, requestId, e.getMessage(), e);
-                emitAudit(request, path, method, sensitivity, false, 403, requestId);
+                emitAudit(request, path, method, sensitivity, false, 403, requestId, tenantId, principalName);
                 if (enforcing) {
                     return Promise.of(policyDenyResponse(requestId));
                 }
@@ -231,17 +263,16 @@ public final class DataCloudSecurityFilter {
             EndpointSensitivity sensitivity,
             boolean success,
             int statusCode,
-            String requestId) {
+            String requestId,
+            String tenantId,
+            String principalName) {
 
         if (auditService == null) return;
-
-        String tenantId  = resolveTenantFromContext();
-        String principal = resolvePrincipalFromContext();
 
         AuditEvent event = AuditEvent.builder()
             .tenantId(tenantId)
             .eventType("HTTP_REQUEST")
-            .principal(principal)
+            .principal(principalName)
             .resourceType("HTTP_ENDPOINT")
             .resourceId(method + " " + path)
             .success(success)
@@ -266,14 +297,28 @@ public final class DataCloudSecurityFilter {
         return (existing != null && !existing.isBlank()) ? existing : UUID.randomUUID().toString();
     }
 
-    private static String resolveTenantFromContext() {
-        String tenantId = TenantContext.getCurrentTenantId();
-        return (tenantId != null) ? tenantId : "default";
+    private static String resolveTenantId(
+            io.activej.http.HttpRequest request,
+            Principal authenticatedPrincipal) {
+        if (authenticatedPrincipal != null && authenticatedPrincipal.getTenantId() != null) {
+            return authenticatedPrincipal.getTenantId();
+        }
+
+        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        if (tenantHeader != null && !tenantHeader.isBlank()) {
+            return tenantHeader.trim();
+        }
+
+        return TenantContext.getCurrentTenantId();
     }
 
-    private static String resolvePrincipalFromContext() {
+    private static String resolvePrincipalName(Principal authenticatedPrincipal) {
+        if (authenticatedPrincipal != null) {
+            return authenticatedPrincipal.getName();
+        }
+
         return TenantContext.current()
-            .map(p -> p.getName())
+            .map(Principal::getName)
             .orElse("anonymous");
     }
 

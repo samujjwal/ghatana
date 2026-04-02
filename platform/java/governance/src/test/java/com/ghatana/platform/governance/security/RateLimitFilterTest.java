@@ -83,6 +83,14 @@ class RateLimitFilterTest extends EventloopTestBase {
         void validParametersCreateInstance() {
             assertThat(new RateLimitFilter(100, 60)).isNotNull();
         }
+
+        @Test
+        @DisplayName("null client key resolver throws NullPointerException")
+        void nullClientKeyResolverThrows() {
+            assertThatThrownBy(() -> new RateLimitFilter(100, 60, null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("clientKeyResolver");
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -252,6 +260,32 @@ class RateLimitFilterTest extends EventloopTestBase {
                         .isEqualTo(429);
             }
         }
+
+        @Test
+        @DisplayName("custom client key resolver can isolate tenants behind one forwarded IP")
+        void customClientKeyResolverCanIsolateTenants() {
+            RateLimitFilter filter =
+                    new RateLimitFilter(
+                            1,
+                            60,
+                            request -> {
+                                String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
+                                String clientIp = request.getHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"));
+                                return (tenantId == null ? "unknown" : tenantId) + "|" + clientIp;
+                            });
+            AsyncServlet servlet = filter.wrap(OK_SERVLET);
+
+            HttpRequest tenantARequest = buildRequestWithTenantAndXff("tenant-a", "192.168.0.10");
+            HttpRequest tenantBRequest = buildRequestWithTenantAndXff("tenant-b", "192.168.0.10");
+
+            int tenantAFirst = runPromise(() -> servlet.serve(tenantARequest).map(HttpResponse::getCode));
+            int tenantASecond = runPromise(() -> servlet.serve(tenantARequest).map(HttpResponse::getCode));
+            int tenantBFirst = runPromise(() -> servlet.serve(tenantBRequest).map(HttpResponse::getCode));
+
+            assertThat(tenantAFirst).isEqualTo(200);
+            assertThat(tenantASecond).isEqualTo(429);
+            assertThat(tenantBFirst).isEqualTo(200);
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -306,6 +340,14 @@ class RateLimitFilterTest extends EventloopTestBase {
     private static HttpRequest buildRequestWithXff(String xffValue) {
         return HttpRequest.get("http://localhost/api/test")
                 .withHeader(io.activej.http.HttpHeaders.HOST, "localhost")
+                .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"), xffValue)
+                .build();
+    }
+
+    private static HttpRequest buildRequestWithTenantAndXff(String tenantId, String xffValue) {
+        return HttpRequest.get("http://localhost/api/test")
+                .withHeader(io.activej.http.HttpHeaders.HOST, "localhost")
+                .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), tenantId)
                 .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"), xffValue)
                 .build();
     }

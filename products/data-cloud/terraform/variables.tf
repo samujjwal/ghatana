@@ -364,6 +364,16 @@ variable "clickhouse_version" {
   default     = "24.3"
 }
 
+variable "clickhouse_ami_id" {
+  description = "Ubuntu 22.04 LTS AMI ID for the ClickHouse deployment region."
+  type        = string
+}
+
+variable "clickhouse_key_name" {
+  description = "EC2 key pair name for ClickHouse operational access."
+  type        = string
+}
+
 # ---------------------------------------------------------------------------
 # Secrets (Vault path prefixes — consumed by ESO SecretStore)
 # ---------------------------------------------------------------------------

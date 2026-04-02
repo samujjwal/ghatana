@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.*;
 import com.ghatana.audio.video.vision.model.*;
@@ -35,26 +36,38 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
     private final VideoFrameExtractor frameExtractor;
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
+    private final MediaProcessingMetrics mediaMetrics;
 
     /** Package-private constructor for unit testing — inject a fake {@link VisionDetector}. */
     VisionGrpcService(VisionDetector detector, VideoFrameExtractor frameExtractor) {
+        this(detector, frameExtractor, MediaProcessingMetrics.noop());
+    }
+
+    /** Package-private constructor for unit testing with metrics capture. */
+    VisionGrpcService(VisionDetector detector, VideoFrameExtractor frameExtractor,
+                      MediaProcessingMetrics metrics) {
         this.detector = detector;
         this.frameExtractor = frameExtractor;
+        this.mediaMetrics = metrics;
     }
 
     public VisionGrpcService() {
+        this(MediaProcessingMetrics.create());
+    }
+
+    public VisionGrpcService(MediaProcessingMetrics metrics) {
         String modelPath = System.getenv("VISION_MODEL_PATH");
         if (modelPath == null || modelPath.isEmpty()) {
             modelPath = System.getProperty("user.home") + "/.ghatana/models/vision";
         }
-        
+
         double confidenceThreshold = Double.parseDouble(
             System.getenv().getOrDefault("VISION_CONFIDENCE_THRESHOLD", "0.5")
         );
         double nmsThreshold = Double.parseDouble(
             System.getenv().getOrDefault("VISION_NMS_THRESHOLD", "0.4")
         );
-        
+
         YoloV8Adapter adapter = new YoloV8Adapter(
             Paths.get(modelPath),
             confidenceThreshold,
@@ -71,14 +84,24 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             throw new RuntimeException("Vision service initialization failed", e);
         }
         this.detector = adapter;
+        this.mediaMetrics = metrics;
     }
     
     @Override
     public void detectObjects(DetectRequest request, StreamObserver<DetectResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
         requestCount.incrementAndGet();
+        mediaMetrics.recordStarted("vision.detect");
         
         try {
+            if (request.getImageData().isEmpty()) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Image data cannot be empty")
+                    .asRuntimeException());
+                mediaMetrics.recordFailed("vision.detect");
+                return;
+            }
+
             LOG.debug("Detecting objects in image ({} bytes)", request.getImageData().size());
             
             DetectionOptions options = DetectionOptions.builder()
@@ -112,6 +135,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             
             long processingTime = System.currentTimeMillis() - startTime;
             totalProcessingTime.addAndGet(processingTime);
+            mediaMetrics.recordSucceeded("vision.detect", processingTime);
             
             responseBuilder.setProcessingTimeMs(processingTime);
             
@@ -119,16 +143,41 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             responseObserver.onCompleted();
             
             LOG.info("Detected {} objects in {}ms", detectedObjects.size(), processingTime);
-            
+
+        } catch (VisionDetector.DetectionException e) {
+            LOG.error("Object detection engine failure", e);
+            mediaMetrics.recordFailed("vision.detect");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Detection engine error: " + e.getMessage())
+                .asRuntimeException());
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Invalid detection request: {}", e.getMessage());
+            mediaMetrics.recordFailed("vision.detect");
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
-            LOG.error("Object detection failed", e);
-            responseObserver.onError(e);
+            LOG.error("Unexpected error during object detection", e);
+            mediaMetrics.recordFailed("vision.detect");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Internal detection error")
+                .asRuntimeException());
         }
     }
     
     @Override
     public void analyzeImage(AnalyzeRequest request, StreamObserver<AnalyzeResponse> responseObserver) {
+        long startTime = System.currentTimeMillis();
+        mediaMetrics.recordStarted("vision.analyze");
         try {
+            if (request.getImageData().isEmpty()) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Image data cannot be empty")
+                    .asRuntimeException());
+                mediaMetrics.recordFailed("vision.analyze");
+                return;
+            }
+
             LOG.debug("Analyzing image ({} bytes)", request.getImageData().size());
             
             AnalyzeResponse.Builder responseBuilder = AnalyzeResponse.newBuilder();
@@ -152,12 +201,28 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
-            
+            mediaMetrics.recordSucceeded("vision.analyze", System.currentTimeMillis() - startTime);
+
             LOG.info("Image analysis completed");
-            
+
+        } catch (VisionDetector.DetectionException e) {
+            LOG.error("Image analysis engine failure", e);
+            mediaMetrics.recordFailed("vision.analyze");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Analysis engine error: " + e.getMessage())
+                .asRuntimeException());
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Invalid image analysis request: {}", e.getMessage());
+            mediaMetrics.recordFailed("vision.analyze");
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
         } catch (Exception e) {
-            LOG.error("Image analysis failed", e);
-            responseObserver.onError(e);
+            LOG.error("Unexpected error during image analysis", e);
+            mediaMetrics.recordFailed("vision.analyze");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Internal analysis error")
+                .asRuntimeException());
         }
     }
     

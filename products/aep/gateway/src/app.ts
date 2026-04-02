@@ -5,6 +5,21 @@ import WebSocket from 'ws';
 import { verifyJwt, extractBearerToken } from './jwt.js';
 import type { JwtPayload } from './jwt.js';
 
+function extractHeaderTenantId(value: string | string[] | undefined): string | null {
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value) && value.length > 0 && value[0].trim().length > 0) {
+    return value[0].trim();
+  }
+  return null;
+}
+
+function extractPayloadTenantId(payload: JwtPayload): string | null {
+  const tenantId = payload['tenantId'];
+  return typeof tenantId === 'string' && tenantId.trim().length > 0 ? tenantId.trim() : null;
+}
+
 export interface GatewayConfig {
   jwtSecret: string;
   backendUrl: string;
@@ -33,6 +48,15 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }
     try {
       const payload = verifyJwt(token, config.jwtSecret);
+      const headerTenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
+      const payloadTenantId = extractPayloadTenantId(payload);
+      if (headerTenantId && payloadTenantId && headerTenantId !== payloadTenantId) {
+        void reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Tenant mismatch between X-Tenant-Id header and JWT payload',
+        });
+        return;
+      }
       (request as FastifyRequest & { user: JwtPayload }).user = payload;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid token';
@@ -54,8 +78,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     if (request.headers.authorization) {
       proxyHeaders['authorization'] = request.headers.authorization;
     }
-    if (request.headers['x-tenant-id']) {
-      proxyHeaders['x-tenant-id'] = request.headers['x-tenant-id'] as string;
+    const payloadTenantId = extractPayloadTenantId((request as FastifyRequest & { user: JwtPayload }).user);
+    const headerTenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
+    const effectiveTenantId = payloadTenantId ?? headerTenantId;
+    if (effectiveTenantId) {
+      proxyHeaders['x-tenant-id'] = effectiveTenantId;
     }
 
     const method = request.method;
@@ -82,15 +109,28 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     if (!token) {
       return reply.status(401).send({ error: 'Authentication required' });
     }
+    let payload: JwtPayload;
     try {
-      verifyJwt(token, config.jwtSecret);
+      payload = verifyJwt(token, config.jwtSecret);
     } catch {
       return reply.status(403).send({ error: 'Invalid or expired token' });
     }
 
     const query = request.query as Record<string, string>;
+    const queryTenantId = typeof query.tenantId === 'string' && query.tenantId.trim().length > 0
+      ? query.tenantId.trim()
+      : null;
+    const jwtTenantId = extractPayloadTenantId(payload);
+    if (queryTenantId && jwtTenantId && queryTenantId !== jwtTenantId) {
+      return reply.status(403).send({
+        error: 'Forbidden',
+        message: 'Tenant mismatch between tenantId query parameter and JWT payload',
+      });
+    }
+
     const params = new URLSearchParams();
-    if (query.tenantId) params.set('tenantId', query.tenantId);
+    const effectiveTenantId = jwtTenantId ?? queryTenantId;
+    if (effectiveTenantId) params.set('tenantId', effectiveTenantId);
 
     const backendUrl = `${config.backendUrl}/events/stream?${params.toString()}`;
     const backendRes = await fetch(backendUrl, {

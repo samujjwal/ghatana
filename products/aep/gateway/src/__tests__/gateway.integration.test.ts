@@ -14,8 +14,8 @@ function makeJwt(payload: Record<string, unknown>, secret = TEST_SECRET): string
   return `${header}.${body}.${sig}`;
 }
 
-function validToken(): string {
-  return makeJwt({ sub: 'user-1', exp: Math.floor(Date.now() / 1000) + 3600 });
+function validToken(payload: Record<string, unknown> = {}): string {
+  return makeJwt({ sub: 'user-1', exp: Math.floor(Date.now() / 1000) + 3600, ...payload });
 }
 
 // ── Health endpoint ────────────────────────────────────────────────────────────
@@ -91,6 +91,20 @@ describe('Authentication', () => {
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().message).toBe('JWT has expired');
+  });
+
+  it('rejects tenant mismatch between JWT and X-Tenant-Id header', async () => {
+    const token = validToken({ tenantId: 'tenant-a' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'x-tenant-id': 'tenant-b',
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().message).toBe('Tenant mismatch between X-Tenant-Id header and JWT payload');
   });
 });
 
@@ -227,6 +241,17 @@ describe('HTTP Reverse Proxy', () => {
     expect(lastRequest.headers['x-tenant-id']).toBe('tenant-42');
   });
 
+  it('forwards tenantId from JWT when header is absent', async () => {
+    await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: {
+        authorization: `Bearer ${validToken({ tenantId: 'tenant-from-jwt' })}`,
+      },
+    });
+    expect(lastRequest.headers['x-tenant-id']).toBe('tenant-from-jwt');
+  });
+
   it('proxies POST with body to backend', async () => {
     const res = await app.inject({
       method: 'POST',
@@ -314,5 +339,60 @@ describe('WebSocket /tail/events auth', () => {
     });
     // 1011 = backend connection failed, which means auth succeeded
     expect(code).toBe(1011);
+  });
+});
+
+// ── SSE tenant parity and propagation ─────────────────────────────────────────
+describe('SSE /events/stream tenant handling', () => {
+  let app: FastifyInstance;
+  let backend: ReturnType<typeof createServer>;
+  let backendUrl: string;
+  let lastSseRequestUrl: string;
+
+  beforeEach(async () => {
+    backend = createServer((req: IncomingMessage, res: ServerResponse) => {
+      lastSseRequestUrl = req.url ?? '';
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.end('data: ok\\n\\n');
+    });
+    await new Promise<void>((resolve) => { backend.listen(0, '127.0.0.1', resolve); });
+    const addr = backend.address() as AddressInfo;
+    backendUrl = `http://127.0.0.1:${addr.port}`;
+
+    app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl,
+      allowedOrigins: ['http://localhost:5173'],
+    });
+    await app.ready();
+  });
+
+  afterEach(async () => {
+    await app.close();
+    await new Promise<void>((resolve) => { backend.close(() => resolve()); });
+  });
+
+  it('rejects tenant mismatch between query tenantId and JWT tenantId', async () => {
+    const token = validToken({ tenantId: 'tenant-a' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/events/stream?tenantId=tenant-b',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().message).toBe('Tenant mismatch between tenantId query parameter and JWT payload');
+  });
+
+  it('propagates tenantId from JWT when query tenantId is absent', async () => {
+    const token = validToken({ tenantId: 'tenant-jwt' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/events/stream',
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(lastSseRequestUrl).toBe('/events/stream?tenantId=tenant-jwt');
   });
 });

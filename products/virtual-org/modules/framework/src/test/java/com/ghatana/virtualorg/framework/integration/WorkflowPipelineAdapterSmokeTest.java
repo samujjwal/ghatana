@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.framework.integration;
 
-import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ class WorkflowPipelineAdapterSmokeTest {
 
     @BeforeEach
     void setUp() {
-        operatorCatalog = new InMemoryOperatorCatalog();
+        operatorCatalog = new UnifiedOperatorCatalog();
         adapter = new WorkflowPipelineAdapter(operatorCatalog);
     }
 

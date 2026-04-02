@@ -10,6 +10,7 @@
  * @doc.pattern Dispatcher
  */
 
+import { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 
 type GenerationJob = {
@@ -133,14 +134,14 @@ export class GenerationQueueDispatcher {
           status: "RUNNING",
           startedAt: new Date(),
           progress: Math.max(job.progress, 5),
-          diagnostics: mergeJobDiagnostics(job.diagnostics, {
+          diagnostics: toNullableJsonValue(mergeJobDiagnostics(job.diagnostics, {
             queueDispatch: {
               queueJobId:
                 enqueued.id != null ? String(enqueued.id) : queueJobId,
               enqueuedAt: new Date().toISOString(),
               dispatcher: "generation_queue_dispatcher",
             },
-          }),
+          })),
         },
       });
 
@@ -364,6 +365,12 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function toNullableJsonValue(
+  value: Record<string, unknown> | null,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value ? (value as Prisma.InputJsonValue) : Prisma.JsonNull;
 }
 
 function mapReviewPath(value: string): "auto_publish" | "expert_review" | "human_review" {

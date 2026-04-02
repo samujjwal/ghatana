@@ -25,13 +25,25 @@
     "check:duplicate-packages": "./scripts/check-duplicate-package-names.sh",
     "check:platform-package-governance": "node ./scripts/check-platform-package-governance.js",
     "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
-    "check:license-policy": "./scripts/check-license-policy.sh"
+    "check:license-policy": "./scripts/check-license-policy.sh",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.2.4",
     "turbo": "^1.12.0",
     "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "**/*.{js,jsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "pnpm": {
     "overrides": {

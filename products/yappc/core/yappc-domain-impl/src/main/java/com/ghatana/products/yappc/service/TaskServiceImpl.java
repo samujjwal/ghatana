@@ -2,6 +2,7 @@ package com.ghatana.products.yappc.service;
 
 import com.ghatana.products.yappc.domain.task.*;
 import com.ghatana.platform.core.exception.ResourceNotFoundException;
+import com.ghatana.platform.core.validation.ValidationResult;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -50,6 +51,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @NotNull
+    @SuppressWarnings("unchecked")
     public <TInput, TOutput> Promise<TaskResult<TOutput>> executeTask(
             @NotNull String taskId,
             @NotNull TInput input,
@@ -74,12 +76,12 @@ public class TaskServiceImpl implements TaskService {
 
         // 2. Validate input
         ValidationResult validation = validator.validateInput(task, input);
-        if (!validation.valid()) {
-            LOG.warn("Task input validation failed for {}: {}", taskId, validation.errors());
+        if (!validation.isValid()) {
+            LOG.warn("Task input validation failed for {}: {}", taskId, validation.violations());
             return Promise.of(TaskResult.<TOutput>failure(
                 executionId,
                 taskId,
-                "Validation failed: " + String.join(", ", validation.errors())
+                "Validation failed: " + validation.violations().stream().map(ValidationResult.Violation::message).collect(java.util.stream.Collectors.joining(", "))
             ));
         }
 
@@ -95,7 +97,7 @@ public class TaskServiceImpl implements TaskService {
             null,
             startTime,
             null,
-            context.metadata()
+            withExecutionContextMetadata(context)
         );
         executionStore.put(executionId, execution);
 
@@ -118,7 +120,7 @@ public class TaskServiceImpl implements TaskService {
                     null,
                     startTime,
                     endTime,
-                    context.metadata()
+                    withExecutionContextMetadata(context)
                 );
                 executionStore.put(executionId, completedExecution);
 
@@ -153,7 +155,7 @@ public class TaskServiceImpl implements TaskService {
                     error.getMessage(),
                     startTime,
                     endTime,
-                    context.metadata()
+                    withExecutionContextMetadata(context)
                 );
                 executionStore.put(executionId, failedExecution);
             });
@@ -169,7 +171,7 @@ public class TaskServiceImpl implements TaskService {
         boolean skipDependencies = Boolean.TRUE.equals(context.metadata().get("skipDependencies"));
 
         if (skipDependencies || root.dependencies().isEmpty()) {
-            return orchestrator.execute(root, input, context).map(o -> (Object) o);
+            return orchestrator.execute(root, input, context).map(o -> o);
         }
 
         Map<String, TaskDefinition> graph = new HashMap<>();
@@ -334,9 +336,9 @@ public class TaskServiceImpl implements TaskService {
         try {
             // Validate task definition
             ValidationResult validation = validator.validateTaskDefinition(definition);
-            if (!validation.valid()) {
+            if (!validation.isValid()) {
                 return Promise.of(TaskRegistrationResult.failure(
-                        "Invalid task definition: " + String.join(", ", validation.errors())
+                        "Invalid task definition: " + validation.violations().stream().map(ValidationResult.Violation::message).collect(java.util.stream.Collectors.joining(", "))
                 ));
             }
 
@@ -374,7 +376,7 @@ public class TaskServiceImpl implements TaskService {
     public Promise<ValidationResult> validateTaskInput(@NotNull String taskId, @NotNull Object input) {
         Optional<TaskDefinition> taskOpt = taskRegistry.getTask(taskId);
         if (taskOpt.isEmpty()) {
-            return Promise.of(ValidationResult.failure("Task not found: " + taskId));
+            return Promise.of(ValidationResult.invalid("taskId", "Task not found: " + taskId));
         }
         return Promise.of(validator.validateInput(taskOpt.get(), input));
     }
@@ -439,6 +441,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private boolean matchesFilter(TaskExecution execution, TaskHistoryFilter filter) {
+        if (filter.tenantId() != null && !filter.tenantId().equals(execution.metadata().get("tenantId"))) {
+            return false;
+        }
         if (filter.userId() != null && !filter.userId().equals(execution.userId())) {
             return false;
         }
@@ -458,6 +463,14 @@ public class TaskServiceImpl implements TaskService {
             return false;
         }
         return true;
+    }
+
+    @NotNull
+    private Map<String, Object> withExecutionContextMetadata(@NotNull TaskExecutionContext context) {
+        Map<String, Object> metadata = new HashMap<>(context.metadata());
+        metadata.put("tenantId", context.tenantId());
+        metadata.put("traceId", context.traceId());
+        return Map.copyOf(metadata);
     }
 
     private String generateExecutionId() {

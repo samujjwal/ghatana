@@ -21,11 +21,11 @@ rule_files:
   - "ci/monitoring/alerts/*.yml"
 
 scrape_configs:
-  # Tutorputor Main Application (Node.js Prometheus client on port 9090)
+  # Tutorputor Main Application (Node.js Prometheus client on the main HTTP port)
   - job_name: "tutorputor-app"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["tutorputor-app:9090"]
+      - targets: ["tutorputor-app:3000"]
         labels:
           service: "tutorputor-app"
           tier: "application"

@@ -476,17 +476,31 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     Mockito.eq("datacloud.sensitive-route-access"), any());
         }
 
+            @Test
+            @DisplayName("CRITICAL path policy evaluation uses authenticated tenant context")
+            void criticalPath_policyContextUsesAuthenticatedTenant() {
+                when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE));
+                AsyncServlet secured = enforcing().apply(OK_DELEGATE);
+                HttpRequest req = get(CRITICAL_PATH);
+
+                runPromise(() -> secured.serve(req).map(HttpResponse::getCode));
+
+                @SuppressWarnings("unchecked")
+                ArgumentCaptor<Map<String, Object>> contextCaptor = ArgumentCaptor.forClass(Map.class);
+                verify(policyEngine).evaluate(
+                    Mockito.eq("datacloud.sensitive-route-access"), contextCaptor.capture());
+                assertThat(contextCaptor.getValue()).containsEntry("tenantId", TEST_TENANT);
+            }
+
         @Test
         @DisplayName("policyExcludedTenants bypasses policy engine for matching tenant")
         void criticalPath_excludedTenant_bypassesPolicy() {
-            // Policy evaluation currently runs after the tenant scope has closed,
-            // so the governance TenantContext falls back to its default tenant id.
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder()
                     .apiKeyResolver(apiKeyResolver)
                     .policyEngine(policyEngine)
                     .auditService(auditService)
                     .enforcing(true)
-                .policyExcludedTenants(Set.of("default-tenant"))
+                    .policyExcludedTenants(Set.of(TEST_TENANT))
                     .build();
 
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE));

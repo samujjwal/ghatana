@@ -17,6 +17,7 @@ import type { HealthAwareAnalyticsService } from "./analytics-service";
 import type { LearnerProfileService } from "./learner-profile-service";
 import type { SessionAdaptationEngine } from "../adaptation/session-engine.js";
 import type { ContentVariationService } from "../content/variation/service.js";
+import { learningMetrics } from "./learning-metrics.js";
 import {
   createSimulationAssessmentIntegration,
   scoreSimulationAssessmentResponse,
@@ -43,6 +44,7 @@ import {
   getTenantId,
   getUserId,
   roleGuard,
+  respondWithErrors,
 } from "../../core/http/requestContext.js";
 import { writeSseEvent } from "../../core/http/sse.js";
 
@@ -140,13 +142,14 @@ async function learningRoutes(
         userId,
         moduleId as ModuleId,
       );
+      learningMetrics.recordEnrollment(tenantId, "new");
       return reply.status(201).send(enrollment);
     },
   );
 
   fastify.patch<{
     Params: { id: string };
-    Body: { progressPercent: number; timeSpentSecondsDelta: number };
+    Body: { progressPercent: number; timeSpentSecondsDelta?: number };
   }>(
     "/enrollments/:id/progress",
     {
@@ -175,21 +178,31 @@ async function learningRoutes(
       const enrollmentId = request.params.id as EnrollmentId;
       const { progressPercent, timeSpentSecondsDelta } = request.body;
 
-      try {
+      const snapshot = await learnerProfileService.getPersonalizationSnapshot(
+        tenantId,
+        userId,
+      );
+
+      await respondWithErrors(reply, async () => {
         const updated = await learningService.updateProgress({
           tenantId,
           userId,
           enrollmentId,
           progressPercent,
           timeSpentSecondsDelta: timeSpentSecondsDelta ?? 0,
+          constraints: {
+            preferredPacing: snapshot.preferredPacing,
+            preferredSessionMinutes:
+              snapshot.sessionPreferences.preferredSessionMinutes,
+            adjustedDifficulty: snapshot.adjustedDifficulty,
+          },
         });
-        return reply.send(updated);
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes("not found")) {
-          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
+        learningMetrics.recordProgressUpdate(tenantId);
+        if (updated.progressPercent === 100) {
+          learningMetrics.recordCompletion(tenantId);
         }
-        throw e;
-      }
+        return updated;
+      });
     },
   );
 
@@ -612,15 +625,16 @@ async function learningRoutes(
       const tenantId = getTenantId(request) as TenantId;
       const userId = getUserId(request) as UserId;
       const { moduleId, count, difficulty, objectiveIds } = request.body;
-      const result = await assessmentService.generateAssessmentItems({
-        tenantId,
-        userId,
-        moduleId: moduleId as ModuleId,
-        count: count ?? 5,
-        difficulty: (difficulty as Difficulty | undefined) ?? "INTERMEDIATE",
-        objectiveIds: objectiveIds ?? [],
-      });
-      return reply.send(result);
+      await respondWithErrors(reply, async () =>
+        assessmentService.generateAssessmentItems({
+          tenantId,
+          userId,
+          moduleId: moduleId as ModuleId,
+          count: count ?? 5,
+          difficulty: (difficulty as Difficulty | undefined) ?? "INTERMEDIATE",
+          objectiveIds: objectiveIds ?? [],
+        }),
+      );
     },
   );
 
@@ -878,6 +892,37 @@ async function learningRoutes(
         sessionId: request.params.sessionId,
         ...request.body,
       });
+
+      if (decision.adapted) {
+        await analyticsService.recordEvent({
+          tenantId,
+          event: {
+            type: "ai_tutor_message",
+            userId,
+            timestamp: request.body.occurredAt,
+            payload: {
+              source: "session_adaptation",
+              sessionId: request.params.sessionId,
+              assetId: request.body.assetId,
+              trigger: decision.trigger,
+              reason: decision.reason,
+              recommendation: decision.recommendation,
+              eventType: request.body.eventType,
+              variant: decision.variant
+                ? {
+                    variantId: decision.variant.variantId,
+                    family: decision.variant.family,
+                    key: decision.variant.key,
+                    strategy: decision.variant.metadata.strategy,
+                  }
+                : undefined,
+              observedSignals: decision.observedSignals,
+              adapted: true,
+            },
+          },
+        });
+      }
+
       return reply.status(200).send(decision);
     },
   );
@@ -894,7 +939,11 @@ async function learningRoutes(
       },
     },
     async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const decision = await sessionAdaptationEngine.getCurrentAdaptation(
+        tenantId,
+        userId,
         request.params.sessionId,
         request.query.assetId,
       );
@@ -918,7 +967,11 @@ async function learningRoutes(
       },
     },
     async (request, reply) => {
+      const tenantId = getTenantId(request) as TenantId;
+      const userId = getUserId(request) as UserId;
       const decision = await sessionAdaptationEngine.getCurrentAdaptation(
+        tenantId,
+        userId,
         request.params.sessionId,
         request.query.assetId,
       );

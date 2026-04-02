@@ -30,6 +30,18 @@ interface SsoServiceDeps {
   baseUrl: string; // e.g., https://api.tutorputor.com
   generateAccessToken: (userId: string, tenantId: string) => string;
   generateRefreshToken: (userId: string, tenantId: string) => string;
+  onUserAuthenticated?: (args: {
+    tenantId: TenantId;
+    userId: string;
+    isNewUser: boolean;
+  }) => Promise<void>;
+}
+
+interface ProviderRuntimeConfig {
+  discoveryEndpoint: string;
+  clientId: string;
+  allowedDomains: string[];
+  roleMapping: Record<string, string>;
 }
 
 // =============================================================================
@@ -54,21 +66,62 @@ const stateCache = new Map<
 // =============================================================================
 
 export function createSsoService(deps: SsoServiceDeps): SsoService {
-  const { prisma, baseUrl, generateAccessToken, generateRefreshToken } = deps;
+  const {
+    prisma,
+    baseUrl,
+    generateAccessToken,
+    generateRefreshToken,
+    onUserAuthenticated,
+  } = deps;
 
-  function getProviderRuntimeConfig(provider: Record<string, unknown>) {
+  function getProviderRuntimeConfig(
+    provider: Record<string, unknown>,
+  ): ProviderRuntimeConfig {
+    const parseStringArray = (value: unknown): string[] => {
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value) as unknown;
+          return Array.isArray(parsed)
+            ? parsed.filter((entry): entry is string => typeof entry === "string")
+            : [];
+        } catch {
+          return [];
+        }
+      }
+
+      return Array.isArray(value)
+        ? value.filter((entry): entry is string => typeof entry === "string")
+        : [];
+    };
+
+    const parseRoleMapping = (value: unknown): Record<string, string> => {
+      const parsed =
+        typeof value === "string"
+          ? (() => {
+              try {
+                return JSON.parse(value) as unknown;
+              } catch {
+                return {};
+              }
+            })()
+          : value;
+
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return {};
+      }
+
+      return Object.fromEntries(
+        Object.entries(parsed).filter(
+          (entry): entry is [string, string] => typeof entry[1] === "string",
+        ),
+      );
+    };
+
     return {
-      discoveryEndpoint: provider.discoveryEndpoint,
-      clientId: provider.clientId,
-      clientSecret: provider.clientSecret ?? undefined,
-      allowedDomains:
-        typeof provider.allowedDomains === "string"
-          ? JSON.parse(provider.allowedDomains)
-          : (provider.allowedDomains ?? []),
-      roleMapping:
-        typeof provider.roleMapping === "string"
-          ? JSON.parse(provider.roleMapping)
-          : (provider.roleMapping ?? {}),
+      discoveryEndpoint: String(provider.discoveryEndpoint ?? ""),
+      clientId: String(provider.clientId ?? ""),
+      allowedDomains: parseStringArray(provider.allowedDomains),
+      roleMapping: parseRoleMapping(provider.roleMapping),
     };
   }
 
@@ -83,7 +136,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     const client = new OidcClient({
       discoveryEndpoint: config.discoveryEndpoint,
       clientId: config.clientId,
-      clientSecret: config.clientSecret,
+      clientSecret: "",
       redirectUri: `${baseUrl}/api/auth/sso/callback/${providerId}`,
       scopes: ["openid", "profile", "email"],
       expectedAudience: config.clientId,
@@ -138,11 +191,15 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         where: { tenantId: tenant.id, enabled: true },
         select: { id: true, displayName: true, type: true },
       });
-      return providers as unknown[];
+      return providers.map((provider) => ({
+        id: String(provider.id),
+        displayName: String(provider.displayName),
+        type: provider.type as "oidc" | "saml",
+      }));
     },
 
     async createProvider({ tenantId, config }) {
-      const providerConfig = (config as { config?: Record<string, unknown> }).config ?? {};
+      const oidcConfig = config.oidcConfig ?? {};
 
       // @ts-ignore
       const created = await prisma.identityProvider.create({
@@ -151,17 +208,27 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           displayName: config.displayName,
           type: config.type,
           enabled: config.enabled,
-          discoveryEndpoint: providerConfig.discoveryEndpoint ?? "",
-          clientId: providerConfig.clientId ?? "",
-          clientSecret: providerConfig.clientSecret ?? null,
-          allowedDomains: JSON.stringify(providerConfig.allowedDomains ?? []),
-          roleMapping: JSON.stringify((config as { roleMapping?: unknown }).roleMapping || {}),
+          discoveryEndpoint: config.discoveryEndpoint,
+          clientId: config.clientId,
+          clientSecret: null,
+          allowedDomains: JSON.stringify(config.allowedDomains ?? []),
+          roleMapping: JSON.stringify(config.roleMapping ?? {}),
         },
       });
       return mapDbProviderToConfig(created);
     },
 
-    async updateProvider({ tenantId, providerId, updates }: { tenantId: string; providerId: string; updates: Record<string, unknown> }) {
+    async updateProvider({
+      tenantId,
+      providerId,
+      patch,
+    }: {
+      tenantId: TenantId;
+      providerId: string;
+      patch: Partial<
+        Omit<IdentityProviderConfig, "id" | "tenantId" | "createdAt">
+      >;
+    }) {
       // @ts-ignore
       const current = await prisma.identityProvider.findFirst({
         where: { id: providerId, tenantId },
@@ -169,19 +236,20 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
       if (!current) throw new Error("Provider not found");
 
       const data: Record<string, unknown> = {};
-      if (updates.displayName) data.displayName = updates.displayName;
-      if (updates.enabled !== undefined) data.enabled = updates.enabled;
-      if (updates.config?.discoveryEndpoint)
-        data.discoveryEndpoint = updates.config.discoveryEndpoint;
-      if (updates.config?.clientId) data.clientId = updates.config.clientId;
-      if ("clientSecret" in (updates.config || {})) {
-        data.clientSecret = updates.config.clientSecret ?? null;
+      if (patch.displayName) data.displayName = patch.displayName;
+      if (patch.enabled !== undefined) data.enabled = patch.enabled;
+      if (patch.discoveryEndpoint) {
+        data.discoveryEndpoint = patch.discoveryEndpoint;
       }
-      if (updates.config?.allowedDomains) {
-        data.allowedDomains = JSON.stringify(updates.config.allowedDomains);
+      if (patch.clientId) {
+        data.clientId = patch.clientId;
       }
-      if (updates.roleMapping)
-        data.roleMapping = JSON.stringify(updates.roleMapping);
+      if (patch.allowedDomains) {
+        data.allowedDomains = JSON.stringify(patch.allowedDomains);
+      }
+      if (patch.roleMapping) {
+        data.roleMapping = JSON.stringify(patch.roleMapping);
+      }
 
       // @ts-ignore
       const updated = await prisma.identityProvider.update({
@@ -331,6 +399,7 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         where: { tenantId: storedState.tenantId, email: externalUser.email },
       });
 
+      let isNewUser = false;
       if (!user) {
         // Derive role from OIDC claims using configurable role mapping.
         // Priority: role claim from IdP config > default from provider config > fallback "student"
@@ -368,6 +437,15 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
             role: mappedRole,
           },
         });
+        isNewUser = true;
+      }
+
+      if (onUserAuthenticated) {
+        await onUserAuthenticated({
+          tenantId: storedState.tenantId,
+          userId: String(user.id),
+          isNewUser,
+        });
       }
 
       // 5. Generate Session
@@ -385,7 +463,6 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           role: (user as { role?: UserRole }).role as UserRole,
           tenantId: user.tenantId as TenantId,
         },
-        redirectUri: storedState.redirectUri,
       };
     },
 

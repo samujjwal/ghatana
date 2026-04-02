@@ -31,6 +31,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: stt
           image: ghcr.io/ghatana/audio-video/stt-service:latest

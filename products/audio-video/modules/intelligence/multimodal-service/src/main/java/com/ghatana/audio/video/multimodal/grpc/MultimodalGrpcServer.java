@@ -2,6 +2,7 @@ package com.ghatana.audio.video.multimodal.grpc;
 
 import com.ghatana.audio.video.common.GrpcInterceptorChain;
 import com.ghatana.audio.video.common.health.HealthMetricsServer;
+import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
 import com.ghatana.platform.governance.security.TenantGrpcInterceptor;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -34,7 +35,7 @@ public class MultimodalGrpcServer implements AutoCloseable {
             .intercept(TenantGrpcInterceptor.lenient());
         GrpcInterceptorChain.build().forEach(builder::intercept);
         this.server = builder
-            .addService(new MultimodalGrpcService())
+            .addService(new MultimodalGrpcService(MediaProcessingMetrics.create()))
             .build();
         this.healthServer = new HealthMetricsServer("multimodal-service", () -> !server.isShutdown());
     }

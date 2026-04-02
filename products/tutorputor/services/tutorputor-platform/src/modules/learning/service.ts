@@ -22,7 +22,7 @@ import type {
   UserId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
-import { NotFoundError } from "../../core/errors";
+import { NotFoundError, ValidationError } from "../../core/errors";
 
 // =============================================================================
 // Types
@@ -38,9 +38,16 @@ export type HealthAwareLearningService = Omit<
     enrollmentId: EnrollmentId;
     progressPercent: number;
     timeSpentSecondsDelta: number;
+    constraints?: ProgressUpdateConstraints;
   }) => Promise<Enrollment>;
   checkHealth: () => Promise<boolean>;
 };
+
+export interface ProgressUpdateConstraints {
+  preferredPacing: "SELF_PACED" | "GUIDED" | "ADAPTIVE" | "INTENSIVE";
+  preferredSessionMinutes: number;
+  adjustedDifficulty: "beginner" | "easy" | "medium" | "hard" | "expert";
+}
 
 type ModuleTag = {
   label: string;
@@ -111,7 +118,7 @@ export function createLearningService(
           id: user.id as UserId,
           email: user.email,
           displayName: user.displayName,
-          role: user.role as any,
+          role: user.role as DashboardSummary["user"]["role"],
         },
         currentEnrollments: enrollments.map(mapEnrollment),
         recommendedModules: modules.map((module) => mapModuleSummary(module)),
@@ -152,6 +159,7 @@ export function createLearningService(
       enrollmentId,
       progressPercent,
       timeSpentSecondsDelta,
+      constraints,
     }) {
       const enrollment = await prisma.enrollment.findFirst({
         where: { id: enrollmentId, tenantId, userId },
@@ -165,6 +173,12 @@ export function createLearningService(
         enrollment.progressPercent,
         progressPercent,
       );
+      validateProgressUpdateConstraints({
+        currentProgress: enrollment.progressPercent,
+        requestedProgress: nextProgress,
+        timeSpentSecondsDelta,
+        constraints,
+      });
       const totalTime = Math.max(
         0,
         enrollment.timeSpentSeconds + timeSpentSecondsDelta,
@@ -215,6 +229,79 @@ async function assertModuleExists(
 
 export function clampProgress(current: number, requested: number) {
   return Math.max(current, Math.min(requested, 100));
+}
+
+function validateProgressUpdateConstraints(args: {
+  currentProgress: number;
+  requestedProgress: number;
+  timeSpentSecondsDelta: number;
+  constraints?: ProgressUpdateConstraints;
+}) {
+  const { currentProgress, requestedProgress, timeSpentSecondsDelta, constraints } = args;
+  if (!constraints) {
+    return;
+  }
+
+  const deltaProgress = Math.max(0, requestedProgress - currentProgress);
+  if (deltaProgress === 0) {
+    return;
+  }
+
+  if (timeSpentSecondsDelta <= 0) {
+    throw new ValidationError(
+      "Progress updates that advance completion must include time spent.",
+    );
+  }
+
+  const sessionSecondsPerProgressPoint =
+    Math.max(constraints.preferredSessionMinutes, 1) * 0.6;
+  const pacingMultiplier = getPacingMultiplier(constraints.preferredPacing);
+  const difficultyMultiplier = getDifficultyMultiplier(
+    constraints.adjustedDifficulty,
+  );
+  const minimumRequiredSeconds = Math.ceil(
+    deltaProgress * sessionSecondsPerProgressPoint * pacingMultiplier * difficultyMultiplier,
+  );
+
+  if (timeSpentSecondsDelta < minimumRequiredSeconds) {
+    throw new ValidationError(
+      `Progress update advances too quickly for the learner pacing profile; expected at least ${minimumRequiredSeconds} seconds for ${deltaProgress} progress points.`,
+    );
+  }
+}
+
+function getPacingMultiplier(
+  preferredPacing: ProgressUpdateConstraints["preferredPacing"],
+) {
+  switch (preferredPacing) {
+    case "SELF_PACED":
+      return 0.85;
+    case "GUIDED":
+      return 1.2;
+    case "INTENSIVE":
+      return 0.65;
+    case "ADAPTIVE":
+    default:
+      return 1;
+  }
+}
+
+function getDifficultyMultiplier(
+  adjustedDifficulty: ProgressUpdateConstraints["adjustedDifficulty"],
+) {
+  switch (adjustedDifficulty) {
+    case "beginner":
+      return 1.25;
+    case "easy":
+      return 1.1;
+    case "hard":
+      return 0.9;
+    case "expert":
+      return 0.8;
+    case "medium":
+    default:
+      return 1;
+  }
 }
 
 function mapEnrollment(record: EnrollmentRecord): Enrollment {

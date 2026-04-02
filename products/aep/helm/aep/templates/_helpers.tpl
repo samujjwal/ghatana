@@ -66,3 +66,14 @@ Secret name where credentials are stored.
 {{- define "aep.secretName" -}}
 {{- .Values.existingSecret | default (printf "%s-secrets" (include "aep.fullname" .)) }}
 {{- end }}
+
+{{/*
+Service account name used by the workload.
+*/}}
+{{- define "aep.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "aep.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}

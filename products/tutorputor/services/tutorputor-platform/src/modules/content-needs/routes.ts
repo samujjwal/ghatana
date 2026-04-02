@@ -6,6 +6,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import type { ContentNeeds } from "@tutorputor/contracts/v1/learning-unit";
 import type { ContentNeedsAnalyzer } from "./service";
 import type { ContentDriftDetector } from "./drift-detector";
 import type { ContentQualityMLPipeline } from "../content/quality-ml/pipeline";
@@ -66,7 +67,7 @@ export function registerContentNeedsRoutes(
     try {
       const content = await contentNeedsAnalyzer.generateContentForClaim(
         claimId,
-        needs,
+        needs as ContentNeeds,
       );
       return { success: true, data: content };
     } catch (error) {

@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { createLearningService, clampProgress } from "../service";
-import { NotFoundError } from "../../../core/errors";
+import { NotFoundError, ValidationError } from "../../../core/errors";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 // ---------------------------------------------------------------------------
@@ -191,6 +191,31 @@ describe("createLearningService", () => {
       });
 
       expect(result.status).toBe("COMPLETED");
+    });
+
+    it("rejects progress jumps that violate learner pacing constraints", async () => {
+      const existing = makeEnrollment({ progressPercent: 20 });
+
+      vi.mocked(prisma.enrollment.findFirst).mockResolvedValue(
+        existing as never,
+      );
+
+      await expect(
+        service.updateProgress({
+          tenantId: TENANT,
+          userId: USER,
+          enrollmentId: "enr-1" as never,
+          progressPercent: 80,
+          timeSpentSecondsDelta: 120,
+          constraints: {
+            preferredPacing: "GUIDED",
+            preferredSessionMinutes: 30,
+            adjustedDifficulty: "beginner",
+          },
+        }),
+      ).rejects.toThrow(ValidationError);
+
+      expect(prisma.enrollment.update).not.toHaveBeenCalled();
     });
   });
 

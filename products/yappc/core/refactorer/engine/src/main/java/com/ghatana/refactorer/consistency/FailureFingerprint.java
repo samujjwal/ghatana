@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.consistency;
 
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -43,7 +44,7 @@ public class FailureFingerprint {
             return BASE64_ENCODER.encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
             // Should not happen as SHA-256 is required to be available
-            throw new RuntimeException("Failed to generate fingerprint", e);
+            throw new RefactorerOperationException("Failed to generate fingerprint", e);
         }
     }
 

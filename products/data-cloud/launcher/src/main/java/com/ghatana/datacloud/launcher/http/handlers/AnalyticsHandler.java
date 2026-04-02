@@ -4,6 +4,7 @@ import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
 import com.ghatana.datacloud.analytics.report.ReportDefinition;
 import com.ghatana.datacloud.analytics.report.ReportResult;
 import com.ghatana.datacloud.analytics.report.ReportService;
+import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -24,11 +25,13 @@ import java.util.Map;
  */
 public class AnalyticsHandler {
 
+    private static final String HANDLER_NAME = "AnalyticsHandler";
     private static final Logger log = LoggerFactory.getLogger(AnalyticsHandler.class);
 
     private final AnalyticsQueryEngine analyticsEngine;
     private final HttpHandlerSupport http;
     private ReportService reportService;
+    private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
 
     public AnalyticsHandler(AnalyticsQueryEngine analyticsEngine, HttpHandlerSupport http) {
         this.analyticsEngine = analyticsEngine;
@@ -40,6 +43,11 @@ public class AnalyticsHandler {
         return this;
     }
 
+    public AnalyticsHandler withMetrics(DataCloudHttpMetrics metrics) {
+        this.httpMetrics = metrics;
+        return this;
+    }
+
     // ==================== Analytics Endpoints (DC-9) ====================
 
     @SuppressWarnings("unchecked")
@@ -48,6 +56,7 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String tenantId = http.resolveTenantId(request);
+        long start = System.currentTimeMillis();
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
@@ -60,20 +69,26 @@ public class AnalyticsHandler {
                     ? (Map<String, Object>) payload.get("parameters")
                     : Map.of();
                 return analyticsEngine.submitQuery(tenantId, queryText, params)
-                    .map(result -> http.jsonResponse(Map.of(
-                        "queryId",         result.getQueryId(),
-                        "queryType",       result.getQueryType(),
-                        "rowCount",        result.getRowCount(),
-                        "columnCount",     result.getColumnCount(),
-                        "rows",            result.getRows(),
-                        "executionTimeMs", result.getExecutionTimeMs(),
-                        "optimized",       result.isOptimized(),
-                        "timestamp",       Instant.now().toString()
-                    )))
+                    .map(result -> {
+                        HttpResponse response = http.jsonResponse(Map.of(
+                            "queryId",         result.getQueryId(),
+                            "queryType",       result.getQueryType(),
+                            "rowCount",        result.getRowCount(),
+                            "columnCount",     result.getColumnCount(),
+                            "rows",            result.getRows(),
+                            "executionTimeMs", result.getExecutionTimeMs(),
+                            "optimized",       result.isOptimized(),
+                            "timestamp",       Instant.now().toString()
+                        ));
+                        httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
+                        httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
+                        return response;
+                    })
                     .then(
                         response -> Promise.of(response),
                         e -> {
                             log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
+                            httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsQuery", e);
                             return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
                         }
                     );
@@ -149,6 +164,7 @@ public class AnalyticsHandler {
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String tenantId = http.resolveTenantId(request);
+        long start = System.currentTimeMillis();
         return request.loadBody()
             .then(
                 buf -> {
@@ -169,19 +185,25 @@ public class AnalyticsHandler {
                             ? (Map<String, Object>) payload.get("parameters")
                             : Map.of();
                         return analyticsEngine.submitQuery(tenantId, queryText, params)
-                            .map(result -> http.jsonResponse(Map.of(
-                                "queryId",         result.getQueryId(),
-                                "queryType",       result.getQueryType(),
-                                "rowCount",        result.getRowCount(),
-                                "rows",            result.getRows(),
-                                "executionTimeMs", result.getExecutionTimeMs(),
-                                "optimized",       result.isOptimized(),
-                                "timestamp",       Instant.now().toString()
-                            )))
+                            .map(result -> {
+                                HttpResponse response = http.jsonResponse(Map.of(
+                                    "queryId",         result.getQueryId(),
+                                    "queryType",       result.getQueryType(),
+                                    "rowCount",        result.getRowCount(),
+                                    "rows",            result.getRows(),
+                                    "executionTimeMs", result.getExecutionTimeMs(),
+                                    "optimized",       result.isOptimized(),
+                                    "timestamp",       Instant.now().toString()
+                                ));
+                                httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsAggregate", tenantId, response.getCode());
+                                httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsAggregate", System.currentTimeMillis() - start);
+                                return response;
+                            })
                             .then(
                                 response -> Promise.of(response),
                                 e -> {
                                     log.error("[DC-9] analytics aggregate failed: {}", e.getMessage(), e);
+                                    httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsAggregate", e);
                                     return Promise.of(http.errorResponse(500, "Aggregate query failed: " + e.getMessage()));
                                 }
                             );

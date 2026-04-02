@@ -65,3 +65,14 @@ Secret name where credentials are stored.
 {{- define "data-cloud.secretName" -}}
 {{- .Values.existingSecret | default (printf "%s-secrets" (include "data-cloud.fullname" .)) }}
 {{- end }}
+
+{{/*
+Service account name used by the workload.
+*/}}
+{{- define "data-cloud.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "data-cloud.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}

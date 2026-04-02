@@ -12,6 +12,7 @@
  */
 
 import crypto from "crypto";
+import { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   ArtifactManifestType,
@@ -100,7 +101,7 @@ export class AssetMaterializationService {
         data: {
           slug,
           title: shape.title,
-          assetType: shape.assetType.toUpperCase(),
+          assetType: shape.assetType.toUpperCase() as never,
           domain: normalizeAssetDomain(input.domain),
           conceptId: input.conceptId ?? null,
           status: "DRAFT",
@@ -131,7 +132,7 @@ export class AssetMaterializationService {
           tenantId: input.tenantId,
           slug,
           title: shape.title,
-          assetType: shape.assetType.toUpperCase(),
+          assetType: shape.assetType.toUpperCase() as never,
           domain: normalizeAssetDomain(input.domain),
           conceptId: input.conceptId ?? null,
           status: "DRAFT",
@@ -153,11 +154,13 @@ export class AssetMaterializationService {
         data: {
           assetId: asset.id,
           blockRef: block.blockRef,
-          blockType: block.blockType.toUpperCase(),
+          blockType: block.blockType.toUpperCase() as never,
           orderIndex: block.orderIndex,
           title: block.title ?? null,
-          payload: block.payload,
-          claimRefs: block.claimRefs ?? null,
+          payload: toInputJsonValue(block.payload),
+          claimRefs: block.claimRefs
+            ? (block.claimRefs as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         },
       });
     }
@@ -166,12 +169,14 @@ export class AssetMaterializationService {
       await this.prisma.artifactManifest.create({
         data: {
           assetId: asset.id,
-          manifestType: manifest.manifestType.toUpperCase(),
+          manifestType: manifest.manifestType.toUpperCase() as never,
           version: manifest.version,
           claimRef: manifest.claimRef ?? null,
-          manifest: manifest.manifest,
+          manifest: toInputJsonValue(manifest.manifest),
           isValid: manifest.isValid,
-          validationErrors: manifest.validationErrors ?? null,
+          validationErrors: manifest.validationErrors
+            ? (manifest.validationErrors as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           generatedBy: manifest.generatedBy,
           generationId: input.requestId,
         },
@@ -183,7 +188,7 @@ export class AssetMaterializationService {
         assetId: asset.id,
         version,
         changeNote: `Generated from ${input.jobType} job ${input.jobId}`,
-        snapshot: shape.snapshot,
+        snapshot: toInputJsonValue(shape.snapshot),
         createdBy: input.requestedBy,
       },
     });
@@ -516,4 +521,8 @@ function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0
     ? value.trim()
     : undefined;
+}
+
+function toInputJsonValue(value: Record<string, unknown>): Prisma.InputJsonValue {
+  return value as Prisma.InputJsonValue;
 }

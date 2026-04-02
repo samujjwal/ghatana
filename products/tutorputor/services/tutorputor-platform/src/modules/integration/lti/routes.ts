@@ -36,13 +36,21 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post("/launch", async (request, reply) => {
     try {
+      let tenantId: TenantId | undefined;
+      try {
+        tenantId = getTenantId(request) as TenantId;
+      } catch {
+        tenantId = undefined;
+      }
+
       const validation = await ltiValidator.validateLaunchRequest(
         request.body,
-        "public" as TenantId,
+        tenantId,
       );
 
       app.log.info(
         {
+          tenantId: tenantId ?? "state-derived",
           state: validation.state,
           platformId: validation.launchContext?.platformId,
           contextId: validation.launchContext?.contextId,

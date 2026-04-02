@@ -58,14 +58,20 @@ Configured in [prometheus/prometheus.yml](prometheus/prometheus.yml):
 - backend-api: `localhost:8000/metrics`
 
 **AEP Services:**
-- aep-server: `localhost:8090/metrics`
+- aep-service-manager: `localhost:8090/metrics`
 
 **Data Cloud:**
+- data-cloud-platform: `localhost:8082/metrics`
 - data-cloud-event: `localhost:8100/metrics`
+
+**Tutorputor:**
+- tutorputor-app: `localhost:3000/metrics`
 
 **Infrastructure:**
 - PostgreSQL exporter: `localhost:9187/metrics`
 - Redis exporter: `localhost:9121/metrics`
+
+The repo-wide canonical Prometheus and Grafana assets used by the broader platform live under `monitoring/` at the repository root. This `shared-services/infrastructure/monitoring` directory is the local shared observability compose stack, and its live Prometheus configuration is `prometheus/prometheus.yml` plus `prometheus/rules/*.yml`.
 
 ### Alert Rules
 

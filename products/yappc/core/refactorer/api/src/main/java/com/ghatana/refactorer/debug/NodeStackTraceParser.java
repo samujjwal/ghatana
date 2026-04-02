@@ -21,8 +21,11 @@ public final class NodeStackTraceParser implements StackTraceParser {
      */
     public static final Pattern DEFAULT_FRAME_PATTERN =
             Pattern.compile(
-                    "^\\s*at\\s+(?:(.+?)\\s+\\()?([^:]+?):(\\d+)(?::(\\d+))?\\s*(?:\\)|$)",
+                "^\\s*at\\s+(?:(.+?)\\s+\\()?(.+?):(\\d+)(?::(\\d+))?\\s*(?:\\)|$)",
                     Pattern.MULTILINE);
+
+        private static final Pattern FALLBACK_FRAME_PATTERN =
+            Pattern.compile("^(?:(.+?)\\s+)?(.+?):(\\d+)(?::(\\d+))?$");
 
     private static final Pattern FRAME_PATTERN = DEFAULT_FRAME_PATTERN;
 
@@ -50,26 +53,69 @@ public final class NodeStackTraceParser implements StackTraceParser {
             return frames;
         }
 
+        List<String> seenFrameKeys = new ArrayList<>();
+
         // Use the pattern to find all matches in the content
         Matcher matcher = framePattern.matcher(content);
         while (matcher.find()) {
-            try {
-                String function =
-                        matcher.group(1) != null ? matcher.group(1).trim() : "<anonymous>";
-                String file = matcher.group(2);
-                int lineNum = Integer.parseInt(matcher.group(3));
+            TraceFrame frame = buildFrame(matcher.group(1), matcher.group(2), matcher.group(3));
+            if (frame != null) {
+                addIfAbsent(frames, seenFrameKeys, frame);
+            }
+        }
 
-                frames.add(new TraceFrame(file, lineNum, function, function));
-            } catch (NumberFormatException e) {
-                // Skip invalid line numbers
-                continue;
-            } catch (Exception e) {
-                // Skip malformed frames
-                continue;
+        for (String line : content.split("\\R")) {
+            TraceFrame frame = parseFallbackFrame(line);
+            if (frame != null) {
+                addIfAbsent(frames, seenFrameKeys, frame);
             }
         }
 
         return frames;
+    }
+
+    private TraceFrame parseFallbackFrame(String line) {
+        String trimmed = line.trim();
+        if (!trimmed.startsWith("at ")) {
+            return null;
+        }
+
+        String remainder = trimmed.substring(3).trim();
+        Matcher matcher = FALLBACK_FRAME_PATTERN.matcher(remainder);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        return buildFrame(matcher.group(1), matcher.group(2), matcher.group(3));
+    }
+
+    private TraceFrame buildFrame(String functionGroup, String fileGroup, String lineGroup) {
+        try {
+            String function =
+                    functionGroup != null && !functionGroup.isBlank()
+                            ? functionGroup.trim()
+                            : "<anonymous>";
+            String file = fileGroup != null ? fileGroup.trim() : null;
+            if (file == null || file.isBlank()) {
+                return null;
+            }
+
+            int lineNum = Integer.parseInt(lineGroup);
+            return new TraceFrame(file, lineNum, function, function);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private void addIfAbsent(
+            List<TraceFrame> frames,
+            List<String> seenFrameKeys,
+            TraceFrame frame) {
+        String frameKey = frame.file() + ":" + frame.line() + ":" + frame.function();
+        if (!seenFrameKeys.contains(frameKey)) {
+            seenFrameKeys.add(frameKey);
+            frames.add(frame);
+        }
     }
 
     @Override

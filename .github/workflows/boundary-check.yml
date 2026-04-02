@@ -73,3 +73,63 @@ jobs:
 
       - name: Check Data-Cloud OpenAPI contract drift
         run: bash products/data-cloud/scripts/check-openapi-drift.sh
+
+      - name: Run YAPPC duplication boundary checks
+        run: pnpm --dir products/yappc/frontend check:duplication-boundaries
+
+      - name: Enforce shared-services residue ownership boundary
+        run: |
+          # The canonical feature-store-ingest must stay product-owned.
+          # Do not allow re-introduction of shared-services Gradle module wiring.
+          if grep -RIn ':shared-services:feature-store-ingest' settings.gradle.kts shared-services/build.gradle.kts products/**/build.gradle.kts 2>/dev/null \
+            | grep -Ev '^[^:]+:[0-9]+:\s*//' \
+            | grep -q .; then
+            echo "ERROR: shared-services feature-store-ingest module wiring detected"
+            exit 1
+          fi
+          echo "Shared-services residue boundary check passed"
+
+      - name: Enforce auth-gateway JWT boundary ownership
+        run: |
+          # Auth gateway must depend on the platform JWT port, not concrete impls or direct JWT libraries.
+          if find shared-services/auth-gateway/src/main -name '*.java' -type f -print0 \
+            | xargs -0 grep -nE 'com\.ghatana\.platform\.security\.jwt\.JwtTokenProvider' 2>/dev/null \
+            | grep -q .; then
+            echo "ERROR: auth-gateway references concrete platform JWT implementation"
+            exit 1
+          fi
+
+          if find shared-services/auth-gateway/src/main -name '*.java' -type f -print0 \
+            | xargs -0 grep -nE 'io\.jsonwebtoken|com\.auth0\.jwt|com\.nimbusds\.jwt|com\.nimbusds\.jose' 2>/dev/null \
+            | grep -q .; then
+            echo "ERROR: auth-gateway must not use JWT libraries directly; use platform security port"
+            exit 1
+          fi
+
+          echo "Auth-gateway JWT boundary check passed"
+
+      - name: Enforce shared-services ownership metadata
+        run: |
+          # Active shared services must keep explicit ownership contracts.
+          REQUIRED_FILES=(
+            "shared-services/auth-gateway/OWNER.md"
+            "shared-services/user-profile-service/OWNER.md"
+            "shared-services/ai-inference-service/STATUS.md"
+            "shared-services/feature-store-ingest/OWNER.md"
+            "shared-services/feature-store-ingest/README.md"
+          )
+
+          MISSING=""
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              MISSING="$MISSING\n$file"
+            fi
+          done
+
+          if [ -n "$MISSING" ]; then
+            echo "ERROR: Missing shared-services ownership metadata files:"
+            echo -e "$MISSING"
+            exit 1
+          fi
+
+          echo "Shared-services ownership metadata check passed"

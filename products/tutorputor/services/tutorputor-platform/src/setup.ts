@@ -5,6 +5,7 @@ import jwt from "@fastify/jwt";
 import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
 import Stripe from "stripe";
+import type { Logger } from "pino";
 
 import {
   setupMetrics,
@@ -12,7 +13,7 @@ import {
 } from "./core/observability/metrics.js";
 import { setupErrorTracking } from "./core/observability/error-tracking.js";
 import { setupRateLimit } from "./core/middleware/rate-limit.js";
-import { ContentWorkerService } from "./workers/content/index.js";
+import { initializeContentWorker } from "./startup/content-worker-init.js";
 
 // Core Modules
 import { contentModule } from "./modules/content/index.js";
@@ -358,33 +359,17 @@ export async function setupPlatform(
       ? process.env.CONTENT_WORKER_ENABLED === "true"
       : process.env.NODE_ENV !== "test");
 
-  let contentWorker: ContentWorkerService | null = null;
-  if (shouldStartContentWorker) {
-    const redisUrlObj = new URL(options.redisUrl || REDIS_URL);
-    const redisDb = redisUrlObj.pathname?.slice(1);
-
-    contentWorker = new ContentWorkerService({
-      redis: {
-        host: redisUrlObj.hostname,
-        port: parseInt(redisUrlObj.port || "6379", 10),
-        ...(redisUrlObj.password ? { password: redisUrlObj.password } : {}),
-        db: redisDb ? parseInt(redisDb, 10) || 0 : 0,
-      },
-      grpc: {
-        serverAddress:
-          options.grpcServerAddress ||
-          process.env.GRPC_SERVER_ADDRESS ||
-          "localhost:50051",
-        useTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
-      },
-      logger: app.log as any,
-      prisma,
-    });
-
-    app.log.info("Content worker initialized");
-  } else {
-    app.log.info("Content worker startup disabled");
-  }
+  const contentWorker = await initializeContentWorker({
+    shouldStart: shouldStartContentWorker,
+    redisUrl: options.redisUrl || REDIS_URL,
+    grpcServerAddress:
+      options.grpcServerAddress ||
+      process.env.GRPC_SERVER_ADDRESS ||
+      "localhost:50051",
+    grpcUseTls: options.grpcUseTls ?? process.env.GRPC_USE_TLS === "true",
+    logger: app.log as unknown as Logger,
+    prisma,
+  });
 
   // Add cleanup hook
   app.addHook("onClose", async (instance) => {

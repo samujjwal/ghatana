@@ -1,0 +1,72 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "aep.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aep.labels" . | nindent 4 }}
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "aep.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNginxNamespace | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.httpPort }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{ .Values.networkPolicy.platformNamespaceLabel }}: {{ .Values.networkPolicy.platformNamespaceLabelValue | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.grpcPort }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.monitoringNamespace | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.httpPort }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "aep.selectorLabels" . | nindent 14 }}
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.dataCloudNamespace | quote }}
+      ports:
+        - protocol: TCP
+          port: 8082
+        - protocol: TCP
+          port: 9090
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.sharedServicesNamespace | quote }}
+      ports:
+        - protocol: TCP
+          port: 9092
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 5432
+    - ports:
+        - protocol: TCP
+          port: 443
+{{- end }}

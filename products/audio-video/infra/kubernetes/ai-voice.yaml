@@ -49,6 +49,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ai-voice
           image: ghcr.io/ghatana/audio-video/ai-voice:latest
@@ -91,11 +93,20 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 18
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: voice-models
               mountPath: /app/models
               readOnly: true
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: voice-models
           persistentVolumeClaim:
             claimName: ai-voice-models-pvc

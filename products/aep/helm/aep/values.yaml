@@ -14,6 +14,28 @@ nameOverride: ""
 fullnameOverride: ""
 
 # ---------------------------------------------------------------------------
+# Runtime identity and RBAC
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: ""
+
+rbac:
+  create: true
+
+# ---------------------------------------------------------------------------
+# Network policy
+# ---------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  ingressNginxNamespace: ingress-nginx
+  monitoringNamespace: monitoring
+  platformNamespaceLabel: ghatana.io/platform
+  platformNamespaceLabelValue: "true"
+  dataCloudNamespace: data-cloud
+  sharedServicesNamespace: shared-services
+
+# ---------------------------------------------------------------------------
 # Service
 # ---------------------------------------------------------------------------
 service:
@@ -181,6 +203,8 @@ podSecurityContext:
   runAsUser: 1000
   runAsGroup: 1000
   fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
 securityContext:
   allowPrivilegeEscalation: false

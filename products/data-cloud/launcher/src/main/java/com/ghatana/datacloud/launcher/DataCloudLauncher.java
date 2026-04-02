@@ -2,25 +2,10 @@ package com.ghatana.datacloud.launcher;
 
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
-import com.ghatana.datacloud.ai.AIModelManager;
-import com.ghatana.datacloud.analytics.AnalyticsQueryEngine;
-import com.ghatana.datacloud.analytics.report.ReportService;
-import com.ghatana.datacloud.brain.DataCloudBrain;
-import com.ghatana.datacloud.di.DataCloudBrainModule;
-import com.ghatana.datacloud.launcher.grpc.DataCloudGrpcServer;
-import com.ghatana.datacloud.launcher.http.DataCloudHttpServer;
-import com.ghatana.datacloud.launcher.learning.DataCloudLearningBridge;
-import com.ghatana.aiplatform.featurestore.FeatureStoreService;
-import com.ghatana.aiplatform.observability.AiMetricsEmitter;
-import com.ghatana.aiplatform.registry.ModelRegistryService;
-import com.ghatana.datacloud.infrastructure.config.DataCloudDatabaseConfig;
-import com.ghatana.platform.observability.MetricsCollector;
-import com.ghatana.platform.observability.MetricsCollectorFactory;
-import com.zaxxer.hikari.HikariDataSource;
+import com.ghatana.datacloud.launcher.bootstrap.DataCloudGrpcLauncherBootstrap;
+import com.ghatana.datacloud.launcher.bootstrap.DataCloudHttpLauncherBootstrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.sql.DataSource;
 
 /**
  * Data-Cloud Standalone Launcher - Entry point for standalone deployment.
@@ -48,7 +33,13 @@ public class DataCloudLauncher {
             // Validate configuration before creating any resources (fail-fast)
             DataCloudConfigValidator.fromEnvironment().validate();
 
-            DataCloud.DataCloudConfig config = parseConfig(args);
+            DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig(args);
+            boolean startHttpServer = DataCloudLauncherSettings.shouldStartHttpServer(args);
+            boolean startGrpcServer = DataCloudLauncherSettings.shouldStartGrpcServer(args);
+            if (!DataCloudLauncherSettings.hasEnabledTransport(args, System.getenv())) {
+                throw new IllegalStateException(
+                        "No transport enabled. Configure DATACLOUD_HTTP_ENABLED, DATACLOUD_GRPC_ENABLED, DATACLOUD_GRPC_PORT, or pass --http/--grpc.");
+            }
             
             // Create and start client
             DataCloudClient client = DataCloud.create(config);
@@ -67,13 +58,13 @@ public class DataCloudLauncher {
             }));
             
             // Start HTTP server if configured
-            if (shouldStartHttpServer(args)) {
-                startHttpServer(client, config);
+            if (startHttpServer) {
+                startHttpServer(client);
             }
 
             // Start gRPC server if configured
-            if (shouldStartGrpcServer(args)) {
-                startGrpcServer(client, args);
+            if (startGrpcServer) {
+                startGrpcServer(client);
             }
 
             // Keep running
@@ -89,220 +80,11 @@ public class DataCloudLauncher {
         }
     }
 
-    private static DataCloud.DataCloudConfig parseConfig(String[] args) {
-        DataCloud.DataCloudConfig.Builder builder = DataCloud.DataCloudConfig.builder();
-        
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "--instance-id" -> {
-                    if (i + 1 < args.length) {
-                        builder.instanceId(args[++i]);
-                    }
-                }
-                case "--max-connections" -> {
-                    if (i + 1 < args.length) {
-                        builder.maxConnectionsPerTenant(Integer.parseInt(args[++i]));
-                    }
-                }
-                case "--enable-caching" -> builder.enableCaching(true);
-                case "--disable-caching" -> builder.enableCaching(false);
-                case "--enable-metrics" -> builder.enableMetrics(true);
-            }
-        }
-        
-        // Environment variable overrides
-        String instanceId = System.getenv("DATACLOUD_INSTANCE_ID");
-        if (instanceId != null) {
-            builder.instanceId(instanceId);
-        }
-        
-        String maxConnections = System.getenv("DATACLOUD_MAX_CONNECTIONS");
-        if (maxConnections != null) {
-            builder.maxConnectionsPerTenant(Integer.parseInt(maxConnections));
-        }
-        
-        return builder.build();
+    private static void startGrpcServer(DataCloudClient client) {
+        DataCloudGrpcLauncherBootstrap.start(client, log);
     }
 
-    private static boolean shouldStartGrpcServer(String[] args) {
-        for (String arg : args) {
-            if ("--grpc".equals(arg)) {
-                return true;
-            }
-        }
-        return System.getenv("DATACLOUD_GRPC_ENABLED") != null
-                || System.getenv("DATACLOUD_GRPC_PORT") != null;
-    }
-
-    private static void startGrpcServer(DataCloudClient client, String[] args) {
-        try {
-            DataCloudGrpcServer grpcServer = new DataCloudGrpcServer(client.eventLogStore());
-            grpcServer.start();
-
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("Stopping gRPC server...");
-                grpcServer.close();
-            }));
-        } catch (Exception e) {
-            log.error("Failed to start gRPC server", e);
-        }
-    }
-
-    private static boolean shouldStartHttpServer(String[] args) {
-        for (String arg : args) {
-            if ("--http".equals(arg) || "--server".equals(arg)) {
-                return true;
-            }
-        }
-        return System.getenv("DATACLOUD_HTTP_ENABLED") != null;
-    }
-
-    private static void startHttpServer(DataCloudClient client, DataCloud.DataCloudConfig config) {
-        int port = 8082;
-        String portEnv = System.getenv("DATACLOUD_HTTP_PORT");
-        if (portEnv != null) {
-            port = Integer.parseInt(portEnv);
-        }
-
-        // Wire optional brain + learning bridge when DATACLOUD_BRAIN_ENABLED=true
-        DataCloudBrain brain = null;
-        DataCloudLearningBridge learningBridge = null;
-
-        String brainEnabled = System.getenv("DATACLOUD_BRAIN_ENABLED");
-        if ("true".equalsIgnoreCase(brainEnabled)) {
-            try {
-                brain = DataCloudBrainModule.createStandalone(null);
-                log.info("Brain initialised (standalone mode)");
-
-                learningBridge = new DataCloudLearningBridge(brain);
-                learningBridge.start();
-                log.info("Learning bridge started (interval=5min)");
-
-                final DataCloudLearningBridge bridgeRef = learningBridge;
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    log.info("Closing learning bridge...");
-                    bridgeRef.close();
-                }));
-            } catch (Exception e) {
-                log.warn("Failed to start brain/learning bridge, continuing without: {}", e.getMessage(), e);
-                brain = null;
-                learningBridge = null;
-            }
-        }
-
-        // Wire analytics engine when DATACLOUD_ANALYTICS_ENABLED=true (DC-9)
-        AnalyticsQueryEngine analyticsEngine = null;
-        if ("true".equalsIgnoreCase(System.getenv("DATACLOUD_ANALYTICS_ENABLED"))) {
-            try {
-                analyticsEngine = new AnalyticsQueryEngine();
-                log.info("AnalyticsQueryEngine initialised (standalone mode)");
-            } catch (Exception e) {
-                log.warn("Failed to start analytics engine, continuing without: {}", e.getMessage(), e);
-            }
-        }
-
-        AIModelManager aiModelManager = null;
-        FeatureStoreService featureStoreService = null;
-
-        // Wire report service when analytics engine is available (DC-10)
-        ReportService reportService = null;
-        if (analyticsEngine != null) {
-            try {
-                reportService = new ReportService(analyticsEngine);
-                log.info("ReportService initialised (analytics-only mode; use EntityExportService for full export)");
-            } catch (Exception e) {
-                log.warn("Failed to start report service, continuing without: {}", e.getMessage(), e);
-            }
-        }
-
-        boolean databaseEnabled = "true".equalsIgnoreCase(System.getenv("DATACLOUD_DB_ENABLED"));
-        boolean aiEnabled = "true".equalsIgnoreCase(System.getenv("DATACLOUD_AI_ENABLED"));
-        DataSource databaseDataSource = null;
-        if (databaseEnabled || aiEnabled) {
-            try {
-                databaseDataSource = buildDatabaseDataSource();
-                log.info("Standalone database DataSource initialised");
-            } catch (Exception e) {
-                log.warn("Failed to create standalone database DataSource, continuing without DB-backed features: {}",
-                        e.getMessage(), e);
-                databaseDataSource = null;
-                aiModelManager = null;
-                featureStoreService = null;
-            }
-        }
-
-        if (aiEnabled && databaseDataSource != null) {
-            try {
-                io.micrometer.prometheus.PrometheusMeterRegistry promRegistry =
-                    new io.micrometer.prometheus.PrometheusMeterRegistry(
-                        io.micrometer.prometheus.PrometheusConfig.DEFAULT);
-                MetricsCollector metrics = MetricsCollectorFactory.create(promRegistry);
-                AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metrics);
-                ModelRegistryService modelRegistry = new ModelRegistryService(databaseDataSource, metrics);
-                aiModelManager = new AIModelManager(modelRegistry, aiMetrics);
-                featureStoreService = new FeatureStoreService(databaseDataSource, metrics);
-                log.info("AI services initialised (model registry + feature store)");
-            } catch (Exception e) {
-                log.warn("Failed to start AI services, continuing without: {}", e.getMessage(), e);
-                aiModelManager = null;
-                featureStoreService = null;
-            }
-        }
-
-        try {
-            final DataSource databaseDataSourceRef = databaseDataSource;
-            DataCloudHttpServer httpServer = new DataCloudHttpServer(client, port, brain, learningBridge, analyticsEngine)
-                    .withReportService(reportService)
-                    .withAiModelManager(aiModelManager)
-                    .withFeatureStoreService(featureStoreService)
-                    .withMetricsCollector(MetricsCollectorFactory.create(
-                            new io.micrometer.prometheus.PrometheusMeterRegistry(
-                                    io.micrometer.prometheus.PrometheusConfig.DEFAULT)));
-            if (databaseEnabled && databaseDataSource != null) {
-                httpServer.withHealthSubsystem("database", new JdbcDatabaseHealthProbe(databaseDataSource, 5));
-            }
-            httpServer.start();
-            log.info("HTTP server started on port {}", port);
-
-            // Register shutdown hook for HTTP server
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("Stopping HTTP server...");
-                httpServer.stop();
-                closeDataSource(databaseDataSourceRef);
-            }));
-        } catch (Exception e) {
-            log.error("Failed to start HTTP server on port {}", port, e);
-            closeDataSource(databaseDataSource);
-        }
-    }
-
-    /**
-     * Creates a HikariCP {@link DataSource} for standalone database-backed features.
-     *
-     * <p>Reads {@code DATACLOUD_DB_URL}, {@code DATACLOUD_DB_USER}, and
-     * {@code DATACLOUD_DB_PASSWORD}. Reused for standalone health checks and
-     * optional AI services so all database-backed launcher features share one pool.
-     *
-     * @return configured {@link HikariDataSource}
-     * @throws IllegalStateException if required env vars are missing
-     *
-     * @doc.type method
-     * @doc.purpose Create shared standalone DataSource from environment variables
-     * @doc.layer product
-     * @doc.pattern Factory
-     */
-    private static DataSource buildDatabaseDataSource() {
-        // DC-014: standardised via DataCloudDatabaseConfig — consistent pool sizing,
-        // keep-alive, leak detection, and validation across all data-cloud modules.
-        // Reads DATACLOUD_DB_URL / DATACLOUD_DB_USER / DATACLOUD_DB_PASSWORD
-        // plus optional DATACLOUD_DB_POOL_* tuning variables.
-        return DataCloudDatabaseConfig.fromEnvironment("DATACLOUD_DB")
-                .createDataSource();
-    }
-
-    private static void closeDataSource(DataSource dataSource) {
-        if (dataSource instanceof HikariDataSource hikariDataSource && !hikariDataSource.isClosed()) {
-            hikariDataSource.close();
-        }
+    private static void startHttpServer(DataCloudClient client) {
+        DataCloudHttpLauncherBootstrap.start(client, log);
     }
 }

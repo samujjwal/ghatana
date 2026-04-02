@@ -19,9 +19,9 @@ groups:
       - record: job:data_cloud_request_success_rate:5m
         expr: |
           1 - (
-            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[5m]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform", status=~"5.."}[5m]))
             /
-            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[5m]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform"}[5m]))
           )
         labels:
           product: data-cloud
@@ -30,9 +30,9 @@ groups:
       - record: job:data_cloud_request_success_rate:30m
         expr: |
           1 - (
-            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[30m]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform", status=~"5.."}[30m]))
             /
-            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[30m]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform"}[30m]))
           )
         labels:
           product: data-cloud
@@ -41,9 +41,9 @@ groups:
       - record: job:data_cloud_request_success_rate:1h
         expr: |
           1 - (
-            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[1h]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform", status=~"5.."}[1h]))
             /
-            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[1h]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform"}[1h]))
           )
         labels:
           product: data-cloud
@@ -52,9 +52,9 @@ groups:
       - record: job:data_cloud_request_success_rate:6h
         expr: |
           1 - (
-            sum(rate(http_server_requests_seconds_count{job="data-cloud", status=~"5.."}[6h]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform", status=~"5.."}[6h]))
             /
-            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[6h]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform"}[6h]))
           )
         labels:
           product: data-cloud
@@ -63,9 +63,9 @@ groups:
       - record: job:data_cloud_error_budget_consumed:30d
         expr: |
           1 - (
-            sum(rate(http_server_requests_seconds_count{job="data-cloud", status!~"5.."}[30d]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform", status!~"5.."}[30d]))
             /
-            sum(rate(http_server_requests_seconds_count{job="data-cloud"}[30d]))
+            sum(rate(http_server_requests_seconds_count{job="data-cloud-platform"}[30d]))
           )
           /
           (1 - 0.999)   # 1 - SLO target
@@ -81,7 +81,7 @@ groups:
       - record: job:data_cloud_request_latency_p50:5m
         expr: |
           histogram_quantile(0.50,
-            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud-platform"}[5m]))
           )
         labels:
           product: data-cloud
@@ -90,7 +90,7 @@ groups:
       - record: job:data_cloud_request_latency_p95:5m
         expr: |
           histogram_quantile(0.95,
-            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud-platform"}[5m]))
           )
         labels:
           product: data-cloud
@@ -99,7 +99,7 @@ groups:
       - record: job:data_cloud_request_latency_p99:5m
         expr: |
           histogram_quantile(0.99,
-            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[5m]))
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud-platform"}[5m]))
           )
         labels:
           product: data-cloud
@@ -108,7 +108,7 @@ groups:
       - record: job:data_cloud_request_latency_p99:1h
         expr: |
           histogram_quantile(0.99,
-            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud"}[1h]))
+            sum by (le) (rate(http_server_requests_seconds_bucket{job="data-cloud-platform"}[1h]))
           )
         labels:
           product: data-cloud

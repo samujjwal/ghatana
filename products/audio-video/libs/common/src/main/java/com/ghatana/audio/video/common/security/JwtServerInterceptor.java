@@ -26,19 +26,25 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
  * gRPC server interceptor that validates Bearer JWT tokens on every inbound call.
  *
  * <p>The JWT secret is read from the environment variable {@code AV_JWT_SECRET}.
- * If the variable is absent the interceptor operates in <em>permissive mode</em> and
- * logs a warning — allowing local development without credentials.
+ * If the variable is absent the interceptor throws {@link IllegalStateException}
+ * at construction time to prevent silent permissive-mode startup in production.
+ *
+ * <p>To allow unauthenticated access for local development, set
+ * {@code AV_JWT_PERMISSIVE_MODE=true} explicitly. This flag must never be set
+ * in production deployments.
  *
  * <p>Validated subject is stored in {@link #CTX_SUBJECT} so downstream handlers can
  * retrieve the authenticated principal:
  * <pre>{@code
  *   String user = JwtServerInterceptor.CTX_SUBJECT.get();
+ *   String tenant = JwtServerInterceptor.CTX_TENANT.get();
  * }</pre>
  */
 public class JwtServerInterceptor implements ServerInterceptor {
@@ -47,6 +53,8 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
     /** gRPC {@link Context} key carrying the validated JWT subject. */
     public static final Context.Key<String> CTX_SUBJECT = Context.key("av.jwt.subject");
+    /** gRPC {@link Context} key carrying the validated tenant ID. */
+    public static final Context.Key<String> CTX_TENANT = Context.key("av.jwt.tenant");
 
     private static final Metadata.Key<String> AUTHORIZATION_KEY =
             Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER);
@@ -59,13 +67,24 @@ public class JwtServerInterceptor implements ServerInterceptor {
 
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
     private final boolean permissive;
+    private final TokenValidator tokenValidator;
 
     public JwtServerInterceptor() {
+        this.tokenValidator = fromAuthGatewayClient(AuthGatewayClient.getInstance());
         String secret = System.getenv("AV_JWT_SECRET");
         if (secret == null || secret.isBlank()) {
-            LOG.warn("AV_JWT_SECRET not set — JWT interceptor running in PERMISSIVE mode (dev only)");
-            this.jwtProcessor = null;
-            this.permissive = true;
+            String permissiveFlag = System.getenv("AV_JWT_PERMISSIVE_MODE");
+            if ("true".equalsIgnoreCase(permissiveFlag)) {
+                LOG.warn("AV_JWT_PERMISSIVE_MODE=true — JWT interceptor in PERMISSIVE mode. " +
+                         "Do NOT use in production.");
+                this.jwtProcessor = null;
+                this.permissive = true;
+            } else {
+                throw new IllegalStateException(
+                        "AV_JWT_SECRET is not set. The Audio-Video JWT interceptor requires a " +
+                        "signing secret. Set AV_JWT_SECRET in the environment, or set " +
+                        "AV_JWT_PERMISSIVE_MODE=true explicitly for local development only.");
+            }
         } else {
             SecretKey key = new SecretKeySpec(
                     secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
@@ -83,6 +102,16 @@ public class JwtServerInterceptor implements ServerInterceptor {
         }
     }
 
+    JwtServerInterceptor(
+            ConfigurableJWTProcessor<SecurityContext> jwtProcessor,
+            boolean permissive,
+            TokenValidator tokenValidator
+    ) {
+        this.jwtProcessor = jwtProcessor;
+        this.permissive = permissive;
+        this.tokenValidator = Objects.requireNonNull(tokenValidator, "tokenValidator must not be null");
+    }
+
     @Override
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
             ServerCall<ReqT, RespT> call,
@@ -96,7 +125,9 @@ public class JwtServerInterceptor implements ServerInterceptor {
         }
 
         if (permissive) {
-            Context ctx = Context.current().withValue(CTX_SUBJECT, "anonymous");
+            Context ctx = Context.current()
+                    .withValue(CTX_SUBJECT, "anonymous")
+                    .withValue(CTX_TENANT, "dev-tenant");
             return Contexts.interceptCall(ctx, call, headers, next);
         }
 
@@ -108,26 +139,50 @@ public class JwtServerInterceptor implements ServerInterceptor {
         }
 
         String token = authHeader.substring(7);
+        SignedJWT jwt;
         try {
-            SignedJWT jwt = SignedJWT.parse(token);
+            jwt = SignedJWT.parse(token);
+        } catch (Exception e) {
+            LOG.warn("JWT parsing failed on {}: {}", fullMethod, e.getMessage());
+            call.close(Status.UNAUTHENTICATED.withDescription("Invalid token: " + e.getMessage()),
+                    new Metadata());
+            return new ServerCall.Listener<>() {};
+        }
+
+        try {
             // Validate signature and standard claims
             jwtProcessor.process(jwt, null);
 
             String subject = jwt.getJWTClaimsSet().getSubject();
-            Context ctx = Context.current().withValue(CTX_SUBJECT, subject != null ? subject : "unknown");
-            LOG.debug("Authenticated subject='{}' on {}", subject, fullMethod);
+            String tenantId = extractTenantId(jwt);
+            if (tenantId == null || tenantId.isBlank()) {
+                LOG.warn("JWT missing tenantId claim on {}", fullMethod);
+                call.close(Status.UNAUTHENTICATED.withDescription("Missing tenant claim"), new Metadata());
+                return new ServerCall.Listener<>() {};
+            }
+            Context ctx = Context.current()
+                    .withValue(CTX_SUBJECT, subject != null ? subject : "unknown")
+                    .withValue(CTX_TENANT, tenantId);
+            LOG.debug("Authenticated subject='{}' tenant='{}' on {}", subject, tenantId, fullMethod);
             return Contexts.interceptCall(ctx, call, headers, next);
 
         } catch (Exception e) {
             // Local JWT validation failed — attempt platform auth-gateway fallback
             // for cross-service tokens issued by the central auth-service.
-            AuthGatewayClient gwClient = AuthGatewayClient.getInstance();
-            if (gwClient.isEnabled()) {
-                AuthGatewayClient.ValidationResult gwResult = gwClient.validate(token);
+            if (tokenValidator.isEnabled()) {
+                AuthGatewayClient.ValidationResult gwResult = tokenValidator.validate(token);
                 if (gwResult.valid()) {
+                    String tenantId = extractTenantId(jwt);
+                    if (tenantId == null || tenantId.isBlank()) {
+                        LOG.warn("Auth-gateway accepted token but tenantId claim is missing on {}", fullMethod);
+                        call.close(Status.UNAUTHENTICATED.withDescription("Missing tenant claim"), new Metadata());
+                        return new ServerCall.Listener<>() {};
+                    }
                     String subject = gwResult.userId() != null ? gwResult.userId() : "platform";
-                    LOG.debug("Platform auth-gateway accepted token, subject='{}'", subject);
-                    Context ctx = Context.current().withValue(CTX_SUBJECT, subject);
+                    LOG.debug("Platform auth-gateway accepted token, subject='{}', tenant='{}'", subject, tenantId);
+                    Context ctx = Context.current()
+                            .withValue(CTX_SUBJECT, subject)
+                            .withValue(CTX_TENANT, tenantId);
                     return Contexts.interceptCall(ctx, call, headers, next);
                 }
             }
@@ -137,5 +192,33 @@ public class JwtServerInterceptor implements ServerInterceptor {
                     new Metadata());
             return new ServerCall.Listener<>() {};
         }
+    }
+
+    private String extractTenantId(SignedJWT jwt) {
+        try {
+            return jwt.getJWTClaimsSet().getStringClaim("tenantId");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static TokenValidator fromAuthGatewayClient(AuthGatewayClient client) {
+        return new TokenValidator() {
+            @Override
+            public boolean isEnabled() {
+                return client.isEnabled();
+            }
+
+            @Override
+            public AuthGatewayClient.ValidationResult validate(String token) {
+                return client.validate(token);
+            }
+        };
+    }
+
+    interface TokenValidator {
+        boolean isEnabled();
+
+        AuthGatewayClient.ValidationResult validate(String token);
     }
 }

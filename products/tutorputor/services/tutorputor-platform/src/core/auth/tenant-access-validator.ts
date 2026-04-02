@@ -64,6 +64,10 @@ export interface ValidationResult {
   metadata?: Record<string, unknown>;
 }
 
+type RequestWithAccessValidation = import("fastify").FastifyRequest & {
+  accessValidation?: ValidationResult;
+};
+
 /**
  * Tenant Access Validator for multi-tenant security
  */
@@ -547,19 +551,24 @@ export class TenantAccessValidator {
   createMiddleware(requiredAction: string) {
     return async (request: import("fastify").FastifyRequest, reply: import("fastify").FastifyReply) => {
       const tenantId = request.user?.tenantId;
-      const userId = request.user?.userId;
+      const userId = request.user?.userId ?? request.user?.id;
 
       if (!tenantId || !userId) {
         throw new UnauthorizedError("Missing tenant or user context");
       }
 
+      const params =
+        request.params && typeof request.params === "object"
+          ? (request.params as { id?: string })
+          : undefined;
+
       const accessRequest: AccessRequest = {
         action: requiredAction,
         resource: request.routeOptions.url?.split("/")[1] || "unknown",
-        resourceId: request.params?.id,
-        tenantId,
-        userId,
+        tenantId: tenantId as TenantId,
+        userId: userId as UserId,
         context: { method: request.method, url: request.url },
+        ...(params?.id ? { resourceId: params.id } : {}),
       };
 
       const result = await this.validateAccess(accessRequest);
@@ -569,7 +578,7 @@ export class TenantAccessValidator {
       }
 
       // Add validation result to request for downstream use
-      request.accessValidation = result;
+      (request as RequestWithAccessValidation).accessValidation = result;
     };
   }
 }

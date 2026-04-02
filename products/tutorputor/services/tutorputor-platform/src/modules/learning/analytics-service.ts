@@ -69,6 +69,8 @@ export function createAnalyticsService(
       if (redis) {
         try {
           // Add to Stream: learning:events:{tenantId}
+          // Redis.xadd() is not yet fully typed in ioredis type definitions
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (redis as any).xadd(
             `learning:events:${tenantId}`,
             "MAXLEN",

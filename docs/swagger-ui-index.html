@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghatana API Documentation Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            color: #ccc;
+        }
+        
+        .container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .api-card {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .api-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .api-card h2 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .api-icon {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .api-card p {
+            color: #666;
+            margin-bottom: 20px;
+            flex: 1;
+            line-height: 1.6;
+        }
+        
+        .endpoint-list {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        
+        .endpoint-list h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        
+        .endpoint {
+            background: white;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #555;
+        }
+        
+        .endpoint:last-child {
+            margin-bottom: 0;
+        }
+        
+        .endpoint.post {
+            border-left-color: #48bb78;
+        }
+        
+        .endpoint.get {
+            border-left-color: #4299e1;
+        }
+        
+        .endpoint .label {
+            display: inline-block;
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 0.85em;
+        }
+        
+        .label.post {
+            color: #48bb78;
+        }
+        
+        .label.get {
+            color: #4299e1;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        footer {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            border-top: 1px solid #667eea;
+        }
+        
+        footer p {
+            font-size: 0.9em;
+            color: #aaa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #48bb78;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            header h1 {
+                font-size: 2em;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚀 Ghatana API Documentation</h1>
+        <p>Comprehensive API specifications and interactive exploration tools</p>
+    </header>
+    
+    <div class="container">
+        <!-- TutorPutor API Card -->
+        <div class="api-card">
+            <h2>
+                <div class="api-icon">📚</div>
+                TutorPutor Content Generation
+            </h2>
+            <p>AI-powered content generation, library management, and personalized learning path creation for educational applications.</p>
+            
+            <div class="endpoint-list">
+                <h4>Key Endpoints (5 total)</h4>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/content/generate</span>
+                </div>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/content/generate/{id}</span>
+                </div>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/libraries</span>
+                </div>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/learning-paths/{userId}</span>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="/swagger-ui.html?urls=%5B%7B%22url%22:%22http://localhost:8080/api/v1/docs/tutorputor-api.json%22,%22name%22:%22TutorPutor%20API%22%7D%5D" class="btn btn-primary">
+                    📖 View API Docs
+                </a>
+                <a href="http://localhost:8080/api/v1/docs/tutorputor-api.yaml" class="btn btn-secondary">
+                    ⬇️ Download YAML
+                </a>
+            </div>
+        </div>
+        
+        <!-- Data Cloud API Card -->
+        <div class="api-card">
+            <h2>
+                <div class="api-icon">📊</div>
+                Data Cloud Query API
+            </h2>
+            <p>High-performance query execution, dataset management, and analytics aggregation with asynchronous operations and dual authentication.</p>
+            
+            <div class="endpoint-list">
+                <h4>Key Endpoints (7 total)</h4>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/datasets</span>
+                </div>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/queries</span>
+                </div>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/queries/{opId}/results</span>
+                </div>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/analytics/aggregate</span>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="/swagger-ui.html?urls=%5B%7B%22url%22:%22http://localhost:8081/api/v1/docs/data-cloud-api.json%22,%22name%22:%22Data%20Cloud%20API%22%7D%5D" class="btn btn-primary">
+                    📖 View API Docs
+                </a>
+                <a href="http://localhost:8081/api/v1/docs/data-cloud-api.yaml" class="btn btn-secondary">
+                    ⬇️ Download YAML
+                </a>
+            </div>
+        </div>
+        
+        <!-- YAPPC API Card -->
+        <div class="api-card">
+            <h2>
+                <div class="api-icon">⚙️</div>
+                YAPPC Code Generation
+            </h2>
+            <p>System architecture design, multi-language code generation, and intelligent refactoring suggestions with circular dependency detection.</p>
+            
+            <div class="endpoint-list">
+                <h4>Key Endpoints (8 total)</h4>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/designs</span>
+                </div>
+                <div class="endpoint post">
+                    <span class="label post">POST</span>
+                    <span>/generated-code</span>
+                </div>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/artifacts/{id}</span>
+                </div>
+                <div class="endpoint get">
+                    <span class="label get">GET</span>
+                    <span>/refactoring-suggestions/{id}</span>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <a href="/swagger-ui.html?urls=%5B%7B%22url%22:%22http://localhost:8082/api/v1/docs/yappc-api.json%22,%22name%22:%22YAPPC%20API%22%7D%5D" class="btn btn-primary">
+                    📖 View API Docs
+                </a>
+                <a href="http://localhost:8082/api/v1/docs/yappc-api.yaml" class="btn btn-secondary">
+                    ⬇️ Download YAML
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>🔐 All APIs require Bearer token authentication (JWT) | Last Updated: 2026-04-02 | OpenAPI 3.1.0 Specification</p>
+        <p>© 2026 Ghatana. All rights reserved. <a href="https://docs.ghatana.io" style="color: #667eea; text-decoration: none;">Documentation</a> | <a href="https://github.com/ghatana" style="color: #667eea; text-decoration: none;">GitHub</a></p>
+    </footer>
+</body>
+</html>

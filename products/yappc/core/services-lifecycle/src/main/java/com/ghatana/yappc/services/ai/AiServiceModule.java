@@ -12,8 +12,8 @@ import com.ghatana.ai.llm.ToolAwareAnthropicCompletionService;
 import com.ghatana.ai.llm.ToolAwareOpenAICompletionService;
 import com.ghatana.ai.prompts.PromptTemplateManager;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import com.ghatana.yappc.ai.canvas.CanvasService;
 import com.ghatana.yappc.ai.router.AIModelRouter;
@@ -80,8 +80,8 @@ public class AiServiceModule extends AbstractModule {
      */
     @Provides
     PrometheusMeterRegistry prometheusMeterRegistry() {
-        logger.info("Creating PrometheusMeterRegistry for AI service — scrape at GET /metrics");
-        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        logger.info("Using canonical MetricsProvider registry for AI service — scrape at GET /metrics");
+        return MetricsProvider.getRegistry();
     }
 
     /**

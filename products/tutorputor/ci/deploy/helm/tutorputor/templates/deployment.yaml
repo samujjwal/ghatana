@@ -45,16 +45,13 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
-            - name: metrics
-              containerPort: 9090
-              protocol: TCP
           env:
             - name: NODE_ENV
               value: {{ .Values.app.nodeEnv | quote }}
             - name: PORT
               value: {{ .Values.app.port | default "3000" | quote }}
             - name: METRICS_PORT
-              value: {{ .Values.app.metricsPort | default "9090" | quote }}
+              value: {{ .Values.app.metricsPort | default "3000" | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.app.logLevel | quote }}
             - name: DEFAULT_TENANT
@@ -121,3 +118,10 @@ spec:
             initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi

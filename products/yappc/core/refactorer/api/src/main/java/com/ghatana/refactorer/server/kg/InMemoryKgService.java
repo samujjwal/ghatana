@@ -1,6 +1,7 @@
 package com.ghatana.refactorer.server.kg;
 
 import com.ghatana.platform.core.exception.ErrorCodeMappers;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.ghatana.refactorer.server.kg.config.KgConfiguration;
 import com.ghatana.refactorer.server.kg.config.KgConfigurationLoader;
 import com.ghatana.refactorer.server.kg.learning.CorrelationAnalyzer;
@@ -151,10 +152,11 @@ public final class InMemoryKgService implements KgService {
         } catch (Exception e) {
             logger.error("Failed to submit pattern for tenant: {}", tenantId, e);
             return Promise.ofException(
-                    new RuntimeException(
+                new RefactorerOperationException(
                             ErrorCodeMappers.fromIngress("PATTERN_SUBMISSION_FAILED").name()
                             + ": "
-                            + e.getMessage()));
+                    + e.getMessage(),
+                    e));
         }
     }
 

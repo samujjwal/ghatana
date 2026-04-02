@@ -35,7 +35,7 @@ public final class FS {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(md.digest(data));
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RefactorerOperationException("Failed to compute SHA-256 digest", e);
         }
     }
 }

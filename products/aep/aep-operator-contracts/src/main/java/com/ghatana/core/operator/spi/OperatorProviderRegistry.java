@@ -6,7 +6,7 @@
 package com.ghatana.core.operator.spi;
 
 import com.ghatana.core.operator.*;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.OperatorCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * int count = registry.discoverProviders();
  *
  * // Optionally materialize into an OperatorCatalog
- * DefaultOperatorCatalog catalog = new DefaultOperatorCatalog();
+ * OperatorCatalog catalog = new UnifiedOperatorCatalog();
  * registry.materializeIntoCatalog(catalog);
  * }</pre>
  *
@@ -167,7 +167,7 @@ public class OperatorProviderRegistry {
      * @param catalog the catalog to populate
      * @return the number of operators registered
      */
-    public int materializeIntoCatalog(DefaultOperatorCatalog catalog) {
+    public int materializeIntoCatalog(OperatorCatalog catalog) {
         int count = 0;
         for (OperatorProvider provider : providers.values()) {
             for (OperatorId opId : provider.getOperatorIds()) {

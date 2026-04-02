@@ -1,6 +1,9 @@
 package com.ghatana.yappc.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import com.ghatana.yappc.common.JsonMapper;
 import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.domain.generate.DiffResult;
@@ -8,11 +11,16 @@ import com.ghatana.yappc.domain.generate.GeneratedArtifacts;
 import com.ghatana.yappc.domain.generate.ValidatedSpec;
 import com.ghatana.yappc.services.generate.GenerationService;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
+import io.activej.http.HttpHeaderValue;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.Objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static com.ghatana.yappc.api.HttpResponses.*;
@@ -26,13 +34,22 @@ import static com.ghatana.yappc.api.HttpResponses.*;
 public class GenerationApiController {
     
     private static final Logger log = LoggerFactory.getLogger(GenerationApiController.class);
+    private static final int GENERATION_RATE_LIMIT = 30;
     
     private final GenerationService generationService;
     private final YappcArtifactRepository artifactRepository;
+    private final RateLimiter generationRateLimiter;
     
     public GenerationApiController(GenerationService generationService, YappcArtifactRepository artifactRepository) {
         this.generationService = generationService;
         this.artifactRepository = artifactRepository;
+        this.generationRateLimiter = DefaultRateLimiter.create(
+            RateLimiterConfig.builder()
+                .maxRequestsPerMinute(Integer.parseInt(System.getenv().getOrDefault("YAPPC_GENERATE_RATE_LIMIT_MAX", String.valueOf(GENERATION_RATE_LIMIT))))
+                .burstSize(Integer.parseInt(System.getenv().getOrDefault("YAPPC_GENERATE_RATE_LIMIT_BURST", String.valueOf(GENERATION_RATE_LIMIT))))
+                .windowDuration(Duration.ofMinutes(1))
+                .build()
+        );
     }
     
     /**
@@ -44,12 +61,17 @@ public class GenerationApiController {
      */
     public Promise<HttpResponse> generateArtifacts(HttpRequest request) {
         log.info("Generating artifacts from validated spec");
+
+        HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate");
+        if (throttled != null) {
+            return Promise.of(throttled);
+        }
         
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
-                        ValidatedSpec spec = JsonMapper.fromJson(json, ValidatedSpec.class);
+                        ValidatedSpec spec = parseValidatedSpec(json);
                         
                         return generationService.generate(spec)
                                 .map(artifacts -> {
@@ -60,9 +82,9 @@ public class GenerationApiController {
                                         return error500("Internal server error");
                                     }
                                 });
-                    } catch (JsonProcessingException e) {
+                    } catch (JsonProcessingException | IllegalArgumentException e) {
                         log.error("Error parsing request", e);
-                        return Promise.of(badRequest400("Invalid JSON format"));
+                        return Promise.of(badRequest400(e.getMessage() == null ? "Invalid generation request" : e.getMessage()));
                     }
                 })
                 .whenException(e -> log.error("Error generating artifacts", e));
@@ -76,12 +98,21 @@ public class GenerationApiController {
      * @return Promise of HTTP response with DiffResult
      */
     public Promise<HttpResponse> regenerateWithDiff(HttpRequest request) {
+        HttpResponse throttled = rateLimitResponseIfNeeded(request, "generate-diff");
+        if (throttled != null) {
+            return Promise.of(throttled);
+        }
+
         return request.loadBody()
                 .then(body -> {
                     String json = body.asString(UTF_8);
                     try {
-                        ValidatedSpec spec = JsonMapper.fromJson(json, ValidatedSpec.class);
-                        GeneratedArtifacts existing = JsonMapper.fromJson(json, GeneratedArtifacts.class);
+                        RegenerateDiffRequest diffRequest = JsonMapper.fromJson(json, RegenerateDiffRequest.class);
+                        if (diffRequest == null || diffRequest.validatedSpec() == null || diffRequest.existingArtifacts() == null) {
+                            throw new IllegalArgumentException("validatedSpec and existingArtifacts are required");
+                        }
+                        ValidatedSpec spec = validateSpec(diffRequest.validatedSpec());
+                        GeneratedArtifacts existing = validateExistingArtifacts(diffRequest.existingArtifacts());
                         
                         return generationService.regenerateWithDiff(spec, existing)
                                 .map(diff -> {
@@ -92,9 +123,9 @@ public class GenerationApiController {
                                         return error500("Internal server error");
                                     }
                                 });
-                    } catch (JsonProcessingException e) {
+                    } catch (JsonProcessingException | IllegalArgumentException e) {
                         log.error("Error parsing request", e);
-                        return Promise.of(badRequest400("Invalid JSON format"));
+                        return Promise.of(badRequest400(e.getMessage() == null ? "Invalid diff generation request" : e.getMessage()));
                     }
                 })
                 .whenException(e -> log.error("Diff generation failed", e));
@@ -131,5 +162,73 @@ public class GenerationApiController {
                     }
                 })
                 .whenException(e -> log.error("Error retrieving artifacts: {}", artifactsId, e));
+    }
+
+    private HttpResponse rateLimitResponseIfNeeded(HttpRequest request, String routeName) {
+        String key = routeName + ":" + resolveRequesterKey(request);
+        RateLimiter.AcquireResult acquireResult = generationRateLimiter.tryAcquire(key);
+        if (acquireResult.allowed()) {
+            return null;
+        }
+        return HttpResponse.ofCode(429)
+            .withHeader(HttpHeaders.of("Retry-After"), HttpHeaderValue.of(String.valueOf(acquireResult.retryAfterSeconds())))
+            .withJson("{\"error\":\"Generation rate limit exceeded\"}")
+            .build();
+    }
+
+    private String resolveRequesterKey(HttpRequest request) {
+        String apiKey = request.getHeader(HttpHeaders.of("X-API-Key"));
+        if (apiKey != null && !apiKey.isBlank()) {
+            return apiKey.trim();
+        }
+        String authorization = request.getHeader(HttpHeaders.of("Authorization"));
+        if (authorization != null && !authorization.isBlank()) {
+            return authorization.trim();
+        }
+        String forwardedFor = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            int commaIndex = forwardedFor.indexOf(',');
+            return (commaIndex > 0 ? forwardedFor.substring(0, commaIndex) : forwardedFor).trim();
+        }
+        return "anonymous";
+    }
+
+    private ValidatedSpec parseValidatedSpec(String json) throws JsonProcessingException {
+        return validateSpec(JsonMapper.fromJson(json, ValidatedSpec.class));
+    }
+
+    private ValidatedSpec validateSpec(ValidatedSpec spec) {
+        if (spec == null) {
+            throw new IllegalArgumentException("validatedSpec is required");
+        }
+        if (spec.shapeSpec() == null) {
+            throw new IllegalArgumentException("validatedSpec.shapeSpec is required");
+        }
+        if (spec.shapeSpec().id() == null || spec.shapeSpec().id().isBlank()) {
+            throw new IllegalArgumentException("validatedSpec.shapeSpec.id is required");
+        }
+        if (spec.validationResult() == null) {
+            throw new IllegalArgumentException("validatedSpec.validationResult is required");
+        }
+        if (!spec.validationResult().passed() || spec.validationResult().hasBlockingIssues()) {
+            throw new IllegalArgumentException("validatedSpec must pass validation before generation");
+        }
+        return spec;
+    }
+
+    private GeneratedArtifacts validateExistingArtifacts(GeneratedArtifacts existingArtifacts) {
+        if (existingArtifacts.id() == null || existingArtifacts.id().isBlank()) {
+            throw new IllegalArgumentException("existingArtifacts.id is required");
+        }
+        if (existingArtifacts.specRef() == null || existingArtifacts.specRef().isBlank()) {
+            throw new IllegalArgumentException("existingArtifacts.specRef is required");
+        }
+        if (existingArtifacts.artifacts() == null) {
+            throw new IllegalArgumentException("existingArtifacts.artifacts is required");
+        }
+        return existingArtifacts;
+    }
+
+    private record RegenerateDiffRequest(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) {
     }
 }

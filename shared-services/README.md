@@ -18,10 +18,10 @@ This directory is for networked services and gateways that are shared by multipl
 
 ## Current posture
 
-- `auth-gateway`: retained as a shared runtime service
-- `user-profile-service`: retained as a shared runtime service
-- `ai-inference-service`: shared runtime candidate that must stay operationally justified
-- `feature-store-ingest`: migrated to `products/data-cloud/feature-store-ingest`; the local directory is retained only as historical residue and is not included in Gradle
+- `auth-gateway`: **ACTIVE** — retained as the canonical cross-product authentication service (ADR-013, ADR-019)
+- `user-profile-service`: **ACTIVE** — retained as the cross-product user-profile service
+- `ai-inference-service`: **ARCHIVED** — build disabled; product teams use `platform:java:ai-integration` directly; re-enable instructions in `ai-inference-service/STATUS.md`
+- `feature-store-ingest`: **RESIDUE** — canonical location is `products/data-cloud/feature-store-ingest`; this directory is not included in Gradle and will be deleted in the next cleanup sprint
 
 ## Build conventions
 

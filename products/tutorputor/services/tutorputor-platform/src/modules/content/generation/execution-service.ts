@@ -13,6 +13,7 @@
  * @doc.pattern Service
  */
 
+import { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import type {
@@ -203,6 +204,10 @@ export class GenerationExecutionService {
       include: { jobs: true },
     });
 
+    if (!updated) {
+      throw new Error(`Generation request ${requestId} not found after execution start`);
+    }
+
     const mappedRequest = {
       ...mapRequest(updated),
       jobs: (updated.jobs ?? []).map(mapJob),
@@ -232,8 +237,8 @@ export class GenerationExecutionService {
         ...(result.outputAssetId !== undefined
           ? { outputAssetId: result.outputAssetId }
           : {}),
-        outputData: result.outputData ?? null,
-        diagnostics: result.diagnostics ?? null,
+        outputData: toNullableJsonValue(result.outputData),
+        diagnostics: toNullableJsonValue(result.diagnostics),
         errorMessage: result.errorMessage ?? null,
         completedAt: new Date(),
       },
@@ -274,6 +279,10 @@ export class GenerationExecutionService {
     const request = await this.prisma.generationRequest.findFirst({
       where: { id: requestId },
     });
+
+    if (!request) {
+      throw new Error(`Generation request ${requestId} not found after batch results`);
+    }
 
     return {
       requestId,
@@ -340,7 +349,7 @@ export class GenerationExecutionService {
       kind: "snapshot",
       requestId,
       at: new Date().toISOString(),
-      snapshot,
+      snapshot: snapshot as unknown as Record<string, unknown>,
     });
   }
 
@@ -580,24 +589,34 @@ function buildExecutionEvents(
 
 function mapRequest(row: Record<string, unknown>): GenerationRequest {
   return {
-    id: row.id,
-    tenantId: row.tenantId,
-    title: row.title,
-    domain: row.domain,
-    requestedBy: row.requestedBy,
+    id: asString(row.id) ?? "",
+    tenantId: asString(row.tenantId) ?? "",
+    title: asString(row.title) ?? "",
+    domain: asString(row.domain) ?? "",
+    requestedBy: asString(row.requestedBy) ?? "",
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
     riskLevel: (row.riskLevel as string).toLowerCase() as GenerationRequest["riskLevel"],
     reviewPath: enumToReviewPath(row.reviewPath as string),
-    totalJobs: row.totalJobs,
-    completedJobs: row.completedJobs,
-    failedJobs: row.failedJobs,
-    ...(row.description != null ? { description: row.description } : {}),
-    ...(row.conceptId != null ? { conceptId: row.conceptId } : {}),
-    ...(row.targetGrades != null ? { targetGrades: row.targetGrades } : {}),
-    ...(row.plannedAssets != null ? { plannedAssets: row.plannedAssets } : {}),
-    ...(row.artifactNeeds != null ? { artifactNeeds: row.artifactNeeds } : {}),
-    ...(row.riskFactors != null ? { riskFactors: row.riskFactors } : {}),
-    ...(row.estimatedCost != null ? { estimatedCost: row.estimatedCost } : {}),
+    totalJobs: asNumber(row.totalJobs) ?? 0,
+    completedJobs: asNumber(row.completedJobs) ?? 0,
+    failedJobs: asNumber(row.failedJobs) ?? 0,
+    ...(typeof row.description === "string" ? { description: row.description } : {}),
+    ...(typeof row.conceptId === "string" ? { conceptId: row.conceptId } : {}),
+    ...(Array.isArray(row.targetGrades)
+      ? { targetGrades: asStringArray(row.targetGrades) }
+      : {}),
+    ...(Array.isArray(row.plannedAssets)
+      ? { plannedAssets: row.plannedAssets as NonNullable<GenerationRequest["plannedAssets"]> }
+      : {}),
+    ...(asRecord(row.artifactNeeds)
+      ? { artifactNeeds: asRecord(row.artifactNeeds) as Record<string, number> }
+      : {}),
+    ...(Array.isArray(row.riskFactors)
+      ? { riskFactors: asStringArray(row.riskFactors) }
+      : {}),
+    ...(asRecord(row.estimatedCost)
+      ? { estimatedCost: asRecord(row.estimatedCost) as unknown as NonNullable<GenerationRequest["estimatedCost"]> }
+      : {}),
     ...(row.plannedAt
       ? { plannedAt: (row.plannedAt as Date).toISOString() }
       : {}),
@@ -614,20 +633,20 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
 
 function mapJob(row: Record<string, unknown>): GenerationJob {
   return {
-    id: row.id,
-    requestId: row.requestId,
+    id: asString(row.id) ?? "",
+    requestId: asString(row.requestId) ?? "",
     jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
     status: (row.status as string).toLowerCase() as GenerationJob["status"],
-    progress: row.progress,
-    retryCount: row.retryCount,
-    maxRetries: row.maxRetries,
-    ...(row.targetRef != null ? { targetRef: row.targetRef } : {}),
-    ...(row.inputPrompt != null ? { inputPrompt: row.inputPrompt } : {}),
-    ...(row.parameters != null ? { parameters: row.parameters } : {}),
-    ...(row.outputAssetId != null ? { outputAssetId: row.outputAssetId } : {}),
-    ...(row.outputData != null ? { outputData: row.outputData } : {}),
-    ...(row.diagnostics != null ? { diagnostics: row.diagnostics } : {}),
-    ...(row.errorMessage != null ? { errorMessage: row.errorMessage } : {}),
+    progress: asNumber(row.progress) ?? 0,
+    retryCount: asNumber(row.retryCount) ?? 0,
+    maxRetries: asNumber(row.maxRetries) ?? 0,
+    ...(typeof row.targetRef === "string" ? { targetRef: row.targetRef } : {}),
+    ...(typeof row.inputPrompt === "string" ? { inputPrompt: row.inputPrompt } : {}),
+    ...(asRecord(row.parameters) ? { parameters: asRecord(row.parameters)! } : {}),
+    ...(typeof row.outputAssetId === "string" ? { outputAssetId: row.outputAssetId } : {}),
+    ...(asRecord(row.outputData) ? { outputData: asRecord(row.outputData)! } : {}),
+    ...(asRecord(row.diagnostics) ? { diagnostics: asRecord(row.diagnostics)! } : {}),
+    ...(typeof row.errorMessage === "string" ? { errorMessage: row.errorMessage } : {}),
     ...(row.startedAt
       ? { startedAt: (row.startedAt as Date).toISOString() }
       : {}),
@@ -740,14 +759,11 @@ function getWorkerTelemetry(
     jobId,
     stage,
     message,
-    ...(typeof telemetry.jobType === "string"
-      ? { jobType: telemetry.jobType as GenerationExecutionWorkerTelemetry["jobType"] }
-      : {}),
     ...(typeof telemetry.progressPercent === "number"
       ? { progressPercent: telemetry.progressPercent }
       : {}),
     ...(typeof telemetry.status === "string"
-      ? { status: telemetry.status as GenerationExecutionWorkerTelemetry["status"] }
+      ? { status: telemetry.status }
       : {}),
     ...(telemetryDiagnostics ? { diagnostics: telemetryDiagnostics } : {}),
     ...(costPayload ? { cost: costPayload } : {}),
@@ -762,6 +778,22 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 
 function asNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+function toNullableJsonValue(
+  value: Record<string, unknown> | undefined,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value ? (value as Prisma.InputJsonValue) : Prisma.JsonNull;
 }
 
 function roundUsd(value: number): number {

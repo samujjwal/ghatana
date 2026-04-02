@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -329,6 +330,13 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
             return snapshot.get().preferences;
         }
 
+        if (snapshot.isPresent()) {
+            List<String> derivedPreferences = derivePreferences(snapshot.get());
+            if (!derivedPreferences.isEmpty()) {
+                return derivedPreferences;
+            }
+        }
+
         context.recordMetric("tutorputor.content.personalization_fallback", 1);
         return List.of("visual-learning", "step-by-step-explanations");
     }
@@ -359,6 +367,43 @@ public class ContentGenerationAgent extends BaseAgent<ContentGenerationRequest, 
 
         context.recordMetric("tutorputor.content.personalization_fallback", 1);
         return new ArrayList<>();
+    }
+
+    private List<String> derivePreferences(LearnerProfileHttpClient.LearnerPersonalizationSnapshot snapshot) {
+        LinkedHashSet<String> derived = new LinkedHashSet<>();
+
+        if (snapshot.preferredModality != null) {
+            switch (snapshot.preferredModality.trim().toUpperCase()) {
+                case "VISUAL" -> derived.add("visual-learning");
+                case "AUDITORY" -> derived.add("audio-explanations");
+                case "KINESTHETIC" -> derived.add("hands-on-practice");
+                case "READING" -> derived.add("reading-based-learning");
+                case "MIXED" -> derived.add("multimodal-learning");
+                default -> {
+                }
+            }
+        }
+
+        if (snapshot.preferredPacing != null) {
+            switch (snapshot.preferredPacing.trim().toUpperCase()) {
+                case "SLOW", "STEADY" -> derived.add("step-by-step-explanations");
+                case "FAST" -> derived.add("concise-progress-checks");
+                case "ADAPTIVE" -> derived.add("adaptive-checkpoints");
+                default -> {
+                }
+            }
+        }
+
+        if (snapshot.preferredDifficulty != null) {
+            switch (snapshot.preferredDifficulty.trim().toUpperCase()) {
+                case "BEGINNER", "EASY" -> derived.add("scaffolded-practice");
+                case "ADVANCED", "HARD", "EXPERT" -> derived.add("challenge-problems");
+                default -> {
+                }
+            }
+        }
+
+        return List.copyOf(derived);
     }
 
     private String buildEpisodeInput(ContentGenerationRequest request) {

@@ -235,7 +235,7 @@ public class GEvent implements Event  {
 
     @Override
     public Object getPayload(String key) {
-        return payload.get(key);
+        return payload != null ? payload.get(key) : null;
     }
 
     /**

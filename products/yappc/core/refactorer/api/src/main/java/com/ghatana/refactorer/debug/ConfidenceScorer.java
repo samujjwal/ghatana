@@ -18,12 +18,14 @@ import org.slf4j.LoggerFactory;
 */
 public class ConfidenceScorer {
     private static final Logger log = LoggerFactory.getLogger(ConfidenceScorer.class);
+    private static final double STACK_TRACE_BONUS = 0.1;
 
     // Weight factors for different confidence components (sum should be 1.0)
     private static final double PATTERN_MATCH_WEIGHT = 0.4;
     private static final double HISTORICAL_WEIGHT = 0.3;
     private static final double CONTEXT_WEIGHT = 0.2;
     private static final double LANGUAGE_WEIGHT = 0.1;
+    private static final double DECLARED_CONFIDENCE_WEIGHT = 0.15;
 
     // Historical success tracking
     private final Map<String, SuccessStats> successStats = new HashMap<>();
@@ -47,7 +49,10 @@ public class ConfidenceScorer {
         if (languageScore < 0.5) {
             // If there's a language mismatch, cap the total score at 0.5
             // This ensures language mismatches are always penalized
-            return Math.min(0.5, calculatePatternMatchScore(suggestion, errorMessage) * 0.5);
+            double mismatchScore = calculatePatternMatchScore(suggestion, errorMessage) * 0.5;
+            mismatchScore = (mismatchScore * (1.0 - DECLARED_CONFIDENCE_WEIGHT))
+                    + (suggestion.getConfidence() * DECLARED_CONFIDENCE_WEIGHT);
+            return Math.min(0.5, mismatchScore);
         }
 
         double patternScore = calculatePatternMatchScore(suggestion, errorMessage);
@@ -127,8 +132,8 @@ public class ConfidenceScorer {
                     double score = Math.min(1.0, baseScore + groupBonus);
 
                     // Debug logging
-                    log.info("Regex pattern match - isFullMatch: %b, baseScore: %.2f, groupCount:"
-                                    + " %d, groupBonus: %.2f, score: %.2f%n",
+                        log.info("Regex pattern match - isFullMatch: {}, baseScore: {}, groupCount:"
+                                + " {}, groupBonus: {}, score: {}",
                             isFullMatch, baseScore, groupCount, groupBonus, score);
 
                     return score;
@@ -200,14 +205,21 @@ public class ConfidenceScorer {
 
             if ((suggestionLang.equals("java") && !fileExt.equals(".java"))
                     || (suggestionLang.equals("python") && !fileExt.equals(".py"))
-                    || (suggestionLang.matches("(js|javascript|typescript|ts)")
-                            && !fileExt.matches("\\.(js|jsx|ts|tsx|mjs|cjs)"))) {
+                    || (suggestionLang.matches("(node|js|javascript|typescript|ts)")
+                        && !fileExt.matches("\\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)"))) {
                 return 0.4; // Slightly higher than language mismatch but still low
             }
         }
 
         // Higher score for matching language and context
-        return 0.9;
+        double score = 0.9;
+        boolean stackTraceParsed = context.getMetadata("stackTraceParsed", false);
+        int parsedFrameCount = context.getMetadata("parsedFrameCount", 0);
+        if (stackTraceParsed) {
+            score = Math.min(1.0, score + STACK_TRACE_BONUS + Math.min(parsedFrameCount, 5) * 0.01);
+        }
+
+        return score;
     }
 
     private double calculateLanguageScore(FixSuggestion suggestion, FixContext context) {

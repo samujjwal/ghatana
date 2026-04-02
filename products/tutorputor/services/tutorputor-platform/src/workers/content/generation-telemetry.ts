@@ -10,6 +10,7 @@
  * @doc.pattern Publisher
  */
 
+import { Prisma } from "@tutorputor/core/db";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import type { Logger } from "pino";
@@ -291,7 +292,7 @@ export class ContentWorkerTelemetryPublisher {
         where: { id: generationJobId },
         data: {
           progress: progressPercent,
-          diagnostics,
+          diagnostics: toNullableJsonValue(diagnostics),
           ...(existingJob.startedAt == null &&
           (input.status === "running" || progressPercent > 0)
             ? { startedAt: new Date(at) }
@@ -339,4 +340,10 @@ function toFiniteNumber(value: unknown): number | undefined {
 
 function roundUsd(value: number): number {
   return Math.round(value * 10000) / 10000;
+}
+
+function toNullableJsonValue(
+  value: Record<string, unknown> | null,
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value ? (value as Prisma.InputJsonValue) : Prisma.JsonNull;
 }

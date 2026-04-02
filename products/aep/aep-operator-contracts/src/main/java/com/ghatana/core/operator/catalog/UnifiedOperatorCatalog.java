@@ -29,8 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * OperatorCatalog catalog = UnifiedOperatorCatalog.withServiceLoaderDiscovery();
  * }</pre>
  *
- * <p>{@link DefaultOperatorCatalog} and {@link InMemoryOperatorCatalog} are kept for
- * backward compatibility. New code should use {@code UnifiedOperatorCatalog} instead.
+ * <p>This is the canonical operator catalog. Previous implementations
+ * ({@code DefaultOperatorCatalog} and {@code InMemoryOperatorCatalog}) have been
+ * removed. Use {@code UnifiedOperatorCatalog} for all new code.
  *
  * @see OperatorCatalog
  * @see com.ghatana.core.operator.spi.OperatorProvider

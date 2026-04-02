@@ -31,6 +31,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: tts
           image: ghcr.io/ghatana/audio-video/tts-service:latest
@@ -86,6 +88,13 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
             failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8091
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 12
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

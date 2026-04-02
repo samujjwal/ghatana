@@ -16,41 +16,41 @@ import type { RiskLevel } from "@tutorputor/contracts/v1/types";
 
 export type ContentAssetType =
   | "explainer"
-  | "worked_example"
-  | "assessment"
+  | "module"
+  | "example_set"
   | "simulation"
   | "animation"
-  | "concept_map"
-  | "infographic"
-  | "tutorial"
-  | "drill"
-  | "practice_problem";
+  | "assessment"
+  | "pathway"
+  | "reference_pack";
 
 export type ContentAssetStatus =
   | "draft"
+  | "validating"
+  | "review"
+  | "approved"
   | "published"
-  | "archived"
-  | "under_review";
+  | "archived";
 
 export type ContentBlockType =
-  | "text"
-  | "code"
-  | "image"
-  | "video"
-  | "interactive"
-  | "assessment"
-  | "simulation"
-  | "animation"
-  | "diagram"
-  | "equation"
-  | "table";
+  | "text_explainer"
+  | "worked_example"
+  | "data_table"
+  | "visual_sequence"
+  | "simulation_entry"
+  | "animation_entry"
+  | "question_set"
+  | "task"
+  | "reflection"
+  | "hint"
+  | "tutor_prompt"
+  | "evidence_capture";
 
 export type ArtifactManifestType =
+  | "worked_example"
   | "simulation"
   | "animation"
-  | "assessment"
-  | "worked_example"
-  | "interactive";
+  | "assessment";
 
 export interface ContentAsset {
   id: string;
@@ -63,8 +63,8 @@ export interface ContentAsset {
   status: ContentAssetStatus;
   currentVersion: number;
   qualityScore?: number;
-  semanticIndexStatus?: "pending" | "ready" | "failed";
-  recommendationStatus?: "pending" | "ready" | "stale";
+  semanticIndexStatus?: "pending" | "indexed" | "stale";
+  recommendationStatus?: "pending" | "computed" | "stale";
   tags?: string[];
   targetGrades: string[];
   difficultyLevel?: string;

@@ -117,9 +117,47 @@ describe("SessionAdaptationEngine", () => {
       inactivityMs: 240000,
     });
 
-    const decision = await engine.getCurrentAdaptation("session-2", "asset-1");
+    const decision = await engine.getCurrentAdaptation(
+      "tenant-1",
+      "user-1",
+      "session-2",
+      "asset-1",
+    );
 
     expect(decision?.adapted).toBe(true);
     expect(decision?.variant?.key).toBe("visual");
+  });
+
+  it("isolates cached decisions by tenant and learner", async () => {
+    const engine = new SessionAdaptationEngine(
+      makeLearnerProfileService() as never,
+      makeVariationService() as never,
+    );
+
+    await engine.processEvent({
+      tenantId: "tenant-1",
+      userId: "user-1",
+      sessionId: "shared-session",
+      assetId: "asset-1",
+      eventType: "IDLE",
+      inactivityMs: 240000,
+    });
+
+    await expect(
+      engine.getCurrentAdaptation(
+        "tenant-2",
+        "user-1",
+        "shared-session",
+        "asset-1",
+      ),
+    ).resolves.toBeNull();
+    await expect(
+      engine.getCurrentAdaptation(
+        "tenant-1",
+        "user-2",
+        "shared-session",
+        "asset-1",
+      ),
+    ).resolves.toBeNull();
   });
 });

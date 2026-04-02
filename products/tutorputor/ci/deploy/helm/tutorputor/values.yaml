@@ -17,7 +17,7 @@ serviceAccount:
 
 podAnnotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "9090"
+  prometheus.io/port: "3000"
   prometheus.io/path: "/metrics"
 
 podSecurityContext:
@@ -29,13 +29,13 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop: ["ALL"]
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true
 
 service:
   type: ClusterIP
   port: 80
   targetPort: 3000
-  metricsPort: 9090
+  metricsPort: 3000
 
 ingress:
   enabled: false
@@ -83,7 +83,7 @@ podDisruptionBudget:
 app:
   nodeEnv: production
   port: "3000"
-  metricsPort: "9090"
+  metricsPort: "3000"
   logLevel: warn
   defaultTenant: default
   rateLimitWindow: "900000"

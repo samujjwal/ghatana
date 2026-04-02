@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Run lint-staged to enforce formatting and linting rules on staged TypeScript/JavaScript files.
+pnpm exec lint-staged

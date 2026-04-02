@@ -246,7 +246,13 @@ public class PolicyConfigLoader {
         List<PolicyDefinition> merged = new ArrayList<>();
 
         try {
-            URI uri = getClass().getResource(CLASSPATH_POLICIES_DIR).toURI();
+            java.net.URL resourceUrl = getClass().getResource(CLASSPATH_POLICIES_DIR);
+            if (resourceUrl == null) {
+                log.warn("PolicyConfigLoader: classpath resource '{}' not found — no policies loaded",
+                        CLASSPATH_POLICIES_DIR);
+                return List.of();
+            }
+            URI uri = resourceUrl.toURI();
 
             // Support running inside a JAR (where the "directory" is a zip entry)
             if ("jar".equals(uri.getScheme())) {
@@ -259,9 +265,6 @@ public class PolicyConfigLoader {
                 merged.addAll(loadFromDirectory(mapper, dir));
             }
 
-        } catch (NullPointerException e) {
-            log.warn("PolicyConfigLoader: classpath resource '{}' not found — no policies loaded",
-                    CLASSPATH_POLICIES_DIR);
         } catch (URISyntaxException | IOException e) {
             throw new IllegalStateException(
                     "PolicyConfigLoader: failed to load classpath policies from '"

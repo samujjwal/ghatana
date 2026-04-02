@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.ghatana.refactorer.debug.DebugController;
 import com.ghatana.refactorer.orchestrator.TestResourceInitializer;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -117,7 +118,7 @@ class DebugEntryTest {
         // Act & Assert - Should throw when command times out
         Exception exception =
                 assertThrows(
-                        RuntimeException.class,
+                RefactorerOperationException.class,
                         () -> DebugEntry.run(mockContext, command, Duration.ofMillis(100)),
                         "Expected timeout exception");
 

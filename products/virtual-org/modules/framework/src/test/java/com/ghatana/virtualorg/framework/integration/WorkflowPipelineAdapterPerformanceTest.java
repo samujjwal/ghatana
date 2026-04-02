@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.framework.integration;
 
-import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -43,7 +43,7 @@ class WorkflowPipelineAdapterPerformanceTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        operatorCatalog = new InMemoryOperatorCatalog();
+        operatorCatalog = new UnifiedOperatorCatalog();
         adapter = new WorkflowPipelineAdapter(operatorCatalog);
     }
 

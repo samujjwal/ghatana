@@ -18,6 +18,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  # NOTE: several products reuse default local ports across independent dev flows.
+  # These host.docker.internal targets assume one product stack at a time unless
+  # local ports are remapped to run multiple stacks concurrently.
+
   # Data-Cloud platform (HTTP + gRPC launcher on 8082)
   - job_name: 'data-cloud-platform'
     static_configs:
@@ -38,5 +42,41 @@ scrape_configs:
           service: 'data-cloud-event'
           product: 'data-cloud'
           layer: 'event'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # YAPPC lifecycle service (ActiveJ/JVM)
+  - job_name: 'yappc-lifecycle'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          service: 'yappc-lifecycle'
+          product: 'yappc'
+          layer: 'lifecycle'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # AEP service manager
+  - job_name: 'aep-service-manager'
+    static_configs:
+      - targets: ['host.docker.internal:8090']
+        labels:
+          service: 'aep-service-manager'
+          product: 'aep'
+          layer: 'server'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Tutorputor platform (Node.js/Fastify metrics on the main app port)
+  - job_name: 'tutorputor-app'
+    static_configs:
+      - targets: ['host.docker.internal:3000']
+        labels:
+          service: 'tutorputor-app'
+          product: 'tutorputor'
+          layer: 'platform'
+          tech: 'nodejs'
     metrics_path: '/metrics'
     scrape_interval: 15s

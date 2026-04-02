@@ -2,7 +2,7 @@ package com.ghatana.products.yappc.service;
 
 import com.ghatana.products.yappc.domain.task.ParameterSpec;
 import com.ghatana.products.yappc.domain.task.TaskDefinition;
-import com.ghatana.products.yappc.domain.task.ValidationResult;
+import com.ghatana.platform.core.validation.ValidationResult;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,39 +31,39 @@ public class TaskValidator {
      */
     @NotNull
     public ValidationResult validateTaskDefinition(@NotNull TaskDefinition definition) {
-        List<String> errors = new ArrayList<>();
+        List<ValidationResult.Violation> errors = new ArrayList<>();
 
         // Validate ID
         if (definition.id() == null || definition.id().isBlank()) {
-            errors.add("Task ID cannot be null or blank");
+            errors.add(new ValidationResult.Violation("id", "Task ID cannot be null or blank"));
         }
 
         // Validate name
         if (definition.name() == null || definition.name().isBlank()) {
-            errors.add("Task name cannot be null or blank");
+            errors.add(new ValidationResult.Violation("name", "Task name cannot be null or blank"));
         }
 
         // Validate capabilities
         if (definition.requiredCapabilities().isEmpty()) {
-            errors.add("Task must require at least one capability");
+            errors.add(new ValidationResult.Violation("requiredCapabilities", "Task must require at least one capability"));
         }
 
         // Validate parameters
         for (Map.Entry<String, ParameterSpec> entry : definition.parameters().entrySet()) {
             if (entry.getKey() == null || entry.getKey().isBlank()) {
-                errors.add("Parameter name cannot be null or blank");
+                errors.add(new ValidationResult.Violation("parameters", "Parameter name cannot be null or blank"));
             }
             if (entry.getValue() == null) {
-                errors.add("Parameter spec cannot be null for: " + entry.getKey());
+                errors.add(new ValidationResult.Violation("parameters." + entry.getKey(), "Parameter spec cannot be null for: " + entry.getKey()));
             }
         }
 
         if (!errors.isEmpty()) {
             LOG.warn("Task definition validation failed: {}", errors);
-            return ValidationResult.failure(errors);
+            return ValidationResult.of(errors);
         }
 
-        return ValidationResult.success();
+        return ValidationResult.valid();
     }
 
     /**
@@ -75,7 +75,7 @@ public class TaskValidator {
      */
     @NotNull
     public ValidationResult validateInput(@NotNull TaskDefinition task, @NotNull Object input) {
-        List<String> errors = new ArrayList<>();
+        List<ValidationResult.Violation> errors = new ArrayList<>();
 
         // If input is a Map, validate against parameter specs
         if (input instanceof Map<?, ?> inputMap) {
@@ -85,14 +85,17 @@ public class TaskValidator {
 
                 // Check required parameters
                 if (spec.required() && !inputMap.containsKey(paramName)) {
-                    errors.add("Required parameter missing: " + paramName);
+                    errors.add(new ValidationResult.Violation("input." + paramName, "Required parameter missing: " + paramName));
                 }
 
                 // Type validation (basic)
                 if (inputMap.containsKey(paramName)) {
                     Object value = inputMap.get(paramName);
                     if (!validateType(value, spec.type())) {
-                        errors.add("Parameter " + paramName + " has invalid type. Expected: " + spec.type());
+                        errors.add(new ValidationResult.Violation(
+                                "input." + paramName,
+                                "Parameter " + paramName + " has invalid type. Expected: " + spec.type()
+                        ));
                     }
                 }
             }
@@ -100,10 +103,10 @@ public class TaskValidator {
 
         if (!errors.isEmpty()) {
             LOG.debug("Task input validation failed for {}: {}", task.id(), errors);
-            return ValidationResult.failure(errors);
+            return ValidationResult.of(errors);
         }
 
-        return ValidationResult.success();
+        return ValidationResult.valid();
     }
 
     /**

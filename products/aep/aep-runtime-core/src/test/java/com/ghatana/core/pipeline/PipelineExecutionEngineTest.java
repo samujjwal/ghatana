@@ -1,7 +1,7 @@
 package com.ghatana.core.pipeline;
 
 import com.ghatana.core.operator.*;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
@@ -37,12 +37,12 @@ import static org.assertj.core.api.Assertions.*;
 class PipelineExecutionEngineTest extends EventloopTestBase {
 
     private PipelineExecutionEngine engine;
-    private DefaultOperatorCatalog catalog;
+    private UnifiedOperatorCatalog catalog;
 
     @BeforeEach
     void setUp() {
         engine = new PipelineExecutionEngine();
-        catalog = new DefaultOperatorCatalog();
+        catalog = new UnifiedOperatorCatalog();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -577,7 +577,7 @@ class PipelineExecutionEngineTest extends EventloopTestBase {
     }
 
     // ════════════════════════════════════════════════════════════════
-    // Tests: DefaultOperatorCatalog
+    // Tests: UnifiedOperatorCatalog
     // ════════════════════════════════════════════════════════════════
 
     @Test

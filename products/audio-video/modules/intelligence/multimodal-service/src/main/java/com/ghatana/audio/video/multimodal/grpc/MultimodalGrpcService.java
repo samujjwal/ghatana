@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.multimodal.grpc;
 
+import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
 import com.ghatana.audio.video.multimodal.engine.AudioVideoProcessingError;
 import com.ghatana.audio.video.multimodal.engine.MultimodalAnalysisEngine;
 import com.ghatana.audio.video.multimodal.engine.PlatformMultimodalAdapter;
@@ -31,16 +32,24 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
     private final PlatformMultimodalAdapter platformAdapter;
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
+    private final MediaProcessingMetrics mediaMetrics;
 
     public MultimodalGrpcService() {
+        this(MediaProcessingMetrics.create());
+    }
+
+    public MultimodalGrpcService(MediaProcessingMetrics metrics) {
         this.platformAdapter = new PlatformMultimodalAdapter();
         this.engine = new MultimodalAnalysisEngine(platformAdapter);
+        this.mediaMetrics = metrics;
         LOG.info("Multimodal service initialized against platform audio-video library");
     }
 
     @Override
     public void processMultimodal(MultimodalRequest request, StreamObserver<MultimodalResponse> responseObserver) {
         requestCount.incrementAndGet();
+        long startTime = System.currentTimeMillis();
+        mediaMetrics.recordStarted("multimodal.analyse");
         try {
             LOG.debug("Processing multimodal request with {} analysis types",
                     request.getAnalysisTypesList().size());
@@ -86,6 +95,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
                     .putMetadata("platform_metrics_enabled", String.valueOf(platformAdapter.metricsEnabled()));
 
             totalProcessingTime.addAndGet(result.getProcessingTimeMs());
+            mediaMetrics.recordSucceeded("multimodal.analyse", System.currentTimeMillis() - startTime);
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
 
@@ -93,6 +103,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
 
         } catch (Exception e) {
             LOG.error("Multimodal processing failed", e);
+            mediaMetrics.recordFailed("multimodal.analyse");
             responseObserver.onError(toStatus(e, "Multimodal processing failed").asRuntimeException());
         }
     }

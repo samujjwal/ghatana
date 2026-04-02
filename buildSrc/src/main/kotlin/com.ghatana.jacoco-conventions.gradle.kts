@@ -51,12 +51,15 @@ pluginManager.withPlugin("java") {
                 limit {
                     counter = "BRANCH"
                     value = "COVEREDRATIO"
-                    minimum = BigDecimal("0.00")
+                    // Minimum 50% branch coverage — raised from 0% to enforce a meaningful gate.
+                    // Increase incrementally as coverage improves; target is 80% for critical paths.
+                    minimum = BigDecimal("0.50")
                 }
                 limit {
                     counter = "LINE"
                     value = "COVEREDRATIO"
-                    minimum = BigDecimal("0.00")
+                    // Minimum 60% line coverage — raised from 0% to enforce a meaningful gate.
+                    minimum = BigDecimal("0.60")
                 }
             }
         }

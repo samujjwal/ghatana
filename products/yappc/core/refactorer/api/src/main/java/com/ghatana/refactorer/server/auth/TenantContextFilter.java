@@ -57,6 +57,10 @@ public final class TenantContextFilter implements AsyncServlet {
 
     @Override
     public Promise<HttpResponse> serve(HttpRequest request) {
+        return filter(request, delegate);
+    }
+
+    public Promise<HttpResponse> filter(HttpRequest request, AsyncServlet next) {
         try {
             // Extract tenant ID with priority: attached context > X-Tenant-ID header
             Optional<String> tenantId = extractTenantId(request);
@@ -73,7 +77,7 @@ public final class TenantContextFilter implements AsyncServlet {
             );
 
             // Serve request and ensure cleanup on completion
-            return delegate.serve(request)
+        return next.serve(request)
                     .whenComplete((response, exception) -> com.ghatana.platform.governance.security.TenantContext.clear());
 
         } catch (Exception e) {

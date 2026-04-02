@@ -5,6 +5,7 @@ import com.ghatana.orchestrator.subsys.TriggerListener;
 import com.ghatana.platform.domain.event.GEvent;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -219,7 +220,7 @@ public class TriggerListenerBootstrap {
             }
 
             // Parse the event payload
-            Map<String, Object> eventData = objectMapper.readValue(payload, Map.class);
+            Map<String, Object> eventData = objectMapper.readValue(payload, new TypeReference<Map<String, Object>>() {});
 
             // Extract required fields
             String tenantId = extractStringField(eventData, "tenantId", eventId);

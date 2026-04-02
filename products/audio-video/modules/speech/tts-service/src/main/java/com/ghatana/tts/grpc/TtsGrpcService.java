@@ -32,6 +32,20 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
     private final Timer synthesizeTimer;
     private final Timer streamingTimer;
 
+    /**
+     * Package-private constructor for unit testing — supply a pre-configured library.
+     * Avoids native-library / file-system dependencies during tests.
+     */
+    TtsGrpcService(AudioVideoLibrary library, MeterRegistry metrics) {
+        this.library = library;
+        this.synthesizeTimer = Timer.builder("tts.synthesize")
+            .description("Synthesis latency")
+            .register(metrics);
+        this.streamingTimer = Timer.builder("tts.synthesize.streaming")
+            .description("Streaming synthesis latency")
+            .register(metrics);
+    }
+
     public TtsGrpcService(MeterRegistry metrics) {
         TtsConfig config = TtsConfig.builder()
             .voiceModelPath(Paths.get(System.getenv().getOrDefault("TTS_MODEL_PATH", "/models/piper-en.onnx")))

@@ -13,8 +13,10 @@
 
 import type { FastifyInstance } from "fastify";
 import { getTenantId, roleGuard } from "../../../core/http/requestContext.js";
-type ContentAssetType = string;
-type ContentAssetStatus = string;
+import type {
+  ContentAssetStatus,
+  ContentAssetType,
+} from "../types.js";
 import { ContentAssetReadService } from "./read-service.js";
 import type { PrismaClient } from "@tutorputor/core/db";
 
@@ -56,6 +58,24 @@ export function registerContentAssetRoutes(
   context: AssetRouteContext,
 ): void {
   const service = new ContentAssetReadService(context.prisma);
+  const contentAssetTypes = new Set<ContentAssetType>([
+    "explainer",
+    "module",
+    "example_set",
+    "simulation",
+    "animation",
+    "assessment",
+    "pathway",
+    "reference_pack",
+  ]);
+  const contentAssetStatuses = new Set<ContentAssetStatus>([
+    "draft",
+    "validating",
+    "review",
+    "approved",
+    "published",
+    "archived",
+  ]);
 
   const readGuard = roleGuard([
     "admin",
@@ -75,11 +95,15 @@ export function registerContentAssetRoutes(
       const tenantId = getTenantId(request);
       const { assetType, status, domain, authorId, search, limit, offset } =
         request.query;
+      const normalizedAssetType =
+        assetType && contentAssetTypes.has(assetType) ? assetType : undefined;
+      const normalizedStatus =
+        status && contentAssetStatuses.has(status) ? status : undefined;
 
       const result = await service.listAssets({
         tenantId,
-        ...(assetType ? { assetType } : {}),
-        ...(status ? { status } : {}),
+        ...(normalizedAssetType ? { assetType: normalizedAssetType } : {}),
+        ...(normalizedStatus ? { status: normalizedStatus } : {}),
         ...(domain ? { domain } : {}),
         ...(authorId ? { authorId } : {}),
         ...(search ? { search } : {}),
