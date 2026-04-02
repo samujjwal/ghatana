@@ -9,6 +9,7 @@ description = "YAPPC Domain Models Module"
 
 dependencies {
     // Platform modules
+    implementation(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:http"))

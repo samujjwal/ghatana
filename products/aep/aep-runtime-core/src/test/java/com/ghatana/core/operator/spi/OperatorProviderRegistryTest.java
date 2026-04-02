@@ -6,7 +6,7 @@
 package com.ghatana.core.operator.spi;
 
 import com.ghatana.core.operator.*;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.platform.domain.event.Event;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
@@ -307,7 +307,7 @@ class OperatorProviderRegistryTest {
             registry.registerProvider(new StreamOperatorProvider());
             registry.registerProvider(new PatternOperatorProvider());
 
-            DefaultOperatorCatalog catalog = new DefaultOperatorCatalog();
+            UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
             int count = registry.materializeIntoCatalog(catalog);
 
             assertThat(count).isEqualTo(3); // 2 stream + 1 pattern
@@ -317,7 +317,7 @@ class OperatorProviderRegistryTest {
         @Test
         @DisplayName("Empty registry materializes nothing")
         void emptyMaterialization() {
-            DefaultOperatorCatalog catalog = new DefaultOperatorCatalog();
+            UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
             int count = registry.materializeIntoCatalog(catalog);
             assertThat(count).isZero();
             assertThat(catalog.size()).isZero();

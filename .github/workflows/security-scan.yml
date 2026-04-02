@@ -106,7 +106,7 @@ jobs:
                   retention-days: 30
 
     sast-scan:
-        name: Static Application Security Testing (SAST)
+        name: Static Application Security Testing (SAST) — TypeScript
         runs-on: ubuntu-latest
 
         steps:
@@ -123,6 +123,35 @@ jobs:
               uses: github/codeql-action/analyze@v3
               with:
                   category: "/language:javascript"
+
+    sast-scan-java:
+        name: Static Application Security Testing (SAST) — Java
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "21"
+
+            - name: Initialize CodeQL for Java
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: java
+                  queries: security-and-quality
+
+            - name: Build Java sources for CodeQL
+              run: ./gradlew compileJava compileTestJava --no-daemon -x test
+
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v3
+              with:
+                  category: "/language:java"
+                  upload: true
 
     secret-scan:
         name: Secret Detection
@@ -239,6 +268,7 @@ jobs:
                 dependency-scan-node,
                 dependency-scan-gradle,
                 sast-scan,
+                sast-scan-java,
                 secret-scan,
                 container-scan,
                 license-compliance,

@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.server.config;
 
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +34,7 @@ public final class ConfigLoader {
      * Loads server configuration from application.conf and environment variables.
      *
      * @return ServerConfig instance
-     * @throws RuntimeException if configuration loading fails
+    * @throws RefactorerOperationException if configuration loading fails
      */
     public static ServerConfig load() {
         try {
@@ -46,6 +47,7 @@ public final class ConfigLoader {
             config = config.resolve();
 
             ServerConfig serverConfig = ServerConfig.fromConfig(config);
+            validateConfig(serverConfig);
 
             logger.info("Server configuration loaded successfully");
             logger.debug(
@@ -58,7 +60,7 @@ public final class ConfigLoader {
 
         } catch (Exception e) {
             logger.error("Failed to load server configuration", e);
-            throw new RuntimeException("Configuration loading failed", e);
+            throw new RefactorerOperationException("Configuration loading failed", e);
         }
     }
 

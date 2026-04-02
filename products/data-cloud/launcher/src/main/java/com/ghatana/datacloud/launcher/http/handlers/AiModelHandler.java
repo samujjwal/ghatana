@@ -5,6 +5,7 @@ import com.ghatana.aiplatform.featurestore.Feature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
+import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.*;
@@ -29,11 +30,13 @@ import java.util.Map;
  */
 public class AiModelHandler {
 
+    private static final String HANDLER_NAME = "AiModelHandler";
     private static final Logger log = LoggerFactory.getLogger(AiModelHandler.class);
 
     private final AIModelManager aiModelManager;
     private final FeatureStoreService featureStoreService;
     private final HttpHandlerSupport http;
+    private DataCloudHttpMetrics httpMetrics = DataCloudHttpMetrics.noop();
 
     public AiModelHandler(AIModelManager aiModelManager,
                           FeatureStoreService featureStoreService,
@@ -43,6 +46,11 @@ public class AiModelHandler {
         this.http = http;
     }
 
+    public AiModelHandler withMetrics(DataCloudHttpMetrics metrics) {
+        this.httpMetrics = metrics;
+        return this;
+    }
+
     // ==================== Model Registry ====================
 
     public Promise<HttpResponse> handleListAiModels(HttpRequest request) {
@@ -50,15 +58,20 @@ public class AiModelHandler {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
         String tenantId = http.resolveTenantId(request);
+        long start = System.currentTimeMillis();
         return aiModelManager.getAllModels(tenantId)
             .map(models -> {
                 List<Map<String, Object>> modelList = models.stream()
                         .map(this::modelMetadataToMap)
                         .toList();
-                return http.jsonResponse(Map.of("models", modelList, "count", modelList.size()));
+                HttpResponse response = http.jsonResponse(Map.of("models", modelList, "count", modelList.size()));
+                httpMetrics.recordRequest(HANDLER_NAME, "handleListAiModels", tenantId, response.getCode());
+                httpMetrics.recordLatency(HANDLER_NAME, "handleListAiModels", System.currentTimeMillis() - start);
+                return response;
             })
             .then(Promise::of, e -> {
                 log.error("[DC-11] failed to list models for tenant={}: {}", tenantId, e.getMessage(), e);
+                httpMetrics.recordError(HANDLER_NAME, "handleListAiModels", e);
                 return Promise.of(http.errorResponse(500, "Failed to list models: " + e.getMessage()));
             });
     }
@@ -68,6 +81,7 @@ public class AiModelHandler {
         if (aiModelManager == null) {
             return Promise.of(http.errorResponse(503, "AI model manager not available in this deployment"));
         }
+        long start = System.currentTimeMillis();
         return request.loadBody()
             .then(buf -> {
                 try {
@@ -108,17 +122,21 @@ public class AiModelHandler {
                         .map(registered -> {
                             Map<String, Object> response = modelMetadataToMap(registered);
                             try {
-                                return HttpResponse.ofCode(201)
+                                HttpResponse httpResponse = HttpResponse.ofCode(201)
                                         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                                         .withBody(ByteBuf.wrapForReading(
                                                 http.objectMapper().writeValueAsBytes(response)))
                                         .build();
+                                httpMetrics.recordRequest(HANDLER_NAME, "handleRegisterAiModel", tenantId, 201);
+                                httpMetrics.recordLatency(HANDLER_NAME, "handleRegisterAiModel", System.currentTimeMillis() - start);
+                                return httpResponse;
                             } catch (Exception ex) {
                                 throw new RuntimeException(ex);
                             }
                         })
                         .then(Promise::of, e -> {
                             log.error("[DC-11] model registration failed: {}", e.getMessage(), e);
+                            httpMetrics.recordError(HANDLER_NAME, "handleRegisterAiModel", e);
                             return Promise.of(http.errorResponse(500, "Model registration failed: " + e.getMessage()));
                         });
                 } catch (Exception e) {

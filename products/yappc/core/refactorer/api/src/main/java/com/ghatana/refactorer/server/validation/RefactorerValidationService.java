@@ -3,6 +3,9 @@ package com.ghatana.refactorer.server.validation;
 import com.ghatana.platform.validation.ValidationError;
 import com.ghatana.platform.validation.ValidationResult;
 import com.ghatana.platform.validation.ValidationService;
+import com.ghatana.refactorer.api.v1.Budget;
+import com.ghatana.refactorer.api.v1.DiagnoseRequest;
+import com.ghatana.refactorer.api.v1.RunRequest;
 import com.ghatana.refactorer.server.dto.RestModels;
 import io.activej.promise.Promise;
 import java.util.ArrayList;
@@ -59,6 +62,14 @@ public class RefactorerValidationService implements ValidationService {
         }
 
         if (event instanceof RestModels.RunRequest runReq) {
+            return Promise.of(validateRunRequest(runReq));
+        }
+
+        if (event instanceof DiagnoseRequest diagnoseReq) {
+            return Promise.of(validateDiagnoseRequest(diagnoseReq));
+        }
+
+        if (event instanceof RunRequest runReq) {
             return Promise.of(validateRunRequest(runReq));
         }
 
@@ -190,6 +201,72 @@ public class RefactorerValidationService implements ValidationService {
         return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
     }
 
+    private ValidationResult validateDiagnoseRequest(DiagnoseRequest request) {
+        List<ValidationError> errors = new ArrayList<>();
+
+        if (request.getRepoRoot().isBlank()) {
+            errors.add(
+                    new ValidationError(
+                            "MISSING_REPO_ROOT",
+                            "Repository root path is required",
+                            "repoRoot",
+                            request.getRepoRoot()));
+        }
+
+        if (request.getLanguagesCount() == 0) {
+            errors.add(
+                    new ValidationError(
+                            "MISSING_LANGUAGES",
+                            "At least one language must be specified",
+                            "languages",
+                            request.getLanguagesList()));
+        }
+
+        if (request.hasBudget()) {
+            errors.addAll(validateBudget(request.getBudget()));
+        } else {
+            errors.add(
+                    new ValidationError(
+                            "MISSING_BUDGET",
+                            "Budget configuration is required",
+                            "budget",
+                            null));
+        }
+
+        logger.debug("DiagnoseRequest validation complete: {} errors found", errors.size());
+        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+    }
+
+    private ValidationResult validateRunRequest(RunRequest request) {
+        List<ValidationError> errors = new ArrayList<>();
+
+        if (!request.hasConfig()) {
+            errors.add(
+                    new ValidationError(
+                            "MISSING_CONFIG",
+                            "Diagnosis configuration is required",
+                            "config",
+                            null));
+        } else {
+            ValidationResult configResult = validateDiagnoseRequest(request.getConfig());
+            if (!configResult.isValid()) {
+                errors.addAll(configResult.getErrors());
+            }
+        }
+
+        if (request.getIdempotencyKey().isBlank()) {
+            errors.add(
+                    new ValidationError(
+                            "MISSING_IDEMPOTENCY_KEY",
+                            "Idempotency key is required",
+                            "idempotencyKey",
+                            request.getIdempotencyKey()));
+        }
+
+        logger.debug("RunRequest validation complete: {} errors found", errors.size());
+        return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors);
+    }
+
     /**
      * Validates budget constraints.
      *
@@ -224,6 +301,39 @@ public class RefactorerValidationService implements ValidationService {
                             "Timeout must be greater than zero",
                             "budget.timeoutSeconds",
                             budget.timeoutSeconds()));
+        }
+
+        return errors;
+    }
+
+    private List<ValidationError> validateBudget(Budget budget) {
+        List<ValidationError> errors = new ArrayList<>();
+
+        if (budget.getMaxPasses() < 1) {
+            errors.add(
+                    new ValidationError(
+                            "INVALID_MAX_PASSES",
+                            "Maximum passes must be at least 1",
+                            "budget.maxPasses",
+                            budget.getMaxPasses()));
+        }
+
+        if (budget.getMaxEditsPerFile() < 0) {
+            errors.add(
+                    new ValidationError(
+                            "INVALID_MAX_EDITS",
+                            "Maximum edits per file must be non-negative",
+                            "budget.maxEditsPerFile",
+                            budget.getMaxEditsPerFile()));
+        }
+
+        if (budget.getTimeoutSeconds() <= 0) {
+            errors.add(
+                    new ValidationError(
+                            "INVALID_TIMEOUT",
+                            "Timeout must be greater than zero",
+                            "budget.timeoutSeconds",
+                            budget.getTimeoutSeconds()));
         }
 
         return errors;

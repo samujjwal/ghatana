@@ -22,6 +22,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DisplayName("AepHttpServer – Pipeline Versioning (AEP-07)")
 class AepHttpServerPipelineVersioningTest {
+
+    private static final String DEFAULT_TENANT_ID = "test-tenant";
 
     private AepEngine engine;
     private AepHttpServer server;
@@ -295,16 +298,41 @@ class AepHttpServerPipelineVersioningTest {
         }
     }
 
+    @Nested
+    @DisplayName("Tenant isolation")
+    class TenantIsolation {
+
+        @Test
+        @DisplayName("list endpoint only returns pipelines for the requested tenant")
+        void listEndpointIsTenantScoped() throws Exception {
+            String tenantOnePipelineId = createPipelineAndGetId("tenant-one-pipeline", "tenant-one");
+            String tenantTwoPipelineId = createPipelineAndGetId("tenant-two-pipeline", "tenant-two");
+
+            HttpResponse<String> tenantOneResponse = get("/api/v1/pipelines", "tenant-one");
+            HttpResponse<String> tenantTwoResponse = get("/api/v1/pipelines", "tenant-two");
+
+            assertThat(tenantOneResponse.statusCode()).isEqualTo(200);
+            assertThat(tenantTwoResponse.statusCode()).isEqualTo(200);
+
+            assertThat(pipelineIds(tenantOneResponse)).contains(tenantOnePipelineId).doesNotContain(tenantTwoPipelineId);
+            assertThat(pipelineIds(tenantTwoResponse)).contains(tenantTwoPipelineId).doesNotContain(tenantOnePipelineId);
+        }
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private String createPipelineAndGetId(String name) throws Exception {
+        return createPipelineAndGetId(name, DEFAULT_TENANT_ID);
+    }
+
+    private String createPipelineAndGetId(String name, String tenantId) throws Exception {
         String config = "{\"stages\":[{\"name\":\"step1\",\"type\":\"transform\"}]}";
         HttpResponse<String> resp = post("/api/v1/pipelines",
             mapper.writeValueAsString(Map.of(
                 "name", name,
-                "tenantId", "test-tenant",
+                "tenantId", tenantId,
                 "config", config
-            )));
+            )), tenantId);
         assertThat(resp.statusCode()).isIn(200, 201);
         Map<String, Object> body = parseBody(resp);
         assertThat(body.get("id")).as("Pipeline create response must contain 'id'; body=%s", resp.body())
@@ -318,24 +346,40 @@ class AepHttpServerPipelineVersioningTest {
     }
 
     private HttpResponse<String> get(String path) throws Exception {
+        return get(path, DEFAULT_TENANT_ID);
+    }
+
+    private HttpResponse<String> get(String path, String tenantId) throws Exception {
         return httpClient.send(
             HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + path))
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", tenantId)
                 .GET()
                 .build(),
             HttpResponse.BodyHandlers.ofString());
     }
 
     private HttpResponse<String> post(String path, String body) throws Exception {
+        return post(path, body, DEFAULT_TENANT_ID);
+    }
+
+    private HttpResponse<String> post(String path, String body, String tenantId) throws Exception {
         return httpClient.send(
             HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:" + port + path))
                 .header("Content-Type", "application/json")
-                .header("X-Tenant-Id", "test-tenant")
+                .header("X-Tenant-Id", tenantId)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .build(),
             HttpResponse.BodyHandlers.ofString());
+    }
+
+    private List<String> pipelineIds(HttpResponse<String> response) throws Exception {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> pipelines = (List<Map<String, Object>>) parseBody(response).get("pipelines");
+        return pipelines.stream()
+            .map(pipeline -> (String) pipeline.get("id"))
+            .collect(Collectors.toList());
     }
 
     private int findFreePort() throws IOException {

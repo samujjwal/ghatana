@@ -191,98 +191,188 @@ export class ContentAssetReadService {
   // Mapping helpers
   // -------------------------------------------------------------------------
 
-  private mapAsset(raw: any): ContentAsset {
+  private mapAsset(raw: Record<string, unknown>): ContentAsset {
+    const semanticIndexStatus = this.normalizeSemanticIndexStatus(
+      raw.semanticIndexStatus,
+    );
+    const recommendationStatus = this.normalizeRecommendationStatus(
+      raw.recommendationStatus,
+    );
+    const publishedAt =
+      raw.publishedAt instanceof Date ? raw.publishedAt.toISOString() : undefined;
+
     return {
-      id: raw.id as string,
-      tenantId: raw.tenantId as string,
-      slug: raw.slug as string,
-      title: raw.title as string,
-      assetType: (raw.assetType as string).toLowerCase() as ContentAssetType,
-      domain: raw.domain as string,
-      conceptId: (raw.conceptId as string) ?? undefined,
-      status: (raw.status as string).toLowerCase() as ContentAssetStatus,
-      currentVersion: raw.currentVersion as number,
-      qualityScore: (raw.qualityScore as number) ?? undefined,
-      semanticIndexStatus:
-        ((
-          raw.semanticIndexStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["semanticIndexStatus"]) ?? undefined,
-      recommendationStatus:
-        ((
-          raw.recommendationStatus as string | null | undefined
-        )?.toLowerCase() as ContentAsset["recommendationStatus"]) ?? undefined,
-      tags: (raw.tags as string[]) ?? undefined,
+      id: String(raw.id),
+      tenantId: String(raw.tenantId),
+      slug: String(raw.slug),
+      title: String(raw.title),
+      assetType: String(raw.assetType).toLowerCase() as ContentAssetType,
+      domain: String(raw.domain),
+      status: String(raw.status).toLowerCase() as ContentAssetStatus,
+      currentVersion: Number(raw.currentVersion),
       targetGrades: Array.isArray(raw.targetGrades)
-        ? (raw.targetGrades as string[])
+        ? raw.targetGrades.filter((grade): grade is string => typeof grade === "string")
         : [],
-      difficultyLevel: (raw.difficultyLevel as string) ?? undefined,
-      authorId: raw.authorId as string,
-      lastEditedBy: (raw.lastEditedBy as string) ?? undefined,
-      publishedAt: raw.publishedAt
-        ? (raw.publishedAt as Date).toISOString()
-        : undefined,
+      authorId: String(raw.authorId),
       createdAt: (raw.createdAt as Date).toISOString(),
       updatedAt: (raw.updatedAt as Date).toISOString(),
-      promptHash: (raw.promptHash as string) ?? undefined,
       riskLevel: (
         (raw.riskLevel as string | null | undefined) ?? "LOW"
       ).toUpperCase() as ContentAsset["riskLevel"],
-      confidenceScore: (raw.confidenceScore as number) ?? undefined,
-      legacyModuleId: (raw.legacyModuleId as string) ?? undefined,
-      legacyExperienceId: (raw.legacyExperienceId as string) ?? undefined,
+      ...(typeof raw.conceptId === "string" ? { conceptId: raw.conceptId } : {}),
+      ...(typeof raw.qualityScore === "number"
+        ? { qualityScore: raw.qualityScore }
+        : {}),
+      ...(semanticIndexStatus ? { semanticIndexStatus } : {}),
+      ...(recommendationStatus ? { recommendationStatus } : {}),
+      ...(Array.isArray(raw.tags)
+        ? {
+            tags: raw.tags.filter((tag): tag is string => typeof tag === "string"),
+          }
+        : {}),
+      ...(typeof raw.difficultyLevel === "string"
+        ? { difficultyLevel: raw.difficultyLevel }
+        : {}),
+      ...(typeof raw.lastEditedBy === "string"
+        ? { lastEditedBy: raw.lastEditedBy }
+        : {}),
+      ...(publishedAt ? { publishedAt } : {}),
+      ...(typeof raw.promptHash === "string" ? { promptHash: raw.promptHash } : {}),
+      ...(typeof raw.confidenceScore === "number"
+        ? { confidenceScore: raw.confidenceScore }
+        : {}),
+      ...(typeof raw.legacyModuleId === "string"
+        ? { legacyModuleId: raw.legacyModuleId }
+        : {}),
+      ...(typeof raw.legacyExperienceId === "string"
+        ? { legacyExperienceId: raw.legacyExperienceId }
+        : {}),
+      ...(typeof raw.reviewState === "string" ? { reviewState: raw.reviewState } : {}),
+      ...(typeof raw.searchableText === "string"
+        ? { searchableText: raw.searchableText }
+        : {}),
     };
   }
 
-  private mapBlock(raw: any): ContentBlock {
+  private mapBlock(raw: Record<string, unknown>): ContentBlock {
     return {
-      id: raw.id as string,
-      assetId: raw.assetId as string,
-      blockRef: raw.blockRef as string,
-      blockType: (
-        raw.blockType as string
-      ).toLowerCase() as ContentBlock["blockType"],
-      orderIndex: raw.orderIndex as number,
-      title: (raw.title as string) ?? undefined,
-      payload: (raw.payload as Record<string, unknown>) ?? {},
-      claimRefs: (raw.claimRefs as string[]) ?? undefined,
-      evidenceRefs: (raw.evidenceRefs as string[]) ?? undefined,
+      id: String(raw.id),
+      assetId: String(raw.assetId),
+      blockRef: String(raw.blockRef),
+      blockType: String(raw.blockType).toLowerCase() as ContentBlock["blockType"],
+      orderIndex: Number(raw.orderIndex),
+      payload: this.asJsonRecord(raw.payload),
       createdAt: (raw.createdAt as Date).toISOString(),
       updatedAt: (raw.updatedAt as Date).toISOString(),
+      ...(typeof raw.title === "string" ? { title: raw.title } : {}),
+      ...(Array.isArray(raw.claimRefs)
+        ? {
+            claimRefs: raw.claimRefs.filter(
+              (ref): ref is string => typeof ref === "string",
+            ),
+          }
+        : {}),
+      ...(Array.isArray(raw.evidenceRefs)
+        ? {
+            evidenceRefs: raw.evidenceRefs.filter(
+              (ref): ref is string => typeof ref === "string",
+            ),
+          }
+        : {}),
     };
   }
 
-  private mapManifest(raw: any): ArtifactManifest {
+  private mapManifest(raw: Record<string, unknown>): ArtifactManifest {
+    const validationErrors = Array.isArray(raw.validationErrors)
+      ? raw.validationErrors.filter(
+          (error): error is string => typeof error === "string",
+        )
+      : undefined;
+    const generatedBy =
+      typeof raw.generatedBy === "string"
+        ? (raw.generatedBy as ArtifactManifest["generatedBy"])
+        : undefined;
+
     return {
-      id: raw.id as string,
-      assetId: raw.assetId as string,
+      id: String(raw.id),
+      assetId: String(raw.assetId),
       manifestType: (
-        raw.manifestType as string
+        String(raw.manifestType)
       ).toLowerCase() as ArtifactManifest["manifestType"],
-      version: raw.version as string,
-      claimRef: (raw.claimRef as string) ?? undefined,
-      manifest: (raw.manifest as Record<string, unknown>) ?? {},
-      schema: (raw.schema as string) ?? undefined,
-      isValid: raw.isValid as boolean,
-      validationErrors: undefined,
-      generatedBy:
-        (raw.generatedBy as ArtifactManifest["generatedBy"]) ?? undefined,
-      generationId: (raw.generationId as string) ?? undefined,
+      version: String(raw.version),
+      manifest: this.asJsonRecord(raw.manifest),
+      isValid: Boolean(raw.isValid),
       createdAt: (raw.createdAt as Date).toISOString(),
       updatedAt: (raw.updatedAt as Date).toISOString(),
+      ...(typeof raw.claimRef === "string" ? { claimRef: raw.claimRef } : {}),
+      ...(typeof raw.schema === "string" ? { schema: raw.schema } : {}),
+      ...(validationErrors ? { validationErrors } : {}),
+      ...(generatedBy ? { generatedBy } : {}),
+      ...(typeof raw.generationId === "string"
+        ? { generationId: raw.generationId }
+        : {}),
     };
   }
 
-  private mapRevision(raw: any): ContentAssetRevision {
+  private mapRevision(raw: Record<string, unknown>): ContentAssetRevision {
     return {
-      id: raw.id as string,
-      assetId: raw.assetId as string,
-      version: raw.version as number,
-      changeNote: (raw.changeNote as string) ?? undefined,
-      snapshot: (raw.snapshot as Record<string, unknown>) ?? {},
-      qualityScore: (raw.qualityScore as number) ?? undefined,
-      validationId: (raw.validationId as string) ?? undefined,
-      createdBy: raw.createdBy as string,
+      id: String(raw.id),
+      assetId: String(raw.assetId),
+      version: Number(raw.version),
+      snapshot: this.asJsonRecord(raw.snapshot),
+      createdBy: String(raw.createdBy),
       createdAt: (raw.createdAt as Date).toISOString(),
+      ...(typeof raw.changeNote === "string" ? { changeNote: raw.changeNote } : {}),
+      ...(typeof raw.qualityScore === "number"
+        ? { qualityScore: raw.qualityScore }
+        : {}),
+      ...(typeof raw.validationId === "string"
+        ? { validationId: raw.validationId }
+        : {}),
     };
+  }
+
+  private asJsonRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  }
+
+  private normalizeSemanticIndexStatus(
+    value: unknown,
+  ): ContentAsset["semanticIndexStatus"] | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalized = value.toLowerCase();
+    if (
+      normalized === "pending" ||
+      normalized === "indexed" ||
+      normalized === "stale"
+    ) {
+      return normalized;
+    }
+
+    return undefined;
+  }
+
+  private normalizeRecommendationStatus(
+    value: unknown,
+  ): ContentAsset["recommendationStatus"] | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const normalized = value.toLowerCase();
+    if (
+      normalized === "pending" ||
+      normalized === "computed" ||
+      normalized === "stale"
+    ) {
+      return normalized;
+    }
+
+    return undefined;
   }
 }

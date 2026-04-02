@@ -242,9 +242,7 @@ public class YappcOperatorProvider implements OperatorProvider {
             return prebuilt;
         }
 
-        // 2. Create on demand, converting the AEP OperatorConfig to a platform one
-        com.ghatana.platform.workflow.operator.OperatorConfig platformConfig = toPlatformConfig(config);
-
+        // 2. Create on demand; resolve the operator by name
         String name = operatorId.getName();
         com.ghatana.platform.workflow.operator.UnifiedOperator platformOp = switch (name) {
 

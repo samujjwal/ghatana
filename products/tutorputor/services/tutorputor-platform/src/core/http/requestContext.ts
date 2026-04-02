@@ -97,9 +97,13 @@ export async function respondWithErrors<T>(
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const err = error as Record<string, unknown>;
-    const statusCode = err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    const code = err.code || "INTERNAL_ERROR";
+    const statusCode =
+      typeof err.statusCode === "number" ? err.statusCode : 500;
+    const message =
+      typeof err.message === "string"
+        ? err.message
+        : "Internal Server Error";
+    const code = typeof err.code === "string" ? err.code : "INTERNAL_ERROR";
 
     reply.code(statusCode).send({
       error: message,

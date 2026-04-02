@@ -59,6 +59,14 @@ export function createLTIService(
                     audience: platform.clientId,
                 });
 
+                const context =
+                    verified["https://purl.imsglobal.org/spec/lti/claim/context"] as LTILaunchPayload["context"] | undefined;
+                const resourceLink =
+                    verified["https://purl.imsglobal.org/spec/lti/claim/resource_link"] as LTILaunchPayload["resourceLink"] | undefined;
+                if (!context || !resourceLink) {
+                    return { valid: false, error: "Missing required LTI launch claims" };
+                }
+
                 // Extract LTI payload from verified claims
                 const payload: LTILaunchPayload = {
                     iss: verified.iss!,
@@ -66,10 +74,16 @@ export function createLTIService(
                     aud: typeof verified.aud === "string" ? verified.aud : verified.aud![0]!,
                     exp: verified.exp,
                     iat: verified.iat,
-                    nonce: verified.nonce as string | undefined,
-                    context: verified["https://purl.imsglobal.org/spec/lti/claim/context"] as LTILaunchPayload["context"],
-                    resourceLink: verified["https://purl.imsglobal.org/spec/lti/claim/resource_link"] as LTILaunchPayload["resourceLink"],
-                    roles: verified["https://purl.imsglobal.org/spec/lti/claim/roles"] as string[] | undefined,
+                    nonce: typeof verified.nonce === "string" ? verified.nonce : "",
+                    context,
+                    resourceLink,
+                    ...(
+                        Array.isArray(verified["https://purl.imsglobal.org/spec/lti/claim/roles"])
+                            ? {
+                                roles: verified["https://purl.imsglobal.org/spec/lti/claim/roles"] as string[],
+                              }
+                            : {}
+                    ),
                 };
 
                 // Validate nonce matches

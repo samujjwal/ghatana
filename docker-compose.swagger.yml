@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # Swagger UI Service - Aggregates all OpenAPI specifications
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: ghatana-swagger-ui
+    ports:
+      - "8888:8080"
+    environment:
+      # Main API specs to display
+      URLS: >
+        [
+          {"name":"TutorPutor Content Generation","url":"http://localhost:8080/api/v1/docs/tutorputor-api.json"},
+          {"name":"Data Cloud Query API","url":"http://localhost:8081/api/v1/docs/data-cloud-api.json"},
+          {"name":"YAPPC Code Generation API","url":"http://localhost:8082/api/v1/docs/yappc-api.json"}
+        ]
+      URLS_PRIMARY_NAME: "TutorPutor Content Generation"
+      SWAGGER_JSON_PATH: "/api/v1/docs"
+      API_KEY_ENABLED: "true"
+      API_KEY_NAME: "X-API-Key"
+      OAUTH2_ENABLED: "true"
+      OAUTH2_CLIENT_ID: "swagger-ui"
+      OAUTH2_REALM: "ghatana"
+      OAUTH2_APP_NAME: "Ghatana Swagger UI"
+      OAUTH2_SCOPES_SEPARATOR: " "
+      DEEPLINK: "true"
+      PRESETS: "apis,swaggerui"
+      LAYOUT: "StandaloneLayout"
+      DEFAULT_MODELS_EXPAND_DEPTH: "1"
+      DEFAULT_MODEL_EXPAND_DEPTH: "1"
+      SYNTAX_HIGHLIGHT: "monokai"
+      TRY_IT_OUT_ENABLED: "true"
+      DOC_EXPANSION: "list"
+      FILTER: "true"
+      SHOW_EXTENSIONS: "false"
+      SHOW_COMMON_EXTENSIONS: "false"
+    volumes:
+      # Mount OpenAPI specs directory
+      - ./products/tutorputor/api:/usr/share/nginx/html/specs/tutorputor:ro
+      - ./products/data-cloud/api:/usr/share/nginx/html/specs/data-cloud:ro
+      - ./products/yappc/api:/usr/share/nginx/html/specs/yappc:ro
+      - ./docs/swagger-ui-index.html:/usr/share/nginx/html/index.html:ro
+    networks:
+      - ghatana-network
+    depends_on:
+      - tutorputor-api
+      - data-cloud-api
+      - yappc-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # TutorPutor API Service
+  tutorputor-api:
+    image: ghatana/tutorputor-api:latest
+    container_name: tutorputor-api-server
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: "8080"
+      API_DOCS_PATH: "/api/v1/docs"
+      OPENAPI_SPEC_PATH: "/specs/tutorputor-api.json"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+    networks:
+      - ghatana-network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Data Cloud API Service
+  data-cloud-api:
+    image: ghatana/data-cloud-api:latest
+    container_name: data-cloud-api-server
+    ports:
+      - "8081:8080"
+    environment:
+      SERVER_PORT: "8080"
+      API_DOCS_PATH: "/api/v1/docs"
+      OPENAPI_SPEC_PATH: "/specs/data-cloud-api.json"
+      DATABASE_HOST: "postgres"
+      DATABASE_PORT: "5432"
+      REDIS_HOST: "redis"
+    networks:
+      - ghatana-network
+    depends_on:
+      - postgres
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # YAPPC API Service
+  yappc-api:
+    image: ghatana/yappc-api:latest
+    container_name: yappc-api-server
+    ports:
+      - "8082:8080"
+    environment:
+      SERVER_PORT: "8080"
+      API_DOCS_PATH: "/api/v1/docs"
+      OPENAPI_SPEC_PATH: "/specs/yappc-api.json"
+      CACHE_HOST: "redis"
+      CACHE_PORT: "6379"
+    networks:
+      - ghatana-network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache Service
+  redis:
+    image: redis:7-alpine
+    container_name: ghatana-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ghatana-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: ghatana-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "ghatana"
+      POSTGRES_USER: "ghatana"
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-ghatana-dev-password}"
+    networks:
+      - ghatana-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghatana"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  ghatana-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local

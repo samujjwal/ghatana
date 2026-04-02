@@ -3,7 +3,7 @@ module "data_cloud" {
 
   # ----- Globals -----
   environment    = "staging"
-  region         = var.region
+  aws_region     = var.region
   replica_region = var.replica_region
 
   # ----- VPC -----
@@ -12,24 +12,34 @@ module "data_cloud" {
   single_nat_gateway    = true   # cost optimised for staging
 
   # ----- EKS -----
-  eks_cluster_version = "1.29"
-  eks_node_groups     = var.eks_node_groups
+  kubernetes_version = "1.29"
+  node_groups = {
+    for name, group in var.eks_node_groups : name => {
+      instance_types = group.instance_types
+      desired_size   = group.desired_size
+      min_size       = group.min_size
+      max_size       = group.max_size
+      disk_size_gb   = group.disk_size
+      taints         = group.taints
+      labels         = group.labels
+    }
+  }
 
   # ----- RDS -----
-  rds_instance_class    = "db.t4g.medium"
-  rds_multi_az          = false
-  rds_deletion_protection = false
-  rds_storage_gb        = 50
-  rds_backup_days       = 3
+  postgres_instance_class        = "db.t4g.medium"
+  postgres_multi_az              = false
+  postgres_deletion_protection   = false
+  postgres_allocated_storage_gb  = 50
+  postgres_backup_retention_days = 3
 
   # ----- MSK -----
-  msk_instance_type     = "kafka.t3.small"
-  msk_broker_count      = 2
-  msk_storage_gb        = 100
+  msk_broker_instance_type = "kafka.t3.small"
+  msk_broker_count         = 2
+  msk_broker_storage_gb    = 100
 
   # ----- ElastiCache -----
-  elasticache_node_type     = "cache.t4g.medium"
-  elasticache_replicas      = 1
+  redis_node_type       = "cache.t4g.medium"
+  redis_num_cache_nodes = 1
 
   # ----- OpenSearch -----
   opensearch_instance_type  = "t3.small.search"
@@ -40,7 +50,7 @@ module "data_cloud" {
   opensearch_dedicated_master_count   = 0
 
   # ----- S3 -----
-  enable_cross_region_replication = false
+  s3_enable_cross_region_replication = false
 
   # ----- ClickHouse -----
   clickhouse_node_count   = 1

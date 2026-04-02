@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { TenantId } from "@tutorputor/contracts/v1/types";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 vi.mock("jose", () => ({
     SignJWT: class {
@@ -25,13 +27,68 @@ vi.mock("openid-client", () => ({
     },
 }));
 
+vi.mock("../oidc/OidcClient.js", () => ({
+    OidcClient: class {
+        constructor(_config: unknown) {}
+
+        async initialize(): Promise<void> {
+            return;
+        }
+
+        async generateAuthUrl(state: string, _nonce: string): Promise<{
+            url: string;
+            codeVerifier: string;
+        }> {
+            return {
+                url: `https://idp.example.com/auth?state=${state}`,
+                codeVerifier: "code-verifier",
+            };
+        }
+
+        async exchangeCode(_code: string, _codeVerifier: string): Promise<{ id_token: string }> {
+            return { id_token: "id-token" };
+        }
+
+        async verifyIdToken(_idToken: string, _nonce: string): Promise<Record<string, unknown>> {
+            return {
+                sub: "oidc-user-1",
+                email: "alice@example.com",
+                name: "Alice",
+                role: "learner",
+            };
+        }
+    },
+}));
+
 import { createSsoService } from "../service.js";
 
 // ---------------------------------------------------------------------------
 // SSO Service factory tests
 // ---------------------------------------------------------------------------
 describe("createSsoService", () => {
-    let prisma: any;
+    const tenantId = "tenant-1" as TenantId;
+    let prisma: {
+        identityProvider: {
+            findFirst: ReturnType<typeof vi.fn>;
+            create: ReturnType<typeof vi.fn>;
+            findUnique: ReturnType<typeof vi.fn>;
+            findMany: ReturnType<typeof vi.fn>;
+            update: ReturnType<typeof vi.fn>;
+            delete: ReturnType<typeof vi.fn>;
+        };
+        tenant: {
+            findFirst: ReturnType<typeof vi.fn>;
+        };
+        user: {
+            findFirst: ReturnType<typeof vi.fn>;
+            create: ReturnType<typeof vi.fn>;
+        };
+    };
+    let onUserAuthenticated: (args: {
+        tenantId: TenantId;
+        userId: string;
+        isNewUser: boolean;
+    }) => Promise<void>;
     let ssoService: ReturnType<typeof createSsoService>;
 
     beforeEach(() => {
@@ -41,22 +98,30 @@ describe("createSsoService", () => {
                 create: vi.fn(),
                 findUnique: vi.fn().mockResolvedValue(null),
                 findMany: vi.fn().mockResolvedValue([]),
+                update: vi.fn(),
+                delete: vi.fn(),
+            },
+            tenant: {
+                findFirst: vi.fn().mockResolvedValue(null),
             },
             user: {
                 findFirst: vi.fn().mockResolvedValue(null),
                 create: vi.fn(),
             },
-            oauthState: {
-                create: vi.fn(),
-                findUnique: vi.fn().mockResolvedValue(null),
-                delete: vi.fn(),
-            },
         };
+        onUserAuthenticated = vi.fn().mockResolvedValue(undefined) as unknown as (
+            args: {
+                tenantId: TenantId;
+                userId: string;
+                isNewUser: boolean;
+            }
+        ) => Promise<void>;
         ssoService = createSsoService({
-            prisma,
+            prisma: prisma as unknown as TutorPrismaClient,
             baseUrl: "https://app.example.com",
             generateAccessToken: vi.fn().mockReturnValue("access-token"),
             generateRefreshToken: vi.fn().mockReturnValue("refresh-token"),
+            onUserAuthenticated,
         });
     });
 
@@ -66,14 +131,12 @@ describe("createSsoService", () => {
         displayName: "Test IDP",
         type: "oidc",
         enabled: true,
-        config: JSON.stringify({
-            issuerUrl: "https://idp.example.com",
-            clientId: "client-id",
-            clientSecret: "secret",
-            callbackUrl: "https://app.example.com/callback",
-        }),
+        discoveryEndpoint: "https://idp.example.com/.well-known/openid-configuration",
+        clientId: "client-id",
+        clientSecret: "secret",
+        allowedDomains: JSON.stringify(["example.com"]),
         attributeMapping: null,
-        roleMapping: null,
+        roleMapping: JSON.stringify({ learner: "student" }),
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-01"),
         ...overrides,
@@ -82,7 +145,7 @@ describe("createSsoService", () => {
     describe("listProviders", () => {
         it("returns mapped providers for tenant", async () => {
             prisma.identityProvider.findMany.mockResolvedValue([makeDbProvider()]);
-            const result = await ssoService.listProviders({ tenantId: "tenant-1" });
+            const result = await ssoService.listProviders({ tenantId });
             expect(Array.isArray(result)).toBe(true);
             expect(result).toHaveLength(1);
             expect(result[0].id).toBe("prov-1");
@@ -91,7 +154,7 @@ describe("createSsoService", () => {
 
         it("returns empty array when no providers configured", async () => {
             prisma.identityProvider.findMany.mockResolvedValue([]);
-            const result = await ssoService.listProviders({ tenantId: "tenant-empty" });
+            const result = await ssoService.listProviders({ tenantId: "tenant-empty" as TenantId });
             expect(result).toHaveLength(0);
         });
     });
@@ -99,30 +162,94 @@ describe("createSsoService", () => {
     describe("getProvider", () => {
         it("returns null when provider not found", async () => {
             prisma.identityProvider.findUnique.mockResolvedValue(null);
-            const result = await ssoService.getProvider({ tenantId: "tenant-1", providerId: "missing" });
+            const result = await ssoService.getProvider({ tenantId, providerId: "missing" });
             expect(result).toBeNull();
         });
     });
 
     describe("initiateLogin", () => {
         it("throws when provider not found", async () => {
-            prisma.identityProvider.findUnique.mockResolvedValue(null);
+            prisma.identityProvider.findFirst.mockResolvedValue(null);
             await expect(
-                ssoService.initiateLogin({ tenantId: "tenant-1", providerId: "missing" })
+                ssoService.initiateLogin({ tenantId, providerId: "missing" })
             ).rejects.toThrow();
         });
     });
 
     describe("handleCallback", () => {
-        it("throws when oauthState is not found (invalid state)", async () => {
-            prisma.oauthState.findUnique.mockResolvedValue(null);
+        it("throws when state is not found (invalid state)", async () => {
             await expect(
                 ssoService.handleCallback({
+                    tenantId,
                     providerId: "prov-1",
                     code: "code-123",
                     state: "invalid-state",
                 })
             ).rejects.toThrow();
+        });
+
+        it("initializes learner profile hook for newly provisioned users", async () => {
+            const provider = makeDbProvider();
+            prisma.identityProvider.findFirst.mockResolvedValue(provider);
+            prisma.identityProvider.findUnique.mockResolvedValue(provider);
+            prisma.user.findFirst.mockResolvedValue(null);
+            prisma.user.create.mockResolvedValue({
+                id: "user-new-1",
+                tenantId: "tenant-1",
+                email: "alice@example.com",
+                displayName: "Alice",
+                role: "student",
+            });
+
+            const login = await ssoService.initiateLogin({
+                tenantId,
+                providerId: "prov-1",
+            });
+
+            await ssoService.handleCallback({
+                tenantId,
+                providerId: "prov-1",
+                code: "code-123",
+                state: login.state,
+            });
+
+            expect(onUserAuthenticated).toHaveBeenCalledWith({
+                tenantId,
+                userId: "user-new-1",
+                isNewUser: true,
+            });
+        });
+
+        it("does not create user and marks callback as existing user", async () => {
+            const provider = makeDbProvider();
+            prisma.identityProvider.findFirst.mockResolvedValue(provider);
+            prisma.identityProvider.findUnique.mockResolvedValue(provider);
+            prisma.user.findFirst.mockResolvedValue({
+                id: "user-existing-1",
+                tenantId: "tenant-1",
+                email: "alice@example.com",
+                displayName: "Alice",
+                role: "student",
+            });
+
+            const login = await ssoService.initiateLogin({
+                tenantId,
+                providerId: "prov-1",
+            });
+
+            await ssoService.handleCallback({
+                tenantId,
+                providerId: "prov-1",
+                code: "code-123",
+                state: login.state,
+            });
+
+            expect(prisma.user.create).not.toHaveBeenCalled();
+            expect(onUserAuthenticated).toHaveBeenCalledWith({
+                tenantId,
+                userId: "user-existing-1",
+                isNewUser: false,
+            });
         });
     });
 });

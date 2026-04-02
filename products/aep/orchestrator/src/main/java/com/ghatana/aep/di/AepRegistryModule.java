@@ -13,56 +13,34 @@ import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Optional;
 
 /**
- * ActiveJ DI module for AEP registry client bindings (AEP-P5).
+ * ActiveJ DI module for AEP registry bindings (v2.5+).
  *
- * <p>Provides the registry client implementations required by
- * {@link com.ghatana.orchestrator.core.Orchestrator}:
- * <ul>
- *   <li>{@link AgentRegistryClient} — {@link DataCloudAgentRegistryClient} backed by the
- *       Data-Cloud HTTP agent registry ({@code /api/v1/agents}).</li>
- *   <li>{@link PipelineRegistryClient} — {@link NoOpPipelineRegistryClient} stub until
- *       pipelines are stored in Data-Cloud.</li>
- * </ul>
- *
- * <h2>Configuration</h2>
- * <p>The Data-Cloud base URL is read from the {@code AEP_DC_BASE_URL} environment variable
- * (default: {@code http://localhost:8085}).
- *
- * <h2>Installation</h2>
- * <p>Install this module together with {@link AepOrchestrationModule}:
- * <pre>{@code
- * Injector injector = Injector.of(
- *     new AepCoreModule(),
- *     new AepOrchestrationModule(),
- *     new AepRegistryModule()   // ← provides AgentRegistryClient + PipelineRegistryClient
- * );
- * }</pre>
+ * <p>Provides HTTP client bindings for legacy access to agent and pipeline registries.
+ * Agent discovery is now centralized through AepAgentRegistryController.
  *
  * @doc.type class
- * @doc.purpose ActiveJ DI module for DataCloud-backed agent/pipeline registry clients
+ * @doc.purpose ActiveJ DI module for AEP registry clients
  * @doc.layer product
  * @doc.pattern Module
- * @see DataCloudAgentRegistryClient
- * @see DataCloudPipelineRegistryClientImpl
- * @see NoOpPipelineRegistryClient
- * @see AepOrchestrationModule
  * @since 1.0.0
+ * @revised 2.5.0 — agent registry unified at AEP level
  */
 public class AepRegistryModule extends AbstractModule {
 
+    private static final Logger log = LoggerFactory.getLogger(AepRegistryModule.class);
+
     @Override
     protected void configure() {
-        // Bindings are provided via @Provides methods below.
+        log.info("Configuring AEP registry module (v2.5)");
     }
 
     /**
-     * Provides an {@link AgentRegistryClient} backed by Data-Cloud's agent HTTP API.
-     *
-     * <p>The Data-Cloud base URL is resolved from {@code AEP_DC_BASE_URL}
-     * (default: {@code http://localhost:8085}).
+     * Provides an {@link AgentRegistryClient} backed by Data-Cloud's HTTP API.
      *
      * @return Data-Cloud-backed agent registry client
      *
@@ -76,8 +54,7 @@ public class AepRegistryModule extends AbstractModule {
         EnvConfig env = EnvConfig.fromSystem();
         String dcBaseUrl = env.aepDcBaseUrl();
         var dcClient = new DataCloudAgentRegistryClient(dcBaseUrl);
-        // Adapt the DataCloud client (agent.registry.client.AgentRegistryClient)
-        // to the orchestrator.client.AgentRegistryClient expected by Orchestrator
+        // Adapt the DataCloud client to the orchestrator.client.AgentRegistryClient expected by Orchestrator
         return new AgentRegistryClient() {
             @Override
             public Promise<Optional<AgentRegistryClient.AgentInfo>> getAgent(String agentRef) {

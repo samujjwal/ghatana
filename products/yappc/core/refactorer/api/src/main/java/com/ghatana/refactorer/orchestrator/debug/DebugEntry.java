@@ -4,6 +4,7 @@ import com.ghatana.refactorer.debug.DebugController;
 import com.ghatana.refactorer.debug.DebugControllerFactory;
 import com.ghatana.refactorer.debug.StackTraceParser;
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,7 @@ public final class DebugEntry {
      * @throws IndexOutOfBoundsException if command is empty
      * @throws IOException if an I/O error occurs
      * @throws InterruptedException if the current thread is interrupted
-     * @throws RuntimeException if the command times out or fails to execute
+    * @throws RefactorerOperationException if the command times out or fails to execute
      */
     public static DebugController.ParseResult run(
             PolyfixProjectContext ctx, List<String> command, Duration timeout)
@@ -90,7 +91,7 @@ public final class DebugEntry {
 
             if (!finished) {
                 proc.destroyForcibly().waitFor(1, TimeUnit.SECONDS);
-                throw new RuntimeException("Command timed out after " + timeout);
+                throw new RefactorerOperationException("Command timed out after " + timeout);
             }
 
             // Wait for output reader to finish (with a reasonable timeout)

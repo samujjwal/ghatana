@@ -98,7 +98,8 @@ public class GovernedMemoryPlane implements MemoryPlane {
     @Override
     public @NotNull Promise<EnhancedFact> storeFact(@NotNull EnhancedFact fact) {
         String tenantId = TenantContext.getCurrentTenantId();
-        String agentId = fact.getAgentId() != null ? fact.getAgentId() : "system";
+        String rawAgentId = fact.getAgentId();
+        String agentId = rawAgentId != null ? rawAgentId : "system";
         if (!securityManager.canWrite(fact, tenantId, agentId)) {
             return Promise.ofException(new SecurityException(
                     "Memory write denied: tenant mismatch for fact " + fact.getId()));
@@ -122,7 +123,8 @@ public class GovernedMemoryPlane implements MemoryPlane {
     @Override
     public @NotNull Promise<EnhancedProcedure> storeProcedure(@NotNull EnhancedProcedure procedure) {
         String tenantId = TenantContext.getCurrentTenantId();
-        String agentId = procedure.getAgentId() != null ? procedure.getAgentId() : "system";
+        String rawAgentId = procedure.getAgentId();
+        String agentId = rawAgentId != null ? rawAgentId : "system";
         if (!securityManager.canWrite(procedure, tenantId, agentId)) {
             return Promise.ofException(new SecurityException(
                     "Memory write denied: tenant mismatch for procedure " + procedure.getId()));
@@ -251,6 +253,7 @@ public class GovernedMemoryPlane implements MemoryPlane {
      * {@code action} fields run through the {@link MemoryRedactionFilter}.
      */
     private EnhancedEpisode redactEpisode(EnhancedEpisode ep) {
+        String epAction = ep.getAction();
         return EnhancedEpisode.builder()
                 .id(ep.getId())
                 .type(ep.getType())
@@ -270,7 +273,7 @@ public class GovernedMemoryPlane implements MemoryPlane {
                 .timestamp(ep.getTimestamp())
                 .input(redactionFilter.redact(ep.getInput()))
                 .output(redactionFilter.redact(ep.getOutput()))
-                .action(ep.getAction() != null ? redactionFilter.redact(ep.getAction()) : null)
+                .action(epAction != null ? redactionFilter.redact(epAction) : null)
                 .context(ep.getContext())
                 .tags(ep.getTags())
                 .reward(ep.getReward())

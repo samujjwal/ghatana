@@ -112,14 +112,7 @@ public class AgentDispatchValidatorOperator extends AbstractOperator {
     private List<String> validateRequiredFields(Event event) {
         List<String> errors = new ArrayList<>();
         for (String field : REQUIRED_FIELDS) {
-            Object value;
-            try {
-                value = event.getPayload(field);
-            } catch (NullPointerException e) {
-                // payload map is null — all required fields are missing
-                errors.add("missing required field '" + field + "'");
-                continue;
-            }
+            Object value = event.getPayload(field);
             if (value == null || value.toString().isBlank()) {
                 errors.add("missing required field '" + field + "'");
             }

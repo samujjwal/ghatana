@@ -36,7 +36,7 @@ export interface Permission {
   id: string;
   resource: string;
   action: string;
-  conditions?: Record<string, any>;
+  conditions?: Record<string, unknown>;
 }
 
 export interface AuthToken {
@@ -52,6 +52,22 @@ export interface AuthContext {
   token: string;
   permissions: Permission[];
   tenantId: string;
+}
+
+/**
+ * Decoded JWT token structure
+ */
+export interface DecodedJWT {
+  sub: string;
+  email: string;
+  tenantId: string;
+  roles: string[];
+  permissions: Array<{ resource: string; action: string }>;
+  iat: number;
+  exp: number;
+  iss: string;
+  aud: string;
+  jti: string;
 }
 
 /**
@@ -114,8 +130,7 @@ export class JWTManager {
   /**
    * Validate and decode token
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async validateToken(token: string): Promise<any> {
+  async validateToken(token: string): Promise<DecodedJWT> {
     try {
       const decoded = jwt.verify(token, this.jwtSecret, {
         algorithms: ["HS256"],
@@ -123,7 +138,7 @@ export class JWTManager {
         audience: "tutorputor-api",
       });
 
-      return decoded;
+      return decoded as DecodedJWT;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         throw new Error("Token expired");
@@ -453,8 +468,7 @@ export class AuthMiddleware {
   /**
    * Get user from token (placeholder)
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async getUserFromToken(decoded: any): Promise<User> {
+  private async getUserFromToken(decoded: DecodedJWT): Promise<User> {
     // This would integrate with your user service/database
     // For now, return a mock user based on token
     return {
@@ -464,7 +478,7 @@ export class AuthMiddleware {
       roles: decoded.roles
         .map((roleId: string) => this.rbacManager.getRole(roleId)!)
         .filter(Boolean),
-      permissions: decoded.permissions.map((perm: any) => ({
+      permissions: decoded.permissions.map((perm: { resource: string; action: string }) => ({
         id: `${perm.resource}.${perm.action}`,
         resource: perm.resource,
         action: perm.action,

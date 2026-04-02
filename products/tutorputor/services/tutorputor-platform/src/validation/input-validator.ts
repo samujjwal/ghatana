@@ -647,12 +647,15 @@ export function createValidationMiddleware<T>(
 ) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const userAgentHeader = request.headers["user-agent"];
+      const userAgent =
+        typeof userAgentHeader === "string" ? userAgentHeader : undefined;
       const context: ValidationContext = {
         requestId: request.id,
-        userId: request.user?.id,
-        tenantId: request.user?.tenantId,
-        userAgent: request.headers["user-agent"],
         ipAddress: request.ip,
+        ...(request.user?.id ? { userId: request.user.id } : {}),
+        ...(request.user?.tenantId ? { tenantId: request.user.tenantId } : {}),
+        ...(userAgent ? { userAgent } : {}),
       };
 
       const data = request[source];

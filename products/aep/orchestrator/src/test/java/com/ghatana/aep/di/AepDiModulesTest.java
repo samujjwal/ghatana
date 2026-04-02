@@ -33,7 +33,7 @@ import com.ghatana.aep.connector.strategy.sqs.SqsConfig;
 import com.ghatana.aep.connector.strategy.sqs.SqsConsumerStrategy;
 import com.ghatana.aep.connector.strategy.sqs.SqsProducerStrategy;
 import com.ghatana.aep.event.EventCloud;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.PipelineExecutionEngine;
 import com.ghatana.ingress.api.HealthController;
@@ -107,14 +107,14 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides OperatorCatalog bound to DefaultOperatorCatalog")
+        @DisplayName("provides OperatorCatalog bound to UnifiedOperatorCatalog")
         void providesOperatorCatalog() {
             Injector injector = Injector.of(new AepCoreModule());
 
             OperatorCatalog catalog = injector.getInstance(OperatorCatalog.class);
 
             assertThat(catalog).isNotNull();
-            assertThat(catalog).isInstanceOf(DefaultOperatorCatalog.class);
+            assertThat(catalog).isInstanceOf(UnifiedOperatorCatalog.class);
         }
 
         @Test

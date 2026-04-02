@@ -253,7 +253,8 @@ public class PreconditionHash {
 
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Hash algorithm not available: " + HASH_ALGORITHM, e);
+            throw new RefactorerOperationException(
+                    "Hash algorithm not available: " + HASH_ALGORITHM, e);
         }
     }
 

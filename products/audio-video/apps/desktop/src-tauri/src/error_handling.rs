@@ -178,21 +178,44 @@ impl CircuitBreaker {
     }
 
     fn on_success(&self) {
-        let mut success_count = lock_or_recover(&self.success_count);
-        *success_count += 1;
-        
         let state = lock_or_recover(&self.state).clone();
-        if state == CircuitState::HalfOpen && *success_count >= self.success_threshold {
-            *lock_or_recover(&self.state) = CircuitState::Closed;
-            *lock_or_recover(&self.failure_count) = 0;
-            log::info!("Circuit breaker transitioned to CLOSED");
+        match state {
+            CircuitState::Closed => {
+                *lock_or_recover(&self.failure_count) = 0;
+                *lock_or_recover(&self.success_count) = 0;
+            }
+            CircuitState::HalfOpen => {
+                let mut success_count = lock_or_recover(&self.success_count);
+                *success_count += 1;
+
+                if *success_count >= self.success_threshold {
+                    *lock_or_recover(&self.state) = CircuitState::Closed;
+                    *lock_or_recover(&self.failure_count) = 0;
+                    *success_count = 0;
+                    *lock_or_recover(&self.last_failure_time) = None;
+                    log::info!("Circuit breaker transitioned to CLOSED");
+                }
+            }
+            CircuitState::Open => {}
         }
     }
     
     fn on_failure(&self) {
+        let state = lock_or_recover(&self.state).clone();
+
+        if state == CircuitState::HalfOpen {
+            *lock_or_recover(&self.failure_count) = self.failure_threshold;
+            *lock_or_recover(&self.success_count) = 0;
+            *lock_or_recover(&self.state) = CircuitState::Open;
+            *lock_or_recover(&self.last_failure_time) = Some(std::time::Instant::now());
+            log::warn!("Circuit breaker transitioned back to OPEN from HALF_OPEN");
+            return;
+        }
+
         let mut failure_count = lock_or_recover(&self.failure_count);
         *failure_count += 1;
-        
+        *lock_or_recover(&self.success_count) = 0;
+
         if *failure_count >= self.failure_threshold {
             *lock_or_recover(&self.state) = CircuitState::Open;
             *lock_or_recover(&self.last_failure_time) = Some(std::time::Instant::now());
@@ -233,5 +256,95 @@ impl CircuitBreaker {
                 Err(UserError::unavailable_with_context(service, &e))
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn retry_with_backoff_eventually_succeeds_before_max_attempts() {
+        let attempts = std::sync::Arc::new(std::sync::Mutex::new(0_u32));
+        let attempts_for_operation = attempts.clone();
+        let config = RetryConfig {
+            max_attempts: 3,
+            initial_delay_ms: 1,
+            max_delay_ms: 2,
+            backoff_multiplier: 1.0,
+        };
+
+        let result = retry_with_backoff(
+            move || {
+                let attempts = attempts_for_operation.clone();
+                Box::pin(async move {
+                    let mut guard = attempts.lock().unwrap_or_else(|e| e.into_inner());
+                    *guard += 1;
+                    if *guard < 3 {
+                        Err("temporary failure")
+                    } else {
+                        Ok("ok")
+                    }
+                })
+            },
+            &config,
+        )
+        .await;
+
+        assert_eq!(result.unwrap(), "ok");
+        assert_eq!(*attempts.lock().unwrap_or_else(|e| e.into_inner()), 3);
+    }
+
+    #[tokio::test]
+    async fn circuit_breaker_resets_failures_after_success_in_closed_state() {
+        let breaker = CircuitBreaker::new(2, 1, 0);
+
+        let first_error = breaker
+            .call_async_for("STT", || async { Err::<(), String>("boom".to_string()) })
+            .await
+            .unwrap_err();
+        assert_eq!(first_error.code, "SERVICE_UNAVAILABLE");
+        assert_eq!(*lock_or_recover(&breaker.failure_count), 1);
+        assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Closed);
+
+        let success = breaker
+            .call_async_for("STT", || async { Ok::<_, String>("ok") })
+            .await;
+        assert_eq!(success.unwrap(), "ok");
+        assert_eq!(*lock_or_recover(&breaker.failure_count), 0);
+        assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Closed);
+
+        let second_error = breaker
+            .call_async_for("STT", || async { Err::<(), String>("boom again".to_string()) })
+            .await
+            .unwrap_err();
+        assert_eq!(second_error.code, "SERVICE_UNAVAILABLE");
+        assert_eq!(*lock_or_recover(&breaker.failure_count), 1);
+        assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Closed);
+    }
+
+    #[tokio::test]
+    async fn circuit_breaker_reopens_immediately_when_half_open_attempt_fails() {
+        let breaker = CircuitBreaker::new(1, 2, 0);
+
+        let open_error = breaker
+            .call_async_for("TTS", || async { Err::<(), String>("initial failure".to_string()) })
+            .await
+            .unwrap_err();
+        assert_eq!(open_error.code, "SERVICE_UNAVAILABLE");
+        assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Open);
+
+        *lock_or_recover(&breaker.last_failure_time) =
+            Some(std::time::Instant::now() - Duration::from_millis(1));
+
+        let half_open_failure = breaker
+            .call_async_for("TTS", || async { Err::<(), String>("probe failure".to_string()) })
+            .await
+            .unwrap_err();
+
+        assert_eq!(half_open_failure.code, "SERVICE_UNAVAILABLE");
+        assert_eq!(*lock_or_recover(&breaker.state), CircuitState::Open);
+        assert_eq!(*lock_or_recover(&breaker.success_count), 0);
+        assert_eq!(*lock_or_recover(&breaker.failure_count), 1);
     }
 }

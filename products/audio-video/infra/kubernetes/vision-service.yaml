@@ -53,6 +53,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: vision
           image: ghcr.io/ghatana/audio-video/vision-service:latest
@@ -102,11 +104,20 @@ spec:
             initialDelaySeconds: 20
             periodSeconds: 5
             failureThreshold: 12
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: vision-models
               mountPath: /app/models
               readOnly: true
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: vision-models
           persistentVolumeClaim:
             claimName: vision-models-pvc

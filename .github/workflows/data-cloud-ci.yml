@@ -101,6 +101,13 @@ jobs:
             -Dtest=ArchitectureTests \
             --no-daemon
 
+      - name: Run launcher architecture tests
+        run: |
+          ./gradlew \
+            :products:data-cloud:launcher:test \
+            --tests com.ghatana.datacloud.launcher.DataCloudArchitectureTest \
+            --no-daemon
+
       # Code Coverage
       - name: Generate code coverage report
         run: |
@@ -219,6 +226,18 @@ jobs:
         run: |
           echo "## OpenAPI Contract Drift Report" >> "$GITHUB_STEP_SUMMARY"
           bash products/data-cloud/scripts/check-openapi-drift.sh --warn-only \
+            2>&1 >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Tenant isolation static audit
+        run: |
+          chmod +x products/data-cloud/scripts/audit-tenant-isolation.sh
+          bash products/data-cloud/scripts/audit-tenant-isolation.sh
+
+      - name: Upload tenant isolation audit report
+        if: always()
+        run: |
+          echo "## Tenant Isolation Audit" >> "$GITHUB_STEP_SUMMARY"
+          bash products/data-cloud/scripts/audit-tenant-isolation.sh --warn-only \
             2>&1 >> "$GITHUB_STEP_SUMMARY" || true
 
   # Reuse scorecard: enforces shared-library adoption (E7-S1 / Workstream G)

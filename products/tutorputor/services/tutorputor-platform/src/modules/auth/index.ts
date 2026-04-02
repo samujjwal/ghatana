@@ -29,6 +29,20 @@ export const authModule: FastifyPluginAsync = async (app) => {
         { expiresIn: "7d" },
       );
     },
+    onUserAuthenticated: async ({ tenantId, userId, isNewUser }) => {
+      if (!isNewUser) {
+        return;
+      }
+
+      const learnerProfileService = app.learnerProfileService;
+      if (!learnerProfileService) {
+        throw new Error(
+          "Learner profile service unavailable during SSO provisioning",
+        );
+      }
+
+      await learnerProfileService.getOrCreateProfile(tenantId, userId);
+    },
   });
 
   app.log.info("Auth module initialized with SSO support");
@@ -188,7 +202,7 @@ export const authModule: FastifyPluginAsync = async (app) => {
         state,
       });
 
-      const target = result.redirectUri || "/dashboard";
+      const target = "/dashboard";
       const separator = target.includes("?") ? "&" : "?";
       return reply.redirect(
         `${target}${separator}accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`,

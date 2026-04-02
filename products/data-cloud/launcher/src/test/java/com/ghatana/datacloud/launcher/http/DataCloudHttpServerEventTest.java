@@ -6,6 +6,8 @@ package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.governance.security.ApiKeyResolver;
+import com.ghatana.platform.governance.security.Principal;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +24,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -148,6 +151,29 @@ class DataCloudHttpServerEventTest {
 
             assertThat(resp.statusCode()).isEqualTo(415);
         }
+
+    @Test
+    @DisplayName("returns 401 before content-type validation when API key enforcement is enabled")
+    void appendEvent_missingApiKey_returns401BeforeContentTypeValidation() throws Exception {
+        ApiKeyResolver resolver =
+            apiKey ->
+                Optional.ofNullable(apiKey)
+                    .filter("valid-key"::equals)
+                    .map(key -> new Principal("event-service", List.of("writer"), "tenant-1"));
+
+        server = new DataCloudHttpServer(mockClient, port)
+            .withApiKeyResolver(resolver);
+        server.start();
+
+        HttpRequest req = HttpRequest.newBuilder()
+            .POST(HttpRequest.BodyPublishers.ofString("type=order.placed"))
+            .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events"))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .build();
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(resp.statusCode()).isEqualTo(401);
+    }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

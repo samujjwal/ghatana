@@ -1,0 +1,681 @@
+openapi: 3.1.0
+info:
+  title: YAPPC Code Generation API
+  version: 1.0.0
+  description: |
+    API for designing system architectures and generating production-ready code artifacts.
+    
+    ## Authentication
+    Bearer token authentication required for all endpoints.
+    
+    ## Code Generation
+    - YAPPC generates code in multiple languages (Java, Python, Go, TypeScript)
+    - Generation is asynchronous for large projects
+    - Use `artifactId` to retrieve generated code
+    
+    ## Design Validation
+    - Designs are validated for circular dependencies
+    - Component relationships must be acyclic
+    - All design elements must have valid types
+  contact:
+    name: YAPPC Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.yappc.io/v1
+    description: Production
+
+tags:
+  - name: Designs
+    description: Create and manage system designs
+  - name: Code Generation
+    description: Generate code from designs
+  - name: Artifacts
+    description: Retrieve generated artifacts
+  - name: Refactoring
+    description: Get refactoring suggestions
+
+paths:
+  /designs:
+    post:
+      summary: Create new design
+      operationId: createDesign
+      tags:
+        - Designs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDesignRequest'
+      responses:
+        '201':
+          description: Design created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Design'
+        '400':
+          description: Invalid design
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /designs/{designId}:
+    get:
+      summary: Get design
+      operationId: getDesign
+      tags:
+        - Designs
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Design details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Design'
+        '404':
+          description: Design not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    patch:
+      summary: Update design
+      operationId: updateDesign
+      tags:
+        - Designs
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDesignRequest'
+      responses:
+        '200':
+          description: Design updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Design'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Design not found
+
+  /designs/{designId}/validate:
+    post:
+      summary: Validate design
+      operationId: validateDesign
+      tags:
+        - Designs
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Design not found
+
+  /generated-code:
+    post:
+      summary: Generate code from design
+      operationId: generateCode
+      tags:
+        - Code Generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeGenerationRequest'
+            examples:
+              java:
+                summary: Generate Java code
+                value:
+                  designId: "design-123"
+                  language: "java"
+                  packageName: "com.example.app"
+              python:
+                summary: Generate Python code
+                value:
+                  designId: "design-456"
+                  language: "python"
+                  packageName: "myapp"
+      responses:
+        '202':
+          description: Code generation started
+          headers:
+            Location:
+              description: URL to poll for status
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeGenerationOperation'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /generated-code/{operationId}:
+    get:
+      summary: Get generation status
+      operationId: getGenerationStatus
+      tags:
+        - Code Generation
+      parameters:
+        - name: operationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Generation status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeGenerationOperation'
+        '404':
+          description: Operation not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /artifacts/{artifactId}:
+    get:
+      summary: Get generated artifact
+      operationId: getArtifact
+      tags:
+        - Artifacts
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - zip
+              - tar.gz
+            default: json
+      responses:
+        '200':
+          description: Generated code artifact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedArtifact'
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Artifact not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /artifacts/{artifactId}/versions:
+    get:
+      summary: List artifact versions
+      operationId: getArtifactVersions
+      tags:
+        - Artifacts
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ArtifactVersion'
+        '404':
+          description: Artifact not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /refactoring-suggestions/{designId}:
+    get:
+      summary: Get refactoring suggestions
+      operationId: getRefactoringSuggestions
+      tags:
+        - Refactoring
+      parameters:
+        - name: designId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - performance
+              - maintainability
+              - testing
+              - security
+      responses:
+        '200':
+          description: Refactoring suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefactoringSuggestion'
+        '404':
+          description: Design not found
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  schemas:
+    CreateDesignRequest:
+      type: object
+      required:
+        - name
+        - components
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentDef'
+          minItems: 1
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+
+    UpdateDesignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentDef'
+        relationships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relationship'
+
+    ComponentDef:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: string
+          pattern: '^[a-z][a-z0-9_]*$'
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - SERVICE
+            - CONTROLLER
+            - REPOSITORY
+            - UTILITY
+            - LIBRARY
+            - DATABASE
+            - CACHE
+            - MESSAGE_QUEUE
+        description:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+
+    Relationship:
+      type: object
+      required:
+        - fromComponent
+        - toComponent
+        - type
+      properties:
+        fromComponent:
+          type: string
+        toComponent:
+          type: string
+        type:
+          type: string
+          enum:
+            - DEPENDS_ON
+            - IMPLEMENTS
+            - EXTENDS
+            - USES
+        strength:
+          type: string
+          enum:
+            - REQUIRED
+            - OPTIONAL
+          default: REQUIRED
+
+    Design:
+      allOf:
+        - $ref: '#/components/schemas/CreateDesignRequest'
+        - type: object
+          required:
+            - designId
+            - createdAt
+          properties:
+            designId:
+              type: string
+              format: uuid
+            version:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            validationStatus:
+              type: string
+              enum:
+                - VALID
+                - INVALID
+                - NEEDS_REVIEW
+
+    ValidationResult:
+      type: object
+      required:
+        - isValid
+      properties:
+        isValid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationWarning'
+        circularDependencies:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+
+    ValidationError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - CIRCULAR_DEPENDENCY
+            - INVALID_COMPONENT_TYPE
+            - MISSING_DEPENDENCY
+            - INVALID_RELATIONSHIP
+        message:
+          type: string
+        componentId:
+          type: string
+
+    ValidationWarning:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        componentId:
+          type: string
+
+    CodeGenerationRequest:
+      type: object
+      required:
+        - designId
+        - language
+        - packageName
+      properties:
+        designId:
+          type: string
+        language:
+          type: string
+          enum:
+            - java
+            - python
+            - go
+            - typescript
+        packageName:
+          type: string
+          minLength: 1
+        targetVersion:
+          type: string
+          description: Language/framework version
+        includeTests:
+          type: boolean
+          default: true
+        includeDocumentation:
+          type: boolean
+          default: true
+
+    CodeGenerationOperation:
+      type: object
+      required:
+        - operationId
+        - status
+      properties:
+        operationId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - QUEUED
+            - RUNNING
+            - COMPLETED
+            - FAILED
+        artifactId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        error:
+          $ref: '#/components/schemas/Error'
+
+    GeneratedArtifact:
+      type: object
+      required:
+        - artifactId
+        - designId
+        - language
+        - files
+      properties:
+        artifactId:
+          type: string
+          format: uuid
+        designId:
+          type: string
+        language:
+          type: string
+        version:
+          type: integer
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedFile'
+        createdAt:
+          type: string
+          format: date-time
+
+    GeneratedFile:
+      type: object
+      required:
+        - path
+        - content
+      properties:
+        path:
+          type: string
+          description: File path relative to root
+        content:
+          type: string
+          description: File content
+
+    ArtifactVersion:
+      type: object
+      required:
+        - version
+        - createdAt
+      properties:
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        language:
+          type: string
+        description:
+          type: string
+
+    RefactoringSuggestion:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - category
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum:
+            - performance
+            - maintainability
+            - testing
+            - security
+        impact:
+          type: string
+          enum:
+            - HIGH
+            - MEDIUM
+            - LOW
+        affectedComponents:
+          type: array
+          items:
+            type: string
+        suggestedChanges:
+          type: object
+          additionalProperties: true
+
+    DesignValidationError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          properties:
+            validationErrors:
+              type: array
+              items:
+                $ref: '#/components/schemas/ValidationError'
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        traceId:
+          type: string
+          format: uuid
+
+  responses:
+    UnauthorizedError:
+      description: Authentication failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

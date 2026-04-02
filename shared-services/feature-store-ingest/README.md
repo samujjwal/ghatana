@@ -1,6 +1,15 @@
-# Feature Store Ingest Service
+# Feature Store Ingest Service (Residue)
 
-## Purpose
+## Status
+
+This directory is historical residue.
+
+- Canonical implementation: `products/data-cloud/feature-store-ingest`
+- Shared-services copy: not canonical, not build-wired, not runtime-supported
+
+Follow `OWNER.md` in this directory for ownership and migration policy.
+
+## Purpose (Historical)
 
 Real-time feature extraction and ingestion pipeline from EventCloud to Feature Store for ML model serving.
 
@@ -61,12 +70,12 @@ Set environment variables:
 
 ## Running
 
-```bash
-# Development
-./gradlew :products:shared-services:feature-store-ingest:run
+Do not run this residue module.
 
-# Production
-java -jar products/shared-services/feature-store-ingest/build/libs/feature-store-ingest.jar
+Use the canonical product module instead:
+
+```bash
+./gradlew :products:data-cloud:feature-store-ingest:run
 ```
 
 ## Metrics

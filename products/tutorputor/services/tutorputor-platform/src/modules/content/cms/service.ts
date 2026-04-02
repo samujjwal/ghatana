@@ -5,7 +5,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from '@tutorputor/core/db';
+import type { Prisma, PrismaClient } from '@tutorputor/core/db';
 import type { ModuleStatus } from "@tutorputor/contracts/v1";
 import type {
     CMSService,
@@ -203,7 +203,8 @@ export class CMSServiceImpl implements CMSService {
         tenantId: TenantId,
         authorId: string,
         input: ModuleDraftInput
-    ): Record<string, unknown> {
+    ): Prisma.ModuleCreateInput {
+        return {
             tenantId,
             slug: input.slug,
             title: input.title,
@@ -229,7 +230,7 @@ export class CMSServiceImpl implements CMSService {
                     id: block.id || `${input.slug}-block-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,
-                    payload: block.payload,
+                    payload: block.payload as Prisma.InputJsonValue,
                 })),
             },
             prerequisites: {
@@ -240,8 +241,8 @@ export class CMSServiceImpl implements CMSService {
         };
     }
 
-    private buildModuleUpdateInput(patch: ModuleDraftPatch, userId: string): Record<string, unknown> {
-        const data: Record<string, unknown> = {
+    private buildModuleUpdateInput(patch: ModuleDraftPatch, userId: string): Prisma.ModuleUpdateInput {
+        const data: Prisma.ModuleUpdateInput = {
             updatedBy: userId,
             updatedAt: new Date(),
         };
@@ -276,7 +277,7 @@ export class CMSServiceImpl implements CMSService {
                     id: block.id ?? `${Date.now()}-${index}`,
                     orderIndex: block.orderIndex ?? index,
                     blockType: block.blockType,
-                    payload: block.payload,
+                    payload: block.payload as Prisma.InputJsonValue,
                 })),
             };
         }

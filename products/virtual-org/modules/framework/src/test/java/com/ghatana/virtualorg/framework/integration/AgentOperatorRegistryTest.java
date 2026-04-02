@@ -1,7 +1,7 @@
 package com.ghatana.virtualorg.framework.integration;
 
 import com.ghatana.core.operator.OperatorId;
-import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.virtualorg.framework.agent.OrganizationalAgent;
@@ -44,7 +44,7 @@ class AgentOperatorRegistryTest extends EventloopTestBase {
     
     @BeforeEach
     void setUp() {
-        operatorCatalog = new InMemoryOperatorCatalog();
+        operatorCatalog = new UnifiedOperatorCatalog();
         meterRegistry = new SimpleMeterRegistry();
         registry = new AgentOperatorRegistry(operatorCatalog, meterRegistry);
     }

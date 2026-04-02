@@ -1,0 +1,610 @@
+openapi: 3.1.0
+info:
+  title: TutorPutor Content Generation API
+  version: 1.0.0
+  description: |
+    API for generating educational content, managing content libraries, and tracking learning paths.
+    
+    ## Authentication
+    All endpoints require Bearer token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    
+    ## Error Handling
+    The API uses standard HTTP status codes and returns errors in the following format:
+    ```json
+    {
+      "error": "ERROR_CODE",
+      "message": "Human-readable error message",
+      "details": { "field": "Additional context" },
+      "traceId": "correlation-id-for-debugging"
+    }
+    ```
+    
+    ## Rate Limiting
+    - Tier 1 (default): 100 requests per minute
+    - Tier 2 (premium): 1000 requests per minute
+    
+    Check response headers for rate limit info:
+    - `X-RateLimit-Limit`: Maximum requests per window
+    - `X-RateLimit-Remaining`: Requests remaining in current window
+    - `X-RateLimit-Reset`: Unix timestamp when limit resets
+  contact:
+    name: TutorPutor API Support
+    url: https://tutorputor.ghatana.io/support
+    email: api-support@tutorputor.io
+  license:
+    name: Proprietary
+    url: https://tutorputor.ghatana.io/license
+  x-logo:
+    url: https://tutorputor.ghatana.io/logo.png
+servers:
+  - url: https://api.tutorputor.io/v1
+    description: Production environment
+    variables:
+      region:
+        default: us-east-1
+        enum:
+          - us-east-1
+          - eu-west-1
+          - ap-southeast-1
+  - url: https://staging-api.tutorputor.io/v1
+    description: Staging environment
+
+tags:
+  - name: Content Generation
+    description: Generate educational content from topics
+  - name: Content Libraries
+    description: Manage content collections and libraries
+  - name: Learning Paths
+    description: Create and track user learning sequences
+  - name: Topic Claims
+    description: Manage topic-specific knowledge claims
+
+paths:
+  /content/generate:
+    post:
+      summary: Generate educational content
+      operationId: generateContent
+      tags:
+        - Content Generation
+      description: |
+        Generates comprehensive educational content for a given topic.
+        This is a long-running operation that may take 5-30 seconds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentGenerationRequest'
+            examples:
+              basic:
+                summary: Basic content generation
+                value:
+                  topic: "Photosynthesis"
+                  gradeLevel: "high-school"
+                  format: "markdown"
+              advanced:
+                summary: Advanced with custom parameters
+                value:
+                  topic: "Quantum Mechanics"
+                  gradeLevel: "undergraduate"
+                  format: "html"
+                  language: "en-US"
+                  includeExamples: true
+                  exampleCount: 5
+                  includeQuiz: true
+      responses:
+        '200':
+          description: Content generated successfully
+          headers:
+            X-Content-ID:
+              description: Unique identifier for generated content
+              schema:
+                type: string
+                format: uuid
+            X-Generation-Time-MS:
+              description: Time taken to generate content in milliseconds
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedContent'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "INVALID_REQUEST"
+                message: "Topic is required"
+                details:
+                  topic: "Required field"
+                traceId: "trace-123456"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                format: unix-time
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+      x-code-samples:
+        - lang: curl
+          source: |
+            curl -X POST https://api.tutorputor.io/v1/content/generate \
+              -H "Authorization: Bearer $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "topic": "Photosynthesis",
+                "gradeLevel": "high-school",
+                "format": "markdown"
+              }'
+        - lang: python
+          source: |
+            import requests
+            
+            response = requests.post(
+              'https://api.tutorputor.io/v1/content/generate',
+              headers={'Authorization': f'Bearer {token}'},
+              json={
+                'topic': 'Photosynthesis',
+                'gradeLevel': 'high-school',
+                'format': 'markdown'
+              }
+            )
+            content = response.json()
+
+  /content/generate/{contentId}:
+    get:
+      summary: Retrieve generated content
+      operationId: getGeneratedContent
+      tags:
+        - Content Generation
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          description: Unique identifier of generated content
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Content retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedContent'
+        '404':
+          description: Content not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /libraries:
+    get:
+      summary: List content libraries
+      operationId: listLibraries
+      tags:
+        - Content Libraries
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: search
+          in: query
+          required: false
+          description: Search libraries by name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of libraries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContentLibrary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      summary: Create content library
+      operationId: createLibrary
+      tags:
+        - Content Libraries
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLibraryRequest'
+      responses:
+        '201':
+          description: Library created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentLibrary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learning-paths/{userId}:
+    get:
+      summary: Get user learning paths
+      operationId: getUserLearningPaths
+      tags:
+        - Learning Paths
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User learning paths
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningPath'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: User not found
+
+    post:
+      summary: Create learning path for user
+      operationId: createLearningPath
+      tags:
+        - Learning Paths
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLearningPathRequest'
+      responses:
+        '201':
+          description: Learning path created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPath'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  schemas:
+    ContentGenerationRequest:
+      type: object
+      required:
+        - topic
+        - gradeLevel
+        - format
+      properties:
+        topic:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Topic to generate content for
+          example: "Photosynthesis"
+        gradeLevel:
+          type: string
+          enum:
+            - elementary
+            - middle-school
+            - high-school
+            - undergraduate
+            - graduate
+          description: Target grade/education level
+          example: "high-school"
+        format:
+          type: string
+          enum:
+            - markdown
+            - html
+            - json
+            - plain-text
+          description: Output format
+          example: "markdown"
+        language:
+          type: string
+          pattern: '^[a-z]{2}-[A-Z]{2}$'
+          default: "en-US"
+          description: Output language (BCP 47 format)
+          example: "en-US"
+        includeExamples:
+          type: boolean
+          default: true
+          description: Include real-world examples
+        exampleCount:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+          description: Number of examples to include
+        includeQuiz:
+          type: boolean
+          default: false
+          description: Include quiz questions at end
+
+    GeneratedContent:
+      type: object
+      required:
+        - id
+        - topic
+        - content
+        - format
+        - createdAt
+        - estimatedReadTime
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique content identifier
+        topic:
+          type: string
+          description: Topic of generated content
+        content:
+          type: string
+          description: The actual generated content
+          minLength: 100
+        format:
+          type: string
+          enum:
+            - markdown
+            - html
+            - json
+            - plain-text
+        gradeLevel:
+          type: string
+          enum:
+            - elementary
+            - middle-school
+            - high-school
+            - undergraduate
+            - graduate
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        estimatedReadTime:
+          type: integer
+          description: Estimated reading time in minutes
+          minimum: 1
+        exampleCount:
+          type: integer
+          minimum: 0
+        includesQuiz:
+          type: boolean
+        generationTimeMs:
+          type: integer
+          description: Time taken to generate in milliseconds
+
+    ContentLibrary:
+      type: object
+      required:
+        - id
+        - name
+        - itemCount
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        itemCount:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isPublic:
+          type: boolean
+          default: false
+
+    LearningPath:
+      type: object
+      required:
+        - id
+        - userId
+        - contentSequence
+        - progressPercentage
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        name:
+          type: string
+        contentSequence:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        progressPercentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        completedItems:
+          type: integer
+          minimum: 0
+        lastAccessedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateLibraryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        isPublic:
+          type: boolean
+          default: false
+
+    CreateLearningPathRequest:
+      type: object
+      required:
+        - name
+        - contentSequence
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        contentSequence:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - traceId
+      properties:
+        error:
+          type: string
+          description: Error code (snake_case)
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error context
+        traceId:
+          type: string
+          format: uuid
+          description: Correlation ID for support
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            retryAfter:
+              type: integer
+              description: Seconds to wait before retrying
+
+  responses:
+    UnauthorizedError:
+      description: Authentication failed or missing
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "UNAUTHORIZED"
+            message: "Missing or invalid authentication token"
+            traceId: "trace-abc123"
+
+    BadRequestError:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by the authentication service
+
+security:
+  - BearerAuth: []

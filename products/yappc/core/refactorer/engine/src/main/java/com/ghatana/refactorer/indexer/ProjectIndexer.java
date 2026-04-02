@@ -1,6 +1,7 @@
 package com.ghatana.refactorer.indexer;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.nio.file.Path;
 import org.apache.logging.log4j.Logger;
 
@@ -45,7 +46,7 @@ public class ProjectIndexer {
             logger.info("Found {} unique exports", symbolStore.getExportCount());
         } catch (Exception e) {
             logger.error("Error indexing project: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to index project", e);
+            throw new RefactorerOperationException("Failed to index project: " + projectRoot, e);
         }
     }
 

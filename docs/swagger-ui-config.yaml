@@ -1,0 +1,76 @@
+# Swagger UI Configuration
+# Serves all OpenAPI specifications for Ghatana APIs
+# Access at: http://localhost:8888/swagger-ui.html
+
+swagger:
+  enabled: true
+  title: "Ghatana API Documentation"
+  description: "Comprehensive API documentation for all Ghatana microservices"
+  version: "1.0.0"
+  contact:
+    name: "Ghatana Engineering"
+    email: "engineering@ghatana.io"
+
+# API Specifications
+apis:
+  - name: "TutorPutor Content Generation"
+    description: "Content generation, library management, and learning path management"
+    url: "http://localhost:8080/api/docs/tutorputor-api.openapi.yaml"
+    path: "/tutorputor"
+    version: "1.0.0"
+    contact: "tutorputor-team@ghatana.io"
+
+  - name: "Data Cloud Query API"
+    description: "Dataset management, query execution, and analytics aggregations"
+    url: "http://localhost:8081/api/docs/data-cloud-api.openapi.yaml"
+    path: "/data-cloud"
+    version: "1.0.0"
+    contact: "data-cloud-team@ghatana.io"
+
+  - name: "YAPPC Code Generation"
+    description: "System design management, code generation, and refactoring suggestions"
+    url: "http://localhost:8082/api/docs/yappc-api.openapi.yaml"
+    path: "/yappc"
+    version: "1.0.0"
+    contact: "yappc-team@ghatana.io"
+
+# Swagger UI Server Configuration
+server:
+  port: 8888
+  host: "0.0.0.0"
+  contextPath: "/swagger-ui"
+
+# Security Configuration
+security:
+  enabled: true
+  oauth2:
+    enabled: true
+    clientId: "swagger-ui"
+    clientSecret: "${SWAGGER_UI_CLIENT_SECRET}"
+    authorizationUrl: "http://localhost:8888/auth/oauth/authorize"
+    tokenUrl: "http://localhost:8888/auth/oauth/token"
+    scopes:
+      - "read:api"
+      - "write:api"
+
+# UI Configuration
+ui:
+  deepLinking: true
+  displayOperationId: true
+  defaultModelsExpandDepth: 1
+  defaultModelExpandDepth: 1
+  docExpansion: "list"
+  filter: true
+  showExtensions: false
+  showCommonExtensions: false
+  syntaxHighlight:
+    activate: true
+    theme: "monokai"
+  tryItOutEnabled: true
+
+# API Key Authentication
+apiKey:
+  enabled: true
+  name: "X-API-Key"
+  in: "header"
+  description: "Optional API Key for enhanced rate limits"

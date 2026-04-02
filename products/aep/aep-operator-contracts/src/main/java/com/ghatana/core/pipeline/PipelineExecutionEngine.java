@@ -65,7 +65,7 @@ import java.util.stream.Collectors;
  *
  * <p><b>Usage</b>
  * <pre>{@code
- * OperatorCatalog catalog = new DefaultOperatorCatalog();
+ * OperatorCatalog catalog = new UnifiedOperatorCatalog();
  * catalog.register(filterOperator);
  * catalog.register(enrichOperator);
  *
@@ -99,6 +99,7 @@ public class PipelineExecutionEngine {
     private final PipelineExecutionGraphBuilder graphBuilder;
     private final PipelineStageExecutor stageExecutor;
     private final PipelineEventRouter eventRouter;
+    private AepPipelineMetrics pipelineMetrics = AepPipelineMetrics.noop();
 
     public PipelineExecutionEngine() {
         this(new PipelineExecutionGraphBuilder(), new PipelineStageExecutor(), new PipelineEventRouter());
@@ -112,6 +113,17 @@ public class PipelineExecutionEngine {
         this.graphBuilder = Objects.requireNonNull(graphBuilder, "graphBuilder cannot be null");
         this.stageExecutor = Objects.requireNonNull(stageExecutor, "stageExecutor cannot be null");
         this.eventRouter = Objects.requireNonNull(eventRouter, "eventRouter cannot be null");
+    }
+
+    /**
+     * Attaches a metrics facade for recording pipeline execution counters and timers.
+     *
+     * @param metrics the metrics facade; must not be {@code null}
+     * @return {@code this} for chaining
+     */
+    public PipelineExecutionEngine withMetrics(AepPipelineMetrics metrics) {
+        this.pipelineMetrics = Objects.requireNonNull(metrics, "metrics cannot be null");
+        return this;
     }
 
     /**
@@ -130,15 +142,19 @@ public class PipelineExecutionEngine {
 
         long startTimeMs = System.currentTimeMillis();
         String pipelineId = pipeline.getId();
+        String tenantId = context.getTenantId();
 
         logger.info("Starting pipeline execution: pipeline={}, execution={}, tenant={}",
-                pipelineId, context.getExecutionId(), context.getTenantId());
+                pipelineId, context.getExecutionId(), tenantId);
+        pipelineMetrics.recordStarted(pipelineId, tenantId);
 
         // Step 1: Validate pipeline structure
         PipelineValidationResult validation = pipeline.validate();
         if (!validation.isValid()) {
             String errorMsg = "Pipeline validation failed: " + validation.errors();
             logger.error(errorMsg);
+            pipelineMetrics.recordFailed(pipelineId, tenantId,
+                    System.currentTimeMillis() - startTimeMs);
             return Promise.of(PipelineExecutionResult.failure(
                     pipelineId, inputEvent, 0, errorMsg));
         }
@@ -147,7 +163,7 @@ public class PipelineExecutionEngine {
         PipelineExecutionGraph graph = graphBuilder.build(pipeline);
 
         // Step 3: Execute stages in topological order
-        return executeStages(pipeline, inputEvent, context, graph, startTimeMs);
+        return executeStages(pipeline, inputEvent, context, graph, startTimeMs, tenantId);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -160,7 +176,7 @@ public class PipelineExecutionEngine {
      */
     private Promise<PipelineExecutionResult> executeStages(
             Pipeline pipeline, Event inputEvent, PipelineExecutionContext context,
-            PipelineExecutionGraph graph, long startTimeMs) {
+            PipelineExecutionGraph graph, long startTimeMs, String tenantId) {
 
         // Per-stage input accumulator: stageId → list of events to process
         Map<String, List<Event>> stageInputs = new java.util.concurrent.ConcurrentHashMap<>();
@@ -176,7 +192,7 @@ public class PipelineExecutionEngine {
         // Execute in topological order (sequential — Promise chain)
         return executeStageSequence(graph.topoOrder(), 0, graph, context, stageInputs, stageResults)
                 .map(unused -> buildFinalResult(pipeline.getId(), inputEvent, graph, stageInputs,
-                        stageResults, startTimeMs));
+                        stageResults, startTimeMs, tenantId));
     }
 
     /**
@@ -254,7 +270,7 @@ public class PipelineExecutionEngine {
     private PipelineExecutionResult buildFinalResult(
             String pipelineId, Event inputEvent, PipelineExecutionGraph graph,
             Map<String, List<Event>> stageInputs, List<StageExecutionResult> stageResults,
-            long startTimeMs) {
+            long startTimeMs, String tenantId) {
 
         long processingTimeMs = System.currentTimeMillis() - startTimeMs;
 
@@ -278,6 +294,7 @@ public class PipelineExecutionEngine {
         if (failures.isEmpty()) {
             logger.info("Pipeline '{}' completed successfully: {} stages, {} output events, {}ms",
                     pipelineId, stagesExecuted, outputEvents.size(), processingTimeMs);
+            pipelineMetrics.recordSucceeded(pipelineId, tenantId, processingTimeMs, stagesExecuted);
             return PipelineExecutionResult.success(
                     pipelineId, inputEvent, outputEvents, processingTimeMs, stagesExecuted);
         } else {
@@ -291,10 +308,12 @@ public class PipelineExecutionEngine {
             // If we have outputs from successful terminal stages, still return them
             if (!outputEvents.isEmpty()) {
                 // Partial success: some stages failed but terminal stages produced output
+                pipelineMetrics.recordSucceeded(pipelineId, tenantId, processingTimeMs, stagesExecuted);
                 return PipelineExecutionResult.success(
                         pipelineId, inputEvent, outputEvents, processingTimeMs, stagesExecuted);
             }
 
+            pipelineMetrics.recordFailed(pipelineId, tenantId, processingTimeMs);
             return PipelineExecutionResult.failure(
                     pipelineId, inputEvent, processingTimeMs, errorMsg);
         }

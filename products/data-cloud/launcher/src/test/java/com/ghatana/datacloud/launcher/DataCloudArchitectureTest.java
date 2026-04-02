@@ -71,6 +71,26 @@ class DataCloudArchitectureTest {
     class ForbiddenImports {
 
         @Test
+        @DisplayName("Root launcher must delegate transport and infra wiring to bootstrap classes")
+        void rootLauncherMustNotComposeTransportOrInfrastructureDirectly() {
+            ArchRule rule = noClasses()
+                    .that().haveSimpleName("DataCloudLauncher")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage(
+                            "com.ghatana.datacloud.di..",
+                            "com.ghatana.datacloud.infrastructure..",
+                            "com.ghatana.aiplatform..",
+                            "com.ghatana.datacloud.launcher.http..",
+                            "com.ghatana.datacloud.launcher.grpc..",
+                            "javax.sql..",
+                            "com.zaxxer.hikari..")
+                    .because(
+                        "The root launcher should stay thin and delegate transport/resource composition "
+                        + "to dedicated bootstrap classes instead of wiring product internals directly.");
+            rule.check(LAUNCHER_CLASSES);
+        }
+
+        @Test
         @DisplayName("Data-Cloud must not use Spring Reactor / WebFlux")
         void noSpringReactorOrWebFlux() {
             ArchRule rule = noClasses()

@@ -197,6 +197,41 @@ class ContentGenerationAgentTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("Should derive learner preferences from snapshot fields when explicit preferences are absent")
+    void shouldDeriveLearnerPreferencesFromSnapshotFields() {
+        ContentGenerationRequest request = ContentGenerationRequest.forLearner(
+            "Fractions",
+            "MATH",
+            "5",
+            ContentGenerationRequest.ContentType.EXAMPLE,
+            "learner-123"
+        );
+
+        LearnerProfileHttpClient.LearnerPersonalizationSnapshot snapshot =
+            new LearnerProfileHttpClient.LearnerPersonalizationSnapshot();
+        snapshot.preferredModality = "VISUAL";
+        snapshot.preferredPacing = "ADAPTIVE";
+        snapshot.preferredDifficulty = "BEGINNER";
+        snapshot.adjustedDifficulty = "easy";
+        snapshot.preferences = List.of();
+        snapshot.knowledgeGaps = List.of("fraction-basics");
+
+        when(mockLearnerProfileClient.getPersonalization("learner-123", "Fractions"))
+            .thenReturn(Optional.of(snapshot));
+        when(mockContext.getLogger()).thenReturn(LOG);
+
+        ContentGenerationRequest enriched = agent.runPerceive(request, mockContext);
+
+        assertThat(enriched.learnerPreferences()).containsExactly(
+            "visual-learning",
+            "adaptive-checkpoints",
+            "scaffolded-practice"
+        );
+        assertThat(enriched.difficulty()).isEqualTo("easy");
+        assertThat(enriched.knowledgeGaps()).containsExactly("fraction-basics");
+    }
+
+    @Test
     @DisplayName("Should create response with validation issues")
     void shouldCreateResponseWithValidationIssues() {
         // Given
@@ -379,6 +414,13 @@ class ContentGenerationAgentTest extends EventloopTestBase {
             AgentContext context
         ) {
             return super.reflect(request, response, context);
+        }
+
+        private ContentGenerationRequest runPerceive(
+            ContentGenerationRequest request,
+            AgentContext context
+        ) {
+            return super.perceive(request, context);
         }
     }
 }

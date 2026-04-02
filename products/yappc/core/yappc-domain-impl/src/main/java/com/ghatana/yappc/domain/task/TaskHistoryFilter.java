@@ -20,6 +20,7 @@ import java.time.Instant;
  * @doc.pattern ValueObject
  */
 public record TaskHistoryFilter(
+    @Nullable String tenantId,
         @Nullable String userId,
         @Nullable String projectId,
         @Nullable String taskId,
@@ -39,6 +40,7 @@ public record TaskHistoryFilter(
     }
 
     public static class Builder {
+        private String tenantId;
         private String userId;
         private String projectId;
         private String taskId;
@@ -46,6 +48,11 @@ public record TaskHistoryFilter(
         private Instant startTime;
         private Instant endTime;
         private int limit = 100;
+
+        public Builder tenantId(String tenantId) {
+            this.tenantId = tenantId;
+            return this;
+        }
 
         public Builder userId(String userId) {
             this.userId = userId;
@@ -83,7 +90,7 @@ public record TaskHistoryFilter(
         }
 
         public TaskHistoryFilter build() {
-            return new TaskHistoryFilter(userId, projectId, taskId, status, startTime, endTime, limit);
+            return new TaskHistoryFilter(tenantId, userId, projectId, taskId, status, startTime, endTime, limit);
         }
     }
 }

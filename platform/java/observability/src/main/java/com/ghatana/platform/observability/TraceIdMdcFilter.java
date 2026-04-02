@@ -5,23 +5,22 @@ import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
-import org.slf4j.MDC;
 
 import java.util.UUID;
 
 /**
- * HTTP filter that injects trace IDs into SLF4J MDC for structured logging.
+ * HTTP filter that initializes correlation context for structured logging.
  *
- * <p>TraceIdMdcFilter extracts or generates request IDs from HTTP headers and populates
- * SLF4J MDC with trace context for consistent logging across requests. Ensures MDC cleanup
- * after request completion.</p>
+ * <p>TraceIdMdcFilter extracts or generates request IDs from HTTP headers and initializes
+ * {@link CorrelationContext} so SLF4J MDC stays consistent across request handling. Ensures
+ * context cleanup or restoration after request completion.</p>
  *
  * <p><b>Features:</b></p>
  * <ul>
  *   <li>Extract request ID from X-Request-Id header</li>
  *   <li>Generate UUID request ID if header missing</li>
- *   <li>Populate MDC with requestId, traceId, spanId</li>
- *   <li>Automatic MDC cleanup after request (in finally block)</li>
+ *   <li>Populate CorrelationContext and MDC from a single source of truth</li>
+ *   <li>Automatic context cleanup after async request completion</li>
  *   <li>ActiveJ Promise integration (non-blocking)</li>
  * </ul>
  *
@@ -48,13 +47,12 @@ import java.util.UUID;
  * </ul>
  *
  * <p><b>Integration with CorrelationContext:</b></p>
- * <p>This filter provides basic MDC setup. For full correlation context (userId, tenantId, etc.),
- * use {@link CorrelationContext} in combination with this filter or replace with
- * CorrelationContext-based filter.</p>
+ * <p>This filter uses {@link CorrelationContext} directly so requestId and correlationId remain
+ * available to downstream async handlers and logging.</p>
  *
  * <p><b>Cleanup Guarantee:</b></p>
  * <ul>
- *   <li>MDC cleared in finally block (guaranteed cleanup)</li>
+ *   <li>Context restored after promise completion (guaranteed cleanup)</li>
  *   <li>Prevents MDC leakage in thread pool environments</li>
  *   <li>Safe for reused threads (ActiveJ eventloop threads)</li>
  * </ul>
@@ -76,16 +74,16 @@ import java.util.UUID;
  * @updated 2025-10-29
  * @version 1.0.0
  * @type HTTP Filter (MDC Interceptor)
- * @purpose Trace ID injection into SLF4J MDC for structured logging
+ * @purpose Correlation context initialization for structured logging
  * @pattern Filter pattern, Decorator pattern, Interceptor pattern
- * @responsibility Request ID extraction/generation, MDC population, MDC cleanup
+ * @responsibility Request ID extraction/generation, correlation context population, cleanup
  * @usage Wrap AsyncServlet with wrap(): `filter.wrap(delegate)`
  * @examples See class-level JavaDoc for AsyncServlet wrapping example
  * @testing Test header extraction, UUID generation, MDC population, MDC cleanup, exception handling
- * @notes MDC cleanup guaranteed via finally; generates UUID if X-Request-Id missing; placeholder traceId/spanId
+ * @notes Cleanup occurs after async completion; generates UUID if X-Request-Id missing
  *
  * @doc.type class
- * @doc.purpose HTTP filter injecting trace IDs into SLF4J MDC for structured logging
+ * @doc.purpose HTTP filter initializing correlation context for structured logging
  * @doc.layer platform
  * @doc.pattern Filter
  */
@@ -93,31 +91,45 @@ public final class TraceIdMdcFilter {
     private static final String HDR_REQUEST_ID = "X-Request-Id";
 
     public AsyncServlet wrap(AsyncServlet delegate) {
-        return request -> {
-            try {
-                return serveWithMdc(delegate, request);
-            } catch (Exception e) {
-                MDC.clear();
-                return Promise.ofException(e);
-            }
-        };
+        return request -> serveWithCorrelationContext(delegate, request);
     }
 
-    private Promise<HttpResponse> serveWithMdc(AsyncServlet delegate, HttpRequest request) throws Exception {
+    private Promise<HttpResponse> serveWithCorrelationContext(AsyncServlet delegate, HttpRequest request) throws Exception {
+        CorrelationContext.CorrelationData previousContext = CorrelationContext.getCurrentData();
+        String requestId = resolveRequestId(request);
+
+        CorrelationContext.initialize(requestId, null, null, requestId);
+        try {
+            Promise<HttpResponse> responsePromise = delegate.serve(request);
+            return responsePromise.whenComplete((response, exception) -> restoreContext(previousContext));
+        } catch (Exception exception) {
+            restoreContext(previousContext);
+            throw exception;
+        }
+    }
+
+    private String resolveRequestId(HttpRequest request) {
         String requestId = request.getHeader(HttpHeaders.of(HDR_REQUEST_ID));
         if (requestId == null || requestId.isBlank()) {
-            requestId = UUID.randomUUID().toString();
+            return UUID.randomUUID().toString();
         }
-        MDC.put("requestId", requestId);
-        // Placeholders to keep MDC keys consistent
-        MDC.put("traceId", requestId);
-        MDC.put("spanId", "root");
-        try {
-            return delegate.serve(request);
-        } finally {
-            MDC.remove("requestId");
-            MDC.remove("traceId");
-            MDC.remove("spanId");
+        return requestId;
+    }
+
+    private void restoreContext(CorrelationContext.CorrelationData previousContext) {
+        if (hasContext(previousContext)) {
+            CorrelationContext.initializeFrom(previousContext);
+            return;
         }
+        CorrelationContext.clear();
+    }
+
+    private boolean hasContext(CorrelationContext.CorrelationData previousContext) {
+        return previousContext.getCorrelationId() != null
+            || previousContext.getUserId() != null
+            || previousContext.getTenantId() != null
+            || previousContext.getRequestId() != null
+            || previousContext.getTraceId() != null
+            || previousContext.getSpanId() != null;
     }
 }

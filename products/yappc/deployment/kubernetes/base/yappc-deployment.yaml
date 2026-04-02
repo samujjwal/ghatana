@@ -1,3 +1,13 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yappc
+  namespace: yappc
+  labels:
+    app: yappc-agents
+    component: sdlc-platform
+automountServiceAccountToken: false
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,16 +36,27 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
     spec:
+      serviceAccountName: yappc
+      automountServiceAccountToken: false
       # Security Context (non-root)
       securityContext:
+        runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       
       # Init Container: Wait for Ollama to be ready
       initContainers:
         - name: wait-for-ollama
           image: busybox:1.36
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           command: ['sh', '-c']
           args:
             - |
@@ -49,8 +70,14 @@ spec:
       # Main Container: YAPPC Agents
       containers:
         - name: yappc-agents
-          image: yappc-agents:latest  # TODO: Replace with actual image registry
-          imagePullPolicy: Always
+          image: docker.io/ghatana/yappc:2026.3.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           ports:
             - name: http
               containerPort: 8080
@@ -93,6 +120,8 @@ spec:
           
           # Persistent Storage
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             - name: yappc-logs
               mountPath: /app/logs
             - name: yappc-cache
@@ -130,6 +159,9 @@ spec:
       
       # Volumes
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
         - name: yappc-logs
           persistentVolumeClaim:
             claimName: yappc-logs-pvc
@@ -161,3 +193,62 @@ spec:
   sessionAffinityConfig:
     clientIP:
       timeoutSeconds: 10800  # 3 hours
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: yappc-agents-default
+  namespace: yappc
+  labels:
+    app: yappc-agents
+    component: sdlc-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: yappc-agents
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 11434
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443

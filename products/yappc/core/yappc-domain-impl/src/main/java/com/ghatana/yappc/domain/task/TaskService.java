@@ -1,5 +1,6 @@
 package com.ghatana.products.yappc.domain.task;
 
+import com.ghatana.platform.core.validation.ValidationResult;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 

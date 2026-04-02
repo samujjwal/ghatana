@@ -44,7 +44,7 @@ const ConfigSchema = z.object({
 
   // Observability
   SENTRY_DSN: z.string().url().optional(),
-  METRICS_PORT: z.coerce.number().default(9090),
+  METRICS_PORT: z.coerce.number().default(3000),
 
   // Multi-tenancy
   DEFAULT_TENANT: z.string().default('default'),

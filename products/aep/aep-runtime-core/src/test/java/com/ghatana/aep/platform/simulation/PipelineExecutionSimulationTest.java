@@ -3,7 +3,7 @@ package com.ghatana.aep.platform.simulation;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.UnifiedOperator;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineBuilder;
 import com.ghatana.core.pipeline.PipelineExecutionContext;
@@ -39,14 +39,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PipelineExecutionSimulationTest extends EventloopTestBase {
 
     private PipelineExecutionEngine engine;
-    private DefaultOperatorCatalog catalog;
+    private UnifiedOperatorCatalog catalog;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     @BeforeEach
     void setUp() {
         engine = new PipelineExecutionEngine();
-        catalog = new DefaultOperatorCatalog();
+        catalog = new UnifiedOperatorCatalog();
         
         OperatorId id = OperatorId.of("test", "simulation", "load-op", "1.0");
         catalog.register(new DummyOperator(id, executor));

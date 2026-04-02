@@ -2,7 +2,7 @@ package com.ghatana.virtualorg.framework.integration;
 
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.core.operator.OperatorId;
-import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -53,7 +53,7 @@ class VirtualOrgFrameworkIntegrationTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        operatorCatalog = new InMemoryOperatorCatalog();
+        operatorCatalog = new UnifiedOperatorCatalog();
         meterRegistry = new SimpleMeterRegistry();
         agentRegistry = new AgentOperatorRegistry(operatorCatalog, meterRegistry);
         workflowAdapter = new WorkflowPipelineAdapter(operatorCatalog);

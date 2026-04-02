@@ -57,4 +57,49 @@ describe("LTIValidator", () => {
       userClaims: { sub: "user-1" },
     });
   });
+
+  it("derives tenant from stored launch state when the route is public", async () => {
+    const launchService = createLaunchService() as LtiLaunchService & {
+      resolveLaunchTenantIdFromState: ReturnType<typeof vi.fn>;
+    };
+    launchService.resolveLaunchTenantIdFromState = vi
+      .fn()
+      .mockReturnValue("tenant-from-state");
+    vi.mocked(launchService.validateLaunch).mockResolvedValue({
+      valid: true,
+      launchContext: { platformId: "platform-1" } as never,
+    });
+
+    const validator = new LTIValidator(launchService);
+
+    await validator.validateLaunchRequest({
+      id_token: "header.payload.signature",
+      state: "state-1",
+    });
+
+    expect(launchService.resolveLaunchTenantIdFromState).toHaveBeenCalledWith(
+      "state-1",
+    );
+    expect(launchService.validateLaunch).toHaveBeenCalledWith({
+      tenantId: "tenant-from-state",
+      idToken: "header.payload.signature",
+      state: "state-1",
+    });
+  });
+
+  it("rejects launches when neither request nor state can resolve a tenant", async () => {
+    const launchService = createLaunchService() as LtiLaunchService & {
+      resolveLaunchTenantIdFromState: ReturnType<typeof vi.fn>;
+    };
+    launchService.resolveLaunchTenantIdFromState = vi.fn().mockReturnValue(null);
+
+    const validator = new LTIValidator(launchService);
+
+    await expect(
+      validator.validateLaunchRequest({
+        id_token: "header.payload.signature",
+        state: "state-1",
+      }),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+  });
 });

@@ -3,6 +3,7 @@ package com.ghatana.refactorer.orchestrator.report;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import java.lang.reflect.RecordComponent;
@@ -272,7 +273,8 @@ public final class ReportGenerator implements AutoCloseable {
                                     reportServer.start();
                                 } catch (Exception e) {
                                     log.error("Failed to start report server", e);
-                                    throw new RuntimeException("Failed to start report server", e);
+                                    throw new RefactorerOperationException(
+                                            "Failed to start report server", e);
                                 }
                             });
 
@@ -280,7 +282,7 @@ public final class ReportGenerator implements AutoCloseable {
 
         } catch (Exception e) {
             log.error("Failed to initialize report server: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to initialize report server", e);
+            throw new RefactorerOperationException("Failed to initialize report server", e);
         }
     }
 

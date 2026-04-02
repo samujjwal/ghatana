@@ -2,6 +2,7 @@
 package com.ghatana.refactorer.diagnostics;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.ghatana.refactorer.shared.UnifiedDiagnostic;
 import com.ghatana.refactorer.shared.service.LanguageService;
 import io.activej.eventloop.Eventloop;
@@ -89,7 +90,7 @@ public final class DiagnosticsRunner {
             }
         } catch (ServiceConfigurationError e) {
             log.error("Error loading language services", e);
-            throw new RuntimeException("Failed to load language services", e);
+            throw new RefactorerOperationException("Failed to load language services", e);
         }
         return services;
     }
@@ -172,7 +173,7 @@ public final class DiagnosticsRunner {
 
         } catch (IOException e) {
             log.error("Error scanning project files: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to scan project files", e);
+            throw new RefactorerOperationException("Failed to scan project files", e);
         }
 
         log.info("Completed diagnostics. Found {} total issues.", allDiagnostics.size());

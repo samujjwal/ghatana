@@ -33,6 +33,10 @@ import java.util.stream.Collectors;
 /**
  * Data-Cloud-backed implementation of {@link AgentRegistry}.
  *
+ * <p><strong>Role (v2.5+):</strong> This class is the <em>durable persistence backend</em>
+ * for agent metadata and lifecycle events. It is injected into {@code AepCentralRegistryService}
+ * as an optional provider to handle persistence operations.
+ *
  * <p>All agent descriptors and configurations are persisted to Data-Cloud for
  * durability and cross-instance discovery. An in-memory write-through cache
  * supports O(1) {@link #resolve(String)} and {@link #listAgentIds()} without
@@ -59,20 +63,27 @@ import java.util.stream.Collectors;
  * backed by {@link ConcurrentHashMap}. Data-Cloud writes are async and
  * non-blocking with respect to the local maps.
  *
- * <h2>Migration note (v2.4)</h2>
- * <p>Agent <em>discovery</em> is now centralised in {@code AepCentralRegistryService}.
- * This class retains its role as the durable <strong>persistence backend</strong>
- * for agent descriptors and lifecycle events. Products should no longer use this
- * class directly for agent lookup or capability search; instead, query through
- * the AEP runtime APIs. See {@code docs/AGENT_REGISTRY_MIGRATION_GUIDE.md}.
+ * <h2>Architecture (v2.5+)</h2>
+ * <p>As of v2.5, this class is a <strong>persistence provider</strong> injected into
+ * {@code AepCentralRegistryService}. The unified AEP runtime now:
+ * <ul>
+ *   <li>Handles all HTTP API requests via {@code AepAgentRegistryController}</li>
+ *   <li>Manages catalog-based discovery via {@code AepCentralRegistryService}</li>
+ *   <li>Delegates persistence to this provider with optional in-process calls</li>
+ *   <li>Records all lifecycle events (agent.registered, agent.deregistered) to immutable audit trail</li>
+ * </ul>
+ *
+ * <p>Products no longer expose their own registry HTTP endpoints. All agent operations
+ * route through the unified AEP API at {@code /api/v1/agents/*}.
  *
  * @doc.type class
  * @doc.purpose Data-Cloud-backed agent registry with in-memory write-through cache and TTL eviction
  * @doc.layer registry
- * @doc.pattern Repository, Cache-Aside
+ * @doc.pattern Repository, Cache-Aside, Provider
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
+ * @see com.ghatana.aep.runtime.AepCentralRegistryService (v2.5+ primary consumer)
  */
 public final class DataCloudAgentRegistry implements AgentRegistry, AutoCloseable {
 

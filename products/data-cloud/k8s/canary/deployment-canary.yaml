@@ -72,11 +72,14 @@ spec:
         # Prevents Argo CD / Flux from reconciling canary back to stable image
         argocd.argoproj.io/compare-options: IgnoreExtraneous
     spec:
+      serviceAccountName: data-cloud
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
         fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
 
       terminationGracePeriodSeconds: 60
 
@@ -154,6 +157,14 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
 
       # Prefer scheduling canary on different nodes than stable pods
       affinity:

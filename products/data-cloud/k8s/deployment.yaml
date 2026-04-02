@@ -32,12 +32,15 @@ spec:
         prometheus.io/path: "/metrics"
         prometheus.io/port: "8082"
     spec:
+      serviceAccountName: data-cloud
       # Security context — run as non-root (mirrors Dockerfile USER)
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
         fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
 
       # Allow 60 s for graceful shutdown before SIGKILL
       terminationGracePeriodSeconds: 60
@@ -112,7 +115,7 @@ spec:
           # Read-only root filesystem for security
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false   # false: app writes temp files
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL

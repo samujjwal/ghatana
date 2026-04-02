@@ -23,9 +23,18 @@ import {
   type GenerationRequestExecutionJobData,
 } from "../../../modules/content/generation/queue-dispatcher.js";
 import { AssetMaterializationService } from "../../../modules/content/asset/materialization-service.js";
+import type { GenerationJobType } from "../../../modules/content/types.js";
 import { GenerationQualityLoopService } from "../../../modules/content/review/quality-loop-service.js";
 import { RealContentGenerationClient } from "../grpc/RealContentGenerationClient.js";
 import { ContentWorkerTelemetryPublisher } from "../generation-telemetry.js";
+
+type GrpcExampleLike = {
+  example_id?: string;
+  title?: string;
+  description?: string;
+  content?: string;
+  solution_content?: string;
+};
 
 export class GenerationRequestJobProcessor {
   private readonly assetMaterializationService: AssetMaterializationService;
@@ -221,7 +230,7 @@ export class GenerationRequestJobProcessor {
         tenantId: job.data.tenantId,
         requestId: job.data.generationRequestId,
         jobId: job.data.generationJobId,
-        jobType: job.data.generationJobType,
+        jobType: job.data.generationJobType as Exclude<GenerationJobType, "claim" | "evaluation">,
         requestTitle: job.data.requestTitle,
         ...(job.data.requestDescription
           ? { requestDescription: job.data.requestDescription }
@@ -307,7 +316,10 @@ export class GenerationRequestJobProcessor {
     const cost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(
       response.metadata,
     );
-    const explainers = (response.examples ?? []).map((example, index) => ({
+    const examples = Array.isArray(response.examples)
+      ? (response.examples as GrpcExampleLike[])
+      : [];
+    const explainers = examples.map((example: GrpcExampleLike, index: number) => ({
       id: example.example_id ?? `${job.data.generationJobId}-explainer-${index + 1}`,
       title: example.title ?? `Explainer for ${job.data.requestTitle}`,
       description: example.description ?? "",
@@ -455,7 +467,10 @@ export class GenerationRequestJobProcessor {
       count: 3,
     });
 
-    const assessments = (response.examples ?? []).map((example, index) => ({
+    const examples = Array.isArray(response.examples)
+      ? (response.examples as GrpcExampleLike[])
+      : [];
+    const assessments = examples.map((example: GrpcExampleLike, index: number) => ({
       id: example.example_id ?? `${job.data.generationJobId}-assessment-${index + 1}`,
       prompt: example.title ?? `Assessment item ${index + 1}`,
       guidance: example.description ?? "",

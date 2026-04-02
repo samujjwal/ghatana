@@ -6,6 +6,7 @@ package com.ghatana.aep.metrics;
 
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
+import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.NoopMetricsCollector;
 
 import java.util.Objects;
@@ -78,7 +79,7 @@ public final class AepMetricsCollector {
      * Creates an instance backed by a default {@link MetricsCollector} from the factory.
      */
     public static AepMetricsCollector create() {
-        return new AepMetricsCollector(MetricsCollectorFactory.createNoop());
+        return new AepMetricsCollector(MetricsProvider.getCollector());
     }
 
     /**

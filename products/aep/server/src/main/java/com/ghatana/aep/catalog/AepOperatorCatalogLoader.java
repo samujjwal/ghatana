@@ -4,7 +4,7 @@
  */
 package com.ghatana.aep.catalog;
 
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.spi.OperatorProviderRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +30,10 @@ public class AepOperatorCatalogLoader {
     private static final Logger log = LoggerFactory.getLogger(AepOperatorCatalogLoader.class);
     private static final String OPERATORS_DIR = "operators";
 
-    private final DefaultOperatorCatalog catalog;
+    private final UnifiedOperatorCatalog catalog;
     private final OperatorProviderRegistry providerRegistry;
 
-    public AepOperatorCatalogLoader(DefaultOperatorCatalog catalog,
+    public AepOperatorCatalogLoader(UnifiedOperatorCatalog catalog,
                                     OperatorProviderRegistry providerRegistry) {
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         this.providerRegistry = Objects.requireNonNull(providerRegistry, "providerRegistry");

@@ -3,16 +3,13 @@ kind: Kustomization
 
 namespace: yappc
 
-commonLabels:
-  app.kubernetes.io/part-of: yappc
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: yappc
 
 resources:
-  - ../../helm/yappc/yappc/templates/deployment.yaml
-  - ../../helm/yappc/yappc/templates/service.yaml
-  - ../../helm/yappc/yappc/templates/configmap.yaml
-  - ../../helm/yappc/yappc/templates/ingress.yaml
-  - ../../helm/yappc/yappc/templates/hpa.yaml
-  - ../../helm/yappc/yappc/templates/pdb.yaml
+  - platform-resources.yaml
 
 # Note: Kustomize overlays are for pure-yaml workflows.
 # For Helm-based deployments, use: helm install -f values-<env>.yaml
+# This base is kept self-contained so kubectl kustomize works without non-default load restrictor flags.

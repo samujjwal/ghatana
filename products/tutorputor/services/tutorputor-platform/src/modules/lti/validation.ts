@@ -24,8 +24,14 @@ export interface LTILaunchValidationResult {
   userClaims?: Awaited<ReturnType<LtiLaunchService["validateLaunch"]>>["userClaims"];
 }
 
+interface LaunchServiceStateResolver {
+  resolveLaunchTenantIdFromState?: (state: string) => TenantId | null;
+}
+
 export class LTIValidator {
-  constructor(private readonly launchService: LtiLaunchService) {}
+  constructor(
+    private readonly launchService: LtiLaunchService & LaunchServiceStateResolver,
+  ) {}
 
   parseLaunchRequest(input: unknown): LTILaunchRequest {
     const parsed = launchRequestSchema.safeParse(input);
@@ -38,11 +44,22 @@ export class LTIValidator {
 
   async validateLaunchRequest(
     request: unknown,
-    tenantId: TenantId,
+    tenantId?: TenantId,
   ): Promise<LTILaunchValidationResult> {
     const parsed = this.parseLaunchRequest(request);
+    const resolvedTenantId =
+      tenantId ??
+      this.launchService.resolveLaunchTenantIdFromState?.(parsed.state) ??
+      null;
+
+    if (!resolvedTenantId) {
+      throw new AuthorizationError("Unknown or expired LTI launch state", {
+        state: parsed.state,
+      });
+    }
+
     const result = await this.launchService.validateLaunch({
-      tenantId,
+      tenantId: resolvedTenantId,
       idToken: parsed.id_token,
       state: parsed.state,
     });

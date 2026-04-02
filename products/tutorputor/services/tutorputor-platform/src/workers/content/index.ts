@@ -274,6 +274,22 @@ export class ContentWorkerService {
     });
   }
 
+  async healthCheck(): Promise<boolean> {
+    if (!this.worker || !this.producerQueue || !this.redisConnection) {
+      throw new Error("Content worker is not fully initialized");
+    }
+
+    const redis = this.redisConnection as Redis & {
+      ping: () => Promise<string>;
+    };
+    const ping = await redis.ping();
+    if (ping !== "PONG") {
+      throw new Error(`Unexpected Redis ping response: ${ping}`);
+    }
+
+    return true;
+  }
+
   async close() {
     if (this.worker) {
       await this.worker.close();
@@ -285,7 +301,10 @@ export class ContentWorkerService {
       await this.dlqManager.close();
     }
     if (this.redisConnection) {
-      await this.redisConnection.quit();
+      const redis = this.redisConnection as Redis & {
+        quit: () => Promise<void>;
+      };
+      await redis.quit();
     }
     // We do not close prisma here as it might be shared
   }

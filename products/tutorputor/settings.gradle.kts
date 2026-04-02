@@ -26,6 +26,11 @@ logger.lifecycle("└───────────────────�
 // ============================================================================
 // Helper Functions
 // ============================================================================
+fun includeProject(projectPath: String, projectDir: File) {
+    include(projectPath)
+    project(":$projectPath").projectDir = projectDir
+}
+
 fun includeLib(name: String, subPath: String = "java") {
     val libDir = File(monorepoRoot, "libs/$subPath/$name")
     if (libDir.exists()) {
@@ -138,6 +143,60 @@ if (contractsDir.exists()) {
             include("contracts:$name")
             project(":contracts:$name").projectDir = contractDir
         }
+    }
+}
+
+val platformContractsDir = File(monorepoRoot, "platform/contracts")
+if (platformContractsDir.exists()) {
+    include("platform")
+    project(":platform").projectDir = File(monorepoRoot, "platform")
+    include("platform:java")
+    project(":platform:java").projectDir = File(monorepoRoot, "platform/java")
+    includeProject("platform:contracts", platformContractsDir)
+}
+
+fileTree(File(monorepoRoot, "platform/java")) {
+    include("*/build.gradle.kts")
+    include("*/build.gradle")
+}.forEach { buildFile ->
+    val projectDir = buildFile.parentFile
+    val relativePath = projectDir.relativeTo(File(monorepoRoot, "platform/java")).path
+    val projectName = "platform:java:${relativePath.replace("/", ":")}"
+    includeProject(projectName, projectDir)
+}
+
+val productsRoot = File(monorepoRoot, "products")
+if (productsRoot.exists()) {
+    include("products")
+    project(":products").projectDir = productsRoot
+}
+
+val dataCloudRoot = File(monorepoRoot, "products/data-cloud")
+if (dataCloudRoot.exists()) {
+    include("products:data-cloud")
+    project(":products:data-cloud").projectDir = dataCloudRoot
+
+    fileTree(dataCloudRoot) {
+        include("*/build.gradle.kts")
+        include("*/build.gradle")
+    }.forEach { buildFile ->
+        val projectDir = buildFile.parentFile
+        val relativePath = projectDir.relativeTo(dataCloudRoot).path
+        val projectName = "products:data-cloud:${relativePath.replace("/", ":")}"
+        include(projectName)
+        project(":$projectName").projectDir = projectDir
+    }
+}
+
+val sharedServicesDir = File(monorepoRoot, "shared-services")
+if (sharedServicesDir.exists()) {
+    include("shared-services")
+    project(":shared-services").projectDir = sharedServicesDir
+
+    val authGatewayDir = File(sharedServicesDir, "auth-gateway")
+    if (authGatewayDir.exists()) {
+        include("shared-services:auth-gateway")
+        project(":shared-services:auth-gateway").projectDir = authGatewayDir
     }
 }
 

@@ -43,7 +43,7 @@ import com.ghatana.datacloud.launcher.http.handlers.EntityExportHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
-import com.ghatana.datacloud.launcher.http.handlers.AgentRegistryHandler;
+import com.ghatana.datacloud.launcher.http.handlers.PipelineCheckpointHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
 import com.ghatana.datacloud.launcher.http.handlers.BrainHandler;
 import com.ghatana.datacloud.launcher.http.handlers.LearningHandler;
@@ -132,13 +132,16 @@ public class DataCloudHttpServer {
 
     /**
      * Sliding-window rate limiter (platform:java:governance).
-     * Wraps the delegate servlet and enforces {@link #RATE_LIMIT_REQUESTS} requests
-     * per {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window per client IP.
+    * Wraps the delegate servlet and enforces {@link #RATE_LIMIT_REQUESTS} requests
+    * per {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window per tenant/client bucket.
      * The raw 429 from the platform filter is upgraded in {@link #rateLimitFilter}
      * to include a JSON body and CORS headers required by the Data-Cloud API contract.
      */
-    private final RateLimitFilter platformRateLimiter =
-            new RateLimitFilter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS);
+        private final RateLimitFilter platformRateLimiter =
+            new RateLimitFilter(
+                RATE_LIMIT_REQUESTS,
+                RATE_LIMIT_WINDOW_SECONDS,
+                DataCloudHttpServer::rateLimitClientKey);
 
     /**
      * Optional schema validator for entity data.
@@ -230,7 +233,7 @@ public class DataCloudHttpServer {
     private EntityAnomalyHandler anomalyHandler;
     private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
-    private AgentRegistryHandler agentHandler;
+    private PipelineCheckpointHandler pipelineCheckpointHandler;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
     private LearningHandler learningHandler;
@@ -548,15 +551,17 @@ public class DataCloudHttpServer {
         validationHandler = new EntityValidationHandler(schemaValidator, httpSupport);
 
         eventHandler = new EventHandler(client, httpSupport);
-        agentHandler = new AgentRegistryHandler(client, httpSupport);
+        pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
 
         analyticsHandler = new AnalyticsHandler(analyticsEngine, httpSupport);
         if (reportService != null) analyticsHandler.withReportService(reportService);
+        analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
+        aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
         healthHandler = new HealthHandler(httpSupport, healthSubsystemSuppliers);
 
@@ -612,24 +617,23 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)
             .with(HttpMethod.GET, "/api/v1/events", eventHandler::handleQueryEvents)
 
-            // Agent registry endpoints (DC-3) — delegated to AgentRegistryHandler
-            .with(HttpMethod.GET, "/api/v1/agents", agentHandler::handleListAgents)
-            .with(HttpMethod.POST, "/api/v1/agents", agentHandler::handleRegisterAgent)
-            .with(HttpMethod.GET, "/api/v1/agents/:agentId", agentHandler::handleGetAgent)
-            .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", agentHandler::handleDeleteAgent)
+            // Agent registry endpoints — MIGRATED to AEP unified controller (v2.5)
+            // Routes now served by AepAgentRegistryController via /api/v1/agents/*
+            // Pre-migration: DC HTTP server temporarily returns 410 Gone
+            // Old DC endpoints removed from this server — replace with platform registry
 
-            // Pipeline registry endpoints — delegated to AgentRegistryHandler
-            .with(HttpMethod.GET,    "/api/v1/pipelines",                agentHandler::handleListPipelines)
-            .with(HttpMethod.POST,   "/api/v1/pipelines",                agentHandler::handleSavePipeline)
-            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId",    agentHandler::handleGetPipeline)
-            .with(HttpMethod.PUT,    "/api/v1/pipelines/:pipelineId",    agentHandler::handleUpdatePipeline)
-            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId",    agentHandler::handleDeletePipeline)
+            // Pipeline registry endpoints — delegated to PipelineCheckpointHandler
+            .with(HttpMethod.GET,    "/api/v1/pipelines",                pipelineCheckpointHandler::handleListPipelines)
+            .with(HttpMethod.POST,   "/api/v1/pipelines",                pipelineCheckpointHandler::handleSavePipeline)
+            .with(HttpMethod.GET,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleGetPipeline)
+            .with(HttpMethod.PUT,    "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleUpdatePipeline)
+            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId",    pipelineCheckpointHandler::handleDeletePipeline)
 
-            // Checkpoint management endpoints (DC-3) — delegated to AgentRegistryHandler
-            .with(HttpMethod.GET, "/api/v1/checkpoints", agentHandler::handleListCheckpoints)
-            .with(HttpMethod.POST, "/api/v1/checkpoints", agentHandler::handleSaveCheckpoint)
-            .with(HttpMethod.GET, "/api/v1/checkpoints/:checkpointId", agentHandler::handleGetCheckpoint)
-            .with(HttpMethod.DELETE, "/api/v1/checkpoints/:checkpointId", agentHandler::handleDeleteCheckpoint)
+            // Checkpoint management endpoints (DC-3) — delegated to PipelineCheckpointHandler
+            .with(HttpMethod.GET, "/api/v1/checkpoints", pipelineCheckpointHandler::handleListCheckpoints)
+            .with(HttpMethod.POST, "/api/v1/checkpoints", pipelineCheckpointHandler::handleSaveCheckpoint)
+            .with(HttpMethod.GET, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleGetCheckpoint)
+            .with(HttpMethod.DELETE, "/api/v1/checkpoints/:checkpointId", pipelineCheckpointHandler::handleDeleteCheckpoint)
 
             // Agent memory plane endpoints (DC-4) — delegated to MemoryPlaneHandler
             .with(HttpMethod.GET,    "/api/v1/memory/:agentId",                  memoryHandler::handleGetAgentMemory)
@@ -708,6 +712,8 @@ public class DataCloudHttpServer {
 
             .build();
 
+        AsyncServlet filteredRouter = payloadSizeLimitFilter(contentTypeFilter(router));
+
         // DC-E1: wrap router with security filter when apiKeyResolver is configured
         AsyncServlet rootServlet;
         if (apiKeyResolver != null) {
@@ -716,16 +722,16 @@ public class DataCloudHttpServer {
                 .policyEngine(policyEngine)
                 .auditService(auditService)
                 .build();
-            rootServlet = securityFilter.apply(router);
+            rootServlet = securityFilter.apply(filteredRouter);
             log.info("[DC-E1] security filter active (policy engine: {})",
                 policyEngine != null ? "enabled" : "advisory-only");
         } else {
-            rootServlet = router;
+            rootServlet = filteredRouter;
             log.info("[DC-E1] security filter inactive — withApiKeyResolver not called");
         }
 
         server = HttpServer.builder(eventloop,
-                corsFilter(rateLimitFilter(payloadSizeLimitFilter(contentTypeFilter(rootServlet)))))
+                corsFilter(rateLimitFilter(rootServlet)))
             .withListenPort(port)
             .build();
 
@@ -798,11 +804,11 @@ public class DataCloudHttpServer {
     }
 
     /**
-     * Middleware: sliding-window per-IP rate limiter, backed by
+    * Middleware: sliding-window tenant/IP-aware rate limiter, backed by
      * {@code platform:java:governance} {@link RateLimitFilter}.
      *
-     * <p>Each unique remote address is allowed at most {@link #RATE_LIMIT_REQUESTS} requests
-     * within a {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window (evaluated by
+    * <p>Each unique tenant/client bucket is allowed at most {@link #RATE_LIMIT_REQUESTS}
+    * requests within a {@link #RATE_LIMIT_WINDOW_SECONDS}-second sliding window (evaluated by
      * the platform filter's deque-based algorithm).
      *
      * <p>The raw 429 response emitted by the platform filter (plain text, no CORS) is
@@ -838,6 +844,15 @@ public class DataCloudHttpServer {
                     .withBody(body.getBytes(StandardCharsets.UTF_8))
                     .build();
         });
+    }
+
+    private static String rateLimitClientKey(HttpRequest request) {
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        String clientIp = remoteIp(request);
+        if (tenantId == null || tenantId.isBlank()) {
+            return clientIp;
+        }
+        return tenantId.trim() + "|" + clientIp;
     }
 
     /**

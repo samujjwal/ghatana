@@ -37,3 +37,14 @@ Usage: {{ include "audio-video.selectorLabels" (dict "Release" .Release "compone
 app.kubernetes.io/name: {{ printf "%s-%s" .Release.Name .component | trunc 63 | trimSuffix "-" }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*
+Service account name used by the workloads.
+*/}}
+{{- define "audio-video.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default "audio-video-sa" .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}

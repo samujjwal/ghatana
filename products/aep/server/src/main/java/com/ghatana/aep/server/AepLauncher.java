@@ -11,7 +11,7 @@ import com.ghatana.agent.learning.review.ReviewItem;
 import com.ghatana.agent.learning.review.ReviewNotificationSpi;
 import com.ghatana.aep.server.http.AepHttpServer;
 import com.ghatana.agent.registry.InMemoryAgentFrameworkRegistry;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.spi.OperatorProviderRegistry;
 import com.ghatana.datacloud.DataCloud;
 import com.ghatana.datacloud.DataCloudClient;
@@ -102,7 +102,7 @@ public class AepLauncher {
 
     private static void loadOperatorCatalog() {
         try {
-            DefaultOperatorCatalog catalog = new DefaultOperatorCatalog();
+            UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
             OperatorProviderRegistry registry = OperatorProviderRegistry.create();
             new AepOperatorCatalogLoader(catalog, registry).loadFromClasspath();
             log.info("Operator catalog loaded from classpath");

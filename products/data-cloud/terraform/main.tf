@@ -170,7 +170,7 @@ module "s3" {
 module "clickhouse" {
   source = "./modules/clickhouse"
 
-  name                   = "${local.name_prefix}-clickhouse"
+  name_prefix            = local.name_prefix
   instance_type          = var.clickhouse_instance_type
   node_count             = var.clickhouse_node_count
   volume_size_gb         = var.clickhouse_volume_size_gb
@@ -179,7 +179,10 @@ module "clickhouse" {
   vpc_id                 = module.vpc.vpc_id
   subnet_ids             = module.vpc.database_subnet_ids
   allowed_security_group = module.eks.node_security_group_id
+  ami_id                 = var.clickhouse_ami_id
+  key_name               = var.clickhouse_key_name
   backup_bucket_id       = module.s3.backup_bucket_id
+  backup_bucket_arn      = module.s3.backup_bucket_arn
   tags                   = local.common_tags
 
   depends_on = [module.vpc, module.s3]

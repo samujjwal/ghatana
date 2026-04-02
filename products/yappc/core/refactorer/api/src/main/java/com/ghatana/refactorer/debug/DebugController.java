@@ -92,7 +92,7 @@ public final class DebugController {
                 // We found frames, now classify any errors
                 List<ErrorPatternManager.MatchedPattern> matches = classifyErrors(content, frames);
                 String language = detectLanguage(frames, content);
-                List<FixSuggestion> suggestions = getFixSuggestions(content, matches, language);
+                List<FixSuggestion> suggestions = getFixSuggestions(content, matches, language, frames);
                 return new ParseResult(frames, content, true, matches, suggestions);
             }
         }
@@ -102,7 +102,7 @@ public final class DebugController {
             List<ErrorPatternManager.MatchedPattern> matches = classifyErrors(content, List.of());
             if (!matches.isEmpty()) {
                 String language = detectLanguage(List.of(), content);
-                List<FixSuggestion> suggestions = getFixSuggestions(content, matches, language);
+                List<FixSuggestion> suggestions = getFixSuggestions(content, matches, language, List.of());
                 return new ParseResult(List.of(), content, false, matches, suggestions);
             }
         }
@@ -113,34 +113,45 @@ public final class DebugController {
     /**
  * Get fix suggestions for the given error message and matches. */
     private List<FixSuggestion> getFixSuggestions(
-            String content, List<ErrorPatternManager.MatchedPattern> matches, String language) {
+            String content,
+            List<ErrorPatternManager.MatchedPattern> matches,
+            String language,
+            List<StackTraceParser.TraceFrame> frames) {
         if (matches.isEmpty()) {
             return List.of();
         }
 
-        // Get the most relevant error message (usually the first one)
-        String errorMessage = matches.get(0).getMatchedText();
+        FixContext context = buildFixContext(language, frames);
 
-        // Only return suggestions if we have a known error pattern match
-        // (not just the catch-all 'unknown_error' pattern)
-        boolean hasKnownPattern =
-                matches.stream().anyMatch(m -> !"unknown_error".equals(m.getPattern().getName()));
+        Map<String, FixSuggestion> suggestionsById = new LinkedHashMap<>();
+        for (ErrorPatternManager.MatchedPattern match : matches) {
+            if ("unknown_error".equals(match.getPattern().getName())) {
+                continue;
+            }
 
-        if (!hasKnownPattern) {
-            return List.of();
+            for (FixSuggestion suggestion : fixSuggester.suggestFixes(match.getMatchedText(), context)) {
+                suggestionsById.merge(
+                        suggestion.getId(),
+                        suggestion,
+                        (existing, candidate) ->
+                                candidate.getConfidence() > existing.getConfidence()
+                                        ? candidate
+                                        : existing);
+            }
         }
 
-        // Get language-specific suggestions
-        List<FixSuggestion> suggestions = fixSuggester.getSuggestionsForLanguage(language);
+        return suggestionsById.values().stream()
+                .sorted(Comparator.comparingDouble(FixSuggestion::getConfidence).reversed())
+                .toList();
+    }
 
-        // Also get general suggestions
-        List<FixSuggestion> generalSuggestions = fixSuggester.suggestFixes(errorMessage);
-
-        // Combine and deduplicate suggestions
-        Set<String> seenIds = new HashSet<>();
-        return Stream.concat(suggestions.stream(), generalSuggestions.stream())
-                .filter(s -> seenIds.add(s.getId()))
-                .collect(Collectors.toList());
+    private FixContext buildFixContext(
+            String language, List<StackTraceParser.TraceFrame> frames) {
+        String filePath = frames.isEmpty() ? "" : frames.get(0).file();
+        FixContext context = new FixContext(language, filePath);
+        context.setMetadata("stackTraceParsed", !frames.isEmpty());
+        context.setMetadata("parsedFrameCount", frames.size());
+        return context;
     }
 
     /**
@@ -173,7 +184,7 @@ public final class DebugController {
                 if (file != null) {
                     if (file.endsWith(".java")) return "java";
                     if (file.endsWith(".py")) return "python";
-                    if (file.endsWith(".js") || file.endsWith(".ts")) return "node";
+                    if (file.matches(".*\\.(js|jsx|ts|tsx|mjs|cjs|mts|cts)$")) return "node";
                     if (file.endsWith(".go")) return "go";
                     if (file.endsWith(".rs")) return "rust";
                 }

@@ -1,6 +1,7 @@
 package com.ghatana.refactorer.shared.process;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -95,11 +96,11 @@ public class ProcessRunner {
             List<String> args,
             Path workingDir,
             boolean captureOutput) {
-        try {
-            List<String> commandLine = new ArrayList<>();
-            commandLine.add(command);
-            commandLine.addAll(args);
+        List<String> commandLine = new ArrayList<>();
+        commandLine.add(command);
+        commandLine.addAll(args);
 
+        try {
             ProcessBuilder processBuilder =
                     new ProcessBuilder(commandLine).directory(workingDir.toFile());
 
@@ -183,7 +184,7 @@ public class ProcessRunner {
                                 DEFAULT_TIMEOUT_MINUTES, String.join(" ", commandLine));
                 logger.error(errorMsg);
                 process.destroyForcibly();
-                throw new RuntimeException(errorMsg);
+                throw new RefactorerOperationException(errorMsg);
             }
 
             // Wait for output to be fully read
@@ -194,9 +195,15 @@ public class ProcessRunner {
 
             return new ProcessResult(exitCode, output.toString().trim(), error.toString().trim());
 
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Failed to execute process", e);
+            throw new RefactorerOperationException(
+                    "Process execution interrupted: " + String.join(" ", commandLine),
+                    e);
+        } catch (IOException e) {
+            throw new RefactorerOperationException(
+                    "Failed to execute process: " + String.join(" ", commandLine),
+                    e);
         }
     }
 }

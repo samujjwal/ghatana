@@ -16,14 +16,22 @@ import io.activej.http.ContentType;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import io.activej.bytebuf.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Base64;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * JWT Authentication filter for AEP HTTP server.
@@ -42,6 +50,9 @@ import java.util.Set;
 public final class AepAuthFilter implements AsyncServlet {
 
     private static final Logger log = LoggerFactory.getLogger(AepAuthFilter.class);
+    private static final HttpHeader CORRELATION_ID_HEADER = HttpHeaders.of("X-Correlation-ID");
+    private static final String CORRELATION_ID_MDC_KEY = "correlationId";
+    public static final String JWT_PAYLOAD_ATTACHMENT = "aep.jwt.payload";
 
     // Public endpoints that bypass authentication
     private static final Set<String> PUBLIC_PATHS = Set.of(
@@ -57,10 +68,15 @@ public final class AepAuthFilter implements AsyncServlet {
     private final boolean authEnabled;
 
     public AepAuthFilter(AsyncServlet next) {
+        this(next,
+            System.getenv("AEP_JWT_SECRET"),
+            !"true".equalsIgnoreCase(System.getenv("AEP_AUTH_DISABLED")));
+    }
+
+    AepAuthFilter(AsyncServlet next, String jwtSecret, boolean authEnabled) {
         this.next = next;
-        this.jwtSecret = System.getenv("AEP_JWT_SECRET");
-        boolean devModeExplicit = "true".equalsIgnoreCase(System.getenv("AEP_AUTH_DISABLED"));
-        this.authEnabled = !devModeExplicit;
+        this.jwtSecret = jwtSecret;
+        this.authEnabled = authEnabled;
         
         if (!authEnabled) {
             log.warn("JWT authentication DISABLED via AEP_AUTH_DISABLED=true — do NOT use in production");
@@ -74,47 +90,62 @@ public final class AepAuthFilter implements AsyncServlet {
 
     @Override
     public Promise<HttpResponse> serve(HttpRequest request) throws Exception {
+        String correlationId = resolveCorrelationId(request);
+
         // Skip auth for public endpoints and preflight
         String path = request.getPath();
         if (request.getMethod() == HttpMethod.OPTIONS || isPublicPath(path)) {
-            return next.serve(request);
+            return serveWithCorrelation(request, correlationId);
         }
 
         // If auth explicitly disabled (AEP_AUTH_DISABLED=true), allow through (dev mode only)
         if (!authEnabled) {
             log.debug("Request to {} allowed without auth (dev mode)", path);
-            return next.serve(request);
+            return serveWithCorrelation(request, correlationId);
         }
 
         // Fail closed: if auth is enabled but JWT secret is not configured, reject
         if (jwtSecret == null || jwtSecret.isBlank()) {
             log.error("Rejecting request to {} — AEP_JWT_SECRET not configured", path);
-            return Promise.of(unauthorizedResponse("Server authentication not configured"));
+            return Promise.of(unauthorizedResponse("Server authentication not configured", correlationId));
         }
 
         // Validate Authorization header
         String authHeader = request.getHeader(HttpHeaders.of("Authorization"));
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header for path: {}", path);
-            return Promise.of(unauthorizedResponse("Missing or invalid Authorization header"));
+            return Promise.of(unauthorizedResponse("Missing or invalid Authorization header", correlationId));
         }
 
         String token = authHeader.substring(7).trim();
         if (token.isEmpty()) {
-            return Promise.of(unauthorizedResponse("Empty bearer token"));
+            return Promise.of(unauthorizedResponse("Empty bearer token", correlationId));
         }
 
         // Validate JWT
         try {
             JwtPayload payload = validateJwt(token);
-            // Note: User context from JWT is available via payload
-            // In a production system, this would be attached to a request context
-            // For now, we proceed with the validated request
-            return next.serve(request);
+            request.attach(JWT_PAYLOAD_ATTACHMENT, payload);
+            return serveWithCorrelation(request, correlationId);
         } catch (JwtValidationException e) {
             log.warn("JWT validation failed for path {}: {}", path, e.getMessage());
-            return Promise.of(unauthorizedResponse("Authentication failed"));
+            return Promise.of(unauthorizedResponse("Authentication failed", correlationId));
         }
+    }
+
+    private Promise<HttpResponse> serveWithCorrelation(HttpRequest request, String correlationId) throws Exception {
+        MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+        return next.serve(request)
+            .map(response -> withCorrelationHeader(response, correlationId))
+            .whenComplete(($, e) -> MDC.remove(CORRELATION_ID_MDC_KEY));
+    }
+
+    private String resolveCorrelationId(HttpRequest request) {
+        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        if (correlationId == null || correlationId.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+        return correlationId;
     }
 
     private boolean isPublicPath(String path) {
@@ -162,8 +193,33 @@ public final class AepAuthFilter implements AsyncServlet {
             (String) claims.get("sub"),
             (String) claims.get("iss"),
             expObj instanceof Number ? ((Number) expObj).longValue() : 0,
-            claims.get("iat") instanceof Number ? ((Number) claims.get("iat")).longValue() : 0
+            claims.get("iat") instanceof Number ? ((Number) claims.get("iat")).longValue() : 0,
+            extractStringClaims(claims, "role", "roles"),
+            extractStringClaims(claims, "permission", "permissions", "scope", "scopes"),
+            (String) claims.get("tenantId")
         );
+    }
+
+    private List<String> extractStringClaims(Map<String, Object> claims, String... keys) {
+        LinkedHashSet<String> values = new LinkedHashSet<>();
+        for (String key : keys) {
+            Object claimValue = claims.get(key);
+            if (claimValue instanceof String stringValue) {
+                for (String part : stringValue.split("[ ,]") ) {
+                    String normalized = part.trim();
+                    if (!normalized.isEmpty()) {
+                        values.add(normalized);
+                    }
+                }
+            } else if (claimValue instanceof Collection<?> collectionValue) {
+                for (Object item : collectionValue) {
+                    if (item instanceof String stringItem && !stringItem.isBlank()) {
+                        values.add(stringItem.trim());
+                    }
+                }
+            }
+        }
+        return List.copyOf(values);
     }
 
     private String hmacSha256(String data, String secret) {
@@ -190,7 +246,7 @@ public final class AepAuthFilter implements AsyncServlet {
         return result == 0;
     }
 
-    private HttpResponse unauthorizedResponse(String message) {
+    private HttpResponse unauthorizedResponse(String message, String correlationId) {
         String body = String.format(
             "{\"error\":\"Unauthorized\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
             message.replace("\"", "\\\""), Instant.now()
@@ -199,11 +255,61 @@ public final class AepAuthFilter implements AsyncServlet {
             .withHeader(HttpHeaders.CONTENT_TYPE,
                 HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
             .withHeader(HttpHeaders.of("WWW-Authenticate"), HttpHeaderValue.of("Bearer"))
+            .withHeader(CORRELATION_ID_HEADER, HttpHeaderValue.of(correlationId))
             .withBody(body.getBytes(StandardCharsets.UTF_8))
             .build();
     }
 
-    public record JwtPayload(String sub, String iss, long exp, long iat) {}
+    private HttpResponse withCorrelationHeader(HttpResponse response, String correlationId) {
+        ByteBuf body = null;
+        try {
+            body = response.getBody();
+        } catch (IllegalStateException ignored) {
+            // Response has no body.
+        }
+
+        HttpResponse.Builder builder = HttpResponse.ofCode(response.getCode());
+        for (Map.Entry<HttpHeader, HttpHeaderValue> entry : response.getHeaders()) {
+            builder.withHeader(entry.getKey(), entry.getValue());
+        }
+        builder.withHeader(CORRELATION_ID_HEADER, HttpHeaderValue.of(correlationId));
+        if (body != null && body.readRemaining() > 0) {
+            builder.withBody(body);
+        }
+        return builder.build();
+    }
+
+    public record JwtPayload(
+        String sub,
+        String iss,
+        long exp,
+        long iat,
+        List<String> roles,
+        List<String> permissions,
+        String tenantId
+    ) {
+        public boolean hasRole(String requiredRole) {
+            return roles != null && roles.stream().anyMatch(requiredRole::equalsIgnoreCase);
+        }
+
+        public boolean hasPermission(String requiredPermission) {
+            return permissions != null && permissions.stream().anyMatch(permission ->
+                permission.equalsIgnoreCase(requiredPermission)
+                    || permission.equalsIgnoreCase("*")
+                    || permission.equalsIgnoreCase("deployment:*")
+                    || permission.equalsIgnoreCase("deployment:write")
+            );
+        }
+
+        public boolean canManageDeployments() {
+            return hasRole("admin")
+                || hasRole("deployer")
+                || hasRole("operator")
+                || hasPermission("deployment:create")
+                || hasPermission("deployment:update")
+                || hasPermission("deployment:delete");
+        }
+    }
     
     public static class JwtValidationException extends Exception {
         public JwtValidationException(String message) {

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -144,7 +145,7 @@ public class JsonSupport {
         try {
             return DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Error converting object to JSON", e);
+            throw new RefactorerOperationException("Error converting object to JSON", e);
         }
     }
     

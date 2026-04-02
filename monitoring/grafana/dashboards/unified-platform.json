@@ -69,7 +69,7 @@
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
       "title": "Tutorputor",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"tutorputor\"}", "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"tutorputor-app\"}", "legendFormat": "", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -78,7 +78,7 @@
       "id": 2, "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
       "title": "YAPPC",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"yappc\"}", "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"yappc-lifecycle\"}", "legendFormat": "", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -96,7 +96,7 @@
       "id": 4, "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
       "title": "AEP",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"aep\"}", "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"aep-service-manager\"}", "legendFormat": "", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -114,7 +114,7 @@
       "id": 6, "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
       "title": "Data-Cloud",
       "type": "stat",
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"data-cloud\"}", "legendFormat": "", "refId": "A" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up{job=\"data-cloud-platform\"}", "legendFormat": "", "refId": "A" }]
     },
 
     {
@@ -140,11 +140,11 @@
       "title": "HTTP Request Rate — All Products (req/s)",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"tutorputor\"}[$__rate_interval]))", "legendFormat": "tutorputor", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"yappc\"}[$__rate_interval]))", "legendFormat": "yappc", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(tutorputor_http_request_total{job=\"tutorputor-app\"}[$__rate_interval]))", "legendFormat": "tutorputor", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"yappc-lifecycle\"}[$__rate_interval]))", "legendFormat": "yappc", "refId": "B" },
         { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"dcmaar\"}[$__rate_interval]))", "legendFormat": "dcmaar", "refId": "C" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"aep\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "D" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"data-cloud\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "E" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"aep-service-manager\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "D" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"data-cloud-platform\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "E" }
       ]
     },
     {
@@ -169,11 +169,11 @@
       "title": "HTTP Error Rate (5xx) — All Products",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"tutorputor\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"tutorputor\"}[$__rate_interval]))", "legendFormat": "tutorputor", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"yappc\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"yappc\"}[$__rate_interval]))", "legendFormat": "yappc", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(tutorputor_http_request_total{job=\"tutorputor-app\",status_code=~\"5..\"}[$__rate_interval])) / sum(rate(tutorputor_http_request_total{job=\"tutorputor-app\"}[$__rate_interval]))", "legendFormat": "tutorputor", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"yappc-lifecycle\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"yappc-lifecycle\"}[$__rate_interval]))", "legendFormat": "yappc", "refId": "B" },
         { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"dcmaar\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"dcmaar\"}[$__rate_interval]))", "legendFormat": "dcmaar", "refId": "C" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"aep\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"aep\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "D" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"data-cloud\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"data-cloud\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "E" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"aep-service-manager\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"aep-service-manager\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "D" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_server_requests_seconds_count{job=\"data-cloud-platform\",status=~\"5..\"}[$__rate_interval])) / sum(rate(http_server_requests_seconds_count{job=\"data-cloud-platform\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "E" }
       ]
     },
 
@@ -205,11 +205,11 @@
       "title": "HTTP p99 Latency — All Products",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"tutorputor\"}[$__rate_interval])) by (le))", "legendFormat": "tutorputor p99", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"yappc\"}[$__rate_interval])) by (le))", "legendFormat": "yappc p99", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(tutorputor_http_request_duration_seconds_bucket{job=\"tutorputor-app\"}[$__rate_interval])) by (le))", "legendFormat": "tutorputor p99", "refId": "A" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"yappc-lifecycle\"}[$__rate_interval])) by (le))", "legendFormat": "yappc p99", "refId": "B" },
         { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"dcmaar\"}[$__rate_interval])) by (le))", "legendFormat": "dcmaar p99", "refId": "C" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"aep\"}[$__rate_interval])) by (le))", "legendFormat": "aep p99", "refId": "D" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"data-cloud\"}[$__rate_interval])) by (le))", "legendFormat": "data-cloud p99", "refId": "E" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"aep-service-manager\"}[$__rate_interval])) by (le))", "legendFormat": "aep p99", "refId": "D" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"data-cloud-platform\"}[$__rate_interval])) by (le))", "legendFormat": "data-cloud p99", "refId": "E" }
       ]
     },
 
@@ -321,9 +321,8 @@
       "title": "JVM Heap Used — All Java Products",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=\"tutorputor\"}", "legendFormat": "tutorputor {{id}}", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=\"aep\"}", "legendFormat": "aep {{id}}", "refId": "B" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=\"data-cloud\"}", "legendFormat": "data-cloud {{id}}", "refId": "C" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=\"aep-service-manager\"}", "legendFormat": "aep {{id}}", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=\"data-cloud-platform\"}", "legendFormat": "data-cloud {{id}}", "refId": "C" },
         { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "jvm_memory_used_bytes{area=\"heap\",job=~\"stt-service|tts-service\"}", "legendFormat": "audio-video {{id}}", "refId": "D" }
       ]
     },
@@ -339,9 +338,8 @@
       "title": "JVM GC Pause Rate — All Java Products",
       "type": "timeseries",
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"tutorputor\"}[$__rate_interval]))", "legendFormat": "tutorputor", "refId": "A" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"aep\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "B" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"data-cloud\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "C" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"aep-service-manager\"}[$__rate_interval]))", "legendFormat": "aep", "refId": "B" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(jvm_gc_pause_seconds_count{job=\"data-cloud-platform\"}[$__rate_interval]))", "legendFormat": "data-cloud", "refId": "C" }
       ]
     },
 

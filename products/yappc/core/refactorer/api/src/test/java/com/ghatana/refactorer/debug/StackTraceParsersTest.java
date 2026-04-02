@@ -53,4 +53,18 @@ class StackTraceParsersTest {
         assertEquals("/app/index.js", frames.get(0).file());
         assertEquals(15, frames.get(0).line());
     }
+
+    @Test
+    void nodeParser_extractsFileUrlFrames() {
+        String trace =
+                "TypeError: x is not a function\n"
+                        + "    at async loadConfig (file:///app/dist/index.mjs:27:13)\n"
+                        + "    at file:///app/dist/index.mjs:42:3";
+        NodeStackTraceParser p = new NodeStackTraceParser();
+        var frames = p.parse(trace);
+        assertFalse(frames.isEmpty());
+        assertEquals("file:///app/dist/index.mjs", frames.get(0).file());
+        assertEquals(27, frames.get(0).line());
+        assertEquals("async loadConfig", frames.get(0).function());
+    }
 }

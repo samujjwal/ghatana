@@ -6,8 +6,40 @@ import {
   requireTenantAccess,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
-import { createTenantService, type DomainPack } from "./service.js";
+import { createTenantService, type DomainPack, type TenantSettings } from "./service.js";
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
+
+/** Query parameters for domain pack listing */
+interface DomainPackListQuery {
+  domain?: string;
+  status?: string;
+  search?: string;
+  page?: string | number;
+  limit?: string | number;
+}
+
+/** Request body for updating tenant configuration */
+type TenantConfigUpdate = Partial<TenantSettings>;
+
+/** Request body for SSO provider creation */
+interface SSOProviderCreateRequest {
+  type?: string;
+  displayName: string;
+  discoveryEndpoint: string;
+  clientId: string;
+  clientSecret?: string | null;
+  allowedDomains?: string[];
+}
+
+/** Request body for SSO provider update */
+interface SSOProviderUpdateRequest {
+  displayName?: string;
+  discoveryEndpoint?: string;
+  clientId?: string;
+  clientSecret?: string | null;
+  allowedDomains?: string[];
+}
 
 /** Mask the clientSecret field so it never leaks in API responses. */
 function maskSecret(provider: Record<string, unknown>) {
@@ -57,7 +89,7 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.patch("/config", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "superadmin"]);
-    const updates = req.body as any; // Validation ideally via Zod body schema
+    const updates = req.body as TenantConfigUpdate;
 
     await respondWithErrors(reply, () =>
       tenantService.updateTenantConfig(tenantId as TenantId, updates),
@@ -74,7 +106,7 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/domain-packs", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { domain, status, search, page, limit } = (req.query ?? {}) as any;
+    const { domain, status, search, page, limit } = (req.query ?? {}) as DomainPackListQuery;
 
     await respondWithErrors(reply, () =>
       tenantService.listDomainPacks(tenantId, {
@@ -204,7 +236,7 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
   app.post("/sso-providers", async (req, reply) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "superadmin"]);
-    const body = req.body as any;
+    const body = req.body as SSOProviderCreateRequest;
 
     await respondWithErrors(reply, async () => {
       const provider = await prisma.identityProvider.create({
@@ -255,7 +287,7 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
     const tenantId = getTenantId(req);
     requireRole(req, ["admin", "superadmin"]);
     const { providerId } = req.params as { providerId: string };
-    const body = req.body as any;
+    const body = req.body as SSOProviderUpdateRequest;
 
     await respondWithErrors(reply, async () => {
       const existing = await prisma.identityProvider.findFirst({

@@ -43,7 +43,7 @@ public final class PolyfixCommand implements Runnable {
                             LOG);
             new PolyfixOrchestrator().run(ctx);
         } catch (java.io.IOException e) {
-            throw new RuntimeException(e);
+            throw new RefactorerOperationException("Failed to run Polyfix for root: " + root, e);
         }
     }
 
@@ -59,7 +59,7 @@ public final class PolyfixCommand implements Runnable {
             return new PolyfixProjectContext(
                     root, cfg, LanguageServices.load(cfg), Executors.newFixedThreadPool(4), logger);
         } catch (java.io.IOException e) {
-            throw new RuntimeException("Failed to load configuration: " + e.getMessage(), e);
+            throw new RefactorerOperationException("Failed to load configuration for root: " + root, e);
         }
     }
 }

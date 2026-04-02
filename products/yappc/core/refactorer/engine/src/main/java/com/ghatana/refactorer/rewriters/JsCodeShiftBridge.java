@@ -1,5 +1,6 @@
 package com.ghatana.refactorer.rewriters;
 
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import com.ghatana.refactorer.shared.util.ProcessExec;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -297,7 +298,7 @@ public final class JsCodeShiftBridge {
             return result;
         } catch (Exception e) {
             log.error("Failed to execute jscodeshift command", e);
-            throw new RuntimeException(
+            throw new RefactorerOperationException(
                     "Failed to execute jscodeshift command: " + e.getMessage(), e);
         }
     }
@@ -326,7 +327,7 @@ public final class JsCodeShiftBridge {
                     Map.of());
         } catch (Exception e) {
             log.error("Failed to execute jscodeshift command", e);
-            throw new RuntimeException("Failed to execute jscodeshift command", e);
+            throw new RefactorerOperationException("Failed to execute jscodeshift command", e);
         }
     }
 

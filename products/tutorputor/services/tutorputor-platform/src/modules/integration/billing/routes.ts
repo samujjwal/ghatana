@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import type { Logger } from "pino";
 import type {
   CheckoutSessionId,
   MarketplaceListingId,
@@ -47,7 +48,7 @@ export const billingRoutes: FastifyPluginAsync = async (app) => {
         webhookSecret,
       );
     },
-    app.log as any,
+    app.log as unknown as Logger,
   );
 
   /**

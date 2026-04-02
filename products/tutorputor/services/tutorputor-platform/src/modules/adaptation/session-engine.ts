@@ -114,10 +114,12 @@ export class SessionAdaptationEngine {
   }
 
   async getCurrentAdaptation(
+    tenantId: string,
+    userId: string,
     sessionId: string,
     assetId: string,
   ): Promise<SessionAdaptationDecision | null> {
-    const key = getStateKey(sessionId, assetId);
+    const key = getStateKey(tenantId, userId, sessionId, assetId);
 
     if (this.redis) {
       const raw = await this.redis.get(key);
@@ -193,7 +195,12 @@ export class SessionAdaptationEngine {
   private async loadState(
     event: SessionAdaptationEvent,
   ): Promise<SessionAdaptationState> {
-    const key = getStateKey(event.sessionId, event.assetId);
+    const key = getStateKey(
+      event.tenantId,
+      event.userId,
+      event.sessionId,
+      event.assetId,
+    );
 
     if (this.redis) {
       const raw = await this.redis.get(key);
@@ -217,7 +224,12 @@ export class SessionAdaptationEngine {
   }
 
   private async saveState(state: SessionAdaptationState): Promise<void> {
-    const key = getStateKey(state.sessionId, state.assetId);
+    const key = getStateKey(
+      state.tenantId,
+      state.userId,
+      state.sessionId,
+      state.assetId,
+    );
 
     if (this.redis) {
       await this.redis.set(key, JSON.stringify(state), "EX", 3600);
@@ -335,6 +347,11 @@ function describeTrigger(trigger: StrugglePattern): string {
   }
 }
 
-function getStateKey(sessionId: string, assetId: string): string {
-  return `learning:session-adaptation:${sessionId}:${assetId}`;
+function getStateKey(
+  tenantId: string,
+  userId: string,
+  sessionId: string,
+  assetId: string,
+): string {
+  return `learning:session-adaptation:${tenantId}:${userId}:${sessionId}:${assetId}`;
 }

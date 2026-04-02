@@ -7,7 +7,6 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 import * as jose from "jose";
-import type { GetKeyFunction, JWSHeaderParameters, FlattenedJWSInput } from "jose";
 import { randomUUID } from "node:crypto";
 import type {
   TenantId,
@@ -57,8 +56,13 @@ const TOOL_ISSUER =
 const TOOL_CLIENT_ID = process.env.LTI_TOOL_CLIENT_ID ?? "tutorputor-lti-tool";
 
 type LtiKeyMaterial = unknown;
+type RemoteJwkResolver = ReturnType<typeof jose.createRemoteJWKSet>;
 
 type LegacyLtiPrismaClient = PrismaClient & Record<string, any>;
+
+export function resolveLaunchTenantIdFromState(state: string): TenantId | null {
+  return oidcStateStore.get(state)?.tenantId ?? null;
+}
 
 /**
  * LTI Platform Service implementation.
@@ -200,20 +204,32 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
   }
 
   private mapToPlatform(record: Record<string, unknown>): LtiPlatform {
+    const createdAt =
+      record.createdAt instanceof Date
+        ? record.createdAt.toISOString()
+        : new Date(String(record.createdAt)).toISOString();
+    const updatedAt =
+      record.updatedAt instanceof Date
+        ? record.updatedAt.toISOString()
+        : new Date(String(record.updatedAt)).toISOString();
+
     return {
       id: record.id as LtiPlatformId,
       tenantId: record.tenantId as TenantId,
-      name: record.platformName,
-      issuer: record.issuer,
-      clientId: record.clientId,
-      deploymentId: record.deploymentId ?? "",
-      authLoginUrl: record.authUrl,
-      authTokenUrl: record.tokenUrl,
-      jwksUrl: record.jwksUrl,
-      publicKeyPem: record.publicKeyPem ?? undefined,
-      isActive: record.isActive,
-      createdAt: record.createdAt.toISOString(),
-      updatedAt: record.updatedAt.toISOString(),
+      name: String(record.platformName),
+      issuer: String(record.issuer),
+      clientId: String(record.clientId),
+      deploymentId:
+        typeof record.deploymentId === "string" ? record.deploymentId : "",
+      authLoginUrl: String(record.authUrl),
+      authTokenUrl: String(record.tokenUrl),
+      jwksUrl: String(record.jwksUrl),
+      ...(typeof record.publicKeyPem === "string"
+        ? { publicKeyPem: record.publicKeyPem }
+        : {}),
+      isActive: Boolean(record.isActive),
+      createdAt,
+      updatedAt,
     };
   }
 }
@@ -222,7 +238,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
  * LTI Launch Service implementation.
  */
 export class LtiLaunchServiceImpl implements LtiLaunchService {
-  private readonly jwksResolver: (jwksUrl: string) => GetKeyFunction<JWSHeaderParameters, FlattenedJWSInput>;
+  private readonly jwksResolver: (jwksUrl: string) => RemoteJwkResolver;
 
   constructor(
     private readonly prisma: LegacyLtiPrismaClient,
@@ -230,9 +246,13 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       publicKey: LtiKeyMaterial;
       privateKey: LtiKeyMaterial;
     },
-    jwksResolver?: (jwksUrl: string) => GetKeyFunction<JWSHeaderParameters, FlattenedJWSInput>,
+    jwksResolver?: (jwksUrl: string) => RemoteJwkResolver,
   ) {
     this.jwksResolver = jwksResolver ?? ((url: string) => jose.createRemoteJWKSet(new URL(url)));
+  }
+
+  resolveLaunchTenantIdFromState(state: string): TenantId | null {
+    return resolveLaunchTenantIdFromState(state);
   }
 
   async initiateLogin(args: {
@@ -847,14 +867,23 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       orderBy: { createdAt: "desc" },
     });
 
-    return lineItems.map((li) => ({
-      scoreMaximum: li.scoreMaximum,
-      label: li.label,
-      resourceId: li.resourceId ?? undefined,
-      tag: li.tag ?? undefined,
-      startDateTime: li.startDateTime?.toISOString(),
-      endDateTime: li.endDateTime?.toISOString(),
-    }));
+    return lineItems.map((li: Record<string, unknown>) => {
+      const startDateTime =
+        li.startDateTime instanceof Date
+          ? li.startDateTime.toISOString()
+          : undefined;
+      const endDateTime =
+        li.endDateTime instanceof Date ? li.endDateTime.toISOString() : undefined;
+
+      return {
+        scoreMaximum: Number(li.scoreMaximum),
+        label: String(li.label),
+        ...(typeof li.resourceId === "string" ? { resourceId: li.resourceId } : {}),
+        ...(typeof li.tag === "string" ? { tag: li.tag } : {}),
+        ...(startDateTime ? { startDateTime } : {}),
+        ...(endDateTime ? { endDateTime } : {}),
+      };
+    });
   }
 
   async createLineItem(args: {
@@ -1226,15 +1255,22 @@ export class LtiGradeServiceImpl implements LtiGradeService {
       orderBy: { submittedAt: "desc" },
     });
 
-    return scores.map((s) => ({
-      userId: s.ltiUserId,
-      scoreGiven: s.scoreGiven,
-      scoreMaximum: s.scoreMaximum,
-      activityProgress: s.activityProgress as string,
-      gradingProgress: s.gradingProgress as string,
-      timestamp: s.submittedAt.toISOString(),
-      comment: s.comment ?? undefined,
-    }));
+    return scores.map((s: Record<string, unknown>) => {
+      const submittedAt =
+        s.submittedAt instanceof Date
+          ? s.submittedAt.toISOString()
+          : new Date(String(s.submittedAt)).toISOString();
+
+      return {
+        userId: String(s.ltiUserId),
+        scoreGiven: Number(s.scoreGiven),
+        scoreMaximum: Number(s.scoreMaximum),
+        activityProgress: String(s.activityProgress),
+        gradingProgress: String(s.gradingProgress),
+        timestamp: submittedAt,
+        ...(typeof s.comment === "string" ? { comment: s.comment } : {}),
+      };
+    });
   }
 
   async syncGrades(args: {
@@ -1428,9 +1464,9 @@ export class LtiRosterServiceImpl implements LtiRosterService {
     return data.members.map((m) => ({
       userId: m.user_id,
       roles: m.roles as LtiRole[],
-      name: m.name,
-      email: m.email,
-      status: m.status ?? "Active",
+      ...(m.name ? { name: m.name } : {}),
+      ...(m.email ? { email: m.email } : {}),
+      status: (m.status ?? "Active") as "Active" | "Inactive" | "Deleted",
       ltiContextId: args.contextId,
     }));
   }
@@ -1593,7 +1629,9 @@ export class LtiRosterServiceImpl implements LtiRosterService {
 
   private async getAccessToken(platformId: LtiPlatformId): Promise<string> {
     // Reuse grade service's token acquisition
-    return (this.gradeService as { getAccessToken: (platformId: string, scopes: string[]) => Promise<string> }).getAccessToken(platformId, [
+    return (this.gradeService as unknown as {
+      getAccessToken: (platformId: string, scopes: string[]) => Promise<string>;
+    }).getAccessToken(platformId, [
       "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly",
     ]);
   }

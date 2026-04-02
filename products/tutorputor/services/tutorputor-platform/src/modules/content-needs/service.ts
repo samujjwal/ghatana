@@ -5,9 +5,11 @@
  * @doc.pattern Service
  */
 
+import { Prisma } from '@tutorputor/core/db';
 import type { PrismaClient } from '@tutorputor/core/db';
 import type { ContentStudioService } from '@tutorputor/contracts/v1';
 import type { ContentNeeds, ExampleType } from '@tutorputor/contracts/v1/learning-unit';
+import type { SimulationDomain } from '@tutorputor/contracts/v1/types';
 
 // Re-export types from contracts for backwards compatibility
 export type { ContentNeeds, ExampleType };
@@ -49,7 +51,34 @@ type ClaimForGeneration = {
     claimRef: string;
     text: string;
     experienceId: string;
-    experience?: { tenantId: string; domain: string } | null;
+    experience: { tenantId: string; domain: string } | null;
+};
+
+type GradeAdaptationLike = { gradeRange?: string };
+
+type GeneratedSimulation = {
+    id: string;
+    type: string;
+    interactionType: string;
+    complexity: string;
+    estimatedTimeMinutes: number;
+    entities: string[];
+    config: {
+        title: string;
+        description: string;
+    };
+};
+
+type GeneratedAnimation = {
+    id: string;
+    type: string;
+    durationSeconds: number;
+    complexity: string;
+    keyframes: Array<Record<string, unknown>>;
+    config: {
+        title: string;
+        description: string;
+    };
 };
 
 export type AnimationType =
@@ -148,7 +177,7 @@ export class ContentNeedsAnalyzer {
             await this.prisma.learningClaim.update({
                 where: { id: claim.id },
                 data: {
-                    contentNeeds: needs as any,
+                    contentNeeds: toInputJsonValue(needs),
                 },
             });
         }
@@ -498,11 +527,11 @@ export class ContentNeedsAnalyzer {
                     type: exampleType.toUpperCase(),
                     title: exampleTitle,
                     description: `${exampleType} example for ${claim.text}`,
-                    content: {
+                    content: toInputJsonValue({
                         scaffolding: needs.examples.scaffolding,
                         complexity: needs.examples.complexity,
-                        body: exampleContent as any,
-                    },
+                        body: exampleContent,
+                    }),
                     difficulty: needs.examples.complexity === 'simple' ? 'BEGINNER' : needs.examples.complexity === 'complex' ? 'ADVANCED' : 'INTERMEDIATE',
                     orderIndex,
                 },
@@ -516,23 +545,24 @@ export class ContentNeedsAnalyzer {
 
     private async persistSimulation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<unknown> {
         const generated = await this.generateSimulation(claim, needs);
+        const experience = this.requireExperience(claim);
         const manifestId = generated.id;
 
         await this.prisma.simulationManifest.upsert({
             where: { id: manifestId },
             create: {
                 id: manifestId,
-                tenantId: claim.experience.tenantId,
-                domain: claim.experience?.domain as string,
+                tenantId: experience.tenantId,
+                domain: toSimulationDomain(experience.domain),
                 version: '1.0.0',
                 title: generated.config.title,
                 description: generated.config.description,
-                manifest: generated,
+                manifest: toInputJsonValue(generated),
             },
             update: {
                 title: generated.config.title,
                 description: generated.config.description,
-                manifest: generated,
+                manifest: toInputJsonValue(generated),
             },
         });
 
@@ -549,14 +579,14 @@ export class ContentNeedsAnalyzer {
                 simulationManifestId: manifestId,
                 interactionType: generated.interactionType,
                 goal: generated.config.description,
-                successCriteria: { estimatedTimeMinutes: generated.estimatedTimeMinutes },
+                successCriteria: toInputJsonValue({ estimatedTimeMinutes: generated.estimatedTimeMinutes }),
                 estimatedMinutes: generated.estimatedTimeMinutes,
             },
             update: {
                 simulationManifestId: manifestId,
                 interactionType: generated.interactionType,
                 goal: generated.config.description,
-                successCriteria: { estimatedTimeMinutes: generated.estimatedTimeMinutes },
+                successCriteria: toInputJsonValue({ estimatedTimeMinutes: generated.estimatedTimeMinutes }),
                 estimatedMinutes: generated.estimatedTimeMinutes,
             },
         });
@@ -579,14 +609,14 @@ export class ContentNeedsAnalyzer {
                 description: generated.config.description,
                 type: generated.type,
                 duration: generated.durationSeconds,
-                config: generated,
+                config: toInputJsonValue(generated),
             },
             update: {
                 title: generated.config.title,
                 description: generated.config.description,
                 type: generated.type,
                 duration: generated.durationSeconds,
-                config: generated,
+                config: toInputJsonValue(generated),
             },
         });
     }
@@ -611,7 +641,7 @@ export class ContentNeedsAnalyzer {
         return examples;
     }
 
-    private async generateSimulation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<Record<string, unknown>> {
+    private async generateSimulation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<GeneratedSimulation> {
         return {
             id: `simulation-${claim.id}`,
             type: 'physics_simulation',
@@ -626,7 +656,7 @@ export class ContentNeedsAnalyzer {
         };
     }
 
-    private async generateAnimation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<Record<string, unknown>> {
+    private async generateAnimation(claim: ClaimForGeneration, needs: ContentNeeds): Promise<GeneratedAnimation> {
         return {
             id: `animation-${claim.id}`,
             type: needs.animation.type,
@@ -646,11 +676,6 @@ export class ContentNeedsAnalyzer {
     // ===========================================================================
     // Utility Methods
     // ===========================================================================
-
-    private extractGradeRange(experience: { gradeAdaptations?: Array<{ gradeRange?: string }> }): string {
-        // Extract grade range from experience data
-        return experience.gradeAdaptations?.[0]?.gradeRange || 'grade_9_12';
-    }
 
     private hasDomainKeywords(claimText: string, domain: string): boolean {
         const domainKeywords: Record<string, string[]> = {
@@ -689,4 +714,84 @@ export class ContentNeedsAnalyzer {
         const claimLower = claimText.toLowerCase();
         return conceptKeywords.some(keyword => claimLower.includes(keyword));
     }
+
+    private requireExperience(
+        claim: ClaimForGeneration
+    ): { tenantId: string; domain: string } {
+        if (!claim.experience) {
+            throw new Error(`Learning experience missing for claim ${claim.id}`);
+        }
+
+        return claim.experience;
+    }
+
+    private extractGradeRange(experience: { gradeAdaptations?: unknown }): string {
+        const gradeAdaptations = asGradeAdaptations(experience.gradeAdaptations);
+        return gradeAdaptations[0]?.gradeRange || 'grade_9_12';
+    }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+}
+
+function asString(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
+}
+
+function asNumber(value: unknown): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function asStringArray(value: unknown): string[] {
+    return Array.isArray(value)
+        ? value.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+}
+
+function asGradeAdaptations(value: unknown): GradeAdaptationLike[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((entry) => asRecord(entry))
+        .filter((entry): entry is Record<string, unknown> => entry !== null)
+        .map((entry) => {
+            const gradeRange = asString(entry.gradeRange);
+            return gradeRange ? { gradeRange } : {};
+        });
+}
+
+function toSimulationDomain(domain: string): SimulationDomain {
+    const normalized = domain.trim().toUpperCase().replace(/[\s-]+/g, '_');
+    const knownDomains: SimulationDomain[] = [
+        'CS_DISCRETE',
+        'PHYSICS',
+        'ECONOMICS',
+        'CHEMISTRY',
+        'BIOLOGY',
+        'MEDICINE',
+        'ENGINEERING',
+        'MATHEMATICS',
+    ];
+
+    if (knownDomains.includes(normalized as SimulationDomain)) {
+        return normalized as SimulationDomain;
+    }
+
+    if (normalized.includes('PHYS')) return 'PHYSICS';
+    if (normalized.includes('CHEM')) return 'CHEMISTRY';
+    if (normalized.includes('BIO')) return 'BIOLOGY';
+    if (normalized.includes('MED')) return 'MEDICINE';
+    if (normalized.includes('ECON')) return 'ECONOMICS';
+    if (normalized.includes('ENG')) return 'ENGINEERING';
+    if (normalized.includes('CS') || normalized.includes('COMPUT')) return 'CS_DISCRETE';
+    return 'MATHEMATICS';
+}
+
+function toInputJsonValue(value: unknown): Prisma.InputJsonValue {
+    return (value ?? {}) as Prisma.InputJsonValue;
 }

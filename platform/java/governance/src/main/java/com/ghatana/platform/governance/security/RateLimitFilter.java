@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Token-bucket rate limiting filter for ActiveJ HTTP endpoints.
@@ -27,6 +29,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>{@code
  * RateLimitFilter rateLimiter = new RateLimitFilter(100, 60); // 100 req / 60 s
  * AsyncServlet rateLimitedServlet = rateLimiter.wrap(myServlet);
+ *
+ * RateLimitFilter tenantAwareLimiter = new RateLimitFilter(
+ *         100,
+ *         60,
+ *         request -> request.getHeader(HttpHeaders.of("X-Tenant-ID")));
  * }</pre>
  *
  * @doc.type class
@@ -40,6 +47,7 @@ public class RateLimitFilter {
 
     private final int maxRequests;
     private final long windowSeconds;
+    private final Function<io.activej.http.HttpRequest, String> clientKeyResolver;
     private final ConcurrentHashMap<String, Deque<Long>> requestLog = new ConcurrentHashMap<>();
 
     /**
@@ -49,10 +57,25 @@ public class RateLimitFilter {
      * @param windowSeconds sliding window size in seconds
      */
     public RateLimitFilter(int maxRequests, long windowSeconds) {
+        this(maxRequests, windowSeconds, RateLimitFilter::defaultClientKey);
+    }
+
+    /**
+     * Creates a rate limiter with a custom client-key extractor.
+     *
+     * @param maxRequests maximum number of allowed requests per client within the window
+     * @param windowSeconds sliding window size in seconds
+     * @param clientKeyResolver function used to derive the client bucket key from each request
+     */
+    public RateLimitFilter(
+            int maxRequests,
+            long windowSeconds,
+            Function<io.activej.http.HttpRequest, String> clientKeyResolver) {
         if (maxRequests <= 0) throw new IllegalArgumentException("maxRequests must be > 0");
         if (windowSeconds <= 0) throw new IllegalArgumentException("windowSeconds must be > 0");
         this.maxRequests = maxRequests;
         this.windowSeconds = windowSeconds;
+        this.clientKeyResolver = Objects.requireNonNull(clientKeyResolver, "clientKeyResolver");
     }
 
     /**
@@ -73,6 +96,14 @@ public class RateLimitFilter {
     }
 
     private String resolveClientKey(io.activej.http.HttpRequest request) {
+        String resolvedKey = clientKeyResolver.apply(request);
+        if (resolvedKey != null && !resolvedKey.isBlank()) {
+            return resolvedKey.trim();
+        }
+        return defaultClientKey(request);
+    }
+
+    private static String defaultClientKey(io.activej.http.HttpRequest request) {
         String forwarded = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
         if (forwarded != null && !forwarded.isBlank()) {
             // Use only the first address if there are multiple (proxy chain)

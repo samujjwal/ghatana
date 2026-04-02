@@ -29,7 +29,7 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3000"
-  METRICS_PORT: "9090"
+  METRICS_PORT: "3000"
   LOG_LEVEL: "warn"
   DEFAULT_TENANT: "default"
   RATE_LIMIT_WINDOW: "900000"
@@ -68,7 +68,7 @@ spec:
         app: tutorputor-platform
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9090"
+        prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: tutorputor-sa
@@ -90,9 +90,6 @@ spec:
           ports:
             - name: http
               containerPort: 3000
-              protocol: TCP
-            - name: metrics
-              containerPort: 9090
               protocol: TCP
           envFrom:
             - configMapRef:
@@ -166,8 +163,8 @@ spec:
       port: 80
       targetPort: 3000
     - name: metrics
-      port: 9090
-      targetPort: 9090
+      port: 3000
+      targetPort: 3000
 ---
 # HPA — Platform
 apiVersion: autoscaling/v2
@@ -259,7 +256,6 @@ spec:
               kubernetes.io/metadata.name: tutorputor
       ports:
         - port: 3000
-        - port: 9090
   egress:
     - {} # Allow all egress (for DB, Redis, platform services)
 ---

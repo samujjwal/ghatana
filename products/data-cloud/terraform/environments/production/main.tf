@@ -3,7 +3,7 @@ module "data_cloud" {
 
   # ----- Globals -----
   environment    = "production"
-  region         = var.region
+  aws_region     = var.region
   replica_region = var.replica_region
 
   # ----- VPC -----
@@ -12,24 +12,34 @@ module "data_cloud" {
   single_nat_gateway    = false  # per-AZ for HA
 
   # ----- EKS -----
-  eks_cluster_version = "1.29"
-  eks_node_groups     = var.eks_node_groups
+  kubernetes_version = "1.29"
+  node_groups = {
+    for name, group in var.eks_node_groups : name => {
+      instance_types = group.instance_types
+      desired_size   = group.desired_size
+      min_size       = group.min_size
+      max_size       = group.max_size
+      disk_size_gb   = group.disk_size
+      taints         = group.taints
+      labels         = group.labels
+    }
+  }
 
   # ----- RDS -----
-  rds_instance_class      = "db.r6g.xlarge"
-  rds_multi_az            = true
-  rds_deletion_protection = true
-  rds_storage_gb          = 500
-  rds_backup_days         = 14
+  postgres_instance_class        = "db.r6g.xlarge"
+  postgres_multi_az              = true
+  postgres_deletion_protection   = true
+  postgres_allocated_storage_gb  = 500
+  postgres_backup_retention_days = 14
 
   # ----- MSK -----
-  msk_instance_type = "kafka.m5.large"
-  msk_broker_count  = 3
-  msk_storage_gb    = 1000
+  msk_broker_instance_type = "kafka.m5.large"
+  msk_broker_count         = 3
+  msk_broker_storage_gb    = 1000
 
   # ----- ElastiCache -----
-  elasticache_node_type = "cache.r7g.large"
-  elasticache_replicas  = 2
+  redis_node_type       = "cache.r7g.large"
+  redis_num_cache_nodes = 2
 
   # ----- OpenSearch -----
   opensearch_instance_type            = "r6g.large.search"
@@ -40,7 +50,7 @@ module "data_cloud" {
   opensearch_dedicated_master_count   = 3
 
   # ----- S3 -----
-  enable_cross_region_replication = true
+  s3_enable_cross_region_replication = true
 
   # ----- ClickHouse -----
   clickhouse_node_count     = 3

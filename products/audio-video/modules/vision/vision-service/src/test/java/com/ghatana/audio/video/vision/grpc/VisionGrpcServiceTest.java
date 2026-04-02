@@ -7,6 +7,8 @@ import com.ghatana.audio.video.vision.model.DetectedObject;
 import com.ghatana.audio.video.vision.model.DetectionOptions;
 import com.ghatana.audio.video.vision.video.VideoFrameExtractor;
 import com.google.protobuf.ByteString;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +51,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("detectObjects: empty image bytes → INVALID_ARGUMENT error")
+    @DisplayName("detectObjects: empty image bytes → INVALID_ARGUMENT gRPC error")
     void detectObjects_emptyImage_returnsError() {
         // GIVEN
         DetectRequest request = DetectRequest.newBuilder()
@@ -60,10 +62,11 @@ class VisionGrpcServiceTest {
         // WHEN
         service.detectObjects(request, observer);
 
-        // THEN – detector must not have been called, error must be INVALID_ARGUMENT
-        // The service either returns an error or an empty response; validate no crash.
-        // Empty imageData → fakeDetector returns empty list → response with 0 detections
-        assertThat(observer.hasError() || observer.getValue() != null).isTrue();
+        // THEN — service guards against empty image before calling detector
+        assertThat(observer.hasError()).isTrue();
+        assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class);
+        StatusRuntimeException ex = (StatusRuntimeException) observer.getError();
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.INVALID_ARGUMENT.getCode());
     }
 
     @Test
@@ -119,10 +122,10 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("detectObjects: detector throws → error propagated to observer")
+    @DisplayName("detectObjects: DetectionException from detector → INTERNAL gRPC error")
     void detectObjects_detectorThrows_propagatesError() {
         // GIVEN
-        fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("simulated failure"));
+        fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("simulated failure", null));
         DetectRequest request = DetectRequest.newBuilder()
             .setImageData(ByteString.copyFrom(new byte[]{0x42}))
             .build();
@@ -131,8 +134,12 @@ class VisionGrpcServiceTest {
         // WHEN
         service.detectObjects(request, observer);
 
-        // THEN
+        // THEN — DetectionException must map to INTERNAL, not leak the raw exception
         assertThat(observer.hasError()).isTrue();
+        assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class);
+        StatusRuntimeException ex = (StatusRuntimeException) observer.getError();
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.INTERNAL.getCode());
+        assertThat(ex.getStatus().getDescription()).contains("Detection engine error");
     }
 
     // -------------------------------------------------------------------------
@@ -174,6 +181,47 @@ class VisionGrpcServiceTest {
 
         // THEN
         assertThat(observer.hasError()).isFalse();
+    }
+
+    @Test
+    @DisplayName("analyzeImage: empty image bytes → INVALID_ARGUMENT gRPC error")
+    void analyzeImage_emptyImage_returnsInvalidArgument() {
+        // GIVEN
+        AnalyzeRequest request = AnalyzeRequest.newBuilder()
+            .setImageData(ByteString.EMPTY)
+            .build();
+        CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>();
+
+        // WHEN
+        service.analyzeImage(request, observer);
+
+        // THEN — service guards against empty image before calling detector
+        assertThat(observer.hasError()).isTrue();
+        assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class);
+        StatusRuntimeException ex = (StatusRuntimeException) observer.getError();
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.INVALID_ARGUMENT.getCode());
+    }
+
+    @Test
+    @DisplayName("analyzeImage: DetectionException from detector → INTERNAL gRPC error")
+    void analyzeImage_detectorThrows_mapsToInternal() {
+        // GIVEN
+        fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("model error", null));
+        AnalyzeRequest request = AnalyzeRequest.newBuilder()
+            .setImageData(ByteString.copyFrom(new byte[]{0x01}))
+            .addAnalysisTypes("scene")
+            .build();
+        CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>();
+
+        // WHEN
+        service.analyzeImage(request, observer);
+
+        // THEN — DetectionException must map to INTERNAL with a safe message
+        assertThat(observer.hasError()).isTrue();
+        assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class);
+        StatusRuntimeException ex = (StatusRuntimeException) observer.getError();
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.INTERNAL.getCode());
+        assertThat(ex.getStatus().getDescription()).contains("Analysis engine error");
     }
 
     // -------------------------------------------------------------------------

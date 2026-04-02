@@ -3,7 +3,7 @@ package com.ghatana.aep.platform.benchmark;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.OperatorResult;
 import com.ghatana.core.operator.UnifiedOperator;
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
 import com.ghatana.core.pipeline.PipelineBuilder;
 import com.ghatana.core.pipeline.PipelineExecutionContext;
@@ -41,7 +41,7 @@ public class PipelineExecutionBenchmark {
     @Setup(Level.Trial)
     public void setup() {
         engine = new PipelineExecutionEngine();
-        DefaultOperatorCatalog catalog = new DefaultOperatorCatalog();
+        UnifiedOperatorCatalog catalog = new UnifiedOperatorCatalog();
         
         OperatorId id = OperatorId.of("benchmark", "test", "noop", "1.0");
         catalog.register(new NoopOperator(id));

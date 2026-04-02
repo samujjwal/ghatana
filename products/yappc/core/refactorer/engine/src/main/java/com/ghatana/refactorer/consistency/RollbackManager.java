@@ -1,6 +1,7 @@
 package com.ghatana.refactorer.consistency;
 
 import com.ghatana.refactorer.shared.PolyfixProjectContext;
+import com.ghatana.refactorer.shared.RefactorerOperationException;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -223,7 +224,8 @@ public class RollbackManager {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create backup directory: " + backupRoot, e);
+            throw new RefactorerOperationException(
+                    "Failed to create backup directory: " + backupRoot, e);
         }
     }
 }

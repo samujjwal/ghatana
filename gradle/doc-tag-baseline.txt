@@ -258,7 +258,6 @@ products/aep/aep-engine/src/main/java/com/ghatana/statestore/core/StateStoreStat
 products/aep/aep-engine/src/main/java/com/ghatana/statestore/factory/StateStoreConfig.java
 products/aep/aep-engine/src/main/java/com/ghatana/statestore/factory/StateStoreType.java
 products/aep/aep-engine/src/main/java/com/ghatana/statestore/hybrid/SyncStrategy.java
-products/aep/aep-operator-contracts/src/main/java/com/ghatana/core/operator/catalog/InMemoryOperatorCatalog.java
 products/aep/aep-operator-contracts/src/main/java/com/ghatana/core/operator/spi/OperatorProvider.java
 products/aep/aep-operator-contracts/src/main/java/com/ghatana/core/pipeline/PipelineId.java
 products/aep/aep-registry/src/main/java/com/ghatana/aep/agent/AepAgentAdapter.java

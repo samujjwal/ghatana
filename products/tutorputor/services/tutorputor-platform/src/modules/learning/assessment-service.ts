@@ -21,6 +21,7 @@ import type {
   AssessmentAttempt,
   AssessmentFeedback,
   AssessmentAttemptId,
+  AssessmentResponse,
   TenantId,
   UserId,
   ModuleId,
@@ -28,6 +29,7 @@ import type {
   Difficulty,
 } from "@tutorputor/contracts/v1/types";
 import type { Prisma, TutorPrismaClient } from "@tutorputor/core/db";
+import { paginate, TenantAccessValidator } from "@tutorputor/core";
 
 import { aiClient } from "../../clients/ai-client";
 import { createStandaloneLogger } from '@tutorputor/core/logger';
@@ -77,6 +79,16 @@ interface DomainError extends Error {
   details?: Record<string, unknown>;
 }
 
+// Item record from Prisma database - loosely typed since it comes from various Prisma queries
+type AssessmentItemRecord = {
+  id: string;
+  points: number;
+  itemType?: string;
+  choices?: unknown;
+  metadata?: unknown;
+  [key: string]: unknown;
+};
+
 // Model ID for the deterministic fallback path. Configurable so different
 // environments (dev / staging / prod) can report the correct model name in
 // AssessmentGenerationResult.  Defaults to a stable production identifier.
@@ -95,11 +107,11 @@ export function createAssessmentService(
   prisma: TutorPrismaClient,
 ): HealthAwareAssessmentService {
   const learnerProfileService = createLearnerProfileService(prisma);
+  const tenantAccessValidator = new TenantAccessValidator(prisma);
   const simulationAssessmentIntegration =
     createSimulationAssessmentIntegration(prisma);
   return {
     async listAssessments({ tenantId, moduleId, status, cursor, limit = 20 }) {
-      const take = Math.min(limit, 50);
       const where: Prisma.AssessmentWhereInput = { tenantId };
       if (moduleId) {
         where.moduleId = moduleId;
@@ -108,21 +120,17 @@ export function createAssessmentService(
         where.status = status;
       }
 
-      const records = await prisma.assessment.findMany({
-        where,
-        take: take + 1,
-        orderBy: { createdAt: "desc" },
-        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-        include: { items: false, objectives: false },
+      const paginationArgs = {
+        take: Math.min(limit, 50),
+        ...(cursor ? { cursor } : {}),
+      };
+      const records = await paginate(prisma.assessment, where, paginationArgs, {
+        orderField: "createdAt",
       });
 
-      const hasMore = records.length > take;
-      const trimmed = records.slice(0, take);
       return {
-        items: trimmed.map(mapAssessmentSummary),
-        nextCursor: hasMore
-          ? (trimmed[trimmed.length - 1]?.id as AssessmentId)
-          : null,
+        items: records.items.map(mapAssessmentSummary),
+        nextCursor: (records.nextCursor as AssessmentId | undefined) ?? null,
       };
     },
 
@@ -130,14 +138,16 @@ export function createAssessmentService(
       void userId;
       void includeDraft;
 
-      const record = await prisma.assessment.findFirst({
-        where: { id: assessmentId, tenantId },
-        include: { items: true, objectives: true },
-      });
-
-      if (!record) {
-        throw notFoundError("Assessment not found");
-      }
+      const record = await tenantAccessValidator.validateEntityAccess(
+        "Assessment",
+        (args) =>
+          prisma.assessment.findFirst({
+            ...args,
+            include: { items: true, objectives: true },
+          }),
+        assessmentId,
+        { tenantId },
+      );
 
       return mapAssessment(record);
     },
@@ -163,13 +173,16 @@ export function createAssessmentService(
     },
 
     async startAttempt({ tenantId, assessmentId, userId }) {
-      const assessment = await prisma.assessment.findFirst({
-        where: { id: assessmentId, tenantId },
-        include: { items: true, objectives: true },
-      });
-      if (!assessment) {
-        throw notFoundError("Assessment not found");
-      }
+      const assessment = await tenantAccessValidator.validateEntityAccess(
+        "Assessment",
+        (args) =>
+          prisma.assessment.findFirst({
+            ...args,
+            include: { items: true, objectives: true },
+          }),
+        assessmentId,
+        { tenantId },
+      );
       if (assessment.status !== "PUBLISHED") {
         throw validationError("Assessment is not published yet.");
       }
@@ -192,18 +205,20 @@ export function createAssessmentService(
     },
 
     async submitAttempt({ tenantId, attemptId, userId, responses }) {
-      const attempt = await prisma.assessmentAttempt.findFirst({
-        where: { id: attemptId, tenantId, userId },
-        include: {
-          assessment: {
-            include: { items: true, objectives: true },
-          },
-        },
-      });
-
-      if (!attempt) {
-        throw notFoundError("Attempt not found for this user.");
-      }
+      const attempt = await tenantAccessValidator.validateEntityAccess(
+        "Assessment attempt",
+        (args) =>
+          prisma.assessmentAttempt.findFirst({
+            ...args,
+            include: {
+              assessment: {
+                include: { items: true, objectives: true },
+              },
+            },
+          }),
+        attemptId,
+        { tenantId, userId },
+      );
 
       const grading = gradeAttempt(attempt.assessment.items, responses);
       await syncLearnerSignals({
@@ -817,8 +832,8 @@ function mapThetaToDifficulty(theta: number, requested: Difficulty): Difficulty 
 }
 
 function evaluateResponse(
-  item: any,
-  response: any,
+  item: AssessmentItemRecord,
+  response: AssessmentResponse | undefined,
 ): { earnedPoints: number; feedback: AssessmentFeedback } {
   const defaultFeedback: AssessmentFeedback = {
     itemId: item.id as AssessmentItem["id"],
@@ -834,10 +849,9 @@ function evaluateResponse(
   }
 
   const choices = parseChoices(item.choices) ?? [];
-  if (
-    item.itemType === "multiple_choice_single" &&
-    response.type === "multiple_choice"
-  ) {
+  
+  // Handle multiple choice questions
+  if (item.itemType === "multiple_choice_single" && response.type === "multiple_choice") {
     const correctIds = choices
       .filter((choice) => choice.isCorrect)
       .map((choice) => choice.id);
@@ -859,10 +873,9 @@ function evaluateResponse(
     };
   }
 
-  if (
-    item.itemType === "simulation_interaction" &&
-    response.type === "simulation_interaction"
-  ) {
+  // Handle simulation interaction - use type assertion since we've already checked response is defined
+  if (item.itemType === "simulation_interaction" && "trace" in response) {
+    const simulationResponse = response as Extract<AssessmentResponse, { type: "simulation_interaction" }>;
     return scoreSimulationAssessmentResponse({
       item: {
         id: item.id,
@@ -873,7 +886,7 @@ function evaluateResponse(
           ? { metadata: item.metadata as Record<string, unknown> }
           : {}),
       },
-      response,
+      response: simulationResponse,
     });
   }
 

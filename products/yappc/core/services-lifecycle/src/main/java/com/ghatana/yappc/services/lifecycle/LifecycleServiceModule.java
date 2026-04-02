@@ -36,7 +36,7 @@ import com.ghatana.yappc.services.validate.ValidationServiceImpl;
 import com.ghatana.yappc.storage.DataCloudArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import com.ghatana.core.database.config.JpaConfig;
-import com.ghatana.core.operator.catalog.InMemoryOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.template.YamlTemplateEngine;
 import com.ghatana.aep.event.AepEventCloudFactory;
@@ -63,8 +63,8 @@ import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.services.lifecycle.dlq.JdbcDlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import com.ghatana.platform.observability.MetricsProvider;
 // ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
 import com.ghatana.yappc.services.lifecycle.workflow.LifecycleJdbcWorkflowStateStore;
@@ -498,7 +498,7 @@ public class LifecycleServiceModule extends AbstractModule {
         // The operators are wired directly into YappcAepPipelineBootstrapper and do not need
         // catalog-based discovery within the YAPPC lifecycle module.
         logger.info("Created OperatorCatalog for YAPPC lifecycle operators (YAPPC-Ph4): direct pipeline wiring");
-        return new InMemoryOperatorCatalog();
+        return new UnifiedOperatorCatalog();
     }
 
     // ========== EventCloud — transport-agnostic event log (Ph1c) ==========
@@ -1053,8 +1053,8 @@ public class LifecycleServiceModule extends AbstractModule {
      */
     @Provides
     MeterRegistry meterRegistry() {
-        logger.info("Creating PrometheusMeterRegistry");
-        return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        logger.info("Using canonical MetricsProvider registry for YAPPC lifecycle observability");
+        return MetricsProvider.getRegistry();
     }
 
     /**

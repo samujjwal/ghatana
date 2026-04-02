@@ -9,7 +9,7 @@ package com.ghatana.core.pipeline.security;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.ghatana.core.operator.catalog.DefaultOperatorCatalog;
+import com.ghatana.core.operator.catalog.UnifiedOperatorCatalog;
 import com.ghatana.core.pipeline.PipelineExecutionContext;
 import com.ghatana.orchestrator.store.InMemoryCheckpointStore;
 import com.ghatana.orchestrator.store.PipelineCheckpoint;
@@ -183,7 +183,7 @@ class PipelineTenantIsolationTest {
             PipelineExecutionContext ctx = PipelineExecutionContext.builder()
                     .pipelineId(PIPELINE_ID)
                     .tenantId(TENANT_A)
-                    .operatorCatalog(new DefaultOperatorCatalog())
+                    .operatorCatalog(new UnifiedOperatorCatalog())
                     .deadline(Duration.ofSeconds(30))
                     .build();
 
@@ -197,7 +197,7 @@ class PipelineTenantIsolationTest {
                     .pipelineId(PIPELINE_ID)
                     .tenantId(TENANT_A)
                     .executionId("exec-a")
-                    .operatorCatalog(new DefaultOperatorCatalog())
+                    .operatorCatalog(new UnifiedOperatorCatalog())
                     .deadline(Duration.ofSeconds(30))
                     .build();
 
@@ -205,7 +205,7 @@ class PipelineTenantIsolationTest {
                     .pipelineId(PIPELINE_ID)
                     .tenantId(TENANT_B)
                     .executionId("exec-b")
-                    .operatorCatalog(new DefaultOperatorCatalog())
+                    .operatorCatalog(new UnifiedOperatorCatalog())
                     .deadline(Duration.ofSeconds(30))
                     .build();
 

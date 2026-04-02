@@ -26,7 +26,10 @@ public final class EffectiveConfigDumper {
                     outDir.resolve("effective-config.json"),
                     new Record(cfg, Instant.now().toString()));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RefactorerOperationException(
+                    "Failed to dump effective configuration to "
+                            + outDir.resolve("effective-config.json"),
+                    e);
         }
     }
 

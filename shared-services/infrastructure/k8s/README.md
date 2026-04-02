@@ -1,6 +1,8 @@
-# Kubernetes Deployment for AEP and Data-Cloud
+# Kubernetes Deployment for Shared AEP and Data-Cloud Assets
 
-This directory contains Kubernetes manifests for deploying AEP and Data-Cloud in a Kubernetes cluster.
+This directory contains shared Kubernetes manifests for deploying AEP and Data-Cloud in a Kubernetes cluster.
+
+Product-owned deployment assets that have moved to canonical product paths should be managed from those product directories instead of being duplicated here. For example, YAPPC deployment manifests now live under `products/yappc/deployment/**`.
 
 ## Prerequisites
 

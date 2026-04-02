@@ -212,6 +212,36 @@ class DataCloudHttpServerAgentTest {
         }
 
         @Test
+        @DisplayName("invalid agent id is rejected before persistence")
+        void registerAgent_invalidAgentId_returns400() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = post("/api/v1/agents", Map.of(
+                "id", "../../etc/passwd",
+                "name", "Bad Agent"
+            ));
+
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("error")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("agent payload with control characters is rejected before persistence")
+        void registerAgent_controlCharacters_returns400() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = postRaw(
+                "/api/v1/agents",
+                "{\"id\":\"agent-1\",\"name\":\"bad\u0001name\"}"
+            );
+
+            assertThat(resp.statusCode()).isEqualTo(400);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("error")).isNotNull();
+        }
+
+        @Test
         @DisplayName("agent saved to dc_agents collection")
         void registerAgent_savesTo_dcAgentsCollection() throws Exception {
             Map<String, Object> agentData = Map.of("id", "ag-save", "name", "test-agent");

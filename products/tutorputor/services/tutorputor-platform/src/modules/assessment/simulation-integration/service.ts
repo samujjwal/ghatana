@@ -50,6 +50,19 @@ interface SimulationAssessmentMetadata {
   };
 }
 
+interface SimulationTraceInteraction {
+  type?: string;
+  parameterId?: string;
+  predictedOutcome?: string;
+  observedOutcome?: string;
+}
+
+interface SimulationTrace {
+  interactions: SimulationTraceInteraction[];
+  summary?: string;
+  durationMs?: number;
+}
+
 export class SimulationAssessmentIntegration {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -101,7 +114,7 @@ export class SimulationAssessmentIntegration {
 
     return {
       id: itemId as AssessmentItem["id"],
-      type: "simulation_interaction",
+      type: "simulation_interaction" as AssessmentItem["type"],
       prompt: buildPrompt(
         questionType,
         args.manifest.title,
@@ -149,11 +162,12 @@ export function scoreSimulationAssessmentResponse(args: {
   }
 
   const metadata = parseSimulationMetadata(args.item.metadata);
-  const interactions = args.response.trace.interactions ?? [];
+  const trace = parseSimulationTrace(args.response.trace);
+  const interactions = trace.interactions;
   const touchedParameters = new Set(
     interactions
-      .filter((entry) => (entry as Record<string, unknown>).type === "parameter_change" && (entry as Record<string, unknown>).parameterId)
-      .map((entry) => String((entry as Record<string, unknown>).parameterId)),
+      .filter((entry) => entry.type === "parameter_change" && typeof entry.parameterId === "string")
+      .map((entry) => entry.parameterId as string),
   );
   const matchedParameters =
     metadata.expectedParameters.length === 0
@@ -162,13 +176,13 @@ export function scoreSimulationAssessmentResponse(args: {
           touchedParameters.has(parameterId),
         ).length / metadata.expectedParameters.length;
   const predictionMatches = interactions.filter((entry) => {
-    const predicted = String((entry as Record<string, unknown>).predictedOutcome ?? "").toLowerCase();
-    const observed = String((entry as Record<string, unknown>).observedOutcome ?? "").toLowerCase();
+    const predicted = String(entry.predictedOutcome ?? "").toLowerCase();
+    const observed = String(entry.observedOutcome ?? "").toLowerCase();
     if (!predicted || !observed) return false;
     return predicted === observed;
   }).length;
   const predictionOpportunities = interactions.filter(
-    (entry) => (entry as Record<string, unknown>).predictedOutcome || (entry as Record<string, unknown>).observedOutcome,
+    (entry) => entry.predictedOutcome || entry.observedOutcome,
   ).length;
   const predictionScore =
     predictionOpportunities === 0
@@ -176,7 +190,7 @@ export function scoreSimulationAssessmentResponse(args: {
         ? 0.35
         : 0.7
       : predictionMatches / predictionOpportunities;
-  const summaryText = String(args.response.trace.summary ?? "").trim().toLowerCase();
+  const summaryText = String(trace.summary ?? "").trim().toLowerCase();
   const explanationHits = metadata.expectedOutcomeKeywords.filter((keyword) =>
     summaryText.includes(keyword.toLowerCase()),
   ).length;
@@ -262,8 +276,8 @@ export function summarizeSimulationAttempt(args: {
       questionType: metadata.questionType,
       interactionType: metadata.interactionType,
       scorePercent: storedFeedback?.scorePercent ?? scoring.feedback.scorePercent,
-      interactionCount: response?.trace.interactions?.length ?? 0,
-      durationMs: response?.trace.durationMs ?? 0,
+      interactionCount: parseSimulationTrace(response?.trace).interactions.length,
+      durationMs: parseSimulationTrace(response?.trace).durationMs ?? 0,
       strengths: storedFeedback?.strengths ?? scoring.feedback.strengths ?? [],
       improvements:
         storedFeedback?.improvements ?? scoring.feedback.improvements ?? [],
@@ -444,6 +458,34 @@ function parseSimulationMetadata(
                 : 0.15,
           }
         : { discrimination: 1, difficulty: 0, guessing: 0.15 },
+  };
+}
+
+function parseSimulationTrace(value: Record<string, unknown> | undefined): SimulationTrace {
+  const interactions = Array.isArray(value?.interactions)
+    ? value.interactions
+        .filter(
+          (entry): entry is Record<string, unknown> =>
+            entry !== null && typeof entry === "object" && !Array.isArray(entry),
+        )
+        .map((entry) => ({
+          ...(typeof entry.type === "string" ? { type: entry.type } : {}),
+          ...(typeof entry.parameterId === "string"
+            ? { parameterId: entry.parameterId }
+            : {}),
+          ...(typeof entry.predictedOutcome === "string"
+            ? { predictedOutcome: entry.predictedOutcome }
+            : {}),
+          ...(typeof entry.observedOutcome === "string"
+            ? { observedOutcome: entry.observedOutcome }
+            : {}),
+        }))
+    : [];
+
+  return {
+    interactions,
+    ...(typeof value?.summary === "string" ? { summary: value.summary } : {}),
+    ...(typeof value?.durationMs === "number" ? { durationMs: value.durationMs } : {}),
   };
 }
 
