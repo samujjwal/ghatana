@@ -12,9 +12,11 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +44,7 @@ import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityExportHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
+import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
 import com.ghatana.datacloud.launcher.http.handlers.PipelineCheckpointHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
@@ -617,10 +620,11 @@ public class DataCloudHttpServer {
             .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)
             .with(HttpMethod.GET, "/api/v1/events", eventHandler::handleQueryEvents)
 
-            // Agent registry endpoints — MIGRATED to AEP unified controller (v2.5)
-            // Routes now served by AepAgentRegistryController via /api/v1/agents/*
-            // Pre-migration: DC HTTP server temporarily returns 410 Gone
-            // Old DC endpoints removed from this server — replace with platform registry
+            // Agent registry endpoints — DC-3 local CRUD via dc_agents collection
+            .with(HttpMethod.GET, "/api/v1/agents", this::handleListAgents)
+            .with(HttpMethod.POST, "/api/v1/agents", this::handleRegisterAgent)
+            .with(HttpMethod.GET, "/api/v1/agents/:agentId", this::handleGetAgent)
+            .with(HttpMethod.DELETE, "/api/v1/agents/:agentId", this::handleDeleteAgent)
 
             // Pipeline registry endpoints — delegated to PipelineCheckpointHandler
             .with(HttpMethod.GET,    "/api/v1/pipelines",                pipelineCheckpointHandler::handleListPipelines)
@@ -910,6 +914,77 @@ public class DataCloudHttpServer {
      * @doc.layer product
      * @doc.pattern Middleware
      */
+    // ==================== Agent registry handlers (DC-3) ====================
+
+    private Promise<HttpResponse> handleListAgents(HttpRequest request) {
+        String tenantId = httpSupport.resolveTenantId(request);
+        return client.query(tenantId, "dc_agents", DataCloudClient.Query.limit(100))
+            .map(entities -> {
+                List<Map<String, Object>> list = entities.stream()
+                    .map(e -> Map.<String, Object>of(
+                        "id", e.id(),
+                        "collection", e.collection(),
+                        "data", e.data()))
+                    .collect(Collectors.toList());
+                return httpSupport.jsonResponse(Map.of(
+                    "agents", list,
+                    "count", list.size(),
+                    "tenantId", tenantId,
+                    "timestamp", java.time.Instant.now().toString()));
+            });
+    }
+
+    private Promise<HttpResponse> handleRegisterAgent(HttpRequest request) {
+        String tenantId = httpSupport.resolveTenantId(request);
+        return request.loadBody().then(buf -> {
+            try {
+                String body = buf.asString(StandardCharsets.UTF_8);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = objectMapper.readValue(body, Map.class);
+                Optional<String> payloadErr = ApiInputValidator.validateEntityPayload(data);
+                if (payloadErr.isPresent()) {
+                    return Promise.of(httpSupport.errorResponse(400, payloadErr.get()));
+                }
+                Object rawId = data.get("id");
+                if (rawId != null) {
+                    Optional<String> idErr = ApiInputValidator.validateId(rawId.toString());
+                    if (idErr.isPresent()) {
+                        return Promise.of(httpSupport.errorResponse(400, idErr.get()));
+                    }
+                }
+                return client.save(tenantId, "dc_agents", data)
+                    .map(entity -> httpSupport.jsonResponse(Map.of(
+                        "id", entity.id(),
+                        "registeredAt", java.time.Instant.now().toString(),
+                        "tenantId", tenantId)));
+            } catch (Exception e) {
+                return Promise.of(httpSupport.errorResponse(400, "Invalid request: " + e.getMessage()));
+            }
+        });
+    }
+
+    private Promise<HttpResponse> handleGetAgent(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        String tenantId = httpSupport.resolveTenantId(request);
+        return client.findById(tenantId, "dc_agents", agentId)
+            .map(opt -> opt.isPresent()
+                ? httpSupport.jsonResponse(Map.of(
+                    "id", opt.get().id(),
+                    "data", opt.get().data(),
+                    "tenantId", tenantId))
+                : httpSupport.errorResponse(404, "Agent not found: " + agentId));
+    }
+
+    private Promise<HttpResponse> handleDeleteAgent(HttpRequest request) {
+        String agentId = request.getPathParameter("agentId");
+        String tenantId = httpSupport.resolveTenantId(request);
+        return client.delete(tenantId, "dc_agents", agentId)
+            .map(v -> httpSupport.jsonResponse(Map.of(
+                "deleted", true,
+                "agentId", agentId,
+                "timestamp", java.time.Instant.now().toString())));
+    }
+
     private AsyncServlet payloadSizeLimitFilter(AsyncServlet delegate) {
         return request -> {
             String contentLengthHeader = request.getHeader(HttpHeaders.of("Content-Length"));

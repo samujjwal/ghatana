@@ -64,7 +64,10 @@ public class ValidationServiceImpl implements ValidationService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.validate.execute", tags);
                     
                     return auditLogger.log(ServiceObservability.auditEvent("validate.execute", spec, result))
-                            .map(v -> result);
+                            .then(v -> Promise.of(result), auditErr -> {
+                                log.warn("Audit logging failed for validate.execute, continuing", auditErr);
+                                return Promise.of(result);
+                            });
                 })
                 .whenException(e -> {
                     log.error("Validation failed", e);
@@ -90,7 +93,10 @@ public class ValidationServiceImpl implements ValidationService {
                     ServiceObservability.incrementSuccess(metrics, "yappc.validate.policy", tags);
                     
                     return auditLogger.log(ServiceObservability.auditEvent("validate.policy", spec, result))
-                            .map(v -> result);
+                            .then(v -> Promise.of(result), auditErr -> {
+                                log.warn("Audit logging failed for validate.policy, continuing", auditErr);
+                                return Promise.of(result);
+                            });
                 })
                 .whenException(e -> {
                     log.error("Policy validation failed", e);

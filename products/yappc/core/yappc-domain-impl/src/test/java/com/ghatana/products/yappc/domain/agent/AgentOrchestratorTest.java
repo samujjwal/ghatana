@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +37,16 @@ class AgentOrchestratorTest extends EventloopTestBase {
     }
 
     private AIAgentContext context() {
-        return mock(AIAgentContext.class);
+        return AIAgentContext.builder()
+                .userId("test-user")
+                .workspaceId("test-workspace")
+                .requestId("test-request-" + System.nanoTime())
+                .tenantId("test-tenant")
+                .organizationId("test-org")
+                .permissions(Set.of())
+                .timeout(AIAgentContext.DEFAULT_TIMEOUT)
+                .metadata(Map.of())
+                .build();
     }
 
     private AgentResult<Map<String, Object>> successResult() {

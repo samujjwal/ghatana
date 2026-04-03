@@ -17,6 +17,8 @@ dependencies {
     
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

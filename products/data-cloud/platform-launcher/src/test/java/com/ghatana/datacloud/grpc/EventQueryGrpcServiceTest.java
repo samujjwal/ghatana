@@ -5,6 +5,7 @@ import com.ghatana.contracts.event.v1.ExecuteQueryRequestProto;
 import com.ghatana.contracts.event.v1.ExecuteQueryResponseProto;
 import com.ghatana.contracts.event.v1.ExplainQueryRequestProto;
 import com.ghatana.contracts.event.v1.ExplainQueryResponseProto;
+import com.ghatana.contracts.common.v1.Envelope;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
 import com.ghatana.platform.types.identity.Offset;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -145,11 +147,10 @@ class EventQueryGrpcServiceTest {
                     createEventEntry("event-2", "order.placed", "1")
             );
 
-            when(eventLogStore.readByType(
+            when(eventLogStore.read(
                     any(TenantContext.class),
-                    anyString(),
                     any(),
-                    anyInt()))
+                    eq(50)))
                     .thenReturn(io.activej.promise.Promise.of(entries));
 
             CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>();
@@ -173,9 +174,8 @@ class EventQueryGrpcServiceTest {
                 entries.add(createEventEntry("event-" + i, "type-" + (i % 5), "1"));
             }
 
-            when(eventLogStore.readByType(
+            when(eventLogStore.read(
                     any(TenantContext.class),
-                    anyString(),
                     any(),
                     eq(100)))
                     .thenReturn(io.activej.promise.Promise.of(entries));
@@ -206,9 +206,8 @@ class EventQueryGrpcServiceTest {
                 entries.add(createEventEntry("event-" + i, "type", "1"));
             }
 
-            when(eventLogStore.readByType(
+            when(eventLogStore.read(
                     any(TenantContext.class),
-                    anyString(),
                     any(),
                     eq(10000))) // Should be capped at 10,000
                     .thenReturn(io.activej.promise.Promise.of(entries));
@@ -229,9 +228,8 @@ class EventQueryGrpcServiceTest {
                     .setLimit(0)
                     .build();
 
-            when(eventLogStore.readByType(
+            when(eventLogStore.read(
                     any(TenantContext.class),
-                    anyString(),
                     any(),
                     anyInt()))
                     .thenReturn(io.activej.promise.Promise.of(List.of()));
@@ -253,8 +251,7 @@ class EventQueryGrpcServiceTest {
         @DisplayName("should use tenant from envelope")
         void shouldUseTenantFromEnvelope() {
             // Create envelope with tenant ID
-            ExecuteQueryRequestProto.QueryEnvelope envelope = 
-                ExecuteQueryRequestProto.QueryEnvelope.newBuilder()
+            Envelope envelope = Envelope.newBuilder()
                     .setTenantId("tenant-specific-123")
                     .build();
 
@@ -388,13 +385,7 @@ class EventQueryGrpcServiceTest {
         @Test
         @DisplayName("should honor tenant context in explain")
         void shouldHonorTenantInExplain() {
-            ExplainQueryRequestProto.ExplainEnvelope envelope = 
-                ExplainQueryRequestProto.ExplainEnvelope.newBuilder()
-                    .setTenantId("tenant-secure")
-                    .build();
-
             ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder()
-                    .setEnvelope(envelope)
                     .setQuery("type:user.created")
                     .build();
 
@@ -471,14 +462,14 @@ class EventQueryGrpcServiceTest {
     // ─── Helper Methods ───────────────────────────────────────────────────
 
     private EventLogStore.EventEntry createEventEntry(String eventId, String eventType, String version) {
-        return new EventLogStore.EventEntry(
-                eventId,
-                eventType,
-                version,
-                Instant.now(),
-                "application/json",
-                "{\"test\": \"data}".getBytes(StandardCharsets.UTF_8)
-        );
+        return EventLogStore.EventEntry.builder()
+                .eventId(UUID.randomUUID())
+                .eventType(eventType)
+                .eventVersion(version)
+                .timestamp(Instant.now())
+                .contentType("application/json")
+                .payload("{\"test\": \"data\"}".getBytes(StandardCharsets.UTF_8))
+                .build();
     }
 
     private static class CapturingObserver<T> implements StreamObserver<T> {

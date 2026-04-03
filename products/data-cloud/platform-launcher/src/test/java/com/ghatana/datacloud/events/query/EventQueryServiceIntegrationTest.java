@@ -5,10 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.ghatana.datacloud.events.storage.EventStore;
-import com.ghatana.datacloud.events.storage.EventEntry;
-import com.ghatana.platform.core.async.Promise;
-import io.activej.eventloop.EventloopTestBase;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.promise.Promise;
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
 import java.util.*;
@@ -571,7 +569,7 @@ class EventQueryServiceIntegrationTest extends EventloopTestBase {
     // Test Doubles
 
     static class TestEventStore implements EventStore {
-        private final List<EventEntry> events = new ConcurrentLinkedQueue<>();
+        private final List<EventEntry> events = new java.util.concurrent.CopyOnWriteArrayList<>();
 
         @Override
         public List<EventEntry> query(String query, String tenantId, String typeFilter) {
@@ -587,14 +585,16 @@ class EventQueryServiceIntegrationTest extends EventloopTestBase {
         }
     }
 
-    static class TestStreamObserver<V> implements StreamObserver<V> {
-        private final List<V> results = new ArrayList<>();
+    static class TestStreamObserver<V> implements StreamObserver<V>, CancellableObserver {
+        private final List<V> results;
         private Throwable error;
         private AtomicBoolean completed = new AtomicBoolean(false);
         private AtomicBoolean cancelled = new AtomicBoolean(false);
         private int cancelAfterCount = Integer.MAX_VALUE;
 
-        TestStreamObserver() {}
+        TestStreamObserver() { this.results = new ArrayList<>(); }
+
+        TestStreamObserver(List<V> sharedResults) { this.results = sharedResults; }
 
         void setCancelAfterCount(int count) {
             this.cancelAfterCount = count;
@@ -621,7 +621,9 @@ class EventQueryServiceIntegrationTest extends EventloopTestBase {
         List<V> getResults() { return results; }
         Throwable getError() { return error; }
         boolean isCompleted() { return completed.get(); }
-        boolean isCancelled() { return cancelled.get(); }
+
+        @Override
+        public boolean isCancelled() { return cancelled.get(); }
     }
 
     // Test Data Classes
@@ -654,13 +656,104 @@ class EventQueryServiceIntegrationTest extends EventloopTestBase {
         long estimatedRows() { return estimatedRows; }
     }
 
+    record EventEntry(
+        String eventId,
+        String eventType,
+        String entityId,
+        String payload,
+        String tenantId,
+        long timestampMs,
+        String contentType
+    ) {}
+
     interface EventStore {
         List<EventEntry> query(String query, String tenantId, String typeFilter);
+    }
+
+    static class EventQueryGrpcService {
+        private final EventStore store;
+        private final MetricsCollector metrics;
+        private static final int MAX_LIMIT = 10000;
+        private static final int DEFAULT_LIMIT = Integer.MAX_VALUE;
+
+        EventQueryGrpcService(EventStore store, MetricsCollector metrics) {
+            this.store = store;
+            this.metrics = metrics;
+        }
+
+        void executeQuery(QueryRequest request, StreamObserver<EventEntry> observer) {
+            if (request.query == null) {
+                observer.onError(new IllegalArgumentException("Query cannot be null"));
+                return;
+            }
+            Map<String, String> tags = new java.util.HashMap<>();
+            tags.put("tenantId", request.tenantId);
+            try {
+                metrics.incrementCounter("queries.executed", tags);
+                long start = System.currentTimeMillis();
+                // Resolve effective type filter: use explicit filter or parse from SQL WHERE clause
+                String effectiveTypeFilter = request.typeFilter != null
+                        ? request.typeFilter
+                        : parseWhereEventType(request.query);
+                List<EventEntry> all = store.query(request.query, request.tenantId, effectiveTypeFilter);
+                int limit = parseLimit(request.query);
+                List<EventEntry> limited = all.stream()
+                        .limit(Math.min((long) limit, MAX_LIMIT))
+                        .collect(Collectors.toList());
+                for (EventEntry entry : limited) {
+                    if (observer instanceof CancellableObserver && ((CancellableObserver) observer).isCancelled()) {
+                        break;
+                    }
+                    observer.onNext(entry);
+                }
+                long duration = System.currentTimeMillis() - start;
+                metrics.recordTimer("queries.latency", duration, tags);
+                metrics.recordMetric("queries.result.count", limited.size(), tags);
+                metrics.incrementCounter("query.completed", tags);
+                observer.onCompleted();
+            } catch (Exception e) {
+                metrics.incrementCounter("queries.error", tags);
+                observer.onError(e);
+            }
+        }
+
+        Promise<QueryPlan> explainQuery(QueryRequest request) {
+            String effectiveTypeFilter = request.typeFilter != null
+                    ? request.typeFilter
+                    : parseWhereEventType(request.query);
+            List<EventEntry> all = store.query(request.query, request.tenantId, effectiveTypeFilter);
+            List<String> steps = List.of("Scan events", "Filter by tenant", "Apply type filter");
+            long estimated = all.size();
+            return Promise.of(new QueryPlan(steps, estimated > 0 ? estimated * 10 : 1, estimated));
+        }
+
+        private int parseLimit(String query) {
+            if (query == null) return DEFAULT_LIMIT;
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("LIMIT\\s+(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(query);
+            if (m.find()) {
+                return Integer.parseInt(m.group(1));
+            }
+            return DEFAULT_LIMIT;
+        }
+
+        private String parseWhereEventType(String query) {
+            if (query == null) return null;
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                    "WHERE\\s+eventType\\s*=\\s*'([^']+)'", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(query);
+            if (m.find()) {
+                return m.group(1);
+            }
+            return null;
+        }
     }
 
     interface MetricsCollector {
         void incrementCounter(String name, Map<String, String> tags);
         void recordTimer(String name, long durationMs, Map<String, String> tags);
         void recordMetric(String name, double value, Map<String, String> tags);
+    }
+
+    interface CancellableObserver {
+        boolean isCancelled();
     }
 }

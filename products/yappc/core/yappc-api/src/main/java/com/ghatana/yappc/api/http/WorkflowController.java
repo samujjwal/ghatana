@@ -112,7 +112,7 @@ public class WorkflowController {
     public Promise<HttpResponse> listWorkflows(@NotNull HttpRequest request) {
         String tenantId = extractTenantId(request);
         String statusParam = request.getQueryParameter("status");
-        int limit = getIntParam(request, "limit", 20);
+        int limit = Math.min(getIntParam(request, "limit", 20), 100);
         int offset = getIntParam(request, "offset", 0);
 
         AiWorkflowInstance.WorkflowStatus status = null;

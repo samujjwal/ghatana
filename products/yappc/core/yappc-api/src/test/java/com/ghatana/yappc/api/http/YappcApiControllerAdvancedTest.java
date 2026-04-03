@@ -7,10 +7,12 @@ package com.ghatana.yappc.api.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.products.yappc.domain.vector.RagService;
 import com.ghatana.products.yappc.domain.vector.SemanticSearchService;
+import com.ghatana.products.yappc.domain.workflow.AiPlan;
 import com.ghatana.products.yappc.domain.workflow.AiWorkflowInstance;
 import com.ghatana.products.yappc.domain.workflow.AiWorkflowService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.HttpHeaders;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -31,6 +33,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,7 +129,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 400
             assertThat(response.getCode()).isEqualTo(400);
-            assertThat(response.getBodyString()).contains("Invalid request");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("Invalid request");
         }
 
         @Test
@@ -167,37 +171,30 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("generatePlan returns 200 with generated plan")
         void generatePlanSuccess() {
             // GIVEN: Workflow can generate plan
-            Map<String, Object> plan = Map.of(
-                "planId", "plan-1",
-                "status", "PENDING",
-                "steps", List.of(),
-                "estimatedDuration", "00:30:00",
-                "successProbability", 0.95
-            );
-            when(workflowService.generatePlan(any(), any()))
+            AiPlan plan = new AiPlan("plan-1", "wf-1", "tenant-001", "test objective",
+                List.of(), AiPlan.PlanStatus.PENDING_REVIEW, null, "gpt-4", 0.95, null, null);
+            when(workflowService.generatePlan(any(), any(), any()))
                 .thenReturn(Promise.of(plan));
 
             // WHEN: Generate plan
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/plans/generate")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withBody("{\"objective\":\"test objective\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
             HttpResponse response = runPromise(() -> controller.generatePlan(request, "wf-1"));
 
             // THEN: Returns 200 with plan
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString()).contains("planId").contains("PENDING");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("PENDING_REVIEW");
         }
 
         @Test
         @DisplayName("approvePlan transitions plan to APPROVED")
         void approvePlanSuccess() {
             // GIVEN: Plan can be approved
-            Map<String, Object> approvedPlan = Map.of(
-                "planId", "plan-1",
-                "status", "APPROVED",
-                "approvedAt", Instant.now().toString()
-            );
-            when(workflowService.approvePlan(any(), any(), any()))
+            AiPlan approvedPlan = new AiPlan("plan-1", "wf-1", "tenant-001", "objective",
+                List.of(), AiPlan.PlanStatus.APPROVED, null, "gpt-4", 0.9, null, null);
+            when(workflowService.approvePlan(any(), any()))
                 .thenReturn(Promise.of(approvedPlan));
 
             // WHEN: Approve plan
@@ -208,45 +205,41 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString()).contains("\"status\":\"APPROVED\"");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("APPROVED");
         }
 
         @Test
         @DisplayName("rejectPlan transitions plan to REJECTED")
         void rejectPlanSuccess() {
             // GIVEN: Plan can be rejected
-            Map<String, Object> rejectedPlan = Map.of(
-                "planId", "plan-1",
-                "status", "REJECTED"
-            );
+            AiPlan rejectedPlan = new AiPlan("plan-1", "wf-1", "tenant-001", "objective",
+                List.of(), AiPlan.PlanStatus.REJECTED, null, "gpt-4", 0.0, null, null);
             when(workflowService.rejectPlan(any(), any(), any()))
                 .thenReturn(Promise.of(rejectedPlan));
 
             // WHEN: Reject plan
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/plans/plan-1/reject")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withBody("{\"reason\": \"Does not meet requirements\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
             HttpResponse response = runPromise(() -> controller.rejectPlan(request, "wf-1", "plan-1"));
 
             // THEN: Returns 200
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString()).contains("\"status\":\"REJECTED\"");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("REJECTED");
         }
 
         @Test
         @DisplayName("modifyPlanSteps updates plan steps before approval")
         void modifyPlanStepsSuccess() {
             // GIVEN: Plan steps can be modified
-            Map<String, Object> modifiedPlan = Map.of(
-                "planId", "plan-1",
-                "status", "PENDING",
-                "steps", List.of("modified-step-1", "modified-step-2")
-            );
-            when(workflowService.modifyPlanSteps(any(), any(), any(), any()))
+            AiPlan modifiedPlan = new AiPlan("plan-1", "wf-1", "tenant-001", "objective",
+                List.of(), AiPlan.PlanStatus.MODIFIED, null, "gpt-4", 0.8, null, null);
+            when(workflowService.modifyPlanSteps(any(), any(), any()))
                 .thenReturn(Promise.of(modifiedPlan));
 
             // WHEN: Modify plan steps
-            String stepsBody = "{\"steps\": [{\"id\": \"step-1\", \"agent\": \"refactor\"}]}";
+            String stepsBody = "{\"steps\": [{\"id\": \"step-1\", \"name\": \"Refactor step\", \"description\": \"Refactoring\", \"type\": \"CODE_GENERATION\", \"order\": 0, \"dependencies\": []}]}";
             HttpRequest request = HttpRequest.put("http://localhost/api/v1/workflows/wf-1/plans/plan-1/steps")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .withBody(stepsBody.getBytes(StandardCharsets.UTF_8))
@@ -277,16 +270,18 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("hybridSearch combines semantic and keyword results")
         void hybridSearchSuccess() {
             // GIVEN: Hybrid search returns results
-            SemanticSearchService.SearchResult result = new SemanticSearchService.SearchResult(
+            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult(
                 "query text",
                 List.of(),
-                50
+                50,
+                0L,
+                null
             );
             when(searchService.hybridSearch(any()))
                 .thenReturn(Promise.of(result));
 
             // WHEN: Perform hybrid search
-            String searchBody = "{\"query\": \"test\", \"keywords\": [\"test\", \"query\"], \"limit\": 10, \"threshold\": 0.7, \"keyword_boost\": 0.3}";
+            String searchBody = "{\"query\": \"test\", \"keywords\": [\"test\", \"query\"], \"limit\": 10, \"threshold\": 0.7, \"keywordBoost\": 0.3}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search/hybrid")
                 .withBody(searchBody.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -317,16 +312,18 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("hybridSearch respects keyword boost parameter")
         void hybridSearchWithKeywordBoost() {
             // GIVEN: Hybrid search with keyword boost
-            SemanticSearchService.SearchResult result = new SemanticSearchService.SearchResult(
+            SemanticSearchService.SemanticSearchResult result = new SemanticSearchService.SemanticSearchResult(
                 "query",
                 List.of(),
-                0
+                0,
+                0L,
+                null
             );
             when(searchService.hybridSearch(any()))
                 .thenReturn(Promise.of(result));
 
             // WHEN: Search with keyword boost
-            String searchBody = "{\"query\": \"test\", \"keywords\": [\"keyword1\"], \"keyword_boost\": 0.8}";
+            String searchBody = "{\"query\": \"test\", \"keywords\": [\"keyword1\"], \"keywordBoost\": 0.8}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search/hybrid")
                 .withBody(searchBody.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -357,11 +354,11 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("findSimilar returns similar documents")
         void findSimilarSuccess() {
             // GIVEN: Similar documents found
-            List<Map<String, Object>> similar = List.of(
-                Map.of("id", "doc-2", "score", 0.92),
-                Map.of("id", "doc-3", "score", 0.85)
+            List<SemanticSearchService.SearchHit> similar = List.of(
+                new SemanticSearchService.SearchHit("doc-2", "", 0.92, null),
+                new SemanticSearchService.SearchHit("doc-3", "", 0.85, null)
             );
-            when(searchService.findSimilar(any(), any(), any()))
+            when(searchService.findSimilar(any(), anyInt(), anyDouble()))
                 .thenReturn(Promise.of(similar));
 
             // WHEN: Find similar
@@ -371,7 +368,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with similar documents
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString())
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
                 .contains("\"sourceId\":\"doc-1\"")
                 .contains("\"similar\"")
                 .contains("\"count\":2");
@@ -381,7 +378,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("findSimilar returns empty array when no similar documents")
         void findSimilarNoMatches() {
             // GIVEN: No similar documents
-            when(searchService.findSimilar(any(), any(), any()))
+            when(searchService.findSimilar(any(), anyInt(), anyDouble()))
                 .thenReturn(Promise.of(List.of()));
 
             // WHEN: Find similar
@@ -391,7 +388,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with empty array
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString()).contains("\"count\":0");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("\"count\":0");
         }
     }
 
@@ -415,8 +412,8 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         void batchIndexSuccess() {
             // GIVEN: Batch indexing succeeds
             List<SemanticSearchService.IndexResult> results = List.of(
-                new SemanticSearchService.IndexResult("doc-1", true, null, Instant.now()),
-                new SemanticSearchService.IndexResult("doc-2", true, null, Instant.now())
+                new SemanticSearchService.IndexResult("doc-1", true, 0L, 0, null),
+                new SemanticSearchService.IndexResult("doc-2", true, 0L, 0, null)
             );
             when(searchService.batchIndex(any()))
                 .thenReturn(Promise.of(results));
@@ -430,7 +427,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with batch results
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString())
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
                 .contains("\"results\"")
                 .contains("\"total\":2")
                 .contains("\"success\":2")
@@ -442,8 +439,8 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         void batchIndexPartialFailure() {
             // GIVEN: Some documents fail indexing
             List<SemanticSearchService.IndexResult> results = List.of(
-                new SemanticSearchService.IndexResult("doc-1", true, null, Instant.now()),
-                new SemanticSearchService.IndexResult("doc-2", false, "Duplicate ID", Instant.now())
+                new SemanticSearchService.IndexResult("doc-1", true, 0L, 0, null),
+                new SemanticSearchService.IndexResult("doc-2", false, 0L, 0, "Duplicate ID")
             );
             when(searchService.batchIndex(any()))
                 .thenReturn(Promise.of(results));
@@ -457,7 +454,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with mixed results
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString())
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
                 .contains("\"total\":2")
                 .contains("\"success\":1")
                 .contains("\"failed\":1");
@@ -487,7 +484,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
                 .thenReturn(Promise.of(true));
 
             // WHEN: Delete document
-            HttpRequest request = HttpRequest.delete("http://localhost/api/v1/vector/index/doc-1")
+            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/vector/index/doc-1")
                 .build();
             HttpResponse response = runPromise(() -> controller.deleteDocument(request, "doc-1"));
 
@@ -504,13 +501,13 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
                 .thenReturn(Promise.of(false));
 
             // WHEN: Delete non-existent document
-            HttpRequest request = HttpRequest.delete("http://localhost/api/v1/vector/index/non-existent")
+            HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/vector/index/non-existent")
                 .build();
             HttpResponse response = runPromise(() -> controller.deleteDocument(request, "non-existent"));
 
             // THEN: Returns 404
             assertThat(response.getCode()).isEqualTo(404);
-            assertThat(response.getBodyString()).contains("not found");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("not found");
         }
     }
 
@@ -533,17 +530,20 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("rag returns 200 with retrieved documents and generated response")
         void ragSuccess() {
             // GIVEN: RAG service returns documents and generated text
-            Map<String, Object> ragResult = Map.of(
-                "retrieved_documents", List.of(),
-                "generated_response", "Generated answer based on retrieval",
-                "sources", List.of(),
-                "confidence", 0.92
+            RagService.RagResponse ragResult = new RagService.RagResponse(
+                "What is machine learning?",
+                "Generated answer based on retrieval",
+                List.of(),
+                true,
+                null,
+                100L,
+                null
             );
-            when(ragService.rag(any()))
+            when(ragService.generate(any()))
                 .thenReturn(Promise.of(ragResult));
 
             // WHEN: Perform RAG
-            String ragBody = "{\"query\": \"What is machine learning?\", \"limit\": 5, \"generator\": \"gpt-4\"}";
+            String ragBody = "{\"query\": \"What is machine learning?\", \"contextLimit\": 5}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/rag")
                 .withBody(ragBody.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -551,27 +551,30 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with RAG result
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString())
-                .contains("retrieved_documents")
-                .contains("generated_response")
-                .contains("sources");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
+                .contains("contexts")
+                .contains("response")
+                .contains("query");
         }
 
         @Test
         @DisplayName("ragChat returns conversation response")
         void ragChatSuccess() {
             // GIVEN: RAG chat service returns response
-            Map<String, Object> chatResponse = Map.of(
-                "conversation_id", "conv-123",
-                "reply", "Response to user message",
-                "sources", List.of(),
-                "tokens_used", 150
+            RagService.RagResponse chatResponse = new RagService.RagResponse(
+                "Tell me more",
+                "Response to user message",
+                List.of(),
+                true,
+                null,
+                80L,
+                null
             );
-            when(ragService.ragChat(any()))
+            when(ragService.chat(any()))
                 .thenReturn(Promise.of(chatResponse));
 
             // WHEN: RAG chat
-            String chatBody = "{\"conversation_id\": \"conv-123\", \"message\": \"Tell me more\"}";
+            String chatBody = "{\"query\": \"Tell me more\"}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/rag/chat")
                 .withBody(chatBody.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -579,25 +582,30 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with chat response
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString())
-                .contains("conversation_id")
-                .contains("reply")
-                .contains("tokens_used");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8))
+                .contains("query")
+                .contains("response")
+                .contains("success");
         }
 
         @Test
         @DisplayName("ragChat handles new conversation")
         void ragChatNewConversation() {
             // GIVEN: Starting new conversation
-            Map<String, Object> chatResponse = Map.of(
-                "conversation_id", "conv-new",
-                "reply", "Initial response"
+            RagService.RagResponse chatResponse = new RagService.RagResponse(
+                "Hello, can you help?",
+                "Initial response",
+                List.of(),
+                true,
+                null,
+                50L,
+                null
             );
-            when(ragService.ragChat(any()))
+            when(ragService.chat(any()))
                 .thenReturn(Promise.of(chatResponse));
 
             // WHEN: Start new RAG chat
-            String chatBody = "{\"message\": \"Hello, can you help?\"}"; // No conversation_id
+            String chatBody = "{\"query\": \"Hello, can you help?\"}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/rag/chat")
                 .withBody(chatBody.getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -605,7 +613,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Returns 200 with new conversation
             assertThat(response.getCode()).isEqualTo(200);
-            assertThat(response.getBodyString()).contains("conversation_id");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("query");
         }
     }
 
@@ -630,7 +638,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("listWorkflows response contains required pagination fields")
         void listWorkflowsResponseSchema() {
             // GIVEN: Workflows returned
-            when(workflowService.listWorkflows(any(), any(), any(), any()))
+            when(workflowService.listWorkflows(any(), any(), anyInt(), anyInt()))
                 .thenReturn(Promise.of(List.of(createWorkflowForTenant("wf-1", "tenant-001", true))));
 
             // WHEN: List workflows
@@ -640,7 +648,7 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> workflowController.listWorkflows(request));
 
             // THEN: Response contains all required fields
-            String body = response.getBodyString();
+            String body = response.getBody().asString(StandardCharsets.UTF_8);
             assertThat(body).contains("\"workflows\"").contains("\"count\"")
                 .contains("\"limit\"").contains("\"offset\"");
         }
@@ -649,13 +657,16 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
         @DisplayName("rag response contains required fields")
         void ragResponseSchema() {
             // GIVEN: RAG result
-            Map<String, Object> result = Map.of(
-                "retrieved_documents", List.of(),
-                "generated_response", "Response",
-                "sources", List.of(),
-                "confidence", 0.9
+            RagService.RagResponse result = new RagService.RagResponse(
+                "test",
+                "Response",
+                List.of(),
+                true,
+                null,
+                0L,
+                null
             );
-            when(ragService.rag(any())).thenReturn(Promise.of(result));
+            when(ragService.generate(any())).thenReturn(Promise.of(result));
 
             // WHEN: RAG query
             String ragBody = "{\"query\": \"test\"}";
@@ -666,10 +677,10 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
 
             // THEN: Response has required fields
             assertThat(response.getCode()).isEqualTo(200);
-            String body = response.getBodyString();
-            assertThat(body).contains("retrieved_documents")
-                .contains("generated_response")
-                .contains("sources");
+            String body = response.getBody().asString(StandardCharsets.UTF_8);
+            assertThat(body).contains("contexts")
+                .contains("response")
+                .contains("query");
         }
     }
 
@@ -680,18 +691,22 @@ class YappcApiControllerAdvancedTest extends EventloopTestBase {
     private AiWorkflowInstance createWorkflowForTenant(String id, String tenantId, boolean isActive) {
         return new AiWorkflowInstance(
             id,
+            tenantId,
             "Test Workflow",
             "A test workflow",
-            "SEQUENTIAL",
-            isActive ? "ACTIVE" : "DRAFT",
-            tenantId,
+            AiWorkflowInstance.WorkflowType.CUSTOM,
+            isActive ? AiWorkflowInstance.WorkflowStatus.IN_PROGRESS : AiWorkflowInstance.WorkflowStatus.DRAFT,
+            "step-1",
+            0,
+            1,
+            new HashMap<>(),
+            new HashMap<>(),
+            null,
             "user-123",
             Instant.now(),
-            isActive ? Instant.now() : null,
+            Instant.now(),
             null,
-            null,
-            0,
-            new HashMap<>()
+            null
         );
     }
 }

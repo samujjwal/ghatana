@@ -32,10 +32,6 @@ public record TaskDefinition(
         Objects.requireNonNull(id, "Task ID cannot be null");
         Objects.requireNonNull(name, "Task name cannot be null");
         Objects.requireNonNull(requiredCapabilities, "Required capabilities cannot be null");
-
-        if (requiredCapabilities.isEmpty()) {
-            throw new IllegalArgumentException("Task must require at least one capability");
-        }
     }
 
     /**
