@@ -4,9 +4,6 @@ packages:
   - "platform/typescript/canvas/flow-canvas"
   - "platform/typescript/foundation/*"
 
-  # Libs TypeScript YAPPC libraries (critical test infrastructure)
-  - "libs/typescript/yappc/*"
-
   # Product UIs
   - "products/data-cloud/ui"
   - "products/aep/ui"

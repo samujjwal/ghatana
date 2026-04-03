@@ -1,5 +1,5 @@
 {
-  "name": "@ghatana/security",
+  "name": "@yappc/security",
   "version": "0.1.0",
   "description": "Security utilities and middleware for YAPPC (CSP, headers, etc.)",
   "private": false,
