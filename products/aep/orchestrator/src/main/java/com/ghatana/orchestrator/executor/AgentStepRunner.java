@@ -6,6 +6,7 @@ package com.ghatana.orchestrator.executor;
 
 import com.ghatana.agent.registry.domain.AgentStep;
 import com.ghatana.orchestrator.executor.model.AgentStepResult;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -119,7 +120,16 @@ public class AgentStepRunner {
 
         // Execute the step function in a blocking executor wrapped with Promise
         // Note: Exceptions are automatically propagated as Promise failures by ofBlocking
-        Promise<Object> stepPromise = Promise.ofBlocking(blockingExecutor, () -> stepFunction.apply(step));
+        // TenantContext is propagated explicitly so the worker thread sees the correct tenant.
+        final String capturedTenantId = this.tenantId;
+        Promise<Object> stepPromise = Promise.ofBlocking(blockingExecutor, () -> {
+            TenantContext.setCurrentTenantId(capturedTenantId);
+            try {
+                return stepFunction.apply(step);
+            } finally {
+                TenantContext.clear();
+            }
+        });
 
         // Apply timeout using ActiveJ Promises utility
         Promise<Object> timedPromise = Promises.timeout(Duration.ofMillis(timeoutMs), stepPromise);

@@ -137,10 +137,7 @@ public final class AepAgentRegistryController {
 
                     return httpUtils.jsonResponse(200, response);
                 })
-                .whenException(e -> {
-                    log.error("Failed to list agents: {}", e.getMessage());
-                    return httpUtils.errorResponse(500, "Failed to list agents: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to list agents: {}", e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
@@ -182,10 +179,7 @@ public final class AepAgentRegistryController {
                             return httpUtils.jsonResponse(200, response);
                         })
                         .orElseGet(() -> httpUtils.errorResponse(404, "Agent not found: " + agentId)))
-                .whenException(e -> {
-                    log.error("Failed to get agent [{}]: {}", agentId, e.getMessage());
-                    return httpUtils.errorResponse(500, "Failed to get agent: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to get agent [{}]: {}", agentId, e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
@@ -240,10 +234,7 @@ public final class AepAgentRegistryController {
 
                             return httpUtils.jsonResponse(200, response);
                         })
-                        .whenException(e -> {
-                            log.warn("Agent [{}] execution failed: {}", agentId, e.getMessage());
-                            return httpUtils.errorResponse(500, "Execution failed: " + e.getMessage());
-                        });
+                        .whenException(e -> log.warn("Agent [{}] execution failed: {}", agentId, e.getMessage()));
             } catch (Exception e) {
                 log.warn("Invalid execute request for agent [{}]: {}", agentId, e.getMessage());
                 return Promise.of(httpUtils.errorResponse(400, "Invalid request format: " + e.getMessage()));
@@ -274,7 +265,7 @@ public final class AepAgentRegistryController {
 
         return registryService
                 .resolve(agentId)
-                .flatMap(optAgent -> {
+                .then(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
@@ -291,10 +282,7 @@ public final class AepAgentRegistryController {
                         return httpUtils.jsonResponse(200, response);
                     });
                 })
-                .whenException(e -> {
-                    log.error("Failed to check health for agent [{}]: {}", agentId, e.getMessage());
-                    return httpUtils.errorResponse(500, "Health check failed: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to check health for agent [{}]: {}", agentId, e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
@@ -324,20 +312,23 @@ public final class AepAgentRegistryController {
             return Promise.of(httpUtils.errorResponse(400, "agentId path parameter required"));
         }
 
-        int limit = 100;
         String limitParam = request.getQueryParameter("limit");
+        final int limit;
         if (limitParam != null) {
+            int parsed = 100;
             try {
-                limit = Integer.parseInt(limitParam);
-                limit = Math.min(limit, 1000); // Cap at 1000
+                parsed = Math.min(Integer.parseInt(limitParam), 1000); // Cap at 1000
             } catch (NumberFormatException e) {
                 // Use default
             }
+            limit = parsed;
+        } else {
+            limit = 100;
         }
 
         return registryService
                 .resolve(agentId)
-                .flatMap(optAgent -> {
+                .then(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
@@ -361,10 +352,7 @@ public final class AepAgentRegistryController {
                         return httpUtils.jsonResponse(200, response);
                     });
                 })
-                .whenException(e -> {
-                    log.error("Failed to get history for agent [{}]: {}", agentId, e.getMessage());
-                    return httpUtils.errorResponse(500, "Failed to get history: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to get history for agent [{}]: {}", agentId, e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
@@ -390,7 +378,7 @@ public final class AepAgentRegistryController {
 
         return registryService
                 .resolve(agentId)
-                .flatMap(optAgent -> {
+                .then(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
@@ -406,10 +394,7 @@ public final class AepAgentRegistryController {
                         return httpUtils.jsonResponse(200, response);
                     });
                 })
-                .whenException(e -> {
-                    log.error("Failed to get memory for agent [{}]: {}", agentId, e.getMessage());
-                    return httpUtils.errorResponse(500, "Failed to get memory: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to get memory for agent [{}]: {}", agentId, e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════
@@ -442,20 +427,17 @@ public final class AepAgentRegistryController {
 
         return registryService
                 .resolve(agentId)
-                .flatMap(optAgent -> {
+                .then(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
 
                     return registryService.deregister(agentId).map(v -> {
                         log.info("Agent [{}] deregistered", agentId);
-                        return HttpResponse.ok204();
+                        return HttpResponse.ofCode(204).build();
                     });
                 })
-                .whenException(e -> {
-                    log.error("Failed to deregister agent [{}]: {}", agentId, e.getMessage());
-                    return httpUtils.errorResponse(500, "Deregistration failed: " + e.getMessage());
-                });
+                .whenException(e -> log.error("Failed to deregister agent [{}]: {}", agentId, e.getMessage()));
     }
 
     // ═════════════════════════════════════════════════════════════════════════════

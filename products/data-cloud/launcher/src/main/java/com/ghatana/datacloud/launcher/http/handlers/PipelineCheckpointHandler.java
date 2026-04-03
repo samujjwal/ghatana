@@ -16,8 +16,8 @@ import java.util.Map;
 /**
  * Handles pipeline registry and checkpoint HTTP endpoints.
  *
- * <p>Extracted from {@code AgentRegistryHandler} after agent registry migration to AEP (v2.5).
- * Covers DC-3 pipeline and checkpoint CRUD stored in DataCloud collections.
+ * <p>Covers DC-3 pipeline and checkpoint CRUD stored in DataCloud collections.
+ * Agent registry operations were migrated to the AEP Central Registry (v2.5).
  *
  * @doc.type class
  * @doc.purpose Pipeline and checkpoint registry HTTP handlers

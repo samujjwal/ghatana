@@ -13,7 +13,7 @@ The deployable HTTP + gRPC server for Data-Cloud Standalone. Responsible for:
 
 - Route wiring (all `/api/v1/**` REST endpoints)
 - Middleware stack: CORS → rate-limit → payload-size → content-type → security-filter → routes
-- Handler orchestration: `EntityCrudHandler`, `EventHandler`, `AgentRegistryHandler`,
+- Handler orchestration: `EntityCrudHandler`, `EventHandler`, `PipelineCheckpointHandler`,
   `MemoryPlaneHandler`, `BrainHandler`, `LearningHandler`, `AnalyticsHandler`, `AiModelHandler`,
   `AiAssistHandler` (DC-E3), `VoiceGatewayHandler` (DC-E4), `DataLifecycleHandler` (DC-E5),
   `SseStreamingHandler`, `HealthHandler`
@@ -26,7 +26,7 @@ The deployable HTTP + gRPC server for Data-Cloud Standalone. Responsible for:
 |---------|--------|
 | `EntityCrudHandler` | `/api/v1/entities/**` |
 | `EventHandler` | `/api/v1/events/**` |
-| `AgentRegistryHandler` | `/api/v1/agents/**`, `/api/v1/pipelines/**`, `/api/v1/checkpoints/**` |
+| `PipelineCheckpointHandler` | `/api/v1/pipelines/**`, `/api/v1/checkpoints/**` |
 | `MemoryPlaneHandler` | `/api/v1/memory/**` |
 | `BrainHandler` | `/api/v1/brain/**` (non-streaming) |
 | `LearningHandler` | `/api/v1/learning/**` (non-streaming) |

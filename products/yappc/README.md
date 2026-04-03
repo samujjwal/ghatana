@@ -10,6 +10,8 @@
 
 YAPPC (Yet Another Platform Product Creator) is an **AI-native platform** that orchestrates the complete software development lifecycle through an **8-phase approach**: Intent → Shape → Validate → Generate → Run → Observe → Learn → Evolve.
 
+The **Run** phase drives an underlying SDLC lifecycle (Discover → Define → Design → Plan → Build → Test → Release → Deploy) managed by the AEP pipeline at `config/pipelines/lifecycle-management-v1.yaml`. Phase transitions, gate agents, and state persistence are defined in `config/agents/phase-transition-events.yaml`.
+
 ### Key Capabilities
 
 - **AI-Powered Code Generation** - Generate production-ready code from natural language

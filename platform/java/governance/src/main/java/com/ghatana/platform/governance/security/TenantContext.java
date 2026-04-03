@@ -1,6 +1,7 @@
 package com.ghatana.platform.governance.security;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 /**
  * Thread-local context for storing the current tenant and principal information.
@@ -162,7 +163,50 @@ public class TenantContext {
             CURRENT_TENANT_ID.set(previousTenantId);
         };
     }
-    
+
+    /**
+     * Wraps a runnable with the current thread's tenant/principal context.
+     *
+     * <p>Use this when submitting work to executors so tenant context is propagated safely
+     * across thread boundaries and restored afterward.
+     */
+    public static Runnable wrapWithCurrentContext(Runnable delegate) {
+        Principal capturedPrincipal = CURRENT_PRINCIPAL.get();
+        String capturedTenantId = CURRENT_TENANT_ID.get();
+        return () -> {
+            Principal previousPrincipal = CURRENT_PRINCIPAL.get();
+            String previousTenantId = CURRENT_TENANT_ID.get();
+            try {
+                CURRENT_PRINCIPAL.set(capturedPrincipal);
+                CURRENT_TENANT_ID.set(capturedTenantId);
+                delegate.run();
+            } finally {
+                CURRENT_PRINCIPAL.set(previousPrincipal);
+                CURRENT_TENANT_ID.set(previousTenantId);
+            }
+        };
+    }
+
+    /**
+     * Wraps a callable with the current thread's tenant/principal context.
+     */
+    public static <T> Callable<T> wrapWithCurrentContext(Callable<T> delegate) {
+        Principal capturedPrincipal = CURRENT_PRINCIPAL.get();
+        String capturedTenantId = CURRENT_TENANT_ID.get();
+        return () -> {
+            Principal previousPrincipal = CURRENT_PRINCIPAL.get();
+            String previousTenantId = CURRENT_TENANT_ID.get();
+            try {
+                CURRENT_PRINCIPAL.set(capturedPrincipal);
+                CURRENT_TENANT_ID.set(capturedTenantId);
+                return delegate.call();
+            } finally {
+                CURRENT_PRINCIPAL.set(previousPrincipal);
+                CURRENT_TENANT_ID.set(previousTenantId);
+            }
+        };
+    }
+
     /**
      * Clears the current principal and tenant context.
      */

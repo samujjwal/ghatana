@@ -262,15 +262,15 @@ else
   emit FAIL "pipeline:list" "GET /pipelines → HTTP $code (expected 200)"
 fi
 
-# ─── 7. Agent list ────────────────────────────────────────────────────────────
+# ─── 7. Checkpoint list ───────────────────────────────────────────────────────
 echo ""
-echo "── [7] Agent operations ──────────────────────────────────────────────"
+echo "── [7] Checkpoint operations ─────────────────────────────────────────"
 
-code=$(dc_curl GET "/api/v1/agents")
+code=$(dc_curl GET "/api/v1/checkpoints")
 if [[ "$code" == "200" ]]; then
-  emit PASS "agent:list" "GET /agents → HTTP 200"
+  emit PASS "checkpoint:list" "GET /checkpoints → HTTP 200"
 else
-  emit FAIL "agent:list" "GET /agents → HTTP $code (expected 200)"
+  emit FAIL "checkpoint:list" "GET /checkpoints → HTTP $code (expected 200)"
 fi
 
 # ─── 8. Governance retention policy ──────────────────────────────────────────

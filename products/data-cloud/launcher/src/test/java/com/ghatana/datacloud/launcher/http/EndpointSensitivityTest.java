@@ -25,9 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <h2>Coverage Matrix</h2>
  * <pre>
  *  PUBLIC   — /health, /health/detail, /ready, /live, /metrics, /info
- *  INTERNAL — authenticated read-only GETs (entities, events, agents, analytics…)
+ *  INTERNAL — authenticated read-only GETs (entities, events, analytics…)
  *  SENSITIVE — mutations (POST/PUT/PATCH) for most resources; AI inference; voice
- *  CRITICAL  — deletions of agents/entities/pipelines/checkpoints;
+ *  CRITICAL  — deletions of entities/pipelines/checkpoints;
  *               governance/** ; memory delete/retain; model promote;
  *               learning approve/reject; voice transcripts
  * </pre>
@@ -79,9 +79,6 @@ class EndpointSensitivityTest {
             "/api/v1/entities/users/export",
             // Events (read)
             "/api/v1/events",
-            // Agents (read)
-            "/api/v1/agents",
-            "/api/v1/agents/agent-abc",
             // Pipelines (read)
             "/api/v1/pipelines",
             "/api/v1/pipelines/pipe-123",
@@ -132,8 +129,6 @@ class EndpointSensitivityTest {
             "POST, /api/v1/entities/users/anomalies",
             // Events
             "POST, /api/v1/events",
-            // Agent mutations (non-DELETE individual — registration is SENSITIVE)
-            "POST, /api/v1/agents",
             // Pipeline mutations (non-DELETE)
             "POST, /api/v1/pipelines",
             "PUT,  /api/v1/pipelines/pipe-123",
@@ -184,8 +179,6 @@ class EndpointSensitivityTest {
             // Entity DELETE
             "DELETE, /api/v1/entities/users/123",
             "DELETE, /api/v1/entities/users/batch",
-            // Agent DELETE
-            "DELETE, /api/v1/agents/agent-abc",
             // Pipeline DELETE
             "DELETE, /api/v1/pipelines/pipe-123",
             // Checkpoint DELETE
@@ -226,13 +219,6 @@ class EndpointSensitivityTest {
         @DisplayName("DELETE /api/v1/entities/:collection/:id is CRITICAL")
         void entityDelete_isCritical() {
             assertThat(classify("DELETE", "/api/v1/entities/user_profiles/u-123"))
-                .isEqualTo(CRITICAL);
-        }
-
-        @Test
-        @DisplayName("DELETE /api/v1/agents/:id is CRITICAL (agents must be deregistered under policy)")
-        void agentDelete_isCritical() {
-            assertThat(classify("DELETE", "/api/v1/agents/my-agent"))
                 .isEqualTo(CRITICAL);
         }
 
@@ -281,20 +267,6 @@ class EndpointSensitivityTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/agents is SENSITIVE — agent registration requires auth")
-        void agentPost_isSensitive_notCritical() {
-            EndpointSensitivity result = classify("POST", "/api/v1/agents");
-            assertThat(result).isEqualTo(SENSITIVE);
-        }
-
-        @Test
-        @DisplayName("GET /api/v1/agents is INTERNAL — read-only registry lookup")
-        void agentGet_isInternal() {
-            assertThat(classify("GET", "/api/v1/agents"))
-                .isEqualTo(INTERNAL);
-        }
-
-        @Test
         @DisplayName("POST /api/v1/learning/trigger is SENSITIVE — mutation of learning pipeline")
         void learningTrigger_isSensitive() {
             assertThat(classify("POST", "/api/v1/learning/trigger"))
@@ -304,9 +276,9 @@ class EndpointSensitivityTest {
         @Test
         @DisplayName("classify is case-insensitive for HTTP method")
         void caseInsensitiveMethod() {
-            assertThat(classify("delete", "/api/v1/agents/my-agent")).isEqualTo(CRITICAL);
-            assertThat(classify("DELETE", "/api/v1/agents/my-agent")).isEqualTo(CRITICAL);
-            assertThat(classify("Delete", "/api/v1/agents/my-agent")).isEqualTo(CRITICAL);
+            assertThat(classify("delete", "/api/v1/pipelines/my-pipeline")).isEqualTo(CRITICAL);
+            assertThat(classify("DELETE", "/api/v1/pipelines/my-pipeline")).isEqualTo(CRITICAL);
+            assertThat(classify("Delete", "/api/v1/pipelines/my-pipeline")).isEqualTo(CRITICAL);
         }
 
         @Test
@@ -333,7 +305,6 @@ class EndpointSensitivityTest {
         void deleteCriticalPrefixes_coversExpectedResources() {
             Set<String> expected = Set.of(
                 "/api/v1/entities/",
-                "/api/v1/agents/",
                 "/api/v1/pipelines/",
                 "/api/v1/checkpoints/",
                 "/api/v1/memory/",

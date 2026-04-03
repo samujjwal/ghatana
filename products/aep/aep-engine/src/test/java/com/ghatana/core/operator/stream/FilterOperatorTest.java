@@ -69,7 +69,7 @@ class FilterOperatorTest extends EventloopTestBase {
             OperatorResult result = runPromise(() -> op.process(event));
 
             assertThat(result.isSuccess()).isTrue();
-            assertThat(result.isEmpty()).isFalse();
+            assertThat(result.getOutputEvents()).isNotEmpty();
         }
 
         @Test
@@ -91,7 +91,7 @@ class FilterOperatorTest extends EventloopTestBase {
 
             OperatorResult result = runPromise(() -> op.process(event));
 
-            assertThat(result.getEvent()).isPresent().contains(event);
+            assertThat(result.getOutputEvents()).hasSize(1).contains(event);
         }
     }
 
@@ -106,7 +106,7 @@ class FilterOperatorTest extends EventloopTestBase {
 
             OperatorResult result = runPromise(() -> op.process(event));
 
-            assertThat(result.isEmpty()).isTrue();
+            assertThat(result.getOutputEvents()).isEmpty();
         }
 
         @Test
@@ -141,7 +141,7 @@ class FilterOperatorTest extends EventloopTestBase {
 
             OperatorResult result = runPromise(() -> op.process(event));
 
-            assertThat(result.isEmpty()).isTrue();
+            assertThat(result.getOutputEvents()).isEmpty();
             assertThat(op.getFilterCount()).isEqualTo(1);
             assertThat(op.getPassThroughCount()).isEqualTo(0);
         }

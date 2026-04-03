@@ -32,4 +32,3 @@ lifecycle events to `agent-registry-events`.
 ## Consumers
 
 - `products:agentic-event-processor` (discovery)
-- `products:data-cloud:launcher` (HTTP API registry routes)

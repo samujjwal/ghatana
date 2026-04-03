@@ -46,7 +46,6 @@ import java.util.function.BiConsumer;
  *   <li>Entity CDC stream ({@code GET /api/v1/entities/:collection/stream})</li>
  *   <li>General event-log SSE ({@code GET /events/stream})</li>
  *   <li>Brain workspace SSE ({@code GET /api/v1/brain/workspace/stream})</li>
- *   <li>Agents event SSE ({@code GET /api/v1/agents/events/stream})</li>
  *   <li>Learning status SSE ({@code GET /api/v1/learning/stream})</li>
  *   <li>Streaming query SSE ({@code GET /api/v1/entities/:collection/query/stream})</li>
  *   <li>WebSocket real-time push ({@code /ws})</li>
@@ -358,75 +357,6 @@ public class SseStreamingHandler {
 
         log.info("[SSE-WS] brain workspace stream opened for tenant={}", tenantId);
         return Promise.of(buildSseResponse(bodyStream));
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Agents Event SSE — GET /api/v1/agents/events/stream
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * SSE stream of agent-lifecycle events.
-     *
-     * @param request the incoming HTTP request
-     * @return SSE response
-     *
-     * @doc.type method
-     * @doc.purpose Agent events SSE stream (DC-9)
-     * @doc.layer product
-     * @doc.pattern Publish-Subscribe, SSE
-     */
-    public Promise<HttpResponse> handleAgentsEventStream(HttpRequest request) {
-        String tenantId = http.resolveTenantId(request);
-        LinkedBlockingQueue<Optional<byte[]>> queue = new LinkedBlockingQueue<>(SSE_QUEUE_CAPACITY);
-
-        List<String> agentEventTypes = List.of(
-            "AGENT_CREATED", "AGENT_STARTED", "AGENT_STOPPED",
-            "AGENT_FAILED", "AGENT_UPDATED", "CHECKPOINT_SAVED");
-
-        queue.offer(Optional.of(buildSseFrame("connected", Map.of(
-            "service",   "data-cloud-agents",
-            "tenantId",  tenantId,
-            "filter",    agentEventTypes,
-            "timestamp", Instant.now().toString()
-        ))));
-
-        TenantContext tenant = TenantContext.of(tenantId);
-        EventLogStore eventLogStore = client.eventLogStore();
-        return eventLogStore.tail(tenant, Offset.of(0L), entry -> {
-            if (!agentEventTypes.contains(entry.eventType())) return;
-            try {
-                byte[] frame = buildEventSseFrame(entry);
-                if (!queue.offer(Optional.of(frame), 100L, TimeUnit.MILLISECONDS)) {
-                    log.warn("[SSE-AGENTS] queue full for tenant={}, dropping event type={}", tenantId, entry.eventType());
-                }
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-            } catch (Exception ex) {
-                log.warn("[SSE-AGENTS] serialization error for tenant={}: {}", tenantId, ex.getMessage());
-            }
-        }).map(subscription -> {
-            sseSubscriptions.add(subscription);
-            ChannelSupplier<ByteBuf> bodyStream = ChannelSuppliers.ofAsyncSupplier(() -> {
-                if (subscription.isCancelled()) return Promise.of(null);
-                try {
-                    if (subscription.isCancelled()) return Promise.of(null);
-                    Optional<byte[]> item = queue.poll(SSE_HEARTBEAT_TIMEOUT_SEC, TimeUnit.SECONDS);
-                    if (item == null) {
-                        return Promise.of(ByteBuf.wrapForReading(buildSseFrame("heartbeat",
-                            Map.of("ts", Instant.now().toString()))));
-                    }
-                    return Promise.of(item.isPresent() ? ByteBuf.wrapForReading(item.get()) : null);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return Promise.of(null);
-                }
-            });
-            log.info("[SSE-AGENTS] agents event stream opened for tenant={}", tenantId);
-            return buildSseResponse(bodyStream);
-        }).mapException(e -> {
-            log.error("[SSE-AGENTS] failed to open tail for tenant={}: {}", tenantId, e.getMessage(), e);
-            return new HttpException("Agents SSE subscription failed: " + e.getMessage(), e);
-        });
     }
 
     // ─────────────────────────────────────────────────────────────────────────

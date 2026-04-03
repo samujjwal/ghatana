@@ -8,10 +8,12 @@ import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.lifecycle.GateEvaluator;
 import com.ghatana.yappc.services.lifecycle.StageConfigLoader;
 import com.ghatana.yappc.services.lifecycle.StageSpec;
+import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,24 +72,43 @@ public final class PhaseGateValidator {
 
     private static final Logger log = LoggerFactory.getLogger(PhaseGateValidator.class);
 
-    private final StageConfigLoader     stageConfig;
-    private final GateEvaluator         gateEvaluator;
+    private final StageConfigLoader      stageConfig;
+    private final GateEvaluator          gateEvaluator;
     private final YappcArtifactRepository artifactRepository;
+    @Nullable
+    private final BusinessMetrics         metrics;
 
     /**
-     * Constructs the validator.
+     * Constructs the validator without metrics instrumentation.
      *
      * @param stageConfig        loaded lifecycle stage definitions
      * @param gateEvaluator      low-level criterion evaluator
      * @param artifactRepository artifact presence checker
      */
     public PhaseGateValidator(
-            @NotNull StageConfigLoader      stageConfig,
-            @NotNull GateEvaluator          gateEvaluator,
+            @NotNull StageConfigLoader       stageConfig,
+            @NotNull GateEvaluator           gateEvaluator,
             @NotNull YappcArtifactRepository  artifactRepository) {
+        this(stageConfig, gateEvaluator, artifactRepository, null);
+    }
+
+    /**
+     * Constructs the validator with optional metrics instrumentation.
+     *
+     * @param stageConfig        loaded lifecycle stage definitions
+     * @param gateEvaluator      low-level criterion evaluator
+     * @param artifactRepository artifact presence checker
+     * @param metrics            business metrics publisher, or {@code null} to disable instrumentation
+     */
+    public PhaseGateValidator(
+            @NotNull  StageConfigLoader       stageConfig,
+            @NotNull  GateEvaluator           gateEvaluator,
+            @NotNull  YappcArtifactRepository  artifactRepository,
+            @Nullable BusinessMetrics          metrics) {
         this.stageConfig         = Objects.requireNonNull(stageConfig,         "stageConfig");
         this.gateEvaluator       = Objects.requireNonNull(gateEvaluator,       "gateEvaluator");
         this.artifactRepository  = Objects.requireNonNull(artifactRepository,  "artifactRepository");
+        this.metrics             = metrics;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -109,11 +130,13 @@ public final class PhaseGateValidator {
         Objects.requireNonNull(targetPhase,  "targetPhase");
         Objects.requireNonNull(conditions,   "conditions");
 
+        long startMs = System.currentTimeMillis();
         String stageId = targetPhase.name().toLowerCase();
 
         Optional<StageSpec> stageOpt = stageConfig.findById(stageId);
         if (stageOpt.isEmpty()) {
             log.warn("No stage spec found for phase '{}'; treating as open gate", stageId);
+            emitGateMetrics(projectId, targetPhase, true, startMs);
             return Promise.of(ValidationResult.allClear(targetPhase));
         }
 
@@ -142,7 +165,9 @@ public final class PhaseGateValidator {
         if (requiredArtifacts.isEmpty()) {
             boolean clear = blockers.isEmpty();
             log.debug("Phase gate validation for {}/{}: {} blockers", projectId, targetPhase, blockers.size());
-            return Promise.of(new ValidationResult(targetPhase, clear, List.copyOf(blockers)));
+            ValidationResult syncResult = new ValidationResult(targetPhase, clear, List.copyOf(blockers));
+            emitGateMetrics(projectId, targetPhase, clear, startMs);
+            return Promise.of(syncResult);
         }
 
         List<Promise<Optional<String>>> artifactChecks = requiredArtifacts.stream()
@@ -158,7 +183,9 @@ public final class PhaseGateValidator {
                     }
                     boolean clear = blockers.isEmpty();
                     log.debug("Phase gate validation for {}/{}: {} blockers", projectId, targetPhase, blockers.size());
-                    return new ValidationResult(targetPhase, clear, List.copyOf(blockers));
+                    ValidationResult result = new ValidationResult(targetPhase, clear, List.copyOf(blockers));
+                    emitGateMetrics(projectId, targetPhase, clear, startMs);
+                    return result;
                 });
     }
 
@@ -176,6 +203,16 @@ public final class PhaseGateValidator {
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────
+
+    private void emitGateMetrics(String projectId, PhaseType phase, boolean clear, long startMs) {
+        if (metrics != null) {
+            metrics.recordPhaseGateValidation(
+                    projectId,
+                    phase.name(),
+                    clear ? "PASS" : "BLOCK",
+                    System.currentTimeMillis() - startMs);
+        }
+    }
 
     private Promise<Optional<String>> checkArtifact(String projectId, PhaseType phase, String artifactKey) {
         return artifactRepository.listVersions(projectId, phase)

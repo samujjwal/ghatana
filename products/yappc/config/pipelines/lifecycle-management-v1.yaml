@@ -13,6 +13,42 @@ metadata:
   description: "Project lifecycle state management pipeline"
   tags: ["lifecycle", "state-management", "core"]
 
+  # ─── Lifecycle Contract Reference ─────────────────────────────────────────
+  # This pipeline processes SDLC phase transitions defined in
+  # config/agents/phase-transition-events.yaml.
+  #
+  # Managed SDLC phases (8+1 Debug recovery):
+  #   Discover → Define → Design → Plan → Build → Test → Release → Deploy
+  #   └─ Debug (automatic recovery branch from Build/Test failures)
+  #
+  # Each phase transition is processed by:
+  #   1. phase-transition-validator  — schema validation
+  #   2. phase-state-manager         — persists new phase state to Data-Cloud
+  #   3. gate-orchestrator           — runs gate agents for the target phase
+  #   4. lifecycle-state-publisher   — broadcasts state update for UI sync
+  #   5. agent-dispatcher            — routes follow-on work events to agents
+  #
+  # AI-Native Orchestration Model (README: Intent → Shape → Validate → Generate
+  #   → Run → Observe → Learn → Evolve) maps to this pipeline as the execution
+  #   layer for the "Run" phase: YAPPC uses this pipeline to orchestrate the SDLC
+  #   lifecycle of the projects it builds during the "Run" orchestration phase.
+  lifecycle_phases:
+    sdlc:
+      - Discover
+      - Define
+      - Design
+      - Plan
+      - Build
+      - Test
+      - Release
+      - Deploy
+    recovery_branches:
+      - Debug         # Triggered automatically on Build/Test failure; no gate
+    ai_orchestration_model:
+      reference: "README.md#8-phase-approach"
+      phases: ["Intent", "Shape", "Validate", "Generate", "Run", "Observe", "Learn", "Evolve"]
+      pipeline_role: "Lifecycle management runs within the 'Run' phase of the AI orchestration model"
+
 spec:
   # Pipeline inputs
   inputs:

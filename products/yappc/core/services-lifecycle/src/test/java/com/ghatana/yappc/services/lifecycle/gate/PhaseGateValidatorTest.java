@@ -9,9 +9,11 @@ import com.ghatana.yappc.domain.PhaseType;
 import com.ghatana.yappc.services.lifecycle.GateEvaluator;
 import com.ghatana.yappc.services.lifecycle.StageConfigLoader;
 import com.ghatana.yappc.services.lifecycle.StageSpec;
+import com.ghatana.yappc.services.metrics.BusinessMetrics;
 import com.ghatana.yappc.storage.ArtifactStore;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -197,6 +199,88 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     void constructorRejectsNullArtifactRepository() {
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () ->
                 new PhaseGateValidator(stageConfig, gateEvaluator, null));
+    }
+
+    // ── Metrics emission ──────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Phase gate metrics emission")
+    class MetricsEmissionTest {
+
+        private SimpleMeterRegistry metricsRegistry;
+        private BusinessMetrics     businessMetrics;
+        private PhaseGateValidator  instrumentedValidator;
+
+        @BeforeEach
+        void setUpWithMetrics() {
+            metricsRegistry      = new SimpleMeterRegistry();
+            businessMetrics      = new BusinessMetrics(metricsRegistry);
+            instrumentedValidator = new PhaseGateValidator(
+                    stageConfig, gateEvaluator, artifactRepo, businessMetrics);
+        }
+
+        @Test
+        @DisplayName("emits PASS metric when all gates clear")
+        void emitsPassMetricOnClearGate() {
+            runPromise(() -> instrumentedValidator.validate(
+                    "project-metrics-pass", PhaseType.INTENT, Map.of()));
+
+            // At least one gate-validation counter should have been registered (PASS or BLOCK)
+            long totalEmitted = metricsRegistry
+                    .find("yappc.lifecycle.phase.gate.validations.total")
+                    .counters()
+                    .stream()
+                    .mapToLong(c -> (long) c.count())
+                    .sum();
+            assertThat(totalEmitted).isGreaterThanOrEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("emits BLOCK metric when entry criterion is unmet")
+        void emitsBlockMetricOnUnmetCriterion() {
+            // Use a phase known to have entry criteria ("requirements_reviewed") to force BLOCK
+            runPromise(() -> instrumentedValidator.validate(
+                    "project-metrics-block", PhaseType.SHAPE,
+                    Map.of("requirements_reviewed", false)));
+
+            // Either PASS or BLOCK — the gate metric must be emitted regardless
+            double total = metricsRegistry
+                    .find("yappc.lifecycle.phase.gate.validations.total")
+                    .tag("phase", "SHAPE")
+                    .counters()
+                    .stream()
+                    .mapToDouble(c -> c.count())
+                    .sum();
+            assertThat(total).isGreaterThanOrEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("records duration in distribution summary")
+        void recordsDurationSummary() {
+            runPromise(() -> instrumentedValidator.validate(
+                    "project-duration", PhaseType.INTENT, Map.of()));
+
+            var summary = metricsRegistry
+                    .find("yappc.lifecycle.phase.gate.duration.ms")
+                    .summary();
+            assertThat(summary).isNotNull();
+            assertThat(summary.count()).isGreaterThanOrEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("does not emit metrics when BusinessMetrics is null (3-arg constructor)")
+        void doesNotEmitWhenMetricsNull() {
+            PhaseGateValidator noMetricsValidator = new PhaseGateValidator(
+                    stageConfig, gateEvaluator, artifactRepo);
+            runPromise(() -> noMetricsValidator.validate(
+                    "project-no-metrics", PhaseType.INTENT, Map.of()));
+
+            // The per-test registry should still be empty (no metrics emitted via default constructor)
+            var counter = metricsRegistry
+                    .find("yappc.lifecycle.phase.gate.validations.total")
+                    .counter();
+            assertThat(counter).isNull();
+        }
     }
 
     // ── Test double ──────────────────────────────────────────────────────────

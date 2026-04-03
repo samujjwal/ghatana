@@ -178,6 +178,61 @@ class BusinessMetricsTest {
         assertThat(count).isEqualTo(1.0);
     }
 
+    // ── recordPhaseGateValidation ─────────────────────────────────────────────
+
+    @Test
+    @DisplayName("recordPhaseGateValidation increments PASS counter with correct tags")
+    void recordPhaseGateValidationPassIncrementsCounter() {
+        metrics.recordPhaseGateValidation("tenant-1", "Build", "PASS", 42L);
+
+        double count = registry.find("yappc.lifecycle.phase.gate.validations.total")
+                .tag("tenant", "tenant-1")
+                .tag("phase", "Build")
+                .tag("outcome", "PASS")
+                .counter()
+                .count();
+        assertThat(count).isEqualTo(1.0);
+    }
+
+    @Test
+    @DisplayName("recordPhaseGateValidation increments BLOCK counter with correct tags")
+    void recordPhaseGateValidationBlockIncrementsCounter() {
+        metrics.recordPhaseGateValidation("tenant-2", "Test", "BLOCK", 10L);
+
+        double count = registry.find("yappc.lifecycle.phase.gate.validations.total")
+                .tag("outcome", "BLOCK")
+                .counter()
+                .count();
+        assertThat(count).isEqualTo(1.0);
+    }
+
+    @Test
+    @DisplayName("recordPhaseGateValidation records duration in distribution summary")
+    void recordPhaseGateValidationRecordsDuration() {
+        metrics.recordPhaseGateValidation("tenant-1", "Design", "PASS", 75L);
+
+        var summary = registry.find("yappc.lifecycle.phase.gate.duration.ms")
+                .tag("tenant", "tenant-1")
+                .tag("phase", "Design")
+                .summary();
+        assertThat(summary).isNotNull();
+        assertThat(summary.count()).isEqualTo(1);
+        assertThat(summary.totalAmount()).isEqualTo(75.0);
+    }
+
+    @Test
+    @DisplayName("recordPhaseGateValidation handles null tenant and phase safely")
+    void recordPhaseGateValidationHandlesNulls() {
+        metrics.recordPhaseGateValidation(null, null, "PASS", 0L);
+
+        double count = registry.find("yappc.lifecycle.phase.gate.validations.total")
+                .tag("tenant", "unknown")
+                .tag("phase", "unknown")
+                .counter()
+                .count();
+        assertThat(count).isEqualTo(1.0);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private double gaugeValue(String name) {

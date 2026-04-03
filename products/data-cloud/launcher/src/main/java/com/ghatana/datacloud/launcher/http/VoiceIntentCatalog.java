@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Catalogue of the top 20 operational voice intents handled by Data-Cloud.
+ * Catalogue of operational voice intents handled by Data-Cloud.
  *
  * <p>Each {@link VoiceIntent} maps a spoken intent name to:
  * <ul>
@@ -26,7 +26,7 @@ import java.util.Optional;
  * scoring when an LLM classifier is unavailable.
  *
  * @doc.type class
- * @doc.purpose Top-20 operational voice intent catalog for Data-Cloud
+ * @doc.purpose Operational voice intent catalog for Data-Cloud
  * @doc.layer product
  * @doc.pattern ValueObject
  */
@@ -113,23 +113,6 @@ public final class VoiceIntentCatalog {
             List.of("name"),
             List.of("description", "steps"),
             EndpointSensitivity.SENSITIVE),
-
-        // ── Agent operations ────────────────────────────────────────────────
-        new VoiceIntent(
-            "list_agents",
-            "GET", "/api/v1/agents",
-            "List registered agents",
-            List.of(),
-            List.of("tenantId", "status", "limit"),
-            EndpointSensitivity.INTERNAL),
-
-        new VoiceIntent(
-            "get_agent",
-            "GET", "/api/v1/agents/:agentId",
-            "Get details of a specific agent",
-            List.of("agentId"),
-            List.of(),
-            EndpointSensitivity.INTERNAL),
 
         // ── Analytics operations ────────────────────────────────────────────
         new VoiceIntent(

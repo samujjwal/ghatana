@@ -8,14 +8,12 @@ info:
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
     - **Event log** — append-only event stream with push-based SSE subscriptions
-    - **Agent registry** — register and discover AI agents
-    - **Pipeline registry** — store and retrieve AEP pipeline definitions
-    - **Checkpoint management** — save/restore agent checkpoints
+    - **Execution metadata** — store and retrieve pipeline/checkpoint records for external runtimes
     - **Agent memory plane** — read and search agent episodic/semantic/procedural memory
     - **Brain API** — salience scoring, attention management, workspace spotlight
     - **Learning API** — policy extraction, human-review queue
     - **Analytics API** — ad-hoc ClickHouse-backed analytics queries
-    - **Server-Sent Events** — real-time push for events, agents, and learning updates
+    - **Server-Sent Events** — real-time push for events and learning updates
     - **WebSocket** — real-time change-data-capture notifications via `GET /ws`
     - **AI Assist** — gracefully-degrading LLM hints for entities, analytics, pipelines, and brain
     - **Voice Gateway** — voice intent resolution and classification
@@ -62,12 +60,10 @@ tags:
     description: Generic JSONB entity CRUD operations.
   - name: events
     description: Append-only event log operations.
-  - name: agents
-    description: Agent registry — register, list, and manage AI agents.
   - name: pipelines
-    description: AEP pipeline definition registry.
+    description: External-runtime pipeline metadata registry.
   - name: checkpoints
-    description: Agent checkpoint save/restore.
+    description: External-runtime checkpoint save/restore.
   - name: memory
     description: Agent memory plane (episodic, semantic, procedural, preference).
   - name: brain
@@ -100,7 +96,7 @@ components:
       name: tenantId
       in: query
       description: |
-        Tenant identifier. Required for all entity, event, agent, and memory operations.
+        Tenant identifier. Required for all entity, event, execution-metadata, and memory operations.
         May alternatively be supplied as the `X-Tenant-ID` request header.
       schema:
         type: string
@@ -536,84 +532,7 @@ paths:
                       $ref: "#/components/schemas/Event"
                   total: { type: integer, format: int64 }
 
-  # ── Agent registry ─────────────────────────────────────────────────────────
-
-  /api/v1/agents:
-    get:
-      summary: List registered agents
-      tags: [agents]
-      parameters:
-        - $ref: "#/components/parameters/tenantIdQuery"
-        - $ref: "#/components/parameters/limitQuery"
-        - $ref: "#/components/parameters/offsetQuery"
-      responses:
-        "200":
-          description: Paginated agent list.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  agents:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties: true
-                  total: { type: integer }
-
-    post:
-      summary: Register a new agent
-      tags: [agents]
-      parameters:
-        - $ref: "#/components/parameters/tenantIdQuery"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        "200":
-          description: Agent registered.
-
-  /api/v1/agents/{agentId}:
-    get:
-      summary: Get agent by ID
-      tags: [agents]
-      parameters:
-        - $ref: "#/components/parameters/agentIdPath"
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200":
-          description: Agent definition.
-        "404": { $ref: "#/components/responses/NotFound" }
-
-    delete:
-      summary: Delete agent registration
-      tags: [agents]
-      parameters:
-        - $ref: "#/components/parameters/agentIdPath"
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200":
-          description: Agent deleted.
-
-  /api/v1/agents/events/stream:
-    get:
-      summary: SSE stream of agent registry events
-      tags: [sse, agents]
-      parameters:
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200":
-          description: SSE event stream (text/event-stream).
-          content:
-            text/event-stream:
-              schema:
-                type: string
-
-  # ── Pipeline registry ──────────────────────────────────────────────────────
+  # ── Execution metadata ─────────────────────────────────────────────────────
 
   /api/v1/pipelines:
     get:

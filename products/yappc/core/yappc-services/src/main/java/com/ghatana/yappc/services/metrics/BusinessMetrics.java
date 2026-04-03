@@ -5,6 +5,7 @@
 package com.ghatana.yappc.services.metrics;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -202,6 +203,34 @@ public final class BusinessMetrics {
                 .tags(tags)
                 .register(registry)
                 .increment();
+    }
+
+    /**
+     * Records a phase gate validation outcome.
+     *
+     * @param tenantId   tenant scope
+     * @param phase      lifecycle phase being validated (e.g. {@code "Build"}, {@code "Test"})
+     * @param outcome    {@code "PASS"} when all gates are satisfied, {@code "BLOCK"} otherwise
+     * @param durationMs gate validation duration in milliseconds
+     */
+    public void recordPhaseGateValidation(String tenantId, String phase, String outcome, long durationMs) {
+        Tags tags = Tags.of(
+                Tag.of("tenant",  safe(tenantId)),
+                Tag.of("phase",   safe(phase)),
+                Tag.of("outcome", safe(outcome))
+        );
+        Counter.builder("yappc.lifecycle.phase.gate.validations.total")
+                .description("Total phase gate validation outcomes")
+                .tags(tags)
+                .register(registry)
+                .increment();
+        DistributionSummary.builder("yappc.lifecycle.phase.gate.duration.ms")
+                .description("Phase gate validation duration in milliseconds")
+                .tags(Tags.of(Tag.of("tenant", safe(tenantId)), Tag.of("phase", safe(phase))))
+                .register(registry)
+                .record(durationMs);
+        log.debug("Phase gate validation: tenant={} phase={} outcome={} duration={}ms",
+                tenantId, phase, outcome, durationMs);
     }
 
     /**

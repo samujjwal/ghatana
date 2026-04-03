@@ -33,7 +33,7 @@ public enum EndpointSensitivity {
 
     /**
      * Authentication required; read-only access to data.
-     * Routes: GET entities, GET events, GET agents, GET pipelines*, GET checkpoints,
+     * Routes: GET entities, GET events, GET pipelines*, GET checkpoints,
      *         GET analytics results, GET reports, GET models, GET features.
      */
     INTERNAL,
@@ -48,7 +48,7 @@ public enum EndpointSensitivity {
 
     /**
      * Authentication required; high-impact operations requiring additional policy checks.
-     * Routes: DELETE entities, DELETE agents, model promote, memory delete/retain,
+     * Routes: DELETE entities, model promote, memory delete/retain,
      *         governance endpoints, learning review approve/reject,
      *         voice transcript management, data lifecycle operations.
      * Audit events are emitted and policy engine is consulted.
@@ -90,12 +90,11 @@ public enum EndpointSensitivity {
      * CRITICAL; non-DELETE requests fall through to SENSITIVE / INTERNAL.
      *
      * <p>Extend this set whenever a resource supports DELETE and the deletion is
-     * considered a high-impact, policy-audited operation (agent deregistration,
-     * pipeline teardown, entity removal, memory purge, model removal).
+     * considered a high-impact, policy-audited operation (pipeline teardown,
+     * entity removal, memory purge, model removal).
      */
     public static final Set<String> DELETE_CRITICAL_PREFIXES = Set.of(
         "/api/v1/entities/",
-        "/api/v1/agents/",
         "/api/v1/pipelines/",
         "/api/v1/checkpoints/",
         "/api/v1/memory/",
@@ -106,13 +105,12 @@ public enum EndpointSensitivity {
      * Path prefixes whose operations are SENSITIVE (authenticated writes, AI inference, voice).
      * Checked only after CRITICAL checks have not matched.
      *
-     * <p>Agent registration and learning trigger mutations are included so they
-     * always require authentication and produce audit events, even when the
-     * policy-engine is not invoked.
+     * <p>Learning trigger mutations are included so they always require
+     * authentication and produce audit events, even when the policy-engine is
+     * not invoked.
      */
     public static final Set<String> SENSITIVE_PATH_PREFIXES = Set.of(
         "/api/v1/entities/",
-        "/api/v1/agents",             // POST (register) and list operations
         "/api/v1/events",
         "/api/v1/pipelines",
         "/api/v1/checkpoints",

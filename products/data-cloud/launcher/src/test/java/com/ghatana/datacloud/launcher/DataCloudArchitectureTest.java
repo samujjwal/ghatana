@@ -117,6 +117,19 @@ class DataCloudArchitectureTest {
         }
 
         @Test
+        @DisplayName("Data-Cloud launcher must not depend on AEP product packages")
+        void noDirectAepDependencies() {
+            ArchRule rule = noClasses()
+                    .that().resideInAPackage("com.ghatana.datacloud.launcher..")
+                    .should().dependOnClassesThat()
+                    .resideInAnyPackage("com.ghatana.aep..", "com.ghatana.orchestrator..")
+                    .because(
+                        "Data-Cloud is the backbone layer. Product-specific AEP concerns must stay "
+                        + "outside the Data-Cloud launcher boundary.");
+            rule.check(LAUNCHER_CLASSES);
+        }
+
+        @Test
         @DisplayName("Data-Cloud must not use System.out or System.err for logging")
         void noSystemOutOrSystemErr() {
             ArchRule rule = noClasses()
