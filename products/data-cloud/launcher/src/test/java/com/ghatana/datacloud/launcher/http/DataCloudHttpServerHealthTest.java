@@ -18,6 +18,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+
 @DisplayName("DataCloudHttpServer – Health Endpoints")
 class DataCloudHttpServerHealthTest {
 

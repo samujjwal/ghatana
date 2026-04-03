@@ -11,6 +11,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.sql.DataSource;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -81,7 +82,7 @@ class ReplicaLagMonitorIT {
     @Test
     @DisplayName("monitor starts without error when replicas are configured")
     void startWithReplicas() throws InterruptedException {
-        Map<String, HikariDataSource> replicaMap = Map.of("replica-1", replicaDataSource);
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource);
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap);
 
         monitor = new ReplicaLagMonitor(
@@ -102,7 +103,7 @@ class ReplicaLagMonitorIT {
     @Test
     @DisplayName("getReplicaLag returns 0 when primary and replica are the same node")
     void lagIsZeroWhenPrimaryEqualsReplica() throws InterruptedException {
-        Map<String, HikariDataSource> replicaMap = Map.of("replica-1", replicaDataSource);
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource);
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap);
 
         monitor = new ReplicaLagMonitor(
@@ -123,7 +124,7 @@ class ReplicaLagMonitorIT {
     @Test
     @DisplayName("stop shuts down the scheduler cleanly")
     void stopShutsDownCleanly() {
-        Map<String, HikariDataSource> replicaMap = Map.of("replica-1", replicaDataSource);
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource);
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap);
 
         monitor = new ReplicaLagMonitor(
@@ -168,7 +169,7 @@ class ReplicaLagMonitorIT {
         HikariDataSource replica2 = new HikariDataSource(cfg2);
 
         try {
-            Map<String, HikariDataSource> replicaMap = Map.of(
+            Map<String, DataSource> replicaMap = Map.of(
                     "r1", replicaDataSource,
                     "r2", replica2);
             RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap);

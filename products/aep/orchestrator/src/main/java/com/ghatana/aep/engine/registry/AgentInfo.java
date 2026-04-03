@@ -30,11 +30,10 @@ public class AgentInfo {
 
     @Override
     public String toString() {
-        return "AgentInfo{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", type='" + type + '\'' +
-                ", status='" + status + '\'' +
-                '}';
+        return "AgentInfo{" + "id='"
+                + id + '\'' + ", name='"
+                + name + '\'' + ", type='"
+                + type + '\'' + ", status='"
+                + status + '\'' + '}';
     }
 }

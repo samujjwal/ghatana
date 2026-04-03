@@ -13,9 +13,9 @@ import com.ghatana.orchestrator.client.PipelineRegistryClient;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
 import io.activej.promise.Promise;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Optional;
 
 /**
  * ActiveJ DI module for AEP registry bindings (v2.5+).

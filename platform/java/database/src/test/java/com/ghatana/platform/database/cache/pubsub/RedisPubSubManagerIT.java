@@ -97,7 +97,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
         runPromise(() -> publisherManager.publish(msg));
 
         RedisPubSubManager.PubSubStats stats = publisherManager.getStats();
-        assertThat(stats.publishCount()).isEqualTo(1L);
+        assertThat(stats.getPublishCount()).isEqualTo(1L);
     }
 
     @Test
@@ -165,10 +165,10 @@ class RedisPubSubManagerIT extends EventloopTestBase {
         CacheInvalidationListener listener = received::add;
 
         subscriberManager.subscribe(listener);
-        assertThat(subscriberManager.getStats().listenerCount()).isEqualTo(1);
+        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(1);
 
         subscriberManager.unsubscribe(listener);
-        assertThat(subscriberManager.getStats().listenerCount()).isEqualTo(0);
+        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(0);
     }
 
     @Test
@@ -179,7 +179,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
                 "tenant-clear", "publisher-1");
         runPromise(() -> publisherManager.publish(msg));
 
-        assertThat(publisherManager.getStats().publishCount()).isEqualTo(1L);
+        assertThat(publisherManager.getStats().getPublishCount()).isEqualTo(1L);
     }
 
     @Test

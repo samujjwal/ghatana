@@ -53,6 +53,10 @@ dependencies {
 
 tasks.named<Test>("test") {
     useJUnitPlatform()
+    // Limit parallel execution to 1 fork: DataCloudHttpServer tests (12 total)
+    // consume significant resources (Eventloop, server threads, port binding).
+    // Running >1 test class in parallel causes resource exhaustion and hangs.
+    maxParallelForks = 1
 }
 
 // HTTP endpoint test suites re-enabled as part of DATA_CLOUD_REMEDIATION_IMPLEMENTATION_PLAN Phase 3.

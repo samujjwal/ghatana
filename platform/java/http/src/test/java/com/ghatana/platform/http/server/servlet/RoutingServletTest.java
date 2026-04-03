@@ -91,7 +91,7 @@ class RoutingServletTest extends EventloopTestBase {
     void getRouteDoesNotMatchDelete() {
         servlet.addRoute(HttpMethod.GET, "/resource", req -> HttpResponse.ok200().build());
 
-        HttpRequest request = HttpRequest.delete("http://localhost/resource").build();
+        HttpRequest request = HttpRequest.post("http://localhost/resource").build();
         HttpResponse response = runPromise(() -> servlet.serve(request));
 
         assertThat(response.getCode()).isEqualTo(404);

@@ -250,7 +250,7 @@ class DeliverySpecialistsRecordTest {
             var generator = new BudgetGateAgent.BudgetGateGenerator();
             var costPromise = generator.estimateCost(null, null);
             // Promise.of() returns immediately
-            assertThat(costPromise.getResult()).isEqualTo(0.0);
+            assertThat(costPromise.getResult()).isEqualTo(0.0); // y04-ok: Promise.of() is synchronous
         }
     }
 }

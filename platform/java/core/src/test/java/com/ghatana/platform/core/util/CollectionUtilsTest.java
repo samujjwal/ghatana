@@ -95,7 +95,7 @@ class CollectionUtilsTest {
     @Test
     @DisplayName("mapList transforms each element")
     void mapListTransformsElements() {
-        List<String> result = CollectionUtils.mapList(List.of("a", "bb", "ccc"), String::length);
+        List<Integer> result = CollectionUtils.mapList(List.of("a", "bb", "ccc"), String::length);
         assertThat(result).containsExactly(1, 2, 3);
     }
 

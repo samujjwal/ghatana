@@ -79,8 +79,8 @@ class FlywayMigrationIT {
 
         FlywayMigration.MigrationResult result = migration.migrate();
 
-        assertThat(result.migrationsExecuted()).isGreaterThanOrEqualTo(2);
-        assertThat(result.success()).isTrue();
+        assertThat(result.getMigrationsExecuted()).isGreaterThanOrEqualTo(2);
+        assertThat(result.isSuccess()).isTrue();
     }
 
     @Test
@@ -110,8 +110,8 @@ class FlywayMigrationIT {
         migration.migrate();
         FlywayMigration.MigrationResult second = migration.migrate();
 
-        assertThat(second.migrationsExecuted()).isEqualTo(0);
-        assertThat(second.success()).isTrue();
+        assertThat(second.getMigrationsExecuted()).isEqualTo(0);
+        assertThat(second.isSuccess()).isTrue();
     }
 
     @Test
@@ -125,8 +125,8 @@ class FlywayMigrationIT {
 
         FlywayMigration.ValidationResult validation = migration.validate();
 
-        assertThat(validation.validationSuccessful()).isTrue();
-        assertThat(validation.errorDetails()).isEmpty();
+        assertThat(validation.isValid()).isTrue();
+        assertThat(validation.getErrors()).isEmpty();
     }
 
     @Test
@@ -140,9 +140,9 @@ class FlywayMigrationIT {
 
         FlywayMigration.MigrationStatus status = migration.getStatus();
 
-        assertThat(status.currentVersion()).isNotNull();
-        assertThat(status.currentVersion()).contains("2"); // V2 is latest
-        assertThat(status.totalMigrations()).isGreaterThanOrEqualTo(2);
+        assertThat(status.getCurrentVersion()).isNotNull();
+        assertThat(status.getCurrentVersion()).contains("2"); // V2 is latest
+        assertThat(status.getTotalMigrations()).isGreaterThanOrEqualTo(2);
     }
 
     @Test
@@ -157,7 +157,7 @@ class FlywayMigrationIT {
         // or may throw depending on mode — we verify it either succeeds or raises
         try {
             FlywayMigration.MigrationResult result = migration.migrate();
-            assertThat(result.migrationsExecuted()).isEqualTo(0);
+            assertThat(result.getMigrationsExecuted()).isEqualTo(0);
         } catch (MigrationException e) {
             // Also acceptable
             assertThat(e.getMessage()).isNotBlank();

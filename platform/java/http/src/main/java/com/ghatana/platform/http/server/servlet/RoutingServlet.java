@@ -267,7 +267,7 @@ public class RoutingServlet implements AsyncServlet {
         
         // Try pattern matching
         for (Route route : routes.values()) {
-            if (route.method == request.getMethod()) {
+            if (route.method == null || route.method == request.getMethod()) {
                 Map<String, String> params = route.match(path);
                 if (params != null) {
                     // Path parameters are matched but not added to request in ActiveJ 6.0
@@ -321,7 +321,7 @@ public class RoutingServlet implements AsyncServlet {
     }
     
     private String routeKey(HttpMethod method, String path) {
-        return method.name() + ":" + path;
+        return (method != null ? method.name() : "*") + ":" + path;
     }
     
     /**
@@ -348,6 +348,12 @@ public class RoutingServlet implements AsyncServlet {
                 params.add(matcher.group(1));
                 regex = regex.replace(":" + matcher.group(1), "([^/]+)");
             }
+            
+            // Convert wildcard patterns to valid regex: ** -> .*, * -> [^/]+
+            // Must replace ** before * to avoid double-replacement
+            regex = regex.replace("**", "\u0000")  // placeholder
+                         .replace("*", "[^/]+")
+                         .replace("\u0000", ".*");
             
             this.paramNames = params.toArray(new String[0]);
             this.compiledPattern = Pattern.compile("^" + regex + "$");

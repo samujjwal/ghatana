@@ -9,7 +9,6 @@ import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.platform.security.annotation.RequiresPermission;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
@@ -57,7 +56,7 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
     }
 
     private static HttpRequest postRequest(String path) {
-        return HttpRequest.of(HttpMethod.POST, "http://localhost" + path).build();
+        return HttpRequest.post("http://localhost" + path).build();
     }
 
     @AfterEach
@@ -108,11 +107,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("GET /events", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(alice)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(getRequest("/events"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
+                return filter.apply(getRequest("/events"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     @Test
@@ -125,11 +125,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("GET /events", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(bob)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(getRequest("/events"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(403);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(bob)) {
+                return filter.apply(getRequest("/events"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(403);
     }
 
     // ── Tests: wildcard matching ───────────────────────────────────────────────
@@ -145,11 +146,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = EventReadRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("GET /events", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(alice)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(getRequest("/events"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
+                return filter.apply(getRequest("/events"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     @Test
@@ -162,11 +164,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = EventWriteRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("POST /events", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(admin)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(postRequest("/events"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(admin)) {
+                return filter.apply(postRequest("/events"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     // ── Tests: anyOf ─────────────────────────────────────────────────────────
@@ -182,11 +185,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("GET /events/any", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(alice)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(getRequest("/events/any"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
+                return filter.apply(getRequest("/events/any"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     @Test
@@ -199,11 +203,12 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         RequiresPermission ann = AnyOfRoute.class.getAnnotation(RequiresPermission.class);
         filter.registerRoutePermission("GET /events/any", ann);
 
-        try (TenantContext.Scope ignored = TenantContext.scope(bob)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(getRequest("/events/any"), OK_DELEGATE));
-            assertThat(response.getCode()).isEqualTo(403);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(bob)) {
+                return filter.apply(getRequest("/events/any"), OK_DELEGATE);
+            }
+        });
+        assertThat(response.getCode()).isEqualTo(403);
     }
 
     // ── Tests: registerRouteClass ─────────────────────────────────────────────
@@ -220,15 +225,16 @@ class PermissionEnforcerFilterTest extends EventloopTestBase {
         String fakeRoutePath = EventReadRoute.class.getName();
         Principal alice = new Principal("alice", List.of("USER"));
 
-        try (TenantContext.Scope ignored = TenantContext.scope(alice)) {
-            HttpResponse response = runPromise(() ->
-                    filter.apply(
-                            HttpRequest.get("http://localhost/" + fakeRoutePath).build(),
-                            OK_DELEGATE));
-            // The route key lookup uses method + " " + path; "GET /class.name" won't match
-            // So it passes through (no constraint found for that exact routeKey)
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(alice)) {
+                return filter.apply(
+                        HttpRequest.get("http://localhost/" + fakeRoutePath).build(),
+                        OK_DELEGATE);
+            }
+        });
+        // The route key lookup uses method + " " + path; "GET /class.name" won't match
+        // So it passes through (no constraint found for that exact routeKey)
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     @Test

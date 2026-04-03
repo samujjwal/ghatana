@@ -1,12 +1,11 @@
 package com.ghatana.aep.engine.registry;
 
 import io.activej.promise.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Central agent registry service for AEP v2.5+.
@@ -50,42 +49,5 @@ public class AepCentralRegistryService {
     public Promise<Void> deregisterAgent(String agentId) {
         log.debug("Deregistering agent: {}", agentId);
         return Promise.complete();
-    }
-
-    /**
-     * Agent metadata and discovery information.
-     */
-    public static class AgentInfo {
-        public String id;
-        public String name;
-        public String type;
-        public String status;
-
-        public AgentInfo(String id, String name, String type) {
-            this.id = id;
-            this.name = name;
-            this.type = type;
-            this.status = "ACTIVE";
-        }
-
-        @Override
-        public String toString() {
-            return "AgentInfo{" + "id='" + id + '\'' + ", name='" + name + '\'' + ", type='" + type + '\'' + '}';
-        }
-    }
-
-    /**
-     * Result of agent execution.
-     */
-    public static class AgentExecutionResult {
-        public String agentId;
-        public Object output;
-        public long executionTimeMs;
-
-        public AgentExecutionResult(String agentId, Object output, long executionTimeMs) {
-            this.agentId = agentId;
-            this.output = output;
-            this.executionTimeMs = executionTimeMs;
-        }
     }
 }

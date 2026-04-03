@@ -149,7 +149,7 @@ class AsyncServletDecoratorTest extends EventloopTestBase {
         // Decorator adds a custom header to whatever next returns
         AsyncServletDecorator headerAdder = next -> request ->
                 next.serve(request).map(resp ->
-                        HttpResponse.builder(resp.getCode()).build());
+                        HttpResponse.ofCode(resp.getCode()).build());
 
         AsyncServlet wrapped = headerAdder.serve(OK_SERVLET);
 

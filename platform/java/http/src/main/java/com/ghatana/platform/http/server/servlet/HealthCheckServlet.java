@@ -82,6 +82,10 @@ public final class HealthCheckServlet {
             String serviceName,
             String version) {
 
+        java.util.Objects.requireNonNull(builder, "builder must not be null");
+        java.util.Objects.requireNonNull(serviceName, "serviceName must not be null");
+        java.util.Objects.requireNonNull(version, "version must not be null");
+
         return builder
                 .with(HttpMethod.GET, "/health", request -> {
                     String body = buildResponseBody(serviceName, version, "UP");

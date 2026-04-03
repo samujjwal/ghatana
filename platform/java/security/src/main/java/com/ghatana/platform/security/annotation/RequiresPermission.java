@@ -45,7 +45,7 @@ public @interface RequiresPermission {
      * 
      * @return The permission string
      */
-    String value();
+    String value() default "";
     
     /**
      * Optional: Specifies if all listed permissions are required (AND) or any one of them (OR).

@@ -188,7 +188,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @displayName("should verify hashed passwords correctly")
+    @DisplayName("should verify hashed passwords correctly")
     void shouldVerifyHashedPasswordsCorrectly() {
         String password = "mySecurePassword123";
         String hashedPassword = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";

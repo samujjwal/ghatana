@@ -191,10 +191,11 @@ public class AgentOrchestrator {
             boolean stopOnError
     ) {
         // Execute all steps in the stage in parallel
-        List<Promise<Void>> stepPromises = new ArrayList<>();
+        // Use Boolean sentinel to avoid List.of(null) NPE from Promises.toList() with Void results
+        List<Promise<Boolean>> stepPromises = new ArrayList<>();
 
         for (WorkflowStep step : stage) {
-            Promise<Void> stepPromise = executeStep(step, results, context)
+            Promise<Boolean> stepPromise = executeStep(step, results, context)
                     .then(result -> {
                         results.put(step.id(), result);
 
@@ -202,7 +203,7 @@ public class AgentOrchestrator {
                             return Promise.ofException(new WorkflowStepException(step.id(), result.error()));
                         }
 
-                        return Promise.complete();
+                        return Promise.of(Boolean.TRUE);
                     });
 
             stepPromises.add(stepPromise);

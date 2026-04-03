@@ -5,23 +5,18 @@
 package com.ghatana.aep.engine.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.agent.AgentDescriptor;
-import com.ghatana.agent.AgentConfig;
 import com.ghatana.aep.engine.registry.AepCentralRegistryService;
 import com.ghatana.aep.engine.registry.AgentExecutionService;
 import com.ghatana.aep.engine.registry.AgentInfo;
-import com.ghatana.aep.engine.controller.HttpHandlerUtils;
-import com.ghatana.platform.core.error.ApiException;
 import io.activej.http.*;
 import io.activej.promise.Promise;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Unified agent registry HTTP controller for AEP runtime.
@@ -106,7 +101,8 @@ public final class AepAgentRegistryController {
     public Promise<HttpResponse> listAgents(@NotNull HttpRequest request) {
         Objects.requireNonNull(request, "request");
 
-        return registryService.listAll()
+        return registryService
+                .listAll()
                 .map(agents -> {
                     // Apply optional filters
                     List<AgentInfo> filtered = agents;
@@ -133,9 +129,9 @@ public final class AepAgentRegistryController {
                     }
 
                     Map<String, Object> response = new LinkedHashMap<>();
-                    response.put("agents", filtered.stream()
-                            .map(this::toAgentSummary)
-                            .collect(Collectors.toList()));
+                    response.put(
+                            "agents",
+                            filtered.stream().map(this::toAgentSummary).collect(Collectors.toList()));
                     response.put("total", filtered.size());
                     response.put("timestamp", Instant.now().toString());
 
@@ -168,9 +164,9 @@ public final class AepAgentRegistryController {
             return Promise.of(httpUtils.errorResponse(400, "agentId path parameter required"));
         }
 
-        return registryService.resolve(agentId)
-                .map(optAgent -> optAgent
-                        .map(agent -> {
+        return registryService
+                .resolve(agentId)
+                .map(optAgent -> optAgent.map(agent -> {
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("id", agent.id());
                             response.put("name", agent.name());
@@ -231,7 +227,8 @@ public final class AepAgentRegistryController {
                     return Promise.of(httpUtils.errorResponse(400, "input field required in request body"));
                 }
 
-                return executionService.execute(agentId, input)
+                return executionService
+                        .execute(agentId, input)
                         .map(result -> {
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("agentId", agentId);
@@ -275,24 +272,24 @@ public final class AepAgentRegistryController {
             return Promise.of(httpUtils.errorResponse(400, "agentId path parameter required"));
         }
 
-        return registryService.resolve(agentId)
+        return registryService
+                .resolve(agentId)
                 .flatMap(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
 
-                    return executionService.checkHealth(agentId)
-                            .map(health -> {
-                                Map<String, Object> response = new LinkedHashMap<>();
-                                response.put("agentId", agentId);
-                                response.put("status", health.status()); // OK, DEGRADED, ERROR
-                                response.put("uptime", health.uptimeMs());
-                                response.put("lastExecution", health.lastExecutionTime());
-                                response.put("failureRate", health.failureRate());
-                                response.put("timestamp", Instant.now().toString());
+                    return executionService.checkHealth(agentId).map(health -> {
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("agentId", agentId);
+                        response.put("status", health.status()); // OK, DEGRADED, ERROR
+                        response.put("uptime", health.uptimeMs());
+                        response.put("lastExecution", health.lastExecutionTime());
+                        response.put("failureRate", health.failureRate());
+                        response.put("timestamp", Instant.now().toString());
 
-                                return httpUtils.jsonResponse(200, response);
-                            });
+                        return httpUtils.jsonResponse(200, response);
+                    });
                 })
                 .whenException(e -> {
                     log.error("Failed to check health for agent [{}]: {}", agentId, e.getMessage());
@@ -338,32 +335,31 @@ public final class AepAgentRegistryController {
             }
         }
 
-        return registryService.resolve(agentId)
+        return registryService
+                .resolve(agentId)
                 .flatMap(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
 
-                    return executionService.getHistory(agentId, limit)
-                            .map(executions -> {
-                                List<Map<String, Object>> historyList = executions.stream()
-                                        .map(exec -> Map.<String, Object>of(
-                                                "executionId", exec.executionId(),
-                                                "status", exec.status(),
-                                                "input", exec.input(),
-                                                "output", exec.output(),
-                                                "duration", exec.durationMs(),
-                                                "timestamp", exec.timestamp()
-                                        ))
-                                        .collect(Collectors.toList());
+                    return executionService.getHistory(agentId, limit).map(executions -> {
+                        List<Map<String, Object>> historyList = executions.stream()
+                                .map(exec -> Map.<String, Object>of(
+                                        "executionId", exec.executionId(),
+                                        "status", exec.status(),
+                                        "input", exec.input(),
+                                        "output", exec.output(),
+                                        "duration", exec.durationMs(),
+                                        "timestamp", exec.timestamp()))
+                                .collect(Collectors.toList());
 
-                                Map<String, Object> response = new LinkedHashMap<>();
-                                response.put("agentId", agentId);
-                                response.put("executions", historyList);
-                                response.put("total", historyList.size());
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("agentId", agentId);
+                        response.put("executions", historyList);
+                        response.put("total", historyList.size());
 
-                                return httpUtils.jsonResponse(200, response);
-                            });
+                        return httpUtils.jsonResponse(200, response);
+                    });
                 })
                 .whenException(e -> {
                     log.error("Failed to get history for agent [{}]: {}", agentId, e.getMessage());
@@ -392,23 +388,23 @@ public final class AepAgentRegistryController {
             return Promise.of(httpUtils.errorResponse(400, "agentId path parameter required"));
         }
 
-        return registryService.resolve(agentId)
+        return registryService
+                .resolve(agentId)
                 .flatMap(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
 
-                    return executionService.getMemory(agentId)
-                            .map(memory -> {
-                                Map<String, Object> response = new LinkedHashMap<>();
-                                response.put("agentId", agentId);
-                                response.put("episodic", memory.episodic()); // Recent executions
-                                response.put("semantic", memory.semantic()); // Learned facts
-                                response.put("procedural", memory.procedural()); // Learned behaviors
-                                response.put("lastUpdated", memory.lastUpdated());
+                    return executionService.getMemory(agentId).map(memory -> {
+                        Map<String, Object> response = new LinkedHashMap<>();
+                        response.put("agentId", agentId);
+                        response.put("episodic", memory.episodic()); // Recent executions
+                        response.put("semantic", memory.semantic()); // Learned facts
+                        response.put("procedural", memory.procedural()); // Learned behaviors
+                        response.put("lastUpdated", memory.lastUpdated());
 
-                                return httpUtils.jsonResponse(200, response);
-                            });
+                        return httpUtils.jsonResponse(200, response);
+                    });
                 })
                 .whenException(e -> {
                     log.error("Failed to get memory for agent [{}]: {}", agentId, e.getMessage());
@@ -444,17 +440,17 @@ public final class AepAgentRegistryController {
         //     return Promise.of(httpUtils.errorResponse(403, "Admin role required"));
         // }
 
-        return registryService.resolve(agentId)
+        return registryService
+                .resolve(agentId)
                 .flatMap(optAgent -> {
                     if (optAgent.isEmpty()) {
                         return Promise.of(httpUtils.errorResponse(404, "Agent not found: " + agentId));
                     }
 
-                    return registryService.deregister(agentId)
-                            .map(v -> {
-                                log.info("Agent [{}] deregistered", agentId);
-                                return HttpResponse.ok204();
-                            });
+                    return registryService.deregister(agentId).map(v -> {
+                        log.info("Agent [{}] deregistered", agentId);
+                        return HttpResponse.ok204();
+                    });
                 })
                 .whenException(e -> {
                     log.error("Failed to deregister agent [{}]: {}", agentId, e.getMessage());

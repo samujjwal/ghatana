@@ -264,9 +264,13 @@ public class SessionFilter {
             return realIp;
         }
 
-        // Fall back to remote address
-        java.net.InetAddress addr = request.getRemoteAddress();
-        return addr != null ? addr.getHostAddress() : "";
+        // Fall back to remote address — getRemoteAddress() throws if not set (e.g. in tests)
+        try {
+            java.net.InetAddress addr = request.getRemoteAddress();
+            return addr != null ? addr.getHostAddress() : "";
+        } catch (NullPointerException ignored) {
+            return "";
+        }
     }
     
     /**

@@ -150,7 +150,7 @@ class AgentBaseTypesTest {
             assertThat(output.getResponseId()).isEqualTo("resp-001");
             assertThat(output.getStatus()).isEqualTo(AgentOutput.ExecutionStatus.SUCCESS);
             assertThat(output.getTimestamp()).isEqualTo(now);
-            assertThat(output.getResult()).isEqualTo("done");
+            assertThat(output.getResult()).isEqualTo("done"); // y04-ok: domain getter, not ActiveJ Promise
         }
 
         @Test

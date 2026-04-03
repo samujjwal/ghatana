@@ -15,12 +15,12 @@ public class HttpHandlerUtils {
 
     public static HttpResponse jsonResponse(int status, Object data) {
         // Stub implementation
-        return HttpResponse.ok200();
+        return HttpResponse.ok200().build();
     }
 
     public static HttpResponse errorResponse(int status, String message) {
         // Stub implementation
-        return HttpResponse.ofCode(status);
+        return HttpResponse.ofCode(status).build();
     }
 
     public static Map<String, Object> toJson(Object obj) {

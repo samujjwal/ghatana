@@ -101,7 +101,7 @@ class DatabaseHealthCheckTest {
 
         HealthStatus status = check.check();
 
-        assertThat(status.getResponseTime()).isNotNegative();
+        assertThat(status.getResponseTime()).isGreaterThanOrEqualTo(Duration.ZERO);
     }
 
     @Test

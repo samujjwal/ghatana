@@ -164,7 +164,8 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
         MockDataCloudRegistry dcRegistry = new MockDataCloudRegistry();
 
-        String registered = runPromise(() -> dcRegistry.register(agent, config)
+        String registered = runPromise(() -> dcRegistry
+                .register(agent, config)
                 .then(() -> dcRegistry.resolve("agent-001"))
                 .map(resolved -> resolved.isPresent() ? "registered" : "not-found"));
 
@@ -213,8 +214,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
         runPromise(() -> registry.register(agent, config));
 
-        Optional<TypedAgent<String, String>> resolved = runPromise(
-                () -> registry.resolve("resolver-agent"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("resolver-agent"));
 
         assertTrue(resolved.isPresent());
         assertEquals("resolver-agent", resolved.get().descriptor().getAgentId());
@@ -225,8 +225,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
     void testResolveNonExistentAgent() {
         MockDataCloudRegistry registry = new MockDataCloudRegistry();
 
-        Optional<TypedAgent<String, String>> resolved = runPromise(
-                () -> registry.resolve("nonexistent-agent"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("nonexistent-agent"));
 
         assertFalse(resolved.isPresent());
     }
@@ -244,11 +243,9 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
                 .retries(3)
                 .build();
 
-        runPromise(() -> registry.register(agent, config)
-                .then(() -> registry.deregister("dereg-agent")));
+        runPromise(() -> registry.register(agent, config).then(() -> registry.deregister("dereg-agent")));
 
-        Optional<TypedAgent<String, String>> resolved = runPromise(
-                () -> registry.resolve("dereg-agent"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("dereg-agent"));
 
         assertFalse(resolved.isPresent());
     }
@@ -361,14 +358,12 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
         runPromise(() -> registry.register(agent, config));
 
-        String result = runPromise(() -> registry.resolve("exec-agent")
-                .flatMap(optAgent -> {
-                    if (optAgent.isEmpty()) {
-                        return Promise.of("not-found");
-                    }
-                    return optAgent.get().process(null, "test-input")
-                            .map(agentResult -> (String) agentResult.output());
-                }));
+        String result = runPromise(() -> registry.resolve("exec-agent").flatMap(optAgent -> {
+            if (optAgent.isEmpty()) {
+                return Promise.of("not-found");
+            }
+            return optAgent.get().process(null, "test-input").map(agentResult -> (String) agentResult.output());
+        }));
 
         assertEquals("exec-agent processed: test-input", result);
     }
@@ -401,8 +396,8 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
                 .retries(3)
                 .build();
 
-        runPromise(() -> dcRegistry.register(dcAgent, dcConfig)
-                .then(() -> yappcRegistry.register(yappcAgent, yappcConfig)));
+        runPromise(() ->
+                dcRegistry.register(dcAgent, dcConfig).then(() -> yappcRegistry.register(yappcAgent, yappcConfig)));
 
         // In unified API, both should be discoverable
         Set<String> dcAgents = runPromise(dcRegistry::listAgentIds);
@@ -435,12 +430,10 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
         // 1. agent.registered
         // 2. agent.deregistered
 
-        runPromise(() -> registry.register(agent, config)
-                .then(() -> registry.deregister("audit-agent")));
+        runPromise(() -> registry.register(agent, config).then(() -> registry.deregister("audit-agent")));
 
         // Verify agent is no longer accessible
-        Optional<TypedAgent<String, String>> resolved = runPromise(
-                () -> registry.resolve("audit-agent"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("audit-agent"));
 
         assertFalse(resolved.isPresent());
     }
@@ -463,8 +456,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
                 .build();
 
         // Register twice (second registration overwrites first)
-        runPromise(() -> registry.register(agent, config)
-                .then(() -> registry.register(agent, config)));
+        runPromise(() -> registry.register(agent, config).then(() -> registry.register(agent, config)));
 
         Set<String> agents = runPromise(registry::listAgentIds);
 
@@ -502,8 +494,8 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
             for (int i = 1; i <= 5; i++) {
                 int idx = i;
                 result = result.then(() -> {
-                    MockAgentDescriptor desc = new MockAgentDescriptor(
-                            "concurrent-" + idx, "Concurrent " + idx, "1.0.0");
+                    MockAgentDescriptor desc =
+                            new MockAgentDescriptor("concurrent-" + idx, "Concurrent " + idx, "1.0.0");
                     MockAgent agent = new MockAgent(desc);
                     return registry.register(agent, config);
                 });

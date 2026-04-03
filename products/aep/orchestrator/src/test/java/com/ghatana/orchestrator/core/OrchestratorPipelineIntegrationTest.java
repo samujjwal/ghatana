@@ -5,17 +5,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.ghatana.orchestrator.core.registry.PipelineRegistryClient;
-import com.ghatana.orchestrator.core.cache.PipelineCache;
 import com.ghatana.orchestrator.core.agent.AgentRegistryClient;
+import com.ghatana.orchestrator.core.cache.PipelineCache;
+import com.ghatana.orchestrator.core.registry.PipelineRegistryClient;
 import com.ghatana.platform.core.async.Promise;
 import com.ghatana.platform.core.async.Promises;
 import com.ghatana.platform.observability.metrics.MetricsCollector;
 import io.activej.eventloop.EventloopTestBase;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,12 +53,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         agentStore = new ConcurrentHashMap<>();
         pipelineCache = new InMemoryPipelineCache(pipelineStore);
 
-        orchestrator = new Orchestrator(
-                pipelineRegistry,
-                agentRegistry,
-                pipelineCache,
-                metricsCollector
-        );
+        orchestrator = new Orchestrator(pipelineRegistry, agentRegistry, pipelineCache, metricsCollector);
     }
 
     @Nested
@@ -76,25 +69,19 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             pipelineStore.put(pipelineId, pipeline);
 
             // Mock registry to return pipeline
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             // Mock agent validation - all agents valid
             mockAgentValidation(pipeline, true);
 
             // Execute
-            OrchestratorPipelineEntity deployed = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify
             assertThat(deployed).isNotNull();
             assertThat(deployed.id()).isEqualTo(pipelineId);
             verify(metricsCollector).incrementCounter("orch.pipeline.deployed");
-            verify(metricsCollector).recordTimer(
-                    argThat(s -> s.contains("deploy.time")),
-                    anyLong()
-            );
+            verify(metricsCollector).recordTimer(argThat(s -> s.contains("deploy.time")), anyLong());
         }
 
         @Test
@@ -102,13 +89,10 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         void shouldFailDeploymentWhenPipelineNotFound() {
             // Setup
             String pipelineId = "nonexistent-pipeline";
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.empty()));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.empty()));
 
             // Execute
-            OrchestratorPipelineEntity result = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity result = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify
             assertThat(result).isNull();
@@ -123,16 +107,13 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             // Mock agent validation - at least one agent invalid
             mockAgentValidation(pipeline, false);
 
             // Execute
-            OrchestratorPipelineEntity result = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity result = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify
             assertThat(result).isNull();
@@ -147,8 +128,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             // Execute first deployment
@@ -159,8 +139,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
             // Execute second deployment
             reset(pipelineRegistry);
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             runPromise(() -> orchestrator.deployPipeline(pipelineId));
@@ -177,34 +156,26 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             // Deploy first
             runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Undeploy
-            Boolean undeployed = runPromise(() ->
-                    orchestrator.undeployPipeline(pipelineId)
-            );
+            Boolean undeployed = runPromise(() -> orchestrator.undeployPipeline(pipelineId));
 
             // Verify
             assertTrue(undeployed);
             verify(metricsCollector).incrementCounter("orch.pipeline.undeployed");
-            verify(metricsCollector).recordTimer(
-                    argThat(s -> s.contains("undeploy.time")),
-                    anyLong()
-            );
+            verify(metricsCollector).recordTimer(argThat(s -> s.contains("undeploy.time")), anyLong());
         }
 
         @Test
         @DisplayName("Should handle undeploy of non-existent pipeline gracefully")
         void shouldHandleUndeployOfNonExistentPipeline() {
             // Execute undeploy of non-existent pipeline
-            Boolean undeployed = runPromise(() ->
-                    orchestrator.undeployPipeline("nonexistent-pipeline")
-            );
+            Boolean undeployed = runPromise(() -> orchestrator.undeployPipeline("nonexistent-pipeline"));
 
             // Verify - should return false but not throw
             assertFalse(undeployed);
@@ -220,27 +191,21 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         void shouldValidateAllAgents() {
             // Setup
             String pipelineId = "multi-agent-pipeline";
-            OrchestratorPipelineEntity pipeline = createTestPipelineWithAgents(
-                    pipelineId,
-                    "agent-1", "agent-2", "agent-3"
-            );
+            OrchestratorPipelineEntity pipeline =
+                    createTestPipelineWithAgents(pipelineId, "agent-1", "agent-2", "agent-3");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             // Mock all agents as valid
             for (String agentId : List.of("agent-1", "agent-2", "agent-3")) {
                 AgentEntity agent = createTestAgent(agentId, "active");
                 agentStore.put(agentId, agent);
-                when(agentRegistry.getAgent(agentId))
-                        .thenReturn(Promise.of(Optional.of(agent)));
+                when(agentRegistry.getAgent(agentId)).thenReturn(Promise.of(Optional.of(agent)));
             }
 
             // Execute
-            OrchestratorPipelineEntity deployed = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify all agents were validated
             assertThat(deployed).isNotNull();
@@ -254,33 +219,24 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         void shouldRejectMissingAgents() {
             // Setup
             String pipelineId = "invalid-agent-pipeline";
-            OrchestratorPipelineEntity pipeline = createTestPipelineWithAgents(
-                    pipelineId,
-                    "agent-1", "agent-missing"
-            );
+            OrchestratorPipelineEntity pipeline = createTestPipelineWithAgents(pipelineId, "agent-1", "agent-missing");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             when(agentRegistry.getAgent("agent-1"))
-                    .thenReturn(Promise.of(Optional.of(
-                            createTestAgent("agent-1", "active")
-                    )));
-            when(agentRegistry.getAgent("agent-missing"))
-                    .thenReturn(Promise.of(Optional.empty()));
+                    .thenReturn(Promise.of(Optional.of(createTestAgent("agent-1", "active"))));
+            when(agentRegistry.getAgent("agent-missing")).thenReturn(Promise.of(Optional.empty()));
 
             // Execute
-            OrchestratorPipelineEntity result = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity result = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify deployment failed
             assertThat(result).isNull();
-            verify(metricsCollector).incrementCounter(
-                    argThat(s -> s.contains("agent.validation.failed")),
-                    argThat(map -> map.containsValue("not_found"))
-            );
+            verify(metricsCollector)
+                    .incrementCounter(
+                            argThat(s -> s.contains("agent.validation.failed")),
+                            argThat(map -> map.containsValue("not_found")));
         }
 
         @Test
@@ -288,31 +244,24 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         void shouldRejectInactiveAgents() {
             // Setup
             String pipelineId = "inactive-agent-pipeline";
-            OrchestratorPipelineEntity pipeline = createTestPipelineWithAgents(
-                    pipelineId,
-                    "agent-1"
-            );
+            OrchestratorPipelineEntity pipeline = createTestPipelineWithAgents(pipelineId, "agent-1");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             // Agent exists but is inactive
             AgentEntity inactiveAgent = createTestAgent("agent-1", "inactive");
-            when(agentRegistry.getAgent("agent-1"))
-                    .thenReturn(Promise.of(Optional.of(inactiveAgent)));
+            when(agentRegistry.getAgent("agent-1")).thenReturn(Promise.of(Optional.of(inactiveAgent)));
 
             // Execute
-            OrchestratorPipelineEntity result = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity result = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify deployment failed
             assertThat(result).isNull();
-            verify(metricsCollector).incrementCounter(
-                    argThat(s -> s.contains("agent.validation.failed")),
-                    argThat(map -> map.containsValue("not_active"))
-            );
+            verify(metricsCollector)
+                    .incrementCounter(
+                            argThat(s -> s.contains("agent.validation.failed")),
+                            argThat(map -> map.containsValue("not_active")));
         }
 
         @Test
@@ -323,13 +272,10 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
 
             // Execute
-            OrchestratorPipelineEntity deployed = runPromise(() ->
-                    orchestrator.deployPipeline(pipelineId)
-            );
+            OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify
             assertThat(deployed).isNotNull();
@@ -350,8 +296,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             // Execute
@@ -359,10 +304,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
             // Verify timing was recorded
             ArgumentCaptor<Long> durationCaptor = ArgumentCaptor.forClass(Long.class);
-            verify(metricsCollector).recordTimer(
-                    contains("deploy.time"),
-                    durationCaptor.capture()
-            );
+            verify(metricsCollector).recordTimer(contains("deploy.time"), durationCaptor.capture());
             assertThat(durationCaptor.getValue()).isGreaterThanOrEqualTo(0);
         }
 
@@ -374,8 +316,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity validPipeline = createTestPipeline(validId, "active");
             pipelineStore.put(validId, validPipeline);
 
-            when(pipelineRegistry.getPipeline(validId))
-                    .thenReturn(Promise.of(Optional.of(validPipeline)));
+            when(pipelineRegistry.getPipeline(validId)).thenReturn(Promise.of(Optional.of(validPipeline)));
             mockAgentValidation(validPipeline, true);
 
             // Execute valid deployment
@@ -383,8 +324,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
             // Setup - deploy invalid pipeline
             String invalidId = "invalid-pipeline";
-            when(pipelineRegistry.getPipeline(invalidId))
-                    .thenReturn(Promise.of(Optional.empty()));
+            when(pipelineRegistry.getPipeline(invalidId)).thenReturn(Promise.of(Optional.empty()));
 
             // Execute invalid deployment
             runPromise(() -> orchestrator.deployPipeline(invalidId));
@@ -402,19 +342,14 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             // Execute
             runPromise(() -> orchestrator.deployPipeline(pipelineId));
 
             // Verify metrics include pipeline ID tag
-            verify(metricsCollector).recordTimer(
-                    anyString(),
-                    anyLong(),
-                    argThat(s -> s.contains(pipelineId))
-            );
+            verify(metricsCollector).recordTimer(anyString(), anyLong(), argThat(s -> s.contains(pipelineId)));
         }
     }
 
@@ -432,8 +367,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
                 OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
                 pipelineStore.put(pipelineId, pipeline);
 
-                when(pipelineRegistry.getPipeline(pipelineId))
-                        .thenReturn(Promise.of(Optional.of(pipeline)));
+                when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
                 mockAgentValidation(pipeline, true);
             }
 
@@ -445,9 +379,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             }
 
             // Wait for all
-            List<OrchestratorPipelineEntity> results = runPromise(() ->
-                    Promises.all(deployments)
-            );
+            List<OrchestratorPipelineEntity> results = runPromise(() -> Promises.all(deployments));
 
             // Verify all succeeded
             assertThat(results).hasSize(numPipelines);
@@ -464,8 +396,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             OrchestratorPipelineEntity pipeline = createTestPipeline(pipelineId, "active");
             pipelineStore.put(pipelineId, pipeline);
 
-            when(pipelineRegistry.getPipeline(pipelineId))
-                    .thenReturn(Promise.of(Optional.of(pipeline)));
+            when(pipelineRegistry.getPipeline(pipelineId)).thenReturn(Promise.of(Optional.of(pipeline)));
             mockAgentValidation(pipeline, true);
 
             // Deploy
@@ -492,8 +423,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             if (shouldPass) {
                 AgentEntity agent = createTestAgent(agentId, "active");
                 agentStore.put(agentId, agent);
-                when(agentRegistry.getAgent(agentId))
-                        .thenReturn(Promise.of(Optional.of(agent)));
+                when(agentRegistry.getAgent(agentId)).thenReturn(Promise.of(Optional.of(agent)));
             } else {
                 when(agentRegistry.getAgent(argThat(id -> id.contains(agentId))))
                         .thenReturn(Promise.of(Optional.empty()));
@@ -508,26 +438,13 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
     private OrchestratorPipelineEntity createTestPipeline(String id, String status) {
         return new OrchestratorPipelineEntity(
-                id,
-                "pipeline-" + id,
-                "1.0.0",
-                status,
-                "test-config",
-                System.currentTimeMillis()
-        );
+                id, "pipeline-" + id, "1.0.0", status, "test-config", System.currentTimeMillis());
     }
 
-    private OrchestratorPipelineEntity createTestPipelineWithAgents(
-            String id, String... agentIds) {
+    private OrchestratorPipelineEntity createTestPipelineWithAgents(String id, String... agentIds) {
         String config = buildPipelineConfig(agentIds);
         return new OrchestratorPipelineEntity(
-                id,
-                "pipeline-" + id,
-                "1.0.0",
-                "active",
-                config,
-                System.currentTimeMillis()
-        );
+                id, "pipeline-" + id, "1.0.0", "active", config, System.currentTimeMillis());
     }
 
     private String buildPipelineConfig(String... agentIds) {
@@ -541,13 +458,7 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
     }
 
     private AgentEntity createTestAgent(String id, String status) {
-        return new AgentEntity(
-                id,
-                "agent-" + id,
-                status,
-                "test",
-                System.currentTimeMillis()
-        );
+        return new AgentEntity(id, "agent-" + id, status, "test", System.currentTimeMillis());
     }
 
     /**
@@ -595,8 +506,8 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
         private final String config;
         private final long createdAt;
 
-        OrchestratorPipelineEntity(String id, String name, String version, String status,
-                                   String config, long createdAt) {
+        OrchestratorPipelineEntity(
+                String id, String name, String version, String status, String config, long createdAt) {
             this.id = id;
             this.name = name;
             this.version = version;
@@ -605,11 +516,25 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             this.createdAt = createdAt;
         }
 
-        String id() { return id; }
-        String name() { return name; }
-        String version() { return version; }
-        String status() { return status; }
-        String config() { return config; }
+        String id() {
+            return id;
+        }
+
+        String name() {
+            return name;
+        }
+
+        String version() {
+            return version;
+        }
+
+        String status() {
+            return status;
+        }
+
+        String config() {
+            return config;
+        }
     }
 
     static class AgentEntity {
@@ -627,14 +552,22 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
             this.deployedAt = deployedAt;
         }
 
-        String id() { return id; }
-        String status() { return status; }
+        String id() {
+            return id;
+        }
+
+        String status() {
+            return status;
+        }
     }
 
     interface PipelineCache {
         Promise<OrchestratorPipelineEntity> get(String pipelineId);
+
         Promise<Void> put(String pipelineId, OrchestratorPipelineEntity pipeline);
+
         Promise<Boolean> remove(String pipelineId);
+
         Promise<Void> clear();
     }
 

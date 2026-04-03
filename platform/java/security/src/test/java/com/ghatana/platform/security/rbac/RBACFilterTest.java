@@ -80,29 +80,33 @@ class RBACFilterTest extends EventloopTestBase {
     @DisplayName("secure() returns 403 when principal exists but lacks permission")
     void returns403WhenPrincipalLacksPermission() {
         Principal viewer = new Principal("viewer", List.of("USER"), "tenant-1");
-        try (TenantContext.Scope ignored = TenantContext.scope(viewer)) {
-            AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-            HttpRequest request = HttpRequest.get("http://localhost/data").build();
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
+        HttpRequest request = HttpRequest.get("http://localhost/data").build();
 
-            HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(viewer)) {
+                return secured.serve(request);
+            }
+        });
 
-            assertThat(response.getCode()).isEqualTo(403);
-        }
+        assertThat(response.getCode()).isEqualTo(403);
     }
 
     @Test
     @DisplayName("403 response body contains FORBIDDEN code")
     void forbiddenBodyContainsCode() {
         Principal viewer = new Principal("viewer", List.of("USER"), "tenant-1");
-        try (TenantContext.Scope ignored = TenantContext.scope(viewer)) {
-            AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-            HttpRequest request = HttpRequest.get("http://localhost/data").build();
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
+        HttpRequest request = HttpRequest.get("http://localhost/data").build();
 
-            HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(viewer)) {
+                return secured.serve(request);
+            }
+        });
 
-            String body = response.getBody() != null ? new String(response.getBody().asArray()) : "";
-            assertThat(body).contains("FORBIDDEN");
-        }
+        String body = response.getBody() != null ? new String(response.getBody().asArray()) : "";
+        assertThat(body).contains("FORBIDDEN");
     }
 
     // ── Principal with required permission ────────────────────────────────────
@@ -111,14 +115,16 @@ class RBACFilterTest extends EventloopTestBase {
     @DisplayName("secure() delegates to inner servlet when principal has required permission")
     void delegatesWhenPrincipalHasPermission() {
         Principal admin = new Principal("admin-user", List.of("ADMIN"), "tenant-1");
-        try (TenantContext.Scope ignored = TenantContext.scope(admin)) {
-            AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
-            HttpRequest request = HttpRequest.get("http://localhost/data").build();
+        AsyncServlet secured = rbacFilter.secure(OK_DELEGATE);
+        HttpRequest request = HttpRequest.get("http://localhost/data").build();
 
-            HttpResponse response = runPromise(() -> secured.serve(request));
+        HttpResponse response = runPromise(() -> {
+            try (TenantContext.Scope scope = TenantContext.scope(admin)) {
+                return secured.serve(request);
+            }
+        });
 
-            assertThat(response.getCode()).isEqualTo(200);
-        }
+        assertThat(response.getCode()).isEqualTo(200);
     }
 
     // ── Request attachment ────────────────────────────────────────────────────
