@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: tutorputor buikd + other docs [`ba0af83`](https://github.com/samujjwal/ghatana/commit/ba0af83682a9519e8caf7be5f16b83d9fcdf9594)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`61eac4a`](https://github.com/samujjwal/ghatana/commit/61eac4a8b3691141d6f37b2b04c294b105c334ae)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`e6dbbaf`](https://github.com/samujjwal/ghatana/commit/e6dbbaf1baa819d99ccfa9aae87a9f2d561b3767)
 - **Changed**: cleaup and refactors 11 [`6122b5d`](https://github.com/samujjwal/ghatana/commit/6122b5de39bd59f397325793951a4abaae23bb89)
