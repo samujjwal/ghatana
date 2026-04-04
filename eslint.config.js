@@ -1,24 +1,15 @@
 /**
  * Root ESLint flat config for the Ghatana monorepo.
  *
- * This minimal config allows ESLint to run from the workspace root
- * without errors. Per-package ESLint configs (eslint.config.js or
- * eslint.config.mjs) in individual packages take precedence when ESLint
- * is run scoped to those packages.
- *
- * TypeScript-aware lint rules are enforced through per-product eslint
- * configs (e.g. products/yappc/frontend/eslint.config.mjs) which import
- * the full rule set with typescript-eslint and typed checking.
- *
- * For packages without a dedicated config, this baseline applies:
- * - No rules (type-checking is enforced via tsc --noEmit in CI)
- * - Canonical ignore patterns for generated outputs
+ * Platform TypeScript packages (platform/typescript/) are type-checked via
+ * tsc --noEmit. They are excluded here because the root does not bundle
+ * @typescript-eslint/parser. Product-specific lint configs live alongside
+ * each product (e.g. products/yappc/frontend/eslint.config.mjs).
  *
  * @type {import('eslint').Linter.FlatConfig[]}
  */
 module.exports = [
   {
-    // Ignore generated dirs and third-party code across all workspaces
     ignores: [
       "**/dist/**",
       "**/build/**",
@@ -27,12 +18,7 @@ module.exports = [
       "**/*.d.ts",
       "gradlew",
       "gradlew.bat",
+      "platform/typescript/**",
     ],
-  },
-  {
-    // Apply to all TypeScript source files so ESLint doesn't emit
-    // "file ignored because no matching configuration" warnings.
-    files: ["**/*.ts", "**/*.tsx"],
-    rules: {},
   },
 ];
