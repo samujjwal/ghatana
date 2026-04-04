@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, Badge } from '../components/ui';
-import { Button, Input, Spinner } from '@ghatana/design-system';
+import { Card, Badge, Button, Input, Spinner } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 
 interface MarketplaceListing {

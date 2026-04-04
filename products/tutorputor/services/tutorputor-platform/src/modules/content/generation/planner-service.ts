@@ -129,9 +129,12 @@ export class GenerationPlannerService {
         description: input.description ?? null,
         domain: input.domain,
         conceptId: input.conceptId ?? null,
-        targetGrades: input.targetGrades ?? Prisma.JsonNull,
+        targetGrades: input.targetGrades ?? null,
         requestedBy: input.requestedBy,
-        requestConfig: input.requestConfig != null ? (input.requestConfig as Prisma.InputJsonValue) : Prisma.JsonNull,
+        requestConfig:
+          input.requestConfig != null
+            ? (input.requestConfig as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         status: "DRAFT",
       },
     });
@@ -269,7 +272,14 @@ export class GenerationPlannerService {
     // Create jobs for each planned asset
     const jobData = plannedAssets.map((planned) => ({
       requestId,
-      jobType: planned.jobType.toUpperCase() as "CLAIM" | "EXPLAINER" | "WORKED_EXAMPLE" | "SIMULATION" | "ANIMATION" | "ASSESSMENT" | "EVALUATION",
+      jobType: planned.jobType.toUpperCase() as
+        | "CLAIM"
+        | "EXPLAINER"
+        | "WORKED_EXAMPLE"
+        | "SIMULATION"
+        | "ANIMATION"
+        | "ASSESSMENT"
+        | "EVALUATION",
       targetRef: planned.targetRef,
       inputPrompt: planned.description,
       parameters: {
@@ -290,9 +300,16 @@ export class GenerationPlannerService {
           status: "PLANNED",
           plannedAssets: JSON.parse(JSON.stringify(plannedAssets)),
           artifactNeeds: JSON.parse(JSON.stringify(artifactNeeds)),
-          riskLevel: riskAssessment.riskLevel.toUpperCase() as "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+          riskLevel: riskAssessment.riskLevel.toUpperCase() as
+            | "LOW"
+            | "MEDIUM"
+            | "HIGH"
+            | "CRITICAL",
           riskFactors: riskAssessment.riskFactors,
-          reviewPath: reviewPathToEnum(reviewPath) as "AUTO_PUBLISH" | "HUMAN_REVIEW" | "EXPERT_REVIEW",
+          reviewPath: reviewPathToEnum(reviewPath) as
+            | "AUTO_PUBLISH"
+            | "HUMAN_REVIEW"
+            | "EXPERT_REVIEW",
           estimatedCost: JSON.parse(JSON.stringify(estimatedCost)),
           routingDecision: JSON.parse(JSON.stringify(routingDecision)),
           totalJobs: plannedAssets.length,
@@ -377,11 +394,11 @@ export class GenerationPlannerService {
    * Determine which assets/artifacts should be generated.
    */
   private determinePlannedAssets(request: {
-      id: string;
-      domain?: string | null;
-      title?: string | null;
-      description?: string | null;
-      targetGrades?: unknown;
+    id: string;
+    domain?: string | null;
+    title?: string | null;
+    description?: string | null;
+    targetGrades?: unknown;
   }): PlannedAssetDescriptor[] {
     const assets: PlannedAssetDescriptor[] = [];
     const domain = (request.domain ?? "").toLowerCase();
@@ -446,11 +463,11 @@ export class GenerationPlannerService {
    * title content, and grade targeting.
    */
   private assessRisk(request: {
-      id?: string;
-      domain?: string | null;
-      title?: string | null;
-      description?: string | null;
-      targetGrades?: unknown;
+    id?: string;
+    domain?: string | null;
+    title?: string | null;
+    description?: string | null;
+    targetGrades?: unknown;
   }): {
     riskLevel: RiskLevel;
     riskFactors: string[];
@@ -708,15 +725,25 @@ function mapRequest(row: Record<string, unknown>): GenerationRequest {
     ...(row.conceptId ? { conceptId: row.conceptId as string } : {}),
     ...(row.targetGrades ? { targetGrades: row.targetGrades as string[] } : {}),
     requestedBy: row.requestedBy as string,
-    ...(row.requestConfig ? { requestConfig: row.requestConfig as GenerationRequestConfig } : {}),
+    ...(row.requestConfig
+      ? { requestConfig: row.requestConfig as GenerationRequestConfig }
+      : {}),
     status: (row.status as string).toLowerCase() as GenerationRequest["status"],
-    ...(row.plannedAssets ? { plannedAssets: row.plannedAssets as PlannedAssetDescriptor[] } : {}),
-    ...(row.artifactNeeds ? { artifactNeeds: row.artifactNeeds as Record<string, number> } : {}),
+    ...(row.plannedAssets
+      ? { plannedAssets: row.plannedAssets as PlannedAssetDescriptor[] }
+      : {}),
+    ...(row.artifactNeeds
+      ? { artifactNeeds: row.artifactNeeds as Record<string, number> }
+      : {}),
     riskLevel: (row.riskLevel as string).toLowerCase() as RiskLevel,
     ...(row.riskFactors ? { riskFactors: row.riskFactors as string[] } : {}),
     reviewPath: enumToReviewPath(row.reviewPath as string),
-    ...(row.estimatedCost ? { estimatedCost: row.estimatedCost as GenerationCostEstimate } : {}),
-    ...(row.routingDecision ? { routingDecision: row.routingDecision as GenerationRoutingDecision } : {}),
+    ...(row.estimatedCost
+      ? { estimatedCost: row.estimatedCost as GenerationCostEstimate }
+      : {}),
+    ...(row.routingDecision
+      ? { routingDecision: row.routingDecision as GenerationRoutingDecision }
+      : {}),
     totalJobs: row.totalJobs as number,
     completedJobs: row.completedJobs as number,
     failedJobs: row.failedJobs as number,
@@ -741,12 +768,20 @@ function mapJob(row: Record<string, unknown>): GenerationJob {
     jobType: (row.jobType as string).toLowerCase() as GenerationJob["jobType"],
     ...(row.targetRef ? { targetRef: row.targetRef as string } : {}),
     ...(row.inputPrompt ? { inputPrompt: row.inputPrompt as string } : {}),
-    ...(row.parameters ? { parameters: row.parameters as Record<string, unknown> } : {}),
+    ...(row.parameters
+      ? { parameters: row.parameters as Record<string, unknown> }
+      : {}),
     status: (row.status as string).toLowerCase() as GenerationJob["status"],
     progress: row.progress as number,
-    ...(row.outputAssetId ? { outputAssetId: row.outputAssetId as string } : {}),
-    ...(row.outputData ? { outputData: row.outputData as Record<string, unknown> } : {}),
-    ...(row.diagnostics ? { diagnostics: row.diagnostics as Record<string, unknown> } : {}),
+    ...(row.outputAssetId
+      ? { outputAssetId: row.outputAssetId as string }
+      : {}),
+    ...(row.outputData
+      ? { outputData: row.outputData as Record<string, unknown> }
+      : {}),
+    ...(row.diagnostics
+      ? { diagnostics: row.diagnostics as Record<string, unknown> }
+      : {}),
     ...(row.errorMessage ? { errorMessage: row.errorMessage as string } : {}),
     retryCount: row.retryCount as number,
     maxRetries: row.maxRetries as number,

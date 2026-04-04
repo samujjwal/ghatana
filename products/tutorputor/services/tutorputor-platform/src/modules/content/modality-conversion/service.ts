@@ -74,7 +74,7 @@ import {
   inferDifficulty,
   inferSkills,
 } from "../../../../../../libs/tutorputor-core/src/kernel/path/simulation-adapter";
-import { ContentAssetReadService } from "../asset/read-service.js";
+import type { ContentAssetReadService } from "../asset/read-service.js";
 import {
   extractBlockText,
   keepFirstSentences,

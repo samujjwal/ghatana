@@ -98,17 +98,6 @@ export function createSimulationAuthorService(
   }
 
   /**
-   * Record a request for rate limiting.
-   */
-  function recordRequest(tokens: number): void {
-    const now = Date.now();
-    rateLimitState.requests.push(now);
-    for (let i = 0; i < tokens; i++) {
-      rateLimitState.tokens.push(now);
-    }
-  }
-
-  /**
    * Call AI provider with retry logic.
    */
   async function callAI(

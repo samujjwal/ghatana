@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { createServer } from "./createServer";
 import { setupPlatform } from "@tutorputor/platform";
 
-vi.mock("@ghatana/tutorputor-platform", () => ({
+vi.mock("@tutorputor/platform", () => ({
   setupPlatform: vi.fn(async () => undefined),
 }));
 

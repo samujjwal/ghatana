@@ -46,7 +46,7 @@
     "@types/react-window": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "latest",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",

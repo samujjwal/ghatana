@@ -6,15 +6,15 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
 import type {
   VRSessionService,
   TenantId,
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
 import type {
   VRSession,
   VRSessionId,
@@ -24,7 +24,7 @@ import type {
   VRPerformanceMetrics,
   StartVRSessionRequest,
   UpdateVRSessionRequest,
-} from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
 
 export class VRSessionServiceImpl implements VRSessionService {
   constructor(private prisma: PrismaClient) {}
@@ -40,26 +40,26 @@ export class VRSessionServiceImpl implements VRSessionService {
     const lab = await this.prisma.vRLab.findFirst({
       where: { id: data.labId, tenantId, isPublished: true },
       include: {
-        scenes: { orderBy: { order: 'asc' }, take: 1 },
+        scenes: { orderBy: { order: "asc" }, take: 1 },
         objectives: true,
       },
     });
 
     if (!lab) {
-      throw new Error('Lab not found or not published');
+      throw new Error("Lab not found or not published");
     }
 
     if (lab.scenes.length === 0) {
-      throw new Error('Lab has no scenes');
+      throw new Error("Lab has no scenes");
     }
 
     const session = await this.prisma.vRSession.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         tenantId,
         userId,
         labId: data.labId,
-        status: 'initializing',
+        status: "initializing",
         currentSceneId: lab.scenes[0].id,
         deviceType: data.deviceType,
         deviceInfo: data.deviceInfo as Record<string, unknown>,
@@ -122,13 +122,16 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     if (!current) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const progress = current.progress as any;
 
     // Update scene visits if changing scene
-    if (data.currentSceneId && !progress.scenesVisited.includes(data.currentSceneId)) {
+    if (
+      data.currentSceneId &&
+      !progress.scenesVisited.includes(data.currentSceneId)
+    ) {
       progress.scenesVisited.push(data.currentSceneId);
     }
 
@@ -144,7 +147,9 @@ export class VRSessionServiceImpl implements VRSessionService {
         ...(data.currentSceneId && { currentSceneId: data.currentSceneId }),
         progress,
         lastActiveAt: new Date(),
-        totalDuration: Math.floor((Date.now() - current.startedAt.getTime()) / 1000),
+        totalDuration: Math.floor(
+          (Date.now() - current.startedAt.getTime()) / 1000,
+        ),
         ...(data.performanceMetrics && {
           performanceMetrics: {
             ...(current.performanceMetrics as any),
@@ -171,7 +176,7 @@ export class VRSessionServiceImpl implements VRSessionService {
         userId,
       },
       data: {
-        status: 'completed',
+        status: "completed",
         endedAt: new Date(),
         lastActiveAt: new Date(),
       },
@@ -199,7 +204,7 @@ export class VRSessionServiceImpl implements VRSessionService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { startedAt: 'desc' },
+        orderBy: { startedAt: "desc" },
       }),
       this.prisma.vRSession.count({ where }),
     ]);
@@ -225,7 +230,7 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const progress = session.progress as any;
@@ -253,7 +258,7 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const progress = session.progress as any;
@@ -289,7 +294,7 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const currentMetrics = session.performanceMetrics as any;
@@ -325,7 +330,7 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const lab = await this.prisma.vRLab.findFirst({
@@ -334,15 +339,16 @@ export class VRSessionServiceImpl implements VRSessionService {
     });
 
     const progress = session.progress as any;
-    const maxPoints = lab?.objectives.reduce((sum, o) => sum + o.points, 0) || 0;
+    const maxPoints =
+      lab?.objectives.reduce((sum, o) => sum + o.points, 0) || 0;
     const completionRate = maxPoints > 0 ? progress.totalPoints / maxPoints : 0;
 
     let rank: string | undefined;
-    if (completionRate >= 0.9) rank = 'A';
-    else if (completionRate >= 0.8) rank = 'B';
-    else if (completionRate >= 0.7) rank = 'C';
-    else if (completionRate >= 0.6) rank = 'D';
-    else rank = 'F';
+    if (completionRate >= 0.9) rank = "A";
+    else if (completionRate >= 0.8) rank = "B";
+    else if (completionRate >= 0.7) rank = "C";
+    else if (completionRate >= 0.6) rank = "D";
+    else rank = "F";
 
     return {
       session: this.mapToVRSession(session),

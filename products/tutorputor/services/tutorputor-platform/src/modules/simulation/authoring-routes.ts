@@ -54,26 +54,30 @@ type SimAuthorConfig = {
 };
 
 type SimulationAuthorService = {
-  generateManifest(request: GenerateManifestRequest): Promise<GenerateManifestResult>;
-  refineManifest(request: RefineManifestRequest): Promise<GenerateManifestResult>;
-  suggestParameters(request: SuggestParametersRequest): Promise<SuggestParametersResult>;
+  generateManifest(
+    request: GenerateManifestRequest,
+  ): Promise<GenerateManifestResult>;
+  refineManifest(
+    request: RefineManifestRequest,
+  ): Promise<GenerateManifestResult>;
+  suggestParameters(
+    request: SuggestParametersRequest,
+  ): Promise<SuggestParametersResult>;
 };
 
 async function createAuthorService(
   app: FastifyInstance,
   config: SimAuthorConfig,
 ): Promise<SimulationAuthorService> {
-  const importer = new Function("specifier", "return import(specifier);") as (
-    specifier: string,
-  ) => Promise<{
-    createSimulationAuthorService: (
-      prisma: FastifyInstance["prisma"],
-      serviceConfig: SimAuthorConfig,
-    ) => SimulationAuthorService;
-  }>;
-
-  const simulationModule = await importer("@tutorputor/simulation/engine");
-  return simulationModule.createSimulationAuthorService(app.prisma, config);
+  const simulationModule = await import("@tutorputor/simulation/engine");
+  return (
+    simulationModule as unknown as {
+      createSimulationAuthorService: (
+        prisma: FastifyInstance["prisma"],
+        serviceConfig: SimAuthorConfig,
+      ) => SimulationAuthorService;
+    }
+  ).createSimulationAuthorService(app.prisma, config);
 }
 
 function toInputJsonValue(
@@ -110,6 +114,13 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         model: process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20240620",
       },
     });
+  }
+
+  if (config.providers.length === 0) {
+    app.log.warn(
+      "No AI providers configured (OPENAI_API_KEY / ANTHROPIC_API_KEY) — simulation authoring routes will not be registered.",
+    );
+    return;
   }
 
   const service = await createAuthorService(app, config);
@@ -165,7 +176,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       ...(request.query.domain ? { domain: request.query.domain } : {}),
       ...(request.query.q ? { query: request.query.q } : {}),
       ...(request.query.source ? { source: request.query.source } : {}),
-      ...(request.query.bootstrapOnly === "true" ? { bootstrapOnly: true } : {}),
+      ...(request.query.bootstrapOnly === "true"
+        ? { bootstrapOnly: true }
+        : {}),
     });
 
     return reply.send({
@@ -223,7 +236,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   }>("/api/sim-author/auto-presets/:id/bootstrap", async (request, reply) => {
     const manifest = bootstrapCompatibleAutoPreset({
       presetRef: request.params.id,
-      ...(request.query.manifestId ? { manifestId: request.query.manifestId } : {}),
+      ...(request.query.manifestId
+        ? { manifestId: request.query.manifestId }
+        : {}),
       tenantId: getTenantId(request) as TenantId,
       authorId: getUserId(request) as UserId,
       ...(request.query.title ? { title: request.query.title } : {}),
@@ -256,7 +271,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     const exported = exportCompatibleAutoPreset({
       presetRef: request.params.id,
       format: request.query.format ?? "manifest",
-      ...(request.query.manifestId ? { manifestId: request.query.manifestId } : {}),
+      ...(request.query.manifestId
+        ? { manifestId: request.query.manifestId }
+        : {}),
       tenantId: getTenantId(request) as TenantId,
       authorId: getUserId(request) as UserId,
       ...(request.query.title ? { title: request.query.title } : {}),
@@ -309,7 +326,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         description: manifest.description ?? null,
         version: manifest.version,
         domain: manifest.domain as any,
-        manifest: toInputJsonValue(manifest as unknown as Record<string, unknown>),
+        manifest: toInputJsonValue(
+          manifest as unknown as Record<string, unknown>,
+        ),
       },
     });
 
@@ -362,7 +381,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   }>("/api/sim-author/starters/:id/bootstrap", async (request, reply) => {
     const manifest = createSimulationStarterManifest({
       starterRef: request.params.id,
-      ...(request.query.manifestId ? { manifestId: request.query.manifestId } : {}),
+      ...(request.query.manifestId
+        ? { manifestId: request.query.manifestId }
+        : {}),
       tenantId: getTenantId(request) as TenantId,
       authorId: getUserId(request) as UserId,
       ...(request.query.title ? { title: request.query.title } : {}),
@@ -393,7 +414,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     const exported = exportSimulationStarterPackage({
       starterRef: request.params.id,
       format: request.query.format ?? "manifest",
-      ...(request.query.manifestId ? { manifestId: request.query.manifestId } : {}),
+      ...(request.query.manifestId
+        ? { manifestId: request.query.manifestId }
+        : {}),
       tenantId: getTenantId(request) as TenantId,
       authorId: getUserId(request) as UserId,
       ...(request.query.title ? { title: request.query.title } : {}),
@@ -444,7 +467,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
         description: manifest.description ?? null,
         version: manifest.version,
         domain: manifest.domain as any,
-        manifest: toInputJsonValue(manifest as unknown as Record<string, unknown>),
+        manifest: toInputJsonValue(
+          manifest as unknown as Record<string, unknown>,
+        ),
       },
     });
 
@@ -486,7 +511,9 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
   );
 
   app.get("/api/sim-author/templates/summary", async (request, reply) => {
-    return reply.send(await templateLibrary.getTemplateSummary(getTenantId(request)));
+    return reply.send(
+      await templateLibrary.getTemplateSummary(getTenantId(request)),
+    );
   });
 
   app.get(
@@ -498,9 +525,14 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get("/api/sim-author/templates/coverage/starters", async (request, reply) => {
-    return reply.send(await templateLibrary.getStarterCoverage(getTenantId(request)));
-  });
+  app.get(
+    "/api/sim-author/templates/coverage/starters",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.getStarterCoverage(getTenantId(request)),
+      );
+    },
+  );
 
   app.get(
     "/api/sim-author/templates/coverage/auto-presets",
@@ -511,9 +543,14 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get("/api/sim-author/templates/coverage/summary", async (request, reply) => {
-    return reply.send(await templateLibrary.getCoverageSummary(getTenantId(request)));
-  });
+  app.get(
+    "/api/sim-author/templates/coverage/summary",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.getCoverageSummary(getTenantId(request)),
+      );
+    },
+  );
 
   app.get<{
     Querystring: {
@@ -524,7 +561,11 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     return reply.send(
       await templateLibrary.getCatalogProgressMatrix(getTenantId(request), {
         ...(request.query.domains
-          ? { domains: request.query.domains.split(",").map((value) => value.trim()) }
+          ? {
+              domains: request.query.domains
+                .split(",")
+                .map((value) => value.trim()),
+            }
           : {}),
         ...(request.query.audiences
           ? {
@@ -544,14 +585,19 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     Querystring: {
       audience?: "k12" | "undergraduate" | "graduate" | "professional";
     };
-  }>("/api/sim-author/templates/catalog/:domain/backlog", async (request, reply) => {
-    return reply.send(
-      await templateLibrary.getDomainCatalogBacklog(getTenantId(request), {
-        domain: request.params.domain,
-        ...(request.query.audience ? { audience: request.query.audience } : {}),
-      }),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/catalog/:domain/backlog",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.getDomainCatalogBacklog(getTenantId(request), {
+          domain: request.params.domain,
+          ...(request.query.audience
+            ? { audience: request.query.audience }
+            : {}),
+        }),
+      );
+    },
+  );
 
   app.get<{
     Querystring: {
@@ -577,15 +623,22 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       audience?: "k12" | "undergraduate" | "graduate" | "professional";
       limit?: string;
     };
-  }>("/api/sim-author/templates/coverage/action-plan", async (request, reply) => {
-    return reply.send(
-      await templateLibrary.getCoverageActionPlan(getTenantId(request), {
-        ...(request.query.domain ? { domain: request.query.domain } : {}),
-        ...(request.query.audience ? { audience: request.query.audience } : {}),
-        ...(request.query.limit ? { limit: Number(request.query.limit) } : {}),
-      }),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/coverage/action-plan",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.getCoverageActionPlan(getTenantId(request), {
+          ...(request.query.domain ? { domain: request.query.domain } : {}),
+          ...(request.query.audience
+            ? { audience: request.query.audience }
+            : {}),
+          ...(request.query.limit
+            ? { limit: Number(request.query.limit) }
+            : {}),
+        }),
+      );
+    },
+  );
 
   app.post<{
     Body: {
@@ -593,32 +646,44 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       audience?: "k12" | "undergraduate" | "graduate" | "professional";
       limit?: number;
     };
-  }>("/api/sim-author/templates/coverage/action-plan/execute", async (request, reply) => {
-    return reply.code(201).send(
-      await templateLibrary.executeCoverageActionPlan(
-        getTenantId(request),
-        getUserId(request),
-        request.body ?? {},
-      ),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/coverage/action-plan/execute",
+    async (request, reply) => {
+      return reply
+        .code(201)
+        .send(
+          await templateLibrary.executeCoverageActionPlan(
+            getTenantId(request),
+            getUserId(request),
+            request.body ?? {},
+          ),
+        );
+    },
+  );
 
   app.post<{
     Body: {
       domain?: string;
       audience?: "k12" | "undergraduate" | "graduate" | "professional";
-      phases?: Array<"starter_foundation" | "review_ready_starters" | "legacy_retirement">;
+      phases?: Array<
+        "starter_foundation" | "review_ready_starters" | "legacy_retirement"
+      >;
       limitPerPhase?: number;
     };
-  }>("/api/sim-author/templates/coverage/campaign/execute", async (request, reply) => {
-    return reply.code(201).send(
-      await templateLibrary.executeCoverageCampaign(
-        getTenantId(request),
-        getUserId(request),
-        request.body ?? {},
-      ),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/coverage/campaign/execute",
+    async (request, reply) => {
+      return reply
+        .code(201)
+        .send(
+          await templateLibrary.executeCoverageCampaign(
+            getTenantId(request),
+            getUserId(request),
+            request.body ?? {},
+          ),
+        );
+    },
+  );
 
   app.post<{
     Params: { domain: string };
@@ -633,18 +698,21 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       moduleId?: string;
       limit?: number;
     };
-  }>("/api/sim-author/templates/catalog/:domain/seed", async (request, reply) => {
-    return reply.code(201).send(
-      await templateLibrary.seedDomainCatalogCoverage(
-        getTenantId(request),
-        getUserId(request),
-        {
-          domain: request.params.domain,
-          ...(request.body ?? {}),
-        },
-      ),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/catalog/:domain/seed",
+    async (request, reply) => {
+      return reply.code(201).send(
+        await templateLibrary.seedDomainCatalogCoverage(
+          getTenantId(request),
+          getUserId(request),
+          {
+            domain: request.params.domain,
+            ...(request.body ?? {}),
+          },
+        ),
+      );
+    },
+  );
 
   app.post<{
     Body: {
@@ -660,20 +728,25 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       limitPerDomain?: number;
     };
   }>("/api/sim-author/templates/catalog/seed-multi", async (request, reply) => {
-    return reply.code(201).send(
-      await templateLibrary.seedCatalogProgressMatrix(
-        getTenantId(request),
-        getUserId(request),
-        request.body ?? {},
-      ),
-    );
+    return reply
+      .code(201)
+      .send(
+        await templateLibrary.seedCatalogProgressMatrix(
+          getTenantId(request),
+          getUserId(request),
+          request.body ?? {},
+        ),
+      );
   });
 
-  app.get("/api/sim-author/templates/coverage/retirement-plan", async (request, reply) => {
-    return reply.send(
-      await templateLibrary.getLegacyAutoRetirementPlan(getTenantId(request)),
-    );
-  });
+  app.get(
+    "/api/sim-author/templates/coverage/retirement-plan",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.getLegacyAutoRetirementPlan(getTenantId(request)),
+      );
+    },
+  );
 
   app.post<{
     Body: {
@@ -689,14 +762,17 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       conceptId?: string;
       moduleId?: string;
     };
-  }>("/api/sim-author/templates/coverage/seed-backlog", async (request, reply) => {
-    const result = await templateLibrary.seedCoverageBacklog(
-      getTenantId(request),
-      getUserId(request),
-      request.body ?? {},
-    );
-    return reply.code(201).send(result);
-  });
+  }>(
+    "/api/sim-author/templates/coverage/seed-backlog",
+    async (request, reply) => {
+      const result = await templateLibrary.seedCoverageBacklog(
+        getTenantId(request),
+        getUserId(request),
+        request.body ?? {},
+      );
+      return reply.code(201).send(result);
+    },
+  );
 
   app.post<{
     Body: {
@@ -705,14 +781,17 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       autoSubmitForReview?: boolean;
       autoPublish?: boolean;
     };
-  }>("/api/sim-author/templates/coverage/retirement-plan/execute", async (request, reply) => {
-    const result = await templateLibrary.executeLegacyAutoRetirement(
-      getTenantId(request),
-      getUserId(request),
-      request.body ?? {},
-    );
-    return reply.code(201).send(result);
-  });
+  }>(
+    "/api/sim-author/templates/coverage/retirement-plan/execute",
+    async (request, reply) => {
+      const result = await templateLibrary.executeLegacyAutoRetirement(
+        getTenantId(request),
+        getUserId(request),
+        request.body ?? {},
+      );
+      return reply.code(201).send(result);
+    },
+  );
 
   app.get<{ Params: { id: string } }>(
     "/api/sim-author/templates/:id/review-history",
@@ -784,16 +863,19 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       conceptId?: string;
       moduleId?: string;
     };
-  }>("/api/sim-author/templates/preview/from-starter/:id", async (request, reply) => {
-    return reply.send(
-      await templateLibrary.previewTemplateFromStarter(
-        getTenantId(request),
-        getUserId(request),
-        request.params.id,
-        request.body ?? {},
-      ),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/preview/from-starter/:id",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.previewTemplateFromStarter(
+          getTenantId(request),
+          getUserId(request),
+          request.params.id,
+          request.body ?? {},
+        ),
+      );
+    },
+  );
 
   app.post<{
     Params: { id: string };
@@ -805,16 +887,19 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       conceptId?: string;
       moduleId?: string;
     };
-  }>("/api/sim-author/templates/preview/from-auto-preset/:id", async (request, reply) => {
-    return reply.send(
-      await templateLibrary.previewTemplateFromAutoPreset(
-        getTenantId(request),
-        getUserId(request),
-        request.params.id,
-        request.body ?? {},
-      ),
-    );
-  });
+  }>(
+    "/api/sim-author/templates/preview/from-auto-preset/:id",
+    async (request, reply) => {
+      return reply.send(
+        await templateLibrary.previewTemplateFromAutoPreset(
+          getTenantId(request),
+          getUserId(request),
+          request.params.id,
+          request.body ?? {},
+        ),
+      );
+    },
+  );
 
   app.post<{
     Params: { id: string };
@@ -846,15 +931,18 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       conceptId?: string;
       moduleId?: string;
     };
-  }>("/api/sim-author/templates/from-auto-preset/:id", async (request, reply) => {
-    const result = await templateLibrary.createTemplateFromAutoPreset(
-      getTenantId(request),
-      getUserId(request),
-      request.params.id,
-      request.body ?? {},
-    );
-    return reply.code(201).send(result);
-  });
+  }>(
+    "/api/sim-author/templates/from-auto-preset/:id",
+    async (request, reply) => {
+      const result = await templateLibrary.createTemplateFromAutoPreset(
+        getTenantId(request),
+        getUserId(request),
+        request.params.id,
+        request.body ?? {},
+      );
+      return reply.code(201).send(result);
+    },
+  );
 
   app.post<{
     Body: {
@@ -881,14 +969,17 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       conceptId?: string;
       moduleId?: string;
     };
-  }>("/api/sim-author/templates/bulk/from-auto-presets", async (request, reply) => {
-    const items = await templateLibrary.bulkCreateTemplatesFromAutoPresets(
-      getTenantId(request),
-      getUserId(request),
-      request.body,
-    );
-    return reply.code(201).send({ items, total: items.length });
-  });
+  }>(
+    "/api/sim-author/templates/bulk/from-auto-presets",
+    async (request, reply) => {
+      const items = await templateLibrary.bulkCreateTemplatesFromAutoPresets(
+        getTenantId(request),
+        getUserId(request),
+        request.body,
+      );
+      return reply.code(201).send({ items, total: items.length });
+    },
+  );
 
   app.post<{
     Body: {
@@ -900,14 +991,17 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       moduleId?: string;
       limit?: number;
     };
-  }>("/api/sim-author/templates/seed/uncovered-starters", async (request, reply) => {
-    const items = await templateLibrary.seedMissingStarterTemplates(
-      getTenantId(request),
-      getUserId(request),
-      request.body ?? {},
-    );
-    return reply.code(201).send({ items, total: items.length });
-  });
+  }>(
+    "/api/sim-author/templates/seed/uncovered-starters",
+    async (request, reply) => {
+      const items = await templateLibrary.seedMissingStarterTemplates(
+        getTenantId(request),
+        getUserId(request),
+        request.body ?? {},
+      );
+      return reply.code(201).send({ items, total: items.length });
+    },
+  );
 
   app.post<{
     Body: {
@@ -919,14 +1013,17 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       moduleId?: string;
       limit?: number;
     };
-  }>("/api/sim-author/templates/seed/uncovered-auto-presets", async (request, reply) => {
-    const items = await templateLibrary.seedMissingAutoPresetTemplates(
-      getTenantId(request),
-      getUserId(request),
-      request.body ?? {},
-    );
-    return reply.code(201).send({ items, total: items.length });
-  });
+  }>(
+    "/api/sim-author/templates/seed/uncovered-auto-presets",
+    async (request, reply) => {
+      const items = await templateLibrary.seedMissingAutoPresetTemplates(
+        getTenantId(request),
+        getUserId(request),
+        request.body ?? {},
+      );
+      return reply.code(201).send({ items, total: items.length });
+    },
+  );
 
   app.post<{
     Params: { id: string };
@@ -954,12 +1051,15 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     return reply.send(result);
   });
 
-  app.get("/api/sim-author/templates/reviews/pending", async (request, reply) => {
-    const items = await templateLibrary.listPendingReviewTemplates(
-      getTenantId(request),
-    );
-    return reply.send({ items, total: items.length });
-  });
+  app.get(
+    "/api/sim-author/templates/reviews/pending",
+    async (request, reply) => {
+      const items = await templateLibrary.listPendingReviewTemplates(
+        getTenantId(request),
+      );
+      return reply.send({ items, total: items.length });
+    },
+  );
 
   app.post<{
     Params: { id: string };
@@ -1144,9 +1244,13 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
       request.params.id,
       refined.manifest,
       {
-        ...(request.body.changeNote ? { changeNote: request.body.changeNote } : {}),
+        ...(request.body.changeNote
+          ? { changeNote: request.body.changeNote }
+          : {}),
         ...(request.body.title ? { title: request.body.title } : {}),
-        ...(request.body.description ? { description: request.body.description } : {}),
+        ...(request.body.description
+          ? { description: request.body.description }
+          : {}),
       },
     );
 
@@ -1232,26 +1336,26 @@ export async function simulationAuthoringRoutes(app: FastifyInstance) {
     },
   );
 
-  app.get<{ Params: { id: string }; Querystring: { format?: "webxr" | "unity" } }>(
-    "/api/sim-author/manifests/:id/export",
-    async (request, reply) => {
-      const { id } = request.params;
-      const tenantId = getTenantId(request);
-      const record = await app.prisma.simulationManifest.findFirst({
-        where: { id, tenantId: tenantId as string },
-      });
-      if (!record) {
-        return reply.code(404).send({ error: "Manifest not found" });
-      }
+  app.get<{
+    Params: { id: string };
+    Querystring: { format?: "webxr" | "unity" };
+  }>("/api/sim-author/manifests/:id/export", async (request, reply) => {
+    const { id } = request.params;
+    const tenantId = getTenantId(request);
+    const record = await app.prisma.simulationManifest.findFirst({
+      where: { id, tenantId: tenantId as string },
+    });
+    if (!record) {
+      return reply.code(404).send({ error: "Manifest not found" });
+    }
 
-      const format = request.query.format ?? "webxr";
-      if (format === "unity") {
-        return reply.send(vrExporter.exportToUnity(record.manifest as any));
-      }
+    const format = request.query.format ?? "webxr";
+    if (format === "unity") {
+      return reply.send(vrExporter.exportToUnity(record.manifest as any));
+    }
 
-      return reply.send(vrExporter.exportToWebXR(record.manifest as any));
-    },
-  );
+    return reply.send(vrExporter.exportToWebXR(record.manifest as any));
+  });
 
   // Save / update manifest
   app.put<{ Params: { id: string }; Body: Record<string, unknown> }>(

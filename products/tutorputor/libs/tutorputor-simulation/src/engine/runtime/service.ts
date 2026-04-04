@@ -805,13 +805,6 @@ export class SimulationRuntimeService implements SimRuntimeService {
   private lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t;
   }
-
-  /**
-   * Schedule session cleanup after timeout.
-   */
-  private scheduleSessionCleanup(_sessionId: SimulationSessionId): void {
-    // Redis handles cleanup via TTL
-  }
 }
 
 /**

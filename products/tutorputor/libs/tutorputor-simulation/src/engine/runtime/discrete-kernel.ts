@@ -1,6 +1,6 @@
 /**
  * Discrete Algorithm Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute discrete algorithm simulations (sorting, searching, graphs)
  * @doc.layer product
@@ -10,7 +10,7 @@
 import type {
   DiscreteKernel as IDiscreteKernel,
   SimulationRunRequest,
-  SimulationRunResult
+  SimulationRunResult,
 } from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
@@ -18,9 +18,9 @@ import type {
   SimEntity,
   SimAction,
   SimEntityId,
-  EasingFunction
+  EasingFunction,
 } from "@tutorputor/contracts/v1/simulation";
-import { interpolate, interpolatePoint, getEasingFunction } from "./easing";
+import { interpolate } from "./easing";
 
 /**
  * Discrete kernel configuration.
@@ -33,14 +33,14 @@ export interface DiscreteKernelConfig {
 
 /**
  * Create the discrete algorithm kernel.
- * 
+ *
  * @doc.type function
  * @doc.purpose Factory function for discrete kernel
  * @doc.layer product
  * @doc.pattern Factory
  */
 export function createDiscreteKernel(
-  config: DiscreteKernelConfig = {}
+  config: DiscreteKernelConfig = {},
 ): IDiscreteKernel {
   const defaultDuration = config.defaultDuration || 500;
   const defaultEasing = config.defaultEasing || "easeInOut";
@@ -69,7 +69,7 @@ export function createDiscreteKernel(
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not CS_DISCRETE"]
+          errors: ["Manifest domain is not CS_DISCRETE"],
         };
       }
 
@@ -87,13 +87,13 @@ export function createDiscreteKernel(
         stepIndex: -1,
         timestamp: 0,
         entities: Array.from(entityState.values()),
-        annotations: []
+        annotations: [],
       });
 
       // Process each step
       const stepsToProcess = manifest.steps
-        .filter(s => s.orderIndex >= startStep)
-        .filter(s => endStep === undefined || s.orderIndex <= endStep)
+        .filter((s) => s.orderIndex >= startStep)
+        .filter((s) => endStep === undefined || s.orderIndex <= endStep)
         .sort((a, b) => a.orderIndex - b.orderIndex);
 
       let timestamp = 0;
@@ -105,14 +105,16 @@ export function createDiscreteKernel(
           timestamp,
           defaultDuration,
           defaultEasing,
-          samplingRate
+          samplingRate,
         );
 
         keyframes.push(...stepKeyframes);
 
         // Update timestamp for next step
         const maxDuration = Math.max(
-          ...step.actions.map(a => (a.duration || defaultDuration) + (a.delay || 0))
+          ...step.actions.map(
+            (a) => (a.duration || defaultDuration) + (a.delay || 0),
+          ),
         );
         timestamp += maxDuration;
       }
@@ -122,13 +124,13 @@ export function createDiscreteKernel(
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        ...(warnings.length > 0 ? { warnings } : {})
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
 
     interpolateKeyframes(
       keyframes: SimKeyframe[],
-      targetFps: number
+      targetFps: number,
     ): SimKeyframe[] {
       if (keyframes.length < 2) return keyframes;
 
@@ -146,8 +148,8 @@ export function createDiscreteKernel(
           const progress = f / frameCount;
           const timestamp = current.timestamp + progress * duration;
 
-          const entities = current.entities.map(entity => {
-            const nextEntity = next.entities.find(e => e.id === entity.id);
+          const entities = current.entities.map((entity) => {
+            const nextEntity = next.entities.find((e) => e.id === entity.id);
             if (!nextEntity) return entity;
 
             return interpolateEntity(entity, nextEntity, progress);
@@ -157,7 +159,7 @@ export function createDiscreteKernel(
             stepIndex: current.stepIndex,
             timestamp,
             entities,
-            annotations: current.annotations
+            annotations: current.annotations,
           });
         }
       }
@@ -179,7 +181,7 @@ export function createDiscreteKernel(
       return JSON.stringify({
         stepIndex: currentStepIndex,
         entities: Array.from(currentEntities.entries()),
-        annotations: currentAnnotations
+        annotations: currentAnnotations,
       });
     },
 
@@ -217,10 +219,10 @@ export function createDiscreteKernel(
       }
     },
 
-    interpolate(t: number): Partial<SimKeyframe> {
+    interpolate(_t: number): Partial<SimKeyframe> {
       return {
         entities: Array.from(currentEntities.values()),
-        annotations: [...currentAnnotations]
+        annotations: [...currentAnnotations],
       };
     },
 
@@ -233,8 +235,6 @@ export function createDiscreteKernel(
     getAnalytics(): Record<string, unknown> {
       return {};
     },
-
-
   };
 }
 
@@ -245,9 +245,9 @@ function processStep(
   step: { orderIndex: number; actions: SimAction[] },
   entityState: Map<SimEntityId, SimEntity>,
   startTimestamp: number,
-  defaultDuration: number,
-  defaultEasing: EasingFunction,
-  samplingRate: number
+  _defaultDuration: number,
+  _defaultEasing: EasingFunction,
+  _samplingRate: number,
 ): SimKeyframe[] {
   const keyframes: SimKeyframe[] = [];
   const annotations: SimKeyframe["annotations"] = [];
@@ -279,7 +279,7 @@ function processStep(
       stepIndex: step.orderIndex,
       timestamp,
       entities: Array.from(entityState.values()),
-      annotations: [...annotations]
+      annotations: [...annotations],
     });
   }
 
@@ -289,7 +289,7 @@ function processStep(
       stepIndex: step.orderIndex,
       timestamp: startTimestamp,
       entities: Array.from(entityState.values()),
-      annotations
+      annotations,
     });
   }
 
@@ -302,17 +302,23 @@ function processStep(
 function processAction(
   action: SimAction,
   entityState: Map<SimEntityId, SimEntity>,
-  annotations: SimKeyframe["annotations"]
+  annotations: SimKeyframe["annotations"],
 ): void {
   switch (action.action) {
     case "CREATE_ENTITY": {
-      const createAction = action as { action: "CREATE_ENTITY"; entity: SimEntity };
+      const createAction = action as {
+        action: "CREATE_ENTITY";
+        entity: SimEntity;
+      };
       entityState.set(createAction.entity.id, { ...createAction.entity });
       break;
     }
 
     case "REMOVE_ENTITY": {
-      const removeAction = action as { action: "REMOVE_ENTITY"; targetId: SimEntityId };
+      const removeAction = action as {
+        action: "REMOVE_ENTITY";
+        targetId: SimEntityId;
+      };
       entityState.delete(removeAction.targetId);
       break;
     }
@@ -388,7 +394,9 @@ function processAction(
         // Also swap values if they're node entities
         if ("value" in entity1 && "value" in entity2) {
           const tempValue = (entity1 as { value: unknown }).value;
-          (entity1 as { value: unknown }).value = (entity2 as { value: unknown }).value;
+          (entity1 as { value: unknown }).value = (
+            entity2 as { value: unknown }
+          ).value;
           (entity2 as { value: unknown }).value = tempValue;
         }
       }
@@ -405,7 +413,8 @@ function processAction(
       const entity = entityState.get(setValueAction.targetId);
       if (entity) {
         const prop = setValueAction.property || "value";
-        (entity as unknown as Record<string, unknown>)[prop] = setValueAction.value;
+        (entity as unknown as Record<string, unknown>)[prop] =
+          setValueAction.value;
       }
       break;
     }
@@ -441,7 +450,7 @@ function processAction(
 function interpolateEntity(
   from: SimEntity,
   to: SimEntity,
-  progress: number
+  progress: number,
 ): SimEntity {
   const interpolated = { ...from };
 

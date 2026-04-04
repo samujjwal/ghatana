@@ -540,10 +540,13 @@ async function learningRoutes(
         description: "List assessments",
         tags: ["Assessments"],
         querystring: {
-          moduleId: { type: "string" },
-          status: { type: "string" },
-          limit: { type: "number" },
-          cursor: { type: "string" },
+          type: "object",
+          properties: {
+            moduleId: { type: "string" },
+            status: { type: "string" },
+            limit: { type: "number" },
+            cursor: { type: "string" },
+          },
         },
       },
     },
@@ -582,7 +585,12 @@ async function learningRoutes(
       schema: {
         description: "Get assessment details",
         tags: ["Assessments"],
-        params: { id: { type: "string" } },
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+          },
+        },
       },
     },
     async (request, reply) => {
@@ -1162,7 +1170,7 @@ async function learningRoutes(
   // Health
   // ---------------------------------------------------------------------------
 
-  fastify.get("/health", async () => {
+  fastify.get("/learning/health", async () => {
     const learningHealth = await learningService.checkHealth();
     const pathwaysHealth = await pathwaysService.checkHealth();
     const assessmentHealth = await assessmentService.checkHealth();

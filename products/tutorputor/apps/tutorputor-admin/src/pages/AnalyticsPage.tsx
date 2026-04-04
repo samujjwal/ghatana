@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card } from "../components/ui";
-import {
-  Button,
-  Spinner,
-  ResponsiveTable,
-  PullToRefresh,
-} from "@ghatana/design-system";
-import { LineChart, BarChart, PieChart, AreaChart } from "@ghatana/charts";
+import { Card, Button, Spinner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { ExternalLink, Star } from "lucide-react";
+
+// Mock chart components
+const ResponsiveTable = ({ children }: { children: React.ReactNode }) => <table className="w-full border">{children}</table>;
+const PullToRefresh = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+const LineChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const BarChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const PieChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
+const AreaChart = () => <div className="h-64 bg-gray-100 rounded">Chart</div>;
 
 type DateRange = "7d" | "30d" | "90d" | "1y";
 type MetricTab = "engagement" | "content" | "users" | "performance";
@@ -259,8 +260,8 @@ export function AnalyticsPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${activeTab === tab.id
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
             >
               {tab.icon}
