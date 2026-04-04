@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PhysicsEntity, PhysicsConfig } from "../types";
+import { EntityType, type PhysicsEntity, type PhysicsConfig } from "../types";
 import {
   physicsEntitySchema,
   physicsConfigSchema,
@@ -194,7 +194,7 @@ export function migrateManifest(
 
       return {
         id: `migrated-${Date.now()}-${index}`,
-        type: e.type,
+        type: e.type ?? EntityType.BOX,
         x: e.position?.x ?? e.x ?? 0,
         y: e.position?.y ?? e.y ?? 0,
         width: e.dimensions?.width ?? e.width,

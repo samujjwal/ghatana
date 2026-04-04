@@ -93,28 +93,30 @@ describe("CBMProcessor – TPUT-FR-CBM-006 (viva trigger threshold boundary)", (
   });
 
   it("does NOT trigger a viva when calibration index is exactly 0.3 after 3 items (boundary is exclusive)", async () => {
-    // To achieve calibration = exactly 0.3:
-    // confidence = 1.0 for all, 1 incorrect (delta = 1.0 - 0 = 1.0), 2 correct (delta = 1.0 - 1 = 0.0)
-    // calibrationIndex = (1.0 + 0.0 + 0.0) / 3 = 0.333... → that is > 0.3
-    // Instead use: 1 answer with confidence 0.9 (incorrect) and 2 correct answers with confidence 0.0
-    // delta_wrong = 0.9 - 0 = 0.9; delta_correct = 0.0 - 1 = -1.0 (but clamped to range?)
-    // Let's simply verify: if calibrationIndex < 0.3 no trigger fires.
-    // Use 3 answers: confidence=0.5 correct → delta = 0.5 - 1 = -0.5, CI = -0.5 (no overconfidence trigger)
+    // Exact boundary case:
+    // one incorrect answer at 0.9 confidence => delta = 0.9
+    // two correct answers at 1.0 confidence => delta = 0.0 each
+    // calibrationIndex = (0.9 + 0 + 0) / 3 = 0.3 exactly
     const ctx = makeContext();
-    for (let i = 0; i < 3; i++) {
-      await processor.process(
-        ctx,
-        makeAnswer({ correct: true, confidence: 0.5, evidenceId: `ev-${i}` }),
-      );
-    }
+    await processor.process(
+      ctx,
+      makeAnswer({ correct: false, confidence: 0.9, evidenceId: "ev-0" }),
+    );
+    await processor.process(
+      ctx,
+      makeAnswer({ correct: true, confidence: 1.0, evidenceId: "ev-1" }),
+    );
+    await processor.process(
+      ctx,
+      makeAnswer({ correct: true, confidence: 1.0, evidenceId: "ev-2" }),
+    );
 
     const metrics = ctx.data["cbm.aggregate.metrics"] as Record<
       string,
       unknown
     >;
     expect(metrics).toBeDefined();
-    expect(Math.abs(metrics.calibrationIndex as number)).toBeLessThan(0.3);
-    // No viva trigger
+    expect(metrics.calibrationIndex as number).toBeCloseTo(0.3, 5);
     expect(ctx.data["cbm.trigger.viva"]).toBeUndefined();
   });
 

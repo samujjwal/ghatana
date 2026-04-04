@@ -44,7 +44,9 @@ interface PKCompartmentState {
  * @doc.layer product
  * @doc.pattern Factory
  */
-export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
+export function createMedicineKernel(
+  _config?: MedicineConfig,
+): IMedicineKernel {
   return {
     domain: "MEDICINE" as const,
 
@@ -54,7 +56,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
 
     async run(request: SimulationRunRequest): Promise<SimulationRunResult> {
       const startTime = Date.now();
-      const { manifest, samplingRate = 60 } = request;
+      const { manifest } = request;
 
       if (!this.canExecute(manifest)) {
         return {
@@ -391,11 +393,11 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       return JSON.stringify({});
     },
 
-    deserialize(state: string): void {
+    deserialize(_state: string): void {
       // No-op for stateless execution
     },
 
-    initialize(manifest: SimulationManifest): void {
+    initialize(_manifest: SimulationManifest): void {
       // No-op
     },
 
@@ -403,7 +405,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       // No-op
     },
 
-    interpolate(t: number): Partial<SimKeyframe> {
+    interpolate(_t: number): Partial<SimKeyframe> {
       return {};
     },
 
@@ -590,7 +592,7 @@ function simulateEpidemiology(
   _model: "sir" | "seir",
   dt: number,
 ): void {
-  for (const [_id, agent] of infectionAgents) {
+  for (const [id, agent] of infectionAgents) {
     const population = agent.population ?? agent.load ?? 0;
     const beta = agent.infectivity || 0.3;
     const gamma = 1 / 14; // Recovery rate (14 days)

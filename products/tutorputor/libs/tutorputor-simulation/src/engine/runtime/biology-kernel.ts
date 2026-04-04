@@ -1,6 +1,6 @@
 /**
  * Biology Simulation Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute biology simulations (cellular, molecular, genetic)
  * @doc.layer product
@@ -11,7 +11,7 @@ import type {
   BiologyKernel as IBiologyKernel,
   SimulationRunRequest,
   SimulationRunResult,
-  BiologyConfig
+  BiologyConfig,
 } from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
@@ -19,10 +19,8 @@ import type {
   SimEntity,
   SimEntityId,
   BioCellEntity,
-  BioOrganelleEntity,
   BioCompartmentEntity,
-  BioEnzymeEntity,
-  BioGeneEntity
+  BioGeneEntity,
 } from "@tutorputor/contracts/v1/simulation";
 
 /**
@@ -49,13 +47,13 @@ interface GeneState {
 
 /**
  * Create the biology kernel.
- * 
+ *
  * @doc.type function
  * @doc.purpose Factory function for biology kernel
  * @doc.layer product
  * @doc.pattern Factory
  */
-export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
+export function createBiologyKernel(_config?: BiologyConfig): IBiologyKernel {
   return {
     domain: "BIOLOGY" as const,
 
@@ -65,7 +63,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
 
     async run(request: SimulationRunRequest): Promise<SimulationRunResult> {
       const startTime = Date.now();
-      const { manifest, samplingRate = 30 } = request;
+      const { manifest } = request;
 
       if (!this.canExecute(manifest)) {
         return {
@@ -73,7 +71,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not BIOLOGY"]
+          errors: ["Manifest domain is not BIOLOGY"],
         };
       }
 
@@ -92,7 +90,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
             id: entity.id,
             volume: comp.volume ?? 1,
             concentrations: new Map(Object.entries(comp.concentration || {})),
-            permeability: new Map(Object.entries(comp.permeability || {}))
+            permeability: new Map(Object.entries(comp.permeability || {})),
           });
         } else if (entity.type === "gene") {
           const gene = entity as BioGeneEntity;
@@ -102,7 +100,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
             promoterActive: gene.promoterActive ?? false,
             expressionLevel: gene.expressionLevel || 0,
             transcribing: false,
-            translating: false
+            translating: false,
           });
         }
       }
@@ -115,11 +113,13 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
         stepIndex: -1,
         timestamp: 0,
         entities: Array.from(entities.values()),
-        annotations: []
+        annotations: [],
       });
 
       // Process simulation steps
-      const stepsToProcess = manifest.steps.sort((a, b) => a.orderIndex - b.orderIndex);
+      const stepsToProcess = manifest.steps.sort(
+        (a, b) => a.orderIndex - b.orderIndex,
+      );
       let currentTime = 0;
       const dt = 0.1; // Time step in seconds
 
@@ -164,12 +164,16 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
             keyframes.push({
               stepIndex,
               timestamp: currentTime,
-              entities: Array.from(entities.values()).map(e => ({ ...e })),
-              annotations: step.narration ? [{
-                id: `annotation_${stepIndex}`,
-                text: step.narration,
-                position: { x: 500, y: 30 }
-              }] : []
+              entities: Array.from(entities.values()).map((e) => ({ ...e })),
+              annotations: step.narration
+                ? [
+                    {
+                      id: `annotation_${stepIndex}`,
+                      text: step.narration,
+                      position: { x: 500, y: 30 },
+                    },
+                  ]
+                : [],
             });
           }
         }
@@ -180,20 +184,24 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        ...(warnings.length > 0 ? { warnings } : {})
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
 
     simulateDiffusion(
-      compartments: Array<{ id: string; concentration: number; volume: number }>,
+      compartments: Array<{
+        id: string;
+        concentration: number;
+        volume: number;
+      }>,
       permeability: number,
-      timeStep: number
+      timeStep: number,
     ): Array<{ id: string; concentration: number }> {
       // Fick's first law: J = -D * (dC/dx)
       // For two compartments: flux = P * (C1 - C2)
-      const result = compartments.map(c => ({
+      const result = compartments.map((c) => ({
         id: c.id,
-        concentration: c.concentration
+        concentration: c.concentration,
       }));
 
       if (compartments.length >= 2) {
@@ -201,7 +209,8 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
         const c2 = compartments[1]!;
 
         // Calculate flux
-        const flux = permeability * (c1.concentration - c2.concentration) * timeStep;
+        const flux =
+          permeability * (c1.concentration - c2.concentration) * timeStep;
 
         // Update concentrations based on volumes
         result[0]!.concentration = c1.concentration - flux / c1.volume;
@@ -216,7 +225,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
       enzyme: number,
       km: number,
       vmax: number,
-      time: number
+      time: number,
     ): { substrateRemaining: number; productFormed: number } {
       // Michaelis-Menten kinetics: v = Vmax * [S] / (Km + [S])
       // Numerical integration
@@ -233,7 +242,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
 
       return {
         substrateRemaining: s,
-        productFormed: p
+        productFormed: p,
       };
     },
 
@@ -245,11 +254,11 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
       return JSON.stringify({});
     },
 
-    deserialize(state: string): void {
+    deserialize(_state: string): void {
       // No-op for stateless execution
     },
 
-    initialize(manifest: SimulationManifest): void {
+    initialize(_manifest: SimulationManifest): void {
       // No-op
     },
 
@@ -257,7 +266,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
       // No-op
     },
 
-    interpolate(t: number): Partial<SimKeyframe> {
+    interpolate(_t: number): Partial<SimKeyframe> {
       return {};
     },
 
@@ -267,7 +276,7 @@ export function createBiologyKernel(config?: BiologyConfig): IBiologyKernel {
 
     getAnalytics(): Record<string, unknown> {
       return {};
-    }
+    },
   };
 }
 
@@ -278,7 +287,7 @@ function applyBiologyAction(
   action: any,
   compartments: Map<SimEntityId, CompartmentState>,
   genes: Map<SimEntityId, GeneState>,
-  entities: Map<SimEntityId, SimEntity>
+  entities: Map<SimEntityId, SimEntity>,
 ): void {
   switch (action.action) {
     case "DIFFUSE": {
@@ -295,7 +304,10 @@ function applyBiologyAction(
         const toConc = toComp.concentrations.get(molecule) || 0;
 
         const flux = rate * (fromConc - toConc);
-        fromComp.concentrations.set(molecule, fromConc - flux / fromComp.volume);
+        fromComp.concentrations.set(
+          molecule,
+          fromConc - flux / fromComp.volume,
+        );
         toComp.concentrations.set(molecule, toConc + flux / toComp.volume);
       }
       break;
@@ -339,7 +351,10 @@ function applyBiologyAction(
         }
 
         fromComp.concentrations.set(molecule, fromConc - amount);
-        toComp.concentrations.set(molecule, (toComp.concentrations.get(molecule) || 0) + amount);
+        toComp.concentrations.set(
+          molecule,
+          (toComp.concentrations.get(molecule) || 0) + amount,
+        );
       }
       break;
     }
@@ -356,16 +371,16 @@ function applyBiologyAction(
     }
 
     case "TRANSLATE": {
-      const mRnaId = action.mRnaId as SimEntityId;
+      void action.mRnaId;
       // Would create protein entity
       break;
     }
 
     case "METABOLISE": {
-      const enzymeId = action.enzymeId as SimEntityId;
-      const substrateId = action.substrateId as SimEntityId;
-      const productId = action.productId as SimEntityId;
-      const rate = (action.rate as number) || 1;
+      void action.enzymeId;
+      void action.substrateId;
+      void action.productId;
+      void action.rate;
 
       // Would handle enzyme kinetics
       break;
@@ -380,7 +395,7 @@ function applyBiologyAction(
         // Update cell phase
         (entity as BioCellEntity).metadata = {
           ...(entity as BioCellEntity).metadata,
-          phase
+          phase,
         };
       }
       break;
@@ -407,7 +422,7 @@ function applyBiologyAction(
  */
 function simulateAllDiffusion(
   compartments: Map<SimEntityId, CompartmentState>,
-  dt: number
+  dt: number,
 ): void {
   const compArray = Array.from(compartments.values());
 
@@ -421,7 +436,7 @@ function simulateAllDiffusion(
         const conc2 = c2.concentrations.get(molecule) || 0;
         const permeability = Math.min(
           c1.permeability.get(molecule) || 1,
-          c2.permeability.get(molecule) || 1
+          c2.permeability.get(molecule) || 1,
         );
 
         const flux = permeability * (conc1 - conc2) * dt;
@@ -437,7 +452,7 @@ function simulateAllDiffusion(
  */
 function updateGeneExpression(
   genes: Map<SimEntityId, GeneState>,
-  dt: number
+  dt: number,
 ): void {
   for (const [, gene] of genes) {
     if (gene.transcribing) {

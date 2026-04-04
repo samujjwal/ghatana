@@ -1,6 +1,6 @@
 /**
  * Chemistry Simulation Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute chemistry simulations for reactions and molecular structures
  * @doc.layer product
@@ -11,7 +11,7 @@ import type {
   ChemistryKernel as IChemistryKernel,
   SimulationRunRequest,
   SimulationRunResult,
-  ChemistryConfig
+  ChemistryConfig,
 } from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
@@ -21,18 +21,20 @@ import type {
   ChemAtomEntity,
   ChemBondEntity,
   ChemMoleculeEntity,
-  ChemEnergyProfileEntity
 } from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Element properties for validation and rendering.
  */
-const ELEMENT_DATA: Record<string, {
-  atomicNumber: number;
-  valence: number[];
-  color: string;
-  radius: number;
-}> = {
+const ELEMENT_DATA: Record<
+  string,
+  {
+    atomicNumber: number;
+    valence: number[];
+    color: string;
+    radius: number;
+  }
+> = {
   H: { atomicNumber: 1, valence: [1], color: "#FFFFFF", radius: 25 },
   C: { atomicNumber: 6, valence: [4], color: "#909090", radius: 40 },
   N: { atomicNumber: 7, valence: [3], color: "#3050F8", radius: 38 },
@@ -42,7 +44,7 @@ const ELEMENT_DATA: Record<string, {
   S: { atomicNumber: 16, valence: [2, 4, 6], color: "#FFFF30", radius: 45 },
   Cl: { atomicNumber: 17, valence: [1], color: "#1FF01F", radius: 40 },
   Br: { atomicNumber: 35, valence: [1], color: "#A62929", radius: 45 },
-  I: { atomicNumber: 53, valence: [1], color: "#940094", radius: 50 }
+  I: { atomicNumber: 53, valence: [1], color: "#940094", radius: 50 },
 };
 
 /**
@@ -72,13 +74,15 @@ interface BondState {
 
 /**
  * Create the chemistry kernel.
- * 
+ *
  * @doc.type function
  * @doc.purpose Factory function for chemistry kernel
  * @doc.layer product
  * @doc.pattern Factory
  */
-export function createChemistryKernel(config?: ChemistryConfig): IChemistryKernel {
+export function createChemistryKernel(
+  _config?: ChemistryConfig,
+): IChemistryKernel {
   return {
     domain: "CHEMISTRY" as const,
 
@@ -96,7 +100,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not CHEMISTRY"]
+          errors: ["Manifest domain is not CHEMISTRY"],
         };
       }
 
@@ -119,7 +123,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
             y: entity.y,
             charge: atom.charge || 0,
             bonds: [],
-            totalBondOrder: 0
+            totalBondOrder: 0,
           });
         } else if (entity.type === "bond") {
           const bond = entity as ChemBondEntity;
@@ -128,7 +132,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
             id: entity.id,
             atom1Id: bond.atom1Id,
             atom2Id: bond.atom2Id,
-            bondOrder
+            bondOrder,
           });
 
           // Update atom bond lists
@@ -161,11 +165,13 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
         stepIndex: -1,
         timestamp: 0,
         entities: Array.from(entities.values()),
-        annotations: []
+        annotations: [],
       });
 
       // Process simulation steps
-      const stepsToProcess = manifest.steps.sort((a, b) => a.orderIndex - b.orderIndex);
+      const stepsToProcess = manifest.steps.sort(
+        (a, b) => a.orderIndex - b.orderIndex,
+      );
       let currentTime = 0;
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
@@ -195,12 +201,16 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
           keyframes.push({
             stepIndex,
             timestamp: currentTime,
-            entities: Array.from(entities.values()).map(e => ({ ...e })),
-            annotations: step.narration ? [{
-              id: `annotation_${stepIndex}`,
-              text: step.narration,
-              position: { x: 450, y: 30 }
-            }] : []
+            entities: Array.from(entities.values()).map((e) => ({ ...e })),
+            annotations: step.narration
+              ? [
+                  {
+                    id: `annotation_${stepIndex}`,
+                    text: step.narration,
+                    position: { x: 450, y: 30 },
+                  },
+                ]
+              : [],
           });
         }
       }
@@ -210,7 +220,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        ...(warnings.length > 0 ? { warnings } : {})
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
 
@@ -220,12 +230,15 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
     }> {
       // Simple SMILES parser for basic molecules
       // In production, use RDKit or OpenBabel WASM
-      const atoms: Array<{ element: string; x: number; y: number; charge?: number }> = [];
+      const atoms: Array<{
+        element: string;
+        x: number;
+        y: number;
+        charge?: number;
+      }> = [];
       const bonds: Array<{ from: number; to: number; order: number }> = [];
 
       const elementRegex = /([A-Z][a-z]?)/g;
-      const bondRegex = /[=\-#]/g;
-
       let match;
       let atomIndex = 0;
       const spacing = 80;
@@ -243,7 +256,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
           atoms.push({
             element,
             x,
-            y: y + (atomIndex % 2) * 30 * direction
+            y: y + (atomIndex % 2) * 30 * direction,
           });
 
           // Create bond to previous atom
@@ -257,7 +270,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
             bonds.push({
               from: atomIndex - 1,
               to: atomIndex,
-              order: bondOrder
+              order: bondOrder,
             });
           }
 
@@ -271,7 +284,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
 
     validateReaction(
       reactants: string[],
-      products: string[]
+      products: string[],
     ): {
       valid: boolean;
       massBalanced: boolean;
@@ -303,10 +316,12 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
       for (const [element, count] of reactantAtoms) {
         if (productAtoms.get(element) !== count) {
           massBalanced = false;
-          errors.push(`Element ${element}: ${count} in reactants, ${productAtoms.get(element) || 0} in products`);
+          errors.push(
+            `Element ${element}: ${count} in reactants, ${productAtoms.get(element) || 0} in products`,
+          );
         }
       }
-      for (const [element, count] of productAtoms) {
+      for (const [element, _count] of productAtoms) {
         if (!reactantAtoms.has(element)) {
           massBalanced = false;
           errors.push(`Element ${element} appears only in products`);
@@ -320,7 +335,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
         valid: massBalanced && chargeBalanced,
         massBalanced,
         chargeBalanced,
-        errors
+        errors,
       };
     },
 
@@ -332,11 +347,11 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
       return JSON.stringify({});
     },
 
-    deserialize(state: string): void {
+    deserialize(_state: string): void {
       // No-op for stateless execution
     },
 
-    initialize(manifest: SimulationManifest): void {
+    initialize(_manifest: SimulationManifest): void {
       // No-op
     },
 
@@ -344,7 +359,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
       // No-op
     },
 
-    interpolate(t: number): Partial<SimKeyframe> {
+    interpolate(_t: number): Partial<SimKeyframe> {
       return {};
     },
 
@@ -354,7 +369,7 @@ export function createChemistryKernel(config?: ChemistryConfig): IChemistryKerne
 
     getAnalytics(): Record<string, unknown> {
       return {};
-    }
+    },
   };
 }
 
@@ -365,8 +380,8 @@ function applyChemistryAction(
   action: any,
   atoms: Map<SimEntityId, AtomState>,
   bonds: Map<SimEntityId, BondState>,
-  molecules: Map<SimEntityId, ChemMoleculeEntity>,
-  entities: Map<SimEntityId, SimEntity>
+  _molecules: Map<SimEntityId, ChemMoleculeEntity>,
+  entities: Map<SimEntityId, SimEntity>,
 ): void {
   switch (action.action) {
     case "CREATE_BOND": {
@@ -382,7 +397,7 @@ function applyChemistryAction(
         atom1Id,
         atom2Id,
         bondOrder,
-        forming: true
+        forming: true,
       });
 
       // Update atom bond lists
@@ -408,7 +423,7 @@ function applyChemistryAction(
           y: (atom1Entity.y + atom2Entity.y) / 2,
           atom1Id,
           atom2Id,
-          bondOrder
+          bondOrder,
         } as ChemBondEntity);
       }
       break;
@@ -426,11 +441,11 @@ function applyChemistryAction(
         const atom1 = atoms.get(bond.atom1Id);
         const atom2 = atoms.get(bond.atom2Id);
         if (atom1) {
-          atom1.bonds = atom1.bonds.filter(b => b !== bondId);
+          atom1.bonds = atom1.bonds.filter((b) => b !== bondId);
           atom1.totalBondOrder -= bond.bondOrder;
         }
         if (atom2) {
-          atom2.bonds = atom2.bonds.filter(b => b !== bondId);
+          atom2.bonds = atom2.bonds.filter((b) => b !== bondId);
           atom2.totalBondOrder -= bond.bondOrder;
         }
 
@@ -448,8 +463,11 @@ function applyChemistryAction(
     }
 
     case "REARRANGE": {
-      const atomIds = action.atomIds as SimEntityId[];
-      const newPositions = action.newPositions as Array<{ id: SimEntityId; x: number; y: number }>;
+      const newPositions = action.newPositions as Array<{
+        id: SimEntityId;
+        x: number;
+        y: number;
+      }>;
 
       for (const pos of newPositions) {
         const atom = atoms.get(pos.id);
@@ -524,7 +542,7 @@ function applyChemistryAction(
           y: entity.y,
           charge: atom.charge || 0,
           bonds: [],
-          totalBondOrder: 0
+          totalBondOrder: 0,
         });
       }
       break;
@@ -545,7 +563,7 @@ function applyChemistryAction(
  */
 function validateValence(
   atoms: Map<SimEntityId, AtomState>,
-  bonds: Map<SimEntityId, BondState>
+  _bonds: Map<SimEntityId, BondState>,
 ): string[] {
   const errors: string[] = [];
 
@@ -558,7 +576,7 @@ function validateValence(
 
     if (!expectedValence.includes(actualValence)) {
       errors.push(
-        `Atom ${atom.element} (${id}) has valence ${actualValence}, expected one of ${expectedValence.join(", ")}`
+        `Atom ${atom.element} (${id}) has valence ${actualValence}, expected one of ${expectedValence.join(", ")}`,
       );
     }
   }

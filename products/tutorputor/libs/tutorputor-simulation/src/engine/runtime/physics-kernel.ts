@@ -1,11 +1,11 @@
 /**
  * Physics Simulation Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute physics simulations using a simplified Euler integration solver.
  * @doc.layer product
  * @doc.pattern Kernel
- * @note This implementation currently uses a custom Euler integration loop. 
+ * @note This implementation currently uses a custom Euler integration loop.
  *       Future versions may upgrade to Rapier WASM for more advanced physics.
  */
 
@@ -20,13 +20,13 @@ import type {
   PhysicsSpringEntity,
   PhysicsVectorEntity,
   SimulationRunRequest,
-  SimulationRunResult
+  SimulationRunResult,
 } from "@tutorputor/contracts/v1/simulation";
 
 /**
  * Integration method for physics stepping.
  */
-export type IntegrationMethod = 'euler' | 'verlet' | 'rk4';
+export type IntegrationMethod = "euler" | "verlet" | "rk4";
 
 function toNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -66,7 +66,12 @@ export class SeededRandom {
       this.s[i] = t >>> 0;
     }
     // Ensure non-zero state
-    if (this.s[0] === 0 && this.s[1] === 0 && this.s[2] === 0 && this.s[3] === 0) {
+    if (
+      this.s[0] === 0 &&
+      this.s[1] === 0 &&
+      this.s[2] === 0 &&
+      this.s[3] === 0
+    ) {
       this.s[0] = 1;
     }
   }
@@ -111,7 +116,8 @@ export class SeededRandom {
   nextGaussian(mean = 0, stddev = 1): number {
     const u1 = this.next();
     const u2 = this.next();
-    const z = Math.sqrt(-2 * Math.log(u1 || 1e-10)) * Math.cos(2 * Math.PI * u2);
+    const z =
+      Math.sqrt(-2 * Math.log(u1 || 1e-10)) * Math.cos(2 * Math.PI * u2);
     return z * stddev + mean;
   }
 
@@ -162,7 +168,7 @@ interface CollisionManifold {
 /**
  * Shape type for collision detection.
  */
-type BodyShape = 'circle' | 'rect';
+type BodyShape = "circle" | "rect";
 
 /**
  * AABB bounding box for broadphase.
@@ -226,16 +232,21 @@ export class PhysicsKernel implements SimKernelService {
   readonly domain = "PHYSICS" as const;
 
   constructor(config?: PhysicsConfig) {
-    const rawConfig = config as (Record<string, unknown> & {
-      gravity?: { x: number; y: number };
-    }) | undefined;
+    const rawConfig = config as
+      | (Record<string, unknown> & {
+          gravity?: { x: number; y: number };
+        })
+      | undefined;
     const seed = toNumber(rawConfig?.seed, Date.now());
     this.worldConfig = {
       gravity: config?.gravity ?? { x: 0, y: 9.81 },
       timeStep: toNumber(rawConfig?.timeStep, 1 / 60),
       velocityIterations: 8,
       positionIterations: 3,
-      integrationMethod: toIntegrationMethod(rawConfig?.integrationMethod, "euler"),
+      integrationMethod: toIntegrationMethod(
+        rawConfig?.integrationMethod,
+        "euler",
+      ),
       maxSteps: toNumber(rawConfig?.maxSteps, 10000),
       maxRuntimeMs: toNumber(rawConfig?.maxRuntimeMs, 30000),
       seed,
@@ -269,7 +280,7 @@ export class PhysicsKernel implements SimKernelService {
         keyframes: [],
         totalSteps: 0,
         executionTimeMs: 0,
-        errors: [`Manifest domain is not ${this.domain}`]
+        errors: [`Manifest domain is not ${this.domain}`],
       };
     }
 
@@ -282,7 +293,7 @@ export class PhysicsKernel implements SimKernelService {
     keyframes.push({
       stepIndex: -1,
       timestamp: 0,
-      entities: Array.from(this.entities.values()).map(e => ({ ...e })),
+      entities: Array.from(this.entities.values()).map((e) => ({ ...e })),
       annotations: [],
     });
 
@@ -293,7 +304,7 @@ export class PhysicsKernel implements SimKernelService {
         keyframes.push({
           stepIndex: i,
           timestamp: this.currentTime,
-          entities: Array.from(this.entities.values()).map(e => ({ ...e })),
+          entities: Array.from(this.entities.values()).map((e) => ({ ...e })),
           annotations: [],
         });
       }
@@ -303,11 +314,14 @@ export class PhysicsKernel implements SimKernelService {
       simulationId: request.manifest.id,
       keyframes,
       totalSteps: this.currentStepIndex,
-      executionTimeMs: Date.now() - startTime
+      executionTimeMs: Date.now() - startTime,
     };
   }
 
-  async runDeterministic(request: SimulationRunRequest, seed: number): Promise<SimulationRunResult> {
+  async runDeterministic(
+    request: SimulationRunRequest,
+    _seed: number,
+  ): Promise<SimulationRunResult> {
     // For now, just ignore the seed as our simple physics engine is deterministic by default
     return this.run(request);
   }
@@ -327,7 +341,6 @@ export class PhysicsKernel implements SimKernelService {
     }
   }
 
-
   initialize(manifest: SimulationManifest): void {
     this.manifest = manifest;
     this.reset();
@@ -343,7 +356,10 @@ export class PhysicsKernel implements SimKernelService {
     this.currentTime = 0;
 
     // Extract physics metadata
-    if (this.manifest.domainMetadata && "physics" in this.manifest.domainMetadata) {
+    if (
+      this.manifest.domainMetadata &&
+      "physics" in this.manifest.domainMetadata
+    ) {
       const physics = this.manifest.domainMetadata.physics as any;
       if (physics.gravity) {
         this.worldConfig.gravity = physics.gravity;
@@ -364,11 +380,11 @@ export class PhysicsKernel implements SimKernelService {
         const spring = entity as PhysicsSpringEntity;
         this.springs.push({
           id: entity.id,
-            anchorId: spring.anchorId ?? spring.body1Id ?? entity.id,
-            attachId: spring.attachId ?? spring.body2Id ?? entity.id,
+          anchorId: spring.anchorId ?? spring.body1Id ?? entity.id,
+          attachId: spring.attachId ?? spring.body2Id ?? entity.id,
           stiffness: spring.stiffness,
-            damping: spring.damping ?? 0,
-            restLength: spring.restLength
+          damping: spring.damping ?? 0,
+          restLength: spring.restLength,
         });
       }
     }
@@ -389,16 +405,25 @@ export class PhysicsKernel implements SimKernelService {
 
     // Apply step actions
     for (const action of step.actions) {
-      applyPhysicsAction(action, this.bodies, this.springs, this.entities, this.worldConfig);
+      applyPhysicsAction(
+        action,
+        this.bodies,
+        this.springs,
+        this.entities,
+        this.worldConfig,
+      );
     }
 
     // Simulate physics for this step
     const stepDuration = step.duration ?? 1000; // ms
-    const frameCount = Math.ceil(stepDuration / (this.worldConfig.timeStep * 1000));
+    const frameCount = Math.ceil(
+      stepDuration / (this.worldConfig.timeStep * 1000),
+    );
 
-    const integrate = this.worldConfig.integrationMethod === 'verlet'
-      ? integrateVerlet
-      : integrateEuler;
+    const integrate =
+      this.worldConfig.integrationMethod === "verlet"
+        ? integrateVerlet
+        : integrateEuler;
 
     for (let frame = 0; frame < frameCount; frame++) {
       // Apply forces from springs
@@ -418,7 +443,7 @@ export class PhysicsKernel implements SimKernelService {
         if (body.y + body.halfHeight >= 500) {
           body.y = 500 - body.halfHeight;
           body.vy = -body.vy * body.restitution;
-          body.vx *= (1 - body.friction);
+          body.vx *= 1 - body.friction;
           // Keep prevX/prevY consistent so Verlet doesn't re-accelerate
           body.prevX = body.x - body.vx * this.worldConfig.timeStep;
           body.prevY = body.y - body.vy * this.worldConfig.timeStep;
@@ -447,10 +472,10 @@ export class PhysicsKernel implements SimKernelService {
     this.currentStepIndex++;
   }
 
-  interpolate(t: number): Partial<SimKeyframe> {
+  interpolate(_t: number): Partial<SimKeyframe> {
     // Simple interpolation not implemented for now, returning current state
     return {
-      entities: Array.from(this.entities.values()).map(e => ({ ...e }))
+      entities: Array.from(this.entities.values()).map((e) => ({ ...e })),
     };
   }
 
@@ -461,7 +486,7 @@ export class PhysicsKernel implements SimKernelService {
       entities: Array.from(this.entities.entries()),
       currentStepIndex: this.currentStepIndex,
       currentTime: this.currentTime,
-      worldConfig: this.worldConfig
+      worldConfig: this.worldConfig,
     });
   }
 
@@ -479,7 +504,7 @@ export class PhysicsKernel implements SimKernelService {
     return {
       bodiesCount: this.bodies.size,
       springsCount: this.springs.length,
-      entitiesCount: this.entities.size
+      entitiesCount: this.entities.size,
     };
   }
 
@@ -497,7 +522,12 @@ export function createPhysicsKernel(config?: PhysicsConfig): SimKernelService {
  * x(t+dt) = x(t) + v(t)*dt
  * v(t+dt) = v(t) + a(t)*dt
  */
-function integrateEuler(body: PhysicsBody, ax: number, ay: number, dt: number): void {
+function integrateEuler(
+  body: PhysicsBody,
+  ax: number,
+  ay: number,
+  dt: number,
+): void {
   body.prevX = body.x;
   body.prevY = body.y;
   body.vx += ax * dt;
@@ -514,7 +544,12 @@ function integrateEuler(body: PhysicsBody, ax: number, ay: number, dt: number): 
  * For spring-mass systems and orbital mechanics this provides significantly
  * more stable trajectories than standard Euler at the same step size.
  */
-function integrateVerlet(body: PhysicsBody, ax: number, ay: number, dt: number): void {
+function integrateVerlet(
+  body: PhysicsBody,
+  ax: number,
+  ay: number,
+  dt: number,
+): void {
   const newX = body.x + body.vx * dt + 0.5 * ax * dt * dt;
   const newY = body.y + body.vy * dt + 0.5 * ay * dt * dt;
   // Velocity update using average acceleration (half-step at t, half-step at t+dt)
@@ -535,7 +570,7 @@ function applyPhysicsAction(
   bodies: Map<SimEntityId, PhysicsBody>,
   springs: Spring[],
   entities: Map<SimEntityId, SimEntity>,
-  worldConfig: PhysicsWorldConfig
+  worldConfig: PhysicsWorldConfig,
 ): void {
   switch (action.action) {
     case "SET_INITIAL_VELOCITY": {
@@ -574,7 +609,7 @@ function applyPhysicsAction(
         attachId: action.body2Id as SimEntityId,
         stiffness: action.stiffness as number,
         damping: action.damping as number,
-        restLength: (action.restLength as number) || 0
+        restLength: (action.restLength as number) || 0,
       });
       break;
     }
@@ -591,7 +626,7 @@ function applyPhysicsAction(
     case "SET_GRAVITY": {
       worldConfig.gravity = {
         x: action.gx as number,
-        y: action.gy as number
+        y: action.gy as number,
       };
       break;
     }
@@ -620,7 +655,7 @@ function applyPhysicsAction(
  */
 function applySpringForces(
   bodies: Map<SimEntityId, PhysicsBody>,
-  springs: Spring[]
+  springs: Spring[],
 ): void {
   for (const spring of springs) {
     const anchor = bodies.get(spring.anchorId);
@@ -642,7 +677,8 @@ function applySpringForces(
     // Damping force
     const relVx = attach.vx - anchor.vx;
     const relVy = attach.vy - anchor.vy;
-    const dampingForce = spring.damping * (relVx * dx + relVy * dy) / distance;
+    const dampingForce =
+      (spring.damping * (relVx * dx + relVy * dy)) / distance;
 
     // Apply force
     const fx = (forceMagnitude + dampingForce) * (dx / distance);
@@ -664,9 +700,9 @@ function applySpringForces(
  */
 function updateVectorEntities(
   bodies: Map<SimEntityId, PhysicsBody>,
-  entities: Map<SimEntityId, SimEntity>
+  entities: Map<SimEntityId, SimEntity>,
 ): void {
-  for (const [id, entity] of entities) {
+  for (const [_id, entity] of entities) {
     if (entity.type === "vector") {
       const vector = entity as PhysicsVectorEntity;
       if (vector.attachId) {
@@ -679,12 +715,18 @@ function updateVectorEntities(
           // Update magnitude and angle based on vector type
           switch (vector.vectorType) {
             case "velocity":
-              (entity as PhysicsVectorEntity).magnitude = Math.sqrt(body.vx * body.vx + body.vy * body.vy);
-              (entity as PhysicsVectorEntity).angle = Math.atan2(body.vy, body.vx) * (180 / Math.PI);
+              (entity as PhysicsVectorEntity).magnitude = Math.sqrt(
+                body.vx * body.vx + body.vy * body.vy,
+              );
+              (entity as PhysicsVectorEntity).angle =
+                Math.atan2(body.vy, body.vx) * (180 / Math.PI);
               break;
             case "acceleration":
-              (entity as PhysicsVectorEntity).magnitude = Math.sqrt(body.ax * body.ax + body.ay * body.ay);
-              (entity as PhysicsVectorEntity).angle = Math.atan2(body.ay, body.ax) * (180 / Math.PI);
+              (entity as PhysicsVectorEntity).magnitude = Math.sqrt(
+                body.ax * body.ax + body.ay * body.ay,
+              );
+              (entity as PhysicsVectorEntity).angle =
+                Math.atan2(body.ay, body.ax) * (180 / Math.PI);
               break;
           }
         }
@@ -697,10 +739,10 @@ function updateVectorEntities(
  * Create an internal PhysicsBody from a contract PhysicsBodyEntity.
  */
 function createPhysicsBodyFromEntity(entity: PhysicsBodyEntity): PhysicsBody {
-  const shape: BodyShape = entity.shape === 'rect' ? 'rect' : 'circle';
+  const shape: BodyShape = entity.shape === "rect" ? "rect" : "circle";
   const w = entity.width ?? 20;
   const h = entity.height ?? 20;
-  const radius = shape === 'circle' ? Math.max(w, h) / 2 : 0;
+  const radius = shape === "circle" ? Math.max(w, h) / 2 : 0;
 
   return {
     id: entity.id,
@@ -727,7 +769,7 @@ function createPhysicsBodyFromEntity(entity: PhysicsBodyEntity): PhysicsBody {
  * Compute AABB for broadphase collision detection.
  */
 function getAABB(body: PhysicsBody): AABB {
-  if (body.shape === 'circle') {
+  if (body.shape === "circle") {
     return {
       minX: body.x - body.radius,
       minY: body.y - body.radius,
@@ -747,14 +789,18 @@ function getAABB(body: PhysicsBody): AABB {
  * Broadphase: AABB overlap test.
  */
 function aabbOverlap(a: AABB, b: AABB): boolean {
-  return a.minX <= b.maxX && a.maxX >= b.minX &&
-         a.minY <= b.maxY && a.maxY >= b.minY;
+  return (
+    a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY
+  );
 }
 
 /**
  * Narrowphase: circle vs circle collision detection.
  */
-function circleVsCircle(a: PhysicsBody, b: PhysicsBody): CollisionManifold | null {
+function circleVsCircle(
+  a: PhysicsBody,
+  b: PhysicsBody,
+): CollisionManifold | null {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const distSq = dx * dx + dy * dy;
@@ -779,27 +825,46 @@ function circleVsCircle(a: PhysicsBody, b: PhysicsBody): CollisionManifold | nul
  * Narrowphase: AABB vs AABB collision detection.
  */
 function aabbVsAABB(a: PhysicsBody, b: PhysicsBody): CollisionManifold | null {
-  const overlapX = (a.halfWidth + b.halfWidth) - Math.abs(b.x - a.x);
-  const overlapY = (a.halfHeight + b.halfHeight) - Math.abs(b.y - a.y);
+  const overlapX = a.halfWidth + b.halfWidth - Math.abs(b.x - a.x);
+  const overlapY = a.halfHeight + b.halfHeight - Math.abs(b.y - a.y);
 
   if (overlapX <= 0 || overlapY <= 0) return null;
 
   if (overlapX < overlapY) {
     const sign = b.x > a.x ? 1 : -1;
-    return { bodyA: a.id, bodyB: b.id, normal: { x: sign, y: 0 }, depth: overlapX };
+    return {
+      bodyA: a.id,
+      bodyB: b.id,
+      normal: { x: sign, y: 0 },
+      depth: overlapX,
+    };
   } else {
     const sign = b.y > a.y ? 1 : -1;
-    return { bodyA: a.id, bodyB: b.id, normal: { x: 0, y: sign }, depth: overlapY };
+    return {
+      bodyA: a.id,
+      bodyB: b.id,
+      normal: { x: 0, y: sign },
+      depth: overlapY,
+    };
   }
 }
 
 /**
  * Narrowphase: circle vs AABB collision detection.
  */
-function circleVsAABB(circle: PhysicsBody, rect: PhysicsBody): CollisionManifold | null {
+function circleVsAABB(
+  circle: PhysicsBody,
+  rect: PhysicsBody,
+): CollisionManifold | null {
   // Find closest point on AABB to circle center
-  const closestX = Math.max(rect.x - rect.halfWidth, Math.min(circle.x, rect.x + rect.halfWidth));
-  const closestY = Math.max(rect.y - rect.halfHeight, Math.min(circle.y, rect.y + rect.halfHeight));
+  const closestX = Math.max(
+    rect.x - rect.halfWidth,
+    Math.min(circle.x, rect.x + rect.halfWidth),
+  );
+  const closestY = Math.max(
+    rect.y - rect.halfHeight,
+    Math.min(circle.y, rect.y + rect.halfHeight),
+  );
 
   const dx = circle.x - closestX;
   const dy = circle.y - closestY;
@@ -809,7 +874,12 @@ function circleVsAABB(circle: PhysicsBody, rect: PhysicsBody): CollisionManifold
 
   const dist = Math.sqrt(distSq);
   if (dist === 0) {
-    return { bodyA: circle.id, bodyB: rect.id, normal: { x: 0, y: -1 }, depth: circle.radius };
+    return {
+      bodyA: circle.id,
+      bodyB: rect.id,
+      normal: { x: 0, y: -1 },
+      depth: circle.radius,
+    };
   }
 
   return {
@@ -824,19 +894,24 @@ function circleVsAABB(circle: PhysicsBody, rect: PhysicsBody): CollisionManifold
  * Narrowphase dispatcher: detect collision between two bodies.
  */
 function narrowphase(a: PhysicsBody, b: PhysicsBody): CollisionManifold | null {
-  if (a.shape === 'circle' && b.shape === 'circle') {
+  if (a.shape === "circle" && b.shape === "circle") {
     return circleVsCircle(a, b);
   }
-  if (a.shape === 'rect' && b.shape === 'rect') {
+  if (a.shape === "rect" && b.shape === "rect") {
     return aabbVsAABB(a, b);
   }
-  if (a.shape === 'circle' && b.shape === 'rect') {
+  if (a.shape === "circle" && b.shape === "rect") {
     return circleVsAABB(a, b);
   }
   // rect vs circle: flip and negate normal
   const m = circleVsAABB(b, a);
   if (m) {
-    return { bodyA: a.id, bodyB: b.id, normal: { x: -m.normal.x, y: -m.normal.y }, depth: m.depth };
+    return {
+      bodyA: a.id,
+      bodyB: b.id,
+      normal: { x: -m.normal.x, y: -m.normal.y },
+      depth: m.depth,
+    };
   }
   return null;
 }
@@ -867,17 +942,18 @@ function resolveCollisions(bodies: Map<SimEntityId, PhysicsBody>): void {
       const { normal, depth } = manifold;
 
       // Positional correction (prevent sinking)
-      const totalInvMass = (a.fixed ? 0 : 1 / a.mass) + (b.fixed ? 0 : 1 / b.mass);
+      const totalInvMass =
+        (a.fixed ? 0 : 1 / a.mass) + (b.fixed ? 0 : 1 / b.mass);
       if (totalInvMass === 0) continue;
 
       const correction = depth / totalInvMass;
       if (!a.fixed) {
-        a.x -= normal.x * correction / a.mass;
-        a.y -= normal.y * correction / a.mass;
+        a.x -= (normal.x * correction) / a.mass;
+        a.y -= (normal.y * correction) / a.mass;
       }
       if (!b.fixed) {
-        b.x += normal.x * correction / b.mass;
-        b.y += normal.y * correction / b.mass;
+        b.x += (normal.x * correction) / b.mass;
+        b.y += (normal.y * correction) / b.mass;
       }
 
       // Impulse-based velocity resolution
@@ -889,15 +965,16 @@ function resolveCollisions(bodies: Map<SimEntityId, PhysicsBody>): void {
       if (relVelAlongNormal > 0) continue;
 
       const restitution = Math.min(a.restitution, b.restitution);
-      const impulseMag = -(1 + restitution) * relVelAlongNormal / totalInvMass;
+      const impulseMag =
+        (-(1 + restitution) * relVelAlongNormal) / totalInvMass;
 
       if (!a.fixed) {
-        a.vx -= impulseMag * normal.x / a.mass;
-        a.vy -= impulseMag * normal.y / a.mass;
+        a.vx -= (impulseMag * normal.x) / a.mass;
+        a.vy -= (impulseMag * normal.y) / a.mass;
       }
       if (!b.fixed) {
-        b.vx += impulseMag * normal.x / b.mass;
-        b.vy += impulseMag * normal.y / b.mass;
+        b.vx += (impulseMag * normal.x) / b.mass;
+        b.vy += (impulseMag * normal.y) / b.mass;
       }
 
       // Friction impulse (tangent direction)
@@ -911,16 +988,16 @@ function resolveCollisions(bodies: Map<SimEntityId, PhysicsBody>): void {
         const frictionCoeff = Math.sqrt(a.friction * b.friction);
         const frictionImpulse = Math.min(
           frictionCoeff * Math.abs(impulseMag),
-          tangentLen / totalInvMass
+          tangentLen / totalInvMass,
         );
 
         if (!a.fixed) {
-          a.vx += frictionImpulse * tx / a.mass;
-          a.vy += frictionImpulse * ty / a.mass;
+          a.vx += (frictionImpulse * tx) / a.mass;
+          a.vy += (frictionImpulse * ty) / a.mass;
         }
         if (!b.fixed) {
-          b.vx -= frictionImpulse * tx / b.mass;
-          b.vy -= frictionImpulse * ty / b.mass;
+          b.vx -= (frictionImpulse * tx) / b.mass;
+          b.vy -= (frictionImpulse * ty) / b.mass;
         }
       }
     }

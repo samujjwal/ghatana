@@ -243,6 +243,7 @@ function validateEntity(
   existingIds: Set<SimEntityId>,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
+  void existingIds;
 
   if (!entity.id) {
     issues.push({
