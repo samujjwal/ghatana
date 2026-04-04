@@ -22,6 +22,11 @@ dependencies {
     compileOnly(libs.jetbrains.annotations)
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
+
+    // Test dependencies
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 java {
