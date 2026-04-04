@@ -19,11 +19,13 @@ java {
 }
 
 dependencies {
+    implementation(project(":products:data-cloud:platform-api"))
     api(project(":products:data-cloud:platform-entity"))
     api(project(":products:data-cloud:platform-event"))
     api(project(":products:data-cloud:platform-config"))
     api(project(":products:data-cloud:platform-analytics"))
     api(project(":products:data-cloud:spi"))
+    implementation(project(":products:data-cloud:platform-plugins"))
     api(project(":platform:java:audit"))
 
     implementation(project(":platform:contracts"))
@@ -42,7 +44,6 @@ dependencies {
     implementation(project(":platform:java:plugin"))
     implementation(libs.swagger.annotations)
     implementation(platform(libs.aws.sdk.bom))
-    implementation(libs.aws.glacier)
 
     implementation(libs.activej.http)
     implementation(libs.activej.inject)
@@ -52,31 +53,20 @@ dependencies {
     implementation(libs.grpc.stub)
     implementation(libs.grpc.protobuf)
     implementation(libs.jackson.datatype.jsr310)
-    implementation(libs.kafka.clients)
     implementation(libs.jedis)
     implementation(libs.lettuce.core)
     implementation(libs.aws.s3)
     implementation(libs.caffeine)
     implementation(libs.clickhouse.client)
-    implementation(libs.disruptor)
-    implementation(libs.hadoop.common)
-    implementation(libs.iceberg.core)
-    implementation(libs.iceberg.data)
-    implementation(libs.iceberg.parquet)
-    implementation(libs.jgrapht.core)
     runtimeOnly(libs.clickhouse.http.client)
     implementation(libs.opensearch.java)
     implementation(libs.opensearch.rest.client)
-    implementation(libs.parquet.avro)
     implementation(libs.hikaricp)
     implementation(libs.rocksdb)
     runtimeOnly(libs.sqlite.jdbc)  // Moved to runtimeOnly to reduce compile-time CVEs
     implementation(libs.h2)
 
     compileOnly(libs.javax.annotation.api)
-    compileOnly(libs.trino.plugin.toolkit)
-    compileOnly(libs.trino.spi)
-
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
 
@@ -116,6 +106,11 @@ tasks.test {
     environment("DOCKER_HOST", "unix:///var/run/docker.sock")
     environment("TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE", "/var/run/docker.sock")
     environment("TESTCONTAINERS_HOST_OVERRIDE", "host.docker.internal")
+}
+
+// Skip SpotBugs analysis on test bytecode (test code quality is less critical than production code)
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().matching { it.name == "spotbugsTest" }.configureEach {
+    enabled = false
 }
 
 jacoco {

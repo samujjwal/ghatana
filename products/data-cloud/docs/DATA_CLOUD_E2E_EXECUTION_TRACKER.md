@@ -76,8 +76,7 @@
 ### Fixed Security Bugs
 
 **`EndpointSensitivity` before this pass:**
-- `POST /api/v1/agents` → INTERNAL (❌ should be SENSITIVE — authentication + audit required)
-- `DELETE /api/v1/agents/:id` → INTERNAL (❌ should be CRITICAL — agent deregistration is high-impact)
+- Data-Cloud-owned agent CRUD endpoints existed at this point in history and were later removed during the AEP boundary cleanup.
 - `POST /api/v1/learning/trigger` → INTERNAL (❌ should be SENSITIVE — learning mutation)
 - `DELETE /api/v1/pipelines/:id` → SENSITIVE (❌ should be CRITICAL — destructive)
 - `DELETE /api/v1/checkpoints/:id` → SENSITIVE (❌ should be CRITICAL — destructive)
@@ -416,7 +415,7 @@ Outcome: deterministic release gates and production readiness confidence.
 
 - ✅ Reuse scorecard (`check-reuse-scorecard.sh`) — 9 PASS, 2 advisory WARNs (serialization, rate-limiting), 0 FAIL, EXIT 0. All bash arithmetic/grep bugs fixed.
 - ✅ `reuse-scorecard` CI job operational in `data-cloud-ci.yml`.
-- ✅ E2E smoke matrix (`run-smoke-e2e.sh`) — 8 check categories: health, entity CRUD, events, analytics, voice catalog, pipelines, agents, governance. Verified EXIT 0 with `--warn-only`.
+- ✅ E2E smoke matrix (`run-smoke-e2e.sh`) — 8 check categories: health, entity CRUD, events, analytics, voice catalog, pipelines, memory/execution metadata, governance. Verified EXIT 0 with `--warn-only`.
 - ✅ `smoke-e2e` CI job added to `data-cloud-ci.yml`; advisory integration with `release-gate`.
 - ✅ Canary rollout & rollback playbook (`CANARY_ROLLOUT_PLAYBOOK.md`) — 4-stage progressive delivery (5%→25%→50%→100%), per-stage go/no-go criteria, kubectl rollback procedure, post-rollback checklist, SLO table.
 - ✅ Release sign-off packet prepared (`DATA_CLOUD_RELEASE_SIGNOFF.md`) with evidence links, approval matrix, and execution checklist.

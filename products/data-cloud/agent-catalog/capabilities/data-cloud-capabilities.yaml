@@ -59,7 +59,7 @@ capabilities:
   - id: "data-pipeline-orchestration"
     name: "Data Pipeline Orchestration"
     category: "orchestration"
-    description: "Coordination of multi-stage data processing pipelines"
+    description: "Persistence-backed coordination metadata for multi-stage data processing pipelines; agentic execution and orchestration are delegated to AEP"
     level: "orchestrator"
 
 categories:

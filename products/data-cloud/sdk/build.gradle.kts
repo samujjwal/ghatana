@@ -71,9 +71,6 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
             "performBeanValidation" to "false",
             // Sealed model hierarchy for discriminated unions
             "disallowAdditionalPropertiesIfNotPresent" to "false",
-            // Do not generate reactive variants
-            "useRxJava2" to "false",
-            "useRxJava3" to "false",
             // Generate toString / equals / hashCode
             "hideGenerationTimestamp" to "true",
         )
@@ -112,16 +109,11 @@ tasks.register<org.openapitools.generator.gradle.plugin.tasks.GenerateTask>("gen
             "npmName" to "@ghatana/data-cloud-client",
             "npmVersion" to "1.0.0",
             // Modern TypeScript target
-            "typescriptThreePlus" to "true",
             "supportsES6" to "true",
-            // Enum casing
-            "enumPropertyNaming" to "UPPERCASE",
-            "stringEnums" to "true",
             // API method signatures
             "useSingleRequestParameter" to "true",
             // Generate Interface types alongside concrete implementations
             "withInterfaces" to "true",
-            "prefixParameterInterfaces" to "false",
             // No timestamps in generated files (deterministic builds)
             "hideGenerationTimestamp" to "true",
         )

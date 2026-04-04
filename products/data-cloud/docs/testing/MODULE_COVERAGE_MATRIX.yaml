@@ -1,0 +1,285 @@
+# Data Cloud Module Coverage Matrix
+
+> **Week 1 (Milestone 1) Deliverable**  
+> **Status**: Drafted April 4, 2026  
+> **Purpose**: Track Java module coverage burn-down across 13 core modules + 4 additional areas. Progressive targets: 70% (W4) → 80% (W8) → 90% (W12) → 100% (W16).
+
+## Overview
+
+**Total Modules**: 13 Gradle modules + 4 support areas  
+**Coverage Strategy**: Phase 2A (baselining) + Phase 2B (structural burn-down) per original plan.  
+**Interim Targets**:
+- **Week 4**: 70% line / 55% branch (end of Milestone 1)
+- **Week 8**: 80% line / 70% branch (Milestone 2)
+- **Week 12**: 90% line / 85% branch (Milestone 3)
+- **Week 16**: 100% line / 100% branch (Milestone 4) ✅
+
+---
+
+## Tier 1: Foundation Modules (SPI + Config)
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **spi** | `products/data-cloud/spi` | 8 | 24 | *baseline* | 70% | 80% | 90% | 100% | `SpiContractTest` | TODO |
+| **platform-config** | `products/data-cloud/platform-config` | 4 | 12 | *baseline* | 70% | 80% | 90% | 100% | `ConfigValidationTest` | TODO |
+
+---
+
+## Tier 2: Data Model Modules (Entity + Event)
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **platform-entity** | `products/data-cloud/platform-entity` | 6 | 18 | *baseline* | 70% | 80% | 90% | 100% | `EntityDomainTest` + `EntityValidationTest` | TODO |
+| **platform-event** | `products/data-cloud/platform-event` | 5 | 15 | *baseline* | 70% | 80% | 90% | 100% | `EventDomainTest` + `EventOrderingTest` | TODO |
+
+---
+
+## Tier 3: API & Application Layer
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **platform-api** | `products/data-cloud/platform-api` | 9 | 55 | 7.6% | 70% | 80% | 90% | 100% | `DataCloudHttpServerEntityTest` + `DataCloudHttpServerPipelineTest` + all route tests | TODO |
+| **platform-launcher** | `products/data-cloud/platform-launcher` | 12 | 42 | 11% | 70% | 80% | 90% | 100% | `WorkflowExecutionTest` + `ExecutionServiceTest` + all init tests | TODO |
+| **launcher** (HTTP/gRPC transport) | `products/data-cloud/launcher` | 7 | 28 | *baseline* | 70% | 80% | 90% | 100% | `DataCloudHttpServerTest` + `MiddlewareTest` + `VoiceGatewayTest` | TODO |
+
+---
+
+## Tier 4: Feature & Analytics Modules
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **platform-analytics** | `products/data-cloud/platform-analytics` | 8 | 24 | *baseline* | 70% | 80% | 90% | 100% | `AnalyticsQueryTest` + `ClickHouseQueryTest` + `AggregationTest` | TODO |
+| **platform-plugins** | `products/data-cloud/platform-plugins` | 10 | 35 | *baseline* | 70% | 80% | 90% | 100% | `PluginLifecycleTest` + plugin impl tests (Redis, Kafka, S3, etc.) | TODO |
+| **feature-store-ingest** | `products/data-cloud/feature-store-ingest` | 5 | 16 | *baseline* | 70% | 80% | 90% | 100% | `FeatureIngestTest` + `FeatureValidationTest` | TODO |
+
+---
+
+## Tier 5: Client & Registry Modules
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **platform-client** | `products/data-cloud/platform-client` | 6 | 18 | *baseline* | 70% | 80% | 90% | 100% | `ClientSerializationTest` + `ErrorMappingTest` | TODO |
+| **agent-registry** | `products/data-cloud/agent-registry` | 4 | 12 | *baseline* | 70% | 80% | 90% | 100% | `AgentRegistryTest` + `PolicyTest` | TODO |
+
+---
+
+## Tier 6: Support Modules (SPI Integration, SDK, Platform abstractions)
+
+| Module | Path | Package Count | Classes | Current Cov % | W4 Target | W8 Target | W12 Target | W16 Target | Primary Test Suite | Status |
+|--------|------|---|---|---|---|---|---|---|---|--------|
+| **sdk** | `products/data-cloud/sdk` | 3 | 8 | *baseline* | 70% | 80% | 90% | 100% | `SDKGenerationTest` + `SDKSmokeTest` | TODO |
+| **platform** (abstractions) | `products/data-cloud/platform` | 2 | 6 | *baseline* | 70% | 80% | 90% | 100% | `PlatformAbstractionsTest` | TODO |
+
+---
+
+## Tier 7: Additional Coverage Areas (Not Gradle modules but part of product)
+
+| Area | Location | Purpose | Current Cov % | Status | Primary Test Suite |
+|------|----------|---------|---|--------|---|
+| **data-cloud-cache** | `products/data-cloud/data-cloud-cache` | Query cache service | *baseline* | TODO | `CacheCorrectnessTest` + `CacheEvictionTest` |
+| **api** (contract/integration) | `products/data-cloud/api` | API contract verification | *baseline* | TODO | Included in route coverage tests |
+| **integration-tests** | `products/data-cloud/integration-tests` | Cross-module integration | *baseline* | TODO | `IntegrationTestSuite` |
+| **SDK Generated Output** | `products/data-cloud/sdk/build/generated/java-sdk` | Generated Java SDK | *baseline* | TODO | `SDKGenerationParity` + smoke tests |
+
+---
+
+## Coverage Burn-Down Timeline
+
+### Week 4 (Milestone 1 End)
+
+**Target**: All 13 modules at ≥70% line / ≥55% branch coverage
+
+- `platform-api`: 7.6% → 70% (critical path: write first 30 tests)
+- `platform-launcher`: 11% → 70% (12 classes with sparse test)
+- `platform-entity`: *baseline* → 70% (new test suite)
+- `platform-event`: *baseline* → 70% (new test suite)
+- All others: *baseline* → 70%
+
+**Actions**:
+- [ ] Write 5 critical test suites (pipelines, entities, events, brain, analytics)
+- [ ] Each suite covers 8-12 routes
+- [ ] Verify coverage via `./gradlew jacocoTestCoverageReport`
+
+### Week 8 (Milestone 2 End)
+
+**Target**: All 13 modules at ≥80% line / ≥70% branch coverage
+
+- Focus: Add integration tests (testcontainers, real DB)
+- Replace stub implementations with real tests
+- Add error-path and edge-case tests
+
+### Week 12 (Milestone 3 End)
+
+**Target**: All 13 modules at ≥90% line / ≥85% branch coverage
+
+- Focus: Module burn-down (one per week)
+- Structural analysis (coverage reports) for each module
+- Dead code removal vs. test addition decision per package
+
+### Week 16 (Milestone 4 End)
+
+**Target**: All 13 modules at 100% line / 100% branch coverage ✅
+
+- All source paths covered
+- All branches tested (happy path + error)
+- CI gates enforcing minimum, failing on regression
+
+---
+
+## Per-Module Work Plan
+
+### Priority Tier 1 (Start Week 1): SPI, Config
+
+**Module**: `spi`  
+**Test Suite**: `SpiContractTest` + module-specific suites  
+**Scope**: 24 classes across 8 packages  
+**Week 1 Work**: 
+- [ ] Extract package structure (contracts, storage, integration)
+- [ ] Create abstract base test class
+- [ ] Write contract enforcement tests (10-12 test methods)
+
+**Module**: `platform-config`  
+**Test Suite**: `ConfigValidationTest`  
+**Scope**: 12 classes across 4 packages  
+**Week 1 Work**:
+- [ ] Enumerate all config validators
+- [ ] Test validation rules (valid, invalid, edge cases)
+- [ ] Test defaults
+
+---
+
+### Priority Tier 2 (Start Week 2): Data Model (Entity + Event)
+
+**Module**: `platform-entity`  
+**Test Suite**: `EntityDomainTest`, `EntityValidationTest`, route tests  
+**Scope**: 18 classes across 6 packages (contracts, domain, validators, serializers)  
+**Week 1-2 Work**:
+- [ ] Route test coverage (A001-A016 from REQUIREMENT matrix)
+- [ ] Domain logic tests (validation, versioning, tenant isolation)
+- [ ] Serialization tests (JSON roundtrip)
+
+**Module**: `platform-event`  
+**Test Suite**: `EventDomainTest`, `EventOrderingTest`, route tests  
+**Scope**: 15 classes across 5 packages  
+**Week 1-2 Work**:
+- [ ] Route test coverage (B001-B009 from REQUIREMENT matrix)
+- [ ] Ordering invariant tests (offset guarantees)
+- [ ] Streaming tests (SSE, replay)
+
+---
+
+### Priority Tier 3 (Start Week 2): API & Service Layer
+
+**Module**: `platform-api` (CRITICAL PATH)  
+**Coverage**: 7.6% → 70% (target: +40 test suites in 3 weeks)  
+**Test Suites**: 
+- `DataCloudHttpServerEntityTest` (14 routes, A001-A016)
+- `DataCloudHttpServerPipelineTest` (6 routes, C001-C006)
+- `EventAppendTest` (3 routes, B001-B003)
+- `BrainWorkspaceTest` (6 routes, F001-F003)
+- `AnalyticsQueryTest` (6 routes, F009-F011)
+- `LearningTest` (6 routes, G001-G006)
+- + 15 more for analytics, voice, governance, models, reports
+
+**Week 1-2 Assignments**:
+- Eng1: Start `DataCloudHttpServerEntityTest` (routes A001-A009)
+- Eng2: Start `DataCloudHttpServerPipelineTest` (routes C001-C006)
+- Eng3: Start `EventAppendTest` (routes B001-B003)
+
+**Module**: `platform-launcher`  
+**Coverage**: 11% → 70%  
+**Test Suites**:
+- `WorkflowExecutionTest` (state machine transitions)
+- `ExecutionServiceTest` (domain logic)
+- Service initialization tests
+- Async/promise handling tests
+
+**Module**: `launcher` (HTTP/gRPC)  
+**Test Suites**:
+- `DataCloudHttpServerTest` (framework + middleware)
+- `MiddlewareTest` (auth, tenant context, error handling)
+- `VoiceGatewayTest` (voice intent + transport)
+- `WebSocketTest` (CDC streaming)
+
+---
+
+### Timeline by Week
+
+**Week 1** (THIS WEEK):
+- [ ] Finalize 4 matrices (REQUIREMENT, ROUTE, MODULE, UI)
+- [ ] Create abstract base test classes (Java, TypeScript)
+- [ ] Create test constants and fixtures
+
+**Week 2-3**:
+- [ ] `DataCloudHttpServerEntityTest` (first 20 test methods, A001-A016)
+- [ ] `DataCloudHttpServerPipelineTest` (first 15 test methods, C001-C010)
+- [ ] `EventAppendTest` (first 10 test methods, B001-B009)
+- Target: platform-api + platform-entity + platform-event at 50%+ coverage
+
+**Week 4** (Milestone 1 complete):
+- [ ] All Tier 1-2 modules at 70%+
+- [ ] First 30 test suites passing
+- [ ] CI gates updated to enforce interim thresholds
+
+---
+
+## Notes & Constraints
+
+### Dead Code Handling
+
+For each module, when coverage plateau is reached:
+1. **Categorize uncovered code**:
+   - Production path (test it)
+   - Dead code (delete it)
+   - Generated boilerplate (skip or schema-test it)
+   - Bootstrap glue (test if initialization critical)
+2. **Remove dead code first**, don't ghost-write tests for unused code.
+
+### Skip These (Per Original Plan)
+
+- Generated Java SDK output (`sdk/build/generated/java-sdk`) — schema parity + 1 smoke test per endpoint type, not 100%
+- Boilerplate & serializers — only if on critical path
+- Spring/framework plumbing — only if custom security/auth extensions
+
+### Enforce This
+
+- All custom business logic → 100%
+- All query/filtering/sorting logic → 100%
+- All error paths → 100%
+- All tenant isolation → 100%
+- All async state transitions → 100%
+
+---
+
+## Success Criteria (Per Module)
+
+**Each module is "done"** when:
+1. ✅ All REQUIREMENT matrix rows assigned to this module have tests
+2. ✅ All ROUTE matrix rows (if HTTP handler) have contract + behavior + error tests
+3. ✅ Line coverage ≥ interim target (70%/80%/90%/100%)
+4. ✅ Branch coverage ≥ interim target (55%/70%/85%/100%)
+5. ✅ No flaky tests (deterministic, proper async handling)
+6. ✅ All test classes have Javadoc + @doc.* tags (Rule 9)
+7. ✅ All tests follow naming and placement conventions (Rule 16)
+8. ✅ Code review passed (checklist from EXECUTION_GUIDE Section 4)
+
+---
+
+## CI Integration
+
+```bash
+# Check coverage per module Week 4 (baseline enforcement)
+./gradlew \
+  products:data-cloud:spi:jacocoTestCoverageVerification \
+  products:data-cloud:platform-config:jacocoTestCoverageVerification \
+  products:data-cloud:platform-entity:jacocoTestCoverageVerification \
+  products:data-cloud:platform-event:jacocoTestCoverageVerification \
+  products:data-cloud:platform-api:jacocoTestCoverageVerification \
+  --continue
+```
+
+---
+
+**Maintainer**: Data Cloud Platform Engineering  
+**Last Updated**: April 4, 2026  
+**Version**: 1.0 (Draft)

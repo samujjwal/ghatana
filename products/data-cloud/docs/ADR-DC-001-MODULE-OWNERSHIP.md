@@ -22,7 +22,7 @@ This ADR formalises the ownership matrix and enforces strict downward dependency
 products → libs → contracts
 ```
 
-No circular dependences.  No product ↔ product imports except through `libs/*` or `contracts/*`.
+No circular dependences. Consumer products may depend on approved public Data-Cloud contracts, but Data-Cloud modules must not depend on consumer product code such as AEP.
 
 ---
 
@@ -35,7 +35,7 @@ No circular dependences.  No product ↔ product imports except through `libs/*`
 | `:products:data-cloud:platform-launcher` | Runtime/domain services, transport adapters, DI wiring | Data-Cloud Platform | `com.ghatana.datacloud` | `EmbeddedDataCloudClient`, `EventLogStore`, `DataCloudStorageModule` |
 | `:products:data-cloud:spi` | Storage provider SPI | Data-Cloud Platform | `com.ghatana.datacloud.spi` | `StorageProvider`, `IndexProvider` |
 | `:products:data-cloud:launcher` | Deployable bootstrap and standalone packaging | Data-Cloud Runtime | `com.ghatana.datacloud.launcher` | `DataCloudLauncher` |
-| `:products:data-cloud:agent-registry` | Agent/operator registry | Data-Cloud AI | `com.ghatana.datacloud.agents` | `AgentRegistry`, `AgentDefinition` |
+| `:products:data-cloud:agent-registry` | Agent definition and metadata persistence | Data-Cloud AI | `com.ghatana.datacloud.agents` | `AgentRegistry`, `AgentDefinition` |
 | `:products:data-cloud:feature-store-ingest` | ML feature ingestion pipeline | Data-Cloud AI | `com.ghatana.datacloud.features` | `FeatureIngestService` |
 | `:products:data-cloud:sdk` | External client SDK | Data-Cloud SDK | `com.ghatana.datacloud.sdk` | `DataCloudClient` |
 | `:products:data-cloud:ui` | React/Tailwind UI components | Data-Cloud Frontend | `@ghatana/data-cloud-ui` | Published npm package |
@@ -46,7 +46,7 @@ No circular dependences.  No product ↔ product imports except through `libs/*`
 |---|---|---|---|
 | `EntityHandler` | Entity CRUD + search + export + anomalies + batch + SSE | `/api/v1/entities/**` | `DataCloudService`, `EntityStore` |
 | `AnalyticsHandler` | Query, aggregation, reports, AI suggest | `/api/v1/analytics/**`, `/api/v1/reports/**` | `QueryEngine`, `CompletionService` |
-| `PipelineHandler` | Pipeline management + AI optimise hint | `/api/v1/pipelines/**` | `PipelineService`, `CompletionService` |
+| `PipelineHandler` | Execution metadata persistence + AI optimise hint | `/api/v1/pipelines/**` | `PipelineService`, `CompletionService` |
 | `BrainHandler` | Brain status + AI explanation | `/api/v1/brain/**` | `BrainService`, `CompletionService` |
 | `AiAssistHandler` | Cross-domain AI assist (DC-E3) | `/api/v1/ai/**` | `CompletionService` |
 | `VoiceGatewayHandler` | NLU voice intent resolution (DC-E4) | `/api/v1/voice/**` | `CompletionService`, `AuditService` |
@@ -59,15 +59,16 @@ No circular dependences.  No product ↔ product imports except through `libs/*`
 ### 2.3 Allowed Dependency Edges
 
 ```
-launcher   ──imports──▶  platform-launcher  ──imports──▶  spi
-launcher   ──imports──▶  libs:http-server
-launcher   ──imports──▶  libs:ai-integration    (via AiAssistHandler, VoiceGatewayHandler)
-launcher   ──imports──▶  platform:java:audit    (via DataLifecycleHandler, VoiceGatewayHandler)
-launcher   ──imports──▶  platform:java:governance
-sdk        ──imports──▶  contracts/openapi
-ui         ──imports──▶  sdk  (via REST)
-agent-registry ──imports──▶ platform-launcher
-feature-store-ingest ──imports──▶ platform-launcher
+launcher             ──imports──▶  platform-launcher  ──imports──▶  spi
+launcher             ──imports──▶  libs:http-server
+launcher             ──imports──▶  libs:ai-integration    (embedded AI/ML assist only)
+launcher             ──imports──▶  platform:java:audit    (via DataLifecycleHandler, VoiceGatewayHandler)
+launcher             ──imports──▶  platform:java:governance
+sdk                  ──imports──▶  contracts/openapi
+ui                   ──imports──▶  sdk  (via REST)
+agent-registry       ──imports──▶  platform-launcher
+feature-store-ingest ──imports──▶  platform-launcher
+products:aep:*       ──imports──▶  products:data-cloud:spi / platform-client / public APIs
 ```
 
 **Forbidden edges:**
@@ -77,7 +78,21 @@ feature-store-ingest ──imports──▶ platform-launcher
 | `platform-launcher` | Any `launcher.*` class | Circular |
 | `sdk` | Any `launcher.*` class | Layering violation |
 | `launcher` | `feature-store-ingest` internal impl | Use `platform-launcher` APIs only |
+| Any `products:data-cloud:*` module | Any `products:aep:*` class | Prevent circular product dependency |
 | Any product | `products/virtual-org/**` directly | Must go through `libs/*` |
+
+### 2.5 Agentic Processing Boundary
+
+Data-Cloud is AI/ML-native and may embed ranking, recommendation, anomaly, inference, summarisation, and optimisation support directly in its own workflows. Agentic processing is a separate concern and belongs to AEP.
+
+The approved integration pattern is:
+
+1. Data-Cloud emits agentic intents, work requests, or domain events through event-cloud or a neutral public contract.
+2. AEP subscribes or reads those requests through Data-Cloud public APIs/contracts.
+3. AEP executes planning, tool use, and multi-step orchestration.
+4. AEP writes results, checkpoints, telemetry, and derived memory back into Data-Cloud-owned persistence surfaces.
+
+This preserves one-way dependency flow while allowing tight runtime integration.
 
 ### 2.4 OpenAPI Contract Governance
 

@@ -5,21 +5,16 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,11 +28,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for Data-Cloud HTTP entity CRUD endpoints.
+ * Integration tests for Data Cloud HTTP entity CRUD endpoints.
  *
- * <p>Starts a real {@link DataCloudHttpServer} on a random port and makes
- * HTTP calls via the Java standard {@link java.net.http.HttpClient}.
- * The {@link DataCloudClient} is mocked so tests do not touch real storage.
+ * <p>Extends {@link DataCloudHttpServerTestBase} to inherit reusable HTTP
+ * helpers, tenant context management, and response parsing utilities.
+ * All tests share the same server startup and HTTP client infrastructure.
  *
  * <p>Covers: POST/GET/DELETE single entity, GET query, batch save/delete,
  * export (501 without service), anomaly detection (501 without detector),
@@ -50,13 +45,9 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("DataCloudHttpServer – Entity CRUD Endpoints")
-class DataCloudHttpServerEntityTest {
+class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
-    private DataCloudHttpServer server;
-    private int port;
-    private final HttpClient httpClient = HttpClient.newBuilder().build();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -64,9 +55,11 @@ class DataCloudHttpServerEntityTest {
         port = findFreePort();
     }
 
-    @AfterEach
-    void tearDown() {
-        if (server != null) server.stop();
+    @Override
+    protected void startServer() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port);
+        server.start();
+        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,28 +70,36 @@ class DataCloudHttpServerEntityTest {
     @DisplayName("POST /api/v1/entities/:collection – save entity")
     class SaveEntityTests {
 
+        /**
+         * Requirement A001: Save Entity with Valid Data
+         * Route: POST /api/v1/entities/{collection}
+         */
         @Test
         @DisplayName("returns 200 with saved entity id when client save succeeds")
         void saveEntity_validPayload_returns200() throws Exception {
             DataCloudClient.Entity saved = DataCloudClient.Entity.of(
-                    "ent-1", "products", Map.of("name", "Widget", "price", 9.99));
-            when(mockClient.save(anyString(), eq("products"), any()))
+                    "ent-1", TestConstants.COLLECTION_PRODUCTS, 
+                    Map.of("name", "Widget", "price", 9.99));
+            when(mockClient.save(anyString(), eq(TestConstants.COLLECTION_PRODUCTS), any()))
                     .thenReturn(Promise.of(saved));
             when(mockClient.appendEvent(anyString(), any()))
                     .thenReturn(Promise.of(DataCloudClient.Offset.of(1)));
 
             startServer();
 
-            HttpResponse<String> resp = postJson("/api/v1/entities/products",
+            HttpResponse<String> resp = postJson("/api/v1/entities/" + TestConstants.COLLECTION_PRODUCTS,
                     Map.of("name", "Widget", "price", 9.99));
 
-            assertThat(resp.statusCode()).isEqualTo(200);
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
+            assertStatusCode(resp, TestConstants.HTTP_OK);
+            Map<String, Object> body = parseJsonResponse(resp);
             assertThat(body.get("id")).isEqualTo("ent-1");
-            assertThat(body.get("collection")).isEqualTo("products");
+            assertThat(body.get("collection")).isEqualTo(TestConstants.COLLECTION_PRODUCTS);
         }
 
+        /**
+         * Requirement A002: Reject Invalid Content-Type
+         * Route: POST /api/v1/entities/{collection}
+         */
         @Test
         @DisplayName("returns 415 when Content-Type is not application/json")
         void saveEntity_wrongContentType_returns415() throws Exception {
@@ -106,12 +107,12 @@ class DataCloudHttpServerEntityTest {
 
             HttpRequest req = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"x\"}"))
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/products"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/" + TestConstants.COLLECTION_PRODUCTS))
                     .header("Content-Type", "text/plain")
                     .build();
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> resp = httpClient.send(req, BodyHandlers.ofString());
 
-            assertThat(resp.statusCode()).isEqualTo(415);
+            assertStatusCode(resp, 415);
         }
 
         @Test
@@ -482,71 +483,6 @@ class DataCloudHttpServerEntityTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Helpers
+    // Helpers (inherited from DataCloudHttpServerTestBase)
     // ─────────────────────────────────────────────────────────────────────────
-
-    private void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
-        server.start();
-        waitForServerReady(port);
-    }
-
-    private HttpResponse<String> get(String path) throws Exception {
-        return httpClient.send(
-                HttpRequest.newBuilder().GET()
-                        .uri(URI.create("http://127.0.0.1:" + port + path))
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> getWithHeader(String path, String headerName, String headerValue)
-            throws Exception {
-        return httpClient.send(
-                HttpRequest.newBuilder().GET()
-                        .uri(URI.create("http://127.0.0.1:" + port + path))
-                        .header(headerName, headerValue)
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> postJson(String path, Object body) throws Exception {
-        return postRaw(path, mapper.writeValueAsString(body));
-    }
-
-    private HttpResponse<String> postRaw(String path, String body) throws Exception {
-        return httpClient.send(
-                HttpRequest.newBuilder()
-                        .POST(HttpRequest.BodyPublishers.ofString(body))
-                        .uri(URI.create("http://127.0.0.1:" + port + path))
-                        .header("Content-Type", "application/json")
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> delete(String path) throws Exception {
-        return httpClient.send(
-                HttpRequest.newBuilder().DELETE()
-                        .uri(URI.create("http://127.0.0.1:" + port + path))
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private static int findFreePort() throws IOException {
-        try (ServerSocket ss = new ServerSocket(0)) {
-            return ss.getLocalPort();
-        }
-    }
-
-    private static void waitForServerReady(int port) throws Exception {
-        long deadline = System.currentTimeMillis() + 5_000;
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                new Socket("127.0.0.1", port).close();
-                return;
-            } catch (IOException ignored) {
-                Thread.sleep(50);
-            }
-        }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s");
-    }
 }

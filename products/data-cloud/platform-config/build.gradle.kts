@@ -35,9 +35,15 @@ dependencies {
     annotationProcessor(libs.lombok)
     compileOnly(libs.jetbrains.annotations)
 
+    testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
+
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
 }
 
 tasks.test {

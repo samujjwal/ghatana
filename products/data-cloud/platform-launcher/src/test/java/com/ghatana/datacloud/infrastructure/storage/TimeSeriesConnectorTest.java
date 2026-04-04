@@ -22,9 +22,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 
-@Disabled("Temporarily disabled due to assertion issues in test environment")
 @ExtendWith(MockitoExtension.class)
 class TimeSeriesConnectorTest extends EventloopTestBase {
 
@@ -39,15 +38,14 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
-        doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
+        lenient().doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
+        lenient().doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
         connector = new TimeSeriesConnector(metrics);
     }
 
     // ── constructor ──────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void constructor_null_throwsNPE() {
         assertThatNullPointerException().isThrownBy(() -> new TimeSeriesConnector(null));
     }
@@ -68,7 +66,6 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void create_multipleEntities_allStored() {
         for (int i = 0; i < 5; i++) resolve(connector.create(event(null)));
         long count = resolve(connector.count(COLLECTION_ID, TENANT, null));
@@ -113,7 +110,6 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void update_failsForMissingEntity() {
         Entity ghost = event(UUID.randomUUID());
         assertThatThrownBy(() -> resolve(connector.update(ghost))).isInstanceOf(Exception.class);
@@ -162,7 +158,6 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
     // ── scan ─────────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void scan_returnsAllEntities_noFilter() {
         for (int i = 0; i < 4; i++) resolve(connector.create(event(null)));
         List<Entity> found = resolve(connector.scan(COLLECTION_ID, TENANT, null, 100, 0));
@@ -202,7 +197,6 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
     // ── metadata ─────────────────────────────────────────────────────────────
 
     @Test
-    @Disabled("Temporarily disabled due to assertion issues")
     void metadata_isTimeSeries() {
         assertThat(connector.getMetadata().supportsTimeSeries()).isTrue();
     }

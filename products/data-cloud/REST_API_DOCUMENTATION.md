@@ -4,6 +4,12 @@
 **Framework:** ActiveJ HTTP Server  
 **Base URL:** `/api/v1`
 
+This document describes the Data-Cloud product API surface for data management, analytics, governance, AI/ML-native features, and execution persistence.
+
+Boundary note: Data-Cloud is an independent AI/ML-native product, but it does not host agentic orchestration. AEP performs agentic processing by consuming Data-Cloud public contracts and event-cloud streams, then writing results and execution state back into Data-Cloud.
+
+Canonical contract note: the machine-readable source of truth is `products/data-cloud/docs/openapi.yaml`; this document is a human-oriented companion.
+
 ---
 
 ## Collections API

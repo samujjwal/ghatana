@@ -4,8 +4,9 @@ plugins {
 }
 
 dependencies {
-    // Platform module
+    // Platform modules
     implementation(project(":products:data-cloud:platform-launcher"))
+    implementation(project(":products:data-cloud:platform-api"))
     
     // Core platform dependencies
     implementation(project(":platform:java:observability"))
@@ -51,8 +52,9 @@ dependencies {
     testImplementation(libs.archunit.junit5)
 }
 
-tasks.named<Test>("test") {
+tasks.test {
     useJUnitPlatform()
+    
     // Limit parallel execution to 1 fork: DataCloudHttpServer tests (12 total)
     // consume significant resources (Eventloop, server threads, port binding).
     // Running >1 test class in parallel causes resource exhaustion and hangs.

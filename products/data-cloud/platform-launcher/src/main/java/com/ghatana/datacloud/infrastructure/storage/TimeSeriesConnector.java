@@ -148,7 +148,7 @@ public class TimeSeriesConnector implements StorageConnector {
             }
 
             // Store in time-series store
-            String storeKey = entity.getTenantId() + ":" + entity.getCollectionName();
+            String storeKey = entity.getTenantId();
             List<Entity> tsList = timeSeriesStore.computeIfAbsent(storeKey, k -> Collections.synchronizedList(new ArrayList<>()));
             synchronized (tsList) {
                 tsList.add(entityToCreate);
@@ -178,7 +178,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.getOrDefault(storeKey, Collections.emptyList());
 
             Optional<Entity> found = entities.stream()
@@ -213,7 +213,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "tenant", entity.getTenantId(),
                     "collection", entity.getCollectionName());
 
-            String storeKey = entity.getTenantId() + ":" + entity.getCollectionName();
+            String storeKey = entity.getTenantId();
             List<Entity> entities = timeSeriesStore.get(storeKey);
 
             if (entities != null) {
@@ -252,7 +252,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.get(storeKey);
 
             if (entities != null) {
@@ -292,12 +292,13 @@ public class TimeSeriesConnector implements StorageConnector {
                     "tenant", tenantId,
                     "collection", collectionId.toString());
 
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.getOrDefault(storeKey, Collections.emptyList());
 
             // Apply filters
             List<Entity> filtered = entities.stream()
                     .filter(e -> applyFilter(e, spec.getFilter().orElse(null)))
+                    .filter(e -> applyTimeWindowFilter(e, spec))
                     .toList();
 
             // Apply pagination
@@ -338,7 +339,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.getOrDefault(storeKey, Collections.emptyList());
 
             // Apply filter if provided
@@ -377,7 +378,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> entities = timeSeriesStore.getOrDefault(storeKey, Collections.emptyList());
 
             long count = filterExpression != null
@@ -415,7 +416,7 @@ public class TimeSeriesConnector implements StorageConnector {
                     "collection", collectionId.toString(),
                     "count", String.valueOf(entities.size()));
 
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> created = new ArrayList<>();
 
             for (Entity entity : entities) {
@@ -458,7 +459,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> store = timeSeriesStore.get(storeKey);
 
             if (store == null) {
@@ -501,7 +502,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> store = timeSeriesStore.get(storeKey);
 
             if (store == null) {
@@ -538,7 +539,7 @@ public class TimeSeriesConnector implements StorageConnector {
 
         long startTime = System.currentTimeMillis();
         try {
-            String storeKey = tenantId + ":" + collectionId;
+            String storeKey = tenantId;
             List<Entity> store = timeSeriesStore.get(storeKey);
 
             long deleted = store != null ? store.size() : 0;
@@ -607,6 +608,30 @@ public class TimeSeriesConnector implements StorageConnector {
 
         // Simple filter: just check if all keys exist
         // In production, parse and evaluate the expression properly
+        return true;
+    }
+
+    private boolean applyTimeWindowFilter(Entity entity, QuerySpec spec) {
+        if (!spec.hasTimeWindow()) {
+            return true;
+        }
+        Instant windowStart = spec.getTimeWindowStart().orElseThrow();
+        Instant windowEnd = spec.getTimeWindowEnd().orElseThrow();
+
+        // Try entity's data.timestamp field first, fall back to createdAt
+        Object tsValue = entity.getData() != null ? entity.getData().get("timestamp") : null;
+        if (tsValue != null) {
+            try {
+                Instant ts = Instant.parse(tsValue.toString());
+                return !ts.isBefore(windowStart) && !ts.isAfter(windowEnd);
+            } catch (Exception ignored) {
+                // unparseable timestamp; fall through to createdAt
+            }
+        }
+        if (entity.getCreatedAt() != null) {
+            return !entity.getCreatedAt().isBefore(windowStart) && !entity.getCreatedAt().isAfter(windowEnd);
+        }
+        // No timestamp available; include the entity
         return true;
     }
 }

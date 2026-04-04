@@ -40,10 +40,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, EventloopTestBase
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("BlobStorageConnector — Integration Tests (MinIO via Testcontainers)")
-@org.junit.jupiter.api.Disabled("Requires Docker")
 class BlobStorageConnectorTest extends EventloopTestBase {
 
     private static final int MINIO_PORT  = 9000;

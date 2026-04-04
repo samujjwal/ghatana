@@ -40,7 +40,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Full audit trail of every step outcome</li>
  *   <li>Ability to replay history for debugging and observability</li>
- *   <li>Alignment with AEP's event-sourced checkpoint model</li>
+ *   <li>Alignment with generic external-runtime checkpoint and execution metadata models</li>
  * </ul>
  *
  * <h2>Payload Format</h2>
@@ -100,25 +100,25 @@ public class WorkflowRunRepository {
      *
      * @param tenantId   tenant identifier (not null)
      * @param workflowId logical workflow name (not null)
-     * @param pipelineId AEP pipeline that the run belongs to (not null)
+     * @param executionId external runtime execution identifier that the run belongs to (not null)
      * @param metadata   arbitrary key-value metadata attached to the run (may be null)
      * @return promise of the newly generated {@code runId}
      */
     public Promise<String> startRun(
             String tenantId,
             String workflowId,
-            String pipelineId,
+            String executionId,
             Map<String, String> metadata) {
 
         Objects.requireNonNull(tenantId,   "tenantId");
         Objects.requireNonNull(workflowId, "workflowId");
-        Objects.requireNonNull(pipelineId, "pipelineId");
+        Objects.requireNonNull(executionId, "executionId");
 
         String runId = UUID.randomUUID().toString();
         Map<String, Object> payload = new HashMap<>();
         payload.put("runId",      runId);
         payload.put("workflowId", workflowId);
-        payload.put("pipelineId", pipelineId);
+        payload.put("executionId", executionId);
         payload.put("startedAt",  Instant.now().toString());
         if (metadata != null && !metadata.isEmpty()) {
             payload.put("metadata", metadata);
@@ -126,8 +126,8 @@ public class WorkflowRunRepository {
 
         return appendEvent(tenantId, EVENT_RUN_STARTED, payload)
                 .map(offset -> {
-                    log.info("Workflow run started: runId={} workflowId={} pipelineId={} offset={}",
-                             runId, workflowId, pipelineId, offset.value());
+                    log.info("Workflow run started: runId={} workflowId={} executionId={} offset={}",
+                             runId, workflowId, executionId, offset.value());
                     return runId;
                 });
     }
@@ -302,7 +302,7 @@ public class WorkflowRunRepository {
         }
 
         String workflowId = String.valueOf(startPayload.getOrDefault("workflowId", ""));
-        String pipelineId = String.valueOf(startPayload.getOrDefault("pipelineId", ""));
+        String executionId = extractExecutionId(startPayload);
         Instant startedAt = parseInstant(startPayload, "startedAt");
 
         // Count completed and failed steps for this runId
@@ -332,9 +332,21 @@ public class WorkflowRunRepository {
                 : null;
 
         return Optional.of(new WorkflowRunStatus(
-                runId, workflowId, pipelineId, startedAt,
+                runId, workflowId, executionId, startedAt,
                 (int) completedSteps, (int) failedSteps,
                 terminalStatus, finishedAt));
+    }
+
+    private String extractExecutionId(Map<String, Object> startPayload) {
+        Object executionId = startPayload.get("executionId");
+        if (executionId != null) {
+            return executionId.toString();
+        }
+
+        // Backward compatibility for historical payloads emitted before the
+        // execution metadata contract was generalized.
+        Object legacyPipelineId = startPayload.get("pipelineId");
+        return legacyPipelineId != null ? legacyPipelineId.toString() : "";
     }
 
     @SuppressWarnings("unchecked")
@@ -369,7 +381,7 @@ public class WorkflowRunRepository {
      *
      * @param runId          unique run identifier
      * @param workflowId     logical workflow name
-     * @param pipelineId     AEP pipeline the run belongs to
+     * @param executionId    external runtime execution identifier the run belongs to
      * @param startedAt      when {@value #EVENT_RUN_STARTED} was recorded
      * @param completedSteps count of {@value #EVENT_STEP_COMPLETED} events this run
      * @param failedSteps    count of {@value #EVENT_STEP_FAILED} events this run
@@ -384,7 +396,7 @@ public class WorkflowRunRepository {
     public record WorkflowRunStatus(
             String runId,
             String workflowId,
-            String pipelineId,
+            String executionId,
             Instant startedAt,
             int completedSteps,
             int failedSteps,

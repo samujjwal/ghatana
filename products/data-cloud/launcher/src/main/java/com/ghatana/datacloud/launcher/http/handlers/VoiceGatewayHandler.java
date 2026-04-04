@@ -154,10 +154,15 @@ public class VoiceGatewayHandler {
         // max 64 KB JSON body — raw audio MUST be delivered base64-encoded within this limit
         return request.loadBody(1024 * 64)
             .then(body -> {
-                Map<String, Object> input = parseBody(body.getString(StandardCharsets.UTF_8));
+                String rawBody = body.getString(StandardCharsets.UTF_8);
+                if (rawBody == null || rawBody.isBlank()) {
+                    return Promise.of(http.errorResponse(400, "Request body is required"));
+                }
+                Map<String, Object> input = parseBody(rawBody);
                 @SuppressWarnings("unchecked")
                 Map<String, String> params = (Map<String, String>) input.getOrDefault("parameters", Map.of());
                 boolean confirmOverride    = Boolean.TRUE.equals(input.get("confirm"));
+                boolean classifyOnly       = Boolean.TRUE.equals(input.get("classifyOnly"));
 
                 String utteranceRaw = (String) input.get("utterance");
                 String audioDataB64 = (String) input.get("audioData");
@@ -190,6 +195,31 @@ public class VoiceGatewayHandler {
                                 "Utterance resolved to empty string — audio may be silent or STT failed",
                                 tenantId, requestId),
                             objectMapper));
+                    }
+
+                    // Classify-only mode: return classification without executing the intent
+                    if (classifyOnly) {
+                        return classifyIntent(utterance, tenantId)
+                            .map(classified -> {
+                                if (classified.isEmpty()) {
+                                    return http.envelopeResponse(
+                                        ApiResponse.success(
+                                            Map.of("intentName", "", "executed", false, "matched", false),
+                                            tenantId, requestId),
+                                        objectMapper);
+                                }
+                                IntentClassification c = classified.get();
+                                return http.envelopeResponse(
+                                    ApiResponse.success(
+                                        Map.of(
+                                            "intentName",  c.intent().name(),
+                                            "executed",    false,
+                                            "matched",     true,
+                                            "confidence",  c.confidence()
+                                        ),
+                                        tenantId, requestId),
+                                    objectMapper);
+                            });
                     }
 
                     return classifyIntent(utterance, tenantId)
@@ -258,17 +288,17 @@ public class VoiceGatewayHandler {
             String audioDataB64, String audioFormat, String language,
             String tenantId, String requestId) {
         if (sttPort == null || !sttPort.isAvailable()) {
-            // Return a resolved promise carrying an empty string so the caller emits a structured error
+            // STT provider not configured — return empty string so caller emits a structured EMPTY_UTTERANCE error
             log.info("[DC-E4] Audio input received but STT provider not configured (tenantId={})", tenantId);
-            return Promise.ofException(new UnsupportedOperationException(
-                "STT provider not configured — set DC_STT_URL to enable audio input"));
+            return Promise.of("");
         }
         byte[] audioBytes;
         try {
             audioBytes = Base64.getDecoder().decode(audioDataB64.replaceAll("\\s", ""));
         } catch (IllegalArgumentException e) {
-            return Promise.ofException(new IllegalArgumentException(
-                "audioData is not valid Base64: " + e.getMessage()));
+            // Invalid base64 — return empty string so caller emits a structured EMPTY_UTTERANCE error
+            log.warn("[DC-E4] Invalid base64 audioData (tenantId={}): {}", tenantId, e.getMessage());
+            return Promise.of("");
         }
         return sttPort.transcribe(audioBytes, audioFormat, language)
             .map(result -> {

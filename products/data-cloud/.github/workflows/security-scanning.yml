@@ -1,0 +1,610 @@
+name: Security Scanning and Compliance
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'Type of security scan to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - quick
+          - dependency-only
+          - container-only
+          - secrets-only
+
+env:
+  JAVA_VERSION: '21'
+  GRADLE_VERSION: '8.5'
+  NODE_VERSION: '20'
+
+jobs:
+  # ====================================================================================
+  # Dependency Vulnerability Scanning
+  # ====================================================================================
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      # Java dependency scanning with OWASP Dependency-Check
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Data-Cloud'
+          path: '.'
+          format: 'ALL'
+          args: >
+            --enableRetired
+            --enableExperimental
+            --failOnCVSS 7
+
+      - name: Upload Dependency-Check results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: reports/
+
+      # Upload to GitHub Security tab
+      - name: Upload to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+
+      # Node.js dependency scanning
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Run npm audit
+        working-directory: ./products/data-cloud/ui
+        run: |
+          npm audit --audit-level=high --json > npm-audit-report.json || true
+          npm audit --audit-level=high || true
+
+      - name: Upload npm audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-report
+          path: ./products/data-cloud/ui/npm-audit-report.json
+
+  # ====================================================================================
+  # Static Application Security Testing (SAST)
+  # ====================================================================================
+  sast-scan:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java, javascript
+          queries: security-extended,security-and-quality
+
+      # Autobuild Java code
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      # Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:java"
+
+      # Run SpotBugs for additional Java security analysis
+      - name: Setup JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Run SpotBugs
+        run: |
+          ./gradlew :products:data-cloud:spotbugsMain :products:data-cloud:spotbugsTest \
+            -Dspotbugs.effort=max \
+            -Dspotbugs.threshold=medium \
+            -Dspotbugs.xmlOutput=true || true
+
+      - name: Upload SpotBugs results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: products/data-cloud/**/build/reports/spotbugs/
+
+  # ====================================================================================
+  # Secret Detection
+  # ====================================================================================
+  secret-detection:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better detection
+
+      # GitLeaks for secret detection
+      - name: Run GitLeaks
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
+
+      # TruffleHog for additional secret scanning
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      # Custom secret patterns check
+      - name: Custom secret pattern check
+        run: |
+          # Check for common secrets patterns
+          patterns=(
+            "password\s*=\s*[\"'][^\"']+[\"']"
+            "api[_-]?key\s*=\s*[\"'][^\"']+[\"']"
+            "secret\s*=\s*[\"'][^\"']+[\"']"
+            "token\s*=\s*[\"'][^\"']+[\"']"
+            "AKIA[0-9A-Z]{16}"  # AWS Access Key
+            "ghp_[0-9a-zA-Z]{36}"  # GitHub Personal Access Token
+            "sk-[0-9a-zA-Z]{48}"  # OpenAI API Key
+          )
+          
+          found_secrets=false
+          for pattern in "${patterns[@]}"; do
+            if grep -r -i -E "$pattern" --include="*.java" --include="*.ts" --include="*.tsx" --include="*.json" --include="*.yaml" --include="*.yml" --include="*.properties" --include="*.env*" . 2>/dev/null | grep -v "example\|test\|mock\|fake\|dummy\|placeholder"; then
+              echo "Potential secret found matching pattern: $pattern"
+              found_secrets=true
+            fi
+          done
+          
+          if [ "$found_secrets" = true ]; then
+            echo "::error::Potential secrets detected in codebase!"
+            exit 1
+          fi
+
+  # ====================================================================================
+  # Container Security Scanning
+  # ====================================================================================
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t datacloud:scan-target \
+            -f products/data-cloud/Dockerfile \
+            products/data-cloud/
+
+      # Trivy container scan
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'datacloud:scan-target'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail build, just report
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      # Grype container scan
+      - name: Run Grype vulnerability scanner
+        uses: anchore/scan-action@v3
+        with:
+          image: 'datacloud:scan-target'
+          fail-build: false
+          severity-cutoff: high
+
+      - name: Upload Grype scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grype-report
+          path: ${{ steps.grype-scan.outputs.json }}
+
+      # Dockle for Dockerfile best practices
+      - name: Run Dockle
+        uses: goodwithtech/dockle-action@master
+        with:
+          image: 'datacloud:scan-target'
+          format: 'sarif'
+          output: 'dockle-results.sarif'
+
+      - name: Upload Dockle results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'dockle-results.sarif'
+
+  # ====================================================================================
+  # Infrastructure as Code (IaC) Security Scanning
+  # ====================================================================================
+  iac-scan:
+    name: Infrastructure as Code Security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Checkov for Terraform/Kubernetes security
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform,dockerfile,kubernetes,helm
+          output_format: sarif
+          output_file_path: reports/checkov.sarif
+          soft_fail: true
+
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: reports/checkov.sarif
+
+      # TFLint for Terraform
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Run TFLint
+        run: |
+          tflint --init
+          tflint -f json > tflint-report.json || true
+        working-directory: ./products/data-cloud/terraform
+
+      - name: Upload TFLint results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tflint-report
+          path: ./products/data-cloud/terraform/tflint-report.json
+
+      # Kubeconform for Kubernetes manifests
+      - name: Run Kubeconform
+        run: |
+          helm plugin install https://github.com/jtyr/kubeconform-helm || true
+          helm kubeconform ./products/data-cloud/helm/data-cloud \
+            --ignore-missing-schemas \
+            --kubernetes-version 1.28.0 \
+            --output json > kubeconform-report.json || true
+
+      - name: Upload Kubeconform results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kubeconform-report
+          path: kubeconform-report.json
+
+  # ====================================================================================
+  # Software Composition Analysis (SCA)
+  # ====================================================================================
+  sca-scan:
+    name: Software Composition Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      # Generate Software Bill of Materials (SBOM)
+      - name: Generate SBOM with CycloneDX
+        run: |
+          ./gradlew :products:data-cloud:cyclonedxBom \
+            --info \
+            --stacktrace || true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-report
+          path: products/data-cloud/**/build/reports/bom.xml
+
+      # Setup Node.js for frontend SBOM
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Generate frontend SBOM
+      - name: Generate frontend SBOM
+        working-directory: ./products/data-cloud/ui
+        run: |
+          npm install -g @cyclonedx/cyclonedx-npm
+          cyclonedx-npm --output-file sbom-frontend.json || true
+
+      - name: Upload frontend SBOM
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-frontend-report
+          path: ./products/data-cloud/ui/sbom-frontend.json
+
+      # FOSSA license and security scanning
+      - name: Run FOSSA scan
+        uses: fossas/fossa-action@main
+        with:
+          api-key: ${{ secrets.FOSSA_API_KEY }}
+          run-tests: true
+
+  # ====================================================================================
+  # Security Policy Validation
+  # ====================================================================================
+  policy-validation:
+    name: Security Policy Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Validate security headers in API responses
+      - name: Setup test environment
+        run: |
+          ./gradlew :products:data-cloud:launcher:bootRun &
+          sleep 60  # Wait for application to start
+
+      - name: Test security headers
+        run: |
+          # Test for security headers
+          response=$(curl -s -I http://localhost:8080/health)
+          
+          # Check for required security headers
+          headers=(
+            "X-Content-Type-Options: nosniff"
+            "X-Frame-Options: DENY"
+            "X-XSS-Protection: 1; mode=block"
+            "Strict-Transport-Security: max-age"
+            "Content-Security-Policy"
+          )
+          
+          missing_headers=()
+          for header in "${headers[@]}"; do
+            if ! echo "$response" | grep -q "$header"; then
+              missing_headers+=("$header")
+            fi
+          done
+          
+          if [ ${#missing_headers[@]} -gt 0 ]; then
+            echo "Missing security headers:"
+            for header in "${missing_headers[@]}"; do
+              echo "  - $header"
+            done
+            exit 1
+          fi
+
+      # Validate Content Security Policy
+      - name: Validate CSP
+        run: |
+          csp=$(curl -s -I http://localhost:8080/health | grep -i "Content-Security-Policy" | head -1)
+          if [ -z "$csp" ]; then
+            echo "Content-Security-Policy header is missing"
+            exit 1
+          fi
+          
+          # Check for unsafe directives
+          if echo "$csp" | grep -q "unsafe-inline\|unsafe-eval\|*"; then
+            echo "CSP contains unsafe directives"
+            exit 1
+          fi
+
+      # Stop test environment
+      - name: Stop test environment
+        if: always()
+        run: pkill -f "bootRun" || true
+
+  # ====================================================================================
+  # Compliance and Governance
+  # ====================================================================================
+  compliance-check:
+    name: Compliance and Governance
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Verify security documentation exists
+      - name: Check security documentation
+        run: |
+          required_docs=(
+            "SECURITY.md"
+            "docs/SECURITY_ARCHITECTURE.md"
+            "docs/INCIDENT_RESPONSE.md"
+            "docs/DATA_PROTECTION.md"
+          )
+          
+          missing_docs=()
+          for doc in "${required_docs[@]}"; do
+            if [ ! -f "$doc" ]; then
+              missing_docs+=("$doc")
+            fi
+          done
+          
+          if [ ${#missing_docs[@]} -gt 0 ]; then
+            echo "Missing security documentation:"
+            for doc in "${missing_docs[@]}"; do
+              echo "  - $doc"
+            done
+          else
+            echo "All required security documentation is present"
+          fi
+
+      # Check for security-related code comments
+      - name: Check for security annotations
+        run: |
+          security_annotations=$(grep -r "@SecurityCheck\|@Audit\|@PII\|@SensitiveData" \
+            --include="*.java" products/data-cloud/ | wc -l)
+          
+          if [ "$security_annotations" -lt 5 ]; then
+            echo "Warning: Few security annotations found ($security_annotations). Consider adding more."
+          fi
+
+      # Validate encryption configuration
+      - name: Check encryption configuration
+        run: |
+          # Check for hardcoded encryption keys
+          if grep -r "SECRET_KEY\|ENCRYPTION_KEY\|AES_KEY\|PRIVATE_KEY" \
+            --include="*.java" --include="*.properties" --include="*.yaml" --include="*.yml" \
+            products/data-cloud/ | grep -v "example\|test\|placeholder\|getenv\|getProperty"; then
+            echo "Potential hardcoded encryption keys detected!"
+            exit 1
+          fi
+
+  # ====================================================================================
+  # Security Test Results Aggregation
+  # ====================================================================================
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, sast-scan, secret-detection, container-scan, iac-scan, sca-scan, policy-validation, compliance-check]
+    if: always()
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate security summary
+        run: |
+          echo "# Security Scan Summary" > security-summary.md
+          echo "" >> security-summary.md
+          echo "## Scan Results" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # Check each job status
+          jobs=("dependency-scan" "sast-scan" "secret-detection" "container-scan" "iac-scan" "sca-scan" "policy-validation" "compliance-check")
+          
+          for job in "${jobs[@]}"; do
+            status="${{ needs.$job.result }}"
+            emoji=""
+            case $status in
+              success) emoji="✅" ;;
+              failure) emoji="❌" ;;
+              skipped) emoji="⏭️" ;;
+              *) emoji="⚠️" ;;
+            esac
+            echo "- $emoji **$job**: $status" >> security-summary.md
+          done
+          
+          echo "" >> security-summary.md
+          echo "## Artifacts Generated" >> security-summary.md
+          echo "" >> security-summary.md
+          
+          # List all artifacts
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              echo "- $dir" >> security-summary.md
+            fi
+          done
+          
+          echo "" >> security-summary.md
+          echo "## Next Steps" >> security-summary.md
+          echo "" >> security-summary.md
+          echo "1. Review scan results in the Security tab" >> security-summary.md
+          echo "2. Address any CRITICAL or HIGH severity findings" >> security-summary.md
+          echo "3. Update security documentation if needed" >> security-summary.md
+          echo "4. Schedule remediation for identified issues" >> security-summary.md
+
+      - name: Upload security summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-summary
+          path: security-summary.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('security-summary.md', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+      # Fail the workflow if any critical job failed
+      - name: Check for failures
+        if: contains(needs.*.result, 'failure')
+        run: |
+          echo "::error::One or more security scans failed. Please review the results."
+          exit 1

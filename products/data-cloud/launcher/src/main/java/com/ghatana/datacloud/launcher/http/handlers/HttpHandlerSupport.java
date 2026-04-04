@@ -127,6 +127,37 @@ public class HttpHandlerSupport {
     }
 
     /**
+     * Builds a 201 Created JSON response with CORS headers.
+     */
+    public HttpResponse createdResponse(Map<String, Object> data) {
+        try {
+            String json = objectMapper.writeValueAsString(data);
+            return HttpResponse.ofCode(201)
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (Exception e) {
+            return HttpResponse.ofCode(500)
+                .withBody(("{\"error\":\"" + e.getMessage() + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 204 No Content response with CORS headers.
+     */
+    public HttpResponse noContentResponse() {
+        return HttpResponse.ofCode(204)
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+            .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+            .build();
+    }
+
+    /**
      * Builds an error response with the given HTTP status code, message, and
      * an {@code X-Request-Id} header set to {@code correlationId}.
      */

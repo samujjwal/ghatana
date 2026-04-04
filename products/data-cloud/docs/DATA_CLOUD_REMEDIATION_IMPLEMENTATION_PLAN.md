@@ -15,7 +15,7 @@ The current Data-Cloud codebase has a strong module foundation, but the product 
 
 The review identified five blocking classes of problems:
 
-1. The UI is built against mock-first or non-existent API namespaces such as `/collections`, `/workflows`, `/data-fabric/*`, `/executions/*`, and `/workspace/spotlight`, while the launcher exposes a different route surface centered on `/api/v1/entities`, `/api/v1/events`, `/api/v1/agents`, `/api/v1/pipelines`, `/api/v1/memory`, `/api/v1/brain`, `/api/v1/learning`, `/api/v1/analytics`, `/api/v1/reports`, `/api/v1/models`, and `/api/v1/features`.
+1. The UI is built against mock-first or non-existent API namespaces such as `/collections`, `/workflows`, `/data-fabric/*`, `/executions/*`, and `/workspace/spotlight`, while the launcher exposes a different route surface centered on `/api/v1/entities`, `/api/v1/events`, `/api/v1/pipelines`, `/api/v1/memory`, `/api/v1/brain`, `/api/v1/learning`, `/api/v1/analytics`, `/api/v1/reports`, `/api/v1/models`, and `/api/v1/features`.
 2. The UI does not currently build or test cleanly in this workspace because of broken Vite alias paths and a missing `zod` dependency.
 3. The backend HTTP layer is not fully trusted because multiple HTTP endpoint test suites are excluded from the launcher test task.
 4. Deployment manifests are inconsistent with the runtime implementation, especially around probe paths and environment variable naming.
@@ -62,7 +62,7 @@ This plan fixes those issues in the minimum safe order:
 
 - The Data-Cloud module structure is substantial and already split into `platform`, `spi`, `launcher`, `agent-registry`, `feature-store-ingest`, `sdk`, `ui`, `k8s`, `helm`, and `terraform`.
 - `./gradlew :products:data-cloud:launcher:test --console=plain` passes for the currently included suites.
-- The launcher already exposes a meaningful backend surface for entities, events, agent registry, pipelines, memory, brain, learning, analytics, reporting, and AI/feature-store operations.
+- The launcher already exposes a meaningful backend surface for entities, events, pipelines, memory, brain, learning, analytics, reporting, and AI/feature-store operations.
 
 ### 3.2 What Is Broken or Inconsistent
 

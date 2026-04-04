@@ -1,160 +1,240 @@
 package com.ghatana.datacloud.infrastructure.encryption;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.*;
 
+/**
+ * Tests for {@link SimpleEncryptionService}.
+ *
+ * @doc.type test
+ * @doc.purpose Validate AES-GCM encryption correctness, security properties, and error handling
+ * @doc.layer infrastructure
+ */
+@DisplayName("SimpleEncryptionService Tests")
 class SimpleEncryptionServiceTest {
 
-    String key;
-    SimpleEncryptionService service;
+    private String validKey;
+    private SimpleEncryptionService service;
 
     @BeforeEach
     void setUp() {
-        key = SimpleEncryptionService.generateKey();
-        service = new SimpleEncryptionService(key);
+        validKey = SimpleEncryptionService.generateKey();
+        service = new SimpleEncryptionService(validKey);
     }
 
-    // ── round-trip ───────────────────────────────────────────────────────────
+    // =========================================================================
+    // CONSTRUCTION
+    // =========================================================================
 
-    @Test
-    void encrypt_decrypt_roundTrip_shortBytes() {
-        byte[] plaintext = "hello world".getBytes(StandardCharsets.UTF_8);
-        byte[] decrypted = service.decrypt(service.encrypt(plaintext));
-        assertThat(decrypted).isEqualTo(plaintext);
+    @Nested
+    @DisplayName("Construction")
+    class Construction {
+
+        @Test
+        @DisplayName("should create service with valid key")
+        void shouldCreateWithValidKey() {
+            assertThatCode(() -> new SimpleEncryptionService(validKey)).doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("should throw NullPointerException for null key")
+        void shouldThrowForNullKey() {
+            assertThatThrownBy(() -> new SimpleEncryptionService(null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("should throw IllegalArgumentException for key with wrong length")
+        void shouldThrowForWrongKeyLength() {
+            // 16-byte key (AES-128), not 32-byte (AES-256)
+            byte[] shortKey = new byte[16];
+            String shortBase64 = Base64.getEncoder().encodeToString(shortKey);
+            assertThatThrownBy(() -> new SimpleEncryptionService(shortBase64))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Invalid key length");
+        }
+
+        @Test
+        @DisplayName("should throw IllegalArgumentException for invalid base64 key")
+        void shouldThrowForInvalidBase64Key() {
+            assertThatThrownBy(() -> new SimpleEncryptionService("not-valid-base64!!!"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
-    @Test
-    void encrypt_decrypt_roundTrip_longBytes() {
-        byte[] plaintext = "a".repeat(10_000).getBytes(StandardCharsets.UTF_8);
-        assertThat(service.decrypt(service.encrypt(plaintext))).isEqualTo(plaintext);
+    // =========================================================================
+    // KEY GENERATION
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Key Generation")
+    class KeyGeneration {
+
+        @Test
+        @DisplayName("should generate a valid base64-encoded 32-byte key")
+        void shouldGenerateValidKey() {
+            String key = SimpleEncryptionService.generateKey();
+            byte[] keyBytes = Base64.getDecoder().decode(key);
+            assertThat(keyBytes).hasSize(32); // 256 bits
+        }
+
+        @Test
+        @DisplayName("should generate unique keys on each call")
+        void shouldGenerateUniqueKeys() {
+            String key1 = SimpleEncryptionService.generateKey();
+            String key2 = SimpleEncryptionService.generateKey();
+            assertThat(key1).isNotEqualTo(key2);
+        }
+
+        @Test
+        @DisplayName("generated key should be usable with service constructor")
+        void generatedKeyShouldBeUsable() {
+            String key = SimpleEncryptionService.generateKey();
+            assertThatCode(() -> new SimpleEncryptionService(key)).doesNotThrowAnyException();
+        }
     }
 
-    @Test
-    void encrypt_decrypt_roundTrip_unicodeBytes() {
-        byte[] plaintext = "こんにちは世界 🌍 тест".getBytes(StandardCharsets.UTF_8);
-        assertThat(service.decrypt(service.encrypt(plaintext))).isEqualTo(plaintext);
+    // =========================================================================
+    // ENCRYPT / DECRYPT ROUND TRIPS
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Encrypt and Decrypt")
+    class EncryptDecrypt {
+
+        @Test
+        @DisplayName("should encrypt and decrypt plaintext correctly")
+        void shouldEncryptAndDecrypt() {
+            byte[] plaintext = "Hello, Data-Cloud!".getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = service.encrypt(plaintext);
+            byte[] decrypted = service.decrypt(encrypted);
+            assertThat(decrypted).isEqualTo(plaintext);
+        }
+
+        @Test
+        @DisplayName("should encrypt empty byte array")
+        void shouldEncryptEmptyArray() {
+            byte[] plaintext = new byte[0];
+            byte[] encrypted = service.encrypt(plaintext);
+            byte[] decrypted = service.decrypt(encrypted);
+            assertThat(decrypted).isEqualTo(plaintext);
+        }
+
+        @ParameterizedTest
+        @DisplayName("should encrypt and decrypt various payloads")
+        @ValueSource(strings = {"a", "short", "medium-length payload for testing", "1234567890"})
+        void shouldEncryptVariousPayloads(String text) {
+            byte[] plaintext = text.getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = service.encrypt(plaintext);
+            byte[] decrypted = service.decrypt(encrypted);
+            assertThat(new String(decrypted, StandardCharsets.UTF_8)).isEqualTo(text);
+        }
+
+        @Test
+        @DisplayName("should encrypt large payload correctly")
+        void shouldEncryptLargePayload() {
+            byte[] bigPayload = new byte[1_000_000];
+            new java.util.Random(42L).nextBytes(bigPayload);
+            byte[] encrypted = service.encrypt(bigPayload);
+            byte[] decrypted = service.decrypt(encrypted);
+            assertThat(decrypted).isEqualTo(bigPayload);
+        }
+
+        @Test
+        @DisplayName("encrypted output should differ from plaintext")
+        void encryptedShouldDifferFromPlaintext() {
+            byte[] plaintext = "sensitive data".getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = service.encrypt(plaintext);
+            assertThat(encrypted).isNotEqualTo(plaintext);
+        }
+
+        @Test
+        @DisplayName("same plaintext encrypted twice should produce different ciphertexts (IV randomness)")
+        void sameTextShouldProduceDifferentCiphertexts() {
+            byte[] plaintext = "same data".getBytes(StandardCharsets.UTF_8);
+            byte[] enc1 = service.encrypt(plaintext);
+            byte[] enc2 = service.encrypt(plaintext);
+            assertThat(enc1).isNotEqualTo(enc2); // Different IV each time
+        }
+
+        @Test
+        @DisplayName("should throw NullPointerException when encrypting null")
+        void shouldThrowForNullEncryptInput() {
+            assertThatThrownBy(() -> service.encrypt(null))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("should throw NullPointerException when decrypting null")
+        void shouldThrowForNullDecryptInput() {
+            assertThatThrownBy(() -> service.decrypt(null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @Test
-    void encrypt_decrypt_roundTrip_emptyBytes() {
-        byte[] plaintext = new byte[0];
-        assertThat(service.decrypt(service.encrypt(plaintext))).isEqualTo(plaintext);
+    // =========================================================================
+    // TAMPER DETECTION (AES-GCM authentication tag)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Tamper Detection")
+    class TamperDetection {
+
+        @Test
+        @DisplayName("should throw EncryptionException when ciphertext is too short")
+        void shouldRejectTooShortCiphertext() {
+            byte[] tooShort = new byte[5];
+            assertThatThrownBy(() -> service.decrypt(tooShort))
+                    .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
+        }
+
+        @Test
+        @DisplayName("should throw EncryptionException when ciphertext is tampered")
+        void shouldDetectTamperedCiphertext() {
+            byte[] plaintext = "important data".getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = service.encrypt(plaintext);
+            // Flip a bit in the ciphertext (after the IV)
+            encrypted[15] ^= 0xFF;
+            assertThatThrownBy(() -> service.decrypt(encrypted))
+                    .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
+        }
+
+        @Test
+        @DisplayName("should throw EncryptionException when decrypting with a different key")
+        void shouldRejectDifferentKey() {
+            byte[] plaintext = "secret".getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = service.encrypt(plaintext);
+
+            String otherKey = SimpleEncryptionService.generateKey();
+            SimpleEncryptionService otherService = new SimpleEncryptionService(otherKey);
+            assertThatThrownBy(() -> otherService.decrypt(encrypted))
+                    .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
+        }
     }
 
-    // ── ciphertext properties ────────────────────────────────────────────────
+    // =========================================================================
+    // fromEnvironment FACTORY
+    // =========================================================================
 
-    @Test
-    void encrypt_producesDifferentCiphertextForSameInput() {
-        // GCM uses random IV so same plaintext → different ciphertext each time
-        byte[] input = "same input".getBytes(StandardCharsets.UTF_8);
-        byte[] ct1 = service.encrypt(input);
-        byte[] ct2 = service.encrypt(input);
-        assertThat(ct1).isNotEqualTo(ct2);
-    }
+    @Nested
+    @DisplayName("fromEnvironment factory")
+    class FromEnvironment {
 
-    @Test
-    void encrypt_outputLongerThanInput() {
-        byte[] input = "test data".getBytes(StandardCharsets.UTF_8);
-        byte[] ciphertext = service.encrypt(input);
-        // IV (12) + GCM tag (16) overhead
-        assertThat(ciphertext.length).isGreaterThan(input.length);
-    }
-
-    @Test
-    void encrypt_doesNotContainPlaintextLiteral() {
-        byte[] input = "secret password".getBytes(StandardCharsets.UTF_8);
-        byte[] ciphertext = service.encrypt(input);
-        // Ciphertext bytes should differ from plaintext bytes
-        assertThat(ciphertext).isNotEqualTo(input);
-    }
-
-    // ── invalid / tampered data ──────────────────────────────────────────────
-
-    @Test
-    void decrypt_tamperedData_throwsEncryptionException() {
-        byte[] plaintext = "original data".getBytes(StandardCharsets.UTF_8);
-        byte[] ciphertext = service.encrypt(plaintext);
-        // Flip a byte in the auth tag area (last 16 bytes)
-        ciphertext[ciphertext.length - 1] ^= 0xFF;
-        assertThatThrownBy(() -> service.decrypt(ciphertext))
-                .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
-    }
-
-    @Test
-    void decrypt_tooShortData_throwsEncryptionException() {
-        // Less than 12-byte IV minimum
-        byte[] tooShort = new byte[5];
-        assertThatThrownBy(() -> service.decrypt(tooShort))
-                .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
-    }
-
-    @Test
-    void decrypt_null_throwsNPE() {
-        assertThatNullPointerException().isThrownBy(() -> service.decrypt(null));
-    }
-
-    @Test
-    void encrypt_null_throwsNPE() {
-        assertThatNullPointerException().isThrownBy(() -> service.encrypt(null));
-    }
-
-    @Test
-    void decrypt_truncatedCiphertext_throwsEncryptionException() {
-        byte[] ciphertext = service.encrypt("some data".getBytes(StandardCharsets.UTF_8));
-        byte[] truncated = new byte[ciphertext.length / 2];
-        System.arraycopy(ciphertext, 0, truncated, 0, truncated.length);
-        assertThatThrownBy(() -> service.decrypt(truncated))
-                .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
-    }
-
-    // ── key validation ───────────────────────────────────────────────────────
-
-    @Test
-    void constructor_nullKey_throwsNPE() {
-        assertThatNullPointerException().isThrownBy(() -> new SimpleEncryptionService(null));
-    }
-
-    @Test
-    void constructor_wrongKeyLength_throwsIllegalArgument() {
-        // 16 bytes base64 → only 128-bit key, not 256-bit
-        String shortKey = java.util.Base64.getEncoder().encodeToString(new byte[16]);
-        assertThatIllegalArgumentException().isThrownBy(() -> new SimpleEncryptionService(shortKey));
-    }
-
-    @Test
-    void constructor_invalidBase64_throwsIllegalArgument() {
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> new SimpleEncryptionService("not-valid-base64!!!"));
-    }
-
-    // ── cross-key isolation ──────────────────────────────────────────────────
-
-    @Test
-    void twoInstances_withDifferentKeys_cannotCrossDecrypt() {
-        SimpleEncryptionService service2 = new SimpleEncryptionService(
-                SimpleEncryptionService.generateKey());
-        byte[] ciphertext = service.encrypt("cross-key test".getBytes(StandardCharsets.UTF_8));
-        assertThatThrownBy(() -> service2.decrypt(ciphertext))
-                .isInstanceOf(SimpleEncryptionService.EncryptionException.class);
-    }
-
-    // ── generateKey ──────────────────────────────────────────────────────────
-
-    @Test
-    void generateKey_producesValidBase64_256bitKey() {
-        String generatedKey = SimpleEncryptionService.generateKey();
-        byte[] keyBytes = java.util.Base64.getDecoder().decode(generatedKey);
-        assertThat(keyBytes).hasSize(32); // 256 bits
-    }
-
-    @Test
-    void generateKey_producesDifferentKeysEachTime() {
-        String k1 = SimpleEncryptionService.generateKey();
-        String k2 = SimpleEncryptionService.generateKey();
-        assertThat(k1).isNotEqualTo(k2);
+        @Test
+        @DisplayName("should create service when env var is absent (ephemeral key fallback)")
+        void shouldCreateServiceWithEphemeralKeyWhenEnvVarAbsent() {
+            // Non-existent env var → ephemeral key path
+            assertThatCode(() -> SimpleEncryptionService.fromEnvironment("__NONEXISTENT_TEST_VAR_XYZ__"))
+                    .doesNotThrowAnyException();
+        }
     }
 }

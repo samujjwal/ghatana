@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Real-time feature extraction and ingestion pipeline from EventCloud to Feature Store for ML model serving.
+Real-time feature extraction and ingestion pipeline from event-cloud to the Data-Cloud feature store for ML model serving.
+
+This is part of Data-Cloud's native AI/ML surface. It is not an agentic runtime. Any agentic processing that consumes these features executes in AEP and integrates back through event-cloud and Data-Cloud APIs.
 
 ## Architecture
 
@@ -63,10 +65,10 @@ Set environment variables:
 
 ```bash
 # Development
-./gradlew :products:shared-services:feature-store-ingest:run
+./gradlew :products:data-cloud:feature-store-ingest:run
 
 # Production
-java -jar products/shared-services/feature-store-ingest/build/libs/feature-store-ingest.jar
+java -jar products/data-cloud/feature-store-ingest/build/libs/feature-store-ingest.jar
 ```
 
 ## Metrics

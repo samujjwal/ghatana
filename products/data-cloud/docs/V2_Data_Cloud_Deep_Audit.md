@@ -1,5 +1,7 @@
 # Data Cloud V2 Deep Audit
 
+> Historical note: this audit reflects pre-boundary-cleanup findings. References here to Data-Cloud-owned agent endpoints predate the later separation where AEP owns agentic processing and Data Cloud retains persistence plus event-cloud integration responsibilities.
+
 Audit date: 2026-03-19  
 Workspace: `/Users/samujjwal/Development/ghatana`  
 Audit basis: current checked-out workspace state, including uncommitted changes and checked-in build outputs.  

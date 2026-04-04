@@ -221,11 +221,23 @@ jobs:
           chmod +x products/data-cloud/scripts/check-openapi-drift.sh
           bash products/data-cloud/scripts/check-openapi-drift.sh
 
+      - name: Canonical doc boundary lint
+        run: |
+          chmod +x products/data-cloud/scripts/check-doc-boundaries.sh
+          bash products/data-cloud/scripts/check-doc-boundaries.sh
+
       - name: Upload contract drift report
         if: always()
         run: |
           echo "## OpenAPI Contract Drift Report" >> "$GITHUB_STEP_SUMMARY"
           bash products/data-cloud/scripts/check-openapi-drift.sh --warn-only \
+            2>&1 >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Upload doc boundary lint summary
+        if: always()
+        run: |
+          echo "## Canonical Doc Boundary Lint" >> "$GITHUB_STEP_SUMMARY"
+          bash products/data-cloud/scripts/check-doc-boundaries.sh --warn-only \
             2>&1 >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Tenant isolation static audit

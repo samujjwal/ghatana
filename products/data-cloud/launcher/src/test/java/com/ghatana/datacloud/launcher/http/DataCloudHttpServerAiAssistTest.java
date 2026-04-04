@@ -8,11 +8,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.llm.CompletionResult;
 import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.datacloud.DataCloudClient;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -22,6 +26,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,22 +39,19 @@ import static org.mockito.Mockito.when;
  * <p>Verifies both LLM-backed and heuristic-fallback modes.  The
  * {@link CompletionService} is mocked; the server is started on a real port.
  *
- * <p><strong>DISABLED (2026-04-02):</strong> These tests hang during test execution.
- * Root cause: DataCloudHttpServer starts an infinite Eventloop in a virtual-threaded 
- * blockingExecutor. Multiple concurrent test classes exhaust thread pool resources or
- * deadlock during server.start() / server.stop() lifecycle management. Requires refactoring:
- * <ul>
- *   <li>Use embedded servlet container instead of real-port HTTP server in tests</li>
- *   <li>Or: Implement proper async server lifecycle with Future.get() timeout</li>
- *   <li>Or: Migrate to shared test fixture / container approach</li>
- * </ul>
- * See: /memories/session/datacloud-test-hang-analysis.md
+ * <p><strong>Fixed (2026-04-03):</strong> The previous hang was caused by mocking
+ * {@code Promise} objects directly and calling {@code .getResult()} on them. The fix
+ * replaces mocked Promises with real {@link Promise#of(Object)} / {@link Promise#ofException}
+ * so the ActiveJ Eventloop can process them correctly within the HTTP handler lifecycle.
+ * Per-test timeouts guard against any future regressions.
  *
  * @doc.type class
  * @doc.purpose Integration tests for AI assist HTTP endpoints (DC-E3)
  * @doc.layer product
  * @doc.pattern Test
  */
+@ExtendWith(MockitoExtension.class)
+@Timeout(value = 15, unit = TimeUnit.SECONDS)
 @DisplayName("DataCloudHttpServer – AI Assist Endpoints (DC-E3)")
 class DataCloudHttpServerAiAssistTest {
 
@@ -87,10 +89,8 @@ class DataCloudHttpServerAiAssistTest {
             when(result.getText()).thenReturn("You could add an 'updatedAt' timestamp field.");
             when(result.getFinishReason()).thenReturn("stop");
             when(result.getModelUsed()).thenReturn("gpt-4o");
-            // Must mock the Promise returned by complete(), then stub getResult() on it
-            io.activej.promise.Promise<CompletionResult> mockPromise = mock(io.activej.promise.Promise.class);
-            when(mockPromise.getResult()).thenReturn(result);
-            when(mockCompletion.complete(any())).thenReturn(mockPromise);
+            // Use real Promise.of() so the ActiveJ Eventloop can process it correctly
+            when(mockCompletion.complete(any())).thenReturn(Promise.of(result));
 
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion);
@@ -135,9 +135,9 @@ class DataCloudHttpServerAiAssistTest {
         @DisplayName("returns 200 with heuristic fallback when LLM throws")
         @SuppressWarnings("unchecked")
         void withLlmError_fallsBackGracefully() throws Exception {
-            io.activej.promise.Promise<CompletionResult> failingPromise = mock(io.activej.promise.Promise.class);
-            when(failingPromise.getResult()).thenThrow(new RuntimeException("LLM timeout"));
-            when(mockCompletion.complete(any())).thenReturn(failingPromise);
+            // Use Promise.ofException() so the Eventloop propagates the failure to the handler
+            when(mockCompletion.complete(any()))
+                .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
 
             server = new DataCloudHttpServer(mockClient, port)
                 .withCompletionService(mockCompletion);

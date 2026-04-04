@@ -14,9 +14,10 @@ This plan defines a detailed, end-to-end implementation path to simplify Data-Cl
 
 The plan is aligned with current Data-Cloud product vision:
 
-- Data-Cloud is the event backbone and data platform for all products.
+- Data-Cloud is an independent AI/ML-native data product that also serves as shared data foundation for other products.
 - Multi-tenant isolation and event-sourced behavior are core invariants.
 - Shared libraries and platform services must be reused first to avoid duplicate code and ownership drift.
+- Agentic processing is delegated to AEP through event-cloud and public contracts, without reverse Data-Cloud dependencies on AEP.
 
 ---
 
@@ -39,11 +40,12 @@ Data-Cloud should feel like one coherent product:
 3. Reuse first: prefer libs/java and libs modules over product-local duplication.
 4. API truth before UI assumptions: UI contracts must map to implemented backend contracts.
 5. AI/ML by default: ranking, anomaly hints, recommendations, and summaries are embedded in normal UX.
-6. Voice-first channel: all major user intents can be triggered by voice, with keyboard and click parity.
-7. Governance, privacy, and security by design: policy checks are built into request flow and data lifecycle.
-8. Tenant isolation is mandatory at API, storage, cache, stream, and model inference layers.
-9. Event sourcing and auditability for all sensitive state changes.
-10. Measure outcomes: every phase has explicit acceptance gates and KPIs.
+6. Agentic processing by boundary: multi-step tool-using execution runs in AEP; Data-Cloud remains the system of record and AI/ML-native product surface.
+7. Voice-first channel: all major user intents can be triggered by voice, with keyboard and click parity.
+8. Governance, privacy, and security by design: policy checks are built into request flow and data lifecycle.
+9. Tenant isolation is mandatory at API, storage, cache, stream, and model inference layers.
+10. Event sourcing and auditability for all sensitive state changes.
+11. Measure outcomes: every phase has explicit acceptance gates and KPIs.
 
 ---
 
@@ -64,6 +66,7 @@ Data-Cloud should feel like one coherent product:
 3. Domain and Service Layer
    - Entity, pipeline, event, analytics, memory, learning, model, and feature services with explicit boundaries.
    - AI/ML service hooks embedded in domain workflows (classification, anomaly, relevance, recommendation).
+   - Agentic processing requests leave this layer through event-cloud/public contracts and are executed by AEP.
 
 4. Persistence and Stream Layer
    - Event log as source of truth.
@@ -147,6 +150,8 @@ Guarantee one canonical contract across UI, middleware, backend, and SDK clients
 ### Goal
 
 Embed AI/ML assistance into core workflows as default product behavior.
+
+Agentic orchestration is explicitly out of scope for in-process Data-Cloud implementation. Where a workflow needs planning, tool use, or long-running autonomous execution, Data-Cloud emits a request and AEP executes it.
 
 ### AI/ML Design Principles
 

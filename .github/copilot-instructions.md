@@ -113,18 +113,41 @@ Ghatana has strong Java conventions enforced by Gradle guardrails and shared pla
 - Use `runPromise(() -> ...)` for promise-based execution.
 - Do not call `.getResult()` directly on ActiveJ promises in tests.
 
-**Meaningful example: ActiveJ async test**
+**Lenient stubbing**: When a `@Mock`'s stub is only used in some tests within the class, declare it in `@BeforeEach` with `lenient().when()` to avoid `UnnecessaryStubbingException`.
+
+**Cascading method stubs**: When a service chains async calls internally (e.g., `validateEntity → scoreEntity → explainScore`), every intermediate method the production code calls must be stubbed. An unstubbed Mockito method returns `null`, which propagates through `Promise.then()` as an NPE.
+
+**Concrete class mocking**: Mockito can `@Mock` concrete classes (e.g., `ConfigLoader`, `ConfigValidator`) without requiring interface extraction. Use this only when extracting an interface would add no design value.
+
+**Builder vs constructor**: Where production code uses Lombok `@Builder`, tests must use the fluent builder API (e.g., `SchemaColumn.builder().name("id").dataType("STRING").build()`). Do not assume a matching all-args constructor exists.
+
+**Meaningful example: ActiveJ async test with stubs**
 
 ```java
 @DisplayName("My Service Tests")
+@ExtendWith(MockitoExtension.class)
 class MyServiceTest extends EventloopTestBase {
+
+    @Mock
+    private Dependency dep;
+
+    private MyService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new MyService(dep);
+        // Use lenient when stub is not needed in every test
+        lenient().when(dep.validate(any())).thenReturn(Promise.of(ValidationResult.valid()));
+    }
+
     @Test
     void shouldProcessAsync() {
-        MyService service = new MyService();
+        when(dep.compute(any())).thenReturn(Promise.of("result"));
 
-        String result = runPromise(() -> service.processAsync("input"));
+        String result = runPromise(() -> service.process("input"));
 
-        assertThat(result).isEqualTo("expected");
+        assertThat(result).isEqualTo("result");
+        verify(dep).compute("input");
     }
 }
 ```

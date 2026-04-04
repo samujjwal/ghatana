@@ -41,9 +41,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("ClickHouseTimeSeriesConnector Integration Tests")
-@org.junit.jupiter.api.Disabled("Requires Docker")
 class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
 
     @Container
@@ -103,8 +102,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
 
     @Nested
     @DisplayName("Create and Read")
-    @org.junit.jupiter.api.Disabled("Requires Docker")
-class CreateAndRead {
+    class CreateAndRead {
 
         @Test
         @DisplayName("should persist an entity and read it back by ID")
@@ -148,8 +146,7 @@ class CreateAndRead {
 
     @Nested
     @DisplayName("Update and Delete")
-    @org.junit.jupiter.api.Disabled("Requires Docker")
-class UpdateAndDelete {
+    class UpdateAndDelete {
 
         @Test
         @DisplayName("should overwrite entity on update")
@@ -204,8 +201,7 @@ class UpdateAndDelete {
 
     @Nested
     @DisplayName("Count and Scan")
-    @org.junit.jupiter.api.Disabled("Requires Docker")
-class CountAndScan {
+    class CountAndScan {
 
         @Test
         @DisplayName("count should return number of tenant entities")

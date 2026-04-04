@@ -74,24 +74,84 @@ public class EventHandler {
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
+        // Handle 'from' parameter for offset-based querying
+        String fromParam = request.getQueryParameter("from");
+        int fromOffset = 0;
+        if (fromParam != null && !fromParam.isBlank()) {
+            try {
+                fromOffset = Integer.parseInt(fromParam.trim());
+            } catch (NumberFormatException e) {
+                return Promise.of(http.errorResponse(400, "Invalid 'from' parameter: must be an integer"));
+            }
+        }
+
         ApiInputValidator.LimitResult limitResult = ApiInputValidator.validateLimit(request.getQueryParameter("limit"), 100);
         if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
 
         String eventType = request.getQueryParameter("type");
+        final int finalFromOffset = fromOffset;
         DataCloudClient.EventQuery query = eventType != null
             ? DataCloudClient.EventQuery.byType(eventType)
             : DataCloudClient.EventQuery.all();
 
         return client.queryEvents(tenantId, query)
-            .map(events -> http.jsonResponse(Map.of(
-                "events", events.stream().map(e -> Map.of(
+            .map(events -> {
+                var filtered = events.stream()
+                    .skip(finalFromOffset)
+                    .toList();
+                
+                var eventResponses = new java.util.ArrayList<Map<String, Object>>();
+                for (int i = 0; i < filtered.size(); i++) {
+                    var e = filtered.get(i);
+                    eventResponses.add(Map.of(
+                        "offset", (long)(finalFromOffset + i),
+                        "type", e.type(),
+                        "payload", e.payload(),
+                        "timestamp", e.timestamp().toString()
+                    ));
+                }
+                
+                return http.jsonResponse(Map.of(
+                    "events", eventResponses,
+                    "nextOffset", (long)(finalFromOffset + filtered.size()),
+                    "count", filtered.size(),
+                    "fromOffset", finalFromOffset,
+                    "tenantId", tenantId,
+                    "timestamp", Instant.now().toString()
+                ));
+            });
+    }
+
+    public Promise<HttpResponse> handleGetEventByOffset(HttpRequest request) {
+        String tenantId = http.resolveTenantId(request);
+
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        String offsetParam = request.getPathParameter("offset");
+        if (offsetParam == null || offsetParam.isBlank()) {
+            return Promise.of(http.errorResponse(400, "offset path parameter is required"));
+        }
+
+        int offset;
+        try {
+            offset = Integer.parseInt(offsetParam.trim());
+        } catch (NumberFormatException e) {
+            return Promise.of(http.errorResponse(400, "Invalid offset parameter: must be an integer"));
+        }
+
+        return client.queryEvents(tenantId, DataCloudClient.EventQuery.all())
+            .map(events -> {
+                if (offset < 0 || offset >= events.size()) {
+                    return http.errorResponse(404, "Event not found at offset: " + offset);
+                }
+                var e = events.get(offset);
+                return http.jsonResponse(Map.of(
+                    "offset", (long)offset,
                     "type", e.type(),
                     "payload", e.payload(),
                     "timestamp", e.timestamp().toString()
-                )).toList(),
-                "count", events.size(),
-                "tenantId", tenantId,
-                "timestamp", Instant.now().toString()
-            )));
+                ));
+            });
     }
 }

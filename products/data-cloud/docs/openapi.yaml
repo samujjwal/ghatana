@@ -5,17 +5,25 @@ info:
   description: |
     REST API for the Ghatana Data-Cloud unified data platform.
 
+    Data-Cloud is an independent, deployable, AI/ML-native product. It owns data management,
+    event-cloud streaming, analytics, reporting, governance, plugin-driven extensibility, feature
+    storage, model metadata, and execution persistence surfaces.
+
+    Data-Cloud does not host agentic orchestration or runtime execution endpoints. Agentic
+    processing is executed by AEP, which consumes Data-Cloud public contracts and event-cloud
+    streams and writes results back through Data-Cloud-owned APIs and persistence layers.
+
     The Data-Cloud platform provides:
     - **Entity storage** — multi-tenant JSONB entity CRUD with pluggable storage backends
     - **Event log** — append-only event stream with push-based SSE subscriptions
-    - **Execution metadata** — store and retrieve pipeline/checkpoint records for external runtimes
-    - **Agent memory plane** — read and search agent episodic/semantic/procedural memory
+    - **Execution metadata** — store and retrieve pipeline/checkpoint records for external runtimes including AEP
+    - **Agent memory plane** — persist, read, and search agent episodic/semantic/procedural memory
     - **Brain API** — salience scoring, attention management, workspace spotlight
     - **Learning API** — policy extraction, human-review queue
     - **Analytics API** — ad-hoc ClickHouse-backed analytics queries
     - **Server-Sent Events** — real-time push for events and learning updates
     - **WebSocket** — real-time change-data-capture notifications via `GET /ws`
-    - **AI Assist** — gracefully-degrading LLM hints for entities, analytics, pipelines, and brain
+    - **AI Assist** — gracefully-degrading embedded AI/ML hints for entities, analytics, pipelines, and brain
     - **Voice Gateway** — voice intent resolution and classification
     - **Data Lifecycle & Governance** — retention policies, PII redaction, compliance posture
     - **AI/ML Model Registry & Feature Store** — model metadata and feature vector management
@@ -61,11 +69,11 @@ tags:
   - name: events
     description: Append-only event log operations.
   - name: pipelines
-    description: External-runtime pipeline metadata registry.
+    description: External-runtime pipeline metadata registry. AEP may consume and update these records; orchestration remains external.
   - name: checkpoints
-    description: External-runtime checkpoint save/restore.
+    description: External-runtime checkpoint save/restore, including AEP execution state.
   - name: memory
-    description: Agent memory plane (episodic, semantic, procedural, preference).
+    description: Agent memory persistence plane (episodic, semantic, procedural, preference).
   - name: brain
     description: Brain API — salience, attention, workspace spotlight.
   - name: learning
@@ -159,6 +167,67 @@ components:
         minimum: 0
 
   schemas:
+    FreeformObject:
+      type: object
+      description: Arbitrary JSON object.
+      additionalProperties: true
+
+    VoiceIntentRequest:
+      type: object
+      required: [utterance]
+      properties:
+        utterance:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/FreeformObject"
+        confirm:
+          type: boolean
+
+    VoiceIntentClassificationRequest:
+      type: object
+      required: [utterance]
+      properties:
+        utterance:
+          type: string
+
+    RetentionClassificationRequest:
+      type: object
+      required: [collection, tier]
+      properties:
+        collection:
+          type: string
+        tier:
+          type: string
+          enum: [transient, short-term, standard, compliance, permanent]
+        reason:
+          type: string
+
+    RetentionPurgeRequest:
+      type: object
+      required: [collection, confirmationToken]
+      properties:
+        collection:
+          type: string
+        confirmationToken:
+          type: string
+        dryRun:
+          type: boolean
+
+    PrivacyRedactionRequest:
+      type: object
+      required: [collection, entityId]
+      properties:
+        collection:
+          type: string
+        entityId:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+
     Entity:
       type: object
       required: [tenantId, collectionName, data]
@@ -291,6 +360,7 @@ paths:
   /health:
     get:
       summary: Composite health check
+      operationId: healthGet
       tags: [health]
       responses:
         "200":
@@ -303,6 +373,7 @@ paths:
   /health/detail:
     get:
       summary: Detailed per-subsystem health breakdown
+      operationId: healthDetailGet
       description: |
         Returns an individual status for every registered health contributor
         (storage, warm-tier DB, cache, index, message broker, etc.). Intended for
@@ -336,6 +407,7 @@ paths:
   /ready:
     get:
       summary: Readiness probe (Kubernetes)
+      operationId: readyGet
       tags: [health]
       responses:
         "200":
@@ -348,6 +420,7 @@ paths:
   /live:
     get:
       summary: Liveness probe (Kubernetes)
+      operationId: liveGet
       tags: [health]
       responses:
         "200":
@@ -360,6 +433,7 @@ paths:
   /info:
     get:
       summary: Service metadata
+      operationId: infoGet
       tags: [info]
       responses:
         "200":
@@ -377,6 +451,7 @@ paths:
   /metrics:
     get:
       summary: Prometheus-format JVM / service metrics
+      operationId: metricsGet
       tags: [info]
       responses:
         "200":
@@ -392,6 +467,7 @@ paths:
   /api/v1/entities/{collection}:
     post:
       summary: Create (save) an entity
+      operationId: apiV1EntitiesCollectionPost
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -416,6 +492,7 @@ paths:
 
     get:
       summary: Query entities in a collection
+      operationId: apiV1EntitiesCollectionGet
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -444,6 +521,7 @@ paths:
   /api/v1/entities/{collection}/{id}:
     get:
       summary: Get a single entity by ID
+      operationId: apiV1EntitiesCollectionIdGet
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -460,6 +538,7 @@ paths:
 
     delete:
       summary: Delete an entity
+      operationId: apiV1EntitiesCollectionIdDelete
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -482,6 +561,7 @@ paths:
   /api/v1/events:
     post:
       summary: Append an event to the event log
+      operationId: apiV1EventsPost
       tags: [events]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -505,6 +585,7 @@ paths:
 
     get:
       summary: Query the event log
+      operationId: apiV1EventsGet
       tags: [events]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -537,6 +618,7 @@ paths:
   /api/v1/pipelines:
     get:
       summary: List pipeline definitions
+      operationId: apiV1PipelinesGet
       tags: [pipelines]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -548,6 +630,7 @@ paths:
 
     post:
       summary: Save a pipeline definition
+      operationId: apiV1PipelinesPost
       tags: [pipelines]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -565,6 +648,7 @@ paths:
   /api/v1/pipelines/{pipelineId}:
     get:
       summary: Get pipeline by ID
+      operationId: apiV1PipelinesPipelineIdGet
       tags: [pipelines]
       parameters:
         - $ref: "#/components/parameters/pipelineIdPath"
@@ -576,6 +660,7 @@ paths:
 
     put:
       summary: Update a pipeline definition
+      operationId: apiV1PipelinesPipelineIdPut
       tags: [pipelines]
       parameters:
         - $ref: "#/components/parameters/pipelineIdPath"
@@ -593,6 +678,7 @@ paths:
 
     delete:
       summary: Delete a pipeline definition
+      operationId: apiV1PipelinesPipelineIdDelete
       tags: [pipelines]
       parameters:
         - $ref: "#/components/parameters/pipelineIdPath"
@@ -606,6 +692,7 @@ paths:
   /api/v1/checkpoints:
     get:
       summary: List agent checkpoints
+      operationId: apiV1CheckpointsGet
       tags: [checkpoints]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -617,6 +704,7 @@ paths:
 
     post:
       summary: Save a checkpoint
+      operationId: apiV1CheckpointsPost
       tags: [checkpoints]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -634,6 +722,7 @@ paths:
   /api/v1/checkpoints/{checkpointId}:
     get:
       summary: Get checkpoint by ID
+      operationId: apiV1CheckpointsCheckpointIdGet
       tags: [checkpoints]
       parameters:
         - $ref: "#/components/parameters/checkpointIdPath"
@@ -645,6 +734,7 @@ paths:
 
     delete:
       summary: Delete a checkpoint
+      operationId: apiV1CheckpointsCheckpointIdDelete
       tags: [checkpoints]
       parameters:
         - $ref: "#/components/parameters/checkpointIdPath"
@@ -658,6 +748,7 @@ paths:
   /api/v1/memory/{agentId}:
     get:
       summary: Get all memory entries for an agent
+      operationId: apiV1MemoryAgentIdGet
       tags: [memory]
       parameters:
         - $ref: "#/components/parameters/agentIdPath"
@@ -669,6 +760,7 @@ paths:
   /api/v1/memory/{agentId}/{tier}:
     get:
       summary: Get memory entries for a specific tier
+      operationId: apiV1MemoryAgentIdTierGet
       tags: [memory]
       parameters:
         - $ref: "#/components/parameters/agentIdPath"
@@ -686,6 +778,7 @@ paths:
   /api/v1/memory/{agentId}/search:
     post:
       summary: Semantic search over agent memory
+      operationId: apiV1MemoryAgentIdSearchPost
       tags: [memory]
       parameters:
         - $ref: "#/components/parameters/agentIdPath"
@@ -711,6 +804,7 @@ paths:
   /api/v1/memory/{agentId}/{memoryId}:
     delete:
       summary: Delete a memory entry
+      operationId: apiV1MemoryAgentIdMemoryIdDelete
       tags: [memory]
       parameters:
         - $ref: "#/components/parameters/agentIdPath"
@@ -727,6 +821,7 @@ paths:
   /api/v1/memory/{agentId}/{memoryId}/retain:
     put:
       summary: Mark a memory entry for retention (prevent auto-expiry)
+      operationId: apiV1MemoryAgentIdMemoryIdRetainPut
       tags: [memory]
       parameters:
         - $ref: "#/components/parameters/agentIdPath"
@@ -745,6 +840,7 @@ paths:
   /api/v1/brain/health:
     get:
       summary: Brain subsystem health
+      operationId: apiV1BrainHealthGet
       tags: [brain]
       responses:
         "200": { description: Brain is healthy. }
@@ -753,6 +849,7 @@ paths:
   /api/v1/brain/config:
     get:
       summary: Brain configuration
+      operationId: apiV1BrainConfigGet
       tags: [brain]
       responses:
         "200": { description: Current brain config. }
@@ -760,6 +857,7 @@ paths:
   /api/v1/brain/stats:
     get:
       summary: Brain runtime statistics
+      operationId: apiV1BrainStatsGet
       tags: [brain]
       responses:
         "200": { description: Brain stats. }
@@ -767,6 +865,7 @@ paths:
   /api/v1/brain/workspace:
     get:
       summary: Get global workspace spotlight items
+      operationId: apiV1BrainWorkspaceGet
       tags: [brain]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -776,6 +875,7 @@ paths:
   /api/v1/brain/workspace/stream:
     get:
       summary: SSE stream of workspace spotlight updates
+      operationId: apiV1BrainWorkspaceStreamGet
       tags: [sse, brain]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -790,6 +890,7 @@ paths:
   /api/v1/brain/attention/elevate:
     post:
       summary: Directly elevate a data record to the workspace
+      operationId: apiV1BrainAttentionElevatePost
       tags: [brain]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -811,12 +912,14 @@ paths:
   /api/v1/brain/attention/thresholds:
     get:
       summary: Get attention score thresholds
+      operationId: apiV1BrainAttentionThresholdsGet
       tags: [brain]
       responses:
         "200": { description: Threshold configuration. }
 
     put:
       summary: Update attention score thresholds
+      operationId: apiV1BrainAttentionThresholdsPut
       tags: [brain]
       requestBody:
         required: true
@@ -832,6 +935,7 @@ paths:
   /api/v1/brain/patterns:
     get:
       summary: List learned attention patterns
+      operationId: apiV1BrainPatternsGet
       tags: [brain]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -841,6 +945,7 @@ paths:
   /api/v1/brain/patterns/match:
     post:
       summary: Test a payload against learned patterns
+      operationId: apiV1BrainPatternsMatchPost
       tags: [brain]
       requestBody:
         required: true
@@ -855,6 +960,7 @@ paths:
   /api/v1/brain/salience/{itemId}:
     get:
       summary: Get salience score for a specific item
+      operationId: apiV1BrainSalienceItemIdGet
       tags: [brain]
       parameters:
         - name: itemId
@@ -871,6 +977,7 @@ paths:
   /api/v1/learning/trigger:
     post:
       summary: Trigger a learning cycle (batch reflection)
+      operationId: apiV1LearningTriggerPost
       tags: [learning]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -881,6 +988,7 @@ paths:
   /api/v1/learning/status:
     get:
       summary: Get learning subsystem status
+      operationId: apiV1LearningStatusGet
       tags: [learning]
       responses:
         "200": { description: Learning status. }
@@ -888,6 +996,7 @@ paths:
   /api/v1/learning/review:
     get:
       summary: Get the human-review queue of low-confidence policies
+      operationId: apiV1LearningReviewGet
       tags: [learning]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -898,6 +1007,7 @@ paths:
   /api/v1/learning/review/{reviewId}/approve:
     post:
       summary: Approve a policy from the review queue
+      operationId: apiV1LearningReviewReviewIdApprovePost
       tags: [learning]
       parameters:
         - name: reviewId
@@ -912,6 +1022,7 @@ paths:
   /api/v1/learning/review/{reviewId}/reject:
     post:
       summary: Reject a policy from the review queue
+      operationId: apiV1LearningReviewReviewIdRejectPost
       tags: [learning]
       parameters:
         - name: reviewId
@@ -926,6 +1037,7 @@ paths:
   /api/v1/learning/stream:
     get:
       summary: SSE stream of learning status updates
+      operationId: apiV1LearningStreamGet
       tags: [sse, learning]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -942,6 +1054,7 @@ paths:
   /api/v1/analytics/query:
     post:
       summary: Submit an analytics query
+      operationId: apiV1AnalyticsQueryPost
       tags: [analytics]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -973,6 +1086,7 @@ paths:
   /api/v1/analytics/query/{queryId}:
     get:
       summary: Poll for query result
+      operationId: apiV1AnalyticsQueryQueryIdGet
       tags: [analytics]
       parameters:
         - name: queryId
@@ -988,6 +1102,7 @@ paths:
   /api/v1/analytics/query/{queryId}/plan:
     get:
       summary: Get execution plan for a submitted query
+      operationId: apiV1AnalyticsQueryQueryIdPlanGet
       tags: [analytics]
       parameters:
         - name: queryId
@@ -1002,6 +1117,7 @@ paths:
   /api/v1/analytics/aggregate:
     post:
       summary: Run an aggregation query
+      operationId: apiV1AnalyticsAggregatePost
       tags: [analytics]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1026,6 +1142,7 @@ paths:
   /events/stream:
     get:
       summary: Server-Sent Events stream — event log
+      operationId: eventsStreamGet
       tags: [sse, events]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1059,6 +1176,7 @@ paths:
   /api/v1/entities/{collection}/search:
     get:
       summary: Full-text entity search via OpenSearch
+      operationId: apiV1EntitiesCollectionSearchGet
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1074,6 +1192,7 @@ paths:
   /api/v1/entities/{collection}/export:
     get:
       summary: Bulk export entities as CSV or NDJSON
+      operationId: apiV1EntitiesCollectionExportGet
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1088,6 +1207,7 @@ paths:
   /api/v1/entities/{collection}/anomalies:
     post:
       summary: Detect statistical anomalies in a collection
+      operationId: apiV1EntitiesCollectionAnomaliesPost
       tags: [entities, analytics]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1096,7 +1216,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Anomaly detection results }
         "501": { description: Anomaly detector not configured }
@@ -1104,6 +1225,7 @@ paths:
   /api/v1/entities/{collection}/validate:
     post:
       summary: Validate a single entity payload against the collection schema
+      operationId: apiV1EntitiesCollectionValidatePost
       description: |
         Checks the supplied payload against registered validation rules for the collection.
         Returns a list of violations when the payload is invalid. Does not persist the entity.
@@ -1116,9 +1238,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              description: Arbitrary JSON payload to validate.
-              additionalProperties: true
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200":
           description: Validation outcome.
@@ -1142,6 +1262,7 @@ paths:
   /api/v1/entities/{collection}/validate/batch:
     post:
       summary: Validate multiple entity payloads in a single request
+      operationId: apiV1EntitiesCollectionValidateBatchPost
       description: |
         Validates each payload in the `entities` array against the collection schema.
         Returns per-entity results and a top-level `allValid` flag. Does not persist entities.
@@ -1194,6 +1315,7 @@ paths:
   /api/v1/entities/{collection}/batch:
     post:
       summary: Upsert multiple entities in a single request
+      operationId: apiV1EntitiesCollectionBatchPost
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1202,11 +1324,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Batch upsert results }
     delete:
       summary: Delete multiple entities by ID
+      operationId: apiV1EntitiesCollectionBatchDelete
       tags: [entities]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1215,13 +1339,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Batch delete results }
 
   /api/v1/entities/{collection}/stream:
     get:
       summary: SSE CDC stream for entity changes
+      operationId: apiV1EntitiesCollectionStreamGet
       tags: [entities, sse]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1236,6 +1362,7 @@ paths:
   /api/v1/entities/{collection}/query/stream:
     get:
       summary: SSE streaming query snapshot + tail
+      operationId: apiV1EntitiesCollectionQueryStreamGet
       tags: [entities, sse]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1256,6 +1383,7 @@ paths:
   /api/v1/entities/{collection}/suggest:
     post:
       summary: AI-assisted entity schema suggestions (DC-E3)
+      operationId: apiV1EntitiesCollectionSuggestPost
       tags: [entities, ai]
       parameters:
         - $ref: "#/components/parameters/collectionPath"
@@ -1264,7 +1392,8 @@ paths:
         required: false
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Schema suggestions with AI metadata }
 
@@ -1273,6 +1402,7 @@ paths:
   /api/v1/analytics/suggest:
     post:
       summary: AI-assisted analytics query suggestions (DC-E3)
+      operationId: apiV1AnalyticsSuggestPost
       tags: [analytics, ai]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1280,13 +1410,15 @@ paths:
         required: false
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Suggested analytics queries with AI metadata }
 
   /api/v1/reports:
     post:
       summary: Generate a report
+      operationId: apiV1ReportsPost
       tags: [analytics, reports]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1294,11 +1426,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Generated report or report ID }
     get:
       summary: List cached reports
+      operationId: apiV1ReportsGet
       tags: [analytics, reports]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1308,6 +1442,7 @@ paths:
   /api/v1/reports/{reportId}:
     get:
       summary: Retrieve a cached report
+      operationId: apiV1ReportsReportIdGet
       tags: [analytics, reports]
       parameters:
         - name: reportId
@@ -1323,6 +1458,7 @@ paths:
   /api/v1/pipelines/{pipelineId}/optimise-hint:
     post:
       summary: AI-assisted pipeline optimisation hints (DC-E3)
+      operationId: apiV1PipelinesPipelineIdOptimiseHintPost
       tags: [pipelines, ai]
       parameters:
         - name: pipelineId
@@ -1334,7 +1470,8 @@ paths:
         required: false
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Optimisation hints with AI metadata }
 
@@ -1343,6 +1480,7 @@ paths:
   /api/v1/brain/explain:
     post:
       summary: AI-assisted brain status explanation (DC-E3)
+      operationId: apiV1BrainExplainPost
       tags: [brain, ai]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1350,7 +1488,8 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200":
           { description: Human-readable explanation with remediation steps }
@@ -1360,6 +1499,7 @@ paths:
   /api/v1/models:
     get:
       summary: List registered AI models
+      operationId: apiV1ModelsGet
       tags: [models]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1367,6 +1507,7 @@ paths:
         "200": { description: List of models }
     post:
       summary: Register an AI model
+      operationId: apiV1ModelsPost
       tags: [models]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1374,13 +1515,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Registered model }
 
   /api/v1/models/{modelName}:
     get:
       summary: Get an AI model by name
+      operationId: apiV1ModelsModelNameGet
       tags: [models]
       parameters:
         - name: modelName
@@ -1394,6 +1537,7 @@ paths:
   /api/v1/models/{modelName}/promote:
     post:
       summary: Promote a model version to production
+      operationId: apiV1ModelsModelNamePromotePost
       tags: [models]
       parameters:
         - name: modelName
@@ -1405,7 +1549,8 @@ paths:
         required: false
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Model promoted }
 
@@ -1414,6 +1559,7 @@ paths:
   /api/v1/features:
     post:
       summary: Ingest a feature vector
+      operationId: apiV1FeaturesPost
       tags: [features]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1421,13 +1567,15 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Feature ingested }
 
   /api/v1/features/{entityId}:
     get:
       summary: Get features for an entity
+      operationId: apiV1FeaturesEntityIdGet
       tags: [features]
       parameters:
         - name: entityId
@@ -1443,6 +1591,7 @@ paths:
   /api/v1/voice/intent:
     post:
       summary: Resolve and execute a voice intent
+      operationId: apiV1VoiceIntentPost
       tags: [voice]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1451,18 +1600,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [utterance]
-              properties:
-                utterance: { type: string }
-                parameters: { type: object }
-                confirm: { type: boolean }
+              $ref: "#/components/schemas/VoiceIntentRequest"
       responses:
         "200": { description: Intent resolution and execution result }
 
   /api/v1/voice/intents:
     get:
       summary: List all registered voice intents
+      operationId: apiV1VoiceIntentsGet
       tags: [voice]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1472,6 +1617,7 @@ paths:
   /api/v1/voice/intent/classify:
     post:
       summary: Classify an utterance without executing the intent
+      operationId: apiV1VoiceIntentClassifyPost
       tags: [voice]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1480,10 +1626,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [utterance]
-              properties:
-                utterance: { type: string }
+              $ref: "#/components/schemas/VoiceIntentClassificationRequest"
       responses:
         "200": { description: Classification result }
 
@@ -1492,6 +1635,7 @@ paths:
   /api/v1/governance/retention/classify:
     post:
       summary: Assign a retention tier to a collection
+      operationId: apiV1GovernanceRetentionClassifyPost
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1500,14 +1644,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [collection, tier]
-              properties:
-                collection: { type: string }
-                tier:
-                  type: string
-                  enum: [transient, short-term, standard, compliance, permanent]
-                reason: { type: string }
+              $ref: "#/components/schemas/RetentionClassificationRequest"
       responses:
         "200":
           { description: Classification result with retention days and expiry }
@@ -1515,6 +1652,7 @@ paths:
   /api/v1/governance/retention/policy:
     get:
       summary: Get the retention policy for a collection
+      operationId: apiV1GovernanceRetentionPolicyGet
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1528,6 +1666,7 @@ paths:
   /api/v1/governance/retention/purge:
     post:
       summary: Trigger a data purge for expired entities (CRITICAL)
+      operationId: apiV1GovernanceRetentionPurgePost
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1536,18 +1675,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [collection, confirmationToken]
-              properties:
-                collection: { type: string }
-                confirmationToken: { type: string }
-                dryRun: { type: boolean }
+              $ref: "#/components/schemas/RetentionPurgeRequest"
       responses:
         "200": { description: Purge scheduled or dry-run estimation }
 
   /api/v1/governance/privacy/redact:
     post:
       summary: Redact PII fields from an entity
+      operationId: apiV1GovernancePrivacyRedactPost
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1556,21 +1691,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [collection, entityId]
-              properties:
-                collection: { type: string }
-                entityId: { type: string }
-                fields:
-                  type: array
-                  items: { type: string }
-                reason: { type: string }
+              $ref: "#/components/schemas/PrivacyRedactionRequest"
       responses:
         "200": { description: Redaction result with list of redacted fields }
 
   /api/v1/governance/privacy/pii-fields:
     get:
       summary: List registered PII field mappings
+      operationId: apiV1GovernancePrivacyPiiFieldsGet
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -1580,6 +1708,7 @@ paths:
   /api/v1/governance/compliance/summary:
     get:
       summary: Tenant compliance posture summary
+      operationId: apiV1GovernanceComplianceSummaryGet
       tags: [governance]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"

@@ -122,6 +122,14 @@ Clearly Scoped (no change required):
 
 ## 8. Architecture Reconfirmed
 
+**Dependency-Safe Agentic Processing Plan:**
+
+1. Data Cloud remains inherently AI/ML-native for embedded inference, recommendations, anomaly handling, feature engineering, ranking, optimisation hints, and model-backed product assistance.
+2. Data Cloud does not embed agentic orchestration or tool-using autonomous execution.
+3. When Data Cloud needs agentic processing, it emits a request through event-cloud or persists execution intent in Data Cloud-owned metadata surfaces.
+4. AEP consumes those requests through Data Cloud public contracts, executes the agentic workflow, and writes results, telemetry, checkpoints, and memory updates back into Data Cloud.
+5. Compile-time dependency remains one-way: AEP depends on Data Cloud public contracts; Data Cloud never imports AEP.
+
 **Data Cloud (Independent Product):**
 
 1. Core responsibility: AI/ML-native data foundation (entities, events, features, analytics)

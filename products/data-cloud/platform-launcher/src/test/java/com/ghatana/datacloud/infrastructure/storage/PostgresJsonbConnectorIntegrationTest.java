@@ -37,9 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, EventloopTestBase
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("PostgresJsonbConnector — Integration Tests (Testcontainers)")
-@org.junit.jupiter.api.Disabled("Requires Docker")
 class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
 
     @Container
@@ -266,7 +265,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
      * @doc.layer product
      * @doc.pattern TestDouble, JDBC
      */
-    static @org.junit.jupiter.api.Disabled("Requires Docker")
+    static
 class JdbcEntityRepository implements EntityRepository {
 
         private final String   jdbcUrl;

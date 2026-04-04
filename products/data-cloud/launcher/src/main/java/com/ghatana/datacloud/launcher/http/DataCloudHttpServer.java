@@ -618,6 +618,7 @@ public class DataCloudHttpServer {
             // Event endpoints — delegated to EventHandler
             .with(HttpMethod.POST, "/api/v1/events", eventHandler::handleAppendEvent)
             .with(HttpMethod.GET, "/api/v1/events", eventHandler::handleQueryEvents)
+            .with(HttpMethod.GET, "/api/v1/events/:offset", eventHandler::handleGetEventByOffset)
 
             // Pipeline registry endpoints — delegated to PipelineCheckpointHandler
             .with(HttpMethod.GET,    "/api/v1/pipelines",                pipelineCheckpointHandler::handleListPipelines)

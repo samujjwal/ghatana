@@ -4,7 +4,6 @@ import com.ghatana.datacloud.*;
 import com.ghatana.datacloud.entity.EntityInterface;
 import com.ghatana.datacloud.entity.storage.QuerySpecInterface;
 import com.ghatana.datacloud.spi.DataStorageOperations;
-import com.ghatana.datacloud.spi.StoragePlugin;
 import com.ghatana.platform.plugin.PluginRegistry;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -18,8 +17,9 @@ import java.util.*;
  *
  * <p><b>Purpose</b><br>
  * In-process client for accessing Data-Cloud functionality in embedded
- * library mode. Uses the SAME plugin architecture as distributed mode,
- * ensuring consistent behavior across deployment models.</p>
+ * library mode. Embedded mode is intentionally conservative: it supports
+ * in-memory operation by default and accepts explicit storage adapters via
+ * {@link DataStorageOperations} when callers need real persistence.</p>
  *
  * <p><b>Architecture - "Mini Distributed" Pattern</b><br>
  * <pre>
@@ -27,10 +27,10 @@ import java.util.*;
  *        ↓
  * EmbeddedDataCloudClient (this class)
  *        ↓
- * PluginRegistry (same as distributed mode)
- *    ├── StoragePlugin (PostgreSQL, Memory, Redis, S3)
- *    ├── StreamingPlugin (Kafka, Memory)
- *    └── Other plugins (same interfaces)
+ * Embedded storage ports + local in-memory event state
+ *    ├── DataStorageOperations (optional explicit adapter)
+ *    ├── In-memory entity fallback
+ *    └── In-memory event/offset fallback
  * </pre>
  *
  * <p><b>Design Philosophy: Single-Service as "Mini Distributed"</b><br>
@@ -88,10 +88,9 @@ import java.util.*;
  *     .withMemoryStorage()
  *     .build();
  *
- * // Production usage (PostgreSQL + Redis)
+ * // Production usage with an explicit storage adapter
  * EmbeddedDataCloudClient client = EmbeddedDataCloudClient.builder()
- *     .withPostgreSQLStorage(postgresConfig)
- *     .withRedisCache(redisConfig)
+ *     .withDataStoragePlugin(storageAdapter)
  *     .build();
  *
  * // Use like normal client
@@ -99,9 +98,9 @@ import java.util.*;
  * }</pre>
  *
  * @doc.type class
- * @doc.purpose Production-ready embedded library client with real plugin integration
+ * @doc.purpose Embedded library client with explicit storage adapter boundaries
  * @doc.layer core
- * @doc.pattern Client, Facade, Mini-Distributed
+ * @doc.pattern Client, Facade
  */
  public class EmbeddedDataCloudClient extends ManagedDataCloudClient {
     private static final Logger log = LoggerFactory.getLogger(EmbeddedDataCloudClient.class);
@@ -109,9 +108,10 @@ import java.util.*;
     // Configuration
     private final EmbeddedClientConfig config;
     
-    // Plugin system (REAL plugins, not mocks)
+    // Plugin registry is retained for advanced callers that register plugins
+    // externally, but embedded mode does not reflectively construct plugins.
     private final PluginRegistry pluginRegistry;
-    private final StoragePlugin<?> storagePlugin;
+    private final String storagePluginType;
     private final DataStorageOperations dataStoragePlugin; // For entity CRUD operations
     
     // Simple in-memory entity storage (fallback when no DataStoragePlugin configured)
@@ -131,12 +131,11 @@ import java.util.*;
     private EmbeddedDataCloudClient(
             EmbeddedClientConfig config,
             PluginRegistry pluginRegistry,
-            StoragePlugin<?> storagePlugin,
             DataStorageOperations dataStoragePlugin) {
         
         this.config = Objects.requireNonNull(config, "config required");
         this.pluginRegistry = Objects.requireNonNull(pluginRegistry, "pluginRegistry required");
-        this.storagePlugin = Objects.requireNonNull(storagePlugin, "storagePlugin required");
+        this.storagePluginType = Objects.requireNonNull(config.getStoragePluginType(), "storagePluginType required");
         this.dataStoragePlugin = dataStoragePlugin; // Can be null (fallback to in-memory)
         this.startTime = Instant.now();
         
@@ -148,8 +147,7 @@ import java.util.*;
         } else {
             log.info("EmbeddedDataCloudClient initialized with in-memory entity storage");
         }
-        log.info("Event storage plugin: {} ({})", 
-            storagePlugin.getPluginId(), storagePlugin.getVersion());
+        log.info("EmbeddedDataCloudClient storage mode: {}", storagePluginType);
     }
 
     /**
@@ -938,7 +936,7 @@ import java.util.*;
         
         // Check plugin health
         Map<String, ComponentStatus> components = new HashMap<>();
-        components.put("storage_plugin", componentStatus("storage_plugin", storagePlugin != null, "OK"));
+        components.put("storage_mode", componentStatus("storage_mode", storagePluginType != null, storagePluginType));
         
         boolean allHealthy = components.values().stream().allMatch(ComponentStatus::isHealthy);
         
@@ -1010,16 +1008,7 @@ import java.util.*;
             return;
         }
 
-        // Shutdown storage plugin
-        if (storagePlugin != null) {
-            try {
-                // Storage plugins implement lifecycle, call destroy
-                log.info("Shutting down storage plugin: {}", storagePlugin.getPluginId());
-                // Note: StoragePlugin.destroy() should be called here
-            } catch (Exception e) {
-                log.warn("Error shutting down storage plugin", e);
-            }
-        }
+        log.info("Shutting down embedded storage mode: {}", storagePluginType);
         
         log.info("EmbeddedDataCloudClient closed");
     }
@@ -1120,7 +1109,6 @@ import java.util.*;
     public static class Builder {
         private EmbeddedClientConfig.Builder configBuilder = EmbeddedClientConfig.builder();
         private PluginRegistry pluginRegistry;
-        private StoragePlugin<?> storagePlugin;
         private DataStorageOperations dataStoragePlugin;
         
         /**
@@ -1154,9 +1142,12 @@ import java.util.*;
         /**
          * Use custom storage plugin.
          */
-        public Builder withStoragePlugin(StoragePlugin<?> plugin) {
-            this.storagePlugin = plugin;
-            return this;
+        @Deprecated(forRemoval = false)
+        public Builder withStoragePlugin(com.ghatana.datacloud.spi.StoragePlugin<?> plugin) {
+            Objects.requireNonNull(plugin, "plugin");
+            throw new UnsupportedOperationException(
+                "EmbeddedDataCloudClient no longer accepts opaque StoragePlugin instances. "
+                + "Pass an explicit DataStorageOperations adapter via withDataStoragePlugin(...) instead.");
         }
         
         /**
@@ -1186,155 +1177,37 @@ import java.util.*;
                 pluginRegistry = new PluginRegistry();
             }
             
-            // Initialize storage plugin if not provided
-            if (storagePlugin == null) {
-                storagePlugin = loadStoragePlugin(config, pluginRegistry);
-            }
+            validateSupportedEmbeddedMode(config, dataStoragePlugin);
             
-            // Initialize plugin
             try {
-                com.ghatana.platform.plugin.PluginContext context = createPluginContext(config);
-                // Note: Plugin initialization would happen here
-                log.info("Initialized storage plugin: {}", storagePlugin.getPluginId());
+                createPluginContext(config);
+                log.info("Initialized embedded storage mode: {}", config.getStoragePluginType());
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to initialize storage plugin", e);
             }
             
-            return new EmbeddedDataCloudClient(config, pluginRegistry, storagePlugin, dataStoragePlugin);
+            return new EmbeddedDataCloudClient(config, pluginRegistry, dataStoragePlugin);
         }
-        
-        private StoragePlugin<?> loadStoragePlugin(EmbeddedClientConfig config, PluginRegistry registry) {
+
+        private void validateSupportedEmbeddedMode(
+                EmbeddedClientConfig config,
+                DataStorageOperations explicitStorageAdapter) {
             String pluginType = config.getStoragePluginType();
-            
-            // Try to find existing plugin
-            Optional<com.ghatana.platform.plugin.Plugin> existingPlugin = registry.findByType(
-                com.ghatana.platform.plugin.PluginType.STORAGE
-            ).stream()
-            .filter(p -> p.metadata().id().contains(pluginType))
-            .findFirst();
-            
-            if (existingPlugin.isPresent() && existingPlugin.get() instanceof StoragePlugin<?> sp) {
-                return sp;
-            }
-            
-            // Create new plugin based on type
-            return switch (pluginType) {
-                case "memory" -> createMemoryPlugin();
-                case "postgres" -> createPostgresPlugin(config.getStorageConfig());
-                case "redis" -> createRedisPlugin(config.getStorageConfig());
+
+            switch (pluginType) {
+                case "memory" -> {
+                    return;
+                }
+                case "postgres", "redis" -> {
+                    if (explicitStorageAdapter == null) {
+                        throw new IllegalStateException(
+                            "EmbeddedDataCloudClient storage mode '" + pluginType + "' requires an explicit "
+                            + "DataStorageOperations implementation via withDataStoragePlugin(...). "
+                            + "Reflective plugin bootstrapping has been removed.");
+                    }
+                    return;
+                }
                 default -> throw new IllegalArgumentException("Unknown storage plugin type: " + pluginType);
-            };
-        }
-        
-        private StoragePlugin<?> createMemoryPlugin() {
-            try {
-                // Use reflection to create InMemoryStoragePlugin
-                Class<?> pluginClass = Class.forName("com.ghatana.datacloud.plugins.memory.InMemoryStoragePlugin");
-                return (StoragePlugin<?>) pluginClass.getDeclaredConstructor().newInstance();
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to create memory storage plugin", e);
-            }
-        }
-        
-        private StoragePlugin<?> createPostgresPlugin(Map<String, Object> config) {
-            try {
-                log.info("Creating PostgreSQL storage plugin with config: {}", config);
-                
-                // Use reflection to load PostgresStoragePlugin and PostgresStorageConfig
-                Class<?> configClass = Class.forName("com.ghatana.datacloud.plugins.postgres.PostgresStorageConfig");
-                Class<?> pluginClass = Class.forName("com.ghatana.datacloud.plugins.postgres.PostgresStoragePlugin");
-                
-                // Build config using builder pattern
-                Object configBuilder = configClass.getMethod("builder").invoke(null);
-                
-                // Set JDBC URL
-                String jdbcUrl = (String) config.getOrDefault("jdbcUrl", "jdbc:postgresql://localhost:5432/ghatana");
-                configBuilder = configClass.getMethod("jdbcUrl", String.class).invoke(configBuilder, jdbcUrl);
-                
-                // Set username
-                String username = (String) config.getOrDefault("username", "ghatana");
-                configBuilder = configClass.getMethod("username", String.class).invoke(configBuilder, username);
-                
-                // Set password
-                String password = (String) config.getOrDefault("password", "");
-                configBuilder = configClass.getMethod("password", String.class).invoke(configBuilder, password);
-                
-                // Set pool size if provided
-                if (config.containsKey("poolSize")) {
-                    int poolSize = ((Number) config.get("poolSize")).intValue();
-                    configBuilder = configClass.getMethod("poolSize", int.class).invoke(configBuilder, poolSize);
-                }
-                
-                // Build config
-                Object pluginConfig = configBuilder.getClass().getMethod("build").invoke(configBuilder);
-                
-                // Create plugin instance
-                StoragePlugin<?> plugin = (StoragePlugin<?>) pluginClass
-                    .getDeclaredConstructor(configClass)
-                    .newInstance(pluginConfig);
-                
-                log.info("Successfully created PostgreSQL storage plugin");
-                return plugin;
-                
-            } catch (Exception e) {
-                log.error("Failed to create PostgreSQL storage plugin", e);
-                throw new IllegalStateException("Failed to create PostgreSQL storage plugin: " + e.getMessage(), e);
-            }
-        }
-        
-        private StoragePlugin<?> createRedisPlugin(Map<String, Object> config) {
-            try {
-                log.info("Creating Redis storage plugin with config: {}", config);
-                
-                // Use reflection to load RedisHotTierPlugin and RedisStorageConfig
-                Class<?> configClass = Class.forName("com.ghatana.datacloud.plugins.redis.RedisStorageConfig");
-                Class<?> pluginClass = Class.forName("com.ghatana.datacloud.plugins.redis.RedisHotTierPlugin");
-                
-                // Build config using builder pattern
-                Object configBuilder = configClass.getMethod("builder").invoke(null);
-                
-                // Set host
-                String host = (String) config.getOrDefault("host", "localhost");
-                configBuilder = configClass.getMethod("host", String.class).invoke(configBuilder, host);
-                
-                // Set port
-                int port = config.containsKey("port") 
-                    ? ((Number) config.get("port")).intValue() 
-                    : 6379;
-                configBuilder = configClass.getMethod("port", int.class).invoke(configBuilder, port);
-                
-                // Set password if provided
-                if (config.containsKey("password")) {
-                    String password = (String) config.get("password");
-                    configBuilder = configClass.getMethod("password", String.class).invoke(configBuilder, password);
-                }
-                
-                // Set database if provided
-                if (config.containsKey("database")) {
-                    int database = ((Number) config.get("database")).intValue();
-                    configBuilder = configClass.getMethod("database", int.class).invoke(configBuilder, database);
-                }
-                
-                // Set max pool size if provided
-                if (config.containsKey("maxPoolSize")) {
-                    int maxPoolSize = ((Number) config.get("maxPoolSize")).intValue();
-                    configBuilder = configClass.getMethod("maxPoolSize", int.class).invoke(configBuilder, maxPoolSize);
-                }
-                
-                // Build config
-                Object pluginConfig = configBuilder.getClass().getMethod("build").invoke(configBuilder);
-                
-                // Create plugin instance
-                StoragePlugin<?> plugin = (StoragePlugin<?>) pluginClass
-                    .getDeclaredConstructor(configClass)
-                    .newInstance(pluginConfig);
-                
-                log.info("Successfully created Redis storage plugin");
-                return plugin;
-                
-            } catch (Exception e) {
-                log.error("Failed to create Redis storage plugin", e);
-                throw new IllegalStateException("Failed to create Redis storage plugin: " + e.getMessage(), e);
             }
         }
         

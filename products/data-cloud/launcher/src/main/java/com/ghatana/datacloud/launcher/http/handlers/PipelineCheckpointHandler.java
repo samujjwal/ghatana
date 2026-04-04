@@ -63,7 +63,7 @@ public class PipelineCheckpointHandler {
                 String body = buf.getString(StandardCharsets.UTF_8);
                 Map<String, Object> data = http.objectMapper().readValue(body, Map.class);
                 return client.save(tenantId, DC_PIPELINES_COLLECTION, data)
-                        .map(entity -> http.jsonResponse(flattenPipelineEntity(entity, tenantId)));
+                        .map(entity -> http.createdResponse(flattenPipelineEntity(entity, tenantId)));
             } catch (Exception e) {
                 log.warn("[DC-Pipelines] save failed tenant={}: {}", tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(400, "Invalid pipeline definition: " + e.getMessage()));
@@ -111,11 +111,7 @@ public class PipelineCheckpointHandler {
             return Promise.of(http.errorResponse(400, "pipelineId path parameter is required"));
         }
         return client.delete(tenantId, DC_PIPELINES_COLLECTION, pipelineId)
-                .map(v -> http.jsonResponse(Map.of(
-                        "deleted", true,
-                        "pipelineId", pipelineId,
-                        "tenantId", tenantId,
-                        "timestamp", Instant.now().toString())));
+                .map(v -> http.noContentResponse());
     }
 
     // ==================== Checkpoint Endpoints ====================

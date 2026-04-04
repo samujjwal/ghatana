@@ -114,6 +114,14 @@ public final class VoiceIntentCatalog {
             List.of("description", "steps"),
             EndpointSensitivity.SENSITIVE),
 
+        new VoiceIntent(
+            "list_agents",
+            "GET", "/api/v1/agents",
+            "List registered agents available for orchestration",
+            List.of(),
+            List.of("tenantId", "limit"),
+            EndpointSensitivity.INTERNAL),
+
         // ── Analytics operations ────────────────────────────────────────────
         new VoiceIntent(
             "run_analytics_query",
@@ -189,6 +197,14 @@ public final class VoiceIntentCatalog {
             "List registered ML models and their promotion status",
             List.of(),
             List.of("tenantId", "status"),
+            EndpointSensitivity.INTERNAL),
+
+        new VoiceIntent(
+            "get_model_status",
+            "GET", "/api/v1/models/:modelName",
+            "Get the active status and metadata for a registered ML model",
+            List.of("modelName"),
+            List.of("tenantId"),
             EndpointSensitivity.INTERNAL)
     );
 

@@ -6,32 +6,66 @@
 
 ## Purpose
 
-**Data Cloud** is the platform's persistent event store and streaming infrastructure. It provides:
+**Data Cloud** is an independent, deployable, AI/ML-native data product for the Ghatana ecosystem. It provides:
 
-- **Event log** — append-only, tenant-scoped event storage (Apache Kafka-backed)
-- **Event tailing** — real-time push-based subscriptions via SSE/WebSocket
-- **Agent registry** — persistent cross-product agent metadata store
-- **Platform abstraction** — SPI for event publishing/consuming consumed by AEP and other products
+- **Data management** — entity storage, retrieval, schema governance, and lifecycle controls
+- **Event-cloud backbone** — append-only event storage plus streaming for platform and product integrations
+- **Analytics and reporting** — query, aggregation, reporting, and observability surfaces
+- **AI/ML-native capabilities** — feature ingestion, model metadata, anomaly detection, ranking, recommendations, and assistive flows embedded across normal product workflows
+- **Plugin-driven extensibility** — feature expansion through a product plugin system rather than hard-coded product silos
+- **Execution persistence surfaces** — pipeline/checkpoint metadata, agent memory, and agent definition persistence for external runtimes
+
+## Boundary And Roles
+
+Data Cloud owns the data foundation and feature platform:
+
+- data storage, event streaming, search, analytics, reporting, governance, and observability
+- AI/ML-native product behavior embedded into data and analytics workflows
+- plugin lifecycle, feature store, model metadata, and execution metadata persistence
+
+AEP owns agentic processing:
+
+- planning, orchestration, tool-using workflows, and long-running multi-step execution
+- runtime discovery and execution of agents/operator pipelines
+
+The integration rule is one-way:
+
+- AEP may depend on Data Cloud public contracts, event schemas, and APIs
+- Data Cloud must not depend on AEP code or import AEP modules
+- Data Cloud requests agentic work through event-cloud and public contracts; AEP executes and writes results, telemetry, and checkpoints back through Data Cloud-owned APIs/events
 
 ## Architecture
 
 ```
-Producers (AEP, Products)  →  data-cloud/event  →  EventLog (Kafka)
-                                                          │
-                                              EventTailing (SSE push)
-                                                          │
-                                              Consumers (AEP, Products)
+Products / Clients  →  Data Cloud APIs + Plugin Runtime  →  Entities / Events / Features / Analytics
+                                  │
+                                  ├── event-cloud ──▶ AEP agentic runtime
+                                  │                     │
+                                  │                     └── emits results / telemetry / checkpoints
+                                  │
+                                  └── standalone and multi-environment deployment modes
 ```
+
+## Deployment Modes
+
+- **Standalone product deployment** for independent Data Cloud operation
+- **Integrated platform deployment** as the shared data foundation for other Ghatana products
+- **Embedded or environment-specific deployment** through launcher, Helm, Kubernetes, and Terraform assets
 
 ### Key Modules
 
 | Module | Purpose |
 |--------|---------|
-| `platform/` | Core SPI: `EventPublisher`, `EventConsumer`, `EventLog` interfaces; includes `com.ghatana.datacloud.event` package for canonical event streaming |
-| `spi/` | Shared interfaces and types for cross-product integration (`EventLogStore`, `AgentRegistry` SPI) |
-| `agent-registry/` | `DataCloudAgentRegistry` — implements platform `AgentRegistry` SPI |
-| `agent-catalog/` | YAML definitions for built-in agent capabilities and operator catalogue |
-| `feature-store-ingest/` | Real-time feature ingestion pipeline from EventCloud → Feature Store (ML pipelines); migrated from `shared-services` per ADR-013 |
+| `spi/` | Stable public contracts for storage, event-cloud integration, plugins, and external product consumption |
+| `platform-entity/` | Entity storage and schema-oriented domain contracts |
+| `platform-event/` | Event-cloud and event-log primitives |
+| `platform-analytics/` | Analytics, reporting, and query capabilities |
+| `platform-config/` | Configuration and deployment-time product wiring |
+| `platform-plugins/` | Plugin lifecycle and extensibility support |
+| `platform-launcher/` | Core runtime/domain services, transport adapters, and DI wiring |
+| `agent-registry/` | Durable persistence for agent definitions and metadata used by external runtimes such as AEP |
+| `agent-catalog/` | Data Cloud capability catalog and integration metadata |
+| `feature-store-ingest/` | Real-time feature ingestion pipeline from event-cloud into the feature store for ML workflows |
 | `sdk/` | Generated client libraries for the Data-Cloud REST API (Java, TypeScript, Python) — run `./gradlew :products:data-cloud:sdk:generateAllSdks` |
 | `launcher/` | ActiveJ bootstrap; hosts the HTTP server with all API routes |
 | `ui/` | React 19 frontend for the Data-Cloud product |
@@ -62,4 +96,6 @@ docker-compose -f shared-services/infrastructure/docker-compose.yml up -d kafka 
 
 - **Event sourcing** — all state changes produce events; consumers build projections
 - **Tenant isolation** — topics and registry entries are namespaced by `tenantId`
-- **No cross-product platform deps** — only depends on `platform/java/*` libs
+- **AI/ML is implicit** — intelligence is embedded into product workflows rather than isolated behind a separate mode
+- **Agentic processing stays external** — agentic execution runs in AEP, while Data Cloud remains the system of record for the relevant data, features, memory, and execution metadata
+- **No circular product dependency** — Data Cloud does not import AEP; AEP consumes Data Cloud through public contracts and event-cloud integration

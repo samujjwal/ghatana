@@ -7,6 +7,9 @@ package com.ghatana.datacloud.agent.registry.provider;
 import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.spi.AgentLogicProvider;
+import com.ghatana.datacloud.agent.registry.agents.DataAnomalyDetectorAgent;
+import com.ghatana.datacloud.agent.registry.agents.DataSyncAgent;
+import com.ghatana.datacloud.agent.registry.agents.SchemaValidatorAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +48,12 @@ public class DataCloudAgentLogicProvider implements AgentLogicProvider {
             new ConcurrentHashMap<>();
 
     public DataCloudAgentLogicProvider() {
-        registerFactory("data-cloud:agent.data-cloud.schema-validator", this::createStubAgent);
-        registerFactory("data-cloud:agent.data-cloud.data-sync", this::createStubAgent);
-        registerFactory("data-cloud:agent.data-cloud.anomaly-detector", this::createStubAgent);
+        registerFactory("data-cloud:agent.data-cloud.schema-validator",
+                config -> new SchemaValidatorAgent());
+        registerFactory("data-cloud:agent.data-cloud.data-sync",
+                config -> new DataSyncAgent());
+        registerFactory("data-cloud:agent.data-cloud.anomaly-detector",
+                config -> new DataAnomalyDetectorAgent());
     }
 
     @Override
@@ -88,11 +94,5 @@ public class DataCloudAgentLogicProvider implements AgentLogicProvider {
                                  Function<AgentConfig, TypedAgent<?, ?>> factory) {
         factories.put(implementationRef, factory);
         log.debug("Registered Data Cloud agent factory for ref '{}'", implementationRef);
-    }
-
-    private TypedAgent<?, ?> createStubAgent(AgentConfig config) {
-        throw new UnsupportedOperationException(
-                "Stub factory for '" + config.getAgentId()
-                        + "'. Wire real agent factories via registerFactory().");
     }
 }

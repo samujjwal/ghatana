@@ -73,8 +73,9 @@ import java.util.stream.Collectors;
  *   <li>Records all lifecycle events (agent.registered, agent.deregistered) to immutable audit trail</li>
  * </ul>
  *
- * <p>Products no longer expose their own registry HTTP endpoints. All agent operations
- * route through the unified AEP API at {@code /api/v1/agents/*}.
+ * <p>Products no longer expose their own registry HTTP endpoints. Agentic discovery and
+ * runtime-facing operations route through AEP-owned APIs, while this provider remains the
+ * Data-Cloud-backed persistence layer.
  *
  * @doc.type class
  * @doc.purpose Data-Cloud-backed agent registry with in-memory write-through cache and TTL eviction

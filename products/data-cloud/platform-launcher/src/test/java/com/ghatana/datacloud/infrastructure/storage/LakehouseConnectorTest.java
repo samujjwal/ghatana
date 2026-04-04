@@ -19,9 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 
-@Disabled("Temporarily disabled due to mock stubbing issues in test environment")
 @ExtendWith(MockitoExtension.class)
 class LakehouseConnectorTest extends EventloopTestBase {
 
@@ -36,8 +35,8 @@ class LakehouseConnectorTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
-        doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
+        lenient().doNothing().when(metrics).incrementCounter(anyString(), any(String[].class));
+        lenient().doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class));
         connector = new LakehouseConnector(metrics);
     }
 
@@ -104,7 +103,6 @@ class LakehouseConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to mock stubbing issues")
     void update_fails_forMissingEntity() {
         Entity ghost = entityWithId(UUID.randomUUID());
         Promise<Entity> p = connector.update(ghost);
@@ -123,7 +121,6 @@ class LakehouseConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to mock stubbing issues")
     void delete_isIdempotent_forMissingEntity() {
         assertThatCode(() -> resolve(connector.delete(COLLECTION_ID, TENANT, UUID.randomUUID())))
                 .doesNotThrowAnyException();
@@ -232,7 +229,6 @@ class LakehouseConnectorTest extends EventloopTestBase {
     }
 
     @Test
-    @Disabled("Temporarily disabled due to mock stubbing issues")
     void healthCheck_succeeds() {
         assertThatCode(() -> resolve(connector.healthCheck())).doesNotThrowAnyException();
     }

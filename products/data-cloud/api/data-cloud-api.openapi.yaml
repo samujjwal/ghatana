@@ -4,6 +4,12 @@ info:
   version: 1.0.0
   description: |
     API for querying datasets, managing data transformations, and retrieving analytics.
+
+    This API is part of Data Cloud, an independent AI/ML-native product. Data Cloud owns data
+    management, analytics, reporting, feature storage, and plugin-driven extensibility.
+
+    Agentic processing is handled by AEP. Data Cloud may publish or persist work requests and
+    execution metadata, but it does not host agentic runtime endpoints or depend on AEP code.
     
     ## Authentication
     All endpoints require API key or Bearer token:

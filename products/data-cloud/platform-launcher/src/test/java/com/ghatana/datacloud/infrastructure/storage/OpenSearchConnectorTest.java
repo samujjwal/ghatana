@@ -32,10 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, EventloopTestBase
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("OpenSearchConnector — Integration Tests (Testcontainers)")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@org.junit.jupiter.api.Disabled("Requires Docker")
 class OpenSearchConnectorTest extends EventloopTestBase {
 
     @SuppressWarnings("resource")

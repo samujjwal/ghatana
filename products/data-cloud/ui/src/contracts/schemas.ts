@@ -150,6 +150,137 @@ export function paginatedSchema<T extends z.ZodTypeAny>(itemSchema: T) {
 }
 
 // ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+
+export const AnalyticsQuerySchema = z.object({
+  metric: z.string().min(1),
+  dimensions: z.array(z.string()).optional(),
+  filters: z.record(z.string(), z.string()).optional(),
+  startTime: z.string(),
+  endTime: z.string(),
+  granularity: z.enum(['minute', 'hour', 'day', 'week', 'month']),
+  limit: z.number().int().positive().optional(),
+});
+
+export const AnalyticsDataPointSchema = z.object({
+  timestamp: z.string(),
+  value: z.number(),
+  dimensions: z.record(z.string(), z.string()).optional(),
+});
+
+export const AnalyticsResultSchema = z.object({
+  metric: z.string(),
+  unit: z.string().optional(),
+  dataPoints: z.array(AnalyticsDataPointSchema),
+  aggregation: z.object({
+    min: z.number(),
+    max: z.number(),
+    avg: z.number(),
+    sum: z.number(),
+    count: z.number(),
+  }),
+  queryDurationMs: z.number(),
+});
+
+export const PaginatedAnalyticsResultSchema = z.object({
+  results: z.array(AnalyticsResultSchema),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+  hasMore: z.boolean(),
+});
+
+// ---------------------------------------------------------------------------
+// Events
+// ---------------------------------------------------------------------------
+
+export const EventSchema = z.object({
+  id: z.string(),
+  tenantId: z.string(),
+  type: z.string().min(1),
+  payload: z.record(z.string(), z.unknown()),
+  headers: z.record(z.string(), z.string()).optional(),
+  offset: z.number(),
+  timestamp: z.string(),
+  source: z.string().optional(),
+  correlationId: z.string().optional(),
+  schemaVersion: z.string().optional(),
+});
+
+export const AppendEventRequestSchema = z.object({
+  type: z.string().min(1),
+  payload: z.record(z.string(), z.unknown()),
+  headers: z.record(z.string(), z.string()).optional(),
+  source: z.string().optional(),
+  correlationId: z.string().optional(),
+  schemaVersion: z.string().optional(),
+});
+
+export const AppendEventResponseSchema = z.object({
+  offset: z.number(),
+  eventId: z.string(),
+  timestamp: z.string(),
+});
+
+export const EventQueryRequestSchema = z.object({
+  eventTypes: z.array(z.string()).min(1).optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  limit: z.number().int().positive().max(10000).default(100),
+  offset: z.number().int().nonnegative().optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const PaginatedEventResponseSchema = z.object({
+  items: z.array(EventSchema),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+  hasMore: z.boolean(),
+  nextOffset: z.number().optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Storage Profile — Create / Update requests
+// ---------------------------------------------------------------------------
+
+export const CreateStorageProfileRequestSchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(['postgresql', 'timescaledb', 'clickhouse', 's3', 'gcs', 'azure-blob', 'in-memory']),
+  config: z.record(z.string(), z.unknown()),
+  isDefault: z.boolean().optional(),
+});
+
+export const UpdateStorageProfileRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+  isDefault: z.boolean().optional(),
+  status: z.enum(['active', 'inactive', 'maintenance']).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Connectors — Create / Update requests
+// ---------------------------------------------------------------------------
+
+export const ConnectorTypeSchema = z.enum([
+  'kafka', 'rabbitmq', 'sqs', 'pubsub', 'http-webhook', 'grpc', 'jdbc', 'custom',
+]);
+
+export const CreateConnectorRequestSchema = z.object({
+  name: z.string().min(1),
+  type: ConnectorTypeSchema,
+  storageProfileId: z.string(),
+  config: z.record(z.string(), z.unknown()),
+});
+
+export const UpdateConnectorRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+  status: z.enum(['active', 'inactive', 'error']).optional(),
+});
+
+// ---------------------------------------------------------------------------
 // Type exports
 // ---------------------------------------------------------------------------
 
@@ -161,3 +292,17 @@ export type Execution = z.infer<typeof ExecutionSchema>;
 export type StorageProfile = z.infer<typeof StorageProfileSchema>;
 export type StorageProfileMetrics = z.infer<typeof StorageProfileMetricsSchema>;
 export type Connector = z.infer<typeof ConnectorSchema>;
+export type AnalyticsQuery = z.infer<typeof AnalyticsQuerySchema>;
+export type AnalyticsDataPoint = z.infer<typeof AnalyticsDataPointSchema>;
+export type AnalyticsResult = z.infer<typeof AnalyticsResultSchema>;
+export type PaginatedAnalyticsResult = z.infer<typeof PaginatedAnalyticsResultSchema>;
+export type Event = z.infer<typeof EventSchema>;
+export type AppendEventRequest = z.infer<typeof AppendEventRequestSchema>;
+export type AppendEventResponse = z.infer<typeof AppendEventResponseSchema>;
+export type EventQueryRequest = z.infer<typeof EventQueryRequestSchema>;
+export type PaginatedEventResponse = z.infer<typeof PaginatedEventResponseSchema>;
+export type CreateStorageProfileRequest = z.infer<typeof CreateStorageProfileRequestSchema>;
+export type UpdateStorageProfileRequest = z.infer<typeof UpdateStorageProfileRequestSchema>;
+export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
+export type CreateConnectorRequest = z.infer<typeof CreateConnectorRequestSchema>;
+export type UpdateConnectorRequest = z.infer<typeof UpdateConnectorRequestSchema>;
