@@ -1,0 +1,18 @@
+id: test-product-agent
+name: Test Product Agent
+namespace: test.product
+version: 1.0.0
+status: active
+summary: Product-specific test agent for routing test events.
+owners:
+  - team: product-team
+    role: feature-owner
+metadata:
+  level: worker
+  domain: product
+  tags: [product, test, routing]
+identity:
+  agentType: deterministic
+capabilities:
+  - event-routing
+  - product-feature
