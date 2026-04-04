@@ -4,7 +4,7 @@ import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
 import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
-import com.ghatana.platform.domain.agent.registry.HealthStatus;
+import com.ghatana.agent.HealthStatus;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.virtualorg.framework.hierarchy.Authority;

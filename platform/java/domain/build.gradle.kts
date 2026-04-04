@@ -19,6 +19,7 @@ java {
 dependencies {
     // Platform Core
     api(project(":platform:java:core"))
+    api(project(":platform:java:agent-core"))
     implementation(project(":platform:contracts"))
 
     // Jackson for JSON serialization

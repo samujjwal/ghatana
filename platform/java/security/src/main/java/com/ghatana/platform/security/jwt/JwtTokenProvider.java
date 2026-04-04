@@ -1,7 +1,6 @@
 package com.ghatana.platform.security.jwt;
 
 import com.ghatana.platform.security.model.User;
-import com.ghatana.platform.security.rbac.Role;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -243,7 +242,7 @@ public class JwtTokenProvider implements com.ghatana.platform.security.port.JwtT
      */
     @Deprecated
     public String createToken(User user) {
-        return createToken(user.getUsername(), user.getRoles().stream().map(Role::name).collect(Collectors.toList()), null);
+        return createToken(user.getUsername(), List.copyOf(user.getRoles()), null);
     }
 
     /**

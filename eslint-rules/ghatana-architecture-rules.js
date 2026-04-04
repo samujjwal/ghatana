@@ -1,6 +1,6 @@
 /**
  * @fileoverview ESLint custom rules for monorepo architecture enforcement
- * @rules no-cross-product-imports, enforce-platform-boundaries, no-banned-libraries
+ * @rules no-cross-product-imports, enforce-platform-boundaries, no-banned-libraries, no-deprecated-ghatana-ui, no-deleted-v41-packages
  */
 
 'use strict';
@@ -355,6 +355,70 @@ module.exports = {
                 context.report({
                   node,
                   messageId: 'usePlatformUtils',
+                });
+              }
+            }
+          },
+        };
+      },
+    },
+
+    /**
+     * Rule: no-deleted-v41-packages
+     * Prevents re-introduction of symbols deleted/renamed in V4.1 deduplication pass.
+     *
+     * Deleted in V4.1:
+     *  - @ghatana/ui                  → @ghatana/design-system (blocked by no-deprecated-ghatana-ui)
+     *  - @yappc/compat-*              → canonical packages (blocked by product compat ESLint)
+     *
+     * TypeScript symbols that were audited and confirmed NOT to be duplicates
+     * (all had different semantics) — no rule needed for those.
+     *
+     * This rule focuses on blocking patterns that WOULD cause duplication:
+     *  - Importing from re-exported barrel files that duplicate canonical exports
+     *  - Importing stale design-system internal paths that bypass the public API
+     */
+    'no-deleted-v41-packages': {
+      meta: {
+        type: 'error',
+        docs: {
+          description: 'Disallow import paths deleted or reorganized in platform V4.1 deduplication',
+          category: 'Migration',
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          deletedPath:
+            '🚫 {{importPath}} references a removed or reorganized V4.1 path. {{fix}}',
+        },
+      },
+
+      create(context) {
+        /** Map from banned import path prefix → helpful fix message */
+        const DELETED_PATHS = new Map([
+          [
+            '@ghatana/design-system/src/components/CommandPalette',
+            'Use the public API: import { CommandPalette } from "@ghatana/design-system"',
+          ],
+          [
+            '@ghatana/design-system/src/typography/List',
+            'Use the public API: import { List } from "@ghatana/design-system" (via typography index)',
+          ],
+          [
+            '@ghatana/design-system/components/CommandPalette',
+            'Use the public API: import { CommandPalette } from "@ghatana/design-system"',
+          ],
+        ]);
+
+        return {
+          ImportDeclaration(node) {
+            const importPath = node.source.value;
+            for (const [bannedPrefix, fix] of DELETED_PATHS) {
+              if (importPath === bannedPrefix || importPath.startsWith(bannedPrefix + '/')) {
+                context.report({
+                  node,
+                  messageId: 'deletedPath',
+                  data: { importPath, fix },
                 });
               }
             }

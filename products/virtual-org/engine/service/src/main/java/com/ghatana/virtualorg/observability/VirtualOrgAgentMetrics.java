@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.observability;
 
-import com.ghatana.platform.domain.agent.registry.HealthStatus;
+import com.ghatana.agent.HealthStatus;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.micrometer.core.instrument.*;
 import org.jetbrains.annotations.NotNull;

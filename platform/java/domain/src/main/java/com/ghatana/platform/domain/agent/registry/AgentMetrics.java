@@ -1,5 +1,6 @@
 package com.ghatana.platform.domain.agent.registry;
 
+import com.ghatana.agent.HealthStatus;
 import java.time.Instant;
 import java.util.Map;
 

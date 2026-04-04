@@ -1,6 +1,6 @@
 # Ghatana Monorepo Documentation
 
-> **Status:** Live | **Last Reviewed:** 2026-03-22
+> **Status:** Live | **Last Reviewed:** 2026-04-04
 
 ## Quick Navigation
 
@@ -8,6 +8,7 @@
 |----------|---------|
 | [MONOREPO_VISION.md](./MONOREPO_VISION.md) | Strategic vision and goals |
 | [MONOREPO_ARCHITECTURE.md](./MONOREPO_ARCHITECTURE.md) | Technical architecture overview |
+| [INTEGRATION_PLATFORM_ARCHITECTURE.md](./INTEGRATION_PLATFORM_ARCHITECTURE.md) | Repo-native ports/adapters/contracts integration plan |
 | [GOVERNANCE.md](./GOVERNANCE.md) | Decision-making and standards |
 | [ROADMAP.md](./ROADMAP.md) | Current roadmap and milestones |
 | [STATUS.md](./STATUS.md) | Current status tracker |

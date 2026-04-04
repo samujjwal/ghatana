@@ -1,6 +1,6 @@
 # Monorepo Status
 
-> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-03-22
+> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-04-04
 
 ## Overall Health
 
@@ -11,6 +11,7 @@
 | Documentation Coverage | 🔄 In Progress | 100% |
 | Test Coverage | ⚠️ Varies | >80% |
 | Boundary Compliance | 🔄 In Progress | 100% |
+| Integration Contracts | 🔄 In Progress | Shared adapters covered by real-infra contract tests |
 
 ## Product Status
 
@@ -42,6 +43,11 @@
 - ⏳ Product-level consolidation (app-platform, dcmaar, yappc)
 - ⏳ Platform package docs cleanup
 
+### Shared Integration Architecture
+- ✅ Repo-native integration architecture plan documented
+- 🔄 Mapping existing platform modules to business ports, capability ports, and adapter contracts
+- ⏳ Standardizing shared Testcontainers fixtures and adapter contract suites
+
 ### Completed Recently
 - ✅ TutorPutor audit completion (10/10 tasks)
 - ✅ 295 TypeScript errors resolved
@@ -68,7 +74,7 @@
 
 1. **March 29, 2026** - Complete documentation consolidation
 2. **April 5, 2026** - All products have clean doc structure
-3. **April 12, 2026** - Archive all historical docs
+3. **April 12, 2026** - Shared integration contract rollout plan baselined
 4. **April 19, 2026** - CI governance checks implemented
 
 ## Related Documents

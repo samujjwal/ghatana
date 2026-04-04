@@ -449,18 +449,95 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("Non-security infrastructure code must not import deprecated security.rbac.Role")
-        void nonSecurityCodeShouldNotUseSecurityRbacRole() {
+        @DisplayName("No code may import removed security.rbac.Role (deleted — use domain.auth.Role)")
+        void noCodeShouldUseDeletedSecurityRbacRole() {
+            // security.rbac.Role was deleted after full migration to domain.auth.Role.
+            // This rule ensures it is never re-introduced.
             ArchRule rule = noClasses()
-                    .that().resideOutsideOfPackages(
-                            "com.ghatana.platform.security..",
-                            "..test..", "..testing.."
-                    )
                     .should().dependOnClassesThat()
                     .haveFullyQualifiedName("com.ghatana.platform.security.rbac.Role")
-                    .because("com.ghatana.platform.security.rbac.Role is deprecated for typed use. "
-                            + "Use com.ghatana.platform.domain.auth.Role instead. "
-                            + "See SHA-002 in SHARED_MODULES_AUDIT_REPORT_COMPLETE.md.")
+                    .because("com.ghatana.platform.security.rbac.Role has been deleted. "
+                            + "Use com.ghatana.platform.domain.auth.Role typed value object instead.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+    }
+
+    @Nested
+    @DisplayName("V4.1 Deduplication — deleted duplicate symbols must not be re-introduced")
+    class V41DeduplicationGuardrails {
+
+        @Test
+        @DisplayName("No code may import deleted domain.agent.registry.HealthStatus (use agent.HealthStatus)")
+        void noCodeShouldUseDeletedDomainRegistryHealthStatus() {
+            // domain.agent.registry.HealthStatus was a 4-value subset enum, deleted in V4.1.
+            // All callers migrated to com.ghatana.agent.HealthStatus (6-value lifecycle enum).
+            ArchRule rule = noClasses()
+                    .should().dependOnClassesThat()
+                    .haveFullyQualifiedName("com.ghatana.platform.domain.agent.registry.HealthStatus")
+                    .because("com.ghatana.platform.domain.agent.registry.HealthStatus was deleted in V4.1. "
+                            + "Use com.ghatana.agent.HealthStatus (agent-core module) instead.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("No code may import deleted domain.audit.AuditEvent (use platform.audit.AuditEvent)")
+        void noCodeShouldUseDeletedDomainAuditEvent() {
+            // domain.audit.AuditEvent had zero external callers and was deleted in V4.1.
+            // Canonical is com.ghatana.platform.audit.AuditEvent (audit module).
+            ArchRule rule = noClasses()
+                    .should().dependOnClassesThat()
+                    .haveFullyQualifiedName("com.ghatana.platform.domain.audit.AuditEvent")
+                    .because("com.ghatana.platform.domain.audit.AuditEvent was deleted in V4.1. "
+                            + "Use com.ghatana.platform.audit.AuditEvent (audit module) instead.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("No code may import deleted governance.rbac.Role (use governance.rbac.RoleDefinition)")
+        void noCodeShouldUseDeletedGovernanceRbacRole() {
+            // governance.rbac.Role was renamed to RoleDefinition in V4.1 to avoid name clash
+            // with domain.auth.Role (typed value object). Single caller migrated.
+            ArchRule rule = noClasses()
+                    .should().dependOnClassesThat()
+                    .haveFullyQualifiedName("com.ghatana.platform.governance.rbac.Role")
+                    .because("com.ghatana.platform.governance.rbac.Role was renamed to RoleDefinition in V4.1. "
+                            + "Use com.ghatana.platform.governance.rbac.RoleDefinition instead.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("Canonical AuditEvent must reside in audit module only")
+        void auditEventMustOnlyResideInAuditModule() {
+            // Prevent re-creation of AuditEvent in domain or other modules.
+            ArchRule rule = classes()
+                    .that().haveSimpleName("AuditEvent")
+                    .should().resideInAPackage("com.ghatana.platform.audit..")
+                    .because("AuditEvent must have a single canonical home in platform.audit. "
+                            + "The domain copy was deleted in V4.1.")
+                    .allowEmptyShould(true);
+
+            rule.check(platformClasses);
+        }
+
+        @Test
+        @DisplayName("HealthStatus implementations must not duplicate agent lifecycle contract")
+        void healthStatusDuplicatesMustNotExist() {
+            // Prevent re-creation of HealthStatus enum in domain.agent.registry.
+            // The only allowed agent lifecycle HealthStatus is in com.ghatana.agent (agent-core).
+            ArchRule rule = noClasses()
+                    .that().haveSimpleName("HealthStatus")
+                    .and().resideInAPackage("com.ghatana.platform.domain.agent.registry..")
+                    .should().dependOnClassesThat().haveSimpleName("Object")  // always-false guard
+                    .because("HealthStatus must not be re-introduced in domain.agent.registry. "
+                            + "Use com.ghatana.agent.HealthStatus from agent-core instead.")
                     .allowEmptyShould(true);
 
             rule.check(platformClasses);

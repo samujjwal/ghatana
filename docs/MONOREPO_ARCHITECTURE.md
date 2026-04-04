@@ -1,6 +1,6 @@
 # Monorepo Architecture
 
-> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-03-22
+> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-04-04
 
 ## Overview
 
@@ -38,6 +38,24 @@ ghatana/
 - `agent-registry` - Agent registration and discovery
 - `event-processor` - Event processing infrastructure
 - `messaging` - Messaging abstractions
+
+### Shared Integration Architecture
+
+Shared integration work follows the repo-native ports/adapters/contracts plan in
+[INTEGRATION_PLATFORM_ARCHITECTURE.md](./INTEGRATION_PLATFORM_ARCHITECTURE.md).
+
+That plan intentionally reuses existing modules such as:
+
+- `platform/java/config`
+- `platform/java/observability`
+- `platform/java/database`
+- `platform/java/distributed-cache`
+- `platform/java/connectors`
+- `platform/java/kernel-persistence`
+- `platform/java/testing`
+
+New integration abstractions should be added inside those modules first and promoted to
+new modules only after consumer demand and module-governance checks justify it.
 
 ### TypeScript Platform (`platform/typescript/`)
 - `accessibility-audit` - Accessibility testing tools
@@ -82,4 +100,5 @@ See [docs/adr/](./adr/) for detailed architecture decision records.
 
 - [MONOREPO_VISION.md](./MONOREPO_VISION.md) - Strategic vision
 - [GOVERNANCE.md](./GOVERNANCE.md) - Governance model
+- [INTEGRATION_PLATFORM_ARCHITECTURE.md](./INTEGRATION_PLATFORM_ARCHITECTURE.md) - Shared integration architecture
 - [platform-libraries/](./platform-libraries/) - Platform library docs

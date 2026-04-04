@@ -1,12 +1,13 @@
 # Monorepo Roadmap
 
-> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-03-22
+> **Owner:** Platform Team | **Status:** Active | **Last Updated:** 2026-04-04
 
 ## Current Quarter (Q1 2026)
 
 ### In Progress
 - [ ] Documentation consolidation and cleanup
 - [ ] Boundary audit remediation
+- [ ] Shared integration architecture rollout inside existing platform modules
 - [ ] TutorPutor production readiness
 - [ ] TypeScript version alignment across workspace
 
@@ -24,6 +25,7 @@
 - [ ] Product documentation consolidation (app-platform, dcmaar, yappc)
 - [ ] Platform library documentation cleanup
 - [ ] Automated governance checks in CI
+- [ ] Adapter contract and performance smoke checks in CI
 - [ ] Archive historical documentation
 - [ ] Remove temporary and generated files
 

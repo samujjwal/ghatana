@@ -1,6 +1,6 @@
 package com.ghatana.refactorer.server.auth;
 
-import com.ghatana.platform.governance.rbac.Role;
+import com.ghatana.platform.governance.rbac.RoleDefinition;
 import com.ghatana.platform.core.exception.UnauthorizedException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class RoleBasedAccessControl {
 
     /**
- * Predefined system roles backed by the canonical governance {@link Role}. */
+ * Predefined system roles backed by the canonical governance {@link RoleDefinition}. */
     public enum PredefinedRole {
         ADMIN(createRole("admin", Permission.ALL_PERMISSIONS)),
         USER(createRole(
@@ -59,13 +59,13 @@ public final class RoleBasedAccessControl {
                         Permission.METRICS_READ,
                         Permission.SYSTEM_READ)));
 
-        private final Role role;
+        private final RoleDefinition role;
 
-        PredefinedRole(Role role) {
+        PredefinedRole(RoleDefinition role) {
             this.role = role;
         }
 
-        public Role toRole() {
+        public RoleDefinition toRole() {
             return role;
         }
     }
@@ -137,7 +137,7 @@ public final class RoleBasedAccessControl {
         ADMIN
     }
 
-    private final Map<String, Set<Role>> userRoles = new ConcurrentHashMap<>();
+    private final Map<String, Set<RoleDefinition>> userRoles = new ConcurrentHashMap<>();
     private final Map<String, Set<Permission>> customPermissions = new ConcurrentHashMap<>();
 
     /**
@@ -150,7 +150,7 @@ public final class RoleBasedAccessControl {
         assignRole(userId, role.toRole());
     }
 
-    public void assignRole(String userId, Role role) {
+    public void assignRole(String userId, RoleDefinition role) {
         Objects.requireNonNull(userId, "User ID cannot be null");
         Objects.requireNonNull(role, "Role cannot be null");
 
@@ -167,11 +167,11 @@ public final class RoleBasedAccessControl {
         removeRole(userId, role.toRole());
     }
 
-    public void removeRole(String userId, Role role) {
+    public void removeRole(String userId, RoleDefinition role) {
         Objects.requireNonNull(userId, "User ID cannot be null");
         Objects.requireNonNull(role, "Role cannot be null");
 
-        Set<Role> roles = userRoles.get(userId);
+        Set<RoleDefinition> roles = userRoles.get(userId);
         if (roles != null) {
             roles.remove(role);
             if (roles.isEmpty()) {
@@ -186,7 +186,7 @@ public final class RoleBasedAccessControl {
      * @param userId the user ID
      * @return the set of roles, or empty set if user has no roles
      */
-    public Set<Role> getUserRoles(String userId) {
+    public Set<RoleDefinition> getUserRoles(String userId) {
         Objects.requireNonNull(userId, "User ID cannot be null");
         return Collections.unmodifiableSet(userRoles.getOrDefault(userId, Collections.emptySet()));
     }
@@ -237,8 +237,8 @@ public final class RoleBasedAccessControl {
         Set<Permission> allPermissions = EnumSet.noneOf(Permission.class);
 
         // Add permissions from roles
-        Set<Role> roles = getUserRoles(userId);
-        for (Role role : roles) {
+        Set<RoleDefinition> roles = getUserRoles(userId);
+        for (RoleDefinition role : roles) {
             allPermissions.addAll(permissionsFromRole(role));
         }
 
@@ -276,7 +276,7 @@ public final class RoleBasedAccessControl {
         return hasRole(userId, role.toRole());
     }
 
-    public boolean hasRole(String userId, Role role) {
+    public boolean hasRole(String userId, RoleDefinition role) {
         Objects.requireNonNull(userId, "User ID cannot be null");
         Objects.requireNonNull(role, "Role cannot be null");
 
@@ -325,8 +325,8 @@ public final class RoleBasedAccessControl {
         return new AccessContext(userId, this);
     }
 
-    private static Role createRole(String name, Set<Permission> permissions) {
-        Role.RoleBuilder builder = Role.builder().name(name);
+    private static RoleDefinition createRole(String name, Set<Permission> permissions) {
+        RoleDefinition.RoleDefinitionBuilder builder = RoleDefinition.builder().name(name);
         permissions.stream()
                 .map(Permission::name)
                 .map(String::toLowerCase)
@@ -334,7 +334,7 @@ public final class RoleBasedAccessControl {
         return builder.build();
     }
 
-    private static Set<Permission> permissionsFromRole(Role role) {
+    private static Set<Permission> permissionsFromRole(RoleDefinition role) {
         Set<Permission> mapped = EnumSet.noneOf(Permission.class);
         for (String permissionName : role.getPermissions()) {
             Permission permission = fromPermissionName(permissionName);
@@ -420,7 +420,7 @@ public final class RoleBasedAccessControl {
             return userId;
         }
 
-        public Set<Role> getRoles() {
+        public Set<RoleDefinition> getRoles() {
             return rbac.getUserRoles(userId);
         }
 
@@ -432,7 +432,7 @@ public final class RoleBasedAccessControl {
             return rbac.hasPermission(userId, permission);
         }
 
-        public boolean hasRole(Role role) {
+        public boolean hasRole(RoleDefinition role) {
             return rbac.hasRole(userId, role);
         }
 
@@ -455,7 +455,7 @@ public final class RoleBasedAccessControl {
             }
         }
 
-        public void requireRole(Role role) {
+        public void requireRole(RoleDefinition role) {
             if (!hasRole(role)) {
                 throw new AccessDeniedException("User " + userId + " lacks role: " + role.getName());
             }

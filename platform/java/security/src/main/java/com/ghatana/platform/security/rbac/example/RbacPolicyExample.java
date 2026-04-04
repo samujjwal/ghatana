@@ -1,11 +1,11 @@
 package com.ghatana.platform.security.rbac.example;
 
+import com.ghatana.platform.domain.auth.Role;
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.security.rbac.InMemoryPolicyRepository;
 import com.ghatana.platform.security.rbac.Permission;
 import com.ghatana.platform.security.rbac.PolicyRepository;
 import com.ghatana.platform.security.rbac.PolicyService;
-import com.ghatana.platform.security.rbac.Role;
 
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +14,8 @@ import java.util.Set;
 /**
  * Example application that demonstrates how to use the RBAC policy enforcement.
  * This class shows how to create and use policies for role-based access control.
- 
+ *
+ * <p>Uses canonical {@link com.ghatana.platform.domain.auth.Role} typed constants.
  *
  * @doc.type class
  * @doc.purpose Rbac policy example
@@ -22,6 +23,9 @@ import java.util.Set;
  * @doc.pattern Component
 */
 public class RbacPolicyExample {
+
+    /** Guest role name — read-only access to public resources. */
+    private static final String GUEST_ROLE = "guest";
 
     public static void main(String[] args) {
         // Create a policy repository
@@ -33,10 +37,10 @@ public class RbacPolicyExample {
         // Create some policies
         createPolicies(policyService);
         
-        // Create some principals with different roles
-        Principal adminUser = createPrincipal("admin", Role.ADMIN);
-        Principal regularUser = createPrincipal("user", Role.USER);
-        Principal guestUser = createPrincipal("guest", Role.GUEST);
+        // Create some principals with different roles — use domain Role typed constants
+        Principal adminUser = createPrincipal("admin", Role.ADMIN.getName());
+        Principal regularUser = createPrincipal("user", Role.USER.getName());
+        Principal guestUser = createPrincipal("guest", GUEST_ROLE);
         
         // Test authorization for different resources and permissions
         testAuthorization(policyService, adminUser, regularUser, guestUser);
@@ -49,7 +53,7 @@ public class RbacPolicyExample {
         policyService.createPolicy(
                 "Admin Policy",
                 "Grants all permissions to admin role",
-                Role.ADMIN,
+                Role.ADMIN.getName(),
                 "*",
                 Set.of("*")
         );
@@ -58,7 +62,7 @@ public class RbacPolicyExample {
         policyService.createPolicy(
                 "User Policy - User Resources",
                 "Grants read and write permissions to user role on user resources",
-                Role.USER,
+                Role.USER.getName(),
                 "user:*",
                 Set.of(Permission.READ, Permission.WRITE)
         );
@@ -67,7 +71,7 @@ public class RbacPolicyExample {
         policyService.createPolicy(
                 "User Policy - Public Resources",
                 "Grants read permissions to user role on public resources",
-                Role.USER,
+                Role.USER.getName(),
                 "public:*",
                 Set.of(Permission.READ)
         );
@@ -76,7 +80,7 @@ public class RbacPolicyExample {
         policyService.createPolicy(
                 "Guest Policy",
                 "Grants read permissions to guest role on public resources",
-                Role.GUEST,
+                GUEST_ROLE,
                 "public:*",
                 Set.of(Permission.READ)
         );
