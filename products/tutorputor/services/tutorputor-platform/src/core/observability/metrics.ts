@@ -4,73 +4,102 @@ import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 import type { LearnerProfileGrpcRuntimeState } from "../../modules/learning/grpc-runtime-state.js";
 
+// Module-level singleton metric instances — prom-client uses a global registry;
+// creating a named metric twice throws. These are initialized once per process.
+let _httpRequestDuration: Histogram | undefined;
+let _httpRequestTotal: Counter | undefined;
+let _activeRequests: Gauge | undefined;
+let _dbQueryDuration: Histogram | undefined;
+let _dbConnectionsActive: Gauge | undefined;
+let _dbConnectionsIdle: Gauge | undefined;
+let _dbConnectionsTotal: Gauge | undefined;
+let _dbConnectionAcquisitions: Counter | undefined;
+let _cacheHits: Counter | undefined;
+let _cacheMisses: Counter | undefined;
+
+function getOrInitMetrics() {
+  if (!_httpRequestDuration) {
+    _httpRequestDuration = new Histogram({
+      name: "tutorputor_http_request_duration_seconds",
+      help: "Duration of HTTP requests in seconds",
+      labelNames: ["method", "route", "status_code", "tenant_id"],
+      buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+    });
+    _httpRequestTotal = new Counter({
+      name: "tutorputor_http_request_total",
+      help: "Total number of HTTP requests",
+      labelNames: ["method", "route", "status_code", "tenant_id"],
+    });
+    _activeRequests = new Gauge({
+      name: "tutorputor_active_requests",
+      help: "Number of requests currently being processed",
+    });
+    _dbQueryDuration = new Histogram({
+      name: "tutorputor_db_query_duration_seconds",
+      help: "Duration of database queries",
+      labelNames: ["operation", "model"],
+      buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1],
+    });
+    _dbConnectionsActive = new Gauge({
+      name: "tutorputor_db_connections_active",
+      help: "Number of active database connections",
+    });
+    _dbConnectionsIdle = new Gauge({
+      name: "tutorputor_db_connections_idle",
+      help: "Number of idle database connections",
+    });
+    _dbConnectionsTotal = new Gauge({
+      name: "tutorputor_db_connections_total",
+      help: "Total number of database connections in pool",
+    });
+    _dbConnectionAcquisitions = new Counter({
+      name: "tutorputor_db_connection_acquisitions_total",
+      help: "Total number of connection acquisitions from pool",
+      labelNames: ["result"],
+    });
+    _cacheHits = new Counter({
+      name: "tutorputor_cache_hits_total",
+      help: "Total number of cache hits",
+      labelNames: ["cache_key_prefix"],
+    });
+    _cacheMisses = new Counter({
+      name: "tutorputor_cache_misses_total",
+      help: "Total number of cache misses",
+      labelNames: ["cache_key_prefix"],
+    });
+  }
+  return {
+    httpRequestDuration: _httpRequestDuration!,
+    httpRequestTotal: _httpRequestTotal!,
+    activeRequests: _activeRequests!,
+    dbQueryDuration: _dbQueryDuration!,
+    dbConnectionsActive: _dbConnectionsActive!,
+    dbConnectionsIdle: _dbConnectionsIdle!,
+    dbConnectionsTotal: _dbConnectionsTotal!,
+    dbConnectionAcquisitions: _dbConnectionAcquisitions!,
+    cacheHits: _cacheHits!,
+    cacheMisses: _cacheMisses!,
+  };
+}
+
 /**
  * Setup Prometheus metrics collection.
  *
  * ✅ PRODUCTION-GRADE: Comprehensive metrics for all HTTP requests and system health
  */
 export async function setupMetrics(app: FastifyInstance) {
-  // Request metrics
-  const httpRequestDuration = new Histogram({
-    name: "tutorputor_http_request_duration_seconds",
-    help: "Duration of HTTP requests in seconds",
-    labelNames: ["method", "route", "status_code", "tenant_id"],
-    buckets: [0.01, 0.05, 0.1, 0.5, 1, 2, 5],
-  });
-
-  const httpRequestTotal = new Counter({
-    name: "tutorputor_http_request_total",
-    help: "Total number of HTTP requests",
-    labelNames: ["method", "route", "status_code", "tenant_id"],
-  });
-
-  const activeRequests = new Gauge({
-    name: "tutorputor_active_requests",
-    help: "Number of requests currently being processed",
-  });
-
-  // Database metrics
-  const dbQueryDuration = new Histogram({
-    name: "tutorputor_db_query_duration_seconds",
-    help: "Duration of database queries",
-    labelNames: ["operation", "model"],
-    buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1],
-  });
-
-  // Database connection pool metrics
-  const dbConnectionsActive = new Gauge({
-    name: "tutorputor_db_connections_active",
-    help: "Number of active database connections",
-  });
-
-  const dbConnectionsIdle = new Gauge({
-    name: "tutorputor_db_connections_idle",
-    help: "Number of idle database connections",
-  });
-
-  const dbConnectionsTotal = new Gauge({
-    name: "tutorputor_db_connections_total",
-    help: "Total number of database connections in pool",
-  });
-
-  const dbConnectionAcquisitions = new Counter({
-    name: "tutorputor_db_connection_acquisitions_total",
-    help: "Total number of connection acquisitions from pool",
-    labelNames: ["result"], // "success" | "timeout" | "error"
-  });
-
-  // Cache metrics
-  const cacheHits = new Counter({
-    name: "tutorputor_cache_hits_total",
-    help: "Total number of cache hits",
-    labelNames: ["cache_key_prefix"],
-  });
-
-  const cacheMisses = new Counter({
-    name: "tutorputor_cache_misses_total",
-    help: "Total number of cache misses",
-    labelNames: ["cache_key_prefix"],
-  });
+  const {
+    httpRequestDuration,
+    httpRequestTotal,
+    activeRequests,
+    dbQueryDuration,
+    dbConnectionsActive,
+    dbConnectionsIdle,
+    dbConnectionsTotal,
+    dbConnectionAcquisitions,
+    cacheHits,
+    cacheMisses,
+  } = getOrInitMetrics();
 
   // Hook into request lifecycle
   app.addHook("onRequest", async (request) => {
@@ -82,7 +111,8 @@ export async function setupMetrics(app: FastifyInstance) {
     activeRequests.dec();
 
     const duration = (Date.now() - (request as any).startTime!) / 1000;
-    const route = request.routeOptions.url || "unknown";
+    const route =
+      (request.routeOptions as { url?: string } | undefined)?.url ?? "unknown";
     const tenantId = (request.headers["x-tenant-id"] as string) || "default";
 
     httpRequestDuration.observe(

@@ -8,6 +8,10 @@ import type { Redis } from "ioredis";
 
 export async function setupRateLimit(app: FastifyInstance) {
   const redis = (app as any).redis as Redis;
+  // Only use Redis store when the client supports defineCommand (real ioredis instance).
+  // Falls back to in-memory store for test environments using mock redis clients.
+  const redisStore =
+    typeof (redis as any)?.defineCommand === "function" ? redis : undefined;
 
   await app.register(
     rateLimit as any,
@@ -15,7 +19,7 @@ export async function setupRateLimit(app: FastifyInstance) {
       global: true,
       max: parseInt(process.env.RATE_LIMIT_MAX || "100", 10), // 100 requests
       timeWindow: process.env.RATE_LIMIT_WINDOW || "1 minute",
-      redis,
+      redis: redisStore,
       nameSpace: "tutorputor:rate-limit:",
 
       // Custom key generator for tenant-aware rate limiting

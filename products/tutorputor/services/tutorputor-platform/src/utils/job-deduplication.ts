@@ -100,9 +100,9 @@ export class JobDeduplicator {
       const lockResult = await (this.redis as unknown as RedisLockClient).set(
         lockKey,
         "1",
+        "NX",
         "EX",
         this.lockTtlSeconds,
-        "NX",
       );
       if (lockResult !== "OK") {
         return {

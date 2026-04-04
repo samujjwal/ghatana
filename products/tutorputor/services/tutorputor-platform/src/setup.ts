@@ -1,3 +1,4 @@
+import Fastify from "fastify";
 import type { FastifyInstance } from "fastify";
 import { PrismaClient } from "@tutorputor/core/db";
 import Redis from "ioredis";
@@ -87,6 +88,10 @@ export interface PlatformOptions {
   grpcUseTls?: boolean;
   startLearnerProfileGrpcServer?: boolean;
   learnerProfileGrpcAddress?: string;
+  /** Injected Prisma client for testing. When provided, the real PrismaClient is not created. */
+  prisma?: PrismaClient;
+  /** Injected Redis client for testing. When provided, the real Redis client is not created. */
+  redis?: unknown;
 }
 
 /**
@@ -131,49 +136,60 @@ export async function setupPlatform(
   }
 
   // Database with connection pooling
-  const prisma = new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
-    // Connection pool configuration
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
+  const prisma: PrismaClient =
+    (options.prisma as PrismaClient | undefined) ??
+    new PrismaClient({
+      log:
+        process.env.NODE_ENV === "development"
+          ? ["query", "error", "warn"]
+          : ["error"],
+      // Connection pool configuration
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
       },
-    },
-    // Connection pool limits based on environment
-    __internal: {
-      engine: {
-        // Connection pool configuration
-        connectionLimit: parseInt(process.env.DATABASE_POOL_SIZE || "10", 10),
-        // Pool timeout in seconds
-        poolTimeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || "10", 10),
-        // Connection timeout in seconds
-        connectTimeout: parseInt(
-          process.env.DATABASE_CONNECT_TIMEOUT || "5",
-          10,
-        ),
-        // How long to wait for a connection from the pool (milliseconds)
-        acquireConnectionTimeout: parseInt(
-          process.env.DATABASE_ACQUIRE_TIMEOUT || "30000",
-          10,
-        ),
-        // How long a connection can be idle before being closed (seconds)
-        idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || "600", 10),
-        // How long a connection can live before being closed (seconds)
-        maxLifetime: parseInt(process.env.DATABASE_MAX_LIFETIME || "1800", 10),
+      // Connection pool limits based on environment
+      __internal: {
+        engine: {
+          // Connection pool configuration
+          connectionLimit: parseInt(process.env.DATABASE_POOL_SIZE || "10", 10),
+          // Pool timeout in seconds
+          poolTimeout: parseInt(process.env.DATABASE_POOL_TIMEOUT || "10", 10),
+          // Connection timeout in seconds
+          connectTimeout: parseInt(
+            process.env.DATABASE_CONNECT_TIMEOUT || "5",
+            10,
+          ),
+          // How long to wait for a connection from the pool (milliseconds)
+          acquireConnectionTimeout: parseInt(
+            process.env.DATABASE_ACQUIRE_TIMEOUT || "30000",
+            10,
+          ),
+          // How long a connection can be idle before being closed (seconds)
+          idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || "600", 10),
+          // How long a connection can live before being closed (seconds)
+          maxLifetime: parseInt(
+            process.env.DATABASE_MAX_LIFETIME || "1800",
+            10,
+          ),
+        },
       },
-    },
-  } as any);
+    } as any);
+  await prisma.$connect();
   app.decorate("prisma", prisma);
 
   // Redis
-  const redis = new (Redis as unknown as new (...args: unknown[]) => Redis)(options.redisUrl || REDIS_URL, {
-    maxRetriesPerRequest: 3,
-    enableReadyCheck: true,
-    lazyConnect: false,
-  });
+  const redis =
+    (options.redis as Redis | undefined) ??
+    new (Redis as unknown as new (...args: unknown[]) => Redis)(
+      options.redisUrl || REDIS_URL,
+      {
+        maxRetriesPerRequest: 3,
+        enableReadyCheck: true,
+        lazyConnect: false,
+      },
+    );
   app.decorate("redis", redis);
   app.decorate(
     "learnerProfileGrpcRuntimeState",
@@ -219,9 +235,12 @@ export async function setupPlatform(
     if (url === "/api/content-studio/health") return;
 
     try {
-      await (req as typeof req & { jwtVerify: () => Promise<void> }).jwtVerify();
-    } catch {
-      reply.code(401).send({
+      await (
+        req as typeof req & { jwtVerify: () => Promise<void> }
+      ).jwtVerify();
+    } catch (err) {
+      req.log.warn({ url, err }, "Authentication failure");
+      reply.code(401).header("x-request-id", req.id).send({
         error: "Unauthorized",
         message: "A valid Bearer token is required.",
       });
@@ -246,9 +265,9 @@ export async function setupPlatform(
     options.learnerProfileGrpcAddress ||
     process.env.LEARNER_PROFILE_GRPC_ADDRESS ||
     "127.0.0.1:50052";
-  let learnerProfileGrpcRuntime:
-    | Awaited<ReturnType<typeof startLearnerProfileGrpcRuntime>>
-    | null = null;
+  let learnerProfileGrpcRuntime: Awaited<
+    ReturnType<typeof startLearnerProfileGrpcRuntime>
+  > | null = null;
 
   if (shouldStartLearnerProfileGrpcServer) {
     app.learnerProfileGrpcRuntimeState = {
@@ -257,9 +276,11 @@ export async function setupPlatform(
       address: learnerProfileGrpcAddress,
     };
 
-    const learnerProfileService = (app as typeof app & {
-      learnerProfileService?: unknown;
-    }).learnerProfileService;
+    const learnerProfileService = (
+      app as typeof app & {
+        learnerProfileService?: unknown;
+      }
+    ).learnerProfileService;
 
     if (!learnerProfileService) {
       throw new Error(
@@ -336,7 +357,10 @@ export async function setupPlatform(
   app.log.info("✅ Notification routes registered");
 
   // Subscription payments: /api/v1/payments/...
-  const stripeKey = requireEnv("STRIPE_SECRET_KEY");
+  const stripeKey = requireEnv(
+    "STRIPE_SECRET_KEY",
+    "sk_test_PLACEHOLDER12345678901234",
+  );
   validateStripeKey(stripeKey);
   const stripe = new Stripe(stripeKey, {
     apiVersion: "2026-02-25.clover",
@@ -396,5 +420,22 @@ export async function setupPlatform(
     (instance.redis as any).disconnect();
   });
 
+  return app;
+}
+
+/**
+ * Creates a fully-configured Fastify server instance.
+ * When `prisma` or `redis` are provided in options, they are used directly (useful for testing).
+ *
+ * @doc.type factory
+ * @doc.purpose Creates and returns a configured FastifyInstance for the TutorPutor Platform.
+ * @doc.layer platform
+ * @doc.pattern Factory
+ */
+export async function createServer(
+  options: PlatformOptions = {},
+): Promise<FastifyInstance> {
+  const app = Fastify({ logger: false }) as FastifyInstance;
+  await setupPlatform(app, options);
   return app;
 }

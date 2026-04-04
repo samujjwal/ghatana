@@ -6,26 +6,33 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
-import Redis from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
+import Redis from "ioredis";
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
-const logger = createStandaloneLogger({ component: 'VRMultiplayerService' });
+const logger = createStandaloneLogger({ component: "VRMultiplayerService" });
 import type {
   VRMultiplayerService,
   TenantId,
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@tutorputor/contracts/v1';
-import type { VRMultiplayerSession, VRLabId, VRParticipant } from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
+import type {
+  VRMultiplayerSession,
+  VRLabId,
+  VRParticipant,
+} from "@tutorputor/contracts/v1";
 
 export class VRMultiplayerServiceImpl implements VRMultiplayerService {
   private publisher: Redis;
   private subscriber: Redis;
 
-  constructor(private prisma: PrismaClient, redisUrl: string) {
+  constructor(
+    private prisma: PrismaClient,
+    redisUrl: string,
+  ) {
     this.publisher = new Redis(redisUrl);
     this.subscriber = new Redis(redisUrl);
   }
@@ -48,19 +55,19 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     });
 
     if (!hostUser) {
-      throw new Error('Host user not found');
+      throw new Error("Host user not found");
     }
 
     const session = await this.prisma.vRMultiplayerSession.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         tenantId,
         labId,
         hostUserId,
         maxParticipants: settings.maxParticipants,
         voiceChatEnabled: settings.voiceChatEnabled,
         spatialAudioEnabled: settings.spatialAudioEnabled,
-        status: 'lobby',
+        status: "lobby",
         participants: [
           {
             userId: hostUserId,
@@ -90,23 +97,23 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     const { tenantId, sessionId, userId, displayName, avatarUrl } = args;
 
     const session = await this.prisma.vRMultiplayerSession.findFirst({
-      where: { id: sessionId, tenantId, status: 'lobby' },
+      where: { id: sessionId, tenantId, status: "lobby" },
     });
 
     if (!session) {
-      throw new Error('Session not found or not in lobby');
+      throw new Error("Session not found or not in lobby");
     }
 
     const participants = session.participants as VRParticipant[];
 
     // Check if already joined
     if (participants.some((p) => p.userId === userId)) {
-      throw new Error('User already in session');
+      throw new Error("User already in session");
     }
 
     // Check max participants
     if (participants.length >= session.maxParticipants) {
-      throw new Error('Session is full');
+      throw new Error("Session is full");
     }
 
     // Add new participant
@@ -129,7 +136,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
 
     // Broadcast participant joined
     await this.broadcastSessionUpdate(sessionId, {
-      type: 'participant_joined',
+      type: "participant_joined",
       participant: participants[participants.length - 1],
     });
 
@@ -148,7 +155,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     });
 
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error("Session not found");
     }
 
     const participants = session.participants as VRParticipant[];
@@ -159,15 +166,15 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     }
 
     // If host leaves and session is in lobby, end session
-    if (participant.isHost && session.status === 'lobby') {
+    if (participant.isHost && session.status === "lobby") {
       await this.prisma.vRMultiplayerSession.update({
         where: { id: sessionId },
-        data: { status: 'ended' },
+        data: { status: "ended" },
       });
 
       await this.broadcastSessionUpdate(sessionId, {
-        type: 'session_ended',
-        reason: 'host_left',
+        type: "session_ended",
+        reason: "host_left",
       });
       return;
     }
@@ -186,7 +193,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     });
 
     await this.broadcastSessionUpdate(sessionId, {
-      type: 'participant_left',
+      type: "participant_left",
       userId,
     });
   }
@@ -210,16 +217,17 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     await this.publisher.publish(
       `vr:session:${sessionId}:state`,
       JSON.stringify({
-        type: 'participant_update',
+        type: "participant_update",
         userId,
         ...state,
         timestamp: Date.now(),
-      })
+      }),
     );
 
     // Periodically persist to database (every 5 seconds for position)
     // This is handled by a background job in production
-    const shouldPersist = state.isMuted !== undefined || state.isReady !== undefined;
+    const shouldPersist =
+      state.isMuted !== undefined || state.isReady !== undefined;
 
     if (shouldPersist) {
       const session = await this.prisma.vRMultiplayerSession.findFirst({
@@ -253,11 +261,11 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     const { tenantId, sessionId, hostUserId } = args;
 
     const session = await this.prisma.vRMultiplayerSession.findFirst({
-      where: { id: sessionId, tenantId, hostUserId, status: 'lobby' },
+      where: { id: sessionId, tenantId, hostUserId, status: "lobby" },
     });
 
     if (!session) {
-      throw new Error('Session not found or not authorized');
+      throw new Error("Session not found or not authorized");
     }
 
     const participants = session.participants as VRParticipant[];
@@ -265,16 +273,16 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
     // Check all participants are ready
     const allReady = participants.every((p) => p.isReady || p.isHost);
     if (!allReady) {
-      throw new Error('Not all participants are ready');
+      throw new Error("Not all participants are ready");
     }
 
     const updated = await this.prisma.vRMultiplayerSession.update({
       where: { id: sessionId },
-      data: { status: 'active' },
+      data: { status: "active" },
     });
 
     await this.broadcastSessionUpdate(sessionId, {
-      type: 'session_started',
+      type: "session_started",
     });
 
     return this.mapToVRMultiplayerSession(updated);
@@ -289,12 +297,12 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
 
     await this.prisma.vRMultiplayerSession.update({
       where: { id: sessionId, tenantId, hostUserId },
-      data: { status: 'ended' },
+      data: { status: "ended" },
     });
 
     await this.broadcastSessionUpdate(sessionId, {
-      type: 'session_ended',
-      reason: 'host_ended',
+      type: "session_ended",
+      reason: "host_ended",
     });
   }
 
@@ -314,7 +322,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
   async listSessions(args: {
     tenantId: TenantId;
     labId?: VRLabId;
-    status?: 'lobby' | 'active';
+    status?: "lobby" | "active";
     pagination: PaginationArgs;
   }): Promise<PaginatedResult<VRMultiplayerSession>> {
     const { tenantId, labId, status, pagination } = args;
@@ -329,7 +337,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.vRMultiplayerSession.count({ where }),
     ]);
@@ -349,7 +357,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
 
   async subscribeToSession(
     sessionId: string,
-    callback: (message: unknown) => void
+    callback: (message: unknown) => void,
   ): Promise<() => void> {
     const channel = `vr:session:${sessionId}:state`;
 
@@ -359,7 +367,7 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
           callback(JSON.parse(message));
         } catch (e) {
           logger.error({
-            message: 'Failed to parse VR multiplayer message',
+            message: "Failed to parse VR multiplayer message",
             error: e instanceof Error ? e.message : String(e),
             sessionId,
             channel,
@@ -368,11 +376,11 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
       }
     };
 
-    this.subscriber.on('message', handler);
+    this.subscriber.on("message", handler);
     await this.subscriber.subscribe(channel);
 
     return async () => {
-      this.subscriber.off('message', handler);
+      this.subscriber.off("message", handler);
       await this.subscriber.unsubscribe(channel);
     };
   }
@@ -381,13 +389,16 @@ export class VRMultiplayerServiceImpl implements VRMultiplayerService {
   // Private helper methods
   // ============================================
 
-  private async broadcastSessionUpdate(sessionId: string, event: Record<string, unknown>): Promise<void> {
+  private async broadcastSessionUpdate(
+    sessionId: string,
+    event: Record<string, unknown>,
+  ): Promise<void> {
     await this.publisher.publish(
       `vr:session:${sessionId}:events`,
       JSON.stringify({
         ...event,
         timestamp: Date.now(),
-      })
+      }),
     );
   }
 

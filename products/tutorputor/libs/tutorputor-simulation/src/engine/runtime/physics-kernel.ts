@@ -425,7 +425,24 @@ export class PhysicsKernel implements SimKernelService {
         ? integrateVerlet
         : integrateEuler;
 
+    // Capture per-step base accelerations (from step actions) so they are
+    // restored at the start of every frame. Spring forces accumulate into
+    // ax/ay via applySpringForces; without this per-frame reset the forces
+    // would pile up across frames within a step, causing energy divergence.
+    const baseAx = new Map<SimEntityId, number>();
+    const baseAy = new Map<SimEntityId, number>();
+    for (const [id, body] of this.bodies) {
+      baseAx.set(id, body.ax);
+      baseAy.set(id, body.ay);
+    }
+
     for (let frame = 0; frame < frameCount; frame++) {
+      // Restore step-level base accelerations before adding per-frame forces
+      for (const [id, body] of this.bodies) {
+        body.ax = baseAx.get(id) ?? 0;
+        body.ay = baseAy.get(id) ?? 0;
+      }
+
       // Apply forces from springs
       applySpringForces(this.bodies, this.springs);
 

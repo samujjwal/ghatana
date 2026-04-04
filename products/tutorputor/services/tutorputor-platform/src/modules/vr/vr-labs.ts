@@ -6,15 +6,15 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
 import type {
   VRLabService,
   TenantId,
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
 import type {
   VRLab,
   VRLabId,
@@ -26,7 +26,7 @@ import type {
   UpdateVRLabRequest,
   CreateVRSceneRequest,
   VRLabListParams,
-} from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
 
 export class VRLabServiceImpl implements VRLabService {
   constructor(private prisma: PrismaClient) {}
@@ -42,7 +42,7 @@ export class VRLabServiceImpl implements VRLabService {
 
     const lab = await this.prisma.vRLab.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         tenantId,
         slug,
         title: data.title,
@@ -52,7 +52,7 @@ export class VRLabServiceImpl implements VRLabService {
         thumbnailUrl: data.thumbnailUrl,
         estimatedDuration: data.estimatedDuration,
         tags: data.tags || [],
-        requiredDevices: ['quest_2', 'quest_3', 'desktop'],
+        requiredDevices: ["quest_2", "quest_3", "desktop"],
         minRequirements: {
           minGpuMemory: 4096,
           minRam: 8192,
@@ -93,10 +93,10 @@ export class VRLabServiceImpl implements VRLabService {
           include: {
             interactables: true,
           },
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
         },
         objectives: {
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
         },
       },
     });
@@ -109,7 +109,14 @@ export class VRLabServiceImpl implements VRLabService {
     params: VRLabListParams;
   }): Promise<PaginatedResult<VRLab>> {
     const { tenantId, params } = args;
-    const { category, difficulty, isPublished, search, page = 1, limit = 20 } = params;
+    const {
+      category,
+      difficulty,
+      isPublished,
+      search,
+      page = 1,
+      limit = 20,
+    } = params;
 
     const where: Record<string, unknown> = { tenantId };
 
@@ -118,8 +125,8 @@ export class VRLabServiceImpl implements VRLabService {
     if (isPublished !== undefined) where.isPublished = isPublished;
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
         { tags: { hasSome: [search] } },
       ];
     }
@@ -133,7 +140,7 @@ export class VRLabServiceImpl implements VRLabService {
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.vRLab.count({ where }),
     ]);
@@ -161,14 +168,21 @@ export class VRLabServiceImpl implements VRLabService {
         tenantId,
       },
       data: {
-        ...(data.title && { title: data.title, slug: this.generateSlug(data.title) }),
+        ...(data.title && {
+          title: data.title,
+          slug: this.generateSlug(data.title),
+        }),
         ...(data.description && { description: data.description }),
         ...(data.category && { category: data.category }),
         ...(data.difficulty && { difficulty: data.difficulty }),
         ...(data.thumbnailUrl && { thumbnailUrl: data.thumbnailUrl }),
-        ...(data.estimatedDuration && { estimatedDuration: data.estimatedDuration }),
+        ...(data.estimatedDuration && {
+          estimatedDuration: data.estimatedDuration,
+        }),
         ...(data.tags && { tags: data.tags }),
-        ...(data.isPublished !== undefined && { isPublished: data.isPublished }),
+        ...(data.isPublished !== undefined && {
+          isPublished: data.isPublished,
+        }),
         updatedAt: new Date(),
       },
       include: {
@@ -236,11 +250,11 @@ export class VRLabServiceImpl implements VRLabService {
     });
 
     if (!lab) {
-      throw new Error('Lab not found');
+      throw new Error("Lab not found");
     }
 
     if (lab.scenes.length === 0) {
-      throw new Error('Cannot publish lab without scenes');
+      throw new Error("Cannot publish lab without scenes");
     }
 
     const updated = await this.prisma.vRLab.update({
@@ -267,7 +281,7 @@ export class VRLabServiceImpl implements VRLabService {
 
     const scene = await this.prisma.vRScene.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         labId: data.labId,
         name: data.name,
         description: data.description,
@@ -303,7 +317,9 @@ export class VRLabServiceImpl implements VRLabService {
         ...(data.environmentUrl && { environmentUrl: data.environmentUrl }),
         ...(data.skyboxUrl && { skyboxUrl: data.skyboxUrl }),
         ...(data.lightingPreset && { lightingPreset: data.lightingPreset }),
-        ...(data.estimatedDuration && { estimatedDuration: data.estimatedDuration }),
+        ...(data.estimatedDuration && {
+          estimatedDuration: data.estimatedDuration,
+        }),
       },
       include: {
         interactables: true,
@@ -334,13 +350,13 @@ export class VRLabServiceImpl implements VRLabService {
     tenantId: TenantId;
     sceneId: VRSceneId;
     userId: UserId;
-    data: Omit<VRInteractable, 'id' | 'sceneId'>;
+    data: Omit<VRInteractable, "id" | "sceneId">;
   }): Promise<VRInteractable> {
     const { sceneId, data } = args;
 
     const interactable = await this.prisma.vRInteractable.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         sceneId,
         name: data.name,
         type: data.type,
@@ -373,16 +389,30 @@ export class VRLabServiceImpl implements VRLabService {
       data: {
         ...(data.name && { name: data.name }),
         ...(data.type && { type: data.type }),
-        ...(data.position && { position: data.position as Record<string, number> }),
-        ...(data.rotation && { rotation: data.rotation as Record<string, number> }),
+        ...(data.position && {
+          position: data.position as Record<string, number>,
+        }),
+        ...(data.rotation && {
+          rotation: data.rotation as Record<string, number>,
+        }),
         ...(data.scale && { scale: data.scale as Record<string, number> }),
         ...(data.modelUrl && { modelUrl: data.modelUrl }),
-        ...(data.materialOverrides && { materialOverrides: data.materialOverrides as Record<string, unknown> }),
-        ...(data.allowedInteractions && { allowedInteractions: data.allowedInteractions }),
-        ...(data.interactionRange && { interactionRange: data.interactionRange }),
-        ...(data.behavior && { behavior: data.behavior as Record<string, unknown> }),
+        ...(data.materialOverrides && {
+          materialOverrides: data.materialOverrides as Record<string, unknown>,
+        }),
+        ...(data.allowedInteractions && {
+          allowedInteractions: data.allowedInteractions,
+        }),
+        ...(data.interactionRange && {
+          interactionRange: data.interactionRange,
+        }),
+        ...(data.behavior && {
+          behavior: data.behavior as Record<string, unknown>,
+        }),
         ...(data.tooltip && { tooltip: data.tooltip }),
-        ...(data.audioFeedbackUrl && { audioFeedbackUrl: data.audioFeedbackUrl }),
+        ...(data.audioFeedbackUrl && {
+          audioFeedbackUrl: data.audioFeedbackUrl,
+        }),
       },
     });
 
@@ -405,13 +435,13 @@ export class VRLabServiceImpl implements VRLabService {
     tenantId: TenantId;
     labId: VRLabId;
     userId: UserId;
-    data: Omit<VRLabObjective, 'id' | 'labId'>;
+    data: Omit<VRLabObjective, "id" | "labId">;
   }): Promise<VRLabObjective> {
     const { labId, data } = args;
 
     const objective = await this.prisma.vRLabObjective.create({
       data: {
-        id: uuidv4(),
+        id: randomUUID(),
         labId,
         title: data.title,
         description: data.description,
@@ -442,7 +472,9 @@ export class VRLabServiceImpl implements VRLabService {
         ...(data.description && { description: data.description }),
         ...(data.order !== undefined && { order: data.order }),
         ...(data.type && { type: data.type }),
-        ...(data.criteria && { criteria: data.criteria as Record<string, unknown> }),
+        ...(data.criteria && {
+          criteria: data.criteria as Record<string, unknown>,
+        }),
         ...(data.hints && { hints: data.hints }),
         ...(data.points !== undefined && { points: data.points }),
         ...(data.isOptional !== undefined && { isOptional: data.isOptional }),
@@ -469,16 +501,21 @@ export class VRLabServiceImpl implements VRLabService {
   // ============================================
 
   private generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      + '-' + uuidv4().slice(0, 8);
+    return (
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") +
+      "-" +
+      randomUUID().slice(0, 8)
+    );
   }
 
   private mapToVRLab(lab: any): VRLab {
-    const scenes = (lab.scenes as Array<Record<string, unknown>> | undefined) ?? [];
-    const objectives = (lab.objectives as Array<Record<string, unknown>> | undefined) ?? [];
+    const scenes =
+      (lab.scenes as Array<Record<string, unknown>> | undefined) ?? [];
+    const objectives =
+      (lab.objectives as Array<Record<string, unknown>> | undefined) ?? [];
     return {
       id: lab.id as string,
       slug: lab.slug as string,
@@ -506,7 +543,8 @@ export class VRLabServiceImpl implements VRLabService {
   }
 
   private mapToVRScene(scene: any): VRScene {
-    const interactables = (scene.interactables as Array<Record<string, unknown>> | undefined) ?? [];
+    const interactables =
+      (scene.interactables as Array<Record<string, unknown>> | undefined) ?? [];
     return {
       id: scene.id as string,
       labId: scene.labId as string,
@@ -534,7 +572,10 @@ export class VRLabServiceImpl implements VRLabService {
       rotation: interactable.rotation as Record<string, number>,
       scale: interactable.scale as Record<string, number>,
       modelUrl: interactable.modelUrl as string,
-      materialOverrides: interactable.materialOverrides as Record<string, unknown>,
+      materialOverrides: interactable.materialOverrides as Record<
+        string,
+        unknown
+      >,
       allowedInteractions: interactable.allowedInteractions as string[],
       interactionRange: interactable.interactionRange as number,
       behavior: interactable.behavior as Record<string, unknown>,

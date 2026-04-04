@@ -1,4 +1,3 @@
-import fp from "fastify-plugin";
 import { createLearningService } from "./service";
 import { createPathwaysService } from "./pathways-service";
 import { createAssessmentService } from "./assessment-service";
@@ -20,59 +19,51 @@ import type { FastifyPluginAsync } from "fastify";
  * - tutorputor-assessment (Done)
  * - tutorputor-analytics (Done)
  */
-export const learningModule = fp(
-  async (fastify: import("fastify").FastifyInstance) => {
-    const prisma = fastify.prisma;
-    const redis = fastify.redis;
+export const learningModule: FastifyPluginAsync = async (fastify) => {
+  const prisma = fastify.prisma;
+  const redis = fastify.redis;
 
-    if (!prisma) {
-      throw new Error(
-        "Prisma client not found on Fastify instance. Ensure database plugin is registered.",
-      );
-    }
-
-    // 1. Create Core Services
-    const learningService = createLearningService(prisma);
-    const pathwaysService = createPathwaysService(prisma);
-    const assessmentService = createAssessmentService(prisma);
-    const analyticsService = createAnalyticsService(prisma, redis);
-    const learnerProfileService = createLearnerProfileService(prisma);
-    const assetReadService = new ContentAssetReadService(prisma);
-    const contentVariationService = new ContentVariationService(
-      assetReadService,
+  if (!prisma) {
+    throw new Error(
+      "Prisma client not found on Fastify instance. Ensure database plugin is registered.",
     );
-    const sessionAdaptationEngine = new SessionAdaptationEngine(
+  }
+
+  // 1. Create Core Services
+  const learningService = createLearningService(prisma);
+  const pathwaysService = createPathwaysService(prisma);
+  const assessmentService = createAssessmentService(prisma);
+  const analyticsService = createAnalyticsService(prisma, redis);
+  const learnerProfileService = createLearnerProfileService(prisma);
+  const assetReadService = new ContentAssetReadService(prisma);
+  const contentVariationService = new ContentVariationService(assetReadService);
+  const sessionAdaptationEngine = new SessionAdaptationEngine(
+    learnerProfileService,
+    contentVariationService,
+    redis,
+  );
+
+  // 2. Register Routes
+  // Mounted relative to where this module is registered.
+  await learningRoutes(
+    fastify as unknown as Parameters<typeof learningRoutes>[0],
+    {
+      learningService,
+      pathwaysService,
+      assessmentService,
+      analyticsService,
       learnerProfileService,
       contentVariationService,
-      redis,
-    );
+      sessionAdaptationEngine,
+    },
+  );
 
-    // 2. Register Routes
-    // Mounted relative to where this module is registered.
-    await learningRoutes(
-      fastify as unknown as Parameters<typeof learningRoutes>[0],
-      {
-        learningService,
-        pathwaysService,
-        assessmentService,
-        analyticsService,
-        learnerProfileService,
-        contentVariationService,
-        sessionAdaptationEngine,
-      },
-    );
-
-    // 3. Decorate for cross-module usage
-    fastify.decorate("learningService", learningService);
-    fastify.decorate("pathwaysService", pathwaysService);
-    fastify.decorate("assessmentService", assessmentService);
-    fastify.decorate("analyticsService", analyticsService);
-    fastify.decorate("learnerProfileService", learnerProfileService);
-    fastify.decorate("contentVariationService", contentVariationService);
-    fastify.decorate("sessionAdaptationEngine", sessionAdaptationEngine);
-  },
-  {
-    name: "learning-module",
-    dependencies: ["database-plugin"],
-  },
-) as FastifyPluginAsync;
+  // 3. Decorate for cross-module usage
+  fastify.decorate("learningService", learningService);
+  fastify.decorate("pathwaysService", pathwaysService);
+  fastify.decorate("assessmentService", assessmentService);
+  fastify.decorate("analyticsService", analyticsService);
+  fastify.decorate("learnerProfileService", learnerProfileService);
+  fastify.decorate("contentVariationService", contentVariationService);
+  fastify.decorate("sessionAdaptationEngine", sessionAdaptationEngine);
+};

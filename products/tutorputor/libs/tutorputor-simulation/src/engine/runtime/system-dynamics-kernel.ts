@@ -94,7 +94,7 @@ export function createSystemDynamicsKernel(
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not SYSTEM_DYNAMICS"],
+          errors: ["Manifest domain is not ECONOMICS"],
         };
       }
 

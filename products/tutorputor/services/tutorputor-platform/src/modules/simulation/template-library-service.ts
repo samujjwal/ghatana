@@ -1645,8 +1645,14 @@ export class SimulationTemplateLibraryService {
     // Enhanced quality validation
     const normalizedTemplate = {
       ...template,
-      createdAt: new Date(template.createdAt).toISOString(),
-      updatedAt: new Date(template.updatedAt).toISOString(),
+      createdAt: (template.createdAt instanceof Date
+        ? template.createdAt
+        : new Date()
+      ).toISOString(),
+      updatedAt: (template.updatedAt instanceof Date
+        ? template.updatedAt
+        : new Date()
+      ).toISOString(),
     };
 
     const qualityChecks = this.performQualityValidation(

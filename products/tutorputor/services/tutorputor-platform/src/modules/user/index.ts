@@ -20,7 +20,7 @@ export const userModule: FastifyPluginAsync = async (app) => {
   await app.register(adminRoutes, { prefix: "/admin" });
 
   // Health check
-  app.get("/health", async () => {
+  app.get("/user/health", async () => {
     return {
       module: "user",
       status: "healthy",

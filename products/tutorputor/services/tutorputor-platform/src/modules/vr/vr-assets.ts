@@ -6,23 +6,23 @@
  * @doc.pattern Service
  */
 
-import { PrismaClient } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "crypto";
+import { PrismaClient } from "@prisma/client";
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
-} from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import type {
   VRAssetService,
   TenantId,
   UserId,
   PaginatedResult,
   PaginationArgs,
-} from '@tutorputor/contracts/v1';
-import type { VRAsset, VRAssetId, VRAssetType } from '@tutorputor/contracts/v1';
+} from "@tutorputor/contracts/v1";
+import type { VRAsset, VRAssetId, VRAssetType } from "@tutorputor/contracts/v1";
 
 export interface VRAssetServiceConfig {
   s3Bucket: string;
@@ -39,7 +39,7 @@ export class VRAssetServiceImpl implements VRAssetService {
 
   constructor(
     private prisma: PrismaClient,
-    private config: VRAssetServiceConfig
+    private config: VRAssetServiceConfig,
   ) {
     this.s3Client = new S3Client({
       region: config.s3Region,
@@ -68,7 +68,7 @@ export class VRAssetServiceImpl implements VRAssetService {
   }): Promise<VRAsset> {
     const { tenantId, userId, file, metadata } = args;
 
-    const assetId = uuidv4();
+    const assetId = randomUUID();
     const assetType = this.determineAssetType(file.type);
     const key = `${tenantId}/vr-assets/${assetId}/${file.name}`;
 
@@ -84,7 +84,7 @@ export class VRAssetServiceImpl implements VRAssetService {
           userId,
           originalName: file.name,
         },
-      })
+      }),
     );
 
     const url = this.cdnUrl
@@ -148,7 +148,7 @@ export class VRAssetServiceImpl implements VRAssetService {
       where.AND = [
         {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
+            { name: { contains: search, mode: "insensitive" } },
             { tags: { hasSome: [search] } },
           ],
         },
@@ -160,7 +160,7 @@ export class VRAssetServiceImpl implements VRAssetService {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.vRAsset.count({ where }),
     ]);
@@ -189,7 +189,7 @@ export class VRAssetServiceImpl implements VRAssetService {
     });
 
     if (!asset) {
-      throw new Error('Asset not found');
+      throw new Error("Asset not found");
     }
 
     // Delete from S3
@@ -197,7 +197,7 @@ export class VRAssetServiceImpl implements VRAssetService {
       new DeleteObjectCommand({
         Bucket: this.bucket,
         Key: asset.s3Key,
-      })
+      }),
     );
 
     // Delete from database
@@ -220,7 +220,7 @@ export class VRAssetServiceImpl implements VRAssetService {
     });
 
     if (!asset) {
-      throw new Error('Asset not found');
+      throw new Error("Asset not found");
     }
 
     // If public and CDN configured, use direct URL
@@ -251,7 +251,7 @@ export class VRAssetServiceImpl implements VRAssetService {
   }): Promise<{ url: string; assetId: VRAssetId; expiresAt: string }> {
     const { tenantId, userId, fileName, contentType } = args;
 
-    const assetId = uuidv4();
+    const assetId = randomUUID();
     const key = `${tenantId}/vr-assets/${assetId}/${fileName}`;
 
     const command = new PutObjectCommand({
@@ -282,7 +282,7 @@ export class VRAssetServiceImpl implements VRAssetService {
         tags: [],
         isPublic: false,
         createdBy: userId,
-        status: 'pending',
+        status: "pending",
       },
     });
 
@@ -294,27 +294,31 @@ export class VRAssetServiceImpl implements VRAssetService {
   // ============================================
 
   private determineAssetType(mimeType: string): VRAssetType {
-    if (mimeType.startsWith('model/') || mimeType.includes('gltf') || mimeType.includes('glb')) {
-      return 'model';
+    if (
+      mimeType.startsWith("model/") ||
+      mimeType.includes("gltf") ||
+      mimeType.includes("glb")
+    ) {
+      return "model";
     }
-    if (mimeType.startsWith('image/')) {
-      return 'texture';
+    if (mimeType.startsWith("image/")) {
+      return "texture";
     }
-    if (mimeType.startsWith('audio/')) {
-      return 'audio';
+    if (mimeType.startsWith("audio/")) {
+      return "audio";
     }
-    if (mimeType.startsWith('video/')) {
-      return 'video';
+    if (mimeType.startsWith("video/")) {
+      return "video";
     }
-    if (mimeType.includes('javascript') || mimeType.includes('json')) {
-      return 'script';
+    if (mimeType.includes("javascript") || mimeType.includes("json")) {
+      return "script";
     }
-    return 'model';
+    return "model";
   }
 
   private getFileExtension(fileName: string): string {
-    const parts = fileName.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
+    const parts = fileName.split(".");
+    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
   }
 
   private mapToVRAsset(asset: any): VRAsset {

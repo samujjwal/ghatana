@@ -19,7 +19,7 @@ export const engagementModule: FastifyPluginAsync = async (app) => {
   await app.register(gamificationRoutes, { prefix: "/gamification" });
   await app.register(socialRoutes, { prefix: "/social" });
 
-  app.get("/health", async () => ({
+  app.get("/engagement/health", async () => ({
     module: "engagement",
     status: "healthy",
     submodules: ["credentials", "gamification", "social"],

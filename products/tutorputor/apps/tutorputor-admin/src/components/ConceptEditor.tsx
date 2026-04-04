@@ -12,8 +12,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card } from '../components/ui';
-import { Input, Button, Spinner } from '@ghatana/design-system';
+import { Card, Input, Button, Spinner } from './ui';
 import { RichTextEditor } from './RichTextEditor';
 
 interface Concept {

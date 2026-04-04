@@ -1,11 +1,13 @@
+import React from 'react';
+
+export interface MinimalThemeProviderProps {
+    children: React.ReactNode;
+}
+
 /**
- * Re-exports MinimalThemeProvider from the canonical shared package.
- *
- * Keeping this re-export module preserves all existing local import paths
- * (`'./providers/MinimalThemeProvider'`) while the actual implementation
- * lives in a single authoritative location.
- *
- * @see @tutorputor/ui
+ * Minimal Theme Provider for TutorPutor Admin
+ * Provides basic theming context for the application
  */
-export { MinimalThemeProvider } from '@tutorputor/ui';
-export type { MinimalThemeProviderProps } from '@tutorputor/ui';
+export const MinimalThemeProvider: React.FC<MinimalThemeProviderProps> = ({ children }) => {
+    return <>{children}</>;
+};
