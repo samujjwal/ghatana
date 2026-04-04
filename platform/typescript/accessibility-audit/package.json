@@ -29,7 +29,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "cli": "pnpm dlx tsx ./examples/cli.ts",
-    "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'archive/**' --ignore-pattern 'examples/**' --ignore-pattern 'src/AccessibilityAuditor.old.ts' --ignore-pattern 'src/AccessibilityReportViewer.old.tsx'",
+    "lint": "eslint src --ext .ts,.tsx --ignore-pattern 'archive/**' --ignore-pattern 'examples/**'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
