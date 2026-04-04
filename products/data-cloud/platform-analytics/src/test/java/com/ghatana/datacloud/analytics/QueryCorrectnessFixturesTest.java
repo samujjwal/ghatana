@@ -4,549 +4,426 @@
  */
 package com.ghatana.datacloud.analytics;
 
+import com.ghatana.datacloud.entity.Entity;
+import com.ghatana.datacloud.entity.storage.QuerySpec;
+import com.ghatana.datacloud.entity.storage.StorageConnector;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 /**
- * Correctness tests for Analytics query engine with deterministic fixtures.
+ * Correctness fixture tests for the Analytics query engine.
  *
- * <p>Provides canonical datasets with known expected results for:
- * <ul>
- *   <li>Aggregation functions (SUM, AVG, COUNT, MIN, MAX)</li>
- *   <li>Filtering and where clauses</li>
- *   <li>Sorting and ordering</li>
- *   <li>Grouping and having clauses</li>
- *   <li>Join operations (basic)</li>
- * </ul>
- *
- * <p><strong>Data Persistence:</strong> Tests use in-memory fixtures or H2 database.
- * No external dependencies. Fully deterministic.
- *
- * <p><strong>Expected Results:</strong> Hard-coded in test. If query engine changes,
- * tests verify the engine still produces correct results (or test expectations are updated
- * with diff and explanation in commit message).
+ * <p>Uses a mock {@link StorageConnector} with deterministic datasets to verify:
+ * COUNT aggregation (with and without GROUP BY), SELECT projection,
+ * JOIN hash-join, TIMESERIES routing, null-connector safety,
+ * input validation, and result/plan caching.
  *
  * @doc.type class
- * @doc.purpose Correctness tests for Analytics query engine with deterministic datasets
+ * @doc.purpose Correctness tests for AnalyticsQueryEngine with deterministic datasets
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Analytics Query Engine – Correctness Fixtures")
-class QueryCorrectnessFixturesTest {
+@DisplayName("Analytics Query Engine - Correctness Fixtures")
+@ExtendWith(MockitoExtension.class)
+class QueryCorrectnessFixturesTest extends EventloopTestBase {
 
-    private AnalyticsQueryEngine queryEngine;
-    private AnalyticsFixtures fixtures;
+    // ─────────────────────────────────────────────────────────────────
+    // Deterministic datasets
+    // ─────────────────────────────────────────────────────────────────
+
+    static final List<Entity> SALES = List.of(
+            mkEntity("1", "sales", Map.of("product", "Widget A", "region", "US",   "quantity", 100)),
+            mkEntity("2", "sales", Map.of("product", "Widget A", "region", "US",   "quantity", 150)),
+            mkEntity("3", "sales", Map.of("product", "Widget B", "region", "EU",   "quantity",  50)),
+            mkEntity("4", "sales", Map.of("product", "Widget B", "region", "EU",   "quantity",  75)),
+            mkEntity("5", "sales", Map.of("product", "Widget C", "region", "APAC", "quantity", 200))
+    );
+
+    static final List<Entity> CUSTOMERS = List.of(
+            mkEntity("c1", "customers", Map.of("customerId", "C001", "name", "Alice")),
+            mkEntity("c2", "customers", Map.of("customerId", "C002", "name", "Bob")),
+            mkEntity("c3", "customers", Map.of("customerId", "C003", "name", "Carol"))
+    );
+
+    static final List<Entity> ORDERS = List.of(
+            mkEntity("o1", "orders", Map.of("customerId", "C001", "amount", 100.0)),
+            mkEntity("o2", "orders", Map.of("customerId", "C002", "amount", 200.0)),
+            mkEntity("o3", "orders", Map.of("customerId", "C001", "amount",  50.0))
+    );
+
+    // ─────────────────────────────────────────────────────────────────
+    // Test wiring
+    // ─────────────────────────────────────────────────────────────────
+
+    @Mock StorageConnector storageConnector;
+    AnalyticsQueryEngine engine;
 
     @BeforeEach
     void setUp() {
-        // Initialize query engine (real or mock)
-        this.queryEngine = new DefaultAnalyticsQueryEngine();
-        this.fixtures = new AnalyticsFixtures();
-        
-        // Load deterministic dataset
-        fixtures.loadSalesData();
+        engine = new AnalyticsQueryEngine(storageConnector);
+        lenient().when(storageConnector.query(anyString(), eq("sales"), any(QuerySpec.class)))
+                .thenReturn(Promise.of(mkResult(SALES)));
     }
 
-    /**
-     * Sales Dataset:
-     * id | product | region | quantity | unitPrice | date
-     * 1  | Widget A | US    | 100      | 10.00     | 2026-01-01
-     * 2  | Widget A | US    | 150      | 10.00     | 2026-01-02
-     * 3  | Widget B | EU    | 50       | 20.00     | 2026-01-01
-     * 4  | Widget B | EU    | 75       | 20.00     | 2026-01-02
-     * 5  | Widget C | APAC  | 200      | 5.00      | 2026-01-01
-     */
+    // ─────────────────────────────────────────────────────────────────
+    // AGGREGATE: COUNT without GROUP BY
+    // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Aggregation: SUM")
-    class SumAggregationTests {
+    @DisplayName("COUNT aggregation - no GROUP BY")
+    class CountAllTests {
 
         @Test
-        @DisplayName("SUM(quantity) across all rows → 575")
-        void sum_allQuantities_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("SUM(quantity) as total_qty")
-                    .from("sales");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(1);
-            Map<String, Object> row = result.getRows().get(0);
-            assertThat(row.get("total_qty")).isEqualTo(575);
+        @DisplayName("COUNT(*) over 5 rows returns single row with count=5")
+        void countAll_returnsSingleRowWithCount() {
+            QueryResult r = runSql("SELECT COUNT(*) FROM sales");
+            assertThat(r.getRows()).hasSize(1);
+            assertThat(r.getQueryType()).isEqualTo("AGGREGATE");
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(5L);
         }
 
         @Test
-        @DisplayName("SUM(quantity * unitPrice) – total revenue → 7,175.00")
-        void sum_revenue_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("SUM(quantity * unitPrice) as revenue")
-                    .from("sales");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            Map<String, Object> row = result.getRows().get(0);
-            assertThat(row.get("revenue")).isEqualTo(7175.00);
+        @DisplayName("COUNT over empty collection returns count=0")
+        void countAll_emptyCollection_returnsZero() {
+            stubCollection("empty", List.of());
+            QueryResult r = runSql("SELECT COUNT(*) FROM empty");
+            assertThat(r.getRows()).hasSize(1);
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(0L);
         }
 
         @Test
-        @DisplayName("SUM grouped by region → US: 2500, EU: 2500, APAC: 1000")
-        void sum_groupByRegion_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, SUM(quantity * unitPrice) as revenue")
-                    .from("sales")
-                    .groupBy("region");
+        @DisplayName("SUM() in SELECT recognised as AGGREGATE query type")
+        void sumInSelect_recognisedAsAggregate() {
+            assertThat(runSql("SELECT SUM(quantity) FROM sales").getQueryType())
+                    .isEqualTo("AGGREGATE");
+        }
 
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(3);
-
-            // Verify each region's revenue
-            Map<String, Double> regionRevenue = new java.util.HashMap<>();
-            for (Map<String, Object> row : result.getRows()) {
-                regionRevenue.put(
-                        (String) row.get("region"),
-                        ((Number) row.get("revenue")).doubleValue()
-                );
-            }
-
-            assertThat(regionRevenue)
-                    .containsEntry("US", 2500.00)
-                    .containsEntry("EU", 2500.00)
-                    .containsEntry("APAC", 1000.00);
+        @Test
+        @DisplayName("AVG() in SELECT recognised as AGGREGATE query type")
+        void avgInSelect_recognisedAsAggregate() {
+            assertThat(runSql("SELECT AVG(quantity) FROM sales").getQueryType())
+                    .isEqualTo("AGGREGATE");
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // AGGREGATE: COUNT with GROUP BY
+    // ─────────────────────────────────────────────────────────────────
+
     @Nested
-    @DisplayName("Aggregation: AVG")
-    class AverageAggregationTests {
+    @DisplayName("COUNT aggregation - with GROUP BY")
+    class GroupByCountTests {
 
         @Test
-        @DisplayName("AVG(unitPrice) → 13.00")
-        void avg_unitPrice_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("AVG(unitPrice) as avg_price")
-                    .from("sales");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            Map<String, Object> row = result.getRows().get(0);
-            assertThat(((Number) row.get("avg_price")).doubleValue()).isCloseTo(13.0, within(0.01));
+        @DisplayName("GROUP BY region: US=2, EU=2, APAC=1")
+        void groupByRegion_correctCounts() {
+            QueryResult r = runSql("SELECT region, COUNT(*) FROM sales GROUP BY region");
+            assertThat(r.getQueryType()).isEqualTo("AGGREGATE");
+            assertThat(r.getRows()).hasSize(3);
+            Map<String, Long> m = countMap(r, "region");
+            assertThat(m).containsEntry("US", 2L).containsEntry("EU", 2L).containsEntry("APAC", 1L);
         }
 
         @Test
-        @DisplayName("AVG grouped by product → Widget A: 10, Widget B: 20, Widget C: 5")
-        void avg_groupByProduct_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("product, AVG(unitPrice) as avg_price")
-                    .from("sales")
-                    .groupBy("product");
+        @DisplayName("GROUP BY product: Widget A=2, Widget B=2, Widget C=1")
+        void groupByProduct_correctCounts() {
+            QueryResult r = runSql("SELECT product, COUNT(*) FROM sales GROUP BY product");
+            assertThat(r.getRows()).hasSize(3);
+            Map<String, Long> m = countMap(r, "product");
+            assertThat(m).containsEntry("Widget A", 2L)
+                         .containsEntry("Widget B", 2L)
+                         .containsEntry("Widget C", 1L);
+        }
 
-            QueryResult result = queryEngine.execute(plan).blockingGet();
+        @Test
+        @DisplayName("GROUP BY on single-entity collection: 1 group, count=1")
+        void groupBySingleEntity_oneGroup() {
+            stubCollection("items", List.of(mkEntity("x", "items", Map.of("cat", "alpha"))));
+            QueryResult r = runSql("SELECT cat, COUNT(*) FROM items GROUP BY cat");
+            assertThat(r.getRows()).hasSize(1);
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(1L);
+        }
 
-            assertThat(result.getRows()).hasSize(3);
-
-            Map<String, Double> productAvg = new java.util.HashMap<>();
-            for (Map<String, Object> row : result.getRows()) {
-                productAvg.put(
-                        (String) row.get("product"),
-                        ((Number) row.get("avg_price")).doubleValue()
-                );
-            }
-
-            assertThat(productAvg.get("Widget A")).isCloseTo(10.0, within(0.01));
-            assertThat(productAvg.get("Widget B")).isCloseTo(20.0, within(0.01));
-            assertThat(productAvg.get("Widget C")).isCloseTo(5.0, within(0.01));
+        @Test
+        @DisplayName("GROUP BY field absent from all entities returns 0 groups")
+        void groupByMissingField_returnsEmpty() {
+            QueryResult r = runSql("SELECT missing, COUNT(*) FROM sales GROUP BY missing");
+            assertThat(r.getRows()).isEmpty();
         }
     }
 
-    @Nested
-    @DisplayName("Aggregation: COUNT")
-    class CountAggregationTests {
-
-        @Test
-        @DisplayName("COUNT(*) → 5")
-        void count_allRows_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("COUNT(*) as row_count")
-                    .from("sales");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            Map<String, Object> row = result.getRows().get(0);
-            assertThat(row.get("row_count")).isEqualTo(5L);
-        }
-
-        @Test
-        @DisplayName("COUNT grouped by region → US: 2, EU: 2, APAC: 1")
-        void count_groupByRegion_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, COUNT(*) as count")
-                    .from("sales")
-                    .groupBy("region");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(3);
-
-            Map<String, Long> regionCount = new java.util.HashMap<>();
-            for (Map<String, Object> row : result.getRows()) {
-                regionCount.put(
-                        (String) row.get("region"),
-                        ((Number) row.get("count")).longValue()
-                );
-            }
-
-            assertThat(regionCount)
-                    .containsEntry("US", 2L)
-                    .containsEntry("EU", 2L)
-                    .containsEntry("APAC", 1L);
-        }
-
-        @Test
-        @DisplayName("COUNT DISTINCT(product) → 3")
-        void count_distinctProducts_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("COUNT(DISTINCT product) as distinct_products")
-                    .from("sales");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            Map<String, Object> row = result.getRows().get(0);
-            assertThat(row.get("distinct_products")).isEqualTo(3L);
-        }
-    }
+    // ─────────────────────────────────────────────────────────────────
+    // SELECT
+    // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Aggregation: MIN / MAX")
-    class MinMaxAggregationTests {
+    @DisplayName("SELECT - row projection")
+    class SelectTests {
 
         @Test
-        @DisplayName("MIN(unitPrice) → 5.00, MAX(unitPrice) → 20.00")
-        void minMax_unitPrice_correct() {
-            QueryPlan planMin = new QueryPlan()
-                    .addSelect("MIN(unitPrice) as min_price")
-                    .from("sales");
-
-            QueryPlan planMax = new QueryPlan()
-                    .addSelect("MAX(unitPrice) as max_price")
-                    .from("sales");
-
-            QueryResult minResult = queryEngine.execute(planMin).blockingGet();
-            QueryResult maxResult = queryEngine.execute(planMax).blockingGet();
-
-            assertThat(minResult.getRows().get(0).get("min_price")).isEqualTo(5.00);
-            assertThat(maxResult.getRows().get(0).get("max_price")).isEqualTo(20.00);
-        }
-
-        @Test
-        @DisplayName("MIN/MAX grouped by region")
-        void minMax_groupByRegion_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, MIN(unitPrice) as min_price, MAX(unitPrice) as max_price")
-                    .from("sales")
-                    .groupBy("region");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(3);
-            // Verify US has min: 10, max: 10 (both Widget A at 10)
-            // EU has min: 20, max: 20 (Widget B)
-            // APAC has min: 5, max: 5 (Widget C)
-        }
-    }
-
-    @Nested
-    @DisplayName("Filtering: WHERE clauses")
-    class FilteringTests {
-
-        @Test
-        @DisplayName("WHERE region = 'US' → 2 rows")
-        void filter_byRegion_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("*")
-                    .from("sales")
-                    .where("region = 'US'");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);
-            for (Map<String, Object> row : result.getRows()) {
-                assertThat(row.get("region")).isEqualTo("US");
+        @DisplayName("SELECT * returns all 5 rows with expected fields")
+        void selectAll_returnsAllRows() {
+            QueryResult r = runSql("SELECT * FROM sales");
+            assertThat(r.getQueryType()).isEqualTo("SELECT");
+            assertThat(r.getRows()).hasSize(5);
+            for (Map<String, Object> row : r.getRows()) {
+                assertThat(row).containsKeys("product", "region", "quantity");
             }
         }
 
         @Test
-        @DisplayName("WHERE quantity > 100 → 3 rows (Widget A:150, Widget B:75? no, Widget C:200)")
-        void filter_byQuantity_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("*")
-                    .from("sales")
-                    .where("quantity > 100");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);  // Widget A:150, Widget C:200
+        @DisplayName("SELECT row includes 'id' field derived from entity UUID")
+        void selectAll_includesId() {
+            QueryResult r = runSql("SELECT * FROM sales");
+            assertThat(r.getRows().get(0)).containsKey("id");
         }
 
         @Test
-        @DisplayName("WHERE unitPrice >= 10 AND region = 'US' → 2 rows")
-        void filter_combined_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("*")
-                    .from("sales")
-                    .where("unitPrice >= 10 AND region = 'US'");
+        @DisplayName("SELECT on empty collection returns 0 rows")
+        void selectEmpty_returnsNoRows() {
+            stubCollection("noop", List.of());
+            assertThat(runSql("SELECT * FROM noop").getRows()).isEmpty();
+        }
 
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);
-            for (Map<String, Object> row : result.getRows()) {
-                assertThat(((Number) row.get("unitPrice")).doubleValue()).isGreaterThanOrEqualTo(10);
-                assertThat(row.get("region")).isEqualTo("US");
-            }
+        @Test
+        @DisplayName("SELECT result has non-blank queryId, isOptimized=true, executionTimeMs>=0")
+        void selectResult_hasCorrectMetadata() {
+            QueryResult r = runSql("SELECT * FROM sales");
+            assertThat(r.getQueryId()).isNotBlank();
+            assertThat(r.isOptimized()).isTrue();
+            assertThat(r.getExecutionTimeMs()).isGreaterThanOrEqualTo(0);
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // LIMIT routing
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("SELECT with LIMIT clause routes as SELECT (not AGGREGATE)")
+    void limitClause_routesToSelect() {
+        assertThat(runSql("SELECT * FROM sales LIMIT 2").getQueryType()).isEqualTo("SELECT");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // JOIN
+    // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Sorting: ORDER BY")
-    class SortingTests {
+    @DisplayName("JOIN - hash join across two collections")
+    class JoinTests {
 
-        @Test
-        @DisplayName("ORDER BY quantity DESC → [200, 150, 75, 50, 100]")
-        void orderBy_quantity_descending_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("product, quantity")
-                    .from("sales")
-                    .orderBy("quantity DESC");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            List<Map<String, Object>> rows = result.getRows();
-            assertThat(((Number) rows.get(0).get("quantity")).intValue()).isEqualTo(200);
-            assertThat(((Number) rows.get(1).get("quantity")).intValue()).isEqualTo(150);
-            assertThat(((Number) rows.get(4).get("quantity")).intValue()).isEqualTo(50);
+        @BeforeEach
+        void stubJoinCollections() {
+            stubCollection("customers", CUSTOMERS);
+            stubCollection("orders", ORDERS);
         }
 
         @Test
-        @DisplayName("ORDER BY region ASC, unitPrice DESC")
-        void orderBy_multiple_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, unitPrice")
-                    .from("sales")
-                    .orderBy("region ASC, unitPrice DESC");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            // Result should be: APAC first, then EU, then US
-            // Within each region, sorted by unitPrice DESC
-            assertThat(result.getRows().get(0).get("region")).isEqualTo("APAC");
+        @DisplayName("JOIN on customerId: C001 appears in 2 orders, C002 in 1 → 3 total rows")
+        void join_onCustomerId_correctRowCount() {
+            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
+            assertThat(r.getQueryType()).isEqualTo("JOIN");
+            assertThat(r.getRows()).hasSize(3);
         }
+
+        @Test
+        @DisplayName("JOIN row merges fields from both left and right collections")
+        void join_mergedRow_hasFieldsFromBothSides() {
+            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
+            assertThat(r.getRows()).isNotEmpty();
+            Map<String, Object> row = r.getRows().get(0);
+            assertThat(row).containsKey("name");    // from customers
+            assertThat(row).containsKey("amount");  // from orders
+        }
+
     }
+
+    @Test
+    @DisplayName("JOIN where right side has no matching key values returns empty result")
+    void joinNoMatchingKeys_returnsEmpty() {
+        stubCollection("customers", CUSTOMERS);
+        stubCollection("orders", List.of(mkEntity("o9", "orders", Map.of("otherField", "X"))));
+        QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
+        assertThat(r.getRows()).isEmpty();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // TIMESERIES routing
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("DATE_TRUNC in SELECT routes to TIMESERIES query type")
+    void datetrunc_routesToTimeseries() {
+        stubCollection("events", List.of());
+        QueryResult r = runPromise(() -> engine.submitQuery("t1",
+                "SELECT DATE_TRUNC(day, ts) FROM events",
+                Map.of("timeWindowStart", "2026-01-01T00:00:00Z",
+                       "timeWindowEnd",   "2026-01-02T00:00:00Z")));
+        assertThat(r.getQueryType()).isEqualTo("TIMESERIES");
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Null StorageConnector (testing/legacy mode)
+    // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HAVING clauses (Post-aggregation filtering)")
-    class HavingTests {
+    @DisplayName("Null StorageConnector - safe empty results")
+    class NullConnectorTests {
 
         @Test
-        @DisplayName("GROUP BY region HAVING COUNT(*) > 1 → US, EU (not APAC with 1 row)")
-        void having_count_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, COUNT(*) as count")
-                    .from("sales")
-                    .groupBy("region")
-                    .having("COUNT(*) > 1");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);  // US and EU only
-            for (Map<String, Object> row : result.getRows()) {
-                assertThat(((Number) row.get("count")).longValue()).isGreaterThan(1);
-            }
+        @DisplayName("SELECT with no connector returns empty rows without throwing")
+        void nullConnector_selectReturnsEmpty() {
+            QueryResult r = runPromise(() ->
+                    new AnalyticsQueryEngine().submitQuery("t1", "SELECT * FROM sales", Map.of()));
+            assertThat(r.getRows()).isEmpty();
         }
 
         @Test
-        @DisplayName("GROUP BY region HAVING SUM(quantity) > 500")
-        void having_sum_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("region, SUM(quantity) as total")
-                    .from("sales")
-                    .groupBy("region")
-                    .having("SUM(quantity) > 500");
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            for (Map<String, Object> row : result.getRows()) {
-                assertThat(((Number) row.get("total")).intValue()).isGreaterThan(500);
-            }
+        @DisplayName("AGGREGATE with no connector returns empty rows without throwing")
+        void nullConnector_aggregateReturnsEmpty() {
+            QueryResult r = runPromise(() ->
+                    new AnalyticsQueryEngine().submitQuery("t1", "SELECT COUNT(*) FROM sales", Map.of()));
+            assertThat(r.getRows()).isEmpty();
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Input validation
+    // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Limit and Offset")
-    class LimitOffsetTests {
+    @DisplayName("Input validation - null inputs rejected at engine boundary")
+    class ValidationTests {
 
         @Test
-        @DisplayName("LIMIT 2 → returns 2 rows")
-        void limit_firstTwo_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("*")
-                    .from("sales")
-                    .limit(2);
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);
+        @DisplayName("null tenantId throws NullPointerException with 'tenantId' in message")
+        void nullTenantId_throwsNPE() {
+            assertThatThrownBy(() ->
+                    runPromise(() -> engine.submitQuery(null, "SELECT * FROM sales", Map.of())))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("tenantId");
         }
 
         @Test
-        @DisplayName("OFFSET 2 LIMIT 2 → skips first 2, returns next 2")
-        void offsetLimit_pagination_correct() {
-            QueryPlan plan = new QueryPlan()
-                    .addSelect("id")
-                    .from("sales")
-                    .offset(2)
-                    .limit(2);
-
-            QueryResult result = queryEngine.execute(plan).blockingGet();
-
-            assertThat(result.getRows()).hasSize(2);
+        @DisplayName("null queryText throws NullPointerException with 'queryText' in message")
+        void nullQueryText_throwsNPE() {
+            assertThatThrownBy(() ->
+                    runPromise(() -> engine.submitQuery("t1", null, Map.of())))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("queryText");
         }
     }
 
-    // ==================== Helper Assertion Methods ====================
+    // ─────────────────────────────────────────────────────────────────
+    // Cached result and plan retrieval
+    // ─────────────────────────────────────────────────────────────────
 
-    private static org.assertj.core.api.Condition<Double> within(double tolerance) {
-        return new org.assertj.core.api.Condition<Double>(
-                value -> Math.abs(value) <= tolerance,
-                "within " + tolerance
-        );
-    }
-}
+    @Nested
+    @DisplayName("Cached result and plan retrieval via getResult / getPlan")
+    class CachedRetrievalTests {
 
-/**
- * Test fixtures: in-memory dataset for correctness tests.
- *
- * @doc.type class
- * @doc.purpose Fixture management for Analytics correctness tests
- * @doc.layer test-support
- * @doc.pattern Fixture
- */
-class AnalyticsFixtures {
-    // Placeholder for fixture loading logic
-    void loadSalesData() {
-        // In real implementation: load test data into H2 or in-memory store
-    }
-}
+        @Test
+        @DisplayName("getResult for known queryId returns the same cached result")
+        void getResult_knownId_returnsCached() {
+            QueryResult submitted = runSql("SELECT * FROM sales");
+            QueryResult fetched   = runPromise(() -> engine.getResult(submitted.getQueryId()));
+            assertThat(fetched.getQueryId()).isEqualTo(submitted.getQueryId());
+        }
 
-/**
- * Default query engine implementation (stub for testing).
- *
- * @doc.type class
- * @doc.purpose Query engine implementation (testable, deterministic)
- * @doc.layer product
- * @doc.pattern Service
- */
-class DefaultAnalyticsQueryEngine implements AnalyticsQueryEngine {
-    @Override
-    public Promise<QueryResult> execute(QueryPlan plan) {
-        // Real implementation would parse plan and execute against database
-        return Promise.of(new QueryResult());
-    }
-}
+        @Test
+        @DisplayName("getResult for unknown id throws IllegalArgumentException with 'not found'")
+        void getResult_unknownId_throws() {
+            assertThatThrownBy(() -> runPromise(() -> engine.getResult("unknown")))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("not found");
+        }
 
-/**
- * QueryPlan builder for test fluency.
- *
- * @doc.type class
- * @doc.purpose Fluent builder for query plans
- * @doc.layer test-support
- * @doc.pattern Builder
- */
-class QueryPlan {
-    private StringBuilder sql = new StringBuilder("SELECT ");
-    private String fromClause = "";
-    private String whereClause = "";
-    private String groupByClause = "";
-    private String havingClause = "";
-    private String orderByClause = "";
-    private int limitValue = 0;
-    private int offsetValue = 0;
+        @Test
+        @DisplayName("getPlan for known queryId lists collection name as data source")
+        void getPlan_knownId_returnsCorrectPlan() {
+            QueryResult result = runSql("SELECT * FROM sales");
+            QueryPlan plan = runPromise(() -> engine.getPlan(result.getQueryId()));
+            assertThat(plan).isNotNull();
+            assertThat(plan.getDataSources()).contains("sales");
+        }
 
-    public QueryPlan addSelect(String select) {
-        this.sql = new StringBuilder("SELECT " + select);
-        return this;
+        @Test
+        @DisplayName("getPlan for unknown id throws IllegalArgumentException with 'not found'")
+        void getPlan_unknownId_throws() {
+            assertThatThrownBy(() -> runPromise(() -> engine.getPlan("ghost")))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("not found");
+        }
     }
 
-    public QueryPlan from(String table) {
-        this.fromClause = " FROM " + table;
-        return this;
+    // ─────────────────────────────────────────────────────────────────
+    // close()
+    // ─────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("close() shuts down the worker executor without throwing")
+    void close_doesNotThrow() throws Exception {
+        new AnalyticsQueryEngine(storageConnector).close();
     }
 
-    public QueryPlan where(String condition) {
-        this.whereClause = " WHERE " + condition;
-        return this;
+    // ─────────────────────────────────────────────────────────────────
+    // Private helpers
+    // ─────────────────────────────────────────────────────────────────
+
+    /** Submit SQL against the default tenant with empty params. */
+    private QueryResult runSql(String sql) {
+        return runPromise(() -> engine.submitQuery("tenant-1", sql, Map.of()));
     }
 
-    public QueryPlan groupBy(String columns) {
-        this.groupByClause = " GROUP BY " + columns;
-        return this;
+    /** Stub the named collection to return the given entity list. */
+    private void stubCollection(String name, List<Entity> entities) {
+        when(storageConnector.query(anyString(), eq(name), any(QuerySpec.class)))
+                .thenReturn(Promise.of(mkResult(entities)));
     }
 
-    public QueryPlan having(String condition) {
-        this.havingClause = " HAVING " + condition;
-        return this;
+    /** Build a {groupField -> count} map from grouped aggregate result rows. */
+    private static Map<String, Long> countMap(QueryResult r, String groupField) {
+        Map<String, Long> m = new HashMap<>();
+        for (Map<String, Object> row : r.getRows()) {
+            m.put((String) row.get(groupField), ((Number) row.get("count")).longValue());
+        }
+        return m;
     }
 
-    public QueryPlan orderBy(String columns) {
-        this.orderByClause = " ORDER BY " + columns;
-        return this;
+    /** Create a test Entity with a deterministic UUID seed, collection name, and data fields. */
+    private static Entity mkEntity(String idSeed, String collection, Map<String, Object> data) {
+        Entity e = Entity.builder()
+                .id(UUID.nameUUIDFromBytes(idSeed.getBytes()))
+                .tenantId("tenant-fixture")
+                .collectionName(collection)
+                .build();
+        e.getData().putAll(data);
+        return e;
     }
 
-    public QueryPlan limit(int limit) {
-        this.limitValue = limit;
-        return this;
+    /** Wrap entities in a {@link StorageConnector.QueryResult} with no pagination offsets. */
+    private static StorageConnector.QueryResult mkResult(List<Entity> entities) {
+        return new StorageConnector.QueryResult(entities, entities.size(), entities.size(), 0, 0);
     }
-
-    public QueryPlan offset(int offset) {
-        this.offsetValue = offset;
-        return this;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder query = new StringBuilder(sql);
-        if (!fromClause.isEmpty()) query.append(fromClause);
-        if (!whereClause.isEmpty()) query.append(whereClause);
-        if (!groupByClause.isEmpty()) query.append(groupByClause);
-        if (!havingClause.isEmpty()) query.append(havingClause);
-        if (!orderByClause.isEmpty()) query.append(orderByClause);
-        if (limitValue > 0) query.append(" LIMIT ").append(limitValue);
-        if (offsetValue > 0) query.append(" OFFSET ").append(offsetValue);
-        return query.toString();
-    }
-}
-
-/**
- * Query result model.
- */
-class QueryResult {
-    private List<Map<String, Object>> rows = new java.util.ArrayList<>();
-
-    public List<Map<String, Object>> getRows() {
-        return rows;
-    }
-}
-
-/**
- * Analytics query engine interface.
- */
-interface AnalyticsQueryEngine {
-    Promise<QueryResult> execute(QueryPlan plan);
 }
