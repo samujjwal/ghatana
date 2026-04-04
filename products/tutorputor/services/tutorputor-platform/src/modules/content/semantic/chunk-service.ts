@@ -48,6 +48,13 @@ interface RawChunk {
   tags?: string[];
 }
 
+interface ExistingChunkRecord {
+  id: string;
+  chunkRef: string;
+  contentHash: string;
+  embeddingStatus: string;
+}
+
 // ---------------------------------------------------------------------------
 // Text utilities
 // ---------------------------------------------------------------------------
@@ -109,6 +116,17 @@ function extractText(value: unknown): string {
   return "";
 }
 
+function asStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const items = value.filter(
+    (item): item is string => typeof item === "string",
+  );
+  return items.length > 0 ? items : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -145,7 +163,7 @@ export class SemanticChunkService {
     const metaText = [
       asset.title,
       asset.domain,
-      ...(asset.tags ?? []),
+      ...(asStringArray(asset.tags) ?? []),
       asset.searchableText ?? "",
     ]
       .filter(Boolean)
@@ -161,7 +179,7 @@ export class SemanticChunkService {
         tokenCount: estimateTokens(metaText),
         contentHash: hashText(metaText),
         domain: asset.domain,
-        tags: asset.tags,
+        tags: asStringArray(asset.tags),
       });
     }
 
@@ -187,7 +205,7 @@ export class SemanticChunkService {
           tokenCount: estimateTokens(text),
           contentHash: hashText(text),
           domain: asset.domain,
-          claimRefs: block.claimRefs ?? undefined,
+          claimRefs: asStringArray(block.claimRefs),
         });
       }
     }
@@ -221,9 +239,14 @@ export class SemanticChunkService {
       where: { assetId },
     });
 
-    const existingMap = new Map<string, Record<string, unknown>>();
+    const existingMap = new Map<string, ExistingChunkRecord>();
     for (const ec of existingChunks) {
-      existingMap.set(ec.chunkRef, ec);
+      existingMap.set(ec.chunkRef, {
+        id: ec.id,
+        chunkRef: ec.chunkRef,
+        contentHash: ec.contentHash,
+        embeddingStatus: ec.embeddingStatus,
+      });
     }
 
     let chunksCreated = 0;

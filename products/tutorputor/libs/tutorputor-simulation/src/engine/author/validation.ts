@@ -286,8 +286,12 @@ function validateEntity(
         });
       }
       break;
-    case "rigidBody":
-      if (!("mass" in entity) || (entity as { mass: number }).mass <= 0) {
+    case "rigidBody": {
+      const isFixed = "fixed" in entity && (entity as { fixed: boolean }).fixed;
+      if (
+        !("mass" in entity) ||
+        (!isFixed && (entity as { mass: number }).mass <= 0)
+      ) {
         issues.push({
           path: `${path}.mass`,
           message: "Rigid body must have positive mass",
@@ -295,6 +299,7 @@ function validateEntity(
         });
       }
       break;
+    }
     case "stock":
       if (!("value" in entity)) {
         issues.push({

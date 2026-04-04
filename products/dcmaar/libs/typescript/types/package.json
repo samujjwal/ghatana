@@ -3,25 +3,25 @@
   "version": "1.0.0",
   "description": "Shared type definitions for DCMAAR framework",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.js"
     },
     "./common": {
-      "types": "./dist/common/index.d.ts",
+      "types": "./src/common/index.ts",
       "require": "./dist/common/index.js",
       "import": "./dist/common/index.js"
     },
     "./errors": {
-      "types": "./dist/errors/index.d.ts",
+      "types": "./src/errors/index.ts",
       "require": "./dist/errors/index.js",
       "import": "./dist/errors/index.js"
     },
     "./utils": {
-      "types": "./dist/utils/index.d.ts",
+      "types": "./src/utils/index.ts",
       "require": "./dist/utils/index.js",
       "import": "./dist/utils/index.js"
     }
@@ -40,7 +40,7 @@
   "author": "DCMAAR Team",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "peerDependencies": {}
 }

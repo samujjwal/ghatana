@@ -8,7 +8,6 @@
 import { Prisma } from "@tutorputor/core/db";
 import type { FastifyPluginAsync } from "fastify";
 import { ContentNeedsAnalyzer } from "./service";
-import { createContentStudioService } from "../content/studio/service";
 import { registerContentNeedsRoutes } from "./routes";
 import type { ContentNeedsModuleConfig } from "./types";
 import { createContentDriftDetector } from "./drift-detector";
@@ -18,17 +17,8 @@ import { ContentQualityMLPipeline } from "../content/quality-ml/pipeline";
 export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
   const { prisma } = fastify;
 
-  // Initialize content studio service dependency
-  const contentStudio = createContentStudioService(prisma, {
-    openaiApiKey: process.env.OPENAI_API_KEY || "",
-    model: "gpt-4",
-  });
-
   // Initialize content needs analyzer
-  const contentNeedsAnalyzer = new ContentNeedsAnalyzer(
-    prisma,
-    contentStudio as any,
-  );
+  const contentNeedsAnalyzer = new ContentNeedsAnalyzer(prisma);
   const contentDriftDetector = createContentDriftDetector(prisma);
   const qualityPipeline = new ContentQualityMLPipeline(prisma);
 
@@ -102,7 +92,10 @@ export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
       ]);
 
       const domainDistribution = domainBreakdown.reduce<Record<string, number>>(
-        (acc, row) => {
+        (
+          acc: Record<string, number>,
+          row: { domain: string; _count: { _all: number } },
+        ) => {
           acc[row.domain] = row._count._all;
           return acc;
         },
@@ -111,11 +104,17 @@ export const contentNeedsModule: FastifyPluginAsync = async (fastify) => {
 
       const bloomLevelDistribution = bloomBreakdown.reduce<
         Record<string, number>
-      >((acc, row) => {
-        const count = row._count?._all ?? 0;
-        acc[row.bloomLevel] = count;
-        return acc;
-      }, {});
+      >(
+        (
+          acc: Record<string, number>,
+          row: { bloomLevel: string; _count?: { _all?: number } },
+        ) => {
+          const count = row._count?._all ?? 0;
+          acc[row.bloomLevel] = count;
+          return acc;
+        },
+        {},
+      );
 
       return {
         analysesPerformed,

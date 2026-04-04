@@ -20,7 +20,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
 import { useApi } from '../contexts/ApiContext';
+import { mobileAtoms } from '../state/localAtoms';
 import { formatDistanceToNow } from 'date-fns';
 
 type ReflectionTab = 'insights' | 'patterns' | 'connections' | 'weekly' | 'monthly';
@@ -65,12 +67,21 @@ export default function ReflectionScreen() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ReflectionTab>('insights');
   const [refreshing, setRefreshing] = useState(false);
+  const selectedSphereId = useAtomValue(mobileAtoms.selectedSphereIdAtom);
+
+  const { data: spheres = [] } = useQuery({
+    queryKey: ['spheres'],
+    queryFn: () => apiClient.getSpheres(),
+  });
+
+  const activeSphereId = selectedSphereId ?? spheres[0]?.id;
 
   // Fetch all reflection data
   const { data: insights, isLoading: insightsLoading } = useQuery<Insight[]>({
-    queryKey: ['reflection', 'insights'],
-    queryFn: () => apiClient.search({ type: 'reflection_insights' }).then((r: any) => r.insights || []),
+    queryKey: ['reflection', 'insights', activeSphereId],
+    queryFn: async () => [],
     placeholderData: [],
+    enabled: Boolean(activeSphereId),
   });
 
   const { data: patterns, isLoading: patternsLoading } = useQuery<Pattern[]>({

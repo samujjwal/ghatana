@@ -21,19 +21,16 @@ import type {
   ModuleDifficultyHeatmap,
   UsageAnalytics,
   UsagePeriodData,
-  LearningEventInput,
   LearningEventType,
   ModuleId,
-  TenantId,
   UserId,
-  ClassroomId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 import { Prisma } from "@tutorputor/core/db";
 import type { Redis } from "ioredis";
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
-const logger = createStandaloneLogger({ component: 'AnalyticsService' });
+const logger = createStandaloneLogger({ component: "AnalyticsService" });
 
 // =============================================================================
 // Types
@@ -60,7 +57,9 @@ export function createAnalyticsService(
           userId: event.userId,
           moduleId: event.moduleId ?? null,
           eventType: event.type,
-          payload: event.payload ? (event.payload as Prisma.InputJsonValue) : Prisma.JsonNull,
+          payload: event.payload
+            ? (event.payload as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
         },
       });
@@ -92,7 +91,7 @@ export function createAnalyticsService(
           );
         } catch (err) {
           logger.warn({
-            message: 'Failed to publish learning event to Redis',
+            message: "Failed to publish learning event to Redis",
             error: err instanceof Error ? err.message : String(err),
             tenantId,
             eventType: event.type,
@@ -141,7 +140,10 @@ export function createAnalyticsService(
 
       const eventsByType: AnalyticsSummary["eventsByType"] =
         groupedEvents.reduce(
-          (acc: AnalyticsSummary["eventsByType"], group: { eventType: string; _count: { eventType: number } }) => {
+          (
+            acc: AnalyticsSummary["eventsByType"],
+            group: { eventType: string; _count: { eventType: number } },
+          ) => {
             acc[group.eventType as LearningEventType] = group._count.eventType;
             return acc;
           },
@@ -327,7 +329,10 @@ export function createAnalyticsService(
     },
 
     async getDifficultyHeatmap({ tenantId, moduleIds }) {
-      const moduleWhere: Record<string, unknown> = { tenantId, status: "PUBLISHED" };
+      const moduleWhere: Record<string, unknown> = {
+        tenantId,
+        status: "PUBLISHED",
+      };
       if (moduleIds && moduleIds.length > 0) {
         moduleWhere.id = { in: moduleIds };
       }
@@ -357,11 +362,11 @@ export function createAnalyticsService(
         const avgCompletionTime =
           completedEnrollments.length > 0
             ? completedEnrollments.reduce(
-              (sum, e) => sum + e.timeSpentSeconds,
-              0,
-            ) /
-            completedEnrollments.length /
-            60
+                (sum, e) => sum + e.timeSpentSeconds,
+                0,
+              ) /
+              completedEnrollments.length /
+              60
             : 0;
 
         const attempts = await prisma.assessmentAttempt.findMany({
@@ -395,8 +400,8 @@ export function createAnalyticsService(
           100,
           Math.round(
             failureRate * 0.4 +
-            dropOffRate * 0.3 +
-            (Math.min(avgAttempts, 5) / 5) * 30,
+              dropOffRate * 0.3 +
+              (Math.min(avgAttempts, 5) / 5) * 30,
           ),
         );
 
@@ -536,13 +541,13 @@ function calculatePredictions(
   const completionTrend =
     recentData.length > 1 && recentData[recentData.length - 1] && recentData[0]
       ? recentData[recentData.length - 1]!.completions -
-      recentData[0]!.completions
+        recentData[0]!.completions
       : 0;
 
   const avgCompletions =
     recentData.length > 0
       ? recentData.reduce((sum, d) => sum + d.completions, 0) /
-      recentData.length
+        recentData.length
       : 0;
 
   const projectedCompletions = Math.round(avgCompletions * 7);

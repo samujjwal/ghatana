@@ -60,9 +60,8 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
         type: asString(item.type),
         url: asString(item.url),
       }))
-      .filter(
-        (item): item is { name: string; type: string; url: string } =>
-          Boolean(item.name && item.type && item.url),
+      .filter((item): item is { name: string; type: string; url: string } =>
+        Boolean(item.name && item.type && item.url),
       );
     return attachments.length ? attachments : undefined;
   };
@@ -199,7 +198,9 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     const moduleIds = asStringArray(body.moduleIds) as ModuleId[];
     const maxMembers = asNumber(body.maxMembers);
     const requireApproval =
-      typeof body.requireApproval === "boolean" ? body.requireApproval : undefined;
+      typeof body.requireApproval === "boolean"
+        ? body.requireApproval
+        : undefined;
 
     try {
       if (!name || !description || !visibility) {
@@ -360,10 +361,7 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
         content,
         ...(contentFormat
           ? {
-              contentFormat: contentFormat as
-                | "markdown"
-                | "html"
-                | "plain",
+              contentFormat: contentFormat as "markdown" | "html" | "plain",
             }
           : {}),
         ...(categoryId !== undefined ? { categoryId } : {}),
@@ -420,7 +418,8 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     try {
       if (!requestId || !tutorId || !scheduledAt || !duration || !type) {
         return reply.code(400).send({
-          error: "requestId, tutorId, scheduledAt, duration, and type are required",
+          error:
+            "requestId, tutorId, scheduledAt, duration, and type are required",
         });
       }
 
@@ -460,10 +459,10 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
         ...(status !== undefined ? { status } : {}),
         ...(requestedRole !== undefined ? { role: requestedRole } : {}),
         pagination: {
-            page: asNumber(query.page) ?? 1,
-            limit: asNumber(query.limit) ?? 20,
+          page: asNumber(query.page) ?? 1,
+          limit: asNumber(query.limit) ?? 20,
         },
-        });
+      });
       return reply.send(result);
     } catch (error) {
       app.log.error(error, "Failed to list peer tutoring sessions");
@@ -493,7 +492,9 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
 
       const type = parseChatRoomType(body.type);
       if (!type) {
-        return reply.code(400).send({ error: "Valid chat room type is required" });
+        return reply
+          .code(400)
+          .send({ error: "Valid chat room type is required" });
       }
 
       const room = await chatService.getOrCreateRoom({
@@ -605,7 +606,6 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
   // ===========================================================================
 
   app.post("/follow", async (request, reply) => {
-    const tenantId = getTenantId(request) as TenantId;
     const userId = getUserId(request) as UserId;
     const { followUserId } = request.body as { followUserId: UserId };
     if (!followUserId) {
@@ -628,11 +628,7 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.delete("/follow/:followUserId", async (request, reply) => {
-    const tenantId = getTenantId(request) as TenantId;
-    const userId = getUserId(request) as UserId;
-    const { followUserId } = request.params as { followUserId: UserId };
-
+  app.delete("/follow/:followUserId", async (_request, reply) => {
     try {
       return reply.code(501).send({
         error: "Follow graph is not implemented in the current social module",
@@ -646,10 +642,7 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.get("/users/:userId/followers", async (request, reply) => {
-    const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
-
+  app.get("/users/:userId/followers", async (_request, reply) => {
     try {
       return reply.code(501).send({
         error: "Follow graph is not implemented in the current social module",
@@ -663,10 +656,7 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.get("/users/:userId/following", async (request, reply) => {
-    const tenantId = getTenantId(request) as TenantId;
-    const { userId } = request.params as { userId: UserId };
-
+  app.get("/users/:userId/following", async (_request, reply) => {
     try {
       return reply.code(501).send({
         error: "Follow graph is not implemented in the current social module",

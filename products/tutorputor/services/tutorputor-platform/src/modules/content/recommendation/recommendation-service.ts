@@ -22,6 +22,12 @@ import type {
   RelatedAssetsResponse,
 } from "../types.js";
 
+type PersistedRecommendationSource =
+  | "RULE_BASED"
+  | "SEMANTIC"
+  | "OUTCOME_AWARE"
+  | "MANUAL";
+
 // ---------------------------------------------------------------------------
 // Difficulty ordering for progression rules
 // ---------------------------------------------------------------------------
@@ -51,7 +57,10 @@ function getDifficultyRank(level: string | null | undefined): number | null {
   return DIFFICULTY_ORDER[level.toLowerCase()] ?? null;
 }
 
-function computePathwayAffinity(source: Record<string, unknown>, target: Record<string, unknown>): number {
+function computePathwayAffinity(
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+): number {
   if (
     source.conceptId &&
     target.conceptId &&
@@ -65,7 +74,10 @@ function computePathwayAffinity(source: Record<string, unknown>, target: Record<
   return 0.35;
 }
 
-function inferEdgeType(source: Record<string, unknown>, target: Record<string, unknown>): string {
+function inferEdgeType(
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+): Extract<RecommendationEdgeType, Uppercase<string>> {
   const sourceRank = getDifficultyRank(
     typeof source.difficultyLevel === "string" ? source.difficultyLevel : null,
   );
@@ -89,7 +101,9 @@ function inferEdgeType(source: Record<string, unknown>, target: Record<string, u
   return "RELATED";
 }
 
-function inferBaseWeight(edgeType: string): number {
+function inferBaseWeight(
+  edgeType: Extract<RecommendationEdgeType, Uppercase<string>>,
+): number {
   switch (edgeType) {
     case "PREREQUISITE":
       return 0.8;
@@ -257,9 +271,13 @@ export class RecommendationService {
         const feedbackScore =
           (telemetry.positiveFeedback + 1) /
           (telemetry.positiveFeedback + telemetry.negativeFeedback + 2);
+        const evaluationScore = evaluationByAsset.get(
+          candidate.id,
+        )?.overallScore;
         const quality = normalizeQualityScore(
-          evaluationByAsset.get(candidate.id)?.overallScore ??
-            candidate.qualityScore,
+          typeof evaluationScore === "number"
+            ? evaluationScore
+            : candidate.qualityScore,
         );
         const pathwayAffinity = computePathwayAffinity(sourceAsset, candidate);
 
@@ -267,7 +285,7 @@ export class RecommendationService {
           sourceAssetId: sourceAsset.id,
           targetAssetId: candidate.id,
           edgeType,
-          source: "OUTCOME_AWARE",
+          source: "OUTCOME_AWARE" as PersistedRecommendationSource,
           weight: clamp01(
             baseWeight * 0.3 +
               ctr * 0.2 +
@@ -580,8 +598,8 @@ export class RecommendationService {
   private async upsertEdge(
     sourceAssetId: string,
     targetAssetId: string,
-    edgeType: string,
-    source: string,
+    edgeType: Extract<RecommendationEdgeType, Uppercase<string>>,
+    source: PersistedRecommendationSource,
     weight: number,
     reason: string,
   ): Promise<"created" | "skipped"> {
@@ -659,7 +677,10 @@ export class RecommendationService {
     if (Array.isArray(raw.tags)) {
       asset.tags = raw.tags as string[];
     }
-    if (typeof raw.difficultyLevel === "string" && raw.difficultyLevel.length > 0) {
+    if (
+      typeof raw.difficultyLevel === "string" &&
+      raw.difficultyLevel.length > 0
+    ) {
       asset.difficultyLevel = raw.difficultyLevel;
     }
     if (typeof raw.lastEditedBy === "string" && raw.lastEditedBy.length > 0) {
@@ -674,7 +695,10 @@ export class RecommendationService {
     if (typeof raw.confidenceScore === "number") {
       asset.confidenceScore = raw.confidenceScore;
     }
-    if (typeof raw.legacyModuleId === "string" && raw.legacyModuleId.length > 0) {
+    if (
+      typeof raw.legacyModuleId === "string" &&
+      raw.legacyModuleId.length > 0
+    ) {
       asset.legacyModuleId = raw.legacyModuleId;
     }
     if (

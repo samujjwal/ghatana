@@ -13,6 +13,32 @@ import { createHash } from "crypto";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type Redis from "ioredis";
 
+interface JobTrackingRecord {
+  jobId: string;
+  fingerprint: string;
+}
+
+interface JobTrackingDelegate {
+  findFirst(args: Record<string, unknown>): Promise<JobTrackingRecord | null>;
+  create(args: Record<string, unknown>): Promise<unknown>;
+  update(args: Record<string, unknown>): Promise<JobTrackingRecord>;
+  deleteMany(args: Record<string, unknown>): Promise<{ count: number }>;
+}
+
+interface RedisLockClient {
+  set(
+    key: string,
+    value: string,
+    mode: "EX",
+    durationSeconds: number,
+    condition: "NX",
+  ): Promise<string | null>;
+}
+
+type JobTrackingPrismaClient = PrismaClient & {
+  jobTracking?: JobTrackingDelegate;
+};
+
 export interface JobFingerprint {
   jobType: string;
   experienceId: string;
@@ -31,13 +57,16 @@ export class JobDeduplicator {
   private readonly dedupWindowMs: number;
   private readonly lockTtlSeconds: number;
   private readonly redis?: Redis;
+  private readonly jobTracking?: JobTrackingDelegate;
 
   constructor(
-    private readonly prisma: PrismaClient,
+    prisma: PrismaClient,
     options: { dedupWindowMs?: number; redis?: Redis } = {},
   ) {
+    const extendedPrisma = prisma as JobTrackingPrismaClient;
     this.dedupWindowMs = options.dedupWindowMs || 24 * 60 * 60 * 1000; // 24 hours default
     this.lockTtlSeconds = Math.max(1, Math.floor(this.dedupWindowMs / 1000));
+    this.jobTracking = extendedPrisma.jobTracking;
     if (options.redis) {
       this.redis = options.redis;
     }
@@ -68,12 +97,12 @@ export class JobDeduplicator {
 
     // Fast distributed duplicate check via Redis lock.
     if (this.redis) {
-      const lockResult = await this.redis.set(
+      const lockResult = await (this.redis as unknown as RedisLockClient).set(
         lockKey,
         "1",
-        "NX",
         "EX",
         this.lockTtlSeconds,
+        "NX",
       );
       if (lockResult !== "OK") {
         return {
@@ -84,7 +113,7 @@ export class JobDeduplicator {
     }
 
     // Check in database for recent jobs with same fingerprint
-    const recentJob = await this.prisma.jobTracking.findFirst({
+    const recentJob = await this.jobTracking?.findFirst({
       where: {
         fingerprint,
         createdAt: {
@@ -120,7 +149,7 @@ export class JobDeduplicator {
     jobType: string,
     metadata: Record<string, any>,
   ): Promise<void> {
-    await this.prisma.jobTracking.create({
+    await this.jobTracking?.create({
       data: {
         jobId,
         fingerprint,
@@ -140,7 +169,7 @@ export class JobDeduplicator {
     jobId: string,
     status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED",
   ): Promise<void> {
-    const updated = await this.prisma.jobTracking.update({
+    const updated = await this.jobTracking?.update({
       where: { jobId },
       data: {
         status,
@@ -150,7 +179,10 @@ export class JobDeduplicator {
 
     // Allow retries for failed jobs by releasing the distributed lock.
     if (status === "FAILED" && this.redis) {
-      await this.redis.del(this.getRedisLockKey(updated.fingerprint));
+      const fingerprint = updated?.fingerprint;
+      if (fingerprint) {
+        await this.redis.del(this.getRedisLockKey(fingerprint));
+      }
     }
   }
 
@@ -160,7 +192,7 @@ export class JobDeduplicator {
   async cleanupOldJobs(
     olderThanMs: number = this.dedupWindowMs,
   ): Promise<number> {
-    const result = await this.prisma.jobTracking.deleteMany({
+    const result = await this.jobTracking?.deleteMany({
       where: {
         createdAt: {
           lt: new Date(Date.now() - olderThanMs),
@@ -168,7 +200,7 @@ export class JobDeduplicator {
       },
     });
 
-    return result.count;
+    return result?.count ?? 0;
   }
 
   /**

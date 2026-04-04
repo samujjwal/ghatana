@@ -256,7 +256,7 @@ export const teacherRoutes: FastifyPluginAsync = async (app) => {
    * GET /teacher/health
    * Health check endpoint
    */
-  app.get("/health", async (request, reply) => {
+  app.get("/health", async (_request, reply) => {
     try {
       const healthy = await teacherService.checkHealth();
       return reply

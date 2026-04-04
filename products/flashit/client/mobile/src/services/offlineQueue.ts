@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const QUEUE_KEY = '@flashit:offline_queue';
+const QUEUE_KEY = "@flashit:offline_queue";
 
 export interface QueuedItem {
   id: string;
-  type: 'audio' | 'image' | 'video' | 'text';
+  type: "audio" | "image" | "video" | "text";
   uri?: string;
   content?: string;
   metadata: {
@@ -15,12 +15,12 @@ export interface QueuedItem {
     retryCount: number;
     lastAttempt?: number;
   };
-  status: 'pending' | 'uploading' | 'failed' | 'completed';
+  status: "pending" | "uploading" | "failed" | "completed";
 }
 
 /**
  * Offline Queue Service
- * 
+ *
  * @doc.type service
  * @doc.purpose Manage offline capture queue with AsyncStorage
  * @doc.layer product
@@ -30,13 +30,17 @@ class OfflineQueueService {
   /**
    * Add item to offline queue
    */
-  async enqueue(item: Omit<QueuedItem, 'id' | 'status' | 'metadata'> & { metadata?: Partial<QueuedItem['metadata']> }): Promise<string> {
+  async enqueue(
+    item: Omit<QueuedItem, "id" | "status" | "metadata"> & {
+      metadata?: Partial<QueuedItem["metadata"]>;
+    },
+  ): Promise<string> {
     try {
       const id = `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const queuedItem: QueuedItem = {
         ...item,
         id,
-        status: 'pending',
+        status: "pending",
         metadata: {
           timestamp: Date.now(),
           retryCount: 0,
@@ -50,7 +54,7 @@ class OfflineQueueService {
 
       return id;
     } catch (error) {
-      console.error('Error enqueueing item:', error);
+      console.error("Error enqueueing item:", error);
       throw error;
     }
   }
@@ -63,7 +67,7 @@ class OfflineQueueService {
       const queueJson = await AsyncStorage.getItem(QUEUE_KEY);
       return queueJson ? JSON.parse(queueJson) : [];
     } catch (error) {
-      console.error('Error getting queue:', error);
+      console.error("Error getting queue:", error);
       return [];
     }
   }
@@ -73,27 +77,33 @@ class OfflineQueueService {
    */
   async getPendingItems(): Promise<QueuedItem[]> {
     const queue = await this.getQueue();
-    return queue.filter((item) => item.status === 'pending' || item.status === 'failed');
+    return queue.filter(
+      (item) => item.status === "pending" || item.status === "failed",
+    );
   }
 
   /**
    * Update item status
    */
-  async updateItemStatus(id: string, status: QueuedItem['status'], error?: string): Promise<void> {
+  async updateItemStatus(
+    id: string,
+    status: QueuedItem["status"],
+    error?: string,
+  ): Promise<void> {
     try {
       const queue = await this.getQueue();
       const index = queue.findIndex((item) => item.id === id);
-      
+
       if (index !== -1) {
         queue[index].status = status;
-        if (status === 'failed') {
+        if (status === "failed") {
           queue[index].metadata.retryCount++;
           queue[index].metadata.lastAttempt = Date.now();
         }
         await this.saveQueue(queue);
       }
     } catch (error) {
-      console.error('Error updating item status:', error);
+      console.error("Error updating item status:", error);
     }
   }
 
@@ -106,7 +116,7 @@ class OfflineQueueService {
       const filteredQueue = queue.filter((item) => item.id !== id);
       await this.saveQueue(filteredQueue);
     } catch (error) {
-      console.error('Error removing item:', error);
+      console.error("Error removing item:", error);
     }
   }
 
@@ -116,10 +126,10 @@ class OfflineQueueService {
   async clearCompleted(): Promise<void> {
     try {
       const queue = await this.getQueue();
-      const activeQueue = queue.filter((item) => item.status !== 'completed');
+      const activeQueue = queue.filter((item) => item.status !== "completed");
       await this.saveQueue(activeQueue);
     } catch (error) {
-      console.error('Error clearing completed items:', error);
+      console.error("Error clearing completed items:", error);
     }
   }
 
@@ -136,11 +146,21 @@ class OfflineQueueService {
     const queue = await this.getQueue();
     return {
       total: queue.length,
-      pending: queue.filter((item) => item.status === 'pending').length,
-      uploading: queue.filter((item) => item.status === 'uploading').length,
-      failed: queue.filter((item) => item.status === 'failed').length,
-      completed: queue.filter((item) => item.status === 'completed').length,
+      pending: queue.filter((item) => item.status === "pending").length,
+      uploading: queue.filter((item) => item.status === "uploading").length,
+      failed: queue.filter((item) => item.status === "failed").length,
+      completed: queue.filter((item) => item.status === "completed").length,
     };
+  }
+
+  async getQueueStats(): Promise<{
+    total: number;
+    pending: number;
+    uploading: number;
+    failed: number;
+    completed: number;
+  }> {
+    return this.getStats();
   }
 
   /**
@@ -150,7 +170,7 @@ class OfflineQueueService {
     try {
       await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
     } catch (error) {
-      console.error('Error saving queue:', error);
+      console.error("Error saving queue:", error);
       throw error;
     }
   }
@@ -162,7 +182,7 @@ class OfflineQueueService {
     try {
       await AsyncStorage.removeItem(QUEUE_KEY);
     } catch (error) {
-      console.error('Error clearing queue:', error);
+      console.error("Error clearing queue:", error);
     }
   }
 }

@@ -7,8 +7,10 @@
  * @doc.pattern Types
  */
 
-import type { SimulationDomain } from "@tutorputor/contracts/v1/simulation/types";
-import type { CurriculumLevel, DomainConcept } from "@tutorputor/contracts/v1/curriculum/types";
+import type {
+  CurriculumLevel,
+  DomainConcept,
+} from "@tutorputor/contracts/v1/curriculum/types";
 
 // =============================================================================
 // Loader Options

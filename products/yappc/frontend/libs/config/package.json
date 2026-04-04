@@ -14,8 +14,8 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "react": "^19.2.4",
-    "@types/react": "^19.2.10"
+    "@types/react": "^19.2.14"
   }
 }

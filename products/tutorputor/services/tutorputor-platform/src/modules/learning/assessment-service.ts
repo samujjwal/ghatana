@@ -32,20 +32,17 @@ import type { Prisma, TutorPrismaClient } from "@tutorputor/core/db";
 import { paginate, TenantAccessValidator } from "@tutorputor/core";
 
 import { aiClient } from "../../clients/ai-client";
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 import { createLearnerProfileService } from "./learner-profile-service.js";
 import { IRTCalibrationService } from "../assessment/irt/service.js";
 import { MisconceptionDatabase } from "../assessment/misconceptions/database.js";
-import {
-  MisconceptionDetector,
-  type MisconceptionSignal,
-} from "../assessment/misconceptions/detector.js";
+import { MisconceptionDetector } from "../assessment/misconceptions/detector.js";
 import {
   createSimulationAssessmentIntegration,
   scoreSimulationAssessmentResponse,
 } from "../assessment/simulation-integration/service.js";
 
-const logger = createStandaloneLogger({ component: 'AssessmentService' });
+const logger = createStandaloneLogger({ component: "AssessmentService" });
 
 // =============================================================================
 // Types
@@ -93,7 +90,7 @@ type AssessmentItemRecord = {
 // environments (dev / staging / prod) can report the correct model name in
 // AssessmentGenerationResult.  Defaults to a stable production identifier.
 const DEFAULT_GENERATOR_MODEL =
-  process.env['ASSESSMENT_MODEL_ID'] ?? 'tutorputor-assessment-v1';
+  process.env["ASSESSMENT_MODEL_ID"] ?? "tutorputor-assessment-v1";
 const MAX_GENERATED_ITEMS = 10;
 const irtService = new IRTCalibrationService();
 const misconceptionDatabase = new MisconceptionDatabase();
@@ -283,8 +280,8 @@ async function generateItems(
   const objectiveCandidates =
     args.objectiveIds.length > 0
       ? module.learningObjectives.filter((objective) =>
-        args.objectiveIds.includes(objective.id.toString()),
-      )
+          args.objectiveIds.includes(objective.id.toString()),
+        )
       : module.learningObjectives;
 
   const count = Math.min(Math.max(args.count, 1), MAX_GENERATED_ITEMS);
@@ -310,7 +307,9 @@ async function generateItems(
           moduleId: args.moduleId,
           count: simulationItemTarget,
           difficulty: targetDifficulty,
-          objectiveLabels: objectiveCandidates.map((objective) => objective.label),
+          objectiveLabels: objectiveCandidates.map(
+            (objective) => objective.label,
+          ),
         })
       : [];
 
@@ -369,7 +368,7 @@ async function generateItems(
     }
   } catch (error) {
     logger.warn({
-      message: 'AI Assessment generation failed, falling back to deterministic',
+      message: "AI Assessment generation failed, falling back to deterministic",
       error: error instanceof Error ? error.message : String(error),
       moduleId: module.id,
       difficulty: args.difficulty,
@@ -471,7 +470,9 @@ function buildDeterministicItems(params: {
   return items;
 }
 
-function mapAssessmentSummary(record: Record<string, unknown>): AssessmentSummary {
+function mapAssessmentSummary(
+  record: Record<string, unknown>,
+): AssessmentSummary {
   return {
     id: record.id as AssessmentSummary["id"],
     moduleId: record.moduleId as ModuleId,
@@ -539,9 +540,12 @@ function mapAttempt(record: AssessmentAttemptRecord): AssessmentAttempt {
       ? { scorePercent: record.scorePercent }
       : {}),
     ...(feedback ? { feedback } : {}),
-    ...(record.submittedAt ? { submittedAt: record.submittedAt.toISOString() } : {}),
+    ...(record.submittedAt
+      ? { submittedAt: record.submittedAt.toISOString() }
+      : {}),
     ...(record.gradedAt ? { gradedAt: record.gradedAt.toISOString() } : {}),
-    ...(record.timeSpentSeconds !== null && record.timeSpentSeconds !== undefined
+    ...(record.timeSpentSeconds !== null &&
+    record.timeSpentSeconds !== undefined
       ? { timeSpentSeconds: record.timeSpentSeconds }
       : {}),
   };
@@ -600,7 +604,11 @@ function buildAdaptiveItem(params: {
   difficulty: string;
   prompt: string;
   points: number;
-  choiceSeed?: Array<{ label: string; isCorrect?: boolean; rationale?: string }>;
+  choiceSeed?: Array<{
+    label: string;
+    isCorrect?: boolean;
+    rationale?: string;
+  }>;
   modelAnswer?: string;
   misconceptionTargets: Array<{
     id: string;
@@ -635,7 +643,9 @@ function buildAdaptiveItem(params: {
       ? choiceSeed.map((choice, choiceIndex) => ({
           id: `${id}-choice-${choiceIndex}`,
           label: choice.label,
-          ...(choice.isCorrect !== undefined ? { isCorrect: choice.isCorrect } : {}),
+          ...(choice.isCorrect !== undefined
+            ? { isCorrect: choice.isCorrect }
+            : {}),
           ...(choice.rationale ? { rationale: choice.rationale } : {}),
         }))
       : [
@@ -652,7 +662,8 @@ function buildAdaptiveItem(params: {
           {
             id: `${id}-choice-b`,
             label:
-              misconceptionTarget?.distractor ?? "Common but incorrect interpretation.",
+              misconceptionTarget?.distractor ??
+              "Common but incorrect interpretation.",
             ...(misconceptionTarget
               ? { rationale: misconceptionTarget.explanation }
               : {}),
@@ -795,7 +806,9 @@ function mapAssessmentDomain(moduleId: string): string {
   return "SCIENCE";
 }
 
-function parseItemMetadata(value: AssessmentItem["metadata"]): Record<string, unknown> {
+function parseItemMetadata(
+  value: AssessmentItem["metadata"],
+): Record<string, unknown> {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     return value as Record<string, unknown>;
   }
@@ -806,7 +819,8 @@ function parseIRTParameters(value: unknown) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const irt = value as Record<string, unknown>;
     return {
-      discrimination: typeof irt.discrimination === "number" ? irt.discrimination : 1,
+      discrimination:
+        typeof irt.discrimination === "number" ? irt.discrimination : 1,
       difficulty: typeof irt.difficulty === "number" ? irt.difficulty : 0,
       guessing: typeof irt.guessing === "number" ? irt.guessing : 0.2,
     };
@@ -822,7 +836,10 @@ function slugifyConceptId(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function mapThetaToDifficulty(theta: number, requested: Difficulty): Difficulty {
+function mapThetaToDifficulty(
+  theta: number,
+  requested: Difficulty,
+): Difficulty {
   if (requested === "ADVANCED" || requested === "INTRO") {
     return requested;
   }
@@ -849,9 +866,12 @@ function evaluateResponse(
   }
 
   const choices = parseChoices(item.choices) ?? [];
-  
+
   // Handle multiple choice questions
-  if (item.itemType === "multiple_choice_single" && response.type === "multiple_choice") {
+  if (
+    item.itemType === "multiple_choice_single" &&
+    response.type === "multiple_choice"
+  ) {
     const correctIds = choices
       .filter((choice) => choice.isCorrect)
       .map((choice) => choice.id);
@@ -875,7 +895,10 @@ function evaluateResponse(
 
   // Handle simulation interaction - use type assertion since we've already checked response is defined
   if (item.itemType === "simulation_interaction" && "trace" in response) {
-    const simulationResponse = response as Extract<AssessmentResponse, { type: "simulation_interaction" }>;
+    const simulationResponse = response as Extract<
+      AssessmentResponse,
+      { type: "simulation_interaction" }
+    >;
     return scoreSimulationAssessmentResponse({
       item: {
         id: item.id,
@@ -898,10 +921,6 @@ function evaluateResponse(
       comments: "Requires instructor review for qualitative scoring.",
     },
   };
-}
-
-function notFoundError(message: string): DomainError {
-  return createDomainError("ASSESSMENT_NOT_FOUND", 404, message);
 }
 
 function validationError(message: string): DomainError {

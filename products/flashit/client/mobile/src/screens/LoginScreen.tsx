@@ -31,7 +31,6 @@ export default function LoginScreen({ navigation }: Props) {
   const { apiClient } = useApi();
   const setToken = useSetAtom(mobileAtoms.authTokenAtom);
   const setCurrentUser = useSetAtom(mobileAtoms.currentUserAtom);
-  const setIsAuthenticated = useSetAtom(mobileAtoms.isAuthenticatedAtom);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -42,10 +41,9 @@ export default function LoginScreen({ navigation }: Props) {
     setLoading(true);
     try {
       const response = await apiClient.login({ email, password });
-      apiClient.setToken(response.token);
-      setToken(response.token);
+      await apiClient.setToken(response.accessToken);
+      setToken(response.accessToken);
       setCurrentUser(response.user);
-      setIsAuthenticated(true);
       // Navigation handled automatically by auth state change
     } catch (error: any) {
       console.error('Login error:', error);
@@ -65,14 +63,14 @@ export default function LoginScreen({ navigation }: Props) {
       accessible={false}
     >
       <View style={styles.content}>
-        <Text 
+        <Text
           style={styles.title}
           accessibilityRole="header"
           accessibilityLabel="Flashit"
         >
           Flashit
         </Text>
-        <Text 
+        <Text
           style={styles.subtitle}
           accessibilityLabel="Capture your moments"
         >
@@ -118,7 +116,7 @@ export default function LoginScreen({ navigation }: Props) {
             accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading ? (
-              <ActivityIndicator 
+              <ActivityIndicator
                 color="#fff"
                 accessibilityLabel="Loading, please wait"
               />

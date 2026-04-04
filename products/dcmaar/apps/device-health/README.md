@@ -44,6 +44,12 @@ npx playwright install chromium firefox msedge
 pnpm run setup:playwright
 ```
 
+To opt into browser installation during dependency install, run:
+
+```bash
+DCMAAR_INSTALL_PLAYWRIGHT=1 pnpm install
+```
+
 This only needs to be done once per system and is optional for most development workflows.
 
 ## Why This Approach?

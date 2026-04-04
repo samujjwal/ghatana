@@ -10,8 +10,6 @@ import type {
 import {
   getTenantId,
   getUserId,
-  requireOwnership,
-  requireTenantAccess,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
 

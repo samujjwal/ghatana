@@ -1,10 +1,10 @@
 /**
  * Guardian Agent Types
- * Import shared types from @ghatana/dcmaar-agent-core
+ * Import shared types from @dcmaar/agent-core
  */
 
 // ============================================================================
-// RE-EXPORTED TYPES FROM @ghatana/dcmaar-agent-core
+// RE-EXPORTED TYPES FROM @dcmaar/agent-core
 // ============================================================================
 // These types are maintained in libs/guardian-agent-core for consistency
 // across all Guardian modules.
@@ -14,20 +14,20 @@ export type {
   DeviceInfo,
   AppInfo,
   AppCategory,
-  
+
   // Usage Tracking
   UsageData,
-  
+
   // Policy Management
   Policy,
   TimeWindow,
   PolicyAction,
   BlockEvent,
-  
+
   // Sync Protocol
   SyncRequest,
   SyncResponse,
-} from '@ghatana/dcmaar-agent-core';
+} from "@dcmaar/agent-core";
 
 // ============================================================================
 // PLATFORM-SPECIFIC TYPES (iOS Screen Time API)

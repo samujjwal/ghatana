@@ -20,14 +20,38 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
+      "@tutorputor/contracts": ["./contracts/v1/index.ts"],
+      "@tutorputor/contracts/*": ["./contracts/*"],
+      "@tutorputor/core": ["./libs/tutorputor-core/src/index.ts"],
+      "@tutorputor/core/db": ["./libs/tutorputor-core/src/db/index.ts"],
+      "@tutorputor/core/*": ["./libs/tutorputor-core/src/*"],
+      "@tutorputor/simulation": ["./libs/tutorputor-simulation/src/index.ts"],
+      "@tutorputor/simulation/animator": [
+        "./libs/tutorputor-simulation/src/animator/index.ts"
+      ],
+      "@tutorputor/simulation/engine": [
+        "./libs/tutorputor-simulation/src/engine/index.ts"
+      ],
+      "@tutorputor/simulation/physics": [
+        "./libs/tutorputor-simulation/src/physics/index.ts"
+      ],
+      "@tutorputor/simulation/renderer": [
+        "./libs/tutorputor-simulation/src/renderer/index.ts"
+      ],
+      "@tutorputor/simulation/sdk": [
+        "./libs/tutorputor-simulation/src/sdk/index.ts"
+      ],
+      "@tutorputor/simulation/*": ["./libs/tutorputor-simulation/src/*"],
+      "@tutorputor/ui": ["./libs/tutorputor-ui/src/index.ts"],
+      "@tutorputor/ui/*": ["./libs/tutorputor-ui/src/*"],
+      "@tutorputor/ai": ["./libs/tutorputor-ai/src/index.ts"],
+      "@tutorputor/ai/*": ["./libs/tutorputor-ai/src/*"],
       "@tutorputor/*": ["./libs/*/src"],
-      "@tutorputor/animator": ["./libs/animator/src"],
       "@tutorputor/simulation-engine": ["./libs/simulation-engine/src"],
-      "@tutorputor/tracing": ["./libs/tracing"],
-      "@tutorputor/tutorputor-db": ["./libs/tutorputor-db/src"],
-      "@ghatana/design-system": ["../../platform/typescript/capabilities/design-system/src/index.ts"],
+      "@ghatana/design-system": [
+        "../../platform/typescript/capabilities/design-system/src/index.ts"
+      ],
       "@ghatana/theme": ["../platform/theme/src"]
     },
     "typeRoots": ["./node_modules/@types", "./types"],
@@ -46,21 +70,13 @@
   "exclude": [
     "node_modules",
     "dist",
+    "tests/e2e/**/*",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "**/node_modules"
-  ],
-  "references": [
-    { "path": "./apps/tutorputor-web" },
-    { "path": "./apps/tutorputor-admin" },
-    { "path": "./libs/animator" },
-    { "path": "./libs/simulation-engine" },
-    { "path": "./libs/tracing" },
-    { "path": "./libs/tutorputor-db" },
-    { "path": "./services/tutorputor-content" },
-    { "path": "./services/tutorputor-assessment" },
-    { "path": "./services/tutorputor-simulation" }
   ]
 }

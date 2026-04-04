@@ -37,6 +37,11 @@ import { MultimediaTest } from '../components/MultimediaTest';
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  Dashboard: undefined;
+  Moments: undefined;
+  Capture: { audioUri?: string; imageUri?: string; videoUri?: string } | undefined;
+  Spheres: undefined;
+  Settings: undefined;
   TextCapture: { audioUri?: string; imageUri?: string; videoUri?: string } | undefined;
   VoiceRecorder: undefined;
   ImageCapture: undefined;
@@ -136,49 +141,44 @@ function MainTabNavigator() {
         },
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
+      <Tab.Screen
+        name="Dashboard"
         component={DashboardScreen}
         options={{
           title: 'Home',
           tabBarAccessibilityLabel: 'View your dashboard',
-          tabBarAccessibilityHint: 'Navigate to your main dashboard',
         }}
       />
-      <Tab.Screen 
-        name="Moments" 
+      <Tab.Screen
+        name="Moments"
         component={MomentsScreen}
         options={{
           title: 'Moments',
           tabBarAccessibilityLabel: 'View your moments',
-          tabBarAccessibilityHint: 'Navigate to your captured moments',
         }}
       />
-      <Tab.Screen 
-        name="Capture" 
+      <Tab.Screen
+        name="Capture"
         component={UnifiedCaptureScreen}
         options={{
           title: 'Capture',
           tabBarAccessibilityLabel: 'Capture a new moment',
-          tabBarAccessibilityHint: 'Create a new moment with text, voice, photo, or video',
         }}
       />
-      <Tab.Screen 
-        name="Spheres" 
+      <Tab.Screen
+        name="Spheres"
         component={SpheresScreen}
         options={{
           title: 'Spheres',
           tabBarAccessibilityLabel: 'View your spheres',
-          tabBarAccessibilityHint: 'Navigate to your contextual spheres',
         }}
       />
-      <Tab.Screen 
-        name="Settings" 
+      <Tab.Screen
+        name="Settings"
         component={SettingsScreen}
         options={{
           title: 'Settings',
           tabBarAccessibilityLabel: 'View settings',
-          tabBarAccessibilityHint: 'Navigate to app settings and preferences',
         }}
       />
     </Tab.Navigator>

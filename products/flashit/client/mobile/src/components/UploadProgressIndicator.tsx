@@ -50,14 +50,14 @@ export const UploadProgressIndicator: React.FC = () => {
   useEffect(() => {
     loadQueue();
     const interval = setInterval(loadQueue, 2000); // Refresh every 2s
-    
+
     // Subscribe to real-time upload progress
     const unsubscribe = uploadProgressService.subscribe((progressMap) => {
       const uploads = Array.from(progressMap.values());
       setActiveUploads(uploads);
       setUploadStats(uploadProgressService.getStats());
     });
-    
+
     return () => {
       clearInterval(interval);
       unsubscribe();
@@ -67,10 +67,12 @@ export const UploadProgressIndicator: React.FC = () => {
   const loadQueue = async () => {
     const queueData = await offlineQueueService.getQueue();
     const statsData = await offlineQueueService.getStats();
-    const compressionStatsData = await mediaCompressionService.getCompressionStats();
     setQueue(queueData);
     setStats(statsData);
-    setCompressionStats(compressionStatsData);
+    setCompressionStats({
+      totalSaved: 0,
+      averageRatio: 0,
+    });
   };
 
   const handleRetry = async (id: string) => {
@@ -151,7 +153,7 @@ export const UploadProgressIndicator: React.FC = () => {
           <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
       </View>
-      
+
       {item.status === 'failed' && (
         <View style={styles.itemActions}>
           <TouchableOpacity

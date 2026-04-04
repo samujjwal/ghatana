@@ -7,7 +7,6 @@
 
 import type {
   TenantId,
-  UserId,
   SubscriptionId,
   PaymentMethodId,
   InvoiceId,
@@ -15,7 +14,7 @@ import type {
   SubscriptionTier,
   BillingInterval,
   SubscriptionStatus,
-} from '@tutorputor/contracts/v1/types';
+} from "@tutorputor/contracts/v1/types";
 
 /**
  * Stripe customer mapping.
@@ -58,7 +57,7 @@ export interface PaymentMethodRecord {
   id: PaymentMethodId;
   tenantId: TenantId;
   stripePaymentMethodId: string;
-  type: 'card' | 'bank_account' | 'paypal';
+  type: "card" | "bank_account" | "paypal";
   isDefault: boolean;
   lastFour?: string;
   brand?: string;
@@ -76,7 +75,7 @@ export interface InvoiceRecord {
   subscriptionId: SubscriptionId;
   stripeInvoiceId: string;
   number: string;
-  status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible';
+  status: "draft" | "open" | "paid" | "void" | "uncollectible";
   currency: string;
   subtotalCents: number;
   taxCents: number;
@@ -100,8 +99,8 @@ export interface TransactionRecord {
   paymentMethodId?: PaymentMethodId;
   stripePaymentIntentId?: string;
   stripeChargeId?: string;
-  type: 'charge' | 'refund' | 'adjustment';
-  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  type: "charge" | "refund" | "adjustment";
+  status: "pending" | "succeeded" | "failed" | "canceled";
   amountCents: number;
   currency: string;
   failureReason?: string;
@@ -140,7 +139,7 @@ export interface PlanConfig {
     maxClassrooms: number;
     maxVrSessions: number;
     analyticsRetentionDays: number;
-    supportLevel: 'community' | 'email' | 'priority' | 'dedicated';
+    supportLevel: "community" | "email" | "priority" | "dedicated";
     customBranding: boolean;
     ssoEnabled: boolean;
     apiAccess: boolean;

@@ -10,8 +10,8 @@
  * @doc.pattern Repository
  */
 
-import { database, MomentRecord } from './database';
-import { v4 as uuid } from 'uuid';
+import { database, MomentRecord } from "./database";
+import { generateUuid } from "../utils/generateUuid";
 
 /**
  * Create moment input.
@@ -20,7 +20,7 @@ export interface CreateMomentInput {
   userId: string;
   sphereId?: string;
   content?: string;
-  contentType: 'text' | 'voice' | 'image' | 'video';
+  contentType: "text" | "voice" | "image" | "video";
   emotion?: string;
   energyLevel?: number;
   tags?: string[];
@@ -41,7 +41,7 @@ export interface UpdateMomentInput {
   energyLevel?: number;
   tags?: string[];
   transcription?: string;
-  transcriptionStatus?: 'none' | 'pending' | 'completed' | 'failed';
+  transcriptionStatus?: "none" | "pending" | "completed" | "failed";
   isPrivate?: boolean;
   isPinned?: boolean;
 }
@@ -52,9 +52,9 @@ export interface UpdateMomentInput {
 export interface MomentFilterOptions {
   userId?: string;
   sphereId?: string;
-  contentType?: 'text' | 'voice' | 'image' | 'video';
+  contentType?: "text" | "voice" | "image" | "video";
   emotion?: string;
-  syncStatus?: 'synced' | 'pending' | 'error';
+  syncStatus?: "synced" | "pending" | "error";
   fromDate?: string;
   toDate?: string;
   isPinned?: boolean;
@@ -66,7 +66,7 @@ export interface MomentFilterOptions {
 /**
  * Moment with parsed JSON fields.
  */
-export interface Moment extends Omit<MomentRecord, 'tags' | 'mediaUrls'> {
+export interface Moment extends Omit<MomentRecord, "tags" | "mediaUrls"> {
   tags: string[];
   mediaUrls: string[];
 }
@@ -83,8 +83,8 @@ function rowToMoment(row: any): Moment {
     contentType: row.content_type,
     emotion: row.emotion,
     energyLevel: row.energy_level,
-    tags: JSON.parse(row.tags || '[]'),
-    mediaUrls: JSON.parse(row.media_urls || '[]'),
+    tags: JSON.parse(row.tags || "[]"),
+    mediaUrls: JSON.parse(row.media_urls || "[]"),
     transcription: row.transcription,
     transcriptionStatus: row.transcription_status,
     locationLat: row.location_lat,
@@ -110,7 +110,7 @@ class MomentRepository {
    * Create a new moment.
    */
   async create(input: CreateMomentInput): Promise<Moment> {
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
     const tags = JSON.stringify(input.tags || []);
     const mediaUrls = JSON.stringify(input.mediaUrls || []);
@@ -134,7 +134,7 @@ class MomentRepository {
         tags,
         mediaUrls,
         input.transcription || null,
-        input.transcription ? 'completed' : 'none',
+        input.transcription ? "completed" : "none",
         input.locationLat || null,
         input.locationLng || null,
         input.locationName || null,
@@ -142,14 +142,14 @@ class MomentRepository {
         0,
         now,
         now,
-        'pending',
+        "pending",
         1,
         0,
-      ]
+      ],
     );
 
     // Queue sync operation
-    await this.queueSync('create', id, input);
+    await this.queueSync("create", id, input);
 
     return this.getById(id) as Promise<Moment>;
   }
@@ -158,10 +158,9 @@ class MomentRepository {
    * Get a moment by ID.
    */
   async getById(id: string): Promise<Moment | null> {
-    const row = await database.queryOne(
-      'SELECT * FROM moments WHERE id = ?',
-      [id]
-    );
+    const row = await database.queryOne("SELECT * FROM moments WHERE id = ?", [
+      id,
+    ]);
     return row ? rowToMoment(row) : null;
   }
 
@@ -173,59 +172,59 @@ class MomentRepository {
     const params: any[] = [];
 
     if (options.userId) {
-      conditions.push('user_id = ?');
+      conditions.push("user_id = ?");
       params.push(options.userId);
     }
 
     if (options.sphereId) {
-      conditions.push('sphere_id = ?');
+      conditions.push("sphere_id = ?");
       params.push(options.sphereId);
     }
 
     if (options.contentType) {
-      conditions.push('content_type = ?');
+      conditions.push("content_type = ?");
       params.push(options.contentType);
     }
 
     if (options.emotion) {
-      conditions.push('emotion = ?');
+      conditions.push("emotion = ?");
       params.push(options.emotion);
     }
 
     if (options.syncStatus) {
-      conditions.push('sync_status = ?');
+      conditions.push("sync_status = ?");
       params.push(options.syncStatus);
     }
 
     if (options.fromDate) {
-      conditions.push('created_at >= ?');
+      conditions.push("created_at >= ?");
       params.push(options.fromDate);
     }
 
     if (options.toDate) {
-      conditions.push('created_at <= ?');
+      conditions.push("created_at <= ?");
       params.push(options.toDate);
     }
 
     if (options.isPinned !== undefined) {
-      conditions.push('is_pinned = ?');
+      conditions.push("is_pinned = ?");
       params.push(options.isPinned ? 1 : 0);
     }
 
-    let sql = 'SELECT * FROM moments';
+    let sql = "SELECT * FROM moments";
     if (conditions.length > 0) {
-      sql += ' WHERE ' + conditions.join(' AND ');
+      sql += " WHERE " + conditions.join(" AND ");
     }
 
-    sql += ' ORDER BY created_at DESC';
+    sql += " ORDER BY created_at DESC";
 
     if (options.limit) {
-      sql += ' LIMIT ?';
+      sql += " LIMIT ?";
       params.push(options.limit);
     }
 
     if (options.offset) {
-      sql += ' OFFSET ?';
+      sql += " OFFSET ?";
       params.push(options.offset);
     }
 
@@ -240,58 +239,62 @@ class MomentRepository {
     const moment = await this.getById(id);
     if (!moment) return null;
 
-    const updates: string[] = ['updated_at = ?', 'local_version = local_version + 1', 'sync_status = ?'];
-    const params: any[] = [new Date().toISOString(), 'pending'];
+    const updates: string[] = [
+      "updated_at = ?",
+      "local_version = local_version + 1",
+      "sync_status = ?",
+    ];
+    const params: any[] = [new Date().toISOString(), "pending"];
 
     if (input.content !== undefined) {
-      updates.push('content = ?');
+      updates.push("content = ?");
       params.push(input.content);
     }
 
     if (input.emotion !== undefined) {
-      updates.push('emotion = ?');
+      updates.push("emotion = ?");
       params.push(input.emotion);
     }
 
     if (input.energyLevel !== undefined) {
-      updates.push('energy_level = ?');
+      updates.push("energy_level = ?");
       params.push(input.energyLevel);
     }
 
     if (input.tags !== undefined) {
-      updates.push('tags = ?');
+      updates.push("tags = ?");
       params.push(JSON.stringify(input.tags));
     }
 
     if (input.transcription !== undefined) {
-      updates.push('transcription = ?');
+      updates.push("transcription = ?");
       params.push(input.transcription);
     }
 
     if (input.transcriptionStatus !== undefined) {
-      updates.push('transcription_status = ?');
+      updates.push("transcription_status = ?");
       params.push(input.transcriptionStatus);
     }
 
     if (input.isPrivate !== undefined) {
-      updates.push('is_private = ?');
+      updates.push("is_private = ?");
       params.push(input.isPrivate ? 1 : 0);
     }
 
     if (input.isPinned !== undefined) {
-      updates.push('is_pinned = ?');
+      updates.push("is_pinned = ?");
       params.push(input.isPinned ? 1 : 0);
     }
 
     params.push(id);
 
     await database.execute(
-      `UPDATE moments SET ${updates.join(', ')} WHERE id = ?`,
-      params
+      `UPDATE moments SET ${updates.join(", ")} WHERE id = ?`,
+      params,
     );
 
     // Queue sync operation
-    await this.queueSync('update', id, input);
+    await this.queueSync("update", id, input);
 
     return this.getById(id);
   }
@@ -303,11 +306,11 @@ class MomentRepository {
     const moment = await this.getById(id);
     if (!moment) return false;
 
-    await database.execute('DELETE FROM moments WHERE id = ?', [id]);
+    await database.execute("DELETE FROM moments WHERE id = ?", [id]);
 
     // Queue sync operation if it was synced
     if (moment.serverId) {
-      await this.queueSync('delete', id, { serverId: moment.serverId });
+      await this.queueSync("delete", id, { serverId: moment.serverId });
     }
 
     return true;
@@ -316,27 +319,32 @@ class MomentRepository {
   /**
    * Search moments using full-text search.
    */
-  async search(query: string, options: MomentFilterOptions = {}): Promise<Moment[]> {
+  async search(
+    query: string,
+    options: MomentFilterOptions = {},
+  ): Promise<Moment[]> {
     // For now, use LIKE-based search
     // TODO: Implement FTS5 for better performance
     const searchTerm = `%${query}%`;
-    const conditions: string[] = ['(content LIKE ? OR transcription LIKE ? OR tags LIKE ?)'];
+    const conditions: string[] = [
+      "(content LIKE ? OR transcription LIKE ? OR tags LIKE ?)",
+    ];
     const params: any[] = [searchTerm, searchTerm, searchTerm];
 
     if (options.userId) {
-      conditions.push('user_id = ?');
+      conditions.push("user_id = ?");
       params.push(options.userId);
     }
 
     if (options.sphereId) {
-      conditions.push('sphere_id = ?');
+      conditions.push("sphere_id = ?");
       params.push(options.sphereId);
     }
 
-    let sql = `SELECT * FROM moments WHERE ${conditions.join(' AND ')} ORDER BY created_at DESC`;
+    let sql = `SELECT * FROM moments WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC`;
 
     if (options.limit) {
-      sql += ' LIMIT ?';
+      sql += " LIMIT ?";
       params.push(options.limit);
     }
 
@@ -349,7 +357,7 @@ class MomentRepository {
    */
   async getPendingSync(): Promise<Moment[]> {
     const rows = await database.query(
-      "SELECT * FROM moments WHERE sync_status = 'pending' ORDER BY created_at"
+      "SELECT * FROM moments WHERE sync_status = 'pending' ORDER BY created_at",
     );
     return rows.map(rowToMoment);
   }
@@ -357,10 +365,14 @@ class MomentRepository {
   /**
    * Mark moment as synced.
    */
-  async markSynced(id: string, serverId: string, serverVersion: number): Promise<void> {
+  async markSynced(
+    id: string,
+    serverId: string,
+    serverVersion: number,
+  ): Promise<void> {
     await database.execute(
       `UPDATE moments SET sync_status = 'synced', server_id = ?, server_version = ?, sync_error = NULL WHERE id = ?`,
-      [serverId, serverVersion, id]
+      [serverId, serverVersion, id],
     );
   }
 
@@ -370,7 +382,7 @@ class MomentRepository {
   async markSyncError(id: string, error: string): Promise<void> {
     await database.execute(
       `UPDATE moments SET sync_status = 'error', sync_error = ? WHERE id = ?`,
-      [error, id]
+      [error, id],
     );
   }
 
@@ -379,11 +391,11 @@ class MomentRepository {
    */
   async getCountBySyncStatus(): Promise<Record<string, number>> {
     const rows = await database.query<{ sync_status: string; count: number }>(
-      'SELECT sync_status, COUNT(*) as count FROM moments GROUP BY sync_status'
+      "SELECT sync_status, COUNT(*) as count FROM moments GROUP BY sync_status",
     );
     return rows.reduce(
       (acc, row) => ({ ...acc, [row.sync_status]: row.count }),
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
   }
 
@@ -392,11 +404,11 @@ class MomentRepository {
    */
   async getCountByEmotion(): Promise<Record<string, number>> {
     const rows = await database.query<{ emotion: string; count: number }>(
-      'SELECT emotion, COUNT(*) as count FROM moments WHERE emotion IS NOT NULL GROUP BY emotion'
+      "SELECT emotion, COUNT(*) as count FROM moments WHERE emotion IS NOT NULL GROUP BY emotion",
     );
     return rows.reduce(
       (acc, row) => ({ ...acc, [row.emotion]: row.count }),
-      {} as Record<string, number>
+      {} as Record<string, number>,
     );
   }
 
@@ -418,11 +430,11 @@ class MomentRepository {
    * Queue a sync operation.
    */
   private async queueSync(
-    operationType: 'create' | 'update' | 'delete',
+    operationType: "create" | "update" | "delete",
     entityId: string,
-    payload: any
+    payload: any,
   ): Promise<void> {
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
     const idempotencyKey = `${operationType}-moment-${entityId}-${Date.now()}`;
 
@@ -434,16 +446,16 @@ class MomentRepository {
       [
         id,
         operationType,
-        'moment',
+        "moment",
         entityId,
         JSON.stringify(payload),
-        operationType === 'delete' ? 0 : 1, // Deletes have lower priority
+        operationType === "delete" ? 0 : 1, // Deletes have lower priority
         0,
         5,
         idempotencyKey,
         now,
         now,
-      ]
+      ],
     );
   }
 
@@ -452,8 +464,8 @@ class MomentRepository {
    */
   async importFromServer(serverMoment: any): Promise<Moment> {
     const existingByServerId = await database.queryOne<any>(
-      'SELECT * FROM moments WHERE server_id = ?',
-      [serverMoment.id]
+      "SELECT * FROM moments WHERE server_id = ?",
+      [serverMoment.id],
     );
 
     if (existingByServerId) {
@@ -465,7 +477,7 @@ class MomentRepository {
     }
 
     // Create new moment from server
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
 
     await database.execute(
@@ -480,21 +492,21 @@ class MomentRepository {
         serverMoment.userId,
         serverMoment.sphereId || null,
         serverMoment.content || null,
-        serverMoment.contentType || 'text',
+        serverMoment.contentType || "text",
         serverMoment.emotion || null,
         serverMoment.energyLevel || null,
         JSON.stringify(serverMoment.tags || []),
         JSON.stringify(serverMoment.mediaUrls || []),
         serverMoment.transcription || null,
-        serverMoment.transcriptionStatus || 'none',
+        serverMoment.transcriptionStatus || "none",
         serverMoment.isPrivate !== false ? 1 : 0,
         serverMoment.createdAt || now,
         serverMoment.updatedAt || now,
         serverMoment.id,
-        'synced',
+        "synced",
         1,
         serverMoment.version || 1,
-      ]
+      ],
     );
 
     return this.getById(id) as Promise<Moment>;
@@ -503,7 +515,10 @@ class MomentRepository {
   /**
    * Update moment from server data.
    */
-  private async updateFromServer(localId: string, serverMoment: any): Promise<void> {
+  private async updateFromServer(
+    localId: string,
+    serverMoment: any,
+  ): Promise<void> {
     await database.execute(
       `UPDATE moments SET
         content = ?, emotion = ?, energy_level = ?, tags = ?,
@@ -516,12 +531,12 @@ class MomentRepository {
         serverMoment.energyLevel || null,
         JSON.stringify(serverMoment.tags || []),
         serverMoment.transcription || null,
-        serverMoment.transcriptionStatus || 'none',
+        serverMoment.transcriptionStatus || "none",
         serverMoment.isPrivate !== false ? 1 : 0,
         serverMoment.updatedAt || new Date().toISOString(),
         serverMoment.version || 1,
         localId,
-      ]
+      ],
     );
   }
 }

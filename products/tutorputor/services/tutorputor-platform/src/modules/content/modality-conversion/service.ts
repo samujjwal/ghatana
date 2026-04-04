@@ -10,7 +10,12 @@
  */
 
 type AnimationManifest = {
-  keyframes?: Array<Record<string, unknown>>;
+  keyframes?: Array<{
+    narration?: string;
+    timeMs?: number;
+    entities?: Record<string, unknown>;
+    pause?: boolean;
+  }>;
   playback?: Record<string, unknown>;
   accessibility?: Record<string, unknown>;
   durationMs?: number;
@@ -38,8 +43,21 @@ type SimulationManifest = {
   blockId?: string;
   canvas?: Record<string, unknown>;
   playback?: Record<string, unknown>;
-  initialEntities: Array<{ id: string | number; type: string; [key: string]: unknown }>;
-  steps: Array<{ id: string; actions: unknown[]; [key: string]: unknown }>;
+  initialEntities: Array<{
+    id: string | number;
+    type: string;
+    [key: string]: unknown;
+  }>;
+  steps: Array<{
+    id: string;
+    title?: string;
+    description?: string;
+    narration?: string;
+    checkpoint?: boolean;
+    actions: unknown[];
+    annotations?: Array<{ text?: string }>;
+    [key: string]: unknown;
+  }>;
   accessibility?: Record<string, unknown>;
   safety?: Record<string, unknown>;
   replay?: Record<string, unknown>;
@@ -103,6 +121,16 @@ export interface ConversionResult {
   };
 }
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
 export class ModalityConversionService {
   constructor(private readonly readService: ContentAssetReadService) {}
 
@@ -154,7 +182,10 @@ export class ModalityConversionService {
     targetModality: ContentModality,
   ): Promise<ConversionResult> {
     const detail = await this.requireAssetDetail(tenantId, assetId);
-    const sourceModalities = inferSourceModalities(detail.manifests, detail.blocks);
+    const sourceModalities = inferSourceModalities(
+      detail.manifests,
+      detail.blocks,
+    );
     const manifestTypes = getManifestTypes(detail.manifests);
 
     switch (targetModality) {
@@ -165,7 +196,11 @@ export class ModalityConversionService {
       case "audio":
         return this.convertToAudio(detail, sourceModalities, manifestTypes);
       case "simulation":
-        return this.convertToSimulation(detail, sourceModalities, manifestTypes);
+        return this.convertToSimulation(
+          detail,
+          sourceModalities,
+          manifestTypes,
+        );
     }
   }
 
@@ -178,7 +213,9 @@ export class ModalityConversionService {
   }
 
   private convertToText(
-    detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+    detail: Awaited<
+      ReturnType<ContentAssetReadService["getAssetDetail"]>
+    > extends infer T
       ? NonNullable<T>
       : never,
     sourceModalities: ContentModality[],
@@ -194,7 +231,10 @@ export class ModalityConversionService {
             step.narration ??
             step.description ??
             `Step ${index + 1}: ${detail.asset.title}`,
-          cues: step.annotations?.map((annotation) => annotation.text) ?? [],
+          cues:
+            step.annotations
+              ?.map((annotation) => asString(annotation.text))
+              .filter(Boolean) ?? [],
         }))
       : detail.blocks.map((block, index) => ({
           blockRef: block.blockRef,
@@ -209,16 +249,16 @@ export class ModalityConversionService {
       "text",
       manifestTypes,
       blocks,
-      simulationManifest
-        ? "simulation-to-text"
-        : "canonical-block-text",
+      simulationManifest ? "simulation-to-text" : "canonical-block-text",
       `Text-first conversion for ${detail.asset.title}`,
       simulationManifest,
     );
   }
 
   private convertToVisual(
-    detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+    detail: Awaited<
+      ReturnType<ContentAssetReadService["getAssetDetail"]>
+    > extends infer T
       ? NonNullable<T>
       : never,
     sourceModalities: ContentModality[],
@@ -234,7 +274,7 @@ export class ModalityConversionService {
             keyframe.narration ??
             `Visualize the state change at ${keyframe.timeMs}ms.`,
           cues: [
-            `entities:${Object.keys(keyframe.entities).length}`,
+            `entities:${Object.keys(keyframe.entities ?? {}).length}`,
             `pause:${String(Boolean(keyframe.pause))}`,
           ],
         }))
@@ -246,8 +286,9 @@ export class ModalityConversionService {
             blockRef: block.blockRef,
             title: block.title ?? `Visual panel ${index + 1}`,
             content: keepFirstSentences(text, 2),
-            cues: keySentences.map((sentence, sentenceIndex) =>
-              `panel-${sentenceIndex + 1}:${sentence}`,
+            cues: keySentences.map(
+              (sentence, sentenceIndex) =>
+                `panel-${sentenceIndex + 1}:${sentence}`,
             ),
           };
         });
@@ -258,15 +299,15 @@ export class ModalityConversionService {
       "visual",
       manifestTypes,
       blocks,
-      animationManifest
-        ? "animation-storyboard"
-        : "text-to-visual-storyboard",
+      animationManifest ? "animation-storyboard" : "text-to-visual-storyboard",
       `Visual storyboard conversion for ${detail.asset.title}`,
     );
   }
 
   private convertToAudio(
-    detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+    detail: Awaited<
+      ReturnType<ContentAssetReadService["getAssetDetail"]>
+    > extends infer T
       ? NonNullable<T>
       : never,
     sourceModalities: ContentModality[],
@@ -293,9 +334,15 @@ export class ModalityConversionService {
         blockRef: "narration-fallback",
         title: "Narration",
         content:
-          ((animationManifest.accessibility as Record<string, unknown> | undefined)?.altText as string | undefined) ??
+          ((
+            animationManifest.accessibility as
+              | Record<string, unknown>
+              | undefined
+          )?.altText as string | undefined) ??
           `Guided narration for ${detail.asset.title}.`,
-        cues: [`duration_hint:${Math.ceil((animationManifest.durationMs ?? 60000) / 1000)}s`],
+        cues: [
+          `duration_hint:${Math.ceil((animationManifest.durationMs ?? 60000) / 1000)}s`,
+        ],
       });
     }
 
@@ -311,7 +358,9 @@ export class ModalityConversionService {
   }
 
   private convertToSimulation(
-    detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+    detail: Awaited<
+      ReturnType<ContentAssetReadService["getAssetDetail"]>
+    > extends infer T
       ? NonNullable<T>
       : never,
     sourceModalities: ContentModality[],
@@ -323,12 +372,26 @@ export class ModalityConversionService {
 
     const simulation = {
       manifest: simulationManifest,
-      inferredDifficulty: String(inferDifficulty(simulationManifest as unknown as Parameters<typeof inferDifficulty>[0])),
+      inferredDifficulty: String(
+        inferDifficulty(
+          simulationManifest as unknown as Parameters<
+            typeof inferDifficulty
+          >[0],
+        ),
+      ),
       estimatedTimeMinutes: Math.max(
         1,
-        Math.ceil(estimateCompletionTime(simulationManifest as unknown as Parameters<typeof estimateCompletionTime>[0]) / 60),
+        Math.ceil(
+          estimateCompletionTime(
+            simulationManifest as unknown as Parameters<
+              typeof estimateCompletionTime
+            >[0],
+          ) / 60,
+        ),
       ),
-      skillNames: inferSkills(simulationManifest as unknown as Parameters<typeof inferSkills>[0]).map((skill) => skill.name),
+      skillNames: inferSkills(
+        simulationManifest as unknown as Parameters<typeof inferSkills>[0],
+      ).map((skill) => skill.name),
     };
 
     const blocks = simulationManifest.steps.map((step, index) => ({
@@ -360,7 +423,9 @@ export class ModalityConversionService {
   }
 
   private buildResult(
-    detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+    detail: Awaited<
+      ReturnType<ContentAssetReadService["getAssetDetail"]>
+    > extends infer T
       ? NonNullable<T>
       : never,
     sourceModalities: ContentModality[],
@@ -423,7 +488,13 @@ function inferSourceModalities(
     }
   }
 
-  if (blocks.some((block) => typeof (block as { payload?: { narration?: unknown } }).payload?.narration === "string")) {
+  if (
+    blocks.some(
+      (block) =>
+        typeof (block as { payload?: { narration?: unknown } }).payload
+          ?.narration === "string",
+    )
+  ) {
     modalities.add("audio");
   }
 
@@ -434,14 +505,14 @@ function findSimulationManifest(
   manifests: ArtifactManifest[],
 ): SimulationManifest | undefined {
   const manifest = manifests.find((item) => item.manifestType === "simulation");
-  return manifest?.manifest as SimulationManifest | undefined;
+  return asRecord(manifest?.manifest) as SimulationManifest | undefined;
 }
 
 function findAnimationManifest(
   manifests: ArtifactManifest[],
 ): AnimationManifest | undefined {
   const manifest = manifests.find((item) => item.manifestType === "animation");
-  return manifest?.manifest as AnimationManifest | undefined;
+  return asRecord(manifest?.manifest) as AnimationManifest | undefined;
 }
 
 function ensureSimulationManifest(
@@ -459,22 +530,33 @@ function ensureSimulationManifest(
       assetId: simulationManifest.blockId ?? simulationManifest.id,
       manifestType: "simulation",
       manifest: simulationManifest,
-      ...(simulationManifest.createdAt ? { createdAt: simulationManifest.createdAt } : {}),
-      ...(simulationManifest.updatedAt ? { updatedAt: simulationManifest.updatedAt } : {}),
+      ...(simulationManifest.createdAt
+        ? { createdAt: simulationManifest.createdAt }
+        : {}),
+      ...(simulationManifest.updatedAt
+        ? { updatedAt: simulationManifest.updatedAt }
+        : {}),
     },
   ];
 }
 
 function buildDerivedSimulationManifest(
-  detail: Awaited<ReturnType<ContentAssetReadService["getAssetDetail"]>> extends infer T
+  detail: Awaited<
+    ReturnType<ContentAssetReadService["getAssetDetail"]>
+  > extends infer T
     ? NonNullable<T>
     : never,
 ): SimulationManifest {
   const now = new Date().toISOString();
   const domain = mapAssetDomainToSimulationDomain(detail.asset.domain);
-  const entityId = `${detail.asset.id}-entity` as SimulationManifest["initialEntities"][number]["id"];
+  const entityId =
+    `${detail.asset.id}-entity` as SimulationManifest["initialEntities"][number]["id"];
   const initialEntity = createSeedEntity(domain, entityId, detail.asset.title);
-  const text = detail.blocks.map((block) => extractBlockText((block as { payload: unknown }).payload)).join(" ");
+  const text = detail.blocks
+    .map((block) =>
+      extractBlockText(asRecord((block as { payload: unknown }).payload) ?? {}),
+    )
+    .join(" ");
   const steps = splitIntoSentences(text).slice(0, 4);
 
   return {
@@ -512,7 +594,7 @@ function buildDerivedSimulationManifest(
     },
     initialEntities: [initialEntity],
     steps: (steps.length > 0 ? steps : [`Explore ${detail.asset.title}.`]).map(
-    (sentence, index) => ({
+      (sentence, index) => ({
         id: `${detail.asset.id}-step-${index + 1}` as SimulationManifest["steps"][number]["id"],
         orderIndex: index,
         title: `Step ${index + 1}`,
@@ -591,7 +673,7 @@ function createSeedEntity(
   domain: SimulationDomain,
   entityId: SimulationManifest["initialEntities"][number]["id"],
   title: string,
-): Record<string, unknown> {
+): SimulationManifest["initialEntities"][number] {
   switch (domain) {
     case "BIOLOGY":
       return {

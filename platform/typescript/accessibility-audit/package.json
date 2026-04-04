@@ -34,14 +34,14 @@
   },
   "dependencies": {
     "@axe-core/react": "^4.11.1",
-    "axe-core": "^4.11.1"
+    "axe-core": "^4.11.2"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": "^19.2.4",

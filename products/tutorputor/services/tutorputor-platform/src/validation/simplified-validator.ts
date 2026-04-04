@@ -647,11 +647,14 @@ export function createValidationMiddleware<T>(
       const userAgentHeader = request.headers["user-agent"];
       const userAgent =
         typeof userAgentHeader === "string" ? userAgentHeader : undefined;
+      const requestUser = request.user as
+        | { id?: string; tenantId?: string }
+        | undefined;
       const context: ValidationContext = {
         requestId: request.id,
         ipAddress: request.ip,
-        ...(request.user?.id ? { userId: request.user.id } : {}),
-        ...(request.user?.tenantId ? { tenantId: request.user.tenantId } : {}),
+        ...(requestUser?.id ? { userId: requestUser.id } : {}),
+        ...(requestUser?.tenantId ? { tenantId: requestUser.tenantId } : {}),
         ...(userAgent ? { userAgent } : {}),
       };
 

@@ -1,6 +1,6 @@
 /**
  * System Dynamics Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute economics and system dynamics simulations
  * @doc.layer product
@@ -11,7 +11,7 @@ import type {
   SystemDynamicsKernel as ISystemDynamicsKernel,
   SimulationRunRequest,
   SimulationRunResult,
-  EconomicsConfig
+  EconomicsConfig,
 } from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
@@ -20,7 +20,7 @@ import type {
   SimEntityId,
   EconStockEntity,
   EconFlowEntity,
-  EconAgentEntity
+  EconAgentEntity,
 } from "@tutorputor/contracts/v1/simulation";
 
 /**
@@ -61,13 +61,15 @@ interface ChartData {
 
 /**
  * Create the system dynamics kernel.
- * 
+ *
  * @doc.type function
  * @doc.purpose Factory function for system dynamics kernel
  * @doc.layer product
  * @doc.pattern Factory
  */
-export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDynamicsKernel {
+export function createSystemDynamicsKernel(
+  _config?: EconomicsConfig,
+): ISystemDynamicsKernel {
   return {
     domain: "ECONOMICS",
 
@@ -81,7 +83,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
 
     async runWithIntegration(
       request: SimulationRunRequest,
-      method: "euler" | "rk4"
+      method: "euler" | "rk4",
     ): Promise<SimulationRunResult> {
       const startTime = Date.now();
       const { manifest, samplingRate = 10 } = request;
@@ -92,7 +94,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not ECONOMICS"]
+          errors: ["Manifest domain is not SYSTEM_DYNAMICS"],
         };
       }
 
@@ -101,11 +103,18 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
       let simulationDuration = 100;
       let integrationMethod = method;
 
-      if (manifest.domainMetadata && "economics" in manifest.domainMetadata) {
-        const economics = manifest.domainMetadata.economics;
-        timeStep = economics.timeStep || timeStep;
-        simulationDuration = economics.simulationDuration || simulationDuration;
-        integrationMethod = economics.integrationMethod || integrationMethod;
+      if (
+        manifest.domainMetadata &&
+        "systemDynamics" in manifest.domainMetadata
+      ) {
+        const systemDynamics = (manifest.domainMetadata as Record<string, any>)[
+          "systemDynamics"
+        ] as any;
+        timeStep = systemDynamics.timeStep || timeStep;
+        simulationDuration =
+          systemDynamics.simulationDuration || simulationDuration;
+        integrationMethod =
+          systemDynamics.integrationMethod || integrationMethod;
       }
 
       // Initialize state
@@ -124,9 +133,13 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
           stocks.set(entity.id, {
             id: entity.id,
             value: stock.value,
-            ...(stock.minValue !== undefined ? { minValue: stock.minValue } : {}),
-            ...(stock.maxValue !== undefined ? { maxValue: stock.maxValue } : {}),
-            history: [stock.value]
+            ...(stock.minValue !== undefined
+              ? { minValue: stock.minValue }
+              : {}),
+            ...(stock.maxValue !== undefined
+              ? { maxValue: stock.maxValue }
+              : {}),
+            history: [stock.value],
           });
         } else if (entity.type === "flow") {
           const flow = entity as EconFlowEntity;
@@ -137,7 +150,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
             rate: flow.rate,
             ...(flow.equation !== undefined ? { equation: flow.equation } : {}),
             ...(flow.delay !== undefined ? { delay: flow.delay } : {}),
-            delayBuffer: []
+            delayBuffer: [],
           });
         } else if (entity.type === "agent") {
           agents.set(entity.id, entity as EconAgentEntity);
@@ -153,11 +166,13 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
         timestamp: 0,
         entities: Array.from(entities.values()),
         annotations: [],
-        charts: []
+        charts: [],
       });
 
       // Process simulation steps
-      const stepsToProcess = manifest.steps.sort((a, b) => a.orderIndex - b.orderIndex);
+      const stepsToProcess = manifest.steps.sort(
+        (a, b) => a.orderIndex - b.orderIndex,
+      );
       let currentTime = 0;
 
       for (let stepIndex = 0; stepIndex < stepsToProcess.length; stepIndex++) {
@@ -170,7 +185,10 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
         }
 
         // Simulate system dynamics for this step
-        const stepsPerFrame = Math.max(1, Math.floor(simulationDuration / samplingRate / stepsToProcess.length));
+        const stepsPerFrame = Math.max(
+          1,
+          Math.floor(simulationDuration / samplingRate / stepsToProcess.length),
+        );
 
         for (let t = 0; t < stepsPerFrame; t++) {
           // Calculate flows and update stocks
@@ -194,12 +212,14 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
           // Generate keyframe
           if (t % Math.ceil(stepsPerFrame / 5) === 0) {
             // Update chart data
-            const chartSnapshots = charts.map(chart => {
+            const chartSnapshots = charts.map((chart) => {
               const data: Array<{ x: number; y: number; label?: string }> = [];
               for (const sourceId of chart.dataSourceIds) {
                 const stock = stocks.get(sourceId);
                 if (stock) {
-                  const label = (entities.get(sourceId) as EconStockEntity | undefined)?.label;
+                  const label = (
+                    entities.get(sourceId) as EconStockEntity | undefined
+                  )?.label;
                   data.push({
                     x: currentTime,
                     y: stock.value,
@@ -213,13 +233,17 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
             keyframes.push({
               stepIndex,
               timestamp: currentTime * 1000, // Convert to ms
-              entities: Array.from(entities.values()).map(e => ({ ...e })),
-              annotations: step.narration ? [{
-                id: `annotation_${stepIndex}`,
-                text: step.narration,
-                position: { x: 400, y: 30 }
-              }] : [],
-              charts: chartSnapshots
+              entities: Array.from(entities.values()).map((e) => ({ ...e })),
+              annotations: step.narration
+                ? [
+                    {
+                      id: `annotation_${stepIndex}`,
+                      text: step.narration,
+                      position: { x: 400, y: 30 },
+                    },
+                  ]
+                : [],
+              charts: chartSnapshots,
             });
           }
         }
@@ -230,7 +254,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        ...(warnings.length > 0 ? { warnings } : {})
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
 
@@ -253,27 +277,31 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
 
         // Sum all stock values
         const firstTotal = first.entities
-          .filter(e => e.type === "stock")
+          .filter((e) => e.type === "stock")
           .reduce((sum, e) => sum + ((e as EconStockEntity).value || 0), 0);
 
         const lastTotal = last.entities
-          .filter(e => e.type === "stock")
+          .filter((e) => e.type === "stock")
           .reduce((sum, e) => sum + ((e as EconStockEntity).value || 0), 0);
 
         // Check for external flows to determine if conservation applies
-        const hasExternalFlows = first.entities.some(e => {
+        const hasExternalFlows = first.entities.some((e) => {
           if (e.type !== "flow") return false;
           const flow = e as EconFlowEntity;
-          return flow.sourceId === ("external" as SimEntityId) ||
-            flow.targetId === ("external" as SimEntityId);
+          return (
+            flow.sourceId === ("external" as SimEntityId) ||
+            flow.targetId === ("external" as SimEntityId)
+          );
         });
 
         if (!hasExternalFlows) {
-          const deviation = Math.abs(lastTotal - firstTotal) / Math.max(firstTotal, 1);
-          if (deviation > 0.01) { // 1% tolerance
+          const deviation =
+            Math.abs(lastTotal - firstTotal) / Math.max(firstTotal, 1);
+          if (deviation > 0.01) {
+            // 1% tolerance
             violations.push({
               law: "mass_conservation",
-              deviation
+              deviation,
             });
           }
         }
@@ -281,7 +309,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
 
       return {
         valid: violations.length === 0,
-        violations
+        violations,
       };
     },
 
@@ -293,11 +321,11 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
       return JSON.stringify({});
     },
 
-    deserialize(state: string): void {
+    deserialize(_state: string): void {
       // No-op for stateless execution
     },
 
-    initialize(manifest: SimulationManifest): void {
+    initialize(_manifest: SimulationManifest): void {
       // No-op
     },
 
@@ -305,7 +333,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
       // No-op
     },
 
-    interpolate(t: number): Partial<SimKeyframe> {
+    interpolate(_t: number): Partial<SimKeyframe> {
       return {};
     },
 
@@ -315,7 +343,7 @@ export function createSystemDynamicsKernel(config?: EconomicsConfig): ISystemDyn
 
     getAnalytics(): Record<string, unknown> {
       return {};
-    }
+    },
   };
 }
 
@@ -328,7 +356,7 @@ function applyEconomicsAction(
   flows: Map<SimEntityId, FlowState>,
   agents: Map<SimEntityId, EconAgentEntity>,
   entities: Map<SimEntityId, SimEntity>,
-  charts: ChartData[]
+  charts: ChartData[],
 ): void {
   switch (action.action) {
     case "SET_STOCK_VALUE": {
@@ -363,7 +391,7 @@ function applyEconomicsAction(
         dataSourceIds: action.dataSourceIds as SimEntityId[],
         title: (action.title as string) || "Chart",
         position: action.position as ChartData["position"],
-        data: []
+        data: [],
       });
       break;
     }
@@ -378,7 +406,7 @@ function applyEconomicsAction(
           value: stock.value,
           ...(stock.minValue !== undefined ? { minValue: stock.minValue } : {}),
           ...(stock.maxValue !== undefined ? { maxValue: stock.maxValue } : {}),
-          history: [stock.value]
+          history: [stock.value],
         });
       } else if (entity.type === "flow") {
         const flow = entity as EconFlowEntity;
@@ -389,7 +417,7 @@ function applyEconomicsAction(
           rate: flow.rate,
           ...(flow.equation !== undefined ? { equation: flow.equation } : {}),
           ...(flow.delay !== undefined ? { delay: flow.delay } : {}),
-          delayBuffer: []
+          delayBuffer: [],
         });
       }
       break;
@@ -412,7 +440,7 @@ function applyEconomicsAction(
 function integrateEuler(
   stocks: Map<SimEntityId, StockState>,
   flows: Map<SimEntityId, FlowState>,
-  dt: number
+  dt: number,
 ): void {
   // Calculate net flow for each stock
   const netFlows = new Map<SimEntityId, number>();
@@ -472,7 +500,7 @@ function integrateEuler(
 function integrateRK4(
   stocks: Map<SimEntityId, StockState>,
   flows: Map<SimEntityId, FlowState>,
-  dt: number
+  dt: number,
 ): void {
   // Store original values
   const originalValues = new Map<SimEntityId, number>();
@@ -485,13 +513,13 @@ function integrateRK4(
 
   // Calculate k2 at midpoint
   for (const [id, stock] of stocks) {
-    stock.value = originalValues.get(id)! + (k1.get(id) || 0) * dt / 2;
+    stock.value = originalValues.get(id)! + ((k1.get(id) || 0) * dt) / 2;
   }
   const k2 = calculateDerivatives(stocks, flows, dt);
 
   // Calculate k3 at midpoint
   for (const [id, stock] of stocks) {
-    stock.value = originalValues.get(id)! + (k2.get(id) || 0) * dt / 2;
+    stock.value = originalValues.get(id)! + ((k2.get(id) || 0) * dt) / 2;
   }
   const k3 = calculateDerivatives(stocks, flows, dt);
 
@@ -528,7 +556,7 @@ function integrateRK4(
 function calculateDerivatives(
   stocks: Map<SimEntityId, StockState>,
   flows: Map<SimEntityId, FlowState>,
-  dt: number
+  dt: number,
 ): Map<SimEntityId, number> {
   const derivatives = new Map<SimEntityId, number>();
 
@@ -563,7 +591,7 @@ function calculateDerivatives(
 function evaluateFlowEquation(
   equation: string,
   stocks: Map<SimEntityId, StockState>,
-  dt: number
+  dt: number,
 ): number {
   // Simple equation parser - replace stock names with values
   let expr = equation;

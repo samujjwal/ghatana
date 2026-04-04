@@ -13,8 +13,9 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { getConfig } from "../config/config.js";
-import "./types.js";
 import { authGatewayClient } from "../clients/auth-gateway.client.js";
+
+type AuthenticatedRequest = FastifyRequest & { authContext?: AuthContext };
 
 export interface User {
   id: string;
@@ -63,6 +64,7 @@ export interface DecodedJWT {
   tenantId: string;
   roles: string[];
   permissions: Array<{ resource: string; action: string }>;
+  type: "access" | "refresh";
   iat: number;
   exp: number;
   iss: string;
@@ -379,7 +381,7 @@ export class AuthMiddleware {
       };
 
       // Add auth context to request
-      request.authContext = authContext;
+      (request as AuthenticatedRequest).authContext = authContext;
 
       return authContext;
     } catch (localError) {
@@ -402,7 +404,7 @@ export class AuthMiddleware {
               permissions: [],
               tenantId: platformUser.tenantId,
             };
-            request.authContext = authContext;
+            (request as AuthenticatedRequest).authContext = authContext;
             return authContext;
           }
         } catch {
@@ -420,7 +422,7 @@ export class AuthMiddleware {
    */
   authorize(resource: string, action: string) {
     return async (request: FastifyRequest, reply: FastifyReply) => {
-      const authContext = request.authContext;
+      const authContext = (request as AuthenticatedRequest).authContext;
 
       if (!authContext) {
         reply.code(401).send({ error: "Authentication required" });
@@ -446,7 +448,7 @@ export class AuthMiddleware {
    */
   requireTenantAccess() {
     return async (request: FastifyRequest, reply: FastifyReply) => {
-      const authContext = request.authContext;
+      const authContext = (request as AuthenticatedRequest).authContext;
 
       if (!authContext) {
         reply.code(401).send({ error: "Authentication required" });
@@ -478,11 +480,13 @@ export class AuthMiddleware {
       roles: decoded.roles
         .map((roleId: string) => this.rbacManager.getRole(roleId)!)
         .filter(Boolean),
-      permissions: decoded.permissions.map((perm: { resource: string; action: string }) => ({
-        id: `${perm.resource}.${perm.action}`,
-        resource: perm.resource,
-        action: perm.action,
-      })),
+      permissions: decoded.permissions.map(
+        (perm: { resource: string; action: string }) => ({
+          id: `${perm.resource}.${perm.action}`,
+          resource: perm.resource,
+          action: perm.action,
+        }),
+      ),
       isActive: true,
     };
   }
@@ -546,7 +550,7 @@ export class AuthService {
    */
   private async validateCredentials(
     email: string,
-    password: string,
+    _password: string,
     tenantId: string,
   ): Promise<User | null> {
     // This would integrate with your user service/database

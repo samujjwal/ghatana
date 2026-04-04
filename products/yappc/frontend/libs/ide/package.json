@@ -27,24 +27,24 @@
     "@yappc/code-editor": "workspace:*",
     "@yappc/collab": "workspace:*",
     "@yappc/core": "workspace:*",
-    "jotai": "^2.17.0",
+    "jotai": "^2.19.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "@yappc/canvas": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
-    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.2.0",
-    "@types/react": "^19.2.10",
+    "@types/node": "^25.5.2",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": "^19.2.4",

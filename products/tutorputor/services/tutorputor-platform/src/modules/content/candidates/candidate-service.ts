@@ -11,7 +11,35 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, type PrismaClient } from "@tutorputor/core/db";
+
+type PersistedRegenerationTrigger =
+  | "POOR_DISCOVERY_PERFORMANCE"
+  | "POOR_LEARNING_OUTCOMES"
+  | "MISCONCEPTION_PATTERN"
+  | "STALE_CURRICULUM"
+  | "SAFETY_CONCERN"
+  | "LOW_EVALUATION_SCORE"
+  | "MANUAL_FLAGGED";
+type PersistedRiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+function toPersistedTrigger(trigger: string): PersistedRegenerationTrigger {
+  const normalized = trigger.toUpperCase().replace(/-/g, "_");
+  if (normalized === "POOR_ENGAGEMENT") {
+    return "POOR_DISCOVERY_PERFORMANCE";
+  }
+  return normalized as PersistedRegenerationTrigger;
+}
+
+function toPersistedSeverity(severity: string): PersistedRiskLevel {
+  return severity.toUpperCase() as PersistedRiskLevel;
+}
+
+function toInputJsonValue(
+  value: Record<string, unknown>,
+): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
 
 interface RegenerationCandidate {
   id: string;
@@ -68,8 +96,12 @@ function mapCandidate(row: Record<string, unknown>): RegenerationCandidate {
     ...(typeof row.generationRequestId === "string"
       ? { generationRequestId: row.generationRequestId }
       : {}),
-    ...(typeof row.resolvedBy === "string" ? { resolvedBy: row.resolvedBy } : {}),
-    ...(row.resolvedAt ? { resolvedAt: (row.resolvedAt as Date).toISOString() } : {}),
+    ...(typeof row.resolvedBy === "string"
+      ? { resolvedBy: row.resolvedBy }
+      : {}),
+    ...(row.resolvedAt
+      ? { resolvedAt: (row.resolvedAt as Date).toISOString() }
+      : {}),
     createdAt: (row.createdAt as Date).toISOString(),
     updatedAt: (row.updatedAt as Date).toISOString(),
   };
@@ -94,10 +126,12 @@ export class RegenerationCandidateService {
         tenantId,
         assetId: input.assetId,
         assetType: input.assetType ?? null,
-        trigger: input.trigger.toUpperCase().replace(/-/g, "_"),
-        severity: (input.severity ?? "medium").toUpperCase(),
+        trigger: toPersistedTrigger(input.trigger),
+        severity: toPersistedSeverity(input.severity ?? "medium"),
         reason: input.reason,
-        evidence: input.evidence ?? null,
+        evidence: input.evidence
+          ? toInputJsonValue(input.evidence)
+          : Prisma.JsonNull,
         priority: input.priority ?? 50,
         status: "OPEN",
       },
@@ -115,8 +149,7 @@ export class RegenerationCandidateService {
   ): Promise<RegenerationCandidate[]> {
     const where: Record<string, unknown> = { tenantId, status: "OPEN" };
     if (filter?.assetId) where.assetId = filter.assetId;
-    if (filter?.trigger)
-      where.trigger = filter.trigger.toUpperCase().replace(/-/g, "_");
+    if (filter?.trigger) where.trigger = toPersistedTrigger(filter.trigger);
 
     const rows = await this.prisma.regenerationCandidate.findMany({
       where,
@@ -134,11 +167,9 @@ export class RegenerationCandidateService {
     candidateId: string,
     resolvedBy: string,
   ): Promise<RegenerationCandidate> {
-    const existing = await this.prisma.regenerationCandidate.findFirst(
-      {
-        where: { id: candidateId, tenantId },
-      },
-    );
+    const existing = await this.prisma.regenerationCandidate.findFirst({
+      where: { id: candidateId, tenantId },
+    });
 
     if (!existing) {
       throw new Error(`Regeneration candidate ${candidateId} not found`);
@@ -164,11 +195,9 @@ export class RegenerationCandidateService {
     candidateId: string,
     generationRequestId: string,
   ): Promise<RegenerationCandidate> {
-    const existing = await this.prisma.regenerationCandidate.findFirst(
-      {
-        where: { id: candidateId, tenantId },
-      },
-    );
+    const existing = await this.prisma.regenerationCandidate.findFirst({
+      where: { id: candidateId, tenantId },
+    });
 
     if (!existing) {
       throw new Error(`Regeneration candidate ${candidateId} not found`);
@@ -208,13 +237,11 @@ export class RegenerationCandidateService {
       if (!event.assetId) continue;
 
       // Skip if already has an open candidate for this trigger
-      const existing = await (
-        this.prisma
-      ).regenerationCandidate.findFirst({
+      const existing = await this.prisma.regenerationCandidate.findFirst({
         where: {
           tenantId,
           assetId: event.assetId,
-          trigger: "POOR_ENGAGEMENT",
+          trigger: toPersistedTrigger("poor_discovery_performance"),
           status: { in: ["OPEN", "QUEUED"] },
         },
       });

@@ -29,6 +29,14 @@ import {
 type GenerationRequestConfig = Record<string, unknown>;
 import { GenerationQueueDispatcher } from "./queue-dispatcher.js";
 
+type RedisPubSubClient = Redis & {
+  removeAllListeners(event?: string): void;
+  unsubscribe(channel: string): Promise<unknown>;
+  disconnect(): void;
+  on(event: string, listener: (...args: unknown[]) => void): unknown;
+  subscribe(channel: string): Promise<unknown>;
+};
+
 // =============================================================================
 // Register
 // =============================================================================
@@ -38,7 +46,10 @@ export function registerGenerationRoutes(
   deps: { prisma: PrismaClient; redis?: Redis },
 ): void {
   const service = new GenerationPlannerService(deps.prisma, deps.redis);
-  const executionService = new GenerationExecutionService(deps.prisma, deps.redis);
+  const executionService = new GenerationExecutionService(
+    deps.prisma,
+    deps.redis,
+  );
   const dispatcher = new GenerationQueueDispatcher(deps.prisma);
 
   const adminGuard = roleGuard(["admin", "content_creator", "superadmin"]);
@@ -68,8 +79,7 @@ export function registerGenerationRoutes(
         conceptId,
         targetGrades,
         requestConfig,
-      } =
-        request.body;
+      } = request.body;
 
       if (!title || !domain) {
         return reply
@@ -205,7 +215,8 @@ export function registerGenerationRoutes(
         return;
       }
 
-      const subscriber = deps.redis!.duplicate();
+      const subscriber = ((deps.redis as Redis & { duplicate?: () => Redis }).duplicate?.() ??
+        deps.redis) as RedisPubSubClient;
       const channel = getGenerationExecutionChannel(requestId);
       const heartbeat = setInterval(() => {
         writeSseEvent(reply.raw, "heartbeat", {
@@ -225,7 +236,8 @@ export function registerGenerationRoutes(
         void cleanup();
       });
 
-      subscriber.on("message", async (_channel: string, rawMessage: string) => {
+      subscriber.on("message", async (...args: unknown[]) => {
+        const rawMessage = typeof args[1] === "string" ? args[1] : "";
         const message = JSON.parse(
           rawMessage,
         ) as GenerationExecutionStreamMessage;
@@ -327,11 +339,11 @@ export function registerGenerationRoutes(
       const { requestId } = request.params;
 
       try {
-        await executionService.startExecution(
+        await executionService.startExecution(tenantId, requestId);
+        const dispatch = await dispatcher.dispatchReadyJobs(
           tenantId,
           requestId,
         );
-        const dispatch = await dispatcher.dispatchReadyJobs(tenantId, requestId);
         const updated = await service.getRequest(tenantId, requestId);
         return reply.send({
           request: updated,

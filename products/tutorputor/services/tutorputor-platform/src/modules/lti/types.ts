@@ -5,15 +5,7 @@
  * @doc.pattern Types
  */
 
-import type {
-  TenantId,
-  UserId,
-  ModuleId,
-  LtiPlatformId,
-  LtiContextId,
-  LtiResourceLinkId,
-  LtiRole,
-} from '@tutorputor/contracts/v1/types';
+import type { TenantId, LtiPlatformId } from "@tutorputor/contracts/v1/types";
 
 /**
  * LTI Platform database record.
@@ -147,34 +139,36 @@ export interface LtiIdTokenClaims {
   nonce: string;
 
   // LTI 1.3 required claims
-  'https://purl.imsglobal.org/spec/lti/claim/message_type': 'LtiResourceLinkRequest' | 'LtiDeepLinkingRequest';
-  'https://purl.imsglobal.org/spec/lti/claim/version': '1.3.0';
-  'https://purl.imsglobal.org/spec/lti/claim/deployment_id': string;
-  'https://purl.imsglobal.org/spec/lti/claim/target_link_uri': string;
-  'https://purl.imsglobal.org/spec/lti/claim/resource_link': {
+  "https://purl.imsglobal.org/spec/lti/claim/message_type":
+    | "LtiResourceLinkRequest"
+    | "LtiDeepLinkingRequest";
+  "https://purl.imsglobal.org/spec/lti/claim/version": "1.3.0";
+  "https://purl.imsglobal.org/spec/lti/claim/deployment_id": string;
+  "https://purl.imsglobal.org/spec/lti/claim/target_link_uri": string;
+  "https://purl.imsglobal.org/spec/lti/claim/resource_link": {
     id: string;
     title?: string;
     description?: string;
   };
 
   // Optional claims
-  'https://purl.imsglobal.org/spec/lti/claim/roles'?: string[];
-  'https://purl.imsglobal.org/spec/lti/claim/context'?: {
+  "https://purl.imsglobal.org/spec/lti/claim/roles"?: string[];
+  "https://purl.imsglobal.org/spec/lti/claim/context"?: {
     id: string;
     type?: string[];
     label?: string;
     title?: string;
   };
-  'https://purl.imsglobal.org/spec/lti/claim/custom'?: Record<string, string>;
-  'https://purl.imsglobal.org/spec/lti/claim/launch_presentation'?: {
-    document_target?: 'frame' | 'iframe' | 'window';
+  "https://purl.imsglobal.org/spec/lti/claim/custom"?: Record<string, string>;
+  "https://purl.imsglobal.org/spec/lti/claim/launch_presentation"?: {
+    document_target?: "frame" | "iframe" | "window";
     width?: number;
     height?: number;
     return_url?: string;
   };
 
   // Deep linking specific
-  'https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings'?: {
+  "https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings"?: {
     deep_link_return_url: string;
     accept_types: string[];
     accept_presentation_document_targets: string[];
@@ -184,14 +178,14 @@ export interface LtiIdTokenClaims {
   };
 
   // AGS (Assignment and Grade Services)
-  'https://purl.imsglobal.org/spec/lti-ags/claim/endpoint'?: {
+  "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint"?: {
     scope: string[];
     lineitems?: string;
     lineitem?: string;
   };
 
   // NRPS (Names and Role Provisioning Services)
-  'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice'?: {
+  "https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice"?: {
     context_memberships_url: string;
     service_versions: string[];
   };
@@ -257,7 +251,7 @@ export interface NrpsMembersResponse {
   members: Array<{
     user_id: string;
     roles: string[];
-    status: 'Active' | 'Inactive' | 'Deleted';
+    status: "Active" | "Inactive" | "Deleted";
     name?: string;
     email?: string;
     given_name?: string;
@@ -272,7 +266,7 @@ export interface NrpsMembersResponse {
  */
 export interface LtiAccessToken {
   access_token: string;
-  token_type: 'Bearer';
+  token_type: "Bearer";
   expires_in: number;
   scope: string;
 }

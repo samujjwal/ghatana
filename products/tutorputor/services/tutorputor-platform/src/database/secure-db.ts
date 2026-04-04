@@ -53,7 +53,6 @@ export class SecureDatabaseManager {
     averageQueryTime: 0,
     activeConnections: 0,
   };
-  private queryTimes: number[] = [];
 
   constructor(config?: DatabaseConfig) {
     const dbConfig = getConfig();
@@ -343,7 +342,6 @@ export class SecureDatabaseManager {
  * Database connection pool manager
  */
 export class DatabaseConnectionPool {
-  private static instance: SecureDatabaseManager;
   private static readonly instances = new Map<string, SecureDatabaseManager>();
 
   /**

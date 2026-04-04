@@ -207,7 +207,8 @@ export const VideoRecorderScreen: React.FC = () => {
 
       // Get file size
       const fileInfo = await FileSystem.getInfoAsync(destUri);
-      const fileSizeMB = fileInfo.size ? (fileInfo.size / (1024 * 1024)).toFixed(2) : '0';
+      const fileSize = 'size' in fileInfo && typeof fileInfo.size === 'number' ? fileInfo.size : 0;
+      const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
 
       Alert.alert(
         'Video Saved',
@@ -253,8 +254,8 @@ export const VideoRecorderScreen: React.FC = () => {
           <Text style={styles.permissionText}>
             Camera and microphone permissions are required to record video.
           </Text>
-          <TouchableOpacity 
-            style={styles.permissionButton} 
+          <TouchableOpacity
+            style={styles.permissionButton}
             onPress={requestPermissions}
             accessible={true}
             accessibilityRole="button"
@@ -271,7 +272,7 @@ export const VideoRecorderScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleGoBack}
           accessible={true}
           accessibilityRole="button"
@@ -280,8 +281,8 @@ export const VideoRecorderScreen: React.FC = () => {
           <Text style={styles.headerButton}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Video Recorder</Text>
-        <TouchableOpacity 
-          onPress={flipCamera} 
+        <TouchableOpacity
+          onPress={flipCamera}
           disabled={recordingState.isRecording}
           accessible={true}
           accessibilityRole="button"

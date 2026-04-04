@@ -11,7 +11,6 @@
 
 import type {
   DomainConcept,
-  CurriculumLevel,
   ChemistryJSONStructure,
   RawConceptJSON,
 } from "@tutorputor/contracts/v1/curriculum/types";
@@ -36,7 +35,10 @@ export function parseChemistryJSON(json: unknown): DomainConcept[] {
 
   const concepts: DomainConcept[] = [];
 
-  for (const [levelName, levelData] of Object.entries(data.levels) as [string, { concepts: RawConceptJSON[] }][]) {
+  for (const [levelName, levelData] of Object.entries(data.levels) as [
+    string,
+    { concepts: RawConceptJSON[] },
+  ][]) {
     if (!levelData.concepts || !Array.isArray(levelData.concepts)) {
       continue;
     }
@@ -49,7 +51,7 @@ export function parseChemistryJSON(json: unknown): DomainConcept[] {
         concepts.push(concept);
       } catch (error) {
         console.warn(
-          `Failed to parse chemistry concept ${rawConcept.id}: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to parse chemistry concept ${rawConcept.id}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }

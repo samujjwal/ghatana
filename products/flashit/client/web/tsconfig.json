@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     /* Bundler mode */
@@ -16,6 +12,12 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "typeRoots": [
+      "../../types",
+      "../../../node_modules/@types",
+      "../../../../node_modules/@types"
+    ],
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
@@ -24,17 +26,14 @@
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@ghatana/flashit-shared": [
-        "../../libs/ts/shared/src/index.ts"
-      ]
+      "@/*": ["./src/*"],
+      "@ghatana/flashit-shared": ["../../libs/ts/shared/src/index.ts"]
     }
   },
-  "include": [
-    "src"
-  ],
+  "typeAcquisition": {
+    "enable": false
+  },
+  "include": ["src"],
   "references": [
     {
       "path": "./tsconfig.node.json"

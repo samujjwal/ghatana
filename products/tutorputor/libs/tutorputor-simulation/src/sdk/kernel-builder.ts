@@ -11,10 +11,9 @@ import type {
   SimulationManifest,
   SimEntityBase,
   SimKernelService,
-  SimKeyframe,
   SimulationDomain,
 } from "@tutorputor/contracts/v1/simulation";
-import { BaseKernel, type KernelHooks, type KernelState } from "./base-kernel";
+import { BaseKernel, type KernelHooks } from "./base-kernel";
 
 /**
  * Step executor function type.

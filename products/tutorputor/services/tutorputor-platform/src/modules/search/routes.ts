@@ -7,9 +7,22 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { SearchServiceImpl } from "./service";
-import type { TenantId, ModuleId } from "@tutorputor/contracts";
+import type { TenantId } from "@tutorputor/contracts";
+import type { ModuleId } from "@tutorputor/contracts";
 import type { SearchFilters } from "./service";
 import { getTenantId } from "../../core/http/requestContext.js";
+
+const SEARCH_TYPES = [
+  "module",
+  "thread",
+  "learning_path",
+  "classroom",
+] as const;
+type SearchType = NonNullable<SearchFilters["type"]>[number];
+
+function isSearchType(value: string): value is SearchType {
+  return (SEARCH_TYPES as readonly string[]).includes(value);
+}
 
 export const searchRoutes: FastifyPluginAsync = async (app) => {
   const searchService = new SearchServiceImpl(app.prisma);
@@ -51,7 +64,7 @@ export const searchRoutes: FastifyPluginAsync = async (app) => {
 
     const filters: SearchFilters = {};
     if (type) {
-      filters.type = type.split(",") as string[];
+      filters.type = type.split(",").filter(isSearchType);
     }
     if (category) {
       filters.category = category.split(",");

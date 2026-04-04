@@ -78,8 +78,12 @@ function mapEvent(row: Record<string, unknown>): ExplorerEvent {
     ...(typeof row.assetType === "string" ? { assetType: row.assetType } : {}),
     ...(typeof row.position === "number" ? { position: row.position } : {}),
     ...(typeof row.score === "number" ? { score: row.score } : {}),
-    ...(typeof row.feedbackLabel === "string" ? { feedbackLabel: row.feedbackLabel } : {}),
-    ...(typeof row.feedbackScore === "number" ? { feedbackScore: row.feedbackScore } : {}),
+    ...(typeof row.feedbackLabel === "string"
+      ? { feedbackLabel: row.feedbackLabel }
+      : {}),
+    ...(typeof row.feedbackScore === "number"
+      ? { feedbackScore: row.feedbackScore }
+      : {}),
     ...(row.metadata && typeof row.metadata === "object"
       ? { metadata: row.metadata as Record<string, unknown> }
       : {}),
@@ -110,7 +114,14 @@ export class TelemetryService {
         tenantId,
         userId: input.userId ?? null,
         sessionId: input.sessionId ?? null,
-        eventType: input.eventType.toUpperCase().replace(/-/g, "_") as "IMPRESSION" | "CLICK" | "QUERY_REFORMULATION" | "ASSET_START" | "ASSET_COMPLETE" | "NEXT_STEP_SELECT" | "RANKING_FEEDBACK",
+        eventType: input.eventType.toUpperCase().replace(/-/g, "_") as
+          | "IMPRESSION"
+          | "CLICK"
+          | "QUERY_REFORMULATION"
+          | "ASSET_START"
+          | "ASSET_COMPLETE"
+          | "NEXT_STEP_SELECT"
+          | "RANKING_FEEDBACK",
         query: input.query ?? null,
         assetId: input.assetId ?? null,
         assetType: input.assetType ?? null,
@@ -118,7 +129,10 @@ export class TelemetryService {
         score: input.score ?? null,
         feedbackLabel: input.feedbackLabel ?? null,
         feedbackScore: input.feedbackScore ?? null,
-        metadata: input.metadata != null ? (input.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+        metadata:
+          input.metadata != null
+            ? (input.metadata as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         occurredAt: input.occurredAt ? new Date(input.occurredAt) : new Date(),
       },
     });
@@ -144,7 +158,14 @@ export class TelemetryService {
       tenantId,
       userId: evt.userId ?? null,
       sessionId: evt.sessionId ?? null,
-      eventType: evt.eventType.toUpperCase().replace(/-/g, "_") as "IMPRESSION" | "CLICK" | "QUERY_REFORMULATION" | "ASSET_START" | "ASSET_COMPLETE" | "NEXT_STEP_SELECT" | "RANKING_FEEDBACK",
+      eventType: evt.eventType.toUpperCase().replace(/-/g, "_") as
+        | "IMPRESSION"
+        | "CLICK"
+        | "QUERY_REFORMULATION"
+        | "ASSET_START"
+        | "ASSET_COMPLETE"
+        | "NEXT_STEP_SELECT"
+        | "RANKING_FEEDBACK",
       query: evt.query ?? null,
       assetId: evt.assetId ?? null,
       assetType: evt.assetType ?? null,
@@ -152,7 +173,10 @@ export class TelemetryService {
       score: evt.score ?? null,
       feedbackLabel: evt.feedbackLabel ?? null,
       feedbackScore: evt.feedbackScore ?? null,
-      metadata: evt.metadata != null ? (evt.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+      metadata:
+        evt.metadata != null
+          ? (evt.metadata as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       occurredAt: evt.occurredAt ? new Date(evt.occurredAt) : new Date(),
     }));
 
@@ -165,7 +189,9 @@ export class TelemetryService {
       tenantId,
       input.events
         .map((evt) => evt.assetId)
-        .filter((assetId: unknown): assetId is string => typeof assetId === "string"),
+        .filter(
+          (assetId: unknown): assetId is string => typeof assetId === "string",
+        ),
       input.events.map((evt) => evt.eventType),
     );
     await this.applyLearnerFeedbackSignals(tenantId, input.events);
@@ -244,7 +270,13 @@ export class TelemetryService {
     const assets = (await this.prisma.contentAsset.findMany({
       where: {
         tenantId,
-        id: { in: actionable.map((event) => event.assetId) },
+        id: {
+          in: actionable
+            .map((event) => event.assetId)
+            .filter(
+              (assetId): assetId is string => typeof assetId === "string",
+            ),
+        },
       },
       select: {
         id: true,

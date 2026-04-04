@@ -27,8 +27,8 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "typedoc": "^0.28.16",
-    "typescript": "^5.9.3"
+    "typedoc": "^0.28.18",
+    "typescript": "^6.0.2"
   },
   "keywords": [
     "ghatana",

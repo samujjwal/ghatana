@@ -10,15 +10,7 @@
  * @doc.pattern IntegrationTest
  */
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  afterAll,
-  vi,
-  beforeEach,
-} from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import type {
   SimulationManifest,
   SimulationDomain,
@@ -27,7 +19,21 @@ import type {
   SimulationId,
   SimEntityId,
 } from "@tutorputor/contracts/v1/simulation/types";
-import { createSimulationAuthorService } from "../src/service";
+import { createSimulationAuthorService } from "../service";
+
+// Module-level reference so vi.mock factory can capture it by closure
+let mockGenerate: ReturnType<typeof vi.fn>;
+
+vi.mock("../ai-providers", () => ({
+  createMultiProviderAIService: () => ({
+    generate: (...args: unknown[]) => mockGenerate(...args),
+    checkHealth: vi.fn().mockResolvedValue(true),
+    generateStream: vi.fn(),
+    getAvailableProviders: vi.fn().mockReturnValue(["test-provider"]),
+    getDefaultProvider: vi.fn().mockReturnValue("test-provider"),
+    getModels: vi.fn().mockResolvedValue([]),
+  }),
+}));
 
 describe("SimAuthorService", () => {
   let service: any;
@@ -35,6 +41,11 @@ describe("SimAuthorService", () => {
   let mockAIProvider: any;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Reset the generate mock each test so mockAIProvider.complete is fresh
+    mockGenerate = vi.fn();
+
     // Mock Prisma client
     mockPrisma = {
       simulationManifest: {
@@ -44,28 +55,29 @@ describe("SimAuthorService", () => {
       },
     };
 
-    // Mock AI provider
+    // mockAIProvider.complete is the same vi.fn as mockGenerate,
+    // so tests can call mockAIProvider.complete.mockResolvedValue(...)
     mockAIProvider = {
-      complete: vi.fn(),
+      complete: mockGenerate,
       chat: vi.fn(),
     };
 
-    // Create service with test configuration
+    // Create service with test configuration (provider field not needed
+    // because createMultiProviderAIService is fully mocked above)
     service = createSimulationAuthorService(mockPrisma, {
       providers: [
         {
           name: "test-provider",
           config: {
+            provider: "openai" as const,
             apiKey: "test-key",
             model: "gpt-4",
-            maxTokens: 2000,
-            temperature: 0.3,
           },
           isDefault: true,
         },
       ],
       maxRetries: 3,
-      cacheEnabled: false, // Disable for testing
+      cacheEnabled: false,
     });
   });
 
@@ -123,10 +135,11 @@ describe("SimAuthorService", () => {
           steps: [
             {
               id: "step-1",
+              orderIndex: 0,
               timestamp: 0,
               actions: [
                 {
-                  type: "APPLY_FORCE",
+                  action: "APPLY_FORCE",
                   entityId: "bob" as SimEntityId,
                   force: { x: 0, y: 9.8 },
                 },
@@ -269,7 +282,11 @@ describe("SimAuthorService", () => {
         providers: [
           {
             name: "test-provider",
-            config: { apiKey: "test-key", model: "gpt-4" },
+            config: {
+              provider: "openai" as const,
+              apiKey: "test-key",
+              model: "gpt-4",
+            },
             isDefault: true,
           },
         ],

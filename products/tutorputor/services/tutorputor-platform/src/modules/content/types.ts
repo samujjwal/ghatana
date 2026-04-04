@@ -341,24 +341,34 @@ export type RecommendationEdgeType =
   | "FOLLOW_UP"
   | "RELATED"
   | "ALTERNATIVE"
-  | "DEEPENING"
-  | "PROGRESSION";
+  | "DEEPER_DIVE"
+  | "prerequisite"
+  | "follow_up"
+  | "related"
+  | "alternative"
+  | "deeper_dive";
 
 export type RecommendationSource =
+  | "RULE_BASED"
+  | "SEMANTIC"
+  | "OUTCOME_AWARE"
+  | "MANUAL"
   | "rule_based"
-  | "feedback_boosted"
+  | "semantic"
   | "outcome_aware"
   | "manual";
 
 export interface RecommendationEdge {
   id: string;
-  tenantId: string;
+  tenantId?: string;
   sourceAssetId: string;
   targetAssetId: string;
   edgeType: RecommendationEdgeType;
   source: RecommendationSource;
   weight: number;
-  pathwayAffinity: number;
+  pathwayAffinity?: number;
+  confidence?: number;
+  reason?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -366,16 +376,20 @@ export interface RecommendationEdge {
 
 export interface NextStepSuggestion {
   asset: ContentAsset;
-  edgeType: RecommendationEdgeType;
-  weight: number;
-  pathwayAffinity: number;
+  edge: RecommendationEdge;
+  edgeType?: RecommendationEdgeType;
+  weight?: number;
+  pathwayAffinity?: number;
   reason: string;
 }
 
 export interface RelatedAssetsResponse {
-  assetId: string;
+  assetId?: string;
+  prerequisites: NextStepSuggestion[];
+  followUps: NextStepSuggestion[];
   related: NextStepSuggestion[];
-  total: number;
+  alternatives: NextStepSuggestion[];
+  total?: number;
 }
 
 // ============================================================================
@@ -443,6 +457,11 @@ export interface RemediationPolicyWeights {
   drift: number;
   experiments: number;
   recommendations: number;
+}
+
+export interface RemediationPolicyBlend {
+  empiricalWeight: number;
+  causalWeight: number;
 }
 
 export interface RemediationPolicyBreakdown {
@@ -535,7 +554,7 @@ export interface TenantRemediationPolicyProfile {
     weights: RemediationPolicyWeights;
     observedLift: RemediationPolicyWeights;
   };
-  policyBlend: RemediationPolicyWeights;
+  policyBlend: RemediationPolicyBlend;
   recommendedFocus: string;
 }
 
@@ -569,8 +588,7 @@ export interface TenantRemediationPortfolio {
   experiences: TenantRemediationPortfolioExperience[];
 }
 
-export interface TenantPortfolioRemediationIntervention
-  extends RemediationIntervention {
+export interface TenantPortfolioRemediationIntervention extends RemediationIntervention {
   experienceId: string;
   title?: string;
   priorityScore: number;
@@ -604,7 +622,8 @@ export interface TenantRemediationPortfolioExecution {
 export interface SimulationTemplateWithManifest {
   id: string;
   tenantId: string;
-  name: string;
+  name?: string;
+  title?: string;
   description?: string;
   domain: string;
   audience?: string;
@@ -612,7 +631,7 @@ export interface SimulationTemplateWithManifest {
   license?: string;
   status: string;
   parameters?: Record<string, unknown>;
-  manifest?: ArtifactManifest;
+  manifest?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }

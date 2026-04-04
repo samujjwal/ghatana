@@ -303,7 +303,7 @@ export abstract class BaseKernel<
   /**
    * Interpolate entities. Override for custom interpolation.
    */
-  protected interpolateEntities(t: number): SimEntityBase[] {
+  protected interpolateEntities(_t: number): SimEntityBase[] {
     // Default: no interpolation, just return current state
     return this.state.entities.map((e) => ({ ...e }));
   }

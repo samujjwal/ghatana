@@ -25,11 +25,12 @@ import type {
   ExplanationOptions,
   SimulationHint,
   SimulationFeedbackConfig,
-  SimulationResponse,
-  SimulationGradingResult,
-  createSimulationItemId,
 } from "@tutorputor/contracts/v1/assessments";
-import type { SimulationManifest, SimulationDomain, SimEntityId } from "@tutorputor/contracts/v1/simulation";
+import type {
+  SimulationManifest,
+  SimulationDomain,
+  SimEntityId,
+} from "@tutorputor/contracts/v1/simulation";
 import type { LearningObjective } from "@tutorputor/contracts/v1/types";
 
 // =============================================================================
@@ -58,20 +59,32 @@ export interface SimulationItemValidationResult {
  * Validate a simulation assessment item.
  */
 export function validateSimulationItem(
-  item: SimulationAssessmentItem
+  item: SimulationAssessmentItem,
 ): SimulationItemValidationResult {
   const errors: SimulationItemValidationError[] = [];
   const warnings: SimulationItemValidationError[] = [];
 
   // Required fields
   if (!item.id) {
-    errors.push({ field: "id", message: "Item ID is required", severity: "error" });
+    errors.push({
+      field: "id",
+      message: "Item ID is required",
+      severity: "error",
+    });
   }
   if (!item.prompt || item.prompt.trim().length === 0) {
-    errors.push({ field: "prompt", message: "Prompt is required", severity: "error" });
+    errors.push({
+      field: "prompt",
+      message: "Prompt is required",
+      severity: "error",
+    });
   }
   if (item.points <= 0) {
-    errors.push({ field: "points", message: "Points must be positive", severity: "error" });
+    errors.push({
+      field: "points",
+      message: "Points must be positive",
+      severity: "error",
+    });
   }
   if (!item.simulationRef?.manifestId) {
     errors.push({
@@ -112,7 +125,8 @@ export function validateSimulationItem(
       if (!item.explanationOptions?.rubricCriteria?.length) {
         warnings.push({
           field: "explanationOptions.rubricCriteria",
-          message: "Explanation mode should have rubric criteria for consistent grading",
+          message:
+            "Explanation mode should have rubric criteria for consistent grading",
           severity: "warning",
         });
       }
@@ -120,19 +134,28 @@ export function validateSimulationItem(
   }
 
   // Grading strategy validation
-  if (item.gradingStrategy.method === "kernel_replay" && !item.gradingStrategy.kernelReplayConfig) {
-    warnings.push({
-      field: "gradingStrategy.kernelReplayConfig",
-      message: "Kernel replay method should have configuration",
-      severity: "warning",
-    });
-  }
-  if (item.gradingStrategy.method === "rubric" && !item.gradingStrategy.rubricConfig) {
-    errors.push({
-      field: "gradingStrategy.rubricConfig",
-      message: "Rubric method requires rubric configuration",
-      severity: "error",
-    });
+  if (item.gradingStrategy) {
+    if (
+      item.gradingStrategy.method === "kernel_replay" &&
+      !item.gradingStrategy.kernelReplayConfig
+    ) {
+      warnings.push({
+        field: "gradingStrategy.kernelReplayConfig",
+        message: "Kernel replay method should have configuration",
+        severity: "warning",
+      });
+    }
+    if (
+      item.gradingStrategy.method === "rubric" &&
+      !item.gradingStrategy.rubricConfig &&
+      item.mode !== "explanation"
+    ) {
+      errors.push({
+        field: "gradingStrategy.rubricConfig",
+        message: "Rubric method requires rubric configuration",
+        severity: "error",
+      });
+    }
   }
 
   // Hints validation
@@ -300,10 +323,12 @@ export class SimulationItemBuilder {
    * Build the simulation item.
    */
   build(): SimulationAssessmentItem {
-    const validation = validateSimulationItem(this.item as SimulationAssessmentItem);
+    const validation = validateSimulationItem(
+      this.item as SimulationAssessmentItem,
+    );
     if (!validation.valid) {
       throw new Error(
-        `Invalid simulation item: ${validation.errors.map((e) => e.message).join(", ")}`
+        `Invalid simulation item: ${validation.errors.map((e) => e.message).join(", ")}`,
       );
     }
     return this.item as SimulationAssessmentItem;
@@ -352,11 +377,11 @@ export function createPredictionItem(params: {
       kernelReplayConfig: {
         tolerances: params.targetVariables.reduce(
           (acc, v) => ({ ...acc, [v.variableId]: v.tolerance }),
-          {}
+          {},
         ),
         metricWeights: params.targetVariables.reduce(
           (acc, v) => ({ ...acc, [v.variableId]: 1.0 }),
-          {}
+          {},
         ),
       },
     })
@@ -490,7 +515,7 @@ export function createExplanationItem(params: {
  */
 export function inferSimulationItemFromManifest(
   manifest: SimulationManifest,
-  mode: SimulationItemMode = "manipulation"
+  mode: SimulationItemMode = "manipulation",
 ): Partial<SimulationAssessmentItem> {
   const domain = manifest.domain;
 
@@ -542,9 +567,12 @@ export function inferSimulationItemFromManifest(
 function inferPromptFromDomain(
   domain: SimulationDomain,
   mode: SimulationItemMode,
-  title: string
+  title: string,
 ): string {
-  const domainPrompts: Record<SimulationDomain, Record<SimulationItemMode, string>> = {
+  const domainPrompts: Record<
+    SimulationDomain,
+    Record<SimulationItemMode, string>
+  > = {
     PHYSICS: {
       prediction: `Based on the initial setup in "${title}", predict the final state of the system.`,
       manipulation: `Modify the parameters in "${title}" to achieve the target outcome.`,
@@ -615,13 +643,15 @@ function inferPromptFromDomain(
  */
 export function calculatePredictionScore(
   predictions: Array<{ variableId: string; predictedValue: number }>,
-  targets: PredictionTarget[]
+  targets: PredictionTarget[],
 ): number {
   if (targets.length === 0) return 0;
 
   let totalScore = 0;
   for (const target of targets) {
-    const prediction = predictions.find((p) => p.variableId === target.variableId);
+    const prediction = predictions.find(
+      (p) => p.variableId === target.variableId,
+    );
     if (!prediction) continue;
 
     const error = Math.abs(prediction.predictedValue - target.expectedValue);
@@ -629,18 +659,20 @@ export function calculatePredictionScore(
 
     switch (target.toleranceType) {
       case "percentage":
-        normalizedError = error / (Math.abs(target.expectedValue) * (target.tolerance / 100));
+        normalizedError =
+          error / (Math.abs(target.expectedValue) * (target.tolerance / 100));
         break;
       case "relative":
-        normalizedError = error / (Math.abs(target.expectedValue) * target.tolerance);
+        normalizedError =
+          error / (Math.abs(target.expectedValue) * target.tolerance);
         break;
       case "absolute":
       default:
         normalizedError = error / target.tolerance;
     }
 
-    // Score is 1 if within tolerance, decreases linearly beyond
-    const variableScore = Math.max(0, 1 - normalizedError);
+    // Score is 1 (full credit) if within tolerance, 0 otherwise
+    const variableScore = normalizedError <= 1 ? 1 : 0;
     totalScore += variableScore;
   }
 
@@ -651,20 +683,32 @@ export function calculatePredictionScore(
  * Calculate manipulation success score.
  */
 export function calculateManipulationScore(
-  conditionResults: Array<{ conditionId: string; achieved: boolean; partialScore?: number }>,
-  conditions: ManipulationCondition[]
+  conditionResults: Array<{
+    conditionId: string;
+    achieved: boolean;
+    partialScore?: number;
+  }>,
+  conditions: ManipulationCondition[],
 ): number {
   if (conditions.length === 0) return 0;
 
   let totalScore = 0;
   for (const condition of conditions) {
-    const result = conditionResults.find((r) => r.conditionId === condition.conditionId);
+    const result = conditionResults.find(
+      (r) => r.conditionId === condition.conditionId,
+    );
     if (!result) continue;
 
     if (result.achieved) {
       totalScore += 1;
-    } else if (result.partialScore !== undefined && condition.partialCreditThreshold) {
-      totalScore += Math.min(result.partialScore, condition.partialCreditThreshold);
+    } else if (
+      result.partialScore !== undefined &&
+      condition.partialCreditThreshold
+    ) {
+      totalScore += Math.min(
+        result.partialScore,
+        condition.partialCreditThreshold,
+      );
     }
   }
 
@@ -677,9 +721,17 @@ export function calculateManipulationScore(
 export function applyCBMScoring(
   baseScore: number,
   confidenceLevel: number,
-  cbmConfig: { confidenceLevels: Array<{ level: number; correctMultiplier: number; incorrectPenalty: number }> }
+  cbmConfig: {
+    confidenceLevels: Array<{
+      level: number;
+      correctMultiplier: number;
+      incorrectPenalty: number;
+    }>;
+  },
 ): number {
-  const levelConfig = cbmConfig.confidenceLevels.find((l) => l.level === confidenceLevel);
+  const levelConfig = cbmConfig.confidenceLevels.find(
+    (l) => l.level === confidenceLevel,
+  );
   if (!levelConfig) return baseScore;
 
   const isCorrect = baseScore >= 50; // Threshold for "correct"

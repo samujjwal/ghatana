@@ -1,15 +1,14 @@
-import * as FileSystem from 'expo-file-system';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { optimizeImage, getFileSizeMB } from './imageOptimization';
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { optimizeImage, getFileSizeMB } from "../utils/imageOptimization";
 
 /**
  * Media Compression Service
- * 
+ *
  * @doc.type service
  * @doc.purpose Compress media files (images, videos, audio) before upload
  * @doc.layer product
  * @doc.pattern Service
- * 
+ *
  * Features:
  * - Adaptive compression based on file size and network
  * - Quality presets (high, medium, low)
@@ -19,8 +18,8 @@ import { optimizeImage, getFileSizeMB } from './imageOptimization';
  * - Bandwidth estimation integration
  */
 
-export type CompressionQuality = 'high' | 'medium' | 'low';
-export type MediaType = 'image' | 'video' | 'audio';
+export type CompressionQuality = "high" | "medium" | "low";
+export type MediaType = "image" | "video" | "audio";
 
 export interface CompressionOptions {
   quality?: CompressionQuality;
@@ -63,24 +62,24 @@ const IMAGE_QUALITY_PRESETS = {
 // Quality presets for videos (sent to backend)
 const VIDEO_QUALITY_PRESETS = {
   high: {
-    resolution: '1280x720', // 720p
-    videoBitrate: '1500k',
-    audioBitrate: '128k',
-    codec: 'libx264',
+    resolution: "1280x720", // 720p
+    videoBitrate: "1500k",
+    audioBitrate: "128k",
+    codec: "libx264",
     crf: 23, // Constant Rate Factor (lower = better quality)
   },
   medium: {
-    resolution: '854x480', // 480p
-    videoBitrate: '1000k',
-    audioBitrate: '96k',
-    codec: 'libx264',
+    resolution: "854x480", // 480p
+    videoBitrate: "1000k",
+    audioBitrate: "96k",
+    codec: "libx264",
     crf: 26,
   },
   low: {
-    resolution: '640x360', // 360p
-    videoBitrate: '600k',
-    audioBitrate: '64k',
-    codec: 'libx264',
+    resolution: "640x360", // 360p
+    videoBitrate: "600k",
+    audioBitrate: "64k",
+    codec: "libx264",
     crf: 29,
   },
 } as const;
@@ -88,19 +87,19 @@ const VIDEO_QUALITY_PRESETS = {
 // Quality presets for audio
 const AUDIO_QUALITY_PRESETS = {
   high: {
-    bitrate: '128k',
+    bitrate: "128k",
     sampleRate: 44100,
-    codec: 'aac',
+    codec: "aac",
   },
   medium: {
-    bitrate: '96k',
+    bitrate: "96k",
     sampleRate: 44100,
-    codec: 'aac',
+    codec: "aac",
   },
   low: {
-    bitrate: '64k',
+    bitrate: "64k",
     sampleRate: 44100,
-    codec: 'aac',
+    codec: "aac",
   },
 } as const;
 
@@ -108,7 +107,7 @@ const AUDIO_QUALITY_PRESETS = {
  * Media Compression Service
  */
 class MediaCompressionService {
-  private apiUrl = 'http://localhost:2900'; // TODO: Use environment config
+  private apiUrl = "http://localhost:2900"; // TODO: Use environment config
 
   /**
    * Compress media file based on type
@@ -116,22 +115,22 @@ class MediaCompressionService {
   async compressMedia(
     uri: string,
     type: MediaType,
-    options: CompressionOptions = {}
+    options: CompressionOptions = {},
   ): Promise<CompressionResult> {
-    const quality = options.quality || 'medium';
+    const quality = options.quality || "medium";
     const startTime = Date.now();
 
     try {
       let result: CompressionResult;
 
       switch (type) {
-        case 'image':
+        case "image":
           result = await this.compressImage(uri, quality, options);
           break;
-        case 'video':
+        case "video":
           result = await this.compressVideo(uri, quality, options);
           break;
-        case 'audio':
+        case "audio":
           result = await this.compressAudio(uri, quality, options);
           break;
         default:
@@ -153,9 +152,9 @@ class MediaCompressionService {
   private async compressImage(
     uri: string,
     quality: CompressionQuality,
-    options: CompressionOptions
+    options: CompressionOptions,
   ): Promise<CompressionResult> {
-    const originalSize = await getFileSizeMB(uri);
+    const originalSize = (await getFileSizeMB(uri)) ?? 0;
     const preset = IMAGE_QUALITY_PRESETS[quality];
 
     // Use existing imageOptimization utility
@@ -166,8 +165,9 @@ class MediaCompressionService {
       format: preset.format,
     });
 
-    const compressedSize = await getFileSizeMB(compressedUri);
-    const compressionRatio = ((originalSize - compressedSize) / originalSize) * 100;
+    const compressedSize = (await getFileSizeMB(compressedUri)) ?? 0;
+    const compressionRatio =
+      ((originalSize - compressedSize) / originalSize) * 100;
 
     return {
       uri: compressedUri,
@@ -186,15 +186,17 @@ class MediaCompressionService {
   private async compressVideo(
     uri: string,
     quality: CompressionQuality,
-    options: CompressionOptions
+    options: CompressionOptions,
   ): Promise<CompressionResult> {
-    const originalSize = await getFileSizeMB(uri);
+    const originalSize = (await getFileSizeMB(uri)) ?? 0;
     const preset = VIDEO_QUALITY_PRESETS[quality];
 
     // For now, return original URI and indicate backend processing needed
     // In production, upload to backend for compression
-    console.log('[MediaCompression] Video compression requires backend processing');
-    console.log('[MediaCompression] Preset:', preset);
+    console.log(
+      "[MediaCompression] Video compression requires backend processing",
+    );
+    console.log("[MediaCompression] Preset:", preset);
 
     // TODO: Implement backend video compression
     // 1. Upload video to backend compression endpoint
@@ -205,18 +207,19 @@ class MediaCompressionService {
     // Estimate compression ratio based on preset
     let estimatedCompressionRatio = 0;
     switch (quality) {
-      case 'high':
+      case "high":
         estimatedCompressionRatio = 30; // ~30% reduction
         break;
-      case 'medium':
+      case "medium":
         estimatedCompressionRatio = 50; // ~50% reduction
         break;
-      case 'low':
+      case "low":
         estimatedCompressionRatio = 70; // ~70% reduction
         break;
     }
 
-    const estimatedCompressedSize = originalSize * (1 - estimatedCompressionRatio / 100);
+    const estimatedCompressedSize =
+      originalSize * (1 - estimatedCompressionRatio / 100);
 
     return {
       uri, // Return original for now
@@ -235,14 +238,16 @@ class MediaCompressionService {
   private async compressAudio(
     uri: string,
     quality: CompressionQuality,
-    options: CompressionOptions
+    options: CompressionOptions,
   ): Promise<CompressionResult> {
-    const originalSize = await getFileSizeMB(uri);
+    const originalSize = (await getFileSizeMB(uri)) ?? 0;
     const preset = AUDIO_QUALITY_PRESETS[quality];
 
     // Similar to video, audio compression needs backend
-    console.log('[MediaCompression] Audio compression requires backend processing');
-    console.log('[MediaCompression] Preset:', preset);
+    console.log(
+      "[MediaCompression] Audio compression requires backend processing",
+    );
+    console.log("[MediaCompression] Preset:", preset);
 
     // TODO: Implement backend audio compression
     // Use FFmpeg to convert to AAC with target bitrate
@@ -250,18 +255,19 @@ class MediaCompressionService {
     // Estimate compression based on preset
     let estimatedCompressionRatio = 0;
     switch (quality) {
-      case 'high':
+      case "high":
         estimatedCompressionRatio = 20; // ~20% reduction
         break;
-      case 'medium':
+      case "medium":
         estimatedCompressionRatio = 40; // ~40% reduction
         break;
-      case 'low':
+      case "low":
         estimatedCompressionRatio = 60; // ~60% reduction
         break;
     }
 
-    const estimatedCompressedSize = originalSize * (1 - estimatedCompressionRatio / 100);
+    const estimatedCompressedSize =
+      originalSize * (1 - estimatedCompressionRatio / 100);
 
     return {
       uri, // Return original for now
@@ -278,8 +284,8 @@ class MediaCompressionService {
    */
   getRecommendedQuality(
     fileSizeMB: number,
-    networkType: 'wifi' | 'cellular' | 'unknown',
-    userPreference?: CompressionQuality
+    networkType: "wifi" | "cellular" | "unknown",
+    userPreference?: CompressionQuality,
   ): CompressionQuality {
     // User preference takes precedence
     if (userPreference) {
@@ -287,20 +293,20 @@ class MediaCompressionService {
     }
 
     // WiFi: allow larger files
-    if (networkType === 'wifi') {
-      if (fileSizeMB > 50) return 'medium';
-      return 'high';
+    if (networkType === "wifi") {
+      if (fileSizeMB > 50) return "medium";
+      return "high";
     }
 
     // Cellular: aggressive compression
-    if (networkType === 'cellular') {
-      if (fileSizeMB > 20) return 'low';
-      if (fileSizeMB > 10) return 'medium';
-      return 'medium'; // Default for cellular
+    if (networkType === "cellular") {
+      if (fileSizeMB > 20) return "low";
+      if (fileSizeMB > 10) return "medium";
+      return "medium"; // Default for cellular
     }
 
     // Unknown network: play it safe
-    return 'medium';
+    return "medium";
   }
 
   /**
@@ -308,7 +314,7 @@ class MediaCompressionService {
    */
   estimateUploadTime(
     fileSizeMB: number,
-    networkType: 'wifi' | 'cellular' | 'unknown'
+    networkType: "wifi" | "cellular" | "unknown",
   ): number {
     // Estimated speeds in Mbps
     const speeds = {
@@ -329,19 +335,20 @@ class MediaCompressionService {
   shouldCompress(
     fileSizeMB: number,
     type: MediaType,
-    networkType: 'wifi' | 'cellular' | 'unknown'
+    networkType: "wifi" | "cellular" | "unknown",
   ): boolean {
     // Always compress videos
-    if (type === 'video') return true;
+    if (type === "video") return true;
 
     // Compress large images
-    if (type === 'image' && fileSizeMB > 2) return true;
+    if (type === "image" && fileSizeMB > 2) return true;
 
     // Compress audio on cellular
-    if (type === 'audio' && networkType === 'cellular' && fileSizeMB > 5) return true;
+    if (type === "audio" && networkType === "cellular" && fileSizeMB > 5)
+      return true;
 
     // Compress large audio files
-    if (type === 'audio' && fileSizeMB > 10) return true;
+    if (type === "audio" && fileSizeMB > 10) return true;
 
     return false;
   }

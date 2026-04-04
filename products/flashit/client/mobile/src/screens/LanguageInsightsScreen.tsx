@@ -195,6 +195,8 @@ export default function LanguageInsightsScreen() {
                             data={chartData}
                             width={screenWidth - 40}
                             height={220}
+                            yAxisLabel=""
+                            yAxisSuffix=""
                             chartConfig={{
                                 backgroundColor: '#ffffff',
                                 backgroundGradientFrom: '#ffffff',

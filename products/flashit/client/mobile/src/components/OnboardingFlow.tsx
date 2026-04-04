@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation';
 import { useToastNotifications } from '../components/Toast';
 import { useHaptics } from '../services/haptics';
@@ -42,7 +42,20 @@ interface OnboardingStep {
   skipAllowed?: boolean;
 }
 
-type OnboardingNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
+type OnboardingNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Main'>;
+
+const sphereExamples: Array<{
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+}> = [
+    { name: 'Personal', icon: 'person', color: '#007aff' },
+    { name: 'Work', icon: 'briefcase', color: '#34c759' },
+    { name: 'Health', icon: 'heart', color: '#ff3b30' },
+    { name: 'Learning', icon: 'book', color: '#ff9500' },
+    { name: 'Social', icon: 'people', color: '#5856d6' },
+    { name: 'Creative', icon: 'color-palette', color: '#ff2d55' },
+  ];
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -106,19 +119,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             Spheres help you organize moments by context
           </Text>
           <View style={styles.spheresGrid}>
-            {[
-              { name: 'Personal', icon: 'person', color: '#007aff' },
-              { name: 'Work', icon: 'briefcase', color: '#34c759' },
-              { name: 'Health', icon: 'heart', color: '#ff3b30' },
-              { name: 'Learning', icon: 'book', color: '#ff9500' },
-              { name: 'Social', icon: 'people', color: '#5856d6' },
-              { name: 'Creative', icon: 'color-palette', color: '#ff2d55' },
-            ].map((sphere) => (
+            {sphereExamples.map((sphere) => (
               <View key={sphere.name} style={styles.sphereCard}>
-                <Ionicons 
-                  name={sphere.icon} 
-                  size={32} 
-                  color={sphere.color} 
+                <Ionicons
+                  name={sphere.icon}
+                  size={32}
+                  color={sphere.color}
                 />
                 <Text style={styles.sphereName}>{sphere.name}</Text>
               </View>
@@ -174,7 +180,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </Text>
           <View style={styles.aiFeatures}>
             <View style={styles.aiFeature}>
-              <Ionicons name="brain" size={24} color="#007aff" />
+              <Ionicons name="bulb-outline" size={24} color="#007aff" />
               <View style={styles.aiFeatureText}>
                 <Text style={styles.aiFeatureTitle}>Smart Classification</Text>
                 <Text style={styles.aiFeatureDesc}>Automatically organizes moments</Text>
@@ -286,18 +292,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       <View style={styles.header}>
         <View style={styles.progressContainer}>
           <View style={styles.progressBar}>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.progressFill,
                 { width: `${progress}%` }
-              ]} 
+              ]}
             />
           </View>
           <Text style={styles.progressText}>
             Step {currentStepIndex + 1} of {steps.length}
           </Text>
         </View>
-        
+
         {currentStep.skipAllowed && (
           <TouchableOpacity
             style={styles.skipButton}
@@ -312,7 +318,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         )}
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -320,10 +326,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         <Animated.View style={{ opacity: fadeAnim }}>
           <View style={styles.stepHeader}>
             <View style={styles.stepIcon}>
-              <Ionicons 
-                name={currentStep.icon} 
-                size={48} 
-                color="#007aff" 
+              <Ionicons
+                name={currentStep.icon}
+                size={48}
+                color="#007aff"
               />
             </View>
             <Text style={styles.stepTitle}>{currentStep.title}</Text>

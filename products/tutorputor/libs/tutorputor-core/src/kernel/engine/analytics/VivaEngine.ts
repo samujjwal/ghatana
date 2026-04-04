@@ -291,8 +291,8 @@ export class VivaEngine {
     const skipped = explanations.filter((e) => e.skipped).length;
     const skipRate = skipped / explanations.length;
 
-    // Trigger if >75% of explanation tasks were skipped
-    if (skipRate > 0.75) return true;
+    // Trigger if >=75% of explanation tasks were skipped
+    if (skipRate >= 0.75) return true;
 
     // Also trigger if attempted but with suspiciously low time (< 5 seconds avg)
     const attempted = explanations.filter((e) => e.attempted && !e.skipped);

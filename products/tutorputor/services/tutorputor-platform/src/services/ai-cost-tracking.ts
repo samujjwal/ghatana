@@ -13,6 +13,16 @@ import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger("ai-cost-tracking");
 
+interface AICostTrackingRequestBody {
+  provider?: string;
+  model?: string;
+  inputTokens?: number;
+}
+
+interface AICostTrackingRequestUser {
+  tenantId?: string;
+}
+
 export interface AICostMetrics {
   provider: string;
   model: string;
@@ -52,7 +62,6 @@ export class AICostTracker extends EventEmitter {
   private config: AICostConfig;
   private dailySpend: number = 0;
   private monthlySpend: number = 0;
-  private lastResetDate: Date;
 
   // Pricing per 1K tokens (approximate, updated regularly)
   private static readonly PRICING: Record<
@@ -83,7 +92,6 @@ export class AICostTracker extends EventEmitter {
       alertThresholdPercent: config.alertThresholdPercent || 80,
       enabled: config.enabled !== false,
     };
-    this.lastResetDate = new Date();
 
     // Reset daily spend at midnight
     this.scheduleDailyReset();
@@ -235,7 +243,7 @@ export class AICostTracker extends EventEmitter {
    */
   private emitAlert(alert: CostAlert): void {
     this.emit("alert", alert);
-    logger.warn(alert, "AI cost alert");
+    logger.warn({ ...alert }, "AI cost alert");
   }
 
   /**
@@ -252,15 +260,18 @@ export class AICostTracker extends EventEmitter {
     const cutoff = new Date(Date.now() - timeWindowHours * 60 * 60 * 1000);
     const windowMetrics = this.metrics.filter((m) => m.timestamp > cutoff);
 
-    const totalCost = windowMetrics.reduce((sum: number, m) => sum + m.costUsd, 0);
+    const totalCost = windowMetrics.reduce(
+      (sum: number, m) => sum + m.costUsd,
+      0,
+    );
     const totalTokens = windowMetrics.reduce(
       (sum: number, m) => sum + m.totalTokens,
       0,
     );
     const requestCount = windowMetrics.length;
     const averageLatency =
-      windowMetrics.reduce((sum: number, m) => sum + m.latencyMs, 0) / requestCount ||
-      0;
+      windowMetrics.reduce((sum: number, m) => sum + m.latencyMs, 0) /
+        requestCount || 0;
     const successfulRequests = windowMetrics.filter((m) => m.success).length;
     const successRate =
       requestCount > 0 ? (successfulRequests / requestCount) * 100 : 0;
@@ -448,29 +459,32 @@ export const globalAICostTracker = new AICostTracker();
 // Middleware for tracking AI calls in Fastify
 export function aiCostTrackingMiddleware() {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    if (request.body?.provider && request.body?.model) {
-      const startTime = Date.now();
-
-      reply
-        .then(() => {
-          const latency = Date.now() - startTime;
-          globalAICostTracker.track({
-            provider: request.body.provider,
-            model: request.body.model,
-            inputTokens: request.body.inputTokens || 0,
-            outputTokens: reply.payload?.outputTokens || 0,
-            totalTokens:
-              (request.body.inputTokens || 0) +
-              (reply.payload?.outputTokens || 0),
-            latencyMs: latency,
-            operation: request.routerPath || "unknown",
-            tenantId: request.user?.tenantId,
-            success: reply.statusCode < 400,
-          });
-        })
-        .catch(() => {
-          // Error handled elsewhere
-        });
+    const body = request.body as AICostTrackingRequestBody | undefined;
+    if (!body?.provider || !body.model) {
+      return;
     }
+
+    const startTime = Date.now();
+    const rawReply = reply.raw;
+    const provider = body.provider;
+    const model = body.model;
+
+    rawReply.once("finish", () => {
+      const inputTokens = body.inputTokens ?? 0;
+      const latency = Date.now() - startTime;
+      const requestUser = request.user as AICostTrackingRequestUser | undefined;
+
+      globalAICostTracker.track({
+        provider,
+        model,
+        inputTokens,
+        outputTokens: 0,
+        totalTokens: inputTokens,
+        latencyMs: latency,
+        operation: request.routeOptions.url || request.url || "unknown",
+        tenantId: requestUser?.tenantId,
+        success: reply.statusCode < 400,
+      });
+    });
   };
 }

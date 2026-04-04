@@ -19,16 +19,15 @@ import type {
   LearningPathNodeId,
   ModuleId,
   ModuleSummary,
-  PathwayConstraints,
   TenantId,
   UserId,
 } from "@tutorputor/contracts/v1/types";
 import type { TutorPrismaClient } from "@tutorputor/core/db";
 
 import { aiClient } from "../../clients/ai-client";
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
-const logger = createStandaloneLogger({ component: 'PathwaysService' });
+const logger = createStandaloneLogger({ component: "PathwaysService" });
 
 // =============================================================================
 // Types
@@ -55,21 +54,21 @@ async function computeLearnerLevel(
   prisma: TutorPrismaClient,
   tenantId: string,
   userId: string,
-): Promise<'beginner' | 'intermediate' | 'advanced'> {
+): Promise<"beginner" | "intermediate" | "advanced"> {
   // Fetch completed enrollments
   const enrollments = await prisma.enrollment.findMany({
-    where: { tenantId, userId, status: 'COMPLETED' },
+    where: { tenantId, userId, status: "COMPLETED" },
     include: { module: { select: { difficulty: true } } },
   });
 
   const completedCount = enrollments.length;
-  if (completedCount === 0) return 'beginner';
+  if (completedCount === 0) return "beginner";
 
   // Fetch graded assessment attempts
   const attempts = await prisma.assessmentAttempt.findMany({
     where: {
       userId,
-      status: 'GRADED',
+      status: "GRADED",
       assessment: { module: { tenantId } },
     },
     select: { scorePercent: true },
@@ -81,23 +80,25 @@ async function computeLearnerLevel(
 
   const avgScore =
     gradedScores.length > 0
-      ? gradedScores.reduce((sum: number, s: number) => sum + s, 0) / gradedScores.length
+      ? gradedScores.reduce((sum: number, s: number) => sum + s, 0) /
+        gradedScores.length
       : 0;
 
   // Count advanced-difficulty completions
   const advancedCount = enrollments.filter(
-    (e: Record<string, unknown>) => (e.module as Record<string, unknown>)?.difficulty === 'ADVANCED',
+    (e: Record<string, unknown>) =>
+      (e.module as Record<string, unknown>)?.difficulty === "ADVANCED",
   ).length;
   const advancedRatio = advancedCount / completedCount;
 
   // Heuristic thresholds
   if (completedCount >= 8 && avgScore >= 75 && advancedRatio >= 0.3) {
-    return 'advanced';
+    return "advanced";
   }
   if (completedCount >= 3 && avgScore >= 55) {
-    return 'intermediate';
+    return "intermediate";
   }
-  return 'beginner';
+  return "beginner";
 }
 
 export function createPathwaysService(
@@ -107,7 +108,11 @@ export function createPathwaysService(
     async generatePathway({ tenantId, userId, goal, constraints }) {
       // 1. Try AI Generation Plan
       try {
-        const learnerLevel = await computeLearnerLevel(prisma, tenantId, userId);
+        const learnerLevel = await computeLearnerLevel(
+          prisma,
+          tenantId,
+          userId,
+        );
 
         const aiPath = await aiClient.generateLearningPath({
           subject: goal,
@@ -148,7 +153,11 @@ export function createPathwaysService(
 
             if (match) {
               // Prevent duplicates
-              if (!pathNodes.find((n: Record<string, unknown>) => n.contentId === match.id)) {
+              if (
+                !pathNodes.find(
+                  (n: Record<string, unknown>) => n.contentId === match.id,
+                )
+              ) {
                 pathNodes.push({
                   title: match.title,
                   description: match.description ?? "",
@@ -164,7 +173,7 @@ export function createPathwaysService(
 
           if (pathNodes.length > 0) {
             // Create the paths
-            const path = await prisma.learningPath.create({
+            await prisma.learningPath.create({
               data: {
                 tenantId,
                 userId,
@@ -201,7 +210,7 @@ export function createPathwaysService(
         }
       } catch (err) {
         logger.warn({
-          message: 'AI Pathway generation failed, falling back to heuristics',
+          message: "AI Pathway generation failed, falling back to heuristics",
           error: err instanceof Error ? err.message : String(err),
           goal,
           tenantId,
@@ -233,19 +242,23 @@ export function createPathwaysService(
         const goalLower = goal.toLowerCase();
 
         // Title match
-        if ((module.title as string).toLowerCase().includes(goalLower)) score += 10;
+        if ((module.title as string).toLowerCase().includes(goalLower))
+          score += 10;
 
         // Description match
-        if ((module.description as string).toLowerCase().includes(goalLower)) score += 5;
+        if ((module.description as string).toLowerCase().includes(goalLower))
+          score += 5;
 
         // Tag match
-        const tagMatch = (module.tags as Array<Record<string, unknown>>).some((t: Record<string, unknown>) =>
-          (t.label as string).toLowerCase().includes(goalLower),
+        const tagMatch = (module.tags as Array<Record<string, unknown>>).some(
+          (t: Record<string, unknown>) =>
+            (t.label as string).toLowerCase().includes(goalLower),
         );
         if (tagMatch) score += 8;
 
         // Domain relevance
-        if (goalLower.includes((module.domain as string).toLowerCase())) score += 7;
+        if (goalLower.includes((module.domain as string).toLowerCase()))
+          score += 7;
 
         // Prefer easier modules first (lower difficulty = higher score)
         if (module.difficulty === "INTRO") score += 3;
@@ -255,7 +268,10 @@ export function createPathwaysService(
       });
 
       // Sort by score and limit
-      scoredModules.sort((a: Record<string, unknown>, b: Record<string, unknown>) => (b.score as number) - (a.score as number));
+      scoredModules.sort(
+        (a: Record<string, unknown>, b: Record<string, unknown>) =>
+          (b.score as number) - (a.score as number),
+      );
       const selectedModules = scoredModules.slice(0, maxModules);
 
       // Calculate estimated duration
@@ -266,8 +282,7 @@ export function createPathwaysService(
         const estimatedMinutes = Number(module.estimatedTimeMinutes ?? 0);
         if (
           constraints?.maxDurationMinutes &&
-          totalDuration + estimatedMinutes >
-          constraints.maxDurationMinutes
+          totalDuration + estimatedMinutes > constraints.maxDurationMinutes
         ) {
           continue;
         }
@@ -357,7 +372,9 @@ export function createPathwaysService(
       }
 
       // Find and mark node as completed
-      const node = path.nodes.find((n: Record<string, unknown>) => n.moduleId === completedModuleId);
+      const node = path.nodes.find(
+        (n: Record<string, unknown>) => n.moduleId === completedModuleId,
+      );
       if (node) {
         await prisma.learningPathNode.update({
           where: { id: node.id },
@@ -379,8 +396,12 @@ export function createPathwaysService(
         throw new Error("Path not found after update");
       }
 
-      const requiredNodes = updatedPath.nodes.filter((n: Record<string, unknown>) => !n.isOptional);
-      const allCompleted = requiredNodes.every((n: Record<string, unknown>) => n.completedAt !== null);
+      const requiredNodes = updatedPath.nodes.filter(
+        (n: Record<string, unknown>) => !n.isOptional,
+      );
+      const allCompleted = requiredNodes.every(
+        (n: Record<string, unknown>) => n.completedAt !== null,
+      );
 
       if (allCompleted) {
         await prisma.learningPath.update({
@@ -412,7 +433,9 @@ function mapToModuleSummary(module: Record<string, unknown>): ModuleSummary {
     domain: module.domain as "MATH" | "SCIENCE" | "TECH",
     difficulty: module.difficulty as "INTRO" | "INTERMEDIATE" | "ADVANCED",
     estimatedTimeMinutes: module.estimatedTimeMinutes as number,
-    tags: (module.tags as Array<Record<string, unknown>>).map((t: Record<string, unknown>) => t.label as string),
+    tags: (module.tags as Array<Record<string, unknown>>).map(
+      (t: Record<string, unknown>) => t.label as string,
+    ),
     status: module.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
     ...((module.publishedAt as Date | undefined)
       ? { publishedAt: (module.publishedAt as Date).toISOString() }
@@ -421,19 +444,22 @@ function mapToModuleSummary(module: Record<string, unknown>): ModuleSummary {
 }
 
 function mapToLearningPath(path: LearningPathWithNodes): LearningPath {
-  const nodes = (path.nodes as Array<Record<string, unknown>> | undefined) ?? [];
-  const mappedNodes: LearningPathNode[] = nodes.map((node: Record<string, unknown>) => {
-    const mappedNode: LearningPathNode = {
-      id: node.id as LearningPathNodeId,
-      moduleId: node.moduleId as ModuleId,
-      orderIndex: node.orderIndex as number,
-      isOptional: node.isOptional as boolean,
-    };
-    if (node.completedAt instanceof Date) {
-      mappedNode.completedAt = node.completedAt.toISOString();
-    }
-    return mappedNode;
-  });
+  const nodes =
+    (path.nodes as Array<Record<string, unknown>> | undefined) ?? [];
+  const mappedNodes: LearningPathNode[] = nodes.map(
+    (node: Record<string, unknown>) => {
+      const mappedNode: LearningPathNode = {
+        id: node.id as LearningPathNodeId,
+        moduleId: node.moduleId as ModuleId,
+        orderIndex: node.orderIndex as number,
+        isOptional: node.isOptional as boolean,
+      };
+      if (node.completedAt instanceof Date) {
+        mappedNode.completedAt = node.completedAt.toISOString();
+      }
+      return mappedNode;
+    },
+  );
 
   return {
     id: path.id as LearningPathId,

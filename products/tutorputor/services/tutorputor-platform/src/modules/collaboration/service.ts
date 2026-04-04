@@ -59,6 +59,63 @@ type ThreadWithPosts = Prisma.ThreadGetPayload<{
 }>;
 
 type PostRecord = Prisma.PostGetPayload<Record<string, never>>;
+type SharedNoteRecord = Prisma.SharedNoteGetPayload<Record<string, never>>;
+
+function parseSharedNoteAccesses(raw: unknown): SharedNoteAccess[] {
+  if (typeof raw !== "string" || raw.trim().length === 0) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.flatMap((entry) => {
+      if (!entry || typeof entry !== "object") {
+        return [];
+      }
+
+      const record = entry as Record<string, unknown>;
+      const userId = typeof record.userId === "string" ? record.userId : null;
+      const permission =
+        record.permission === "view" ||
+        record.permission === "comment" ||
+        record.permission === "edit"
+          ? record.permission
+          : null;
+      const addedBy =
+        typeof record.addedBy === "string" ? record.addedBy : null;
+      const addedAtValue = record.addedAt;
+
+      if (!userId || !permission || !addedBy) {
+        return [];
+      }
+
+      const addedAt = new Date(
+        typeof addedAtValue === "string" || addedAtValue instanceof Date
+          ? addedAtValue
+          : Date.now(),
+      );
+
+      return [{ userId, permission, addedBy, addedAt }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function serializeSharedNoteAccesses(accesses: SharedNoteAccess[]): string {
+  return JSON.stringify(
+    accesses.map((access) => ({
+      userId: access.userId,
+      permission: access.permission,
+      addedBy: access.addedBy,
+      addedAt: access.addedAt.toISOString(),
+    })),
+  );
+}
 
 export class CollaborationServiceImpl implements CollaborationService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -173,13 +230,17 @@ export class CollaborationServiceImpl implements CollaborationService {
     const trimmed = paged.items.map((thread) => ({
       ...thread,
       posts: [...thread.posts]
-        .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+        .sort(
+          (left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
+        )
         .slice(0, 3),
     }));
 
     return {
       items: trimmed.map((thread) => this.mapToThread(thread)),
-      nextCursor: paged.hasMore ? ((paged.nextCursor ?? null) as ThreadId | null) : null,
+      nextCursor: paged.hasMore
+        ? ((paged.nextCursor ?? null) as ThreadId | null)
+        : null,
     };
   }
 
@@ -332,8 +393,8 @@ export class CollaborationServiceImpl implements CollaborationService {
         moduleId: args.moduleId ?? null,
         lessonId: args.lessonId ?? null,
         studyGroupId: args.studyGroupId ?? null,
+        sharedWith: JSON.stringify([]),
       },
-      include: { sharedWith: true },
     });
     return this.mapToNote(note);
   }
@@ -345,7 +406,6 @@ export class CollaborationServiceImpl implements CollaborationService {
   }): Promise<SharedNote> {
     const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
-      include: { sharedWith: true },
     });
     if (!note) {
       throw createHttpError(
@@ -355,11 +415,10 @@ export class CollaborationServiceImpl implements CollaborationService {
       );
     }
 
+    const sharedWith = parseSharedNoteAccesses(note.sharedWith);
     const canAccess =
       note.createdBy === args.userId ||
-      (note.sharedWith ?? []).some(
-        (entry) => entry.userId === args.userId,
-      );
+      sharedWith.some((entry) => entry.userId === args.userId);
     if (!canAccess) {
       throw createHttpError(
         403,
@@ -378,7 +437,6 @@ export class CollaborationServiceImpl implements CollaborationService {
   }): Promise<SharedNote> {
     const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
-      include: { sharedWith: true },
     });
     if (!note) {
       throw createHttpError(
@@ -388,10 +446,11 @@ export class CollaborationServiceImpl implements CollaborationService {
       );
     }
 
+    const sharedWith = parseSharedNoteAccesses(note.sharedWith);
     const canEdit =
       note.createdBy === args.userId ||
       (note.allowEditing &&
-        (note.sharedWith ?? []).some(
+        sharedWith.some(
           (entry) =>
             entry.userId === args.userId && entry.permission === "edit",
         ));
@@ -411,7 +470,6 @@ export class CollaborationServiceImpl implements CollaborationService {
         version: { increment: 1 },
         updatedAt: new Date(),
       },
-      include: { sharedWith: true },
     });
     return this.mapToNote(updatedNote);
   }
@@ -427,7 +485,6 @@ export class CollaborationServiceImpl implements CollaborationService {
   }): Promise<SharedNote> {
     const note = await this.prisma.sharedNote.findFirst({
       where: { id: args.noteId, tenantId: args.tenantId },
-      include: { sharedWith: true },
     });
     if (!note) {
       throw createHttpError(
@@ -444,29 +501,35 @@ export class CollaborationServiceImpl implements CollaborationService {
       "Only the note owner can share this note",
     );
 
-    await Promise.all(
-      args.shareWith.map((shareTarget) =>
-        this.prisma.sharedNoteAccess.upsert({
-          where: {
-            noteId_userId: { noteId: args.noteId, userId: shareTarget.userId },
-          },
-          create: {
-            noteId: args.noteId,
-            userId: shareTarget.userId,
-            permission: shareTarget.permission,
-            addedBy: args.sharedBy,
-            addedAt: new Date(),
-          },
-          update: { permission: shareTarget.permission },
-        }),
-      ),
-    );
-    const updatedNote = await this.prisma.sharedNote.findUniqueOrThrow(
-      {
-        where: { id: args.noteId },
-        include: { sharedWith: true },
-      },
-    );
+    const existingShares = parseSharedNoteAccesses(note.sharedWith);
+    const updatedShares = [...existingShares];
+
+    for (const shareTarget of args.shareWith) {
+      const existingIndex = updatedShares.findIndex(
+        (entry) => entry.userId === shareTarget.userId,
+      );
+      const nextShare: SharedNoteAccess = {
+        userId: shareTarget.userId,
+        permission: shareTarget.permission,
+        addedBy: args.sharedBy,
+        addedAt: new Date(),
+      };
+
+      if (existingIndex >= 0) {
+        updatedShares[existingIndex] = nextShare;
+      } else {
+        updatedShares.push(nextShare);
+      }
+    }
+
+    await this.prisma.sharedNote.update({
+      where: { id: args.noteId },
+      data: { sharedWith: serializeSharedNoteAccesses(updatedShares) },
+    });
+
+    const updatedNote = await this.prisma.sharedNote.findUniqueOrThrow({
+      where: { id: args.noteId },
+    });
     return this.mapToNote(updatedNote);
   }
 
@@ -482,20 +545,21 @@ export class CollaborationServiceImpl implements CollaborationService {
     const where: Record<string, unknown> = { tenantId: args.tenantId };
     if (args.moduleId) where.moduleId = args.moduleId;
     if (args.studyGroupId) where.studyGroupId = args.studyGroupId;
-    where.OR = [
-      { createdBy: args.userId },
-      { sharedWith: { some: { userId: args.userId } } },
-    ];
-    const [items, total] = await Promise.all([
-      this.prisma.sharedNote.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { updatedAt: "desc" },
-        include: { sharedWith: true },
-      }),
-      this.prisma.sharedNote.count({ where }),
-    ]);
+    const rows = await this.prisma.sharedNote.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+    });
+    const accessibleRows = rows.filter((note) => {
+      if (note.createdBy === args.userId) {
+        return true;
+      }
+
+      return parseSharedNoteAccesses(note.sharedWith).some(
+        (entry) => entry.userId === args.userId,
+      );
+    });
+    const items = accessibleRows.slice(skip, skip + take);
+    const total = accessibleRows.length;
     return {
       items: items.map((n) => this.mapToNote(n)),
       totalCount: total,
@@ -504,7 +568,7 @@ export class CollaborationServiceImpl implements CollaborationService {
     };
   }
 
-  private mapToNote(note: any): SharedNote {
+  private mapToNote(note: SharedNoteRecord): SharedNote {
     return {
       id: note.id,
       tenantId: note.tenantId,
@@ -514,18 +578,13 @@ export class CollaborationServiceImpl implements CollaborationService {
       version: note.version,
       allowEditing: note.allowEditing,
       allowComments: note.allowComments,
-      moduleId: note.moduleId,
-      lessonId: note.lessonId,
-      studyGroupId: note.studyGroupId,
-      sharedWith: (note.sharedWith ?? []).map((a: any) => ({
-        userId: a.userId,
-        permission: a.permission,
-        addedAt: a.addedAt,
-        addedBy: a.addedBy,
-      })),
+      ...(note.moduleId ? { moduleId: note.moduleId } : {}),
+      ...(note.lessonId ? { lessonId: note.lessonId } : {}),
+      ...(note.studyGroupId ? { studyGroupId: note.studyGroupId } : {}),
+      sharedWith: parseSharedNoteAccesses(note.sharedWith),
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
-      lastEditedBy: note.lastEditedBy,
+      ...(note.lastEditedBy ? { lastEditedBy: note.lastEditedBy } : {}),
     };
   }
 

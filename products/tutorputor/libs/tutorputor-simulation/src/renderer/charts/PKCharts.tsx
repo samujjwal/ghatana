@@ -7,7 +7,7 @@
  * @doc.pattern Chart
  */
 
-import React, { useRef, useEffect, useMemo, useCallback, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import * as d3 from "d3";
 
 // =============================================================================

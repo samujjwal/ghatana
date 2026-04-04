@@ -12,21 +12,17 @@
  * @doc.pattern Route
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyInstance } from "fastify";
 import {
   getTenantId,
   getUserId,
   roleGuard,
 } from "../../../core/http/requestContext.js";
 import type {
-  LearningExperience,
-  LearningClaim,
-  ExperienceTask,
   CreateExperienceRequest,
   GradeRange,
   ExperienceStatus,
-  ValidationPillar,
-} from "@tutorputor/contracts/v1";
+} from "@tutorputor/contracts/v1/content-studio";
 import type { HealthAwareContentStudioService } from "./service.js";
 import type { AnimationSpec } from "../../animation-runtime/service.js";
 
@@ -76,8 +72,6 @@ type ExperienceFilter = {
   offset?: number;
 };
 
-type GradeLevel = GradeRange;
-
 type AnimationLinkRequest = {
   claimId?: string;
   animationId?: string;
@@ -107,11 +101,6 @@ type GenerateExperienceFromPromptRequest = {
 
 type ChatRequest = {
   message?: string;
-};
-
-type ReviewDecisionRequest = {
-  decision?: "approve" | "reject";
-  reason?: string;
 };
 
 type AutomationRuleMutationRequest = {
@@ -559,9 +548,7 @@ export function registerContentStudioRoutes(
         return reply.code(403).send({ error: "Access denied" });
       }
 
-      const validation = await contentStudioService.validateExperience(
-          id,
-      );
+      const validation = await contentStudioService.validateExperience(id);
       return reply.send({ data: validation });
     });
 
@@ -765,14 +752,14 @@ export function registerContentStudioRoutes(
           simulationManifestId,
           interactionType: interactionType ?? "parameter_exploration",
           goal: goal ?? "",
-            successCriteria: (successCriteria ?? {}) as any,
+          successCriteria: (successCriteria ?? {}) as any,
           estimatedMinutes: estimatedMinutes ?? 10,
         },
         update: {
           simulationManifestId,
           interactionType: interactionType ?? "parameter_exploration",
           goal: goal ?? "",
-            successCriteria: (successCriteria ?? {}) as any,
+          successCriteria: (successCriteria ?? {}) as any,
           estimatedMinutes: estimatedMinutes ?? 10,
         },
       });

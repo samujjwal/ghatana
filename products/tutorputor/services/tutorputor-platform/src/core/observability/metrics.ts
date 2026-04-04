@@ -115,7 +115,7 @@ export async function setupMetrics(app: FastifyInstance) {
   });
 
   // Expose metrics endpoint
-  app.get("/metrics", async (request, reply) => {
+  app.get("/metrics", async (_request, reply) => {
     reply.header("Content-Type", register.contentType);
     return register.metrics();
   });
@@ -138,7 +138,7 @@ export async function setupHealthChecks(
       app.learnerProfileGrpcRuntimeState ?? null;
 
   // Main health check (deep checks)
-  app.get("/health", async (request, reply) => {
+  app.get("/health", async (_request, reply) => {
     const checks: Record<
       string,
       {

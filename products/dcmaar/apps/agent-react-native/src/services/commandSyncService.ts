@@ -8,84 +8,84 @@
  * @module services/commandSyncService
  */
 
-import { atom, createStore } from 'jotai';
+import { atom, createStore } from "jotai";
 
 /**
  * Sync snapshot returned by the backend `/devices/:id/sync` endpoint.
  */
 export interface SyncSnapshot {
-    schema_version: number;
-    device_id: string;
-    synced_at: string;
-    sync_version: string;
-    policies: {
-        version: string;
-        items: PolicyItem[];
-        count: number;
-    };
-    commands: {
-        items: GuardianCommand[];
-        count: number;
-    };
-    next_sync_seconds: number;
+  schema_version: number;
+  device_id: string;
+  synced_at: string;
+  sync_version: string;
+  policies: {
+    version: string;
+    items: PolicyItem[];
+    count: number;
+  };
+  commands: {
+    items: GuardianCommand[];
+    count: number;
+  };
+  next_sync_seconds: number;
 }
 
 /**
  * Policy item from sync payload.
  */
 export interface PolicyItem {
-    id: string;
-    name: string;
-    type: string;
-    priority: number;
-    enabled: boolean;
-    config: Record<string, unknown>;
+  id: string;
+  name: string;
+  type: string;
+  priority: number;
+  enabled: boolean;
+  config: Record<string, unknown>;
 }
 
 /**
  * Guardian command from sync payload (matches backend GuardianCommand contract).
  */
 export interface GuardianCommand {
-    schema_version: number;
-    command_id: string;
-    kind: 'immediate_action' | 'session_request' | 'policy_update';
-    action: string;
-    target: {
-        device_id: string;
-        child_id?: string;
-    };
-    params: Record<string, unknown>;
-    issued_by: {
-        actor_type: 'parent' | 'child' | 'system';
-        user_id?: string;
-    };
-    created_at: string;
-    expires_at?: string;
+  schema_version: number;
+  command_id: string;
+  kind: "immediate_action" | "session_request" | "policy_update";
+  action: string;
+  target: {
+    device_id: string;
+    child_id?: string;
+  };
+  params: Record<string, unknown>;
+  issued_by: {
+    actor_type: "parent" | "child" | "system";
+    user_id?: string;
+  };
+  created_at: string;
+  expires_at?: string;
 }
 
 /**
  * Command sync service configuration.
  */
 export interface CommandSyncConfig {
-    apiBaseUrl: string;
-    deviceId: string;
-    getAuthToken: () => string | null;
-    minPollIntervalSeconds?: number;
-    maxPollIntervalSeconds?: number;
-    initialPollIntervalSeconds?: number;
+  apiBaseUrl: string;
+  deviceId: string;
+  getAuthToken: () => string | null;
+  minPollIntervalSeconds?: number;
+  maxPollIntervalSeconds?: number;
+  initialPollIntervalSeconds?: number;
 }
 
 /**
  * Command sync service state.
  */
 interface CommandSyncState {
-    isRunning: boolean;
-    lastSnapshot: SyncSnapshot | null;
-    lastSyncTime: number | null;
-    lastSyncVersion: string | null;
-    currentPollIntervalSeconds: number;
-    consecutiveErrors: number;
-    error: string | null;
+  isRunning: boolean;
+  lastSnapshot: SyncSnapshot | null;
+  lastSyncTime: number | null;
+  lastSyncVersion: string | null;
+  currentPollIntervalSeconds: number;
+  consecutiveErrors: number;
+  error: string | null;
 }
 
 const DEFAULT_MIN_POLL_INTERVAL = 30;
@@ -93,13 +93,13 @@ const DEFAULT_MAX_POLL_INTERVAL = 300;
 const DEFAULT_INITIAL_POLL_INTERVAL = 60;
 
 const commandSyncStore = createStore();
-const isRunningAtom       = atom(false);
-const lastSnapshotAtom    = atom<SyncSnapshot | null>(null);
-const lastSyncTimeAtom    = atom<number | null>(null);
+const isRunningAtom = atom(false);
+const lastSnapshotAtom = atom<SyncSnapshot | null>(null);
+const lastSyncTimeAtom = atom<number | null>(null);
 const lastSyncVersionAtom = atom<string | null>(null);
-const pollIntervalAtom    = atom(DEFAULT_INITIAL_POLL_INTERVAL);
-const consErrorsAtom      = atom(0);
-const errorAtom           = atom<string | null>(null);
+const pollIntervalAtom = atom(DEFAULT_INITIAL_POLL_INTERVAL);
+const consErrorsAtom = atom(0);
+const errorAtom = atom<string | null>(null);
 
 /** Zustand-compatible singleton accessor. */
 export const useCommandSyncStore = {
@@ -113,210 +113,232 @@ export const useCommandSyncStore = {
     error: commandSyncStore.get(errorAtom),
   }),
   setState: (partial: Partial<CommandSyncState>) => {
-    if (partial.isRunning !== undefined) commandSyncStore.set(isRunningAtom, partial.isRunning);
-    if (partial.lastSnapshot !== undefined) commandSyncStore.set(lastSnapshotAtom, partial.lastSnapshot);
-    if (partial.lastSyncTime !== undefined) commandSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
-    if (partial.lastSyncVersion !== undefined) commandSyncStore.set(lastSyncVersionAtom, partial.lastSyncVersion);
-    if (partial.currentPollIntervalSeconds !== undefined) commandSyncStore.set(pollIntervalAtom, partial.currentPollIntervalSeconds);
-    if (partial.consecutiveErrors !== undefined) commandSyncStore.set(consErrorsAtom, partial.consecutiveErrors);
-    if (partial.error !== undefined) commandSyncStore.set(errorAtom, partial.error);
+    if (partial.isRunning !== undefined)
+      commandSyncStore.set(isRunningAtom, partial.isRunning);
+    if (partial.lastSnapshot !== undefined)
+      commandSyncStore.set(lastSnapshotAtom, partial.lastSnapshot);
+    if (partial.lastSyncTime !== undefined)
+      commandSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
+    if (partial.lastSyncVersion !== undefined)
+      commandSyncStore.set(lastSyncVersionAtom, partial.lastSyncVersion);
+    if (partial.currentPollIntervalSeconds !== undefined)
+      commandSyncStore.set(
+        pollIntervalAtom,
+        partial.currentPollIntervalSeconds,
+      );
+    if (partial.consecutiveErrors !== undefined)
+      commandSyncStore.set(consErrorsAtom, partial.consecutiveErrors);
+    if (partial.error !== undefined)
+      commandSyncStore.set(errorAtom, partial.error);
   },
 };
 
 // Private state
 let config: CommandSyncConfig | null = null;
-let pollTimeout: NodeJS.Timeout | null = null;
+let pollTimeout: ReturnType<typeof setTimeout> | null = null;
 let snapshotListeners: Array<(snapshot: SyncSnapshot) => void> = [];
 
 /**
  * Initialize the command sync service.
  */
 export function initCommandSync(syncConfig: CommandSyncConfig): void {
-    config = {
-        ...syncConfig,
-        minPollIntervalSeconds: syncConfig.minPollIntervalSeconds ?? DEFAULT_MIN_POLL_INTERVAL,
-        maxPollIntervalSeconds: syncConfig.maxPollIntervalSeconds ?? DEFAULT_MAX_POLL_INTERVAL,
-        initialPollIntervalSeconds: syncConfig.initialPollIntervalSeconds ?? DEFAULT_INITIAL_POLL_INTERVAL,
-    };
+  config = {
+    ...syncConfig,
+    minPollIntervalSeconds:
+      syncConfig.minPollIntervalSeconds ?? DEFAULT_MIN_POLL_INTERVAL,
+    maxPollIntervalSeconds:
+      syncConfig.maxPollIntervalSeconds ?? DEFAULT_MAX_POLL_INTERVAL,
+    initialPollIntervalSeconds:
+      syncConfig.initialPollIntervalSeconds ?? DEFAULT_INITIAL_POLL_INTERVAL,
+  };
 
-    useCommandSyncStore.setState({
-        currentPollIntervalSeconds: config.initialPollIntervalSeconds!,
-    });
+  useCommandSyncStore.setState({
+    currentPollIntervalSeconds: config.initialPollIntervalSeconds!,
+  });
 }
 
 /**
  * Start the sync polling loop.
  */
 export async function startCommandSync(): Promise<void> {
-    if (!config) {
-        console.error('[CommandSyncService] Not initialized');
-        return;
-    }
+  if (!config) {
+    console.error("[CommandSyncService] Not initialized");
+    return;
+  }
 
-    if (useCommandSyncStore.getState().isRunning) {
-        return;
-    }
+  if (useCommandSyncStore.getState().isRunning) {
+    return;
+  }
 
-    useCommandSyncStore.setState({ isRunning: true, error: null });
+  useCommandSyncStore.setState({ isRunning: true, error: null });
 
-    // Initial sync immediately
-    await performSync();
+  // Initial sync immediately
+  await performSync();
 }
 
 /**
  * Stop the sync polling loop.
  */
 export function stopCommandSync(): void {
-    if (pollTimeout) {
-        clearTimeout(pollTimeout);
-        pollTimeout = null;
-    }
+  if (pollTimeout) {
+    clearTimeout(pollTimeout);
+    pollTimeout = null;
+  }
 
-    useCommandSyncStore.setState({ isRunning: false });
+  useCommandSyncStore.setState({ isRunning: false });
 }
 
 /**
  * Force an immediate sync.
  */
 export async function forceSync(): Promise<SyncSnapshot | null> {
-    if (pollTimeout) {
-        clearTimeout(pollTimeout);
-        pollTimeout = null;
-    }
+  if (pollTimeout) {
+    clearTimeout(pollTimeout);
+    pollTimeout = null;
+  }
 
-    return performSync();
+  return performSync();
 }
 
 /**
  * Register a listener for sync snapshots.
  */
-export function onSyncSnapshot(listener: (snapshot: SyncSnapshot) => void): () => void {
-    snapshotListeners.push(listener);
-    return () => {
-        snapshotListeners = snapshotListeners.filter((l) => l !== listener);
-    };
+export function onSyncSnapshot(
+  listener: (snapshot: SyncSnapshot) => void,
+): () => void {
+  snapshotListeners.push(listener);
+  return () => {
+    snapshotListeners = snapshotListeners.filter((l) => l !== listener);
+  };
 }
 
 /**
  * Perform a single sync.
  */
 async function performSync(): Promise<SyncSnapshot | null> {
-    if (!config) {
-        return null;
-    }
+  if (!config) {
+    return null;
+  }
 
-    const state = useCommandSyncStore.getState();
-    if (!state.isRunning) {
-        return null;
-    }
+  const state = useCommandSyncStore.getState();
+  if (!state.isRunning) {
+    return null;
+  }
 
-    try {
-        const snapshot = await fetchSyncSnapshot();
+  try {
+    const snapshot = await fetchSyncSnapshot();
 
-        if (snapshot) {
-            // Update state
-            const nextInterval = Math.max(
-                config.minPollIntervalSeconds!,
-                Math.min(config.maxPollIntervalSeconds!, snapshot.next_sync_seconds)
-            );
+    if (snapshot) {
+      // Update state
+      const nextInterval = Math.max(
+        config.minPollIntervalSeconds!,
+        Math.min(config.maxPollIntervalSeconds!, snapshot.next_sync_seconds),
+      );
 
-            useCommandSyncStore.setState({
-                lastSnapshot: snapshot,
-                lastSyncTime: Date.now(),
-                lastSyncVersion: snapshot.sync_version,
-                currentPollIntervalSeconds: nextInterval,
-                consecutiveErrors: 0,
-                error: null,
-            });
+      useCommandSyncStore.setState({
+        lastSnapshot: snapshot,
+        lastSyncTime: Date.now(),
+        lastSyncVersion: snapshot.sync_version,
+        currentPollIntervalSeconds: nextInterval,
+        consecutiveErrors: 0,
+        error: null,
+      });
 
-            // Notify listeners
-            snapshotListeners.forEach((listener) => {
-                try {
-                    listener(snapshot);
-                } catch (e) {
-                    console.error('[CommandSyncService] Listener error:', e);
-                }
-            });
+      // Notify listeners
+      snapshotListeners.forEach((listener) => {
+        try {
+          listener(snapshot);
+        } catch (e) {
+          console.error("[CommandSyncService] Listener error:", e);
         }
-
-        // Schedule next poll
-        scheduleNextPoll();
-
-        return snapshot;
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('[CommandSyncService] Sync error:', errorMessage);
-
-        const currentErrors = useCommandSyncStore.getState().consecutiveErrors + 1;
-
-        // Exponential backoff
-        const backoffSeconds = Math.min(
-            config.maxPollIntervalSeconds!,
-            config.initialPollIntervalSeconds! * Math.pow(2, Math.min(currentErrors, 5))
-        );
-
-        useCommandSyncStore.setState({
-            consecutiveErrors: currentErrors,
-            currentPollIntervalSeconds: backoffSeconds,
-            error: errorMessage,
-        });
-
-        // Schedule next poll with backoff
-        scheduleNextPoll();
-
-        return null;
+      });
     }
+
+    // Schedule next poll
+    scheduleNextPoll();
+
+    return snapshot;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("[CommandSyncService] Sync error:", errorMessage);
+
+    const currentErrors = useCommandSyncStore.getState().consecutiveErrors + 1;
+
+    // Exponential backoff
+    const backoffSeconds = Math.min(
+      config.maxPollIntervalSeconds!,
+      config.initialPollIntervalSeconds! *
+        Math.pow(2, Math.min(currentErrors, 5)),
+    );
+
+    useCommandSyncStore.setState({
+      consecutiveErrors: currentErrors,
+      currentPollIntervalSeconds: backoffSeconds,
+      error: errorMessage,
+    });
+
+    // Schedule next poll with backoff
+    scheduleNextPoll();
+
+    return null;
+  }
 }
 
 /**
  * Fetch sync snapshot from backend.
  */
 async function fetchSyncSnapshot(): Promise<SyncSnapshot | null> {
-    if (!config) {
-        return null;
-    }
+  if (!config) {
+    return null;
+  }
 
-    const token = config.getAuthToken();
-    if (!token) {
-        console.warn('[CommandSyncService] No auth token, skipping sync');
-        return null;
-    }
+  const token = config.getAuthToken();
+  if (!token) {
+    console.warn("[CommandSyncService] No auth token, skipping sync");
+    return null;
+  }
 
-    const url = `${config.apiBaseUrl}/api/devices/${config.deviceId}/sync`;
+  const url = `${config.apiBaseUrl}/api/devices/${config.deviceId}/sync`;
 
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-    });
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 
-    if (!response.ok) {
-        throw new Error(`Sync request failed: ${response.status} ${response.statusText}`);
-    }
+  if (!response.ok) {
+    throw new Error(
+      `Sync request failed: ${response.status} ${response.statusText}`,
+    );
+  }
 
-    const json = await response.json();
+  const json = await response.json();
 
-    if (!json.success) {
-        throw new Error(json.error || 'Sync request returned unsuccessful response');
-    }
+  if (!json.success) {
+    throw new Error(
+      json.error || "Sync request returned unsuccessful response",
+    );
+  }
 
-    return json.data as SyncSnapshot;
+  return json.data as SyncSnapshot;
 }
 
 /**
  * Schedule the next poll.
  */
 function scheduleNextPoll(): void {
-    const state = useCommandSyncStore.getState();
-    if (!state.isRunning) {
-        return;
-    }
+  const state = useCommandSyncStore.getState();
+  if (!state.isRunning) {
+    return;
+  }
 
-    pollTimeout = setTimeout(() => {
-        void performSync();
-    }, state.currentPollIntervalSeconds * 1000);
+  pollTimeout = setTimeout(() => {
+    void performSync();
+  }, state.currentPollIntervalSeconds * 1000);
 
-    console.debug(`[CommandSyncService] Next poll in ${state.currentPollIntervalSeconds}s`);
+  console.debug(
+    `[CommandSyncService] Next poll in ${state.currentPollIntervalSeconds}s`,
+  );
 }

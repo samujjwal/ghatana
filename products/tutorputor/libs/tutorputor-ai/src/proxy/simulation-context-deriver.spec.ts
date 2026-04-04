@@ -22,7 +22,7 @@ import {
   type EntitySummary,
   type ParameterSummary,
   type DerivedMetric,
-} from "../simulation-context-deriver";
+} from "./simulation-context-deriver";
 
 // =============================================================================
 // Mock Data
@@ -55,12 +55,21 @@ const createMockPhysicsManifest = () => ({
       title: "Launch",
       duration: 1000,
       actions: [
-        { action: "APPLY_FORCE", entityId: "projectile-1", force: { x: 10, y: 15, z: 0 } },
+        {
+          action: "APPLY_FORCE",
+          entityId: "projectile-1",
+          force: { x: 10, y: 15, z: 0 },
+        },
       ],
     },
   ],
   parameters: [
-    { name: "initialVelocity", value: 20, unit: "m/s", range: { min: 0, max: 100 } },
+    {
+      name: "initialVelocity",
+      value: 20,
+      unit: "m/s",
+      range: { min: 0, max: 100 },
+    },
     { name: "angle", value: 45, unit: "degrees", range: { min: 0, max: 90 } },
     { name: "gravity", value: 9.8, unit: "m/s²", range: { min: 0, max: 20 } },
   ],
@@ -95,8 +104,18 @@ const createMockChemistryManifest = () => ({
   domain: "CHEMISTRY" as const,
   version: "1.0.0",
   initialEntities: [
-    { id: "hcl", type: "molecule", label: "HCl", properties: { concentration: 0.1, volume: 100 } },
-    { id: "naoh", type: "molecule", label: "NaOH", properties: { concentration: 0.1, volume: 0 } },
+    {
+      id: "hcl",
+      type: "molecule",
+      label: "HCl",
+      properties: { concentration: 0.1, volume: 100 },
+    },
+    {
+      id: "naoh",
+      type: "molecule",
+      label: "NaOH",
+      properties: { concentration: 0.1, volume: 0 },
+    },
   ],
   parameters: [
     { name: "temperature", value: 25, unit: "°C" },
@@ -128,9 +147,24 @@ const createMockBioMedManifest = () => ({
   domain: "MEDICINE" as const,
   version: "1.0.0",
   initialEntities: [
-    { id: "plasma", type: "compartment", label: "Plasma", properties: { volume: 5 } },
-    { id: "tissue", type: "compartment", label: "Tissue", properties: { volume: 35 } },
-    { id: "drug", type: "substance", label: "Drug", properties: { dose: 100, halfLife: 4 } },
+    {
+      id: "plasma",
+      type: "compartment",
+      label: "Plasma",
+      properties: { volume: 5 },
+    },
+    {
+      id: "tissue",
+      type: "compartment",
+      label: "Tissue",
+      properties: { volume: 35 },
+    },
+    {
+      id: "drug",
+      type: "substance",
+      label: "Drug",
+      properties: { dose: 100, halfLife: 4 },
+    },
   ],
   parameters: [
     { name: "dose", value: 100, unit: "mg" },
@@ -159,7 +193,7 @@ describe("SimulationContextDeriver", () => {
       const context = await deriveSimulationContext(
         manifest,
         currentKeyframe,
-        userActions
+        userActions,
       );
 
       expect(context).toBeDefined();
@@ -176,7 +210,11 @@ describe("SimulationContextDeriver", () => {
         metrics: { comparisons: 3, swaps: 2 },
       };
 
-      const context = await deriveSimulationContext(manifest, currentKeyframe, []);
+      const context = await deriveSimulationContext(
+        manifest,
+        currentKeyframe,
+        [],
+      );
 
       expect(context).toBeDefined();
       expect(context.simulationSummary).toContain("Bubble Sort");
@@ -191,7 +229,11 @@ describe("SimulationContextDeriver", () => {
         metrics: {},
       };
 
-      const context = await deriveSimulationContext(manifest, currentKeyframe, []);
+      const context = await deriveSimulationContext(
+        manifest,
+        currentKeyframe,
+        [],
+      );
 
       expect(context.currentStep).toBeDefined();
       expect(context.currentStep?.index).toBe(0);
@@ -202,10 +244,7 @@ describe("SimulationContextDeriver", () => {
   describe("summarizeEntities", () => {
     it("should summarize physics entities correctly", () => {
       const manifest = createMockPhysicsManifest();
-      const summaries = summarizeEntities(
-        manifest.initialEntities,
-        "PHYSICS"
-      );
+      const summaries = summarizeEntities(manifest.initialEntities, "PHYSICS");
 
       expect(summaries).toHaveLength(2);
 
@@ -219,7 +258,7 @@ describe("SimulationContextDeriver", () => {
       const manifest = createMockCSManifest();
       const summaries = summarizeEntities(
         manifest.initialEntities,
-        "CS_DISCRETE"
+        "CS_DISCRETE",
       );
 
       expect(summaries).toHaveLength(1);
@@ -230,7 +269,7 @@ describe("SimulationContextDeriver", () => {
       const manifest = createMockChemistryManifest();
       const summaries = summarizeEntities(
         manifest.initialEntities,
-        "CHEMISTRY"
+        "CHEMISTRY",
       );
 
       expect(summaries).toHaveLength(2);
@@ -240,10 +279,7 @@ describe("SimulationContextDeriver", () => {
 
     it("should summarize biomed entities correctly", () => {
       const manifest = createMockBioMedManifest();
-      const summaries = summarizeEntities(
-        manifest.initialEntities,
-        "MEDICINE"
-      );
+      const summaries = summarizeEntities(manifest.initialEntities, "MEDICINE");
 
       expect(summaries).toHaveLength(3);
       const plasma = summaries.find((e) => e.id === "plasma");
@@ -260,7 +296,7 @@ describe("SimulationContextDeriver", () => {
       const summaries = summarizeParameters(
         manifest.parameters ?? [],
         currentValues,
-        previousValues
+        previousValues,
       );
 
       expect(summaries).toHaveLength(3);
@@ -280,7 +316,7 @@ describe("SimulationContextDeriver", () => {
       const summaries = summarizeParameters(
         manifest.parameters ?? [],
         currentValues,
-        previousValues
+        previousValues,
       );
 
       const gravitySummary = summaries.find((p) => p.name === "gravity");
@@ -291,7 +327,13 @@ describe("SimulationContextDeriver", () => {
   describe("summarizeUserActions", () => {
     it("should create action summaries with descriptions", () => {
       const rawActions = [
-        { type: "CHANGE_PARAMETER", parameter: "angle", from: 45, to: 60, timestamp: 1000 },
+        {
+          type: "CHANGE_PARAMETER",
+          parameter: "angle",
+          from: 45,
+          to: 60,
+          timestamp: 1000,
+        },
         { type: "PLAY", timestamp: 2000 },
         { type: "PAUSE", timestamp: 3000 },
         { type: "RESTART", timestamp: 4000 },
@@ -314,7 +356,12 @@ describe("SimulationContextDeriver", () => {
   describe("deriveMetrics", () => {
     it("should derive physics metrics correctly", () => {
       const keyframe = {
-        metrics: { kineticEnergy: 200, potentialEnergy: 50, height: 5, velocity: 20 },
+        metrics: {
+          kineticEnergy: 200,
+          potentialEnergy: 50,
+          height: 5,
+          velocity: 20,
+        },
       };
 
       const metrics = deriveMetrics(keyframe, "PHYSICS");
@@ -332,14 +379,20 @@ describe("SimulationContextDeriver", () => {
 
       const metrics = deriveMetrics(keyframe, "CS_DISCRETE");
 
-      const comparisonMetric = metrics.find((m) => m.name.includes("Comparison"));
+      const comparisonMetric = metrics.find((m) =>
+        m.name.includes("Comparison"),
+      );
       expect(comparisonMetric).toBeDefined();
       expect(comparisonMetric?.value).toBe(15);
     });
 
     it("should derive economics metrics correctly", () => {
       const keyframe = {
-        metrics: { consumerSurplus: 1000, producerSurplus: 800, totalSurplus: 1800 },
+        metrics: {
+          consumerSurplus: 1000,
+          producerSurplus: 800,
+          totalSurplus: 1800,
+        },
       };
 
       const metrics = deriveMetrics(keyframe, "ECONOMICS");
@@ -411,7 +464,11 @@ describe("SimulationContextDeriver", () => {
         parameters: undefined,
       };
 
-      const context = await deriveSimulationContext(manifest, { stepIndex: 0, entities: [], metrics: {} }, []);
+      const context = await deriveSimulationContext(
+        manifest,
+        { stepIndex: 0, entities: [], metrics: {} },
+        [],
+      );
 
       expect(context.parameters).toEqual([]);
     });
@@ -422,7 +479,11 @@ describe("SimulationContextDeriver", () => {
         initialEntities: [],
       };
 
-      const context = await deriveSimulationContext(manifest, { stepIndex: 0, entities: [], metrics: {} }, []);
+      const context = await deriveSimulationContext(
+        manifest,
+        { stepIndex: 0, entities: [], metrics: {} },
+        [],
+      );
 
       expect(context.entities).toEqual([]);
     });

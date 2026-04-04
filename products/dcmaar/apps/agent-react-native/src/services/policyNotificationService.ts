@@ -61,7 +61,7 @@ interface Policy {
  */
 interface PolicyNotification {
   id: string;
-  type: 'new' | 'updated' | 'deleted' | 'violated' | 'error';
+  type: "new" | "updated" | "deleted" | "violated" | "error";
   policyId?: string;
   policyName?: string;
   message: string;
@@ -100,7 +100,7 @@ let serviceState: PolicyNotificationState = {
 /**
  * Polling timer reference.
  */
-let pollTimer: NodeJS.Timeout | null = null;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Cached policies for comparison.
@@ -128,7 +128,7 @@ function hashPolicies(policies: Policy[]): string {
   const sorted = policies
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((p) => `${p.id}:${p.version || 0}`)
-    .join('|');
+    .join("|");
 
   return simpleHash(sorted);
 }
@@ -140,7 +140,10 @@ function hashPolicies(policies: Policy[]): string {
  * @param newPolicies - New policies from API
  * @returns Array of notifications for changes
  */
-function detectChanges(oldPolicies: Map<string, Policy>, newPolicies: Policy[]): PolicyNotification[] {
+function detectChanges(
+  oldPolicies: Map<string, Policy>,
+  newPolicies: Policy[],
+): PolicyNotification[] {
   const notifications: PolicyNotification[] = [];
   const newMap = new Map(newPolicies.map((p) => [p.id, p]));
 
@@ -152,7 +155,7 @@ function detectChanges(oldPolicies: Map<string, Policy>, newPolicies: Policy[]):
       // New policy
       notifications.push({
         id: `notif:${Date.now()}:${newPolicy.id}`,
-        type: 'new',
+        type: "new",
         policyId: newPolicy.id,
         policyName: newPolicy.name,
         message: `New policy assigned: ${newPolicy.name}`,
@@ -163,7 +166,7 @@ function detectChanges(oldPolicies: Map<string, Policy>, newPolicies: Policy[]):
       // Updated policy
       notifications.push({
         id: `notif:${Date.now()}:${newPolicy.id}`,
-        type: 'updated',
+        type: "updated",
         policyId: newPolicy.id,
         policyName: newPolicy.name,
         message: `Policy updated: ${newPolicy.name}`,
@@ -178,7 +181,7 @@ function detectChanges(oldPolicies: Map<string, Policy>, newPolicies: Policy[]):
     if (!newMap.has(policyId)) {
       notifications.push({
         id: `notif:${Date.now()}:${policyId}`,
-        type: 'deleted',
+        type: "deleted",
         policyId,
         policyName: oldPolicy.name,
         message: `Policy removed: ${oldPolicy.name}`,
@@ -214,7 +217,10 @@ async function pollForPolicyUpdates(): Promise<void> {
       const changes = detectChanges(cachedPolicies, newPolicies);
 
       if (changes.length > 0) {
-        console.log('[PolicyNotificationService] Detected policy changes:', changes);
+        console.log(
+          "[PolicyNotificationService] Detected policy changes:",
+          changes,
+        );
 
         // Add to notifications and update cached data
         serviceState.notifications.push(...changes);
@@ -245,15 +251,15 @@ function handlePollError(error: unknown): void {
 
   if (serviceState.failureCount >= serviceState.maxFailures) {
     console.error(
-      '[PolicyNotificationService] Max polling failures exceeded',
-      error
+      "[PolicyNotificationService] Max polling failures exceeded",
+      error,
     );
 
     // Emit error notification
     serviceState.notifications.push({
       id: `notif:${Date.now()}:error`,
-      type: 'error',
-      message: 'Unable to fetch policy updates. Check your connection.',
+      type: "error",
+      message: "Unable to fetch policy updates. Check your connection.",
       timestamp: Date.now(),
     });
 
@@ -267,7 +273,7 @@ function handlePollError(error: unknown): void {
 
   console.warn(
     `[PolicyNotificationService] Poll failed, will retry in ${nextInterval}ms (attempt ${serviceState.failureCount}/${serviceState.maxFailures})`,
-    error
+    error,
   );
 
   // Schedule next poll with backoff
@@ -302,7 +308,9 @@ export function startPolicyNotifications(): void {
     return;
   }
 
-  console.log('[PolicyNotificationService] Starting policy notification service');
+  console.log(
+    "[PolicyNotificationService] Starting policy notification service",
+  );
 
   serviceState.isStarted = true;
   serviceState.failureCount = 0;
@@ -320,7 +328,9 @@ export function stopPolicyNotifications(): void {
     return;
   }
 
-  console.log('[PolicyNotificationService] Stopping policy notification service');
+  console.log(
+    "[PolicyNotificationService] Stopping policy notification service",
+  );
 
   if (pollTimer !== null) {
     clearTimeout(pollTimer);
@@ -339,7 +349,7 @@ export function pausePolicyNotifications(): void {
   }
 
   serviceState.isPaused = true;
-  console.log('[PolicyNotificationService] Policy notifications paused');
+  console.log("[PolicyNotificationService] Policy notifications paused");
 }
 
 /**
@@ -355,7 +365,7 @@ export function resumePolicyNotifications(): void {
   }
 
   serviceState.isPaused = false;
-  console.log('[PolicyNotificationService] Policy notifications resumed');
+  console.log("[PolicyNotificationService] Policy notifications resumed");
 
   // Poll immediately to catch any missed updates
   void pollForPolicyUpdates();
@@ -403,22 +413,28 @@ export function getNotificationServiceStatus() {
  */
 export function setPollingInterval(intervalMs: number): void {
   if (intervalMs < 5000) {
-    console.warn('[PolicyNotificationService] Polling interval too short, using 5s minimum');
+    console.warn(
+      "[PolicyNotificationService] Polling interval too short, using 5s minimum",
+    );
     serviceState.pollingInterval = 5000;
   } else if (intervalMs > 300000) {
-    console.warn('[PolicyNotificationService] Polling interval too long, using 5m maximum');
+    console.warn(
+      "[PolicyNotificationService] Polling interval too long, using 5m maximum",
+    );
     serviceState.pollingInterval = 300000;
   } else {
     serviceState.pollingInterval = intervalMs;
   }
 
-  console.log(`[PolicyNotificationService] Polling interval set to ${serviceState.pollingInterval}ms`);
+  console.log(
+    `[PolicyNotificationService] Polling interval set to ${serviceState.pollingInterval}ms`,
+  );
 }
 
 /**
  * Manually trigger policy poll (useful for testing or forced refresh).
  */
 export async function triggerPolicyPoll(): Promise<void> {
-  console.log('[PolicyNotificationService] Manual policy poll triggered');
+  console.log("[PolicyNotificationService] Manual policy poll triggered");
   await pollForPolicyUpdates();
 }

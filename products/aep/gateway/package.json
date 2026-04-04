@@ -11,16 +11,16 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastify/cors": "^8.5.0",
-    "@fastify/websocket": "^8.3.1",
-    "fastify": "^4.26.2",
-    "ws": "^8.16.2"
+    "@fastify/cors": "^11.2.0",
+    "@fastify/websocket": "^11.2.0",
+    "fastify": "^5.8.4",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.20",
-    "@types/ws": "^8.5.10",
-    "tsx": "^4.7.1",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.1"
+    "@types/node": "^25.5.2",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   }
 }

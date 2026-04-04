@@ -1,12 +1,11 @@
 // TutorPutor UI - Consolidated Package
-// Merges: ui-shared + charts + assessments + testing + tracing
+// Merges: ui-shared + charts + assessments
 
 // Components exports (from ui-shared)
-export * from './components';
+export * from "./components";
 
 // Charts exports
-export * from './charts';
+export * from "./charts";
 
 // Assessment exports
-export * from './assessment';
-
+export * from "./assessment";

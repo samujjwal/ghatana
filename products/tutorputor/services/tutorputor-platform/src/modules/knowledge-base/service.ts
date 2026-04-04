@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
 // ============================================================================
 // Types
@@ -137,13 +137,12 @@ type CacheEntry<T> = {
 // ============================================================================
 
 export class KnowledgeBaseServiceImpl {
-  private prisma: PrismaClient;
-  private logger = createStandaloneLogger({ service: 'KnowledgeBaseService' });
+  private logger = createStandaloneLogger({ service: "KnowledgeBaseService" });
   private cache: Map<string, CacheEntry<unknown>> = new Map();
   private cacheTimeoutMs = 30 * 60 * 1000; // 30 minutes
 
   constructor(
-    prisma: PrismaClient,
+    _prisma: PrismaClient,
     private readonly config: {
       wikipediaApiUrl?: string;
       openStaxApiUrl?: string;
@@ -151,7 +150,7 @@ export class KnowledgeBaseServiceImpl {
       enableCaching?: boolean;
     } = {},
   ) {
-    this.prisma = prisma;
+    void _prisma;
   }
 
   private getCached<T>(key: string): T | undefined {
@@ -199,7 +198,10 @@ export class KnowledgeBaseServiceImpl {
 
     const results = await Promise.allSettled(sourceQueries);
     const sources = results
-      .filter((result): result is PromiseFulfilledResult<unknown[]> => result.status === "fulfilled")
+      .filter(
+        (result): result is PromiseFulfilledResult<FactSource[]> =>
+          result.status === "fulfilled",
+      )
       .flatMap((result) => result.value);
 
     // Analyze results for verification
@@ -401,7 +403,7 @@ export class KnowledgeBaseServiceImpl {
 
   private async queryWikipedia(
     assertions: string[],
-    domain: string,
+    _domain: string,
   ): Promise<FactSource[]> {
     const sources: FactSource[] = [];
 
@@ -611,7 +613,7 @@ export class KnowledgeBaseServiceImpl {
   private analyzeFactCheckResults(
     assertions: string[],
     sources: FactSource[],
-    request: FactCheckRequest,
+    _request: FactCheckRequest,
   ): {
     verified: boolean;
     confidence: number;

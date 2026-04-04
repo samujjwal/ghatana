@@ -3,20 +3,20 @@
   "version": "1.0.0",
   "description": "Plugin abstraction interfaces and implementations for DCMAAR framework",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.js"
     },
     "./interfaces": {
-      "types": "./dist/interfaces/index.d.ts",
+      "types": "./src/interfaces/index.ts",
       "require": "./dist/interfaces/index.js",
       "import": "./dist/interfaces/index.js"
     },
     "./implementations": {
-      "types": "./dist/implementations/index.d.ts",
+      "types": "./src/implementations/index.ts",
       "require": "./dist/implementations/index.js",
       "import": "./dist/implementations/index.js"
     }
@@ -41,7 +41,7 @@
     "@dcmaar/types": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   }
 }

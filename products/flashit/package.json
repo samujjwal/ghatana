@@ -73,7 +73,10 @@
     "audit:all": "npm run audit:security && npm run audit:accessibility"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^25.2.0",
+    "@types/react-window": "^1.8.8",
+    "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
     "jest-html-reporters": "^3.1.7",
     "jest-junit": "^16.0.0",

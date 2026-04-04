@@ -22,6 +22,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../contexts/ApiContext';
+import { SearchResultItem } from '@flashit/shared';
 import { formatDistanceToNow } from 'date-fns';
 
 interface SearchResult {
@@ -34,7 +35,19 @@ interface SearchResult {
   score?: number;
 }
 
-type SearchType = 'hybrid' | 'semantic' | 'keyword';
+type SearchType = 'hybrid' | 'semantic' | 'text';
+
+function toSearchResult(item: SearchResultItem): SearchResult {
+  return {
+    id: item.momentId,
+    content: item.content,
+    sphereName: item.sphereName,
+    createdAt: item.capturedAt,
+    tags: item.tags,
+    emotions: item.emotions,
+    score: item.score,
+  };
+}
 
 export default function SearchScreen() {
   const { apiClient } = useApi();
@@ -62,7 +75,7 @@ export default function SearchScreen() {
     }
   }, [query]);
 
-  const results: SearchResult[] = data?.results || data?.moments || [];
+  const results: SearchResult[] = (data?.results || []).map(toSearchResult);
 
   const renderSearchTypeChip = (type: SearchType, label: string) => (
     <TouchableOpacity
@@ -146,7 +159,7 @@ export default function SearchScreen() {
       <View style={styles.chipRow}>
         {renderSearchTypeChip('hybrid', 'Hybrid AI')}
         {renderSearchTypeChip('semantic', 'Semantic')}
-        {renderSearchTypeChip('keyword', 'Keyword')}
+        {renderSearchTypeChip('text', 'Keyword')}
       </View>
 
       {/* Results */}

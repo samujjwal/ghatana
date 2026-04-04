@@ -196,7 +196,7 @@ export class GamificationService {
   }
 
   async updateBadge(
-    tenantId: TenantId,
+    _tenantId: TenantId,
     badgeId: BadgeId,
     updates: Partial<CreateBadgeInput>,
   ): Promise<Badge> {
@@ -220,7 +220,7 @@ export class GamificationService {
     } as unknown as Badge;
   }
 
-  async deleteBadge(tenantId: TenantId, badgeId: BadgeId): Promise<void> {
+  async deleteBadge(_tenantId: TenantId, badgeId: BadgeId): Promise<void> {
     await this.prisma.badge.delete({
       where: { id: badgeId },
     });
@@ -288,7 +288,7 @@ export class GamificationService {
     };
   }
 
-  async revokeBadge(tenantId: TenantId, achievementId: string): Promise<void> {
+  async revokeBadge(_tenantId: TenantId, achievementId: string): Promise<void> {
     await this.prisma.badgeEarned.delete({
       where: { id: achievementId },
     });
@@ -466,8 +466,8 @@ export class GamificationService {
 
   // Streak management
   async updateStreak(
-    tenantId: TenantId,
-    userId: UserId,
+    _tenantId: TenantId,
+    _userId: UserId,
   ): Promise<{ currentStreak: number; bonusPoints?: number }> {
     // Placeholder
     return {

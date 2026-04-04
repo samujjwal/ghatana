@@ -1,5 +1,5 @@
-import { createLogger } from '../utils/logger.js';
-const logger = createLogger('domain-loader');
+import { createLogger } from "../utils/logger.js";
+const logger = createLogger("domain-loader");
 
 /**
  * Domain Loader
@@ -38,14 +38,18 @@ function getTutorputorRootDir(): string {
   return resolve(__dirname, "../../../..");
 }
 
-const DEFAULT_CONTENT_DIR = resolve(getTutorputorRootDir(), "content", "domains");
+const DEFAULT_CONTENT_DIR = resolve(
+  getTutorputorRootDir(),
+  "content",
+  "domains",
+);
 
 /**
  * Load domain content from JSON files into the database.
  */
 export async function loadDomainContent(
   prisma: TutorPrismaClient,
-  options: LoaderOptions
+  options: LoaderOptions,
 ): Promise<LoaderResult> {
   const startTime = Date.now();
   const warnings: string[] = [];
@@ -72,7 +76,11 @@ export async function loadDomainContent(
     const allConcepts: DomainConcept[] = [];
 
     // Load Physics
-    if (options.domain === "physics" || options.domain === "all" || !options.domain) {
+    if (
+      options.domain === "physics" ||
+      options.domain === "all" ||
+      !options.domain
+    ) {
       try {
         const physicsPath = join(contentDir, "physics.json");
         const physicsData = JSON.parse(readFileSync(physicsPath, "utf-8"));
@@ -93,7 +101,11 @@ export async function loadDomainContent(
     }
 
     // Load Chemistry
-    if (options.domain === "chemistry" || options.domain === "all" || !options.domain) {
+    if (
+      options.domain === "chemistry" ||
+      options.domain === "all" ||
+      !options.domain
+    ) {
       try {
         const chemistryPath = join(contentDir, "chemistry.json");
         const chemistryData = JSON.parse(readFileSync(chemistryPath, "utf-8"));
@@ -104,7 +116,10 @@ export async function loadDomainContent(
         stats.conceptsByDomain["CHEMISTRY"] = chemistryConcepts.length;
 
         if (options.verbose) {
-          logger.info({}, `Parsed ${chemistryConcepts.length} chemistry concepts`);
+          logger.info(
+            {},
+            `Parsed ${chemistryConcepts.length} chemistry concepts`,
+          );
         }
       } catch (error) {
         const msg = `Failed to load chemistry.json: ${error instanceof Error ? error.message : String(error)}`;
@@ -152,7 +167,13 @@ export async function loadDomainContent(
     }
 
     // Persist to database
-    await persistConcepts(prisma, options.tenantId, allConcepts, stats, warnings);
+    await persistConcepts(
+      prisma,
+      options.tenantId,
+      allConcepts,
+      stats,
+      warnings,
+    );
 
     return {
       success: errors.length === 0,
@@ -163,7 +184,9 @@ export async function loadDomainContent(
       durationMs: Date.now() - startTime,
     };
   } catch (error) {
-    errors.push(`Unexpected error: ${error instanceof Error ? error.message : String(error)}`);
+    errors.push(
+      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return {
       success: false,
       domains: domainsLoaded,
@@ -179,7 +202,7 @@ export async function loadDomainContent(
  * Validate domain content without persisting.
  */
 export async function validateDomainContent(
-  options: Omit<LoaderOptions, "dryRun">
+  options: Omit<LoaderOptions, "dryRun">,
 ): Promise<ValidationResult> {
   const errors: ValidationError[] = [];
   const warnings: ValidationWarning[] = [];
@@ -190,7 +213,11 @@ export async function validateDomainContent(
     const allConcepts: DomainConcept[] = [];
 
     // Load and parse
-    if (options.domain === "physics" || options.domain === "all" || !options.domain) {
+    if (
+      options.domain === "physics" ||
+      options.domain === "all" ||
+      !options.domain
+    ) {
       try {
         const physicsPath = join(contentDir, "physics.json");
         const physicsData = JSON.parse(readFileSync(physicsPath, "utf-8"));
@@ -205,7 +232,11 @@ export async function validateDomainContent(
       }
     }
 
-    if (options.domain === "chemistry" || options.domain === "all" || !options.domain) {
+    if (
+      options.domain === "chemistry" ||
+      options.domain === "all" ||
+      !options.domain
+    ) {
       try {
         const chemistryPath = join(contentDir, "chemistry.json");
         const chemistryData = JSON.parse(readFileSync(chemistryPath, "utf-8"));
@@ -280,8 +311,8 @@ export async function validateDomainContent(
 function validateConcept(
   concept: DomainConcept,
   allIds: Set<string>,
-  errors: ValidationError[],
-  warnings: ValidationWarning[]
+  _errors: ValidationError[],
+  warnings: ValidationWarning[],
 ): void {
   // Check prerequisites exist
   for (const prereqId of concept.prerequisites) {
@@ -423,17 +454,25 @@ async function persistConcepts(
   tenantId: string,
   concepts: DomainConcept[],
   stats: LoadStatistics,
-  warnings: string[]
+  warnings: string[],
 ): Promise<void> {
   // Create concept records in a transaction
   await prisma.$transaction(async (tx: TransactionClient) => {
     // First, create all DomainConcept records
     for (const concept of concepts) {
       // Convert complex objects to JSON-compatible format for Prisma
-      const simulationMeta = JSON.parse(JSON.stringify(concept.simulationMetadata));
-      const learningMeta = JSON.parse(JSON.stringify(concept.learningObjectMetadata));
-      const pedagogicalMeta = JSON.parse(JSON.stringify(concept.pedagogicalMetadata));
-      const crossDomainLinksJson = JSON.parse(JSON.stringify(concept.crossDomainLinks));
+      const simulationMeta = JSON.parse(
+        JSON.stringify(concept.simulationMetadata),
+      );
+      const learningMeta = JSON.parse(
+        JSON.stringify(concept.learningObjectMetadata),
+      );
+      const pedagogicalMeta = JSON.parse(
+        JSON.stringify(concept.pedagogicalMetadata),
+      );
+      const crossDomainLinksJson = JSON.parse(
+        JSON.stringify(concept.crossDomainLinks),
+      );
 
       await tx.domainConcept.upsert({
         where: {
@@ -455,7 +494,10 @@ async function persistConcepts(
           learningObjectMetadata: learningMeta,
           pedagogicalMetadata: pedagogicalMeta,
           crossDomainLinks: crossDomainLinksJson,
-          status: concept.learningObjectMetadata.status === "published" ? "PUBLISHED" : "DRAFT",
+          status:
+            concept.learningObjectMetadata.status === "published"
+              ? "PUBLISHED"
+              : "DRAFT",
         },
         update: {
           name: concept.name,
@@ -466,7 +508,10 @@ async function persistConcepts(
           learningObjectMetadata: learningMeta,
           pedagogicalMetadata: pedagogicalMeta,
           crossDomainLinks: crossDomainLinksJson,
-          status: concept.learningObjectMetadata.status === "published" ? "PUBLISHED" : "DRAFT",
+          status:
+            concept.learningObjectMetadata.status === "published"
+              ? "PUBLISHED"
+              : "DRAFT",
         },
       });
     }
@@ -489,7 +534,9 @@ async function persistConcepts(
       for (const prereqExternalId of concept.prerequisites) {
         const prereqDbId = conceptIdMap.get(prereqExternalId);
         if (!prereqDbId) {
-          warnings.push(`Prerequisite ${prereqExternalId} not found for ${concept.id}`);
+          warnings.push(
+            `Prerequisite ${prereqExternalId} not found for ${concept.id}`,
+          );
           continue;
         }
 
@@ -510,7 +557,7 @@ async function persistConcepts(
           stats.prerequisiteLinks++;
         } catch (error) {
           warnings.push(
-            `Failed to link ${concept.id} → ${prereqExternalId}: ${error instanceof Error ? error.message : String(error)}`
+            `Failed to link ${concept.id} → ${prereqExternalId}: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }

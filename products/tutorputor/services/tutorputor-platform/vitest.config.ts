@@ -3,12 +3,90 @@ import path from "path";
 
 export default defineConfig({
   resolve: {
-    alias: {
-      "@ghatana/tutorputor-db": path.resolve(
-        __dirname,
-        "src/__tests__/__mocks__/tutorputor-db.ts",
-      ),
-    },
+    alias: [
+      {
+        find: "@ghatana/tutorputor-db",
+        replacement: path.resolve(
+          __dirname,
+          "src/__tests__/__mocks__/tutorputor-db.ts",
+        ),
+      },
+      {
+        find: "@ghatana/design-system",
+        replacement: path.resolve(
+          __dirname,
+          "../../../../platform/typescript/design-system/src/index.ts",
+        ),
+      },
+      {
+        find: "@ghatana/theme",
+        replacement: path.resolve(
+          __dirname,
+          "../../../../platform/typescript/theme/src/index.ts",
+        ),
+      },
+      {
+        find: "@ghatana/tokens",
+        replacement: path.resolve(
+          __dirname,
+          "../../../../platform/typescript/tokens/src/index.ts",
+        ),
+      },
+      {
+        find: "@ghatana/platform-utils",
+        replacement: path.resolve(
+          __dirname,
+          "../../../../platform/typescript/foundation/platform-utils/src/index.ts",
+        ),
+      },
+      {
+        find: /^@tutorputor\/core\/(.+)$/,
+        replacement: path.resolve(
+          __dirname,
+          "../../libs/tutorputor-core/src/$1",
+        ),
+      },
+      {
+        find: /^@tutorputor\/simulation\/(.+)$/,
+        replacement: path.resolve(
+          __dirname,
+          "../../libs/tutorputor-simulation/src/$1",
+        ),
+      },
+      {
+        find: /^@tutorputor\/ui\/(.+)$/,
+        replacement: path.resolve(__dirname, "../../libs/tutorputor-ui/src/$1"),
+      },
+      {
+        find: /^@tutorputor\/contracts\/(.+)$/,
+        replacement: path.resolve(__dirname, "../../contracts/src/$1"),
+      },
+      {
+        find: "@tutorputor/contracts",
+        replacement: path.resolve(__dirname, "../../contracts/src/index.ts"),
+      },
+      {
+        find: "@tutorputor/core",
+        replacement: path.resolve(
+          __dirname,
+          "../../libs/tutorputor-core/src/index.ts",
+        ),
+      },
+      {
+        find: "@tutorputor/simulation",
+        replacement: path.resolve(
+          __dirname,
+          "../../libs/tutorputor-simulation/src/index.ts",
+        ),
+      },
+      {
+        find: "@tutorputor/ui",
+        replacement: path.resolve(
+          __dirname,
+          "../../libs/tutorputor-ui/src/index.ts",
+        ),
+      },
+    ],
   },
   test: {
     globals: true,

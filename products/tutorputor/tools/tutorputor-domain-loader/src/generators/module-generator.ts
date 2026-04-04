@@ -1,5 +1,5 @@
-import { createLogger } from '../utils/logger.js';
-const logger = createLogger('module-generator');
+import { createLogger } from "../utils/logger.js";
+const logger = createLogger("module-generator");
 
 /**
  * Module Generator
@@ -13,9 +13,17 @@ const logger = createLogger('module-generator');
  */
 
 import type { TutorPrismaClient } from "../prisma-utils.js";
-import type { DomainConcept, ConceptModuleMapping, ConceptId } from "@tutorputor/contracts/v1/curriculum/types";
+import type {
+  DomainConcept,
+  ConceptModuleMapping,
+  ConceptId,
+} from "@tutorputor/contracts/v1/curriculum/types";
 import type { ModuleId } from "@tutorputor/contracts/v1/types";
-import { levelToDifficulty, domainToModuleDomain, generateSlug } from "../utils/mappers";
+import {
+  levelToDifficulty,
+  domainToModuleDomain,
+  generateSlug,
+} from "../utils/mappers";
 
 /**
  * Options for module generation.
@@ -60,7 +68,7 @@ export interface ModuleGeneratorResult {
 export async function generateModulesFromConcepts(
   prisma: TutorPrismaClient,
   concepts: DomainConcept[],
-  options: ModuleGeneratorOptions
+  options: ModuleGeneratorOptions,
 ): Promise<ModuleGeneratorResult> {
   const mappings: ConceptModuleMapping[] = [];
   const warnings: string[] = [];
@@ -119,14 +127,19 @@ export async function generateModulesFromConcepts(
           description: concept.description,
           domain: moduleDomain,
           difficulty,
-          estimatedTimeMinutes: concept.learningObjectMetadata.typicalLearningTimeMinutes,
-          status: concept.learningObjectMetadata.status === "published" ? "PUBLISHED" : "DRAFT",
+          estimatedTimeMinutes:
+            concept.learningObjectMetadata.typicalLearningTimeMinutes,
+          status:
+            concept.learningObjectMetadata.status === "published"
+              ? "PUBLISHED"
+              : "DRAFT",
           authorId: options.authorId,
         },
         update: {
           title: concept.name,
           description: concept.description,
-          estimatedTimeMinutes: concept.learningObjectMetadata.typicalLearningTimeMinutes,
+          estimatedTimeMinutes:
+            concept.learningObjectMetadata.typicalLearningTimeMinutes,
           updatedBy: options.authorId,
         },
       });
@@ -165,17 +178,26 @@ export async function generateModulesFromConcepts(
       });
 
       if (options.verbose) {
-        logger.info({}, `Created module: ${module.slug} for concept ${concept.id}`);
+        logger.info(
+          {},
+          `Created module: ${module.slug} for concept ${concept.id}`,
+        );
       }
     } catch (error) {
       errors.push(
-        `Failed to create module for ${concept.id}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to create module for ${concept.id}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
 
   // Link module prerequisites after all modules are created
-  await linkModulePrerequisites(prisma, concepts, mappings, options.tenantId, warnings);
+  await linkModulePrerequisites(
+    prisma,
+    concepts,
+    mappings,
+    options.tenantId,
+    warnings,
+  );
 
   return {
     modulesCreated,
@@ -192,7 +214,7 @@ export async function generateModulesFromConcepts(
 async function createModuleTags(
   prisma: TutorPrismaClient,
   moduleId: string,
-  concept: DomainConcept
+  concept: DomainConcept,
 ): Promise<void> {
   const tags = [...concept.keywords, ...concept.audienceTags];
 
@@ -219,7 +241,7 @@ async function createModuleTags(
 async function createLearningObjectives(
   prisma: TutorPrismaClient,
   moduleId: string,
-  concept: DomainConcept
+  concept: DomainConcept,
 ): Promise<void> {
   // Remove existing objectives and recreate
   await prisma.moduleLearningObjective.deleteMany({ where: { moduleId } });
@@ -312,7 +334,7 @@ function inferTaxonomyLevel(objective: string): string {
 async function createContentBlocks(
   prisma: TutorPrismaClient,
   moduleId: string,
-  concept: DomainConcept
+  concept: DomainConcept,
 ): Promise<void> {
   // Remove existing content blocks
   await prisma.moduleContentBlock.deleteMany({ where: { moduleId } });
@@ -393,8 +415,8 @@ async function linkModulePrerequisites(
   prisma: TutorPrismaClient,
   concepts: DomainConcept[],
   mappings: ConceptModuleMapping[],
-  tenantId: string,
-  warnings: string[]
+  _tenantId: string,
+  warnings: string[],
 ): Promise<void> {
   // Build concept-to-module map
   const conceptToModule = new Map<string, string>();
@@ -410,7 +432,7 @@ async function linkModulePrerequisites(
       const prereqModuleId = conceptToModule.get(prereqConceptId);
       if (!prereqModuleId) {
         warnings.push(
-          `Prerequisite module not found for ${prereqConceptId} (required by ${concept.id})`
+          `Prerequisite module not found for ${prereqConceptId} (required by ${concept.id})`,
         );
         continue;
       }
@@ -431,7 +453,7 @@ async function linkModulePrerequisites(
         });
       } catch (error) {
         warnings.push(
-          `Failed to link module prerequisite: ${moduleId} → ${prereqModuleId}: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to link module prerequisite: ${moduleId} → ${prereqModuleId}: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }

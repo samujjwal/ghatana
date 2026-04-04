@@ -56,21 +56,21 @@
   "dependencies": {
     "@yappc/core": "workspace:*",
     "@yappc/ui": "workspace:*",
-    "openai": "^4.20.0",
-    "ai": "^2.2.0",
-    "nanostores": "^0.9.0",
+    "openai": "^6.33.0",
+    "ai": "^6.0.146",
+    "nanostores": "^1.2.0",
     "zod": "^4.3.6",
     "clsx": "^2.1.1",
-    "tslib": "^2.6.2"
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@testing-library/react": "^16.3.2",
     "@testing-library/jest-dom": "^6.9.1",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "react": "^19.0.0",

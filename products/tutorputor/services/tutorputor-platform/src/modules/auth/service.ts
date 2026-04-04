@@ -82,7 +82,9 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
         try {
           const parsed = JSON.parse(value) as unknown;
           return Array.isArray(parsed)
-            ? parsed.filter((entry): entry is string => typeof entry === "string")
+            ? parsed.filter(
+                (entry): entry is string => typeof entry === "string",
+              )
             : [];
         } catch {
           return [];
@@ -125,7 +127,9 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     };
   }
 
-  async function getOidcClient(provider: Record<string, unknown>): Promise<OidcClient> {
+  async function getOidcClient(
+    provider: Record<string, unknown>,
+  ): Promise<OidcClient> {
     const providerId = String(provider.id ?? "");
     if (oidcClientCache.has(providerId)) {
       return oidcClientCache.get(providerId)!;
@@ -148,7 +152,9 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
 
   // --- Mappers ---
 
-  function mapDbProviderToConfig(dbProvider: Record<string, unknown>): IdentityProviderConfig {
+  function mapDbProviderToConfig(
+    dbProvider: Record<string, unknown>,
+  ): IdentityProviderConfig {
     const config = getProviderRuntimeConfig(dbProvider);
 
     return {
@@ -199,8 +205,6 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
     },
 
     async createProvider({ tenantId, config }) {
-      const oidcConfig = config.oidcConfig ?? {};
-
       // @ts-ignore
       const created = await prisma.identityProvider.create({
         data: {
@@ -287,7 +291,10 @@ export function createSsoService(deps: SsoServiceDeps): SsoService {
           await client.initialize();
           return { success: true, message: "Discovery successful" };
         } catch (e: unknown) {
-          return { success: false, message: e instanceof Error ? e.message : String(e) };
+          return {
+            success: false,
+            message: e instanceof Error ? e.message : String(e),
+          };
         }
       }
       return { success: true, message: "SAML test not implemented" };

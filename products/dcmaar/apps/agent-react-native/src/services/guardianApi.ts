@@ -13,7 +13,9 @@
 import axios, {
   AxiosInstance,
   AxiosError,
-} from 'axios';
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 /**
  * API Response wrapper
@@ -58,7 +60,7 @@ export interface AppData {
   category: string;
   isSystemApp: boolean;
   isMonitored: boolean;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   lastSeen: number;
   usageTime: number; // milliseconds
   permissions: string[];
@@ -72,7 +74,7 @@ export interface PolicyData {
   id: string;
   name: string;
   description: string;
-  type: 'RESTRICTIVE' | 'PERMISSIVE' | 'RECOMMENDATION';
+  type: "RESTRICTIVE" | "PERMISSIVE" | "RECOMMENDATION";
   rules: Record<string, any>;
   enabled: boolean;
   createdAt: number;
@@ -85,10 +87,10 @@ export interface PolicyData {
  */
 export interface RecommendationData {
   id: string;
-  type: 'SECURITY' | 'PERFORMANCE' | 'PRIVACY' | 'OPTIMIZATION';
+  type: "SECURITY" | "PERFORMANCE" | "PRIVACY" | "OPTIMIZATION";
   title: string;
   description: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  severity: "INFO" | "WARNING" | "CRITICAL";
   appIds: string[];
   actionRequired: boolean;
   createdAt: number;
@@ -105,7 +107,7 @@ export interface DeviceStatusData {
   appsMonitored: number;
   policiesActive: number;
   lastSync: number;
-  syncStatus: 'synced' | 'syncing' | 'pending' | 'failed';
+  syncStatus: "synced" | "syncing" | "pending" | "failed";
   securityScore: number; // 0-100
   riskCount: {
     critical: number;
@@ -133,7 +135,7 @@ export interface AppFilters {
  */
 class GuardianApiClient {
   private axiosInstance: AxiosInstance;
-  private baseURL = 'https://api.guardian.example.com/v1';
+  private baseURL = "https://api.guardian.example.com/v1";
   private token: string | null = null;
 
   constructor() {
@@ -141,23 +143,25 @@ class GuardianApiClient {
       baseURL: this.baseURL,
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'GuardianApp/1.0',
+        "Content-Type": "application/json",
+        "User-Agent": "GuardianApp/1.0",
       },
     });
 
     // Add request interceptor for auth
-    this.axiosInstance.interceptors.request.use((config) => {
-      if (this.token) {
-        config.headers.Authorization = `Bearer ${this.token}`;
-      }
-      return config;
-    });
+    this.axiosInstance.interceptors.request.use(
+      (config: InternalAxiosRequestConfig) => {
+        if (this.token) {
+          config.headers.Authorization = `Bearer ${this.token}`;
+        }
+        return config;
+      },
+    );
 
     // Add response interceptor for error handling
     this.axiosInstance.interceptors.response.use(
-      (response) => response,
-      (error: AxiosError) => this.handleError(error)
+      (response: AxiosResponse) => response,
+      (error: AxiosError) => this.handleError(error),
     );
   }
 
@@ -174,29 +178,31 @@ class GuardianApiClient {
   private handleError(error: AxiosError): Promise<never> {
     const errorMessage = error.response?.data as any;
     const apiError = {
-      code: error.response?.status?.toString() || 'UNKNOWN',
+      code: error.response?.status?.toString() || "UNKNOWN",
       message: errorMessage?.error?.message || error.message,
       details: errorMessage?.error?.details,
       status: error.response?.status,
     };
 
-    console.error('[GuardianApi] Error:', apiError);
+    console.error("[GuardianApi] Error:", apiError);
     return Promise.reject(apiError);
   }
 
   /**
    * Get list of monitored apps
    */
-  async getApps(tenantId: string, filters?: AppFilters): Promise<PaginatedResponse<AppData>> {
+  async getApps(
+    tenantId: string,
+    filters?: AppFilters,
+  ): Promise<PaginatedResponse<AppData>> {
     const params = {
       tenantId,
       ...filters,
     };
 
-    const response = await this.axiosInstance.get<ApiResponse<PaginatedResponse<AppData>>>(
-      '/apps',
-      { params }
-    );
+    const response = await this.axiosInstance.get<
+      ApiResponse<PaginatedResponse<AppData>>
+    >("/apps", { params });
 
     return response.data.data;
   }
@@ -207,7 +213,7 @@ class GuardianApiClient {
   async getApp(tenantId: string, appId: string): Promise<AppData> {
     const response = await this.axiosInstance.get<ApiResponse<AppData>>(
       `/apps/${appId}`,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;
@@ -219,12 +225,12 @@ class GuardianApiClient {
   async updateApp(
     tenantId: string,
     appId: string,
-    data: Partial<AppData>
+    data: Partial<AppData>,
   ): Promise<AppData> {
     const response = await this.axiosInstance.patch<ApiResponse<AppData>>(
       `/apps/${appId}`,
       data,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;
@@ -233,16 +239,18 @@ class GuardianApiClient {
   /**
    * Get policies for tenant
    */
-  async getPolicies(tenantId: string, filters?: { page?: number; pageSize?: number }): Promise<PaginatedResponse<PolicyData>> {
+  async getPolicies(
+    tenantId: string,
+    filters?: { page?: number; pageSize?: number },
+  ): Promise<PaginatedResponse<PolicyData>> {
     const params = {
       tenantId,
       ...filters,
     };
 
-    const response = await this.axiosInstance.get<ApiResponse<PaginatedResponse<PolicyData>>>(
-      '/policies',
-      { params }
-    );
+    const response = await this.axiosInstance.get<
+      ApiResponse<PaginatedResponse<PolicyData>>
+    >("/policies", { params });
 
     return response.data.data;
   }
@@ -253,7 +261,7 @@ class GuardianApiClient {
   async getPolicy(tenantId: string, policyId: string): Promise<PolicyData> {
     const response = await this.axiosInstance.get<ApiResponse<PolicyData>>(
       `/policies/${policyId}`,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;
@@ -262,11 +270,14 @@ class GuardianApiClient {
   /**
    * Create new policy
    */
-  async createPolicy(tenantId: string, policy: Omit<PolicyData, 'id' | 'createdAt' | 'updatedAt'>): Promise<PolicyData> {
+  async createPolicy(
+    tenantId: string,
+    policy: Omit<PolicyData, "id" | "createdAt" | "updatedAt">,
+  ): Promise<PolicyData> {
     const response = await this.axiosInstance.post<ApiResponse<PolicyData>>(
-      '/policies',
+      "/policies",
       policy,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;
@@ -278,12 +289,12 @@ class GuardianApiClient {
   async updatePolicy(
     tenantId: string,
     policyId: string,
-    data: Partial<PolicyData>
+    data: Partial<PolicyData>,
   ): Promise<PolicyData> {
     const response = await this.axiosInstance.patch<ApiResponse<PolicyData>>(
       `/policies/${policyId}`,
       data,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;
@@ -302,10 +313,9 @@ class GuardianApiClient {
    * Get recommendations
    */
   async getRecommendations(tenantId: string): Promise<RecommendationData[]> {
-    const response = await this.axiosInstance.get<ApiResponse<RecommendationData[]>>(
-      '/recommendations',
-      { params: { tenantId } }
-    );
+    const response = await this.axiosInstance.get<
+      ApiResponse<RecommendationData[]>
+    >("/recommendations", { params: { tenantId } });
 
     return response.data.data;
   }
@@ -313,11 +323,13 @@ class GuardianApiClient {
   /**
    * Get single recommendation
    */
-  async getRecommendation(tenantId: string, recommendationId: string): Promise<RecommendationData> {
-    const response = await this.axiosInstance.get<ApiResponse<RecommendationData>>(
-      `/recommendations/${recommendationId}`,
-      { params: { tenantId } }
-    );
+  async getRecommendation(
+    tenantId: string,
+    recommendationId: string,
+  ): Promise<RecommendationData> {
+    const response = await this.axiosInstance.get<
+      ApiResponse<RecommendationData>
+    >(`/recommendations/${recommendationId}`, { params: { tenantId } });
 
     return response.data.data;
   }
@@ -325,22 +337,27 @@ class GuardianApiClient {
   /**
    * Dismiss recommendation
    */
-  async dismissRecommendation(tenantId: string, recommendationId: string): Promise<void> {
+  async dismissRecommendation(
+    tenantId: string,
+    recommendationId: string,
+  ): Promise<void> {
     await this.axiosInstance.post(
       `/recommendations/${recommendationId}/dismiss`,
       {},
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
   }
 
   /**
    * Get device status
    */
-  async getDeviceStatus(tenantId: string, deviceId: string): Promise<DeviceStatusData> {
-    const response = await this.axiosInstance.get<ApiResponse<DeviceStatusData>>(
-      `/devices/${deviceId}/status`,
-      { params: { tenantId } }
-    );
+  async getDeviceStatus(
+    tenantId: string,
+    deviceId: string,
+  ): Promise<DeviceStatusData> {
+    const response = await this.axiosInstance.get<
+      ApiResponse<DeviceStatusData>
+    >(`/devices/${deviceId}/status`, { params: { tenantId } });
 
     return response.data.data;
   }
@@ -349,10 +366,9 @@ class GuardianApiClient {
    * Get all devices for tenant
    */
   async getDevices(tenantId: string): Promise<DeviceStatusData[]> {
-    const response = await this.axiosInstance.get<ApiResponse<DeviceStatusData[]>>(
-      '/devices',
-      { params: { tenantId } }
-    );
+    const response = await this.axiosInstance.get<
+      ApiResponse<DeviceStatusData[]>
+    >("/devices", { params: { tenantId } });
 
     return response.data.data;
   }
@@ -360,12 +376,13 @@ class GuardianApiClient {
   /**
    * Trigger device sync
    */
-  async syncDevice(tenantId: string, deviceId: string): Promise<DeviceStatusData> {
-    const response = await this.axiosInstance.post<ApiResponse<DeviceStatusData>>(
-      `/devices/${deviceId}/sync`,
-      {},
-      { params: { tenantId } }
-    );
+  async syncDevice(
+    tenantId: string,
+    deviceId: string,
+  ): Promise<DeviceStatusData> {
+    const response = await this.axiosInstance.post<
+      ApiResponse<DeviceStatusData>
+    >(`/devices/${deviceId}/sync`, {}, { params: { tenantId } });
 
     return response.data.data;
   }
@@ -373,10 +390,11 @@ class GuardianApiClient {
   /**
    * Health check
    */
-  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy' }> {
-    const response = await this.axiosInstance.get<ApiResponse<{ status: string }>>(
-      '/health'
-    );
+  async healthCheck(): Promise<{
+    status: "healthy" | "degraded" | "unhealthy";
+  }> {
+    const response =
+      await this.axiosInstance.get<ApiResponse<{ status: string }>>("/health");
 
     return {
       status: response.data.data.status as any,
@@ -388,11 +406,14 @@ class GuardianApiClient {
    * This is a lightweight generic endpoint to persist UI-controlled settings.
    * In production the backend should provide strongly-typed endpoints for each setting.
    */
-  async updateConfig(tenantId: string, data: Record<string, any>): Promise<unknown> {
+  async updateConfig(
+    tenantId: string,
+    data: Record<string, any>,
+  ): Promise<unknown> {
     const response = await this.axiosInstance.post<ApiResponse<unknown>>(
-      '/config',
+      "/config",
       data,
-      { params: { tenantId } }
+      { params: { tenantId } },
     );
 
     return response.data.data;

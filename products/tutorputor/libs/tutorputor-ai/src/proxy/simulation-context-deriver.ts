@@ -262,7 +262,9 @@ export class SimulationContextDeriver {
    */
   private deriveSimulationSummary(): string {
     const { title, domain, description } = this.manifest;
-    const entityCount = this.currentKeyframe?.entities.length ?? this.manifest.initialEntities.length;
+    const entityCount =
+      this.currentKeyframe?.entities.length ??
+      this.manifest.initialEntities.length;
     const stepIndex = this.currentKeyframe?.stepIndex ?? 0;
     const totalSteps = this.manifest.steps.length;
 
@@ -279,7 +281,8 @@ export class SimulationContextDeriver {
    * Derive entity summaries.
    */
   private deriveEntitySummaries(): EntitySummary[] {
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
 
     return entities.slice(0, 20).map((entity) => ({
       id: entity.id,
@@ -295,7 +298,8 @@ export class SimulationContextDeriver {
    */
   private deriveParameterSummaries(): ParameterSummary[] {
     const summaries: ParameterSummary[] = [];
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
     const prevEntities = this.previousKeyframe?.entities ?? [];
 
     // Track key parameters based on domain
@@ -409,7 +413,8 @@ export class SimulationContextDeriver {
   // =============================================================================
 
   private derivePhysicsContext(): PhysicsContext {
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
     const bodies = entities.filter((e) => e.type === "rigidBody") as Array<{
       mass: number;
       velocityX?: number;
@@ -440,7 +445,8 @@ export class SimulationContextDeriver {
   }
 
   private deriveChemistryContext(): ChemistryContext {
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
     const bonds = entities.filter((e) => e.type === "bond");
     const atoms = entities.filter((e) => e.type === "atom");
 
@@ -463,8 +469,11 @@ export class SimulationContextDeriver {
   }
 
   private deriveMedicineContext(): MedicineContext {
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
-    const compartments = entities.filter((e) => e.type === "pkCompartment") as Array<{
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const compartments = entities.filter(
+      (e) => e.type === "pkCompartment",
+    ) as Array<{
       id: string;
       compartmentType: string;
       concentration: number;
@@ -490,7 +499,8 @@ export class SimulationContextDeriver {
   }
 
   private deriveEconomicsContext(): EconomicsContext {
-    const entities = this.currentKeyframe?.entities ?? this.manifest.initialEntities;
+    const entities =
+      this.currentKeyframe?.entities ?? this.manifest.initialEntities;
     const stocks = entities.filter((e) => e.type === "stock") as Array<{
       label?: string;
       value: number;
@@ -673,7 +683,9 @@ export class SimulationContextDeriver {
     return typeLabels[entity.type] ?? entity.type;
   }
 
-  private extractRelevantProperties(entity: SimEntity): Record<string, unknown> {
+  private extractRelevantProperties(
+    entity: SimEntity,
+  ): Record<string, unknown> {
     const props: Record<string, unknown> = {};
     const exclude = ["id", "type", "label", "x", "y", "z", "metadata"];
 
@@ -696,10 +708,15 @@ export class SimulationContextDeriver {
         return "indicator";
       case "atom": {
         const atomEntity = entity as { atomType?: string };
-        return atomEntity.atomType === "nucleophile" ? "nucleophile" : "reactant";
+        return atomEntity.atomType === "nucleophile"
+          ? "nucleophile"
+          : "reactant";
       }
       case "pkCompartment":
-        return (entity as { compartmentType?: string }).compartmentType ?? "compartment";
+        return (
+          (entity as { compartmentType?: string }).compartmentType ??
+          "compartment"
+        );
       default:
         return "element";
     }
@@ -707,14 +724,20 @@ export class SimulationContextDeriver {
 
   private extractDomainParameters(
     entity: SimEntity,
-    prevEntity?: SimEntity
+    prevEntity?: SimEntity,
   ): ParameterSummary[] {
     const params: ParameterSummary[] = [];
 
     // Physics parameters
     if (entity.type === "rigidBody") {
-      const body = entity as { mass: number; velocityX?: number; velocityY?: number };
-      const prevBody = prevEntity as { velocityX?: number; velocityY?: number } | undefined;
+      const body = entity as {
+        mass: number;
+        velocityX?: number;
+        velocityY?: number;
+      };
+      const prevBody = prevEntity as
+        | { velocityX?: number; velocityY?: number }
+        | undefined;
 
       params.push({
         name: "Mass",
@@ -728,7 +751,10 @@ export class SimulationContextDeriver {
           name: "Velocity X",
           currentValue: body.velocityX,
           previousValue: prevBody?.velocityX,
-          delta: prevBody?.velocityX !== undefined ? body.velocityX - prevBody.velocityX : undefined,
+          delta:
+            prevBody?.velocityX !== undefined
+              ? body.velocityX - prevBody.velocityX
+              : undefined,
           unit: "m/s",
           significance: "high",
         });
@@ -765,7 +791,9 @@ export class SimulationContextDeriver {
       case "CHEMISTRY":
         return ["Observe the electron movement during the reaction."];
       case "MEDICINE":
-        return ["Monitor the drug concentration relative to the therapeutic window."];
+        return [
+          "Monitor the drug concentration relative to the therapeutic window.",
+        ];
       case "ECONOMICS":
         return ["Track how changes in flows affect stock levels over time."];
       case "CS_DISCRETE":
@@ -787,7 +815,11 @@ export class SimulationContextDeriver {
   }
 
   // Placeholder implementations for complex derivations
-  private extractForces(): Array<{ name: string; magnitude: number; direction: number }> {
+  private extractForces(): Array<{
+    name: string;
+    magnitude: number;
+    direction: number;
+  }> {
     return [];
   }
 
@@ -803,11 +835,17 @@ export class SimulationContextDeriver {
     return undefined;
   }
 
-  private detectBondChanges(): Array<{ type: string; atoms: string[]; order: number }> {
+  private detectBondChanges(): Array<{
+    type: string;
+    atoms: string[];
+    order: number;
+  }> {
     return [];
   }
 
-  private extractEnergyProfile(): { current: number; activation: number; deltaH: number } | undefined {
+  private extractEnergyProfile():
+    | { current: number; activation: number; deltaH: number }
+    | undefined {
     return undefined;
   }
 
@@ -823,7 +861,9 @@ export class SimulationContextDeriver {
     return {};
   }
 
-  private extractTherapeuticWindow(): { min: number; max: number; current: number } | undefined {
+  private extractTherapeuticWindow():
+    | { min: number; max: number; current: number }
+    | undefined {
     return undefined;
   }
 
@@ -831,7 +871,10 @@ export class SimulationContextDeriver {
     return "checking";
   }
 
-  private detectTrends(): Array<{ variable: string; direction: "up" | "down" | "stable" }> {
+  private detectTrends(): Array<{
+    variable: string;
+    direction: "up" | "down" | "stable";
+  }> {
     return [];
   }
 
@@ -872,7 +915,436 @@ export class SimulationContextDeriver {
  * Create a context deriver for a simulation manifest.
  */
 export function createSimulationContextDeriver(
-  manifest: SimulationManifest
+  manifest: SimulationManifest,
 ): SimulationContextDeriver {
   return new SimulationContextDeriver(manifest);
+}
+
+// =============================================================================
+// Standalone Functional API (used by tests and external callers)
+// =============================================================================
+
+/**
+ * Raw user action as received from simulation UI.
+ */
+export interface RawUserAction {
+  type: string;
+  timestamp?: number;
+  parameter?: string;
+  from?: unknown;
+  to?: unknown;
+  entityId?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Manifest parameter descriptor.
+ */
+export interface ManifestParameter {
+  name: string;
+  value?: number;
+  unit?: string;
+  range?: { min: number; max: number };
+}
+
+/**
+ * Domain-specific context enriched with educational metadata.
+ */
+export interface EnrichedDomainContext {
+  domain: string;
+  concepts: string[];
+  vocabulary: Record<string, string>;
+}
+
+/**
+ * Derive tutor context from a manifest, current keyframe, and user actions.
+ * Convenience standalone function wrapping SimulationContextDeriver.
+ */
+export async function deriveSimulationContext(
+  manifest: SimulationManifest,
+  currentKeyframe: Partial<SimKeyframe> & {
+    stepIndex?: number;
+    entities?: SimEntity[];
+    metrics?: Record<string, number>;
+  },
+  userActions: RawUserAction[],
+): Promise<SimulationTutorContext> {
+  const deriver = new SimulationContextDeriver(manifest);
+
+  // Supply defaults for required SimKeyframe fields we may not have
+  const fullKeyframe: SimKeyframe = {
+    stepIndex: currentKeyframe.stepIndex ?? 0,
+    timestamp: (currentKeyframe as SimKeyframe).timestamp ?? 0,
+    entities: currentKeyframe.entities ?? manifest.initialEntities,
+    annotations: (currentKeyframe as SimKeyframe).annotations ?? [],
+    metadata: (currentKeyframe as { metadata?: Record<string, unknown> })
+      .metadata,
+  };
+  deriver.updateState(fullKeyframe);
+
+  for (const action of userActions) {
+    deriver.recordUserAction({
+      timestamp: action.timestamp ?? Date.now(),
+      actionType: action.type,
+      targetEntityId: action.entityId,
+      parameters: action as Record<string, unknown>,
+    });
+  }
+
+  return deriver.deriveContext();
+}
+
+/**
+ * Infer an entity's role based on its type and the simulation domain.
+ */
+function inferEntityRoleForDomain(
+  entity: SimEntity,
+  domain: SimulationDomain,
+): string {
+  const t = entity.type;
+  switch (domain) {
+    case "PHYSICS":
+      if (t === "particle" || t === "rigidBody") return "subject";
+      if (t === "spring") return "constraint";
+      if (t === "vector") return "indicator";
+      if (t === "surface") return "boundary";
+      break;
+    case "CHEMISTRY":
+      if (t === "molecule" || t === "atom") return "reactant";
+      if (t === "bond") return "bond";
+      break;
+    case "BIOLOGY":
+      if (t === "cell" || t === "membrane") return "subject";
+      if (t === "molecule") return "ligand";
+      break;
+    case "MEDICINE":
+      if (t === "compartment" || t === "pkCompartment") return "compartment";
+      if (t === "substance" || t === "dose") return "drug";
+      break;
+    case "CS_DISCRETE":
+      if (t === "array" || t === "graph") return "data-structure";
+      if (t === "node") return "element";
+      if (t === "edge") return "connection";
+      break;
+    case "ECONOMICS":
+      if (t === "stock") return "stock";
+      if (t === "flow") return "flow";
+      if (t === "curve") return "curve";
+      break;
+  }
+  return "element";
+}
+
+/**
+ * Summarize a list of simulation entities for the AI tutor.
+ */
+export function summarizeEntities(
+  entities: SimEntity[],
+  domain: SimulationDomain,
+): EntitySummary[] {
+  const excludedKeys = new Set([
+    "id",
+    "type",
+    "label",
+    "x",
+    "y",
+    "z",
+    "metadata",
+  ]);
+  return entities.slice(0, 20).map((entity) => ({
+    id: entity.id,
+    type: entity.type,
+    label: entity.label ?? entity.type,
+    properties: Object.fromEntries(
+      Object.entries(entity).filter(
+        ([k]) =>
+          !excludedKeys.has(k) &&
+          (entity as Record<string, unknown>)[k] !== undefined,
+      ),
+    ),
+    role: inferEntityRoleForDomain(entity, domain),
+  }));
+}
+
+/**
+ * Summarize manifest parameters with change significance.
+ */
+export function summarizeParameters(
+  parameters: ManifestParameter[],
+  currentValues: Record<string, number>,
+  previousValues: Record<string, number>,
+): ParameterSummary[] {
+  return parameters.map((param) => {
+    const currentValue = currentValues[param.name] ?? param.value ?? 0;
+    const previousValue = previousValues[param.name];
+    const delta =
+      previousValue !== undefined ? currentValue - previousValue : undefined;
+
+    let significance: "low" | "medium" | "high" = "low";
+    if (delta !== undefined && delta !== 0) {
+      const rangeSpan = param.range ? param.range.max - param.range.min : 100;
+      const normalizedDelta = rangeSpan > 0 ? Math.abs(delta) / rangeSpan : 0;
+      if (normalizedDelta > 0.1) significance = "high";
+      else if (normalizedDelta > 0.02) significance = "medium";
+    }
+
+    return {
+      name: param.name,
+      currentValue,
+      previousValue,
+      delta,
+      unit: param.unit,
+      significance,
+    };
+  });
+}
+
+/**
+ * Convert raw UI actions to tutor-consumable ActionSummary objects.
+ */
+export function summarizeUserActions(
+  rawActions: RawUserAction[],
+): ActionSummary[] {
+  return rawActions.map((action) => {
+    let description = action.type;
+    if (action.type === "CHANGE_PARAMETER" && action.parameter !== undefined) {
+      description = `Changed ${action.parameter} from ${String(action.from)} to ${String(action.to)}`;
+    } else if (action.type === "PLAY") {
+      description = "Started simulation playback";
+    } else if (action.type === "PAUSE") {
+      description = "Paused simulation";
+    } else if (action.type === "RESTART") {
+      description = "Restarted simulation";
+    } else if (action.type === "RESET") {
+      description = "Reset simulation to initial state";
+    }
+
+    return {
+      timestamp: action.timestamp ?? 0,
+      actionType: action.type,
+      description,
+      targetEntity: action.entityId,
+      outcome: undefined,
+    };
+  });
+}
+
+type KeyframeWithMetrics = { metrics?: Record<string, number> };
+
+/**
+ * Derive observable metrics from a keyframe for the given domain.
+ */
+export function deriveMetrics(
+  keyframe: KeyframeWithMetrics,
+  domain: SimulationDomain,
+): DerivedMetric[] {
+  const m = keyframe.metrics ?? {};
+  const result: DerivedMetric[] = [];
+
+  switch (domain) {
+    case "PHYSICS":
+      if (m["kineticEnergy"] !== undefined) {
+        result.push({
+          name: "Total Kinetic Energy",
+          value: m["kineticEnergy"],
+          unit: "J",
+          interpretation: "Sum of kinetic energies of all bodies",
+        });
+      }
+      if (m["potentialEnergy"] !== undefined) {
+        result.push({
+          name: "Total Potential Energy",
+          value: m["potentialEnergy"],
+          unit: "J",
+          interpretation: "Potential energy in system",
+        });
+      }
+      if (m["velocity"] !== undefined) {
+        result.push({
+          name: "Velocity",
+          value: m["velocity"],
+          unit: "m/s",
+          interpretation: "Current speed",
+        });
+      }
+      break;
+    case "CHEMISTRY":
+      if (m["bondChanges"] !== undefined) {
+        result.push({
+          name: "Bond Changes",
+          value: m["bondChanges"],
+          interpretation: "Number of bond changes",
+        });
+      }
+      break;
+    case "MEDICINE":
+      if (m["AUC"] !== undefined) {
+        result.push({
+          name: "AUC",
+          value: m["AUC"],
+          unit: "mg⋅h/L",
+          interpretation: "Area under concentration-time curve",
+        });
+      }
+      if (m["plasmaConcentration"] !== undefined) {
+        result.push({
+          name: "Plasma Concentration",
+          value: m["plasmaConcentration"],
+          unit: "mg/L",
+          interpretation: "Drug concentration in plasma",
+        });
+      }
+      if (m["Cmax"] !== undefined) {
+        result.push({
+          name: "Cmax",
+          value: m["Cmax"],
+          unit: "mg/L",
+          interpretation: "Maximum concentration",
+        });
+      }
+      if (m["Tmax"] !== undefined) {
+        result.push({
+          name: "Tmax",
+          value: m["Tmax"],
+          unit: "h",
+          interpretation: "Time to maximum concentration",
+        });
+      }
+      break;
+    case "ECONOMICS":
+      if (m["consumerSurplus"] !== undefined) {
+        result.push({
+          name: "Consumer Surplus",
+          value: m["consumerSurplus"],
+          unit: "$",
+          interpretation: "Consumer benefit above payment",
+        });
+      }
+      if (m["producerSurplus"] !== undefined) {
+        result.push({
+          name: "Producer Surplus",
+          value: m["producerSurplus"],
+          unit: "$",
+          interpretation: "Producer revenue above minimum",
+        });
+      }
+      if (m["totalSurplus"] !== undefined) {
+        result.push({
+          name: "Total Surplus",
+          value: m["totalSurplus"],
+          unit: "$",
+          interpretation: "Sum of consumer and producer surplus",
+        });
+      }
+      break;
+    case "CS_DISCRETE":
+      if (m["comparisons"] !== undefined) {
+        result.push({
+          name: "Comparisons",
+          value: m["comparisons"],
+          interpretation: "Number of element comparisons",
+        });
+      }
+      if (m["swaps"] !== undefined) {
+        result.push({
+          name: "Swaps",
+          value: m["swaps"],
+          interpretation: "Number of element swaps",
+        });
+      }
+      if (m["inversions"] !== undefined) {
+        result.push({
+          name: "Inversions",
+          value: m["inversions"],
+          interpretation: "Number of inversions remaining",
+        });
+      }
+      break;
+    default:
+      break;
+  }
+
+  return result;
+}
+
+const DOMAIN_CONCEPTS: Record<
+  string,
+  { concepts: string[]; vocabulary: Record<string, string> }
+> = {
+  PHYSICS: {
+    concepts: ["motion", "energy", "force", "momentum", "conservation"],
+    vocabulary: {
+      velocity: "Rate of change of position",
+      acceleration: "Rate of change of velocity",
+      force: "Mass times acceleration (F = ma)",
+      energy: "Capacity to do work",
+    },
+  },
+  CHEMISTRY: {
+    concepts: ["reaction", "equilibrium", "bond", "molecule", "catalyst"],
+    vocabulary: {
+      reaction: "Chemical transformation of substances",
+      bond: "Electrostatic attraction between atoms",
+      equilibrium: "State of balanced forward and reverse reaction rates",
+    },
+  },
+  BIOLOGY: {
+    concepts: ["cell", "membrane", "pathway", "metabolism", "signal"],
+    vocabulary: {
+      cell: "Basic structural and functional unit of life",
+      membrane: "Selective permeability barrier",
+      pathway: "Series of molecular events leading to a cellular outcome",
+    },
+  },
+  MEDICINE: {
+    concepts: [
+      "pharmacokinetics",
+      "absorption",
+      "distribution",
+      "metabolism",
+      "elimination",
+    ],
+    vocabulary: {
+      pharmacokinetics: "Study of drug movement through the body",
+      bioavailability: "Fraction of drug reaching systemic circulation",
+      halfLife: "Time for drug concentration to reduce by half",
+    },
+  },
+  ECONOMICS: {
+    concepts: ["equilibrium", "supply", "demand", "surplus", "elasticity"],
+    vocabulary: {
+      equilibrium: "Market-clearing price and quantity",
+      surplus: "Benefit in excess of the minimum acceptable",
+      elasticity:
+        "Responsiveness of quantity demanded or supplied to price change",
+    },
+  },
+  CS_DISCRETE: {
+    concepts: [
+      "algorithm",
+      "complexity",
+      "data-structure",
+      "sorting",
+      "invariant",
+    ],
+    vocabulary: {
+      algorithm: "Step-by-step procedure for solving a problem",
+      complexity: "Measure of algorithm time or space efficiency",
+      invariant: "Property guaranteed to remain true throughout execution",
+    },
+  },
+};
+
+/**
+ * Return educational domain context (concepts and vocabulary) for a simulation domain.
+ */
+export function getDomainSpecificContext(
+  _manifest: SimulationManifest | Record<string, unknown>,
+  domain: SimulationDomain | string,
+): EnrichedDomainContext {
+  const entry = DOMAIN_CONCEPTS[domain as string];
+  if (entry) {
+    return { domain: domain as string, ...entry };
+  }
+  return { domain: String(domain), concepts: [], vocabulary: {} };
 }

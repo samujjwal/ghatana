@@ -12,7 +12,7 @@ import {
   lerp,
   lerpColor,
   clamp,
-} from "@tutorputor/simulation/renderer";
+} from "@tutorputor/simulation/renderer/easing";
 
 type FrameRequestCallback = (timestamp: number) => void;
 
@@ -433,7 +433,11 @@ export class AnimationRuntime {
     return interpolated;
   }
 
-  private interpolateValue(start: unknown, end: unknown, progress: number): unknown {
+  private interpolateValue(
+    start: unknown,
+    end: unknown,
+    progress: number,
+  ): unknown {
     // Handle different value types
     if (typeof start === "number" && typeof end === "number") {
       return lerp(start, end, progress);
@@ -460,7 +464,11 @@ export class AnimationRuntime {
       const startRecord = start as Record<string, unknown>;
       const endRecord = end as Record<string, unknown>;
       for (const key of Object.keys(endRecord)) {
-        result[key] = this.interpolateValue(startRecord[key], endRecord[key], progress);
+        result[key] = this.interpolateValue(
+          startRecord[key],
+          endRecord[key],
+          progress,
+        );
       }
       return result;
     }
@@ -477,7 +485,9 @@ export class AnimationRuntime {
       keyframe.properties,
       easedProgress,
     );
-    this.renderer.applyTransform((interpolated ?? {}) as Record<string, unknown>);
+    this.renderer.applyTransform(
+      (interpolated ?? {}) as Record<string, unknown>,
+    );
     this.renderer.render();
   }
 }

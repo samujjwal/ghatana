@@ -23,13 +23,49 @@ type SimulationManifest = {
   controls?: unknown[];
   realTime?: boolean;
   safetyWarnings?: unknown;
+  duration?: number;
   [key: string]: unknown;
 };
 type AnimationConfig = {
-  keyframes?: Array<{ time: number }>;
-  assets?: unknown[];
+  id?: string;
+  title?: string;
+  duration?: number;
+  keyframes?: Array<{ time?: number }>;
+  assets?: string[];
   [key: string]: unknown;
 };
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function extractText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  if (Array.isArray(value))
+    return value.map(extractText).filter(Boolean).join(" ");
+  const record = asRecord(value);
+  if (record)
+    return Object.values(record).map(extractText).filter(Boolean).join(" ");
+  return "";
+}
 
 // ============================================================================
 // Types
@@ -205,11 +241,9 @@ export class AutomatedContentReviewService {
    * Review a content example for quality and alignment
    */
   async reviewExample(exampleId: string): Promise<ExampleReviewResult> {
-    const example = await this.prisma.contentExample.findUnique({
+    const example = await this.prisma.claimExample.findUnique({
       where: { id: exampleId },
-      include: {
-        claim: true,
-      },
+      include: { claim: true },
     });
 
     if (!example) {
@@ -217,6 +251,14 @@ export class AutomatedContentReviewService {
     }
 
     const issues: ReviewIssue[] = [];
+    const exampleText = [
+      example.title,
+      example.description,
+      extractText(example.content),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
     // Claim alignment scoring
     const claimAlignment = await this.scoreClaimAlignment(example);
@@ -231,10 +273,7 @@ export class AutomatedContentReviewService {
     const domainRelevance = await this.scoreDomainRelevance(example);
 
     // Quality checks
-    if (
-      !(example as { explanation?: string }).explanation ||
-      (example as { explanation?: string }).explanation!.length < 50
-    ) {
+    if (exampleText.length < 50) {
       issues.push({
         severity: "error",
         category: "quality",
@@ -298,10 +337,8 @@ export class AutomatedContentReviewService {
     let schemaValidity = 0;
 
     try {
-      // Parse and validate manifest
-      const manifest = JSON.parse(
-        simulation.manifest as string,
-      ) as SimulationManifest;
+      const manifest = (asRecord(simulation.manifest) ??
+        {}) as SimulationManifest;
 
       // Check required fields
       const requiredFields = [
@@ -343,7 +380,7 @@ export class AutomatedContentReviewService {
         });
       }
 
-      if (manifest.duration && manifest.duration > 600) {
+      if ((asNumber(manifest.duration) ?? 0) > 600) {
         issues.push({
           severity: "info",
           category: "pedagogical",
@@ -410,7 +447,7 @@ export class AutomatedContentReviewService {
    * Review an animation configuration for completeness and renderability
    */
   async reviewAnimation(animationId: string): Promise<AnimationReviewResult> {
-    const animation = await this.prisma.animationConfig.findUnique({
+    const animation = await this.prisma.claimAnimation.findUnique({
       where: { id: animationId },
     });
 
@@ -423,17 +460,25 @@ export class AutomatedContentReviewService {
     const assetDependencies: string[] = [];
 
     try {
-      const config = JSON.parse(animation.configJson) as AnimationConfig;
+      const config = (asRecord(animation.config) ?? {}) as AnimationConfig;
 
       // Check required fields
-      const requiredFields = ["id", "title", "duration", "keyframes"];
-      for (const field of requiredFields) {
-        if (!config[field as keyof AnimationConfig]) {
+      const requiredChecks = [
+        { field: "id", present: Boolean(config.id) },
+        { field: "title", present: Boolean(config.title ?? animation.title) },
+        {
+          field: "duration",
+          present: Boolean(config.duration ?? animation.duration),
+        },
+        { field: "keyframes", present: asArray(config.keyframes).length > 0 },
+      ];
+      for (const check of requiredChecks) {
+        if (!check.present) {
           issues.push({
             severity: "error",
             category: "completeness",
-            message: `Missing required field: ${field}`,
-            suggestion: `Add the ${field} field to the animation configuration`,
+            message: `Missing required field: ${check.field}`,
+            suggestion: `Add the ${check.field} field to the animation configuration`,
           });
         } else {
           configCompleteness += 25;
@@ -441,15 +486,17 @@ export class AutomatedContentReviewService {
       }
 
       // Check asset dependencies
-      if (config.assets) {
-        assetDependencies.push(...config.assets);
-      }
+      assetDependencies.push(
+        ...asArray(config.assets).filter(
+          (asset): asset is string => typeof asset === "string",
+        ),
+      );
 
       // Renderability check
       const renderability = await this.checkAnimationRenderability(config);
 
       // Additional quality checks
-      if (config.duration && config.duration > 30) {
+      if ((asNumber(config.duration) ?? animation.duration) > 30) {
         issues.push({
           severity: "info",
           category: "pedagogical",
@@ -575,7 +622,7 @@ export class AutomatedContentReviewService {
       claims.map((claim) => this.reviewClaim(experienceId, claim.claimRef)),
     );
 
-    const examples = await this.prisma.contentExample.findMany({
+    const examples = await this.prisma.claimExample.findMany({
       where: { experienceId },
     });
 
@@ -583,15 +630,15 @@ export class AutomatedContentReviewService {
       examples.map((example) => this.reviewExample(example.id)),
     );
 
-    const simulations = await this.prisma.simulationManifest.findMany({
+    const simulations = await this.prisma.claimSimulation.findMany({
       where: { experienceId },
     });
 
     const simulationReviews = await Promise.all(
-      simulations.map((sim) => this.reviewSimulation(sim.id)),
+      simulations.map((sim) => this.reviewSimulation(sim.simulationManifestId)),
     );
 
-    const animations = await this.prisma.animationConfig.findMany({
+    const animations = await this.prisma.claimAnimation.findMany({
       where: { experienceId },
     });
 
@@ -625,34 +672,46 @@ export class AutomatedContentReviewService {
   // Helper Methods - Private
   // ---------------------------------------------------------------------------
 
-  private async scoreClaimQuality(claim: Record<string, unknown>): Promise<number> {
+  private async scoreClaimQuality(
+    claim: Record<string, unknown>,
+  ): Promise<number> {
     let score = 0;
+    const claimText = asString(claim.text) ?? asString(claim.claimText) ?? "";
+    const prerequisites = asArray(claim.prerequisites);
+    const contentNeeds = asRecord(claim.contentNeeds);
+    const bloomLevel = (asString(claim.bloomLevel) ?? "").toLowerCase();
 
     // Check claim text quality
-    if (claim.claimText && claim.claimText.length >= 20) {
+    if (claimText.length >= 20) {
       score += 20;
     }
 
-    // Check for evidence references
-    if (claim.evidenceReferences && claim.evidenceReferences.length > 0) {
+    // Check for prerequisite context
+    if (prerequisites.length > 0) {
       score += 20;
     }
 
-    // Check difficulty level
+    // Check Bloom taxonomy signal
     if (
-      claim.difficultyLevel &&
-      ["beginner", "intermediate", "advanced"].includes(claim.difficultyLevel)
+      [
+        "remember",
+        "understand",
+        "apply",
+        "analyze",
+        "evaluate",
+        "create",
+      ].includes(bloomLevel)
     ) {
       score += 20;
     }
 
-    // Check learning objectives alignment
-    if (claim.learningObjectives && claim.learningObjectives.length > 0) {
+    // Check content-needs analysis presence
+    if (contentNeeds && Object.keys(contentNeeds).length > 0) {
       score += 20;
     }
 
-    // Check domain tags
-    if (claim.domainTags && claim.domainTags.length > 0) {
+    // Check that the claim is substantial enough to guide downstream generation
+    if (claimText.split(/\s+/).filter(Boolean).length >= 6) {
       score += 20;
     }
 
@@ -688,14 +747,19 @@ export class AutomatedContentReviewService {
     return recommendations;
   }
 
-  private async scoreClaimAlignment(example: Record<string, unknown> & { claim?: { claimText?: string } | null }): Promise<number> {
+  private async scoreClaimAlignment(example: {
+    content?: unknown;
+    claim?: { text?: string } | null;
+  }): Promise<number> {
     // Simple heuristic-based scoring
     let score = 50; // Base score
 
     // Check if example references the claim concepts
-    if (example.explanation && example.claim?.claimText) {
-      const claimWords = example.claim.claimText.toLowerCase().split(" ");
-      const exampleWords = example.explanation.toLowerCase().split(" ");
+    const exampleText = extractText(example.content).toLowerCase();
+    const claimText = (example.claim?.text ?? "").toLowerCase();
+    if (exampleText && claimText) {
+      const claimWords = claimText.split(/\s+/);
+      const exampleWords = exampleText.split(/\s+/);
       const overlap = claimWords.filter((word: string) =>
         exampleWords.includes(word),
       ).length;
@@ -705,11 +769,13 @@ export class AutomatedContentReviewService {
     return Math.min(score, 100);
   }
 
-  private async scoreGradeAppropriateness(example: Record<string, unknown>): Promise<number> {
+  private async scoreGradeAppropriateness(example: {
+    content?: unknown;
+  }): Promise<number> {
     // Simple heuristic based on complexity
     let score = 70; // Default to appropriate
 
-    const text = example.explanation || "";
+    const text = extractText(example.content);
     const avgWordLength =
       text
         .split(" ")
@@ -726,32 +792,36 @@ export class AutomatedContentReviewService {
     return Math.max(0, Math.min(score, 100));
   }
 
-  private async scoreUniqueness(_example: Record<string, unknown>): Promise<number> {
+  private async scoreUniqueness(
+    _example: Record<string, unknown>,
+  ): Promise<number> {
     // Simplified uniqueness scoring - return default score
     // In real implementation would check against other examples
     return 85;
   }
 
-  private async scoreDomainRelevance(example: Record<string, unknown> & { claim?: { domain?: string } | null }): Promise<number> {
-    // Check if example uses domain-specific terminology
-    const domainKeywords = await this.getDomainKeywords(
-      example.claim?.domain || "general",
-    );
-    const text = (
-      (example.explanation as string | undefined) ||
-      (example.description as string | undefined) ||
-      ""
-    ).toLowerCase();
+  private async scoreDomainRelevance(example: {
+    content?: unknown;
+    claim?: { text?: string } | null;
+  }): Promise<number> {
+    const text = extractText(example.content).toLowerCase();
+    const claimTerms = (example.claim?.text ?? "")
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((term) => term.length > 4);
 
-    const keywordMatches = domainKeywords.filter((keyword) =>
-      text.includes(keyword.toLowerCase()),
+    if (claimTerms.length === 0 || text.length === 0) {
+      return 60;
+    }
+
+    const keywordMatches = claimTerms.filter((keyword) =>
+      text.includes(keyword),
     ).length;
     const relevanceScore = Math.min(
-      (keywordMatches / domainKeywords.length) * 100,
+      (keywordMatches / claimTerms.length) * 100,
       100,
     );
-
-    return Math.max(relevanceScore, 60); // Minimum score if no keywords found
+    return Math.max(relevanceScore, 60);
   }
 
   private generateExampleRecommendations(issues: ReviewIssue[]): string[] {
@@ -897,57 +967,5 @@ export class AutomatedContentReviewService {
   private async testAutocompleteAccuracy(): Promise<number> {
     // Mock implementation - would test actual autocomplete
     return 70; // Meets minimum
-  }
-
-  private calculateTextSimilarity(text1: string, text2: string): number {
-    // Simple similarity calculation
-    const words1 = text1.toLowerCase().split(" ");
-    const words2 = text2.toLowerCase().split(" ");
-    const intersection = words1.filter((word) => words2.includes(word));
-    const union = [...new Set([...words1, ...words2])];
-    return intersection.length / union.length;
-  }
-
-  private async getDomainKeywords(domain: string): Promise<string[]> {
-    // Mock implementation - would load from domain knowledge base
-    const domainKeywords: Record<string, string[]> = {
-      physics: [
-        "force",
-        "motion",
-        "energy",
-        "velocity",
-        "acceleration",
-        "mass",
-        "gravity",
-      ],
-      chemistry: [
-        "molecule",
-        "reaction",
-        "bond",
-        "atom",
-        "compound",
-        "solution",
-        "acid",
-      ],
-      biology: [
-        "cell",
-        "organism",
-        "gene",
-        "protein",
-        "evolution",
-        "ecosystem",
-        "organ",
-      ],
-      mathematics: [
-        "equation",
-        "function",
-        "variable",
-        "theorem",
-        "proof",
-        "algorithm",
-      ],
-    };
-
-    return domainKeywords[domain] || [];
   }
 }

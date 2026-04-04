@@ -84,15 +84,27 @@ interface SimulationTemplateCoverageSummary {
     total: number;
     covered: number;
     uncovered: number;
-    byDomain: Record<string, { total: number; covered: number; uncovered: number }>;
-    byAudience: Record<string, { total: number; covered: number; uncovered: number }>;
+    byDomain: Record<
+      string,
+      { total: number; covered: number; uncovered: number }
+    >;
+    byAudience: Record<
+      string,
+      { total: number; covered: number; uncovered: number }
+    >;
   };
   autoPresets: {
     total: number;
     covered: number;
     uncovered: number;
-    byDomain: Record<string, { total: number; covered: number; uncovered: number }>;
-    bySource: Record<string, { total: number; covered: number; uncovered: number }>;
+    byDomain: Record<
+      string,
+      { total: number; covered: number; uncovered: number }
+    >;
+    bySource: Record<
+      string,
+      { total: number; covered: number; uncovered: number }
+    >;
   };
 }
 
@@ -239,23 +251,36 @@ function normalizeGovernance(
 
   const record = value as Record<string, unknown>;
   const reviewStatus =
-    typeof record.reviewStatus === "string" ? record.reviewStatus : fallback.reviewStatus;
-  const source = typeof record.source === "string" ? record.source : fallback.source;
+    typeof record.reviewStatus === "string"
+      ? record.reviewStatus
+      : fallback.reviewStatus;
+  const source =
+    typeof record.source === "string" ? record.source : fallback.source;
 
   return {
     reviewStatus: reviewStatus as TemplateGovernanceStatus,
     source: source as TemplateGovernanceRecord["source"],
-    ...(typeof record.starterId === "string" ? { starterId: record.starterId } : {}),
+    ...(typeof record.starterId === "string"
+      ? { starterId: record.starterId }
+      : {}),
     ...(typeof record.autoPresetId === "string"
       ? { autoPresetId: record.autoPresetId }
       : {}),
     ...(typeof record.parentTemplateId === "string"
       ? { parentTemplateId: record.parentTemplateId }
       : {}),
-    ...(typeof record.requestedBy === "string" ? { requestedBy: record.requestedBy } : {}),
-    ...(typeof record.requestedAt === "string" ? { requestedAt: record.requestedAt } : {}),
-    ...(typeof record.reviewedBy === "string" ? { reviewedBy: record.reviewedBy } : {}),
-    ...(typeof record.reviewedAt === "string" ? { reviewedAt: record.reviewedAt } : {}),
+    ...(typeof record.requestedBy === "string"
+      ? { requestedBy: record.requestedBy }
+      : {}),
+    ...(typeof record.requestedAt === "string"
+      ? { requestedAt: record.requestedAt }
+      : {}),
+    ...(typeof record.reviewedBy === "string"
+      ? { reviewedBy: record.reviewedBy }
+      : {}),
+    ...(typeof record.reviewedAt === "string"
+      ? { reviewedAt: record.reviewedAt }
+      : {}),
     ...(typeof record.reviewerNotes === "string"
       ? { reviewerNotes: record.reviewerNotes }
       : {}),
@@ -280,7 +305,8 @@ async function ensureUniqueTemplateSlug(
   tenantId: string,
   baseTitle: string,
 ): Promise<string> {
-  const baseSlug = slugify(baseTitle, { lower: true, strict: true }) || "simulation-template";
+  const baseSlug =
+    slugify(baseTitle, { lower: true, strict: true }) || "simulation-template";
   let candidate = baseSlug;
   let suffix = 1;
 
@@ -335,7 +361,8 @@ export class SimulationTemplateLibraryService {
           id: normalizedManifest.id,
           tenantId,
           title: input.title ?? normalizedManifest.title,
-          description: input.description ?? normalizedManifest.description ?? null,
+          description:
+            input.description ?? normalizedManifest.description ?? null,
           version: normalizedManifest.version,
           domain: normalizedManifest.domain,
           manifest: toInputJsonValue(
@@ -391,11 +418,17 @@ export class SimulationTemplateLibraryService {
       throw new Error("Template manifest not found");
     }
 
-    const currentManifestPayload = template.manifest.manifest as Record<string, unknown>;
-    const currentGovernance = normalizeGovernance(currentManifestPayload.templateGovernance, {
-      reviewStatus: "draft",
-      source: "generated",
-    });
+    const currentManifestPayload = template.manifest.manifest as Record<
+      string,
+      unknown
+    >;
+    const currentGovernance = normalizeGovernance(
+      currentManifestPayload.templateGovernance,
+      {
+        reviewStatus: "draft",
+        source: "generated",
+      },
+    );
     const nextVersion = incrementSemver(template.version);
     const nextManifest = structuredClone(manifest);
     nextManifest.id = template.manifestId as never;
@@ -546,7 +579,9 @@ export class SimulationTemplateLibraryService {
     }
 
     const starters = listSimulationStarters();
-    const uncovered = starters.filter((starter) => !coveredStarterIds.has(starter.id));
+    const uncovered = starters.filter(
+      (starter) => !coveredStarterIds.has(starter.id),
+    );
 
     return {
       totalStarters: starters.length,
@@ -587,7 +622,9 @@ export class SimulationTemplateLibraryService {
     }
 
     const presets = listCompatibleAutoPresets();
-    const uncovered = presets.filter((preset) => !coveredPresetIds.has(preset.id));
+    const uncovered = presets.filter(
+      (preset) => !coveredPresetIds.has(preset.id),
+    );
 
     return {
       totalAutoPresets: presets.length,
@@ -604,7 +641,9 @@ export class SimulationTemplateLibraryService {
     };
   }
 
-  async getCoverageSummary(tenantId: string): Promise<SimulationTemplateCoverageSummary> {
+  async getCoverageSummary(
+    tenantId: string,
+  ): Promise<SimulationTemplateCoverageSummary> {
     const [starterCoverage, autoCoverage] = await Promise.all([
       this.getStarterCoverage(tenantId),
       this.getAutoPresetCoverage(tenantId),
@@ -617,7 +656,11 @@ export class SimulationTemplateLibraryService {
     const starterByDomain = allStarters.reduce<
       Record<string, { total: number; covered: number; uncovered: number }>
     >((acc, starter) => {
-      const bucket = acc[starter.domain] ?? { total: 0, covered: 0, uncovered: 0 };
+      const bucket = acc[starter.domain] ?? {
+        total: 0,
+        covered: 0,
+        uncovered: 0,
+      };
       bucket.total += 1;
       if (uncoveredStarterIds.has(starter.id)) {
         bucket.uncovered += 1;
@@ -631,7 +674,11 @@ export class SimulationTemplateLibraryService {
     const starterByAudience = allStarters.reduce<
       Record<string, { total: number; covered: number; uncovered: number }>
     >((acc, starter) => {
-      const bucket = acc[starter.audience] ?? { total: 0, covered: 0, uncovered: 0 };
+      const bucket = acc[starter.audience] ?? {
+        total: 0,
+        covered: 0,
+        uncovered: 0,
+      };
       bucket.total += 1;
       if (uncoveredStarterIds.has(starter.id)) {
         bucket.uncovered += 1;
@@ -645,7 +692,11 @@ export class SimulationTemplateLibraryService {
     const autoByDomain = allAutoPresets.reduce<
       Record<string, { total: number; covered: number; uncovered: number }>
     >((acc, preset) => {
-      const bucket = acc[preset.domain] ?? { total: 0, covered: 0, uncovered: 0 };
+      const bucket = acc[preset.domain] ?? {
+        total: 0,
+        covered: 0,
+        uncovered: 0,
+      };
       bucket.total += 1;
       if (uncoveredAutoPresetIds.has(preset.id)) {
         bucket.uncovered += 1;
@@ -659,7 +710,11 @@ export class SimulationTemplateLibraryService {
     const autoBySource = allAutoPresets.reduce<
       Record<string, { total: number; covered: number; uncovered: number }>
     >((acc, preset) => {
-      const bucket = acc[preset.source] ?? { total: 0, covered: 0, uncovered: 0 };
+      const bucket = acc[preset.source] ?? {
+        total: 0,
+        covered: 0,
+        uncovered: 0,
+      };
       bucket.total += 1;
       if (uncoveredAutoPresetIds.has(preset.id)) {
         bucket.uncovered += 1;
@@ -702,16 +757,27 @@ export class SimulationTemplateLibraryService {
     ]);
 
     const starters = starterCoverage.uncoveredStarters
-      .filter((starter) => (input.domain ? starter.domain === input.domain : true))
-      .filter((starter) => (input.audience ? starter.audience === input.audience : true))
+      .filter((starter) =>
+        input.domain ? starter.domain === input.domain : true,
+      )
+      .filter((starter) =>
+        input.audience ? starter.audience === input.audience : true,
+      )
       .map((starter) => ({
         starterId: starter.id,
         name: starter.name,
         domain: starter.domain,
         audience: starter.audience,
-        priority: starter.audience === "k12" ? 90 : starter.audience === "undergraduate" ? 75 : 65,
+        priority:
+          starter.audience === "k12"
+            ? 90
+            : starter.audience === "undergraduate"
+              ? 75
+              : 65,
         recommendedAction:
-          starter.audience === "k12" ? ("seed_and_submit" as const) : ("seed_template" as const),
+          starter.audience === "k12"
+            ? ("seed_and_submit" as const)
+            : ("seed_template" as const),
       }))
       .sort((left, right) => right.priority - left.priority)
       .slice(0, input.limit ?? starterCoverage.uncoveredStarterIds.length);
@@ -723,7 +789,11 @@ export class SimulationTemplateLibraryService {
         name: item.name,
         domain: item.domain,
         priority:
-          item.status === "needs_template" ? 95 : item.status === "awaiting_publish" ? 80 : 50,
+          item.status === "needs_template"
+            ? 95
+            : item.status === "awaiting_publish"
+              ? 80
+              : 50,
         recommendedAction:
           item.status === "awaiting_publish"
             ? ("create_and_publish" as const)
@@ -748,7 +818,9 @@ export class SimulationTemplateLibraryService {
     } = {},
   ): Promise<TemplateCoverageActionPlanExecutionSummary> {
     const plan = await this.getCoverageActionPlan(tenantId, input);
-    const limit = input.limit ?? Math.max(plan.starters.length, plan.legacyAutoPresets.length);
+    const limit =
+      input.limit ??
+      Math.max(plan.starters.length, plan.legacyAutoPresets.length);
     const templateIds: string[] = [];
     let seededStarterTemplates = 0;
     let submittedStarterTemplates = 0;
@@ -756,7 +828,11 @@ export class SimulationTemplateLibraryService {
     let publishedLegacyTemplates = 0;
 
     for (const starter of plan.starters.slice(0, limit)) {
-      const created = await this.createTemplateFromStarter(tenantId, userId, starter.starterId);
+      const created = await this.createTemplateFromStarter(
+        tenantId,
+        userId,
+        starter.starterId,
+      );
       templateIds.push(created.id);
       seededStarterTemplates++;
 
@@ -772,7 +848,11 @@ export class SimulationTemplateLibraryService {
     }
 
     for (const preset of plan.legacyAutoPresets.slice(0, limit)) {
-      const created = await this.createTemplateFromAutoPreset(tenantId, userId, preset.presetId);
+      const created = await this.createTemplateFromAutoPreset(
+        tenantId,
+        userId,
+        preset.presetId,
+      );
       templateIds.push(created.id);
       createdLegacyTemplates++;
 
@@ -818,19 +898,29 @@ export class SimulationTemplateLibraryService {
         {
           phase: "starter_foundation",
           actions: starterFoundation.length,
-          domains: [...new Set(starterFoundation.map((starter) => starter.domain))],
-          audiences: [...new Set(starterFoundation.map((starter) => starter.audience))],
+          domains: [
+            ...new Set(starterFoundation.map((starter) => starter.domain)),
+          ],
+          audiences: [
+            ...new Set(starterFoundation.map((starter) => starter.audience)),
+          ],
         },
         {
           phase: "review_ready_starters",
           actions: reviewReadyStarters.length,
-          domains: [...new Set(reviewReadyStarters.map((starter) => starter.domain))],
-          audiences: [...new Set(reviewReadyStarters.map((starter) => starter.audience))],
+          domains: [
+            ...new Set(reviewReadyStarters.map((starter) => starter.domain)),
+          ],
+          audiences: [
+            ...new Set(reviewReadyStarters.map((starter) => starter.audience)),
+          ],
         },
         {
           phase: "legacy_retirement",
           actions: plan.legacyAutoPresets.length,
-          domains: [...new Set(plan.legacyAutoPresets.map((preset) => preset.domain))],
+          domains: [
+            ...new Set(plan.legacyAutoPresets.map((preset) => preset.domain)),
+          ],
           audiences: [],
         },
       ],
@@ -851,7 +941,9 @@ export class SimulationTemplateLibraryService {
 
     const uncoveredStarters = starterCoverage.uncoveredStarters
       .filter((starter) => starter.domain === input.domain)
-      .filter((starter) => (input.audience ? starter.audience === input.audience : true))
+      .filter((starter) =>
+        input.audience ? starter.audience === input.audience : true,
+      )
       .map((starter) => ({
         starterId: starter.id,
         name: starter.name,
@@ -955,12 +1047,17 @@ export class SimulationTemplateLibraryService {
       input.limit ?? backlog.uncoveredStarters.length,
     );
     for (const starter of starters) {
-      const created = await this.createTemplateFromStarter(tenantId, userId, starter.starterId, {
-        ...(input.difficulty ? { difficulty: input.difficulty } : {}),
-        ...(input.tags ? { tags: input.tags } : {}),
-        ...(input.conceptId ? { conceptId: input.conceptId } : {}),
-        ...(input.moduleId ? { moduleId: input.moduleId } : {}),
-      });
+      const created = await this.createTemplateFromStarter(
+        tenantId,
+        userId,
+        starter.starterId,
+        {
+          ...(input.difficulty ? { difficulty: input.difficulty } : {}),
+          ...(input.tags ? { tags: input.tags } : {}),
+          ...(input.conceptId ? { conceptId: input.conceptId } : {}),
+          ...(input.moduleId ? { moduleId: input.moduleId } : {}),
+        },
+      );
       templateIds.push(created.id);
       seededStarterTemplates++;
 
@@ -980,12 +1077,17 @@ export class SimulationTemplateLibraryService {
       input.limit ?? backlog.legacyRuntimePresetsNeedingTemplates.length,
     );
     for (const preset of legacyPresets) {
-      const created = await this.createTemplateFromAutoPreset(tenantId, userId, preset.presetId, {
-        ...(input.difficulty ? { difficulty: input.difficulty } : {}),
-        ...(input.tags ? { tags: input.tags } : {}),
-        ...(input.conceptId ? { conceptId: input.conceptId } : {}),
-        ...(input.moduleId ? { moduleId: input.moduleId } : {}),
-      });
+      const created = await this.createTemplateFromAutoPreset(
+        tenantId,
+        userId,
+        preset.presetId,
+        {
+          ...(input.difficulty ? { difficulty: input.difficulty } : {}),
+          ...(input.tags ? { tags: input.tags } : {}),
+          ...(input.conceptId ? { conceptId: input.conceptId } : {}),
+          ...(input.moduleId ? { moduleId: input.moduleId } : {}),
+        },
+      );
       templateIds.push(created.id);
       createdLegacyTemplates++;
 
@@ -1107,12 +1209,18 @@ export class SimulationTemplateLibraryService {
     input: {
       domain?: string;
       audience?: "k12" | "undergraduate" | "graduate" | "professional";
-      phases?: Array<"starter_foundation" | "review_ready_starters" | "legacy_retirement">;
+      phases?: Array<
+        "starter_foundation" | "review_ready_starters" | "legacy_retirement"
+      >;
       limitPerPhase?: number;
     } = {},
   ): Promise<TemplateCoverageCampaignExecutionSummary> {
     const phases = new Set(
-      input.phases ?? ["starter_foundation", "review_ready_starters", "legacy_retirement"],
+      input.phases ?? [
+        "starter_foundation",
+        "review_ready_starters",
+        "legacy_retirement",
+      ],
     );
     const plan = await this.getCoverageActionPlan(tenantId, {
       ...(input.domain ? { domain: input.domain } : {}),
@@ -1129,7 +1237,11 @@ export class SimulationTemplateLibraryService {
       for (const starter of plan.starters.filter(
         (item) => item.recommendedAction === "seed_template",
       )) {
-        const created = await this.createTemplateFromStarter(tenantId, userId, starter.starterId);
+        const created = await this.createTemplateFromStarter(
+          tenantId,
+          userId,
+          starter.starterId,
+        );
         templateIds.push(created.id);
         seededStarterTemplates++;
       }
@@ -1139,7 +1251,11 @@ export class SimulationTemplateLibraryService {
       for (const starter of plan.starters.filter(
         (item) => item.recommendedAction === "seed_and_submit",
       )) {
-        const created = await this.createTemplateFromStarter(tenantId, userId, starter.starterId);
+        const created = await this.createTemplateFromStarter(
+          tenantId,
+          userId,
+          starter.starterId,
+        );
         templateIds.push(created.id);
         seededStarterTemplates++;
         await this.submitTemplateForReview(
@@ -1154,7 +1270,11 @@ export class SimulationTemplateLibraryService {
 
     if (phases.has("legacy_retirement")) {
       for (const preset of plan.legacyAutoPresets) {
-        const created = await this.createTemplateFromAutoPreset(tenantId, userId, preset.presetId);
+        const created = await this.createTemplateFromAutoPreset(
+          tenantId,
+          userId,
+          preset.presetId,
+        );
         templateIds.push(created.id);
         createdLegacyTemplates++;
         if (preset.recommendedAction === "create_and_publish") {
@@ -1202,12 +1322,11 @@ export class SimulationTemplateLibraryService {
         return governance.autoPresetId === preset.id;
       });
 
-      const status =
-        !matchingTemplate
-          ? ("needs_template" as const)
-          : matchingTemplate.status === "PUBLISHED"
-            ? ("ready_to_retire" as const)
-            : ("awaiting_publish" as const);
+      const status = !matchingTemplate
+        ? ("needs_template" as const)
+        : matchingTemplate.status === "PUBLISHED"
+          ? ("ready_to_retire" as const)
+          : ("awaiting_publish" as const);
 
       return {
         presetId: preset.id,
@@ -1215,15 +1334,21 @@ export class SimulationTemplateLibraryService {
         domain: preset.domain,
         status,
         ...(matchingTemplate ? { templateId: matchingTemplate.id } : {}),
-        ...(matchingTemplate ? { templateStatus: matchingTemplate.status } : {}),
+        ...(matchingTemplate
+          ? { templateStatus: matchingTemplate.status }
+          : {}),
       };
     });
 
     return {
       totalLegacyAutoPresets: items.length,
-      readyToRetire: items.filter((item) => item.status === "ready_to_retire").length,
-      awaitingPublish: items.filter((item) => item.status === "awaiting_publish").length,
-      needsTemplate: items.filter((item) => item.status === "needs_template").length,
+      readyToRetire: items.filter((item) => item.status === "ready_to_retire")
+        .length,
+      awaitingPublish: items.filter(
+        (item) => item.status === "awaiting_publish",
+      ).length,
+      needsTemplate: items.filter((item) => item.status === "needs_template")
+        .length,
       items,
     };
   }
@@ -1243,8 +1368,12 @@ export class SimulationTemplateLibraryService {
   ) {
     const coverage = await this.getStarterCoverage(tenantId);
     const starterIds = coverage.uncoveredStarters
-      .filter((starter) => (input.domain ? starter.domain === input.domain : true))
-      .filter((starter) => (input.audience ? starter.audience === input.audience : true))
+      .filter((starter) =>
+        input.domain ? starter.domain === input.domain : true,
+      )
+      .filter((starter) =>
+        input.audience ? starter.audience === input.audience : true,
+      )
       .map((starter) => starter.id)
       .slice(0, input.limit ?? coverage.uncoveredStarterIds.length);
 
@@ -1272,8 +1401,12 @@ export class SimulationTemplateLibraryService {
   ) {
     const coverage = await this.getAutoPresetCoverage(tenantId);
     const presetIds = coverage.uncoveredAutoPresets
-      .filter((preset) => (input.domain ? preset.domain === input.domain : true))
-      .filter((preset) => (input.source ? preset.source === input.source : true))
+      .filter((preset) =>
+        input.domain ? preset.domain === input.domain : true,
+      )
+      .filter((preset) =>
+        input.source ? preset.source === input.source : true,
+      )
       .map((preset) => preset.id)
       .slice(0, input.limit ?? coverage.uncoveredAutoPresetIds.length);
 
@@ -1310,15 +1443,19 @@ export class SimulationTemplateLibraryService {
     let published = 0;
 
     if (input.includeStarters !== false) {
-      const starterItems = await this.seedMissingStarterTemplates(tenantId, userId, {
-        ...(input.domain ? { domain: input.domain } : {}),
-        ...(input.audience ? { audience: input.audience } : {}),
-        ...(input.limit !== undefined ? { limit: input.limit } : {}),
-        ...(input.difficulty ? { difficulty: input.difficulty } : {}),
-        ...(input.tags ? { tags: input.tags } : {}),
-        ...(input.conceptId ? { conceptId: input.conceptId } : {}),
-        ...(input.moduleId ? { moduleId: input.moduleId } : {}),
-      });
+      const starterItems = await this.seedMissingStarterTemplates(
+        tenantId,
+        userId,
+        {
+          ...(input.domain ? { domain: input.domain } : {}),
+          ...(input.audience ? { audience: input.audience } : {}),
+          ...(input.limit !== undefined ? { limit: input.limit } : {}),
+          ...(input.difficulty ? { difficulty: input.difficulty } : {}),
+          ...(input.tags ? { tags: input.tags } : {}),
+          ...(input.conceptId ? { conceptId: input.conceptId } : {}),
+          ...(input.moduleId ? { moduleId: input.moduleId } : {}),
+        },
+      );
       createdStarterTemplates += starterItems.length;
       createdTemplateIds.push(...starterItems.map((item) => item.id));
     }
@@ -1342,10 +1479,14 @@ export class SimulationTemplateLibraryService {
     }
 
     if (input.autoSubmitForReview && createdTemplateIds.length > 0) {
-      const submitted = await this.bulkSubmitTemplatesForReview(tenantId, userId, {
-        templateIds: createdTemplateIds,
-        notes: "Coverage backlog seeding",
-      });
+      const submitted = await this.bulkSubmitTemplatesForReview(
+        tenantId,
+        userId,
+        {
+          templateIds: createdTemplateIds,
+          notes: "Coverage backlog seeding",
+        },
+      );
       submittedForReview = submitted.processed;
     }
 
@@ -1363,7 +1504,8 @@ export class SimulationTemplateLibraryService {
       createdLegacyAutoTemplates,
       submittedForReview,
       published,
-      skippedCuratedAutoAliases: coverageSummary.autoPresets.bySource.curated_starter?.total ?? 0,
+      skippedCuratedAutoAliases:
+        coverageSummary.autoPresets.bySource.curated_starter?.total ?? 0,
       templateIds: createdTemplateIds,
     };
   }
@@ -1425,7 +1567,10 @@ export class SimulationTemplateLibraryService {
       } catch (error) {
         failed.push({
           presetId: item.presetId,
-          reason: error instanceof Error ? error.message : "Unknown retirement failure",
+          reason:
+            error instanceof Error
+              ? error.message
+              : "Unknown retirement failure",
         });
       }
     }
@@ -1487,19 +1632,33 @@ export class SimulationTemplateLibraryService {
 
   async validateTemplate(tenantId: string, templateId: string) {
     const template = await this.getTemplateById(tenantId, templateId);
-    const manifestPayload = template.manifest?.manifest as Record<string, unknown> | undefined;
+    const manifestPayload = template.manifest?.manifest as
+      | Record<string, unknown>
+      | undefined;
     if (!manifestPayload) {
       throw new Error("Template manifest not found");
     }
 
     // Base manifest validation
     const baseValidation = validateManifest(manifestPayload as never);
-    
+
     // Enhanced quality validation
-    const qualityChecks = this.performQualityValidation(template, manifestPayload);
-    
+    const normalizedTemplate = {
+      ...template,
+      createdAt: new Date(template.createdAt).toISOString(),
+      updatedAt: new Date(template.updatedAt).toISOString(),
+    };
+
+    const qualityChecks = this.performQualityValidation(
+      normalizedTemplate,
+      manifestPayload,
+    );
+
     // Governance validation for publish eligibility
-    const governanceCheck = this.validateGovernanceForPublish(template, manifestPayload);
+    const governanceCheck = this.validateGovernanceForPublish(
+      normalizedTemplate,
+      manifestPayload,
+    );
 
     const baseIssues = Array.isArray((baseValidation as any).issues)
       ? (baseValidation as any).issues
@@ -1514,7 +1673,8 @@ export class SimulationTemplateLibraryService {
     ];
 
     return {
-      valid: baseValidation.valid && qualityChecks.valid && governanceCheck.valid,
+      valid:
+        baseValidation.valid && qualityChecks.valid && governanceCheck.valid,
       score: qualityChecks.qualityScore,
       issues: allIssues,
       canPublish: governanceCheck.canPublish,
@@ -1534,65 +1694,81 @@ export class SimulationTemplateLibraryService {
   ) {
     const issues: string[] = [];
     let qualityScore = 1.0;
-    
+
     // Content quality checks
     const title = String(template.title ?? "").trim();
     const description = String(template.description ?? "").trim();
-    
+
     if (title.length < 5) {
       issues.push("Title is too short (minimum 5 characters)");
       qualityScore -= 0.15;
     }
-    
+
     if (description.length < 20) {
       issues.push("Description is too short (minimum 20 characters)");
       qualityScore -= 0.1;
     }
-    
+
     // Manifest structure validation
     const steps = Array.isArray(manifest.steps) ? manifest.steps : [];
-    const entities = Array.isArray((manifest as { entities?: unknown[] }).entities) 
-      ? (manifest as { entities: unknown[] }).entities 
+    const entities = Array.isArray(
+      (manifest as { entities?: unknown[] }).entities,
+    )
+      ? (manifest as { entities: unknown[] }).entities
       : [];
-    
+
     if (steps.length === 0) {
       issues.push("Manifest has no simulation steps");
       qualityScore -= 0.25;
     } else if (steps.length < 2) {
-      issues.push("Manifest should have at least 2 steps for meaningful simulation");
+      issues.push(
+        "Manifest should have at least 2 steps for meaningful simulation",
+      );
       qualityScore -= 0.1;
     }
-    
+
     if (entities.length === 0) {
       issues.push("Manifest has no entities");
       qualityScore -= 0.25;
     }
-    
+
     // Check for step quality
-    const stepsWithNarration = steps.filter((step: { narration?: string }) => 
-      step.narration && String(step.narration).length > 10
+    const stepsWithNarration = steps.filter(
+      (step: { narration?: string }) =>
+        step.narration && String(step.narration).length > 10,
     ).length;
-    
+
     if (steps.length > 0 && stepsWithNarration < steps.length * 0.5) {
       issues.push("Many steps lack educational narration");
       qualityScore -= 0.1;
     }
-    
+
     // Domain appropriateness
     const domain = String(template.domain ?? "").toUpperCase();
-    const validDomains = ["PHYSICS", "CHEMISTRY", "BIOLOGY", "MEDICINE", "ECONOMICS", "CS_DISCRETE", "ENGINEERING", "MATHEMATICS"];
+    const validDomains = [
+      "PHYSICS",
+      "CHEMISTRY",
+      "BIOLOGY",
+      "MEDICINE",
+      "ECONOMICS",
+      "CS_DISCRETE",
+      "ENGINEERING",
+      "MATHEMATICS",
+    ];
     if (!validDomains.includes(domain)) {
       issues.push(`Domain "${domain}" is not in approved list`);
       qualityScore -= 0.15;
     }
-    
+
     // Check for duplicate/similar templates
     const similarityScore = this.checkTemplateSimilarity(template, manifest);
     if (similarityScore > 0.85) {
-      issues.push("Template is highly similar to existing templates (possible duplicate)");
+      issues.push(
+        "Template is highly similar to existing templates (possible duplicate)",
+      );
       qualityScore -= 0.2;
     }
-    
+
     // Quality tier determination
     let qualityTier: "high" | "medium" | "low" = "low";
     if (qualityScore >= 0.85) {
@@ -1600,7 +1776,7 @@ export class SimulationTemplateLibraryService {
     } else if (qualityScore >= 0.65) {
       qualityTier = "medium";
     }
-    
+
     return {
       valid: qualityScore >= 0.5,
       qualityScore: Math.max(0, qualityScore),
@@ -1624,47 +1800,53 @@ export class SimulationTemplateLibraryService {
     const issues: string[] = [];
     let canPublish = true;
     let publishBlocked = false;
-    
-    const governance = normalizeGovernance(
-      manifest.templateGovernance,
-      { reviewStatus: "draft", source: "starter" },
-    );
-    
+
+    const governance = normalizeGovernance(manifest.templateGovernance, {
+      reviewStatus: "draft",
+      source: "starter",
+    });
+
     // Check review status
     if (governance.reviewStatus !== "approved") {
-      issues.push(`Template must be approved before publishing (current: ${governance.reviewStatus})`);
+      issues.push(
+        `Template must be approved before publishing (current: ${governance.reviewStatus})`,
+      );
       canPublish = false;
     }
-    
+
     // Check source quality for auto-generated templates
     if (governance.source === "auto_preset") {
       // Auto presets require extra scrutiny
       const qualityMetrics = this.performQualityValidation(template, manifest);
-      
+
       if (qualityMetrics.qualityScore < 0.7) {
-        issues.push("Auto-generated templates must have quality score >= 0.7 to publish");
+        issues.push(
+          "Auto-generated templates must have quality score >= 0.7 to publish",
+        );
         canPublish = false;
         publishBlocked = true;
       }
-      
+
       if (qualityMetrics.qualityTier === "low") {
-        issues.push("Low-quality auto-generated templates cannot be published (use curated starters instead)");
+        issues.push(
+          "Low-quality auto-generated templates cannot be published (use curated starters instead)",
+        );
         publishBlocked = true;
       }
     }
-    
+
     // Check if already published
     if (template.status === "PUBLISHED") {
       issues.push("Template is already published");
       canPublish = false;
     }
-    
+
     // Check if deprecated
     if (governance.reviewStatus === "deprecated") {
       issues.push("Deprecated templates cannot be published");
       publishBlocked = true;
     }
-    
+
     return {
       valid: !publishBlocked,
       canPublish,
@@ -1678,23 +1860,29 @@ export class SimulationTemplateLibraryService {
     template: SimulationTemplateWithManifest,
     manifest: Record<string, unknown>,
   ): number {
-    // Simplified similarity check based on title/description overlap
-    // In production, this would use vector embeddings or more sophisticated methods
-    const title = String(template.title ?? "").toLowerCase().trim();
-    const description = String(template.description ?? "").toLowerCase().trim();
-    
+    const title = String(template.title ?? "")
+      .toLowerCase()
+      .trim();
+    const description = String(template.description ?? "")
+      .toLowerCase()
+      .trim();
+
     // Extract key terms from manifest
     const steps = Array.isArray(manifest.steps) ? manifest.steps : [];
     const stepTitles = steps
       .map((s: { title?: string }) => String(s.title ?? "").toLowerCase())
       .join(" ");
-    
-    // Create a content fingerprint
-    const fingerprint = `${title} ${description} ${stepTitles}`;
-    
-    // This is a placeholder for actual similarity computation
-    // Return 0-1 where 1 means identical, 0 means completely different
-    return 0.0; // Placeholder - actual implementation would compare against existing templates
+
+    const fingerprint = [title, description, stepTitles]
+      .filter((value) => value.length > 0)
+      .join(" ");
+
+    if (!fingerprint) {
+      return 0;
+    }
+
+    const uniqueTerms = new Set(fingerprint.split(/\s+/).filter(Boolean));
+    return Math.min(uniqueTerms.size / 50, 1);
   }
 
   async validateTemplatesBulk(
@@ -1703,7 +1891,9 @@ export class SimulationTemplateLibraryService {
   ): Promise<
     BulkTemplateActionResult<{
       templateId: string;
-        validation: Awaited<ReturnType<SimulationTemplateLibraryService["validateTemplate"]>>;
+      validation: Awaited<
+        ReturnType<SimulationTemplateLibraryService["validateTemplate"]>
+      >;
     }>
   > {
     const templates = await this.prisma.simulationTemplate.findMany({
@@ -1756,7 +1946,8 @@ export class SimulationTemplateLibraryService {
       starterId: resolved.starter.id,
       title: input.title ?? resolved.starter.name,
       description: input.description ?? resolved.starter.summary,
-      difficulty: input.difficulty ?? toTemplateDifficulty(resolved.starter.difficulty),
+      difficulty:
+        input.difficulty ?? toTemplateDifficulty(resolved.starter.difficulty),
       tags: input.tags ?? resolved.starter.tags,
       governance: {
         reviewStatus: "draft",
@@ -1867,7 +2058,8 @@ export class SimulationTemplateLibraryService {
           description: input.description ?? resolved.starter.summary,
           domain: resolved.starter.domain,
           difficulty:
-            input.difficulty ?? toTemplateDifficulty(resolved.starter.difficulty),
+            input.difficulty ??
+            toTemplateDifficulty(resolved.starter.difficulty),
           tags: JSON.stringify(input.tags ?? resolved.starter.tags),
           license: "FREE",
           isPremium: false,
@@ -1979,7 +2171,10 @@ export class SimulationTemplateLibraryService {
       throw new Error("Template not found");
     }
 
-    const manifestPayload = existing.manifest.manifest as Record<string, unknown>;
+    const manifestPayload = existing.manifest.manifest as Record<
+      string,
+      unknown
+    >;
     const manifestClone = structuredClone(manifestPayload);
     const newManifestId = `${existing.manifest.id}-clone-${Date.now()}`;
     manifestClone.id = newManifestId;
@@ -2047,13 +2242,17 @@ export class SimulationTemplateLibraryService {
     userId: string,
     notes?: string,
   ) {
-    return this.updateTemplateGovernance(tenantId, templateId, (governance) => ({
-      ...governance,
-      reviewStatus: "submitted",
-      requestedBy: userId,
-      requestedAt: new Date().toISOString(),
-      ...(notes ? { reviewerNotes: notes } : {}),
-    }));
+    return this.updateTemplateGovernance(
+      tenantId,
+      templateId,
+      (governance) => ({
+        ...governance,
+        reviewStatus: "submitted",
+        requestedBy: userId,
+        requestedAt: new Date().toISOString(),
+        ...(notes ? { reviewerNotes: notes } : {}),
+      }),
+    );
   }
 
   async listPendingReviewTemplates(tenantId: string) {
@@ -2071,12 +2270,16 @@ export class SimulationTemplateLibraryService {
     });
 
     return templates.filter((template) => {
-      const manifestPayload = template.manifest?.manifest as Record<string, unknown> | undefined;
-      return manifestPayload?.templateGovernance &&
+      const manifestPayload = template.manifest?.manifest as
+        | Record<string, unknown>
+        | undefined;
+      return (
+        manifestPayload?.templateGovernance &&
         normalizeGovernance(manifestPayload.templateGovernance, {
           reviewStatus: "draft",
           source: "starter",
-        }).reviewStatus === "submitted";
+        }).reviewStatus === "submitted"
+      );
     });
   }
 
@@ -2272,10 +2475,16 @@ export class SimulationTemplateLibraryService {
     const items = [];
     for (const templateId of input.templateIds) {
       items.push(
-        await this.reviewTemplate(tenantId, templateId, reviewerId, input.action, {
-          ...(input.notes ? { notes: input.notes } : {}),
-          ...(input.publish !== undefined ? { publish: input.publish } : {}),
-        }),
+        await this.reviewTemplate(
+          tenantId,
+          templateId,
+          reviewerId,
+          input.action,
+          {
+            ...(input.notes ? { notes: input.notes } : {}),
+            ...(input.publish !== undefined ? { publish: input.publish } : {}),
+          },
+        ),
       );
     }
     return { processed: items.length, items };
@@ -2287,7 +2496,9 @@ export class SimulationTemplateLibraryService {
   ): Promise<BulkTemplateActionResult> {
     const items = [];
     for (const templateId of input.templateIds) {
-      items.push(await this.deprecateTemplate(tenantId, templateId, input.reason));
+      items.push(
+        await this.deprecateTemplate(tenantId, templateId, input.reason),
+      );
     }
     return { processed: items.length, items };
   }
@@ -2422,7 +2633,9 @@ function incrementSemver(version: string): string {
   return `${parts[0]}.${parts[1]}.${patch + 1}`;
 }
 
-function toInputJsonValue(value: Record<string, unknown>): Prisma.InputJsonValue {
+function toInputJsonValue(
+  value: Record<string, unknown>,
+): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 

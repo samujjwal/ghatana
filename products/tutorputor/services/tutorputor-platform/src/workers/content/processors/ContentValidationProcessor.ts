@@ -1,202 +1,231 @@
 /**
  * Content Validation Processor - Validates content using 4C framework.
- * 
+ *
  * @doc.type class
  * @doc.purpose Process content validation jobs
  * @doc.layer backend-worker
  * @doc.pattern JobProcessor
  */
 
-import { Job } from 'bullmq';
-import { PrismaClient } from '@tutorputor/core/db';
-import { Logger } from 'pino';
-import { RealContentGenerationClient } from '../grpc/RealContentGenerationClient';
-import * as crypto from 'crypto';
+import { Job } from "bullmq";
+import { PrismaClient } from "@tutorputor/core/db";
+import { Logger } from "pino";
+import { RealContentGenerationClient } from "../grpc/RealContentGenerationClient";
+import * as crypto from "crypto";
 import {
-    type CorrelatedGenerationJobData,
-    ContentWorkerTelemetryPublisher,
-} from '../generation-telemetry';
+  type CorrelatedGenerationJobData,
+  ContentWorkerTelemetryPublisher,
+} from "../generation-telemetry";
 
 export interface ContentValidationJobData extends CorrelatedGenerationJobData {
-    experienceId: string;
-    checkCorrectness: boolean;
-    checkCompleteness: boolean;
-    checkConcreteness: boolean;
-    checkConciseness: boolean;
-    minConfidenceThreshold: number;
+  experienceId: string;
+  checkCorrectness: boolean;
+  checkCompleteness: boolean;
+  checkConcreteness: boolean;
+  checkConciseness: boolean;
+  minConfidenceThreshold: number;
 }
 
 export class ContentValidationProcessor {
-    constructor(
-        private grpcClient: RealContentGenerationClient,
-        private prisma: PrismaClient,
-        private logger: Logger,
-        private telemetry?: ContentWorkerTelemetryPublisher,
-    ) { }
+  constructor(
+    private grpcClient: RealContentGenerationClient,
+    private prisma: PrismaClient,
+    private logger: Logger,
+    private telemetry?: ContentWorkerTelemetryPublisher,
+  ) {}
 
-    async process(job: Job<ContentValidationJobData>): Promise<void> {
-        const { experienceId, checkCorrectness, checkCompleteness, checkConcreteness, checkConciseness, minConfidenceThreshold } = job.data;
+  async process(job: Job<ContentValidationJobData>): Promise<void> {
+    const {
+      experienceId,
+      checkCorrectness,
+      checkCompleteness,
+      checkConcreteness,
+      checkConciseness,
+      minConfidenceThreshold,
+    } = job.data;
 
-        this.logger.info(
-            { jobId: job.id, experienceId },
-            'Processing content validation job'
-        );
+    this.logger.info(
+      { jobId: job.id, experienceId },
+      "Processing content validation job",
+    );
 
-        try {
-            await this.telemetry?.publishForJob(job, {
-                stage: 'validation_loading',
-                message: 'Loading experience content for validation',
-                progressPercent: 10,
-                status: 'running',
-            });
+    try {
+      await this.telemetry?.publishForJob(job, {
+        stage: "validation_loading",
+        message: "Loading experience content for validation",
+        progressPercent: 10,
+        status: "running",
+      });
 
-            // Fetch experience with all content
-            const experience = await this.prisma.learningExperience.findUnique({
-                where: { id: experienceId },
+      // Fetch experience with all content
+      const experience = await this.prisma.learningExperience.findUnique({
+        where: { id: experienceId },
+        include: {
+          claims: {
+            include: {
+              examples: true,
+              simulations: {
                 include: {
-                    claims: {
-                        include: {
-                            examples: true,
-                            simulations: {
-                                include: {
-                                    simulationManifest: true
-                                }
-                            }
-                        },
-                    },
-                    experienceTasks: true,
+                  simulationManifest: true,
                 },
-            });
+              },
+            },
+          },
+          experienceTasks: true,
+        },
+      });
 
-            if (!experience) {
-                throw new Error(`Experience not found: ${experienceId}`);
-            }
+      if (!experience) {
+        throw new Error(`Experience not found: ${experienceId}`);
+      }
 
-            // Build validation request
-            const requestId = crypto.randomUUID();
+      // Build validation request
+      const requestId = crypto.randomUUID();
 
-            // Adapt claims - map to what Java side likely expects
-            const claimsPayload = (experience.claims as any[]).map((c: any) => ({
-                claimRef: c.claimRef,
-                text: c.text,
-                bloomLevel: c.bloomLevel,
-            }));
+      // Adapt claims - map to what Java side likely expects
+      const claimsPayload = (experience.claims as any[]).map((c: any) => ({
+        claimRef: c.claimRef,
+        text: c.text,
+        bloomLevel: c.bloomLevel,
+      }));
 
-            const evidencesPayload = (experience.claims as any[]).flatMap((c: any) =>
-                (c.examples || []).map((e: any) => ({
-                    claimRef: c.claimRef,
-                    type: e.type,
-                }))
-            );
+      const evidencesPayload = (experience.claims as any[]).flatMap((c: any) =>
+        (c.examples || []).map((e: any) => ({
+          claimRef: c.claimRef,
+          type: e.type,
+        })),
+      );
 
-            const tasksPayload = (experience.experienceTasks || []).map((task: any) => ({
-                claimRef: task.claimRef,
-                type: task.type,
-            }));
+      const tasksPayload = (experience.experienceTasks || []).map(
+        (task: any) => ({
+          claimRef: task.claimRef,
+          type: task.type,
+        }),
+      );
 
-            // Extract targetGrades safely - schema defines it as Json
-            // Assuming it's array of string or object with grade field
-            const targetGrades = Array.isArray(experience.targetGrades) ? experience.targetGrades : [];
-            const primaryGrade = targetGrades.length > 0 ? (typeof targetGrades[0] === 'string' ? targetGrades[0] : JSON.stringify(targetGrades[0])) : 'GRADE_6_8';
+      // Extract targetGrades safely - schema defines it as Json
+      // Assuming it's array of string or object with grade field
+      const targetGrades = Array.isArray(experience.targetGrades)
+        ? experience.targetGrades
+        : [];
+      const primaryGrade =
+        targetGrades.length > 0
+          ? typeof targetGrades[0] === "string"
+            ? targetGrades[0]
+            : JSON.stringify(targetGrades[0])
+          : "GRADE_6_8";
 
-            const response = await this.grpcClient.validateContent({
-                requestId,
-                experienceId,
-                content: {
-                    gradeLevel: primaryGrade,
-                    domain: experience.domain,
-                    claims: claimsPayload,
-                    evidences: evidencesPayload,
-                    tasks: tasksPayload,
-                },
-                config: {
-                    checkCorrectness,
-                    checkCompleteness,
-                    checkConcreteness,
-                    checkConciseness,
-                    minConfidenceThreshold,
-                },
-            });
+      const response = await this.grpcClient.validateContent({
+        requestId,
+        experienceId,
+        content: {
+          gradeLevel: primaryGrade,
+          domain: experience.domain,
+          claims: claimsPayload,
+          evidences: evidencesPayload,
+          tasks: tasksPayload,
+        },
+        config: {
+          checkCorrectness,
+          checkCompleteness,
+          checkConcreteness,
+          checkConciseness,
+          minConfidenceThreshold,
+        },
+      });
 
-            this.logger.info(
-                { jobId: job.id, passed: response.report?.passed, score: response.report?.overall_score },
-                'Content validated successfully'
-            );
+      this.logger.info(
+        {
+          jobId: job.id,
+          passed: response.report?.passed,
+          score: response.report?.overall_score,
+        },
+        "Content validated successfully",
+      );
 
-            const responseCost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(response.metadata);
-            await this.telemetry?.publishForJob(job, {
-                stage: 'validation_completed',
-                message: 'Validation response received',
-                progressPercent: 70,
-                status: 'running',
-                ...(responseCost ? { cost: responseCost } : {}),
-                diagnostics: {
-                    passed: response.report?.passed,
-                    overallScore: response.report?.overall_score,
-                },
-            });
+      const responseCost =
+        ContentWorkerTelemetryPublisher.extractCostFromMetadata(
+          response.metadata,
+        );
+      await this.telemetry?.publishForJob(job, {
+        stage: "validation_completed",
+        message: "Validation response received",
+        progressPercent: 70,
+        status: "running",
+        ...(responseCost ? { cost: responseCost } : {}),
+        diagnostics: {
+          passed: response.report?.passed,
+          overallScore: response.report?.overall_score,
+        },
+      });
 
-            // Store validation results
-            // Schema has changed: uses specific scores and ValidationStatus enum
-            const overallStatus = response.report?.passed ? 'PASS' : 'FAIL';
-            const rawScore = Number(response.report?.overall_score || 0);
-            const score = rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
+      // Store validation results
+      // Schema has changed: uses specific scores and ValidationStatus enum
+      const overallStatus = response.report?.passed ? "PASS" : "FAIL";
+      const rawScore = Number(response.report?.overall_score || 0);
+      const score =
+        rawScore <= 1 ? Math.round(rawScore * 100) : Math.round(rawScore);
 
-            await this.prisma.validationRecord.create({
-                data: {
-                    experienceId,
-                    overallStatus: overallStatus,
+      await this.prisma.validationRecord.create({
+        data: {
+          experienceId,
+          overallStatus: overallStatus,
 
-                    authorityScore: score,
-                    accuracyScore: score,
-                    usefulnessScore: score,
-                    harmlessnessScore: score,
-                    accessibilityScore: score,
-                    gradefitScore: score,
+          authorityScore: score,
+          accuracyScore: score,
+          usefulnessScore: score,
+          harmlessnessScore: score,
+          accessibilityScore: score,
+          gradefitScore: score,
 
-                    issues: response.report?.issues || [],
-                    suggestions: response.report?.recommendations || [],
-                    validatedAt: new Date(),
-                },
-            });
+          issues: response.report?.issues || [],
+          suggestions: response.report?.recommendations || [],
+          validatedAt: new Date(),
+        },
+      });
 
-            if (response.report?.passed) {
-                await this.prisma.learningExperience.update({
-                  where: { id: experienceId },
-                  data: {
-                    status: 'REVIEW',
-                  },
-                });
-            } else {
-                this.logger.warn(
-                    { jobId: job.id, experienceId, issuesCount: response.report?.issues?.length || 0 },
-                    'Experience validation failed - needs improvement'
-                );
-            }
+      if (response.report?.passed) {
+        await this.prisma.learningExperience.update({
+          where: { id: experienceId },
+          data: {
+            status: "REVIEW",
+          },
+        });
+      } else {
+        this.logger.warn(
+          {
+            jobId: job.id,
+            experienceId,
+            issuesCount: response.report?.issues?.length || 0,
+          },
+          "Experience validation failed - needs improvement",
+        );
+      }
 
-            this.logger.info(
-                { jobId: job.id, experienceId },
-                'Content validation job completed'
-            );
+      this.logger.info(
+        { jobId: job.id, experienceId },
+        "Content validation job completed",
+      );
 
-            await this.telemetry?.publishForJob(job, {
-                stage: 'validation_persisted',
-                message: 'Validation record persisted',
-                progressPercent: 90,
-                status: 'running',
-                diagnostics: {
-                    experienceId,
-                    passed: response.report?.passed,
-                    issueCount: response.report?.issues?.length || 0,
-                },
-            });
-
-        } catch (error: unknown) {
-            this.logger.error(
-                { jobId: job.id, experienceId, error: error.message },
-                'Content validation job failed'
-            );
-            throw error;
-        }
+      await this.telemetry?.publishForJob(job, {
+        stage: "validation_persisted",
+        message: "Validation record persisted",
+        progressPercent: 90,
+        status: "running",
+        diagnostics: {
+          experienceId,
+          passed: response.report?.passed,
+          issueCount: response.report?.issues?.length || 0,
+        },
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        { jobId: job.id, experienceId, error: errorMessage },
+        "Content validation job failed",
+      );
+      throw error;
     }
+  }
 }

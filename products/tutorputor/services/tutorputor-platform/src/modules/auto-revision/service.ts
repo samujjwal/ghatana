@@ -7,6 +7,18 @@
 
 import type { PrismaClient } from "@tutorputor/core/db";
 
+type ContentStudioRefinementService = {
+  refineExperience?: (input: {
+    experienceId: string;
+    refinementPrompt: string;
+    userId: string;
+  }) => Promise<{ experience?: unknown } | null | undefined>;
+  refineContent?: (
+    experienceId: string,
+    input: { refinementPrompt: string; userId: string },
+  ) => Promise<unknown>;
+};
+
 export interface DriftSignal {
   type:
     | "engagement_drop"
@@ -106,7 +118,7 @@ export class AutoRevisionService {
 
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly contentStudio: unknown,
+    private readonly contentStudio: ContentStudioRefinementService = {},
   ) {}
 
   async detectDrift(
@@ -241,7 +253,7 @@ export class AutoRevisionService {
 
     for (const experience of experiences) {
       const analytics =
-      (experience as Record<string, unknown>).experienceAnalytics ??
+        (experience as Record<string, unknown>).experienceAnalytics ??
         (experience as Record<string, unknown>).analytics;
       if (!analytics) {
         continue;
@@ -626,36 +638,50 @@ export class AutoRevisionService {
     hasQualityIssues: boolean;
     averageFeedbackScore: number;
   } {
-    const completionRate = this.toNumber(raw?.completionRate, 0);
+    interface RawAnalyticsSnapshot {
+      completionRate?: number;
+      dropOffRate?: number;
+      avgTimeMinutes?: number;
+      averageTimeSpent?: number;
+      masteryRate?: number;
+      simulationStarts?: number;
+      totalAttempts?: number;
+      simulationAborts?: number;
+      abortRate?: number;
+      averageFeedbackScore?: number;
+      hasQualityIssues?: boolean;
+    }
+    const analytics = (raw ?? {}) as Partial<RawAnalyticsSnapshot>;
+    const completionRate = this.toNumber(analytics.completionRate, 0);
     const dropOffRate = this.toNumber(
-      raw?.dropOffRate,
-      this.toNumber(raw?.abortRate, 0),
+      analytics.dropOffRate,
+      this.toNumber(analytics.abortRate, 0),
     );
     const avgTimeMinutes = this.toNumber(
-      raw?.avgTimeMinutes,
-      this.toNumber(raw?.averageTimeSpent, 0),
+      analytics.avgTimeMinutes,
+      this.toNumber(analytics.averageTimeSpent, 0),
     );
-    const masteryRate = this.toNumber(raw?.masteryRate, completionRate);
+    const masteryRate = this.toNumber(analytics.masteryRate, completionRate);
     const simulationStarts = this.toNumber(
-      raw?.simulationStarts,
-      this.toNumber(raw?.totalAttempts, 0),
+      analytics.simulationStarts,
+      this.toNumber(analytics.totalAttempts, 0),
     );
     const simulationAborts = this.toNumber(
-      raw?.simulationAborts,
+      analytics.simulationAborts,
       simulationStarts > 0
-        ? Math.round(this.toNumber(raw?.abortRate, 0) * simulationStarts)
+        ? Math.round(this.toNumber(analytics.abortRate, 0) * simulationStarts)
         : 0,
     );
     const abortRate = this.toNumber(
-      raw?.abortRate,
+      analytics.abortRate,
       simulationStarts > 0 ? simulationAborts / simulationStarts : dropOffRate,
     );
     const averageFeedbackScore = this.toNumber(
-      raw?.averageFeedbackScore,
-      raw?.hasQualityIssues ? 2.5 : 4.0,
+      analytics.averageFeedbackScore,
+      analytics.hasQualityIssues ? 2.5 : 4.0,
     );
     const hasQualityIssues =
-      Boolean(raw?.hasQualityIssues) ||
+      Boolean(analytics.hasQualityIssues) ||
       averageFeedbackScore < this.config.thresholds.feedbackScore;
 
     return {

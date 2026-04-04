@@ -7,7 +7,7 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' build",
     "build:platform": "pnpm -r --filter './platform/typescript/**' build",
@@ -29,12 +29,12 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
+    "@types/node": "^25.5.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "prettier": "^3.2.4",
-    "turbo": "^1.12.0",
-    "typescript": "^5.9.3"
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
+    "turbo": "^2.9.3",
+    "typescript": "^6.0.2"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
@@ -52,19 +52,21 @@
       "@tanstack/react-query": "^5.90.20",
       "jotai": "^2.17.0",
       "zod": "^4.3.6",
-      "typescript": "^5.9.3",
+      "typescript": "^6.0.2",
       "vite": "^7.3.1",
       "vitest": "^4.0.18",
       "tailwindcss": "^4.1.18",
       "eslint": "^9.39.2",
       "prettier": "^3.8.1",
       "date-fns": "^4.1.0",
-      "axios": "npm:node-fetch@3",
+      "axios": "^1.13.1",
       "uuid": "npm:nanoid@5"
     },
     "ignoredBuiltDependencies": [
       "@prisma/engines",
+      "detox",
       "esbuild",
+      "fastify-socket.io",
       "msw",
       "prisma"
     ]

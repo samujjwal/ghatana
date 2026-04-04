@@ -15,10 +15,6 @@ import { Queue, QueueEvents, Job } from "bullmq";
 import { PrismaClient } from "@tutorputor/core/db";
 import { Logger } from "pino";
 import type { ContentNeeds } from "@tutorputor/contracts/v1/learning-unit";
-import {
-  ModalitySelector,
-  type ModalityType,
-} from "../../utils/modality-selector";
 
 // ============================================================================
 // Types
@@ -89,19 +85,15 @@ export class ContentGenerationOrchestrator {
   private queue: Queue;
   private queueEvents: QueueEvents;
   private logger: Logger;
-  private prisma: PrismaClient;
   private config: OrchestratorConfig;
-  private modalitySelector: ModalitySelector;
 
   constructor(
-    prisma: PrismaClient,
+    _prisma: PrismaClient,
     logger: Logger,
     config: OrchestratorConfig,
   ) {
-    this.prisma = prisma;
     this.logger = logger;
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.modalitySelector = new ModalitySelector(prisma);
 
     const redisOpts = {
       host: config.redis.host,
@@ -125,7 +117,7 @@ export class ContentGenerationOrchestrator {
     request: OrchestrationRequest,
   ): Promise<OrchestrationResult> {
     const startTime = Date.now();
-    const { needs, claimRef } = request;
+    const { claimRef } = request;
 
     this.logger.info(
       { claimRef, experienceId: request.experienceId },
@@ -317,9 +309,9 @@ export class ContentGenerationOrchestrator {
    * @param priorityModality - The priority modality to generate first
    * @returns Jobs for the priority modality
    */
-  private async dispatchPriorityJobs(
+  async dispatchPriorityJobs(
     request: OrchestrationRequest,
-    priorityModality: ModalityType,
+    priorityModality: "example" | "simulation" | "animation",
   ): Promise<{
     examples: Job | null;
     simulation: Job | null;
@@ -393,7 +385,9 @@ export class ContentGenerationOrchestrator {
   /**
    * Get the priority modality based on needs (simulation > animation > example)
    */
-  private getPriorityModality(needs: ContentNeeds): ModalityType | null {
+  getPriorityModality(
+    needs: ContentNeeds,
+  ): "example" | "simulation" | "animation" | null {
     if (needs.simulation.required) return "simulation";
     if (needs.animation.required) return "animation";
     if (needs.examples.required && needs.examples.count > 0) return "example";
@@ -422,7 +416,7 @@ export class ContentGenerationOrchestrator {
       const start = Date.now();
 
       try {
-        const result = await Promise.race([
+        await Promise.race([
           job.waitUntilFinished(this.queueEvents, timeout),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("timeout")), timeout),
@@ -435,16 +429,21 @@ export class ContentGenerationOrchestrator {
           durationMs: Date.now() - start,
         };
       } catch (error: unknown) {
-        const isTimeout = error?.message === "timeout";
+        const errorMessage = error instanceof Error ? error.message : undefined;
+        const isTimeout = errorMessage === "timeout";
         this.logger.warn(
-          { jobId: job.id, label, error: error?.message },
+          {
+            jobId: job.id,
+            label,
+            ...(errorMessage ? { error: errorMessage } : {}),
+          },
           isTimeout ? "Job timed out" : "Job failed",
         );
 
         return {
           status: isTimeout ? "timeout" : "failed",
           ...(job.id ? { jobId: String(job.id) } : {}),
-          ...(error?.message ? { error: error.message } : {}),
+          ...(errorMessage ? { error: errorMessage } : {}),
           durationMs: Date.now() - start,
         };
       }

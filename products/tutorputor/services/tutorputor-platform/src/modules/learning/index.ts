@@ -8,8 +8,6 @@ import { SessionAdaptationEngine } from "../adaptation/session-engine.js";
 import { ContentAssetReadService } from "../content/asset/read-service.js";
 import { ContentVariationService } from "../content/variation/service.js";
 import learningRoutes from "./routes";
-import type { TutorPrismaClient } from "@tutorputor/core/db";
-import type { Redis } from "ioredis";
 import type { FastifyPluginAsync } from "fastify";
 
 /**
@@ -40,7 +38,9 @@ export const learningModule = fp(
     const analyticsService = createAnalyticsService(prisma, redis);
     const learnerProfileService = createLearnerProfileService(prisma);
     const assetReadService = new ContentAssetReadService(prisma);
-    const contentVariationService = new ContentVariationService(assetReadService);
+    const contentVariationService = new ContentVariationService(
+      assetReadService,
+    );
     const sessionAdaptationEngine = new SessionAdaptationEngine(
       learnerProfileService,
       contentVariationService,

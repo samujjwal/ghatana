@@ -9,7 +9,6 @@
 
 import React, { useRef, useEffect, useMemo } from 'react';
 import type { SimEntity, SimEntityId } from '@tutorputor/contracts/v1/simulation';
-import { useRendererRegistry } from '../hooks';
 import {
     defaultTheme,
     type RenderTheme,

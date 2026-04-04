@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import type { PrismaClient } from "@tutorputor/core/db";
+import { Prisma, type PrismaClient } from "@tutorputor/core/db";
 
 interface GenerationReviewDecision {
   id: string;
@@ -45,7 +45,9 @@ function mapDecision(row: Record<string, unknown>): GenerationReviewDecision {
       .toLowerCase()
       .replace(/_/g, "_") as GenerationReviewDecision["status"],
     ...(row.reviewedBy != null ? { reviewedBy: String(row.reviewedBy) } : {}),
-    ...(row.decisionNote != null ? { decisionNote: String(row.decisionNote) } : {}),
+    ...(row.decisionNote != null
+      ? { decisionNote: String(row.decisionNote) }
+      : {}),
     ...(row.regenerateJobIds != null
       ? { regenerateJobIds: row.regenerateJobIds as string[] }
       : {}),
@@ -83,24 +85,24 @@ export class GenerationReviewService {
 
     const allowedStates = ["PLANNED", "COMPLETED", "FAILED"];
     if (!allowedStates.includes(request.status)) {
-      throw new Error(
-        `Request in state ${request.status} is not reviewable`,
-      );
+      throw new Error(`Request in state ${request.status} is not reviewable`);
     }
 
-    const decision = await this.prisma.generationReviewDecision.create(
-      {
-        data: {
-          tenantId,
-          requestId: input.requestId,
-          status: input.status.toUpperCase().replace(/-/g, "_"),
-          reviewedBy,
-          decisionNote: input.decisionNote ?? null,
-          regenerateJobIds: input.regenerateJobIds ?? null,
-          reviewedAt: new Date(),
-        },
+    const decision = await this.prisma.generationReviewDecision.create({
+      data: {
+        tenantId,
+        requestId: input.requestId,
+        status: input.status.toUpperCase().replace(/-/g, "_") as
+          | "APPROVED"
+          | "REJECTED"
+          | "PENDING"
+          | "REGENERATION_REQUESTED",
+        reviewedBy,
+        decisionNote: input.decisionNote ?? null,
+        regenerateJobIds: input.regenerateJobIds ?? Prisma.JsonNull,
+        reviewedAt: new Date(),
       },
-    );
+    });
 
     // If approved, transition request to COMPLETED (if it wasn't already)
     if (input.status === "approved" && request.status !== "COMPLETED") {
@@ -120,12 +122,10 @@ export class GenerationReviewService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationReviewDecision[]> {
-    const decisions = await this.prisma.generationReviewDecision.findMany(
-      {
-        where: { tenantId, requestId },
-        orderBy: { createdAt: "desc" },
-      },
-    );
+    const decisions = await this.prisma.generationReviewDecision.findMany({
+      where: { tenantId, requestId },
+      orderBy: { createdAt: "desc" },
+    });
     return decisions.map(mapDecision);
   }
 
@@ -136,12 +136,10 @@ export class GenerationReviewService {
     tenantId: string,
     requestId: string,
   ): Promise<GenerationReviewDecision | null> {
-    const decision = await this.prisma.generationReviewDecision.findFirst(
-      {
-        where: { tenantId, requestId },
-        orderBy: { createdAt: "desc" },
-      },
-    );
+    const decision = await this.prisma.generationReviewDecision.findFirst({
+      where: { tenantId, requestId },
+      orderBy: { createdAt: "desc" },
+    });
     return decision ? mapDecision(decision) : null;
   }
 
@@ -154,12 +152,10 @@ export class GenerationReviewService {
     requestId: string,
     decisionNote?: string,
   ): Promise<GenerationReviewDecision> {
-    const existing = await this.prisma.generationReviewDecision.findFirst(
-      {
-        where: { tenantId, requestId, status: "PENDING" },
-        orderBy: { createdAt: "desc" },
-      },
-    );
+    const existing = await this.prisma.generationReviewDecision.findFirst({
+      where: { tenantId, requestId, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    });
 
     if (existing) {
       return mapDecision(existing);

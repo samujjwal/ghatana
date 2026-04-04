@@ -41,7 +41,6 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
   private readonly prisma: PrismaClient;
   private readonly redis?: Redis;
   private readonly defaultMaxSessionsPerWeek: number;
-  private readonly requestExpirationDays: number;
 
   constructor(config: PeerTutoringServiceConfig) {
     this.prisma = config.prisma;
@@ -49,7 +48,6 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       this.redis = config.redis;
     }
     this.defaultMaxSessionsPerWeek = config.defaultMaxSessionsPerWeek ?? 5;
-    this.requestExpirationDays = config.requestExpirationDays ?? 7;
   }
 
   // ---------------------------------------------------------------------------
@@ -428,7 +426,8 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
 
     if (
       !(request as { tutor?: { id: string; userId: string } }).tutor ||
-      (request as { tutor: { id: string; userId: string } }).tutor.userId !== args.tutorId
+      (request as { tutor: { id: string; userId: string } }).tutor.userId !==
+        args.tutorId
     ) {
       throw new Error("Request not found or tutor mismatch");
     }
@@ -540,7 +539,9 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
     );
 
     // Only tutor can start session
-    if ((session as { tutor: { userId: string } }).tutor.userId !== args.userId) {
+    if (
+      (session as { tutor: { userId: string } }).tutor.userId !== args.userId
+    ) {
       throw new Error("Only the tutor can start the session");
     }
 
@@ -701,7 +702,9 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
   }): Promise<TutoringReview> {
     const review = await this.requireReview(args.tenantId, args.reviewId, true);
 
-    if ((review as { tutor: { userId: string } }).tutor.userId !== args.tutorId) {
+    if (
+      (review as { tutor: { userId: string } }).tutor.userId !== args.tutorId
+    ) {
       throw new Error("Review not found or not authorized");
     }
 
@@ -832,16 +835,21 @@ export class PeerTutoringServiceImpl implements PeerTutoringService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma, {
-      tenantId,
-      userId,
-      type: notification.type,
-      title: notification.title,
-      body: notification.body,
-      ...(notification.targetType ? { targetType: notification.targetType } : {}),
-      ...(notification.targetId ? { targetId: notification.targetId } : {}),
-      ...(notification.actorId ? { actorId: notification.actorId } : {}),
-    });
+    await createSocialNotification(
+      this.prisma as unknown as Parameters<typeof createSocialNotification>[0],
+      {
+        tenantId,
+        userId,
+        type: notification.type,
+        title: notification.title,
+        body: notification.body,
+        ...(notification.targetType
+          ? { targetType: notification.targetType }
+          : {}),
+        ...(notification.targetId ? { targetId: notification.targetId } : {}),
+        ...(notification.actorId ? { actorId: notification.actorId } : {}),
+      },
+    );
 
     if (this.redis) {
       await this.redis.publish(

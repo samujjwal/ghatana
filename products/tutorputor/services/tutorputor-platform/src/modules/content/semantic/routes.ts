@@ -17,8 +17,6 @@ import type { PrismaClient } from "@tutorputor/core/db";
 import { SemanticChunkService } from "./chunk-service.js";
 import { SemanticSearchService } from "./semantic-search-service.js";
 
-type ContentAssetType = string;
-
 // =============================================================================
 // Types
 // =============================================================================
@@ -133,7 +131,11 @@ export function registerSemanticRoutes(
         tenantId,
         query: q,
         ...(assetTypes
-          ? { assetTypes: assetTypes.split(",") as ContentAssetType[] }
+          ? {
+              assetTypes: assetTypes.split(",") as Array<
+                import("../types.js").ContentAssetType
+              >,
+            }
           : {}),
         ...(domain ? { domain } : {}),
         ...(limit ? { limit: parseInt(limit, 10) } : {}),

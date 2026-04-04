@@ -10,16 +10,16 @@
  * @doc.pattern NotificationService
  */
 
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 
 const STORAGE_KEYS = {
-  PUSH_TOKEN: '@notifications_pushToken',
-  PREFERENCES: '@notifications_preferences',
-  LAST_NOTIFICATION: '@notifications_lastNotification',
+  PUSH_TOKEN: "@notifications_pushToken",
+  PREFERENCES: "@notifications_preferences",
+  LAST_NOTIFICATION: "@notifications_lastNotification",
 };
 
 /**
@@ -64,8 +64,8 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
   transcriptionComplete: true,
   weeklyDigest: false,
   quietHoursEnabled: false,
-  quietHoursStart: '22:00',
-  quietHoursEnd: '07:00',
+  quietHoursStart: "22:00",
+  quietHoursEnd: "07:00",
 };
 
 /**
@@ -74,6 +74,8 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -100,14 +102,17 @@ class NotificationService {
       // Load stored preferences
       const storedPrefs = await AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES);
       if (storedPrefs) {
-        this.preferences = { ...DEFAULT_PREFERENCES, ...JSON.parse(storedPrefs) };
+        this.preferences = {
+          ...DEFAULT_PREFERENCES,
+          ...JSON.parse(storedPrefs),
+        };
       }
 
       // Load stored push token
       this.pushToken = await AsyncStorage.getItem(STORAGE_KEYS.PUSH_TOKEN);
 
       // Set up notification channels (Android)
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         await this.setupAndroidChannels();
       }
 
@@ -120,9 +125,9 @@ class NotificationService {
       this.setupListeners();
 
       this.initialized = true;
-      console.log('[Notifications] Initialized');
+      console.log("[Notifications] Initialized");
     } catch (error) {
-      console.error('[Notifications] Init error:', error);
+      console.error("[Notifications] Init error:", error);
     }
   }
 
@@ -130,29 +135,29 @@ class NotificationService {
    * Set up Android notification channels.
    */
   private async setupAndroidChannels(): Promise<void> {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Default",
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#6366F1',
+      lightColor: "#6366F1",
     });
 
-    await Notifications.setNotificationChannelAsync('moments', {
-      name: 'Moments',
-      description: 'Notifications about your moments',
+    await Notifications.setNotificationChannelAsync("moments", {
+      name: "Moments",
+      description: "Notifications about your moments",
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
+      sound: "default",
     });
 
-    await Notifications.setNotificationChannelAsync('social', {
-      name: 'Social',
-      description: 'Comments, reactions, and shares',
+    await Notifications.setNotificationChannelAsync("social", {
+      name: "Social",
+      description: "Comments, reactions, and shares",
       importance: Notifications.AndroidImportance.DEFAULT,
     });
 
-    await Notifications.setNotificationChannelAsync('digest', {
-      name: 'Weekly Digest',
-      description: 'Weekly summary notifications',
+    await Notifications.setNotificationChannelAsync("digest", {
+      name: "Weekly Digest",
+      description: "Weekly summary notifications",
       importance: Notifications.AndroidImportance.LOW,
     });
   }
@@ -162,23 +167,26 @@ class NotificationService {
    */
   async registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-      console.log('[Notifications] Not a physical device, skipping registration');
+      console.log(
+        "[Notifications] Not a physical device, skipping registration",
+      );
       return null;
     }
 
     try {
       // Check existing permissions
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
       // Request permissions if needed
-      if (existingStatus !== 'granted') {
+      if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      if (finalStatus !== 'granted') {
-        console.log('[Notifications] Permission denied');
+      if (finalStatus !== "granted") {
+        console.log("[Notifications] Permission denied");
         return null;
       }
 
@@ -190,10 +198,10 @@ class NotificationService {
       this.pushToken = tokenResult.data;
       await AsyncStorage.setItem(STORAGE_KEYS.PUSH_TOKEN, this.pushToken);
 
-      console.log('[Notifications] Push token:', this.pushToken);
+      console.log("[Notifications] Push token:", this.pushToken);
       return this.pushToken;
     } catch (error) {
-      console.error('[Notifications] Registration error:', error);
+      console.error("[Notifications] Registration error:", error);
       return null;
     }
   }
@@ -206,30 +214,31 @@ class NotificationService {
     this.foregroundSubscription = Notifications.addNotificationReceivedListener(
       (notification) => {
         const data = this.parseNotification(notification);
-        this.handleNotification(data, 'foreground');
-      }
+        this.handleNotification(data, "foreground");
+      },
     );
 
     // Notification response (user tapped)
-    this.responseSubscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    this.responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         const data = this.parseNotification(response.notification);
         this.handleNotificationTap(data);
-      }
-    );
+      });
   }
 
   /**
    * Parse notification into standard format.
    */
-  private parseNotification(notification: Notifications.Notification): PushNotificationData {
+  private parseNotification(
+    notification: Notifications.Notification,
+  ): PushNotificationData {
     const content = notification.request.content;
-    const data = content.data as Record<string, any> || {};
+    const data = (content.data as Record<string, any>) || {};
 
     return {
-      type: data.type || 'default',
-      title: content.title || 'Flashit',
-      body: content.body || '',
+      type: data.type || "default",
+      title: content.title || "Flashit",
+      body: content.body || "",
       data,
       actionUrl: data.actionUrl,
     };
@@ -238,31 +247,37 @@ class NotificationService {
   /**
    * Handle received notification.
    */
-  private handleNotification(data: PushNotificationData, source: 'foreground' | 'background'): void {
+  private handleNotification(
+    data: PushNotificationData,
+    source: "foreground" | "background",
+  ): void {
     // Store last notification
-    AsyncStorage.setItem(STORAGE_KEYS.LAST_NOTIFICATION, JSON.stringify({
-      ...data,
-      receivedAt: new Date().toISOString(),
-      source,
-    }));
+    AsyncStorage.setItem(
+      STORAGE_KEYS.LAST_NOTIFICATION,
+      JSON.stringify({
+        ...data,
+        receivedAt: new Date().toISOString(),
+        source,
+      }),
+    );
 
     // Notify handlers
     this.handlers.forEach((handler) => {
       try {
         handler(data);
       } catch (error) {
-        console.error('[Notifications] Handler error:', error);
+        console.error("[Notifications] Handler error:", error);
       }
     });
 
-    console.log('[Notifications] Received:', data.type, source);
+    console.log("[Notifications] Received:", data.type, source);
   }
 
   /**
    * Handle notification tap (deep linking).
    */
   private handleNotificationTap(data: PushNotificationData): void {
-    console.log('[Notifications] Tapped:', data.type);
+    console.log("[Notifications] Tapped:", data.type);
 
     // Navigate based on notification type
     if (data.actionUrl) {
@@ -271,31 +286,31 @@ class NotificationService {
     }
 
     switch (data.type) {
-      case 'sphere_shared':
+      case "sphere_shared":
         if (data.data?.sphereId) {
           this.navigateTo(`/spheres/${data.data.sphereId}`);
         }
         break;
 
-      case 'moment_commented':
-      case 'moment_reaction':
+      case "moment_commented":
+      case "moment_reaction":
         if (data.data?.momentId) {
           this.navigateTo(`/moments/${data.data.momentId}`);
         }
         break;
 
-      case 'transcription_complete':
+      case "transcription_complete":
         if (data.data?.momentId) {
           this.navigateTo(`/moments/${data.data.momentId}`);
         }
         break;
 
-      case 'weekly_digest':
-        this.navigateTo('/analytics');
+      case "weekly_digest":
+        this.navigateTo("/analytics");
         break;
 
       default:
-        this.navigateTo('/');
+        this.navigateTo("/");
         break;
     }
   }
@@ -306,10 +321,10 @@ class NotificationService {
   private navigateTo(url: string): void {
     try {
       // Remove leading slash for expo-router
-      const path = url.startsWith('/') ? url : `/${url}`;
+      const path = url.startsWith("/") ? url : `/${url}`;
       router.push(path as any);
     } catch (error) {
-      console.error('[Notifications] Navigation error:', error);
+      console.error("[Notifications] Navigation error:", error);
     }
   }
 
@@ -323,9 +338,14 @@ class NotificationService {
   /**
    * Update notification preferences.
    */
-  async updatePreferences(updates: Partial<NotificationPreferences>): Promise<void> {
+  async updatePreferences(
+    updates: Partial<NotificationPreferences>,
+  ): Promise<void> {
     this.preferences = { ...this.preferences, ...updates };
-    await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(this.preferences));
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.PREFERENCES,
+      JSON.stringify(this.preferences),
+    );
 
     // Re-register or unregister based on enabled status
     if (updates.enabled !== undefined) {
@@ -347,7 +367,7 @@ class NotificationService {
    */
   async checkPermissions(): Promise<boolean> {
     const { status } = await Notifications.getPermissionsAsync();
-    return status === 'granted';
+    return status === "granted";
   }
 
   /**
@@ -355,7 +375,7 @@ class NotificationService {
    */
   async requestPermissions(): Promise<boolean> {
     const { status } = await Notifications.requestPermissionsAsync();
-    return status === 'granted';
+    return status === "granted";
   }
 
   /**
@@ -365,21 +385,27 @@ class NotificationService {
     title: string,
     body: string,
     data?: Record<string, any>,
-    triggerSeconds?: number
+    triggerSeconds?: number,
   ): Promise<string> {
-    const trigger = triggerSeconds
-      ? { seconds: triggerSeconds }
-      : null;
+    const content = {
+      title,
+      body,
+      data,
+      sound: "default" as const,
+    };
 
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data,
-        sound: 'default',
-      },
-      trigger,
-    });
+    const id = triggerSeconds
+      ? await Notifications.scheduleNotificationAsync({
+          content,
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: triggerSeconds,
+          } as Notifications.TimeIntervalTriggerInput,
+        })
+      : await Notifications.scheduleNotificationAsync({
+          content,
+          trigger: null,
+        });
 
     return id;
   }
@@ -434,8 +460,8 @@ class NotificationService {
     if (!this.preferences.quietHoursEnabled) return false;
 
     const now = new Date();
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-    
+    const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
     const start = this.preferences.quietHoursStart;
     const end = this.preferences.quietHoursEnd;
 
@@ -450,17 +476,20 @@ class NotificationService {
   /**
    * Send push token to backend.
    */
-  async registerTokenWithBackend(apiBaseUrl: string, authToken: string): Promise<void> {
+  async registerTokenWithBackend(
+    apiBaseUrl: string,
+    authToken: string,
+  ): Promise<void> {
     if (!this.pushToken) {
-      console.log('[Notifications] No push token to register');
+      console.log("[Notifications] No push token to register");
       return;
     }
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/notifications/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
@@ -474,9 +503,9 @@ class NotificationService {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      console.log('[Notifications] Token registered with backend');
+      console.log("[Notifications] Token registered with backend");
     } catch (error) {
-      console.error('[Notifications] Failed to register token:', error);
+      console.error("[Notifications] Failed to register token:", error);
     }
   }
 

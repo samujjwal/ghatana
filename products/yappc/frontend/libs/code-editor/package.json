@@ -28,7 +28,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "monaco-editor": "^0.55.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vscode-languageserver-protocol": "^3.17.5"
   },
   "peerDependencies": {
@@ -37,9 +37,9 @@
     "@yappc/ui": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "@types/react": "^19.2.14",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "keywords": [
     "code-editor",

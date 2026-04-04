@@ -54,7 +54,9 @@ function rowToMetadata(row: Record<string, unknown>): PluginMetadata {
     id: String(row.pluginId ?? ""),
     name: String(row.name ?? ""),
     version: String(row.version ?? ""),
-    ...(typeof row.description === "string" ? { description: row.description } : {}),
+    ...(typeof row.description === "string"
+      ? { description: row.description }
+      : {}),
     ...(typeof row.author === "string" ? { author: row.author } : {}),
     kernelType: String(row.kernelType ?? ""),
     capabilities: JSON.parse(String(row.capabilities ?? "[]")),
@@ -168,7 +170,9 @@ async function listPlugins(
 
     // capability filter (JSON array field, done in-process)
     if (capability) {
-      plugins = plugins.filter((p) => p.capabilities.includes(capability));
+      plugins = plugins.filter((p: PluginMetadata) =>
+        p.capabilities.includes(capability),
+      );
     }
 
     return reply.send({ plugins, count: plugins.length });
@@ -281,7 +285,7 @@ export async function registerKernelRegistryRoutes(fastify: FastifyInstance) {
   fastify.delete("/api/v1/plugins/:pluginId", deletePlugin);
 
   // Health check for kernel registry
-  fastify.get("/api/v1/plugins/health", async (request, reply) => {
+  fastify.get("/api/v1/plugins/health", async (_request, reply) => {
     const prisma = (fastify as FastifyInstance & { prisma: any }).prisma;
     const pluginCount = await prisma.kernelPlugin.count();
     return reply.send({

@@ -549,9 +549,15 @@ export class TenantAccessValidator {
    * Middleware function for Fastify routes
    */
   createMiddleware(requiredAction: string) {
-    return async (request: import("fastify").FastifyRequest, reply: import("fastify").FastifyReply) => {
-      const tenantId = request.user?.tenantId;
-      const userId = request.user?.userId ?? request.user?.id;
+    return async (
+      request: import("fastify").FastifyRequest,
+      _reply: import("fastify").FastifyReply,
+    ) => {
+      const requestUser = request.user as
+        | { tenantId?: string; userId?: string; id?: string }
+        | undefined;
+      const tenantId = requestUser?.tenantId;
+      const userId = requestUser?.userId ?? requestUser?.id;
 
       if (!tenantId || !userId) {
         throw new UnauthorizedError("Missing tenant or user context");

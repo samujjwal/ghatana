@@ -66,31 +66,31 @@ export default function AnalyticsScreen() {
   });
 
   const isLoading = spheresLoading || momentsLoading;
+  const moments = momentsData?.moments || [];
+  const spheres = spheresData || [];
 
   // Compute analytics from available data
   const overview: OverviewStats = React.useMemo(() => {
-    const moments = momentsData?.moments || [];
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const momentsThisWeek = moments.filter(
-      (m: { createdAt: string }) => new Date(m.createdAt) >= weekAgo
+      (m) => new Date(m.capturedAt) >= weekAgo
     ).length;
     const momentsThisMonth = moments.filter(
-      (m: { createdAt: string }) => new Date(m.createdAt) >= monthAgo
+      (m) => new Date(m.capturedAt) >= monthAgo
     ).length;
 
     // Count spheres
     const sphereCounts: Record<string, number> = {};
-    moments.forEach((m: { sphereId?: string }) => {
+    moments.forEach((m) => {
       if (m.sphereId) {
         sphereCounts[m.sphereId] = (sphereCounts[m.sphereId] || 0) + 1;
       }
     });
     const topSphereId = Object.entries(sphereCounts).sort(([, a], [, b]) => b - a)[0]?.[0];
-    const spheres = Array.isArray(spheresData) ? spheresData : (spheresData as any)?.spheres || [];
-    const topSphere = spheres.find((s: { id: string }) => s.id === topSphereId);
+    const topSphere = spheres.find((s) => s.id === topSphereId);
 
     return {
       totalMoments: momentsData?.totalCount || moments.length,
@@ -102,24 +102,21 @@ export default function AnalyticsScreen() {
       topSphereId,
       topSphereName: topSphere?.name,
     };
-  }, [momentsData, spheresData]);
+  }, [moments, momentsData?.totalCount, spheres]);
 
   const patterns: PatternData[] = React.useMemo(() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const counts = new Array(7).fill(0);
-    const moments = momentsData?.moments || [];
-    moments.forEach((m: { createdAt: string }) => {
-      const dayIndex = new Date(m.createdAt).getDay();
+    moments.forEach((m) => {
+      const dayIndex = new Date(m.capturedAt).getDay();
       counts[dayIndex]++;
     });
     return days.map((day, idx) => ({ dayOfWeek: day, count: counts[idx] }));
-  }, [momentsData]);
+  }, [moments]);
 
   const sphereBreakdown: SphereBreakdown[] = React.useMemo(() => {
-    const moments = momentsData?.moments || [];
-    const spheres = Array.isArray(spheresData) ? spheresData : (spheresData as any)?.spheres || [];
     const sphereCounts: Record<string, number> = {};
-    moments.forEach((m: { sphereId?: string }) => {
+    moments.forEach((m) => {
       if (m.sphereId) {
         sphereCounts[m.sphereId] = (sphereCounts[m.sphereId] || 0) + 1;
       }
@@ -129,12 +126,12 @@ export default function AnalyticsScreen() {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 6)
       .map(([id, count], idx) => ({
-        name: spheres.find((s: { id: string }) => s.id === id)?.name || 'Unknown',
+        name: spheres.find((s) => s.id === id)?.name || 'Unknown',
         count,
         percentage: Math.round((count / total) * 100),
         color: SPHERE_COLORS[idx % SPHERE_COLORS.length],
       }));
-  }, [momentsData, spheresData]);
+  }, [moments, spheres]);
 
   if (isLoading) {
     return (
@@ -273,10 +270,10 @@ function StatCard({
   );
 }
 
-function computeStreak(moments: Array<{ createdAt: string }>): number {
+function computeStreak(moments: Array<{ capturedAt: string }>): number {
   if (moments.length === 0) return 0;
   const dates = new Set(
-    moments.map((m) => new Date(m.createdAt).toISOString().split('T')[0])
+    moments.map((m) => new Date(m.capturedAt).toISOString().split('T')[0])
   );
   let streak = 0;
   const today = new Date();

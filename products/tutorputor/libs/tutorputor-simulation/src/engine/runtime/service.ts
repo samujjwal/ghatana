@@ -7,21 +7,20 @@
  * @doc.pattern Service
  */
 
-import { randomUUID } from 'crypto';
-import Redis from 'ioredis';
+import { randomUUID } from "crypto";
+import Redis from "ioredis";
 import type {
   SimulationManifest,
   SimulationSessionId,
   SimKeyframe,
   SimRuntimeService,
   SimKernelService,
-  SimEntityBase,
   SimulationStep,
   EasingFunction,
-} from '@tutorputor/contracts/v1/simulation';
+} from "@tutorputor/contracts/v1/simulation";
 
-import { KernelRegistry } from './kernel-registry';
-import { getEasingFunction } from './easing';
+import { KernelRegistry } from "./kernel-registry";
+import { getEasingFunction } from "./easing";
 
 /**
  * Session state data.
@@ -63,15 +62,13 @@ interface SessionState {
 interface ExecutionHistoryEntry {
   stepIndex: number;
   timestamp: number;
-  action: 'forward' | 'backward' | 'seek' | 'play' | 'pause';
+  action: "forward" | "backward" | "seek" | "play" | "pause";
   duration: number;
 }
 
 /**
  * Session timeout (30 minutes of inactivity).
  */
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
-
 /**
  * Simulation Runtime Service implementation.
  */
@@ -79,7 +76,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
   private redis: Redis;
 
   constructor() {
-    this.redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    this.redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
   }
 
   /**
@@ -88,7 +85,9 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param manifest - The simulation manifest to run
    * @returns The new session ID
    */
-  async createSession(manifest: SimulationManifest): Promise<SimulationSessionId> {
+  async createSession(
+    manifest: SimulationManifest,
+  ): Promise<SimulationSessionId> {
     // Generate session ID
     const sessionId = randomUUID() as SimulationSessionId;
 
@@ -97,7 +96,10 @@ export class SimulationRuntimeService implements SimRuntimeService {
     kernel.initialize(manifest);
 
     // Calculate total duration
-    const totalDuration = manifest.steps.reduce((sum, step) => sum + (step.duration ?? 1000), 0);
+    const totalDuration = manifest.steps.reduce(
+      (sum, step) => sum + (step.duration ?? 1000),
+      0,
+    );
 
     // Create initial keyframe
     const initialKeyframe = this.createInitialKeyframe(manifest);
@@ -134,7 +136,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
    */
   async stepForward(sessionId: SimulationSessionId): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     if (session.currentStepIndex >= session.totalSteps - 1) {
       // Already at the end
@@ -150,23 +152,32 @@ export class SimulationRuntimeService implements SimRuntimeService {
     session.currentStepIndex++;
     const step = session.manifest.steps[session.currentStepIndex];
     if (!step) {
-      throw new Error(`Simulation step not found at index ${session.currentStepIndex}`);
+      throw new Error(
+        `Simulation step not found at index ${session.currentStepIndex}`,
+      );
     }
 
     // Execute kernel step
     kernel.step();
 
     // Generate new keyframe
-    session.currentKeyframe = this.generateKeyframeForStep(session, step, kernel);
+    session.currentKeyframe = this.generateKeyframeForStep(
+      session,
+      step,
+      kernel,
+    );
 
     // Update time
-    session.currentTime = this.calculateTimeForStep(session, session.currentStepIndex);
+    session.currentTime = this.calculateTimeForStep(
+      session,
+      session.currentStepIndex,
+    );
 
     // Record history
     session.executionHistory.push({
       stepIndex: session.currentStepIndex,
       timestamp: Date.now(),
-      action: 'forward',
+      action: "forward",
       duration: Date.now() - startTime,
     });
 
@@ -186,7 +197,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
    */
   async stepBackward(sessionId: SimulationSessionId): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     // console.log('stepBackward: currentStepIndex', session.currentStepIndex);
 
@@ -222,19 +233,28 @@ export class SimulationRuntimeService implements SimRuntimeService {
       // Generate keyframe
       const step = session.manifest.steps[session.currentStepIndex];
       if (!step) {
-        throw new Error(`Simulation step not found at index ${session.currentStepIndex}`);
+        throw new Error(
+          `Simulation step not found at index ${session.currentStepIndex}`,
+        );
       }
-      session.currentKeyframe = this.generateKeyframeForStep(session, step, kernel);
+      session.currentKeyframe = this.generateKeyframeForStep(
+        session,
+        step,
+        kernel,
+      );
 
       // Update time
-      session.currentTime = this.calculateTimeForStep(session, session.currentStepIndex);
+      session.currentTime = this.calculateTimeForStep(
+        session,
+        session.currentStepIndex,
+      );
     }
 
     // Record history
     session.executionHistory.push({
       stepIndex: session.currentStepIndex,
       timestamp: Date.now(),
-      action: 'backward',
+      action: "backward",
       duration: Date.now() - startTime,
     });
 
@@ -253,11 +273,14 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param timeMs - The target time in milliseconds
    * @returns The keyframe at the target time
    */
-  async seekTo(sessionId: SimulationSessionId, timeMs: number): Promise<SimKeyframe> {
+  async seekTo(
+    sessionId: SimulationSessionId,
+    timeMs: number,
+  ): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
-    if (timeMs < 0) {
+    if (timeMs <= 0) {
       return this.reset(sessionId);
     }
 
@@ -267,7 +290,10 @@ export class SimulationRuntimeService implements SimRuntimeService {
     const clampedTime = Math.max(0, Math.min(timeMs, session.totalDuration));
 
     // Find the step at this time
-    const { stepIndex, progressInStep } = this.findStepAtTime(session, clampedTime);
+    const { stepIndex, progressInStep } = this.findStepAtTime(
+      session,
+      clampedTime,
+    );
 
     // Restore kernel
     const kernel = await this.restoreKernel(session);
@@ -296,14 +322,14 @@ export class SimulationRuntimeService implements SimRuntimeService {
       session,
       baseKeyframe,
       progressInStep,
-      (step.easing ?? 'linear') as EasingFunction
+      (step.easing ?? "linear") as EasingFunction,
     );
 
     // Record history
     session.executionHistory.push({
       stepIndex: session.currentStepIndex,
       timestamp: Date.now(),
-      action: 'seek',
+      action: "seek",
       duration: Date.now() - startTime,
     });
 
@@ -321,9 +347,11 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param sessionId - The session to query
    * @returns The current simulation state
    */
-  async getState(sessionId: SimulationSessionId): Promise<Record<string, unknown>> {
+  async getState(
+    sessionId: SimulationSessionId,
+  ): Promise<Record<string, unknown>> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     const kernel = await this.restoreKernel(session);
 
@@ -351,12 +379,18 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param stepIndex - The target step index
    * @returns The keyframe at the target step
    */
-  async seekToStep(sessionId: SimulationSessionId, stepIndex: number): Promise<SimKeyframe> {
+  async seekToStep(
+    sessionId: SimulationSessionId,
+    stepIndex: number,
+  ): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     // Clamp to valid range
-    const targetIndex = Math.max(-1, Math.min(stepIndex, session.totalSteps - 1));
+    const targetIndex = Math.max(
+      -1,
+      Math.min(stepIndex, session.totalSteps - 1),
+    );
 
     const startTime = Date.now();
 
@@ -369,6 +403,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
 
     if (targetIndex === -1) {
       // Back to initial state
+      session.currentStepIndex = -1;
       session.currentKeyframe = this.createInitialKeyframe(session.manifest);
       session.currentTime = 0;
     } else {
@@ -381,17 +416,20 @@ export class SimulationRuntimeService implements SimRuntimeService {
       if (!step) {
         throw new Error(`Simulation step not found at index ${targetIndex}`);
       }
-      session.currentKeyframe = this.generateKeyframeForStep(session, step, kernel);
+      session.currentStepIndex = targetIndex;
+      session.currentKeyframe = this.generateKeyframeForStep(
+        session,
+        step,
+        kernel,
+      );
       session.currentTime = this.calculateTimeForStep(session, targetIndex);
     }
-
-    session.currentStepIndex = targetIndex;
 
     // Record history
     session.executionHistory.push({
       stepIndex: targetIndex,
       timestamp: Date.now(),
-      action: 'seek',
+      action: "seek",
       duration: Date.now() - startTime,
     });
 
@@ -415,8 +453,8 @@ export class SimulationRuntimeService implements SimRuntimeService {
     // Release kernel (if needed, though we just drop the state now)
     KernelRegistry.releaseKernel(session.manifest.id, session.manifest.version);
 
-    // Delete session from Redis
-    await this.redis.del(`session:${sessionId}`);
+    // Delete session from Redis using the correct key prefix
+    await this.redis.del(`sim:session:${sessionId}`);
   }
 
   /**
@@ -451,7 +489,10 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param sessionId - The session to modify
    * @param speed - Playback speed multiplier (0.25 to 4.0)
    */
-  async setPlaybackSpeed(sessionId: SimulationSessionId, speed: number): Promise<void> {
+  async setPlaybackSpeed(
+    sessionId: SimulationSessionId,
+    speed: number,
+  ): Promise<void> {
     const session = await this.getSession(sessionId);
     if (!session) return;
 
@@ -496,7 +537,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
    */
   async reset(sessionId: SimulationSessionId): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     const kernel = await this.restoreKernel(session);
     kernel.reset();
@@ -520,21 +561,30 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * @param sessionId - The session to analyze
    * @returns Session analytics
    */
-  async getSessionAnalytics(sessionId: SimulationSessionId): Promise<SessionAnalytics> {
+  async getSessionAnalytics(
+    sessionId: SimulationSessionId,
+  ): Promise<SessionAnalytics> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     const kernel = await this.restoreKernel(session);
 
     const totalInteractions = session.executionHistory.length;
     const avgStepDuration =
       totalInteractions > 0
-        ? session.executionHistory.reduce((sum, e) => sum + e.duration, 0) / totalInteractions
+        ? session.executionHistory.reduce((sum, e) => sum + e.duration, 0) /
+          totalInteractions
         : 0;
 
-    const forwardSteps = session.executionHistory.filter((e) => e.action === 'forward').length;
-    const backwardSteps = session.executionHistory.filter((e) => e.action === 'backward').length;
-    const seeks = session.executionHistory.filter((e) => e.action === 'seek').length;
+    const forwardSteps = session.executionHistory.filter(
+      (e) => e.action === "forward",
+    ).length;
+    const backwardSteps = session.executionHistory.filter(
+      (e) => e.action === "backward",
+    ).length;
+    const seeks = session.executionHistory.filter(
+      (e) => e.action === "seek",
+    ).length;
 
     return {
       sessionId,
@@ -546,7 +596,8 @@ export class SimulationRuntimeService implements SimRuntimeService {
       backwardSteps,
       seeks,
       avgStepDuration,
-      completionPercentage: (session.currentStepIndex / session.totalSteps) * 100,
+      completionPercentage:
+        (session.currentStepIndex / session.totalSteps) * 100,
       kernelAnalytics: kernel.getAnalytics(),
     };
   }
@@ -555,7 +606,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * List all active sessions.
    */
   async listSessions(): Promise<SessionState[]> {
-    const keys = await this.redis.keys('sim:session:*');
+    const keys = await this.redis.keys("sim:session:*");
     const sessions: SessionState[] = [];
     for (const key of keys) {
       const data = await this.redis.get(key);
@@ -569,15 +620,18 @@ export class SimulationRuntimeService implements SimRuntimeService {
   /**
    * Interpolate state at a specific progress.
    */
-  async interpolate(sessionId: SimulationSessionId, progress: number): Promise<SimKeyframe> {
+  async interpolate(
+    sessionId: SimulationSessionId,
+    progress: number,
+  ): Promise<SimKeyframe> {
     const session = await this.getSession(sessionId);
-    if (!session) throw new Error('Session not found');
+    if (!session) throw new Error("Session not found");
 
     return this.interpolateKeyframe(
       session,
       session.currentKeyframe,
       Math.max(0, Math.min(1, progress)),
-      'linear'
+      "linear",
     );
   }
 
@@ -594,12 +648,14 @@ export class SimulationRuntimeService implements SimRuntimeService {
     await this.redis.set(
       `sim:session:${session.sessionId}`,
       JSON.stringify(session),
-      'EX',
-      30 * 60 // 30 minutes
+      "EX",
+      30 * 60, // 30 minutes
     );
   }
 
-  private async restoreKernel(session: SessionState): Promise<SimKernelService> {
+  private async restoreKernel(
+    session: SessionState,
+  ): Promise<SimKernelService> {
     const kernel = await KernelRegistry.getKernel(session.manifest);
     kernel.deserialize(session.kernelState);
     return kernel;
@@ -615,7 +671,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
       entities: manifest.initialEntities.map((entity) => ({
         ...entity,
         // Ensure default visual properties
-        color: entity.color ?? '#4A90D9',
+        color: entity.color ?? "#4A90D9",
         opacity: entity.opacity ?? 1,
       })),
       annotations: [],
@@ -633,20 +689,22 @@ export class SimulationRuntimeService implements SimRuntimeService {
   private generateKeyframeForStep(
     session: SessionState,
     step: SimulationStep,
-    kernel: SimKernelService
+    kernel: SimKernelService,
   ): SimKeyframe {
     // Get interpolated state from kernel
     const interpolatedState = kernel.interpolate(1.0);
 
     // Map kernel entities to keyframe entities
     const entities = (interpolatedState.entities || []).map((kernelEntity) => {
-      const originalEntity = session.manifest.initialEntities.find((e) => e.id === kernelEntity.id);
+      const originalEntity = session.manifest.initialEntities.find(
+        (e) => e.id === kernelEntity.id,
+      );
       return {
         ...originalEntity,
         ...kernelEntity,
         id: kernelEntity.id,
-        label: kernelEntity.label ?? originalEntity?.label ?? '',
-        type: kernelEntity.type ?? originalEntity?.type ?? 'generic',
+        label: kernelEntity.label ?? originalEntity?.label ?? "",
+        type: kernelEntity.type ?? originalEntity?.type ?? "generic",
         // Flattened visual properties
         color: kernelEntity.color ?? originalEntity?.color,
         opacity: kernelEntity.opacity ?? originalEntity?.opacity,
@@ -675,7 +733,10 @@ export class SimulationRuntimeService implements SimRuntimeService {
   /**
    * Calculate cumulative time for a step index.
    */
-  private calculateTimeForStep(session: SessionState, stepIndex: number): number {
+  private calculateTimeForStep(
+    session: SessionState,
+    stepIndex: number,
+  ): number {
     let time = 0;
     for (let i = 0; i < stepIndex; i++) {
       const step = session.manifest.steps[i];
@@ -689,7 +750,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
    */
   private findStepAtTime(
     session: SessionState,
-    timeMs: number
+    timeMs: number,
   ): { stepIndex: number; progressInStep: number } {
     let accumulatedTime = 0;
 
@@ -716,10 +777,10 @@ export class SimulationRuntimeService implements SimRuntimeService {
    * Interpolate keyframe with easing.
    */
   private interpolateKeyframe(
-    session: SessionState,
+    _session: SessionState,
     baseKeyframe: SimKeyframe,
     progress: number,
-    easing: EasingFunction
+    easing: EasingFunction,
   ): SimKeyframe {
     const easingFn = getEasingFunction(easing);
     const easedProgress = easingFn(progress);
@@ -748,7 +809,7 @@ export class SimulationRuntimeService implements SimRuntimeService {
   /**
    * Schedule session cleanup after timeout.
    */
-  private scheduleSessionCleanup(sessionId: SimulationSessionId): void {
+  private scheduleSessionCleanup(_sessionId: SimulationSessionId): void {
     // Redis handles cleanup via TTL
   }
 }

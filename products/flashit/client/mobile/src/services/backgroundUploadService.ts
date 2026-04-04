@@ -1,17 +1,17 @@
-import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
-import { uploadManager } from './uploadManager';
-import { networkMonitor } from './networkMonitor';
-import { offlineQueueService } from './offlineQueue';
+import * as TaskManager from "expo-task-manager";
+import * as BackgroundFetch from "expo-background-fetch";
+import { uploadManager } from "./uploadManager";
+import { networkMonitor } from "./networkMonitor";
+import { offlineQueueService } from "./offlineQueue";
 
 /**
  * Background Upload Task Service
- * 
+ *
  * @doc.type service
  * @doc.purpose Manages background upload tasks using Expo TaskManager
  * @doc.layer product
  * @doc.pattern Service
- * 
+ *
  * Features:
  * - Background fetch for iOS (15-minute intervals)
  * - Foreground service for Android (persistent notification)
@@ -20,7 +20,7 @@ import { offlineQueueService } from './offlineQueue';
  * - Network-type aware (WiFi preferred)
  */
 
-const BACKGROUND_UPLOAD_TASK = 'BACKGROUND_UPLOAD_TASK';
+const BACKGROUND_UPLOAD_TASK = "BACKGROUND_UPLOAD_TASK";
 
 interface BackgroundTaskOptions {
   minimumInterval?: number; // Seconds (iOS only, min 900s = 15min)
@@ -39,23 +39,25 @@ export class BackgroundUploadService {
   private defineTask() {
     TaskManager.defineTask(BACKGROUND_UPLOAD_TASK, async () => {
       try {
-        console.log('[BackgroundUpload] Task triggered');
+        console.log("[BackgroundUpload] Task triggered");
 
         // Check network connectivity
         if (!networkMonitor.isOnline()) {
-          console.log('[BackgroundUpload] No network, skipping');
+          console.log("[BackgroundUpload] No network, skipping");
           return BackgroundFetch.BackgroundFetchResult.NoData;
         }
 
         // Get pending items
         const pendingItems = await offlineQueueService.getPendingItems();
-        
+
         if (pendingItems.length === 0) {
-          console.log('[BackgroundUpload] No pending items');
+          console.log("[BackgroundUpload] No pending items");
           return BackgroundFetch.BackgroundFetchResult.NoData;
         }
 
-        console.log(`[BackgroundUpload] Processing ${pendingItems.length} items`);
+        console.log(
+          `[BackgroundUpload] Processing ${pendingItems.length} items`,
+        );
 
         // Start upload manager if not already running
         if (!uploadManager.isRunning()) {
@@ -75,7 +77,7 @@ export class BackgroundUploadService {
           ? BackgroundFetch.BackgroundFetchResult.NewData
           : BackgroundFetch.BackgroundFetchResult.NoData;
       } catch (error) {
-        console.error('[BackgroundUpload] Task failed:', error);
+        console.error("[BackgroundUpload] Task failed:", error);
         return BackgroundFetch.BackgroundFetchResult.Failed;
       }
     });
@@ -91,10 +93,12 @@ export class BackgroundUploadService {
   async register(options: BackgroundTaskOptions = {}): Promise<boolean> {
     try {
       // Check if task is already registered
-      const isTaskDefined = await TaskManager.isTaskDefined(BACKGROUND_UPLOAD_TASK);
-      
+      const isTaskDefined = await TaskManager.isTaskDefined(
+        BACKGROUND_UPLOAD_TASK,
+      );
+
       if (isTaskDefined) {
-        console.log('[BackgroundUpload] Task already defined');
+        console.log("[BackgroundUpload] Task already defined");
         this.isRegistered = true;
         return true;
       }
@@ -109,11 +113,11 @@ export class BackgroundUploadService {
         startOnBoot: options.startOnBoot ?? true, // Start on device boot (Android)
       });
 
-      console.log('[BackgroundUpload] Task registered successfully');
+      console.log("[BackgroundUpload] Task registered successfully");
       this.isRunning = true;
       return true;
     } catch (error) {
-      console.error('[BackgroundUpload] Failed to register task:', error);
+      console.error("[BackgroundUpload] Failed to register task:", error);
       return false;
     }
   }
@@ -127,10 +131,10 @@ export class BackgroundUploadService {
       await BackgroundFetch.unregisterTaskAsync(BACKGROUND_UPLOAD_TASK);
       this.isRegistered = false;
       this.isRunning = false;
-      console.log('[BackgroundUpload] Task unregistered');
+      console.log("[BackgroundUpload] Task unregistered");
       return true;
     } catch (error) {
-      console.error('[BackgroundUpload] Failed to unregister task:', error);
+      console.error("[BackgroundUpload] Failed to unregister task:", error);
       return false;
     }
   }
@@ -141,14 +145,16 @@ export class BackgroundUploadService {
   async isTaskRegistered(): Promise<boolean> {
     try {
       const status = await BackgroundFetch.getStatusAsync();
-      const isTaskDefined = await TaskManager.isTaskDefined(BACKGROUND_UPLOAD_TASK);
-      
+      const isTaskDefined = await TaskManager.isTaskDefined(
+        BACKGROUND_UPLOAD_TASK,
+      );
+
       return (
         isTaskDefined &&
         status === BackgroundFetch.BackgroundFetchStatus.Available
       );
     } catch (error) {
-      console.error('[BackgroundUpload] Failed to check task status:', error);
+      console.error("[BackgroundUpload] Failed to check task status:", error);
       return false;
     }
   }
@@ -158,36 +164,40 @@ export class BackgroundUploadService {
    */
   async getStatus(): Promise<{
     available: boolean;
-    status: number;
+    status: BackgroundFetch.BackgroundFetchStatus | null;
     message: string;
   }> {
     try {
       const status = await BackgroundFetch.getStatusAsync();
-      const isTaskDefined = await TaskManager.isTaskDefined(BACKGROUND_UPLOAD_TASK);
+      const isTaskDefined = await TaskManager.isTaskDefined(
+        BACKGROUND_UPLOAD_TASK,
+      );
 
-      let message = '';
+      let message = "";
       switch (status) {
         case BackgroundFetch.BackgroundFetchStatus.Available:
-          message = 'Background fetch available';
+          message = "Background fetch available";
           break;
         case BackgroundFetch.BackgroundFetchStatus.Denied:
-          message = 'Background fetch denied by user';
+          message = "Background fetch denied by user";
           break;
         case BackgroundFetch.BackgroundFetchStatus.Restricted:
-          message = 'Background fetch restricted (Low Power Mode or similar)';
+          message = "Background fetch restricted (Low Power Mode or similar)";
           break;
       }
 
       return {
-        available: status === BackgroundFetch.BackgroundFetchStatus.Available && isTaskDefined,
+        available:
+          status === BackgroundFetch.BackgroundFetchStatus.Available &&
+          isTaskDefined,
         status,
         message,
       };
     } catch (error) {
-      console.error('[BackgroundUpload] Failed to get status:', error);
+      console.error("[BackgroundUpload] Failed to get status:", error);
       return {
         available: false,
-        status: -1,
+        status: null,
         message: `Error: ${error}`,
       };
     }
@@ -200,20 +210,20 @@ export class BackgroundUploadService {
    */
   async triggerManually(): Promise<void> {
     try {
-      console.log('[BackgroundUpload] Manual trigger');
-      
+      console.log("[BackgroundUpload] Manual trigger");
+
       const taskName = BACKGROUND_UPLOAD_TASK;
       const taskFn = TaskManager.isTaskDefined(taskName);
-      
+
       if (!taskFn) {
-        console.error('[BackgroundUpload] Task not defined');
+        console.error("[BackgroundUpload] Task not defined");
         return;
       }
 
       // Execute the task function directly
       // Note: This is for testing only, doesn't use actual background fetch
       if (!networkMonitor.isOnline()) {
-        console.log('[BackgroundUpload] No network');
+        console.log("[BackgroundUpload] No network");
         return;
       }
 
@@ -221,9 +231,9 @@ export class BackgroundUploadService {
         uploadManager.start();
       }
 
-      console.log('[BackgroundUpload] Upload manager started');
+      console.log("[BackgroundUpload] Upload manager started");
     } catch (error) {
-      console.error('[BackgroundUpload] Manual trigger failed:', error);
+      console.error("[BackgroundUpload] Manual trigger failed:", error);
     }
   }
 

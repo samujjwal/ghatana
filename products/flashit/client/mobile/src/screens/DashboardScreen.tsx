@@ -33,21 +33,21 @@ export default function DashboardScreen({ navigation }: Props) {
 
   const { data: momentsData, isLoading: momentsLoading } = useQuery({
     queryKey: ['moments', 'recent'],
-    queryFn: () => apiClient.searchMoments({ limit: 5 }),
+    queryFn: () => apiClient.getMoments({ limit: 5 }),
   });
 
   const isLoading = spheresLoading || momentsLoading;
 
   if (isLoading) {
     return (
-      <View 
+      <View
         style={styles.loadingContainer}
         accessible={true}
         accessibilityLabel="Loading dashboard"
         accessibilityState={{ busy: true }}
       >
-        <ActivityIndicator 
-          size="large" 
+        <ActivityIndicator
+          size="large"
           color="#0ea5e9"
           accessibilityLabel="Loading, please wait"
         />
@@ -56,17 +56,17 @@ export default function DashboardScreen({ navigation }: Props) {
   }
 
   const totalMoments = momentsData?.totalCount || 0;
-  const totalSpheres = spheresData?.spheres.length || 0;
+  const totalSpheres = spheresData?.length || 0;
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       accessible={false}
       accessibilityLabel="Dashboard screen"
     >
       <View style={styles.content}>
         {/* Welcome */}
-        <Text 
+        <Text
           style={styles.welcome}
           accessibilityRole="header"
           accessibilityLabel={`Welcome back, ${currentUser?.displayName || currentUser?.email}`}
@@ -75,12 +75,12 @@ export default function DashboardScreen({ navigation }: Props) {
         </Text>
 
         {/* Stats */}
-        <View 
+        <View
           style={styles.statsContainer}
           accessible={false}
           accessibilityLabel="Statistics"
         >
-          <View 
+          <View
             style={styles.statCard}
             accessible={true}
             accessibilityRole="summary"
@@ -89,7 +89,7 @@ export default function DashboardScreen({ navigation }: Props) {
             <Text style={styles.statNumber}>{totalMoments}</Text>
             <Text style={styles.statLabel}>Moments</Text>
           </View>
-          <View 
+          <View
             style={styles.statCard}
             accessible={true}
             accessibilityRole="summary"
@@ -101,7 +101,7 @@ export default function DashboardScreen({ navigation }: Props) {
         </View>
 
         {/* Quick Actions */}
-        <View 
+        <View
           style={styles.actionsContainer}
           accessible={false}
           accessibilityLabel="Quick actions"
@@ -143,14 +143,14 @@ export default function DashboardScreen({ navigation }: Props) {
         {/* Recent Moments */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text 
+            <Text
               style={styles.sectionTitle}
               accessibilityRole="header"
               accessibilityLabel="Recent moments"
             >
               Recent Moments
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.navigate('Moments')}
               accessible={true}
               accessibilityRole="link"
@@ -166,7 +166,7 @@ export default function DashboardScreen({ navigation }: Props) {
               {momentsData.moments.map((moment) => (
                 <View key={moment.id} style={styles.momentCard}>
                   <View style={styles.momentHeader}>
-                    <Text style={styles.momentSphere}>{moment.sphere.name}</Text>
+                    <Text style={styles.momentSphere}>{moment.sphere?.name ?? 'Unknown sphere'}</Text>
                     <Text style={styles.momentTime}>
                       {formatDistanceToNow(new Date(moment.capturedAt), {
                         addSuffix: true,

@@ -1,5 +1,6 @@
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import * as FileSystem from 'expo-file-system';
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import * as FileSystem from "expo-file-system/legacy";
+import { Image } from "react-native";
 
 interface OptimizationOptions {
   maxWidth?: number;
@@ -17,7 +18,7 @@ const DEFAULT_OPTIONS: Required<OptimizationOptions> = {
 
 /**
  * Image Optimization Utility
- * 
+ *
  * @doc.type utility
  * @doc.purpose Optimize images for upload (resize, compress)
  * @doc.layer product
@@ -32,7 +33,7 @@ const DEFAULT_OPTIONS: Required<OptimizationOptions> = {
  */
 export async function optimizeImage(
   uri: string,
-  options: OptimizationOptions = {}
+  options: OptimizationOptions = {},
 ): Promise<string> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
@@ -40,7 +41,7 @@ export async function optimizeImage(
     // Get image dimensions
     const imageInfo = await getImageDimensions(uri);
     if (!imageInfo) {
-      throw new Error('Failed to get image dimensions');
+      throw new Error("Failed to get image dimensions");
     }
 
     const { width, height } = imageInfo;
@@ -50,7 +51,7 @@ export async function optimizeImage(
       width,
       height,
       opts.maxWidth,
-      opts.maxHeight
+      opts.maxHeight,
     );
 
     // Only resize if image exceeds max dimensions
@@ -69,7 +70,7 @@ export async function optimizeImage(
 
     return result.uri;
   } catch (error) {
-    console.error('Error optimizing image:', error);
+    console.error("Error optimizing image:", error);
     // Return original URI if optimization fails
     return uri;
   }
@@ -81,17 +82,14 @@ export async function optimizeImage(
  * @returns Width and height, or null if failed
  */
 function getImageDimensions(
-  uri: string
+  uri: string,
 ): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height });
-    };
-    img.onerror = () => {
-      resolve(null);
-    };
-    img.src = uri;
+    Image.getSize(
+      uri,
+      (width, height) => resolve({ width, height }),
+      () => resolve(null),
+    );
   });
 }
 
@@ -107,7 +105,7 @@ function calculateOptimalDimensions(
   width: number,
   height: number,
   maxWidth: number,
-  maxHeight: number
+  maxHeight: number,
 ): { width: number; height: number } {
   if (width <= maxWidth && height <= maxHeight) {
     return { width, height };
@@ -147,7 +145,7 @@ export async function getFileSizeMB(uri: string): Promise<number | null> {
     }
     return null;
   } catch (error) {
-    console.error('Error getting file size:', error);
+    console.error("Error getting file size:", error);
     return null;
   }
 }
@@ -164,7 +162,7 @@ export async function imageToBase64(uri: string): Promise<string | null> {
     });
     return base64;
   } catch (error) {
-    console.error('Error converting image to base64:', error);
+    console.error("Error converting image to base64:", error);
     return null;
   }
 }
@@ -177,7 +175,7 @@ export async function imageToBase64(uri: string): Promise<string | null> {
  */
 export async function compressToSize(
   uri: string,
-  targetSizeMB: number
+  targetSizeMB: number,
 ): Promise<string> {
   let currentUri = uri;
   let quality = 0.9;

@@ -179,7 +179,8 @@ export const ImageCaptureScreen: React.FC = () => {
 
       // Get file info
       const fileInfo = await FileSystem.getInfoAsync(destUri);
-      const fileSizeMB = fileInfo.size ? (fileInfo.size / (1024 * 1024)).toFixed(2) : '0';
+      const fileSize = 'size' in fileInfo && typeof fileInfo.size === 'number' ? fileInfo.size : 0;
+      const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
 
       Alert.alert(
         'Photo Saved',
@@ -217,8 +218,8 @@ export const ImageCaptureScreen: React.FC = () => {
           <Text style={styles.permissionText}>
             To capture photos, please grant camera permission.
           </Text>
-          <TouchableOpacity 
-            style={styles.permissionButton} 
+          <TouchableOpacity
+            style={styles.permissionButton}
             onPress={requestPermissions}
             accessible={true}
             accessibilityRole="button"
@@ -235,7 +236,7 @@ export const ImageCaptureScreen: React.FC = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleGoBack}
           accessible={true}
           accessibilityRole="button"
@@ -270,8 +271,8 @@ export const ImageCaptureScreen: React.FC = () => {
             resizeMode="contain"
           />
           <View style={styles.previewControls}>
-            <TouchableOpacity 
-              style={styles.previewButton} 
+            <TouchableOpacity
+              style={styles.previewButton}
               onPress={retakePhoto}
               accessible={true}
               accessibilityRole="button"
@@ -279,8 +280,8 @@ export const ImageCaptureScreen: React.FC = () => {
             >
               <Text style={styles.previewButtonText}>Retake</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.previewButton} 
+            <TouchableOpacity
+              style={styles.previewButton}
               onPress={editPhoto}
               accessible={true}
               accessibilityRole="button"

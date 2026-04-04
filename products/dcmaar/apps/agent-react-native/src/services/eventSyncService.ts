@@ -38,13 +38,18 @@
  * @doc.pattern Observer/Coordinator
  */
 
-import { atom, createStore } from 'jotai';
+import { atom, createStore } from "jotai";
 
 /**
  * Sync operation data to send to backend.
  */
 interface SyncPayload {
-  type: 'APP_FOCUS' | 'APP_BLUR' | 'PERMISSION_CHANGE' | 'DEVICE_STATUS' | 'SYNC_EVENT';
+  type:
+    | "APP_FOCUS"
+    | "APP_BLUR"
+    | "PERMISSION_CHANGE"
+    | "DEVICE_STATUS"
+    | "SYNC_EVENT";
   timestamp: number;
   tenantId?: string;
   data: Record<string, any>;
@@ -84,19 +89,25 @@ export const EventSyncService = {
     maxRetries: eventSyncStore.get(maxRetriesAtom),
   }),
   setState: (partial: Partial<EventSyncState>) => {
-    if (partial.isStarted !== undefined) eventSyncStore.set(isStartedAtom, partial.isStarted);
-    if (partial.isPaused !== undefined) eventSyncStore.set(isPausedAtom, partial.isPaused);
-    if (partial.queuedOperations !== undefined) eventSyncStore.set(queuedOperationsAtom, partial.queuedOperations);
-    if (partial.lastSyncTime !== undefined) eventSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
-    if (partial.syncAttempts !== undefined) eventSyncStore.set(syncAttemptsAtom, partial.syncAttempts);
-    if (partial.maxRetries !== undefined) eventSyncStore.set(maxRetriesAtom, partial.maxRetries);
+    if (partial.isStarted !== undefined)
+      eventSyncStore.set(isStartedAtom, partial.isStarted);
+    if (partial.isPaused !== undefined)
+      eventSyncStore.set(isPausedAtom, partial.isPaused);
+    if (partial.queuedOperations !== undefined)
+      eventSyncStore.set(queuedOperationsAtom, partial.queuedOperations);
+    if (partial.lastSyncTime !== undefined)
+      eventSyncStore.set(lastSyncTimeAtom, partial.lastSyncTime);
+    if (partial.syncAttempts !== undefined)
+      eventSyncStore.set(syncAttemptsAtom, partial.syncAttempts);
+    if (partial.maxRetries !== undefined)
+      eventSyncStore.set(maxRetriesAtom, partial.maxRetries);
   },
 };
 
 /**
  * Private state for managing sync intervals and callbacks.
  */
-let syncInterval: NodeJS.Timeout | null = null;
+let syncInterval: ReturnType<typeof setTimeout> | null = null;
 let syncQueue: Map<string, SyncPayload> = new Map();
 
 /**
@@ -135,7 +146,7 @@ function getBackoffDelay(attempt: number, maxDelay = 30000): number {
  * @param payload - Operation to sync
  */
 export function queueSyncOperation(payload: SyncPayload): void {
-  const key = `${payload.type}:${payload.tenantId || 'default'}`;
+  const key = `${payload.type}:${payload.tenantId || "default"}`;
   syncQueue.set(key, payload);
 
   // Auto-sync after small delay if not already scheduled
@@ -211,7 +222,7 @@ async function syncOperation(payload: SyncPayload): Promise<void> {
   // const { guardianApi } = await import('./guardianApi');
 
   // For now, just log the operation
-  console.log('[EventSyncService] Syncing operation:', {
+  console.log("[EventSyncService] Syncing operation:", {
     type: payload.type,
     timestamp: new Date(payload.timestamp).toISOString(),
     dataKeys: Object.keys(payload.data),
@@ -243,7 +254,10 @@ function handleSyncError(error: unknown): void {
 
   if (newAttempts >= state.maxRetries) {
     // Max retries exceeded
-    console.error('[EventSyncService] Max retries exceeded, operations will persist in queue', error);
+    console.error(
+      "[EventSyncService] Max retries exceeded, operations will persist in queue",
+      error,
+    );
     EventSyncService.setState({ syncAttempts: 0 });
     // In real impl: emit error notification
     return;
@@ -251,7 +265,9 @@ function handleSyncError(error: unknown): void {
 
   // Schedule retry with backoff
   const delay = getBackoffDelay(newAttempts);
-  console.warn(`[EventSyncService] Sync failed, retrying in ${delay}ms (attempt ${newAttempts}/${state.maxRetries})`);
+  console.warn(
+    `[EventSyncService] Sync failed, retrying in ${delay}ms (attempt ${newAttempts}/${state.maxRetries})`,
+  );
 
   EventSyncService.setState({ syncAttempts: newAttempts });
   scheduleSyncAfterDelay(delay);
@@ -268,7 +284,7 @@ export function startEventSync(): void {
     return; // Already started
   }
 
-  console.log('[EventSyncService] Starting event synchronization service');
+  console.log("[EventSyncService] Starting event synchronization service");
 
   EventSyncService.setState({ isStarted: true });
 
@@ -287,7 +303,7 @@ export function stopEventSync(): void {
     return;
   }
 
-  console.log('[EventSyncService] Stopping event synchronization service');
+  console.log("[EventSyncService] Stopping event synchronization service");
 
   if (syncInterval !== null) {
     clearTimeout(syncInterval);
@@ -303,7 +319,7 @@ export function stopEventSync(): void {
  */
 export function pauseEventSync(): void {
   EventSyncService.setState({ isPaused: true });
-  console.log('[EventSyncService] Event sync paused');
+  console.log("[EventSyncService] Event sync paused");
 }
 
 /**
@@ -312,7 +328,7 @@ export function pauseEventSync(): void {
  */
 export function resumeEventSync(): void {
   EventSyncService.setState({ isPaused: false });
-  console.log('[EventSyncService] Event sync resumed');
+  console.log("[EventSyncService] Event sync resumed");
 
   // Trigger immediate sync of queued operations
   if (syncQueue.size > 0) {
@@ -351,7 +367,9 @@ export function getSyncStatus() {
     isStarted: state.isStarted,
     isPaused: state.isPaused,
     pendingOperations: syncQueue.size,
-    lastSyncTime: state.lastSyncTime ? new Date(state.lastSyncTime).toISOString() : null,
+    lastSyncTime: state.lastSyncTime
+      ? new Date(state.lastSyncTime).toISOString()
+      : null,
     currentRetryAttempt: state.syncAttempts,
     queuedOperationTypes: Array.from(syncQueue.values()).map((op) => op.type),
   };

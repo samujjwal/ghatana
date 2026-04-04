@@ -52,8 +52,8 @@ export default function RegisterScreen({ navigation }: Props) {
         password,
         displayName: displayName || undefined,
       });
-      apiClient.setToken(response.token);
-      setToken(response.token);
+      await apiClient.setToken(response.accessToken);
+      setToken(response.accessToken);
       setCurrentUser(response.user);
       // Navigation handled automatically by auth state change
     } catch (error: any) {
@@ -75,14 +75,14 @@ export default function RegisterScreen({ navigation }: Props) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text 
+          <Text
             style={styles.title}
             accessibilityRole="header"
             accessibilityLabel="Flashit"
           >
             Flashit
           </Text>
-          <Text 
+          <Text
             style={styles.subtitle}
             accessibilityLabel="Start capturing your moments"
           >
@@ -140,7 +140,7 @@ export default function RegisterScreen({ navigation }: Props) {
               accessibilityState={{ disabled: loading, busy: loading }}
             >
               {loading ? (
-                <ActivityIndicator 
+                <ActivityIndicator
                   color="#fff"
                   accessibilityLabel="Creating account, please wait"
                 />

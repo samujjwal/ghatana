@@ -9,8 +9,8 @@
  * @doc.pattern Repository
  */
 
-import { database, SphereRecord } from './database';
-import { v4 as uuid } from 'uuid';
+import { database, SphereRecord } from "./database";
+import { generateUuid } from "../utils/generateUuid";
 
 /**
  * Create sphere input.
@@ -51,7 +51,7 @@ export interface Sphere {
   createdAt: string;
   updatedAt: string;
   serverId: string | null;
-  syncStatus: 'synced' | 'pending' | 'error';
+  syncStatus: "synced" | "pending" | "error";
 }
 
 /**
@@ -84,7 +84,7 @@ class SphereRepository {
    * Create a new sphere.
    */
   async create(input: CreateSphereInput): Promise<Sphere> {
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
 
     await database.execute(
@@ -106,11 +106,11 @@ class SphereRepository {
         0,
         now,
         now,
-        'pending',
-      ]
+        "pending",
+      ],
     );
 
-    await this.queueSync('create', id, input);
+    await this.queueSync("create", id, input);
     return this.getById(id) as Promise<Sphere>;
   }
 
@@ -118,7 +118,9 @@ class SphereRepository {
    * Get a sphere by ID.
    */
   async getById(id: string): Promise<Sphere | null> {
-    const row = await database.queryOne('SELECT * FROM spheres WHERE id = ?', [id]);
+    const row = await database.queryOne("SELECT * FROM spheres WHERE id = ?", [
+      id,
+    ]);
     return row ? rowToSphere(row) : null;
   }
 
@@ -127,8 +129,8 @@ class SphereRepository {
    */
   async getAllForUser(userId: string): Promise<Sphere[]> {
     const rows = await database.query(
-      'SELECT * FROM spheres WHERE user_id = ? ORDER BY is_default DESC, name',
-      [userId]
+      "SELECT * FROM spheres WHERE user_id = ? ORDER BY is_default DESC, name",
+      [userId],
     );
     return rows.map(rowToSphere);
   }
@@ -138,8 +140,8 @@ class SphereRepository {
    */
   async getDefault(userId: string): Promise<Sphere | null> {
     const row = await database.queryOne(
-      'SELECT * FROM spheres WHERE user_id = ? AND is_default = 1',
-      [userId]
+      "SELECT * FROM spheres WHERE user_id = ? AND is_default = 1",
+      [userId],
     );
     return row ? rowToSphere(row) : null;
   }
@@ -151,37 +153,37 @@ class SphereRepository {
     const sphere = await this.getById(id);
     if (!sphere) return null;
 
-    const updates: string[] = ['updated_at = ?', 'sync_status = ?'];
-    const params: any[] = [new Date().toISOString(), 'pending'];
+    const updates: string[] = ["updated_at = ?", "sync_status = ?"];
+    const params: any[] = [new Date().toISOString(), "pending"];
 
     if (input.name !== undefined) {
-      updates.push('name = ?');
+      updates.push("name = ?");
       params.push(input.name);
     }
 
     if (input.description !== undefined) {
-      updates.push('description = ?');
+      updates.push("description = ?");
       params.push(input.description);
     }
 
     if (input.color !== undefined) {
-      updates.push('color = ?');
+      updates.push("color = ?");
       params.push(input.color);
     }
 
     if (input.icon !== undefined) {
-      updates.push('icon = ?');
+      updates.push("icon = ?");
       params.push(input.icon);
     }
 
     params.push(id);
 
     await database.execute(
-      `UPDATE spheres SET ${updates.join(', ')} WHERE id = ?`,
-      params
+      `UPDATE spheres SET ${updates.join(", ")} WHERE id = ?`,
+      params,
     );
 
-    await this.queueSync('update', id, input);
+    await this.queueSync("update", id, input);
     return this.getById(id);
   }
 
@@ -192,10 +194,10 @@ class SphereRepository {
     const sphere = await this.getById(id);
     if (!sphere || sphere.isDefault) return false;
 
-    await database.execute('DELETE FROM spheres WHERE id = ?', [id]);
+    await database.execute("DELETE FROM spheres WHERE id = ?", [id]);
 
     if (sphere.serverId) {
-      await this.queueSync('delete', id, { serverId: sphere.serverId });
+      await this.queueSync("delete", id, { serverId: sphere.serverId });
     }
 
     return true;
@@ -206,12 +208,12 @@ class SphereRepository {
    */
   async setDefault(userId: string, sphereId: string): Promise<void> {
     await database.execute(
-      'UPDATE spheres SET is_default = 0 WHERE user_id = ?',
-      [userId]
+      "UPDATE spheres SET is_default = 0 WHERE user_id = ?",
+      [userId],
     );
     await database.execute(
-      'UPDATE spheres SET is_default = 1, sync_status = ? WHERE id = ?',
-      ['pending', sphereId]
+      "UPDATE spheres SET is_default = 1, sync_status = ? WHERE id = ?",
+      ["pending", sphereId],
     );
   }
 
@@ -221,7 +223,7 @@ class SphereRepository {
   async markSynced(id: string, serverId: string): Promise<void> {
     await database.execute(
       `UPDATE spheres SET sync_status = 'synced', server_id = ? WHERE id = ?`,
-      [serverId, id]
+      [serverId, id],
     );
   }
 
@@ -230,7 +232,7 @@ class SphereRepository {
    */
   async getPendingSync(): Promise<Sphere[]> {
     const rows = await database.query(
-      "SELECT * FROM spheres WHERE sync_status = 'pending'"
+      "SELECT * FROM spheres WHERE sync_status = 'pending'",
     );
     return rows.map(rowToSphere);
   }
@@ -240,8 +242,8 @@ class SphereRepository {
    */
   async importFromServer(serverSphere: any): Promise<Sphere> {
     const existing = await database.queryOne<any>(
-      'SELECT * FROM spheres WHERE server_id = ?',
-      [serverSphere.id]
+      "SELECT * FROM spheres WHERE server_id = ?",
+      [serverSphere.id],
     );
 
     if (existing) {
@@ -261,12 +263,12 @@ class SphereRepository {
           serverSphere.momentCount || 0,
           serverSphere.updatedAt || new Date().toISOString(),
           existing.id,
-        ]
+        ],
       );
       return this.getById(existing.id) as Promise<Sphere>;
     }
 
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
 
     await database.execute(
@@ -289,8 +291,8 @@ class SphereRepository {
         serverSphere.createdAt || now,
         serverSphere.updatedAt || now,
         serverSphere.id,
-        'synced',
-      ]
+        "synced",
+      ],
     );
 
     return this.getById(id) as Promise<Sphere>;
@@ -300,11 +302,11 @@ class SphereRepository {
    * Queue a sync operation.
    */
   private async queueSync(
-    operationType: 'create' | 'update' | 'delete',
+    operationType: "create" | "update" | "delete",
     entityId: string,
-    payload: any
+    payload: any,
   ): Promise<void> {
-    const id = uuid();
+    const id = generateUuid();
     const now = new Date().toISOString();
     const idempotencyKey = `${operationType}-sphere-${entityId}-${Date.now()}`;
 
@@ -316,7 +318,7 @@ class SphereRepository {
       [
         id,
         operationType,
-        'sphere',
+        "sphere",
         entityId,
         JSON.stringify(payload),
         2, // Spheres have higher priority than moments
@@ -325,7 +327,7 @@ class SphereRepository {
         idempotencyKey,
         now,
         now,
-      ]
+      ],
     );
   }
 }

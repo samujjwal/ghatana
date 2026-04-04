@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { TutorPrismaClient } from "@tutorputor/db";
+import type { TutorPrismaClient } from "@tutorputor/core/db";
 import type { AIProxyService } from "@tutorputor/contracts/v1/services";
 import type {
   TutorResponsePayload,

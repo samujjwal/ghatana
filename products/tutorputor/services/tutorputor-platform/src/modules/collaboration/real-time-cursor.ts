@@ -7,9 +7,9 @@
 
 import { EventEmitter } from "events";
 import type { WebSocket } from "ws";
-import { createStandaloneLogger } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 
-const logger = createStandaloneLogger({ component: 'RealTimeCursorService' });
+const logger = createStandaloneLogger({ component: "RealTimeCursorService" });
 
 export interface CursorPosition {
   x: number;
@@ -56,6 +56,7 @@ export class RealTimeCollaboration extends EventEmitter {
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   private readonly CURSOR_THROTTLE = 50; // 50ms throttle
   private cursorTimers: Map<string, NodeJS.Timeout> = new Map();
+  private pendingCursorBroadcasts: Map<string, CursorPosition> = new Map();
 
   constructor() {
     super();
@@ -106,16 +107,16 @@ export class RealTimeCollaboration extends EventEmitter {
     const sessionId = this.userSessions.get(userId);
     if (!sessionId) return;
 
+    this.userSessions.delete(userId);
+
     const session = this.sessions.get(sessionId);
     if (!session) return;
 
-    const participant = session.participants.get(userId);
-    if (participant) {
-      participant.isActive = false;
+    if (session.participants.has(userId)) {
+      session.participants.delete(userId);
       session.cursors.delete(userId);
     }
-
-    this.userSessions.delete(userId);
+    session.lastActivity = new Date();
 
     // Broadcast participant leave
     this.broadcastToSession(sessionId, {
@@ -125,6 +126,13 @@ export class RealTimeCollaboration extends EventEmitter {
 
     // Clean up empty sessions
     if (session.participants.size === 0) {
+      const cursorKey = `cursor_${sessionId}`;
+      const cursorTimer = this.cursorTimers.get(cursorKey);
+      if (cursorTimer) {
+        clearTimeout(cursorTimer);
+        this.cursorTimers.delete(cursorKey);
+      }
+      this.pendingCursorBroadcasts.delete(cursorKey);
       this.sessions.delete(sessionId);
     }
   }
@@ -194,7 +202,7 @@ export class RealTimeCollaboration extends EventEmitter {
 
     ws.on("error", (error: Error) => {
       logger.error({
-        message: 'WebSocket error for user',
+        message: "WebSocket error for user",
         userId,
         error: error.message,
       });
@@ -288,13 +296,18 @@ export class RealTimeCollaboration extends EventEmitter {
     cursor: CursorPosition,
   ): void {
     const key = `cursor_${sessionId}`;
+    this.pendingCursorBroadcasts.set(key, cursor);
 
     if (!this.cursorTimers.has(key)) {
       const timer = setTimeout(() => {
-        this.broadcastToSession(sessionId, {
-          type: "cursor_update",
-          cursor,
-        });
+        const latestCursor = this.pendingCursorBroadcasts.get(key);
+        if (latestCursor) {
+          this.broadcastToSession(sessionId, {
+            type: "cursor_update",
+            cursor: latestCursor,
+          });
+        }
+        this.pendingCursorBroadcasts.delete(key);
         this.cursorTimers.delete(key);
       }, this.CURSOR_THROTTLE);
       this.cursorTimers.set(key, timer);
@@ -400,6 +413,7 @@ export class RealTimeCollaboration extends EventEmitter {
       clearTimeout(timer);
     }
     this.cursorTimers.clear();
+    this.pendingCursorBroadcasts.clear();
 
     // Close all WebSocket connections
     for (const [userId, ws] of this.webSockets) {
@@ -407,7 +421,7 @@ export class RealTimeCollaboration extends EventEmitter {
         ws.close();
       } catch (error) {
         logger.error({
-          message: 'Error closing WebSocket',
+          message: "Error closing WebSocket",
           userId,
           error: error instanceof Error ? error.message : String(error),
         });

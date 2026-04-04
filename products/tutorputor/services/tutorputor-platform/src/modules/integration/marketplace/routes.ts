@@ -3,6 +3,7 @@ import type {
   MarketplaceListing,
   ModuleId,
   MarketplaceListingId,
+  SimulationTemplateDifficulty,
   TenantId,
   UserId,
 } from "@tutorputor/contracts/v1/types";
@@ -14,6 +15,21 @@ import {
   respondWithErrors,
 } from "../../../core/http/requestContext.js";
 import { createMarketplaceService } from "./service.js";
+
+const SIMULATION_TEMPLATE_DIFFICULTIES = [
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
+  "EXPERT",
+] as const satisfies readonly SimulationTemplateDifficulty[];
+
+function isSimulationTemplateDifficulty(
+  value: string,
+): value is SimulationTemplateDifficulty {
+  return (SIMULATION_TEMPLATE_DIFFICULTIES as readonly string[]).includes(
+    value,
+  );
+}
 
 /**
  * Marketplace routes.
@@ -92,7 +108,9 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         userId: userId as UserId,
         ...(body.status ? { status: body.status } : {}),
         ...(body.visibility ? { visibility: body.visibility } : {}),
-        ...(typeof body.priceCents === "number" ? { priceCents: body.priceCents } : {}),
+        ...(typeof body.priceCents === "number"
+          ? { priceCents: body.priceCents }
+          : {}),
       });
     });
   });
@@ -121,7 +139,12 @@ export const marketplaceRoutes: FastifyPluginAsync = async (app) => {
         pageSize: pageSize ? Number(pageSize) : 12,
         ...(domains ? { domains: (domains as string).split(",") } : {}),
         ...(difficulties
-          ? { difficulties: (difficulties as string).split(",") as string[] }
+          ? {
+              difficulties: (difficulties as string)
+                .split(",")
+                .map((value) => value.trim().toUpperCase())
+                .filter(isSimulationTemplateDifficulty),
+            }
           : {}),
         ...(tags ? { tags: (tags as string).split(",") } : {}),
         ...(isPremium === "true" ? { isPremium: true } : {}),

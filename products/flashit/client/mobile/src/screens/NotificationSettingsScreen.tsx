@@ -24,7 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   notificationService,
   NotificationPreferences,
-} from '../../services/notificationService';
+} from '../services/notificationService';
 
 /**
  * Time picker modal (simplified - use a proper time picker in production).
@@ -133,7 +133,7 @@ const NotificationSettingsScreen: React.FC = () => {
   const handleEnableNotifications = async () => {
     if (!permissionGranted) {
       const granted = await notificationService.requestPermissions();
-      
+
       if (!granted) {
         Alert.alert(
           'Permissions Required',
@@ -145,7 +145,7 @@ const NotificationSettingsScreen: React.FC = () => {
         );
         return;
       }
-      
+
       setPermissionGranted(true);
     }
 
@@ -177,7 +177,7 @@ const NotificationSettingsScreen: React.FC = () => {
     );
   }
 
-  const notificationsEnabled = preferences.enabled && permissionGranted;
+  const notificationsEnabled = Boolean(preferences.enabled && permissionGranted);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -216,7 +216,7 @@ const NotificationSettingsScreen: React.FC = () => {
 
         {/* Notification Types */}
         <SectionHeader title="Notification Types" />
-        
+
         <SettingsRow
           title="Sphere Shares"
           description="When someone shares a sphere with you"

@@ -5,7 +5,6 @@
  * and queue-driven background content generation.
  */
 
-import { Queue } from "bullmq";
 import type { PrismaClient } from "@tutorputor/core/db";
 import type {
   ContentStudioService,
@@ -19,7 +18,7 @@ import type {
   GradeAdaptation,
   ExperienceStatus as ContractExperienceStatus,
   ValidationCheck,
-} from "@tutorputor/contracts/v1";
+} from "@tutorputor/contracts/v1/content-studio";
 import {
   getContentGenerationQueue,
   type ContentGenerationQueueLike,
@@ -297,15 +296,11 @@ function fromPrismaStatus(status: string): ExperienceStatus {
 }
 
 function toPrismaStatus(status: ContractExperienceStatus): string {
-  const map: Record<ContractExperienceStatus, string> = {
-    draft: "DRAFT",
-    review: "REVIEW",
-    validating: "REVIEW",
-    approved: "REVIEW",
-    published: "PUBLISHED",
-    archived: "ARCHIVED",
-  };
-  return map[status] || "DRAFT";
+  if (status === "draft") return "DRAFT";
+  if (status === "review") return "REVIEW";
+  if (status === "published") return "PUBLISHED";
+  if (status === "archived") return "ARCHIVED";
+  return "DRAFT";
 }
 
 /** Canonical event types for authoring lifecycle observability. */
@@ -622,13 +617,13 @@ export function createContentStudioService(
           status: experience.status,
         },
       );
-        const result: ExperienceOperationResult = {
+      const result: ExperienceOperationResult = {
         success: true,
       };
-        if (mapped) {
-          result.experience = mapped;
-        }
-        return result;
+      if (mapped) {
+        result.experience = mapped;
+      }
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -736,7 +731,7 @@ export function createContentStudioService(
       prisma,
       id,
       "UPDATED",
-        String(updateData.lastEditedBy ?? "system"),
+      String(updateData.lastEditedBy ?? "system"),
       {
         changedFields: Object.keys(updateData).filter(
           (key) => key !== "lastEditedBy",
@@ -969,11 +964,14 @@ export function createContentStudioService(
     }
 
     for (const claim of claims) {
-      const claimRef = (claim as { claimRef?: string; id?: string }).claimRef ?? (claim as { claimRef?: string; id?: string }).id ?? "";
+      const claimRef =
+        (claim as { claimRef?: string; id?: string }).claimRef ??
+        (claim as { claimRef?: string; id?: string }).id ??
+        "";
       const taskCount = tasksByClaimRef.get(claimRef) ?? 0;
-      const exampleCount = claim.examples?.length ?? 0;
-      const simCount = claim.simulations?.length ?? 0;
-      const animCount = claim.animations?.length ?? 0;
+      const exampleCount = Array.isArray(claim.examples) ? claim.examples.length : 0;
+      const simCount = Array.isArray(claim.simulations) ? claim.simulations.length : 0;
+      const animCount = Array.isArray(claim.animations) ? claim.animations.length : 0;
       const hasArtifacts = exampleCount + simCount + animCount > 0;
       const hasTasks = taskCount > 0;
       const hasBloom = !!claim.bloomLevel;
@@ -1078,7 +1076,7 @@ export function createContentStudioService(
         (c) => !c.hasArtifacts,
       ).length;
 
-        const taskCheck: ValidationCheck = {
+      const taskCheck: ValidationCheck = {
         checkId: "claim-tasks",
         pillar: "educational",
         name: "Claim Tasks Coverage",
@@ -1088,13 +1086,13 @@ export function createContentStudioService(
           missingTasks === 0
             ? "All claims have associated practice tasks."
             : `${missingTasks} claim${missingTasks > 1 ? "s are" : " is"} missing tasks.`,
-        };
-        if (missingTasks > 0) {
-          taskCheck.suggestion = "Generate tasks for claims without coverage.";
-        }
-        checks.push(taskCheck);
+      };
+      if (missingTasks > 0) {
+        taskCheck.suggestion = "Generate tasks for claims without coverage.";
+      }
+      checks.push(taskCheck);
 
-        const artifactCheck: ValidationCheck = {
+      const artifactCheck: ValidationCheck = {
         checkId: "claim-artifacts",
         pillar: "experiential",
         name: "Concrete Learning Artifacts",
@@ -1104,15 +1102,15 @@ export function createContentStudioService(
           missingArtifacts === 0
             ? "All claims have at least one concrete learning artifact."
             : `${missingArtifacts} claim${missingArtifacts > 1 ? "s lack" : " lacks"} examples, simulations, or animations.`,
-        };
-        if (missingArtifacts > 0) {
-          artifactCheck.suggestion =
-            "Run the content generation pipeline to create examples and simulations.";
-        }
-        checks.push(artifactCheck);
+      };
+      if (missingArtifacts > 0) {
+        artifactCheck.suggestion =
+          "Run the content generation pipeline to create examples and simulations.";
+      }
+      checks.push(artifactCheck);
     }
 
-      const gradeCheck: ValidationCheck = {
+    const gradeCheck: ValidationCheck = {
       checkId: "grade-adaptation",
       pillar: "accessibility",
       name: "Grade Adaptation",
@@ -1121,12 +1119,12 @@ export function createContentStudioService(
       message: hasGradeAdaptation
         ? "Grade adaptation profile is set."
         : "No grade adaptation profile found.",
-      };
-      if (!hasGradeAdaptation) {
-        gradeCheck.suggestion =
-          "Set a target grade range to enable grade-appropriate content.";
-      }
-      checks.push(gradeCheck);
+    };
+    if (!hasGradeAdaptation) {
+      gradeCheck.suggestion =
+        "Set a target grade range to enable grade-appropriate content.";
+    }
+    checks.push(gradeCheck);
 
     await prisma.validationRecord.create({
       data: {

@@ -13,12 +13,12 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "minimatch": "^10.1.2"
+    "minimatch": "^10.2.5"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "@types/node": "^25.5.2",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
   },
   "peerDependencies": {
     "vite": "^7.3.1"

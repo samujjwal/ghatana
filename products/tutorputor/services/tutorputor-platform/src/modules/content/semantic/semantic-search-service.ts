@@ -11,57 +11,15 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
+import type {
+  ContentAsset,
+  ContentAssetType,
+  HybridSearchOptions,
+  HybridSearchResult,
+} from "../types.js";
 import { HybridSearchService } from "./hybrid-search-service.js";
 
-type ContentAssetType = string;
-
-interface ContentAsset {
-  id: string;
-  tenantId: string;
-  slug: string;
-  title: string;
-  assetType: ContentAssetType;
-  domain: string;
-  status: string;
-  currentVersion: number;
-  tags: string[];
-  targetGrades: string[];
-  authorId: string;
-  createdAt: string;
-  updatedAt: string;
-  riskLevel: string;
-  conceptId?: string;
-  qualityScore?: number;
-  semanticIndexStatus?: "pending" | "indexed" | "stale";
-  recommendationStatus?: "pending" | "computed" | "stale";
-  difficultyLevel?: string;
-  lastEditedBy?: string;
-  publishedAt?: string;
-  promptHash?: string;
-  confidenceScore?: number;
-  legacyModuleId?: string;
-  legacyExperienceId?: string;
-}
-
-interface HybridSearchResult {
-  asset: ContentAsset;
-  ranking: {
-    score: number;
-    signals: unknown[];
-    matchReason: string;
-  };
-  highlights: Array<{ field: string; snippet: string }>;
-}
-
-export interface SemanticSearchOptions {
-  tenantId: string;
-  query: string;
-  assetTypes?: ContentAssetType[];
-  domain?: string;
-  limit?: number;
-  offset?: number;
-  explain?: boolean;
-}
+export type SemanticSearchOptions = HybridSearchOptions;
 
 export interface SemanticSearchResult {
   results: HybridSearchResult[];
@@ -91,7 +49,12 @@ export class SemanticSearchService {
         total: result.total,
         queryTime: result.took,
         ...(options.explain
-          ? { explanation: this.generateExplanation(result.results, options.query) }
+          ? {
+              explanation: this.generateExplanation(
+                result.results,
+                options.query,
+              ),
+            }
           : {}),
       };
     } catch (_error) {
@@ -116,7 +79,9 @@ export class SemanticSearchService {
     };
 
     if (options.assetTypes?.length) {
-      where.assetType = { in: options.assetTypes.map((assetType) => assetType.toUpperCase()) };
+      where.assetType = {
+        in: options.assetTypes.map((assetType) => assetType.toUpperCase()),
+      };
     }
 
     if (options.domain) {
@@ -203,7 +168,9 @@ function scoreLexicalFallback(
   }
 
   const matches = terms.filter((term) => haystack.includes(term)).length;
-  const titleBonus = title.toLowerCase().startsWith(query.toLowerCase()) ? 0.2 : 0;
+  const titleBonus = title.toLowerCase().startsWith(query.toLowerCase())
+    ? 0.2
+    : 0;
   return Math.min(1, matches / terms.length + titleBonus);
 }
 
@@ -218,12 +185,26 @@ function mapContentAsset(raw: Record<string, unknown>): ContentAsset {
     ...(raw.conceptId ? { conceptId: String(raw.conceptId) } : {}),
     status: String(raw.status).toLowerCase() as ContentAsset["status"],
     currentVersion: Number(raw.currentVersion ?? 1),
-    tags: Array.isArray(raw.tags) ? (raw.tags as string[]) : [],
-    targetGrades: Array.isArray(raw.targetGrades) ? (raw.targetGrades as string[]) : [],
+    ...(Array.isArray(raw.tags)
+      ? {
+          tags: raw.tags.filter(
+            (tag): tag is string => typeof tag === "string",
+          ),
+        }
+      : {}),
+    targetGrades: Array.isArray(raw.targetGrades)
+      ? (raw.targetGrades as string[])
+      : [],
     authorId: String(raw.authorId ?? "system"),
-    createdAt: new Date(String(raw.createdAt ?? new Date().toISOString())).toISOString(),
-    updatedAt: new Date(String(raw.updatedAt ?? new Date().toISOString())).toISOString(),
-    riskLevel: String(raw.riskLevel ?? "LOW").toUpperCase() as ContentAsset["riskLevel"],
+    createdAt: new Date(
+      String(raw.createdAt ?? new Date().toISOString()),
+    ).toISOString(),
+    updatedAt: new Date(
+      String(raw.updatedAt ?? new Date().toISOString()),
+    ).toISOString(),
+    riskLevel: String(
+      raw.riskLevel ?? "LOW",
+    ).toUpperCase() as ContentAsset["riskLevel"],
   };
 
   if (raw.qualityScore != null) asset.qualityScore = Number(raw.qualityScore);

@@ -10,8 +10,8 @@ import type { AnimationSpec } from "./service";
 // Browser API declarations for encoding libraries
 declare global {
   interface Window {
-    createFFmpeg?: (options: Record<string, unknown>) => any;
-    GIF?: new (options: Record<string, unknown>) => any;
+    createFFmpeg: any;
+    GIF: any;
   }
 }
 
@@ -501,7 +501,7 @@ export class VideoEncodingService {
    * Build FFmpeg command
    */
   private buildFFmpegCommand(
-    frameFiles: string[],
+    _frameFiles: string[],
     outputName: string,
     options: VideoEncodingOptions,
   ): string[] {

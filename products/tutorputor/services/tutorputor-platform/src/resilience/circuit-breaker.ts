@@ -49,14 +49,12 @@ export class CircuitBreaker extends EventEmitter {
   private nextAttemptTime: Date | undefined;
   private failureThreshold: number;
   private resetTimeout: number;
-  private monitoringPeriod: number;
   private name: string;
 
   constructor(options: CircuitBreakerOptions = {}) {
     super();
     this.failureThreshold = options.failureThreshold || 5;
     this.resetTimeout = options.resetTimeout || 60000; // 1 minute
-    this.monitoringPeriod = options.monitoringPeriod || 10000; // 10 seconds
     this.name = options.name || "unnamed";
   }
 
@@ -68,9 +66,15 @@ export class CircuitBreaker extends EventEmitter {
       totalRequests: this.totalRequests,
       failureRate:
         this.totalRequests > 0 ? this.failures / this.totalRequests : 0,
-      ...(this.lastFailureTime ? { lastFailureTime: this.lastFailureTime } : {}),
-      ...(this.lastSuccessTime ? { lastSuccessTime: this.lastSuccessTime } : {}),
-      ...(this.nextAttemptTime ? { nextAttemptTime: this.nextAttemptTime } : {}),
+      ...(this.lastFailureTime
+        ? { lastFailureTime: this.lastFailureTime }
+        : {}),
+      ...(this.lastSuccessTime
+        ? { lastSuccessTime: this.lastSuccessTime }
+        : {}),
+      ...(this.nextAttemptTime
+        ? { nextAttemptTime: this.nextAttemptTime }
+        : {}),
     };
   }
 
@@ -201,11 +205,7 @@ export class Bulkhead extends EventEmitter {
   private queuedExecutions = 0;
   private rejectedExecutions = 0;
   private totalExecutions = 0;
-  private queue: Array<{
-    resolve: (value: unknown) => void;
-    reject: (reason?: unknown) => void;
-    operation: () => Promise<any>;
-  }> = [];
+  private queue: Array<() => void> = [];
   private maxConcurrent: number;
   private maxQueue: number;
   private name: string;
@@ -233,7 +233,9 @@ export class Bulkhead extends EventEmitter {
       if (this.activeExecutions < this.maxConcurrent) {
         this.executeImmediately(operation, resolve, reject);
       } else if (this.queue.length < this.maxQueue) {
-        this.queue.push({ resolve, reject, operation });
+        this.queue.push(() => {
+          void this.executeImmediately(operation, resolve, reject);
+        });
         this.queuedExecutions++;
       } else {
         this.rejectedExecutions++;
@@ -267,9 +269,9 @@ export class Bulkhead extends EventEmitter {
 
   private processQueue(): void {
     if (this.queue.length > 0 && this.activeExecutions < this.maxConcurrent) {
-      const { resolve, reject, operation } = this.queue.shift()!;
+      const nextExecution = this.queue.shift();
       this.queuedExecutions--;
-      this.executeImmediately(operation, resolve, reject);
+      nextExecution?.();
     }
   }
 }

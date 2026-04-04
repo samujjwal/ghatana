@@ -79,8 +79,9 @@ async function learningRoutes(
     contentVariationService,
     sessionAdaptationEngine,
   } = options;
-  const simulationAssessmentIntegration =
-    createSimulationAssessmentIntegration(fastify.prisma);
+  const simulationAssessmentIntegration = createSimulationAssessmentIntegration(
+    fastify.prisma,
+  );
 
   // ---------------------------------------------------------------------------
   // Dashboard
@@ -232,7 +233,12 @@ async function learningRoutes(
   fastify.patch<{
     Body: {
       preferredDifficulty?: "BEGINNER" | "EASY" | "MEDIUM" | "HARD" | "EXPERT";
-      preferredModality?: "VISUAL" | "AUDITORY" | "KINESTHETIC" | "READING" | "MIXED";
+      preferredModality?:
+        | "VISUAL"
+        | "AUDITORY"
+        | "KINESTHETIC"
+        | "READING"
+        | "MIXED";
       preferredPacing?: "SELF_PACED" | "GUIDED" | "ADAPTIVE" | "INTENSIVE";
       preferredSessionMinutes?: number;
       notificationFrequency?: string;
@@ -509,7 +515,9 @@ async function learningRoutes(
         });
         return reply.send(updated);
       } catch (e: unknown) {
-        return reply.status(400).send({ message: e instanceof Error ? e.message : String(e) });
+        return reply
+          .status(400)
+          .send({ message: e instanceof Error ? e.message : String(e) });
       }
     },
   );
@@ -589,7 +597,9 @@ async function learningRoutes(
         return reply.send(assessment);
       } catch (e: unknown) {
         if (e instanceof Error && e.message.includes("not found"))
-          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
+          return reply
+            .status(404)
+            .send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
@@ -656,13 +666,14 @@ async function learningRoutes(
     },
     async (request, reply) => {
       const tenantId = getTenantId(request) as TenantId;
-      const items = await simulationAssessmentIntegration.createModuleAssessmentItems({
-        tenantId,
-        moduleId: request.body.moduleId,
-        count: request.body.count ?? 2,
-        difficulty: request.body.difficulty ?? "INTERMEDIATE",
-        objectiveLabels: request.body.objectiveLabels ?? [],
-      });
+      const items =
+        await simulationAssessmentIntegration.createModuleAssessmentItems({
+          tenantId,
+          moduleId: request.body.moduleId,
+          count: request.body.count ?? 2,
+          difficulty: request.body.difficulty ?? "INTERMEDIATE",
+          objectiveLabels: request.body.objectiveLabels ?? [],
+        });
       return reply.send({ items, total: items.length });
     },
   );
@@ -729,15 +740,22 @@ async function learningRoutes(
         return reply.status(201).send(attempt);
       } catch (e: unknown) {
         if (e instanceof Error && e.message.includes("not found"))
-          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
+          return reply
+            .status(404)
+            .send({ message: e instanceof Error ? e.message : String(e) });
         if (e instanceof Error && e.message.includes("validation"))
-          return reply.status(400).send({ message: e instanceof Error ? e.message : String(e) });
+          return reply
+            .status(400)
+            .send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
   );
 
-  fastify.post<{ Params: { id: string }; Body: { responses: Record<string, unknown> } }>(
+  fastify.post<{
+    Params: { id: string };
+    Body: { responses: Record<string, unknown> };
+  }>(
     "/attempts/:id/submit",
     {
       schema: {
@@ -758,12 +776,15 @@ async function learningRoutes(
           tenantId,
           attemptId: request.params.id as AssessmentAttemptId,
           userId,
-          responses: request.body.responses as unknown as AssessmentAttempt["responses"],
+          responses: request.body
+            .responses as unknown as AssessmentAttempt["responses"],
         });
         return reply.send(attempt);
       } catch (e: unknown) {
         if (e instanceof Error && e.message.includes("not found"))
-          return reply.status(404).send({ message: e instanceof Error ? e.message : String(e) });
+          return reply
+            .status(404)
+            .send({ message: e instanceof Error ? e.message : String(e) });
         throw e;
       }
     },
@@ -773,7 +794,8 @@ async function learningRoutes(
     "/attempts/:id/simulation-insights",
     {
       schema: {
-        description: "Summarize simulation-backed responses for an assessment attempt",
+        description:
+          "Summarize simulation-backed responses for an assessment attempt",
         tags: ["Assessments"],
       },
     },
@@ -792,27 +814,36 @@ async function learningRoutes(
       });
 
       if (!attempt) {
-        return reply.status(404).send({ message: "Attempt not found for this user." });
+        return reply
+          .status(404)
+          .send({ message: "Attempt not found for this user." });
       }
 
       const responses =
-        attempt.responses && typeof attempt.responses === "object" && !Array.isArray(attempt.responses)
-          ? (attempt.responses as unknown as Record<string, AssessmentResponse | undefined>)
+        attempt.responses &&
+        typeof attempt.responses === "object" &&
+        !Array.isArray(attempt.responses)
+          ? (attempt.responses as unknown as Record<
+              string,
+              AssessmentResponse | undefined
+            >)
           : {};
       const feedback = Array.isArray(attempt.feedback)
         ? (attempt.feedback as unknown as AssessmentFeedback[])
         : undefined;
 
       const summary = summarizeSimulationAttempt({
-        items: attempt.assessment.items.map((item) => ({
-          id: item.id,
-          type: item.itemType,
-          ...(item.metadata &&
-          typeof item.metadata === "object" &&
-          !Array.isArray(item.metadata)
-            ? { metadata: item.metadata as Record<string, unknown> }
-            : {}),
-        })),
+        items: attempt.assessment.items.map(
+          (item: { id: string; itemType: string; metadata?: unknown }) => ({
+            id: item.id,
+            type: item.itemType,
+            ...(item.metadata &&
+            typeof item.metadata === "object" &&
+            !Array.isArray(item.metadata)
+              ? { metadata: item.metadata as Record<string, unknown> }
+              : {}),
+          }),
+        ),
         responses,
         ...(feedback ? { feedback } : {}),
       });
@@ -825,7 +856,7 @@ async function learningRoutes(
   // Analytics
   // ---------------------------------------------------------------------------
 
-  fastify.post<{ Body: { event: Omit<LearningEventInput, 'userId'> } }>(
+  fastify.post<{ Body: { event: Omit<LearningEventInput, "userId"> } }>(
     "/events",
     {
       schema: {
@@ -879,7 +910,8 @@ async function learningRoutes(
     "/sessions/:sessionId/events",
     {
       schema: {
-        description: "Process a learner session event and evaluate adaptation needs",
+        description:
+          "Process a learner session event and evaluate adaptation needs",
         tags: ["Learning", "Adaptation"],
       },
     },
@@ -934,7 +966,8 @@ async function learningRoutes(
     "/sessions/:sessionId/adaptation",
     {
       schema: {
-        description: "Get the current adaptation decision for a session and asset",
+        description:
+          "Get the current adaptation decision for a session and asset",
         tags: ["Learning", "Adaptation"],
       },
     },
@@ -982,20 +1015,24 @@ async function learningRoutes(
       reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
       reply.raw.setHeader("Connection", "keep-alive");
 
-      writeSseEvent(reply.raw, "decision", decision ?? {
-        sessionId: request.params.sessionId,
-        assetId: request.query.assetId,
-        adapted: false,
-        reason: "No adaptation available",
-        observedSignals: {
-          recentEvents: 0,
-          incorrectStreak: 0,
-          hintRate: 0,
-          rapidGuessCount: 0,
-          inactivityMs: 0,
+      writeSseEvent(
+        reply.raw,
+        "decision",
+        decision ?? {
+          sessionId: request.params.sessionId,
+          assetId: request.query.assetId,
+          adapted: false,
+          reason: "No adaptation available",
+          observedSignals: {
+            recentEvents: 0,
+            incorrectStreak: 0,
+            hintRate: 0,
+            rapidGuessCount: 0,
+            inactivityMs: 0,
+          },
+          createdAt: new Date().toISOString(),
         },
-        createdAt: new Date().toISOString(),
-      });
+      );
 
       if (decision?.variant) {
         for (const block of decision.variant.blocks ?? []) {
@@ -1018,7 +1055,8 @@ async function learningRoutes(
     "/assets/:assetId/variations",
     {
       schema: {
-        description: "Preview deterministic adaptive variants for a content asset",
+        description:
+          "Preview deterministic adaptive variants for a content asset",
         tags: ["Learning", "Adaptation"],
       },
     },
@@ -1050,7 +1088,9 @@ async function learningRoutes(
             ),
           );
         default:
-          return reply.status(400).send({ message: "Unsupported variation family" });
+          return reply
+            .status(400)
+            .send({ message: "Unsupported variation family" });
       }
     },
   );
@@ -1090,7 +1130,8 @@ async function learningRoutes(
       const result = await analyticsService.getAdvancedAnalytics({
         tenantId,
         classroomId: classroomId as ClassroomId,
-        period: (period as "daily" | "weekly" | "monthly" | undefined) ?? "weekly",
+        period:
+          (period as "daily" | "weekly" | "monthly" | undefined) ?? "weekly",
       });
       return reply.send(result);
     },

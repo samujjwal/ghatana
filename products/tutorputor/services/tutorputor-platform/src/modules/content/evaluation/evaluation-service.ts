@@ -236,29 +236,55 @@ function deriveRecommendation(
 // ---------------------------------------------------------------------------
 
 function mapRecord(row: Record<string, unknown>): EvaluationRecord {
-  const createdAt = row.createdAt instanceof Date ? row.createdAt : new Date(String(row.createdAt));
-  const updatedAt = row.updatedAt instanceof Date ? row.updatedAt : new Date(String(row.updatedAt));
+  const createdAt =
+    row.createdAt instanceof Date
+      ? row.createdAt
+      : new Date(String(row.createdAt));
+  const updatedAt =
+    row.updatedAt instanceof Date
+      ? row.updatedAt
+      : new Date(String(row.updatedAt));
   return {
     id: String(row.id),
     tenantId: String(row.tenantId),
     ...(typeof row.assetId === "string" ? { assetId: row.assetId } : {}),
-    ...(typeof row.generationJobId === "string" ? { generationJobId: row.generationJobId } : {}),
-    ...(typeof row.generationRequestId === "string" ? { generationRequestId: row.generationRequestId } : {}),
-    ...(typeof row.coherenceScore === "number" ? { coherenceScore: row.coherenceScore } : {}),
-    ...(typeof row.completenessScore === "number" ? { completenessScore: row.completenessScore } : {}),
-    ...(typeof row.safetyScore === "number" ? { safetyScore: row.safetyScore } : {}),
-    ...(typeof row.accessibilityScore === "number" ? { accessibilityScore: row.accessibilityScore } : {}),
-    ...(typeof row.manifestValidityScore === "number" ? { manifestValidityScore: row.manifestValidityScore } : {}),
-    ...(typeof row.overallScore === "number" ? { overallScore: row.overallScore } : {}),
+    ...(typeof row.generationJobId === "string"
+      ? { generationJobId: row.generationJobId }
+      : {}),
+    ...(typeof row.generationRequestId === "string"
+      ? { generationRequestId: row.generationRequestId }
+      : {}),
+    ...(typeof row.coherenceScore === "number"
+      ? { coherenceScore: row.coherenceScore }
+      : {}),
+    ...(typeof row.completenessScore === "number"
+      ? { completenessScore: row.completenessScore }
+      : {}),
+    ...(typeof row.safetyScore === "number"
+      ? { safetyScore: row.safetyScore }
+      : {}),
+    ...(typeof row.accessibilityScore === "number"
+      ? { accessibilityScore: row.accessibilityScore }
+      : {}),
+    ...(typeof row.manifestValidityScore === "number"
+      ? { manifestValidityScore: row.manifestValidityScore }
+      : {}),
+    ...(typeof row.overallScore === "number"
+      ? { overallScore: row.overallScore }
+      : {}),
     status: (row.status as string).toLowerCase() as EvaluationRecord["status"],
     recommendation: (row.recommendation as string)
       .toLowerCase()
       .replace(/_/g, "_") as PublishRecommendation,
-    ...(Array.isArray(row.issues) ? { issues: row.issues as EvaluationIssue[] } : {}),
+    ...(Array.isArray(row.issues)
+      ? { issues: row.issues as EvaluationIssue[] }
+      : {}),
     ...(row.diagnostics && typeof row.diagnostics === "object"
       ? { diagnostics: row.diagnostics as Record<string, unknown> }
       : {}),
-    ...(typeof row.errorMessage === "string" ? { errorMessage: row.errorMessage } : {}),
+    ...(typeof row.errorMessage === "string"
+      ? { errorMessage: row.errorMessage }
+      : {}),
     createdAt: createdAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
   };
@@ -357,14 +383,20 @@ export class EvaluationService {
    */
   async evaluateJob(
     tenantId: string,
-    job: { outputData: unknown; jobType: string; parameters: unknown },
+    job: {
+      id: string;
+      outputAssetId?: string | null;
+      outputData: unknown;
+      jobType: string;
+      parameters: unknown;
+    },
     generationRequestId?: string,
   ): Promise<EvaluationRecord> {
     const outputData = (job.outputData as Record<string, unknown> | null) ?? {};
     const jobType = (job.jobType as string).toLowerCase();
-    const gradeLevel = (job.parameters as Record<string, unknown> | null | undefined)?.gradeLevel as
-      | string
-      | undefined;
+    const gradeLevel = (
+      job.parameters as Record<string, unknown> | null | undefined
+    )?.gradeLevel as string | undefined;
 
     const coherence = scoreCoherence(outputData);
     const completeness = scoreCompleteness(outputData, jobType);
@@ -390,7 +422,10 @@ export class EvaluationService {
     const recommendation = deriveRecommendation(overall, allIssues);
     const status: "passed" | "failed" =
       recommendation === "block" ? "failed" : "passed";
-    const assetId = resolveAssetId(job);
+    const assetId = resolveAssetId({
+      outputAssetId: job.outputAssetId,
+      outputData,
+    });
 
     const created = await this.prisma.evaluationRecord.create({
       data: {
@@ -404,9 +439,20 @@ export class EvaluationService {
         accessibilityScore: accessibility.score,
         manifestValidityScore: manifestValidity.score,
         overallScore: overall,
-        status: status.toUpperCase() as "PENDING" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED",
-        recommendation: recommendation.toUpperCase().replace(/-/g, "_") as "AUTO_PUBLISH" | "MANUAL_REVIEW" | "BLOCK",
-        issues: allIssues.length > 0 ? (allIssues as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
+        status: status.toUpperCase() as
+          | "PENDING"
+          | "RUNNING"
+          | "PASSED"
+          | "FAILED"
+          | "SKIPPED",
+        recommendation: recommendation.toUpperCase().replace(/-/g, "_") as
+          | "AUTO_PUBLISH"
+          | "MANUAL_REVIEW"
+          | "BLOCK",
+        issues:
+          allIssues.length > 0
+            ? (allIssues as unknown as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
         diagnostics: { jobType, jobId: job.id },
       },
     });

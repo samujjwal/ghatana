@@ -90,11 +90,12 @@ export class AssetOutcomeService {
       }),
       this.candidateService.listOpenCandidates(tenantId, { assetId }),
     ]);
-    const experimentObservations = await this.prisma.aBExperimentObservation.findMany({
-      where: { tenantId, assetId },
-      orderBy: { observedAt: "desc" },
-      take: 500,
-    });
+    const experimentObservations =
+      await this.prisma.aBExperimentObservation.findMany({
+        where: { tenantId, assetId },
+        orderBy: { observedAt: "desc" },
+        take: 500,
+      });
 
     const latestReview = latestEvaluation?.generationRequestId
       ? await this.prisma.generationReviewDecision.findFirst({
@@ -107,7 +108,9 @@ export class AssetOutcomeService {
       : null;
 
     const telemetry = summarizeTelemetry(events);
-    const experimentSummary = summarizeExperimentObservations(experimentObservations);
+    const experimentSummary = summarizeExperimentObservations(
+      experimentObservations,
+    );
     const evaluationScore =
       typeof latestEvaluation?.overallScore === "number"
         ? latestEvaluation.overallScore
@@ -115,10 +118,14 @@ export class AssetOutcomeService {
           ? normalizeScore(asset.qualityScore)
           : undefined;
     const evaluationRecommendation = latestEvaluation
-      ? (String(latestEvaluation.recommendation).toLowerCase() as PublishRecommendation)
+      ? (String(
+          latestEvaluation.recommendation,
+        ).toLowerCase() as PublishRecommendation)
       : undefined;
     const latestReviewStatus = latestReview
-      ? (String(latestReview.status).toLowerCase() as GenerationReviewDecisionStatus)
+      ? (String(
+          latestReview.status,
+        ).toLowerCase() as GenerationReviewDecisionStatus)
       : undefined;
 
     const engagementScore = clamp01(
@@ -147,7 +154,9 @@ export class AssetOutcomeService {
       telemetry,
       healthStatus,
       ...(experimentSummary ? { experimentSummary } : {}),
-      recommendationStatus: String(asset.recommendationStatus ?? "").toLowerCase(),
+      recommendationStatus: String(
+        asset.recommendationStatus ?? "",
+      ).toLowerCase(),
       ...(evaluationRecommendation ? { evaluationRecommendation } : {}),
       ...(latestReviewStatus ? { latestReviewStatus } : {}),
     });
@@ -180,7 +189,10 @@ export class AssetOutcomeService {
       );
     }
 
-    if (options?.recomputeRecommendations && String(asset.status) === "PUBLISHED") {
+    if (
+      options?.recomputeRecommendations &&
+      String(asset.status) === "PUBLISHED"
+    ) {
       recommendationRefresh =
         await this.recommendationService.recomputeOutcomeAwareEdges(tenantId, {
           sourceAssetId: assetId,
@@ -190,7 +202,9 @@ export class AssetOutcomeService {
 
     return {
       assetId,
-      assetStatus: String(asset.status).toLowerCase() as AssetOutcomeSummary["assetStatus"],
+      assetStatus: String(
+        asset.status,
+      ).toLowerCase() as AssetOutcomeSummary["assetStatus"],
       ...(evaluationScore !== undefined ? { evaluationScore } : {}),
       ...(evaluationRecommendation ? { evaluationRecommendation } : {}),
       ...(latestReviewStatus ? { latestReviewStatus } : {}),
@@ -296,26 +310,28 @@ export class AssetOutcomeService {
 
     const results = [];
     for (const asset of assets) {
-      results.push(
-        await this.analyzeAsset(tenantId, asset.id, options),
-      );
+      results.push(await this.analyzeAsset(tenantId, asset.id, options));
     }
 
     return {
       experienceId,
       totalAssets: results.length,
-      healthyAssets: results.filter((result) => result.healthStatus === "healthy")
-        .length,
+      healthyAssets: results.filter(
+        (result) => result.healthStatus === "healthy",
+      ).length,
       watchAssets: results.filter((result) => result.healthStatus === "watch")
         .length,
-      interveneAssets: results.filter((result) => result.healthStatus === "intervene")
-        .length,
+      interveneAssets: results.filter(
+        (result) => result.healthStatus === "intervene",
+      ).length,
       assets: results,
     };
   }
 }
 
-function summarizeTelemetry(events: unknown[]): AssetOutcomeSummary["telemetry"] {
+function summarizeTelemetry(
+  events: unknown[],
+): AssetOutcomeSummary["telemetry"] {
   const summary = {
     impressions: 0,
     clicks: 0,
@@ -329,13 +345,14 @@ function summarizeTelemetry(events: unknown[]): AssetOutcomeSummary["telemetry"]
   };
 
   for (const event of events) {
-    const eventType = String(event.eventType ?? "").toUpperCase();
+    const eventRecord = event as Record<string, unknown>;
+    const eventType = String(eventRecord.eventType ?? "").toUpperCase();
     if (eventType === "IMPRESSION") summary.impressions++;
     if (eventType === "CLICK") summary.clicks++;
     if (eventType === "ASSET_COMPLETE") summary.completions++;
     if (eventType === "NEXT_STEP_SELECT") summary.nextStepSelections++;
     if (eventType === "RANKING_FEEDBACK") {
-      const label = String(event.feedbackLabel ?? "").toLowerCase();
+      const label = String(eventRecord.feedbackLabel ?? "").toLowerCase();
       if (POSITIVE_FEEDBACK.has(label)) summary.positiveFeedback++;
       if (NEGATIVE_FEEDBACK.has(label)) summary.negativeFeedback++;
     }
@@ -367,8 +384,12 @@ function summarizeExperimentObservations(
   if (observations.length === 0) {
     return undefined;
   }
-  const control = observations.filter((observation) => observation.variant === "control");
-  const treatment = observations.filter((observation) => observation.variant === "treatment");
+  const control = observations.filter(
+    (observation) => observation.variant === "control",
+  );
+  const treatment = observations.filter(
+    (observation) => observation.variant === "treatment",
+  );
   const controlMean =
     control.length === 0
       ? undefined
@@ -377,8 +398,10 @@ function summarizeExperimentObservations(
   const treatmentMean =
     treatment.length === 0
       ? undefined
-      : treatment.reduce((sum, observation) => sum + observation.metricValue, 0) /
-        treatment.length;
+      : treatment.reduce(
+          (sum, observation) => sum + observation.metricValue,
+          0,
+        ) / treatment.length;
   const relativeLift =
     controlMean !== undefined && treatmentMean !== undefined
       ? (treatmentMean - controlMean) / Math.abs(controlMean || 1)
@@ -419,9 +442,7 @@ function completionSignal(telemetry: AssetOutcomeSummary["telemetry"]): number {
   return clamp01((telemetry.completions + telemetry.nextStepSelections) / 5);
 }
 
-function reviewFactor(
-  status?: GenerationReviewDecisionStatus,
-): number {
+function reviewFactor(status?: GenerationReviewDecisionStatus): number {
   switch (status) {
     case "approved":
       return 1;

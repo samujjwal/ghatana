@@ -24,10 +24,48 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
-import { Moment } from '@flashit/shared';
+import { Moment, SearchResultItem } from '@flashit/shared';
 import { formatDistanceToNow, format } from 'date-fns';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Moments'>;
+
+type MomentListItem = Moment & {
+  sphere?: {
+    id: string;
+    name: string;
+    type: string;
+    visibility?: string;
+  };
+};
+
+function toMomentListItem(result: SearchResultItem): MomentListItem {
+  return {
+    id: result.momentId,
+    userId: '',
+    sphereId: result.sphereId,
+    contentText: result.content,
+    contentTranscript: result.transcript ?? null,
+    contentType: 'TEXT',
+    emotions: result.emotions,
+    tags: result.tags,
+    intent: null,
+    sentimentScore: null,
+    importance: result.importance ?? null,
+    entities: [],
+    capturedAt: result.capturedAt,
+    ingestedAt: result.capturedAt,
+    updatedAt: result.capturedAt,
+    deletedAt: null,
+    metadata: null,
+    version: 1,
+    sphere: {
+      id: result.sphereId,
+      name: result.sphereName,
+      type: 'CUSTOM',
+      visibility: 'PRIVATE',
+    },
+  };
+}
 
 export default function MomentsScreen({ navigation }: Props) {
   const { apiClient } = useApi();
@@ -50,9 +88,13 @@ export default function MomentsScreen({ navigation }: Props) {
           type: 'hybrid', // AI + Keyword
           limit: 50,
         });
-        return { moments: result.results }; // Transform search result to expected format
+        return {
+          moments: result.results.map(toMomentListItem),
+          totalCount: result.totalCount,
+          nextCursor: null,
+        };
       }
-      
+
       // Fallback to standard list if no query
       return apiClient.getMoments({
         limit: 50,
@@ -73,7 +115,7 @@ export default function MomentsScreen({ navigation }: Props) {
   });
 
   const handleDelete = useCallback(
-    (moment: Moment) => {
+    (moment: MomentListItem) => {
       Alert.alert('Delete Moment', 'Are you sure you want to delete this moment?', [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -93,23 +135,23 @@ export default function MomentsScreen({ navigation }: Props) {
   }, [refetch]);
 
   const renderMoment = useCallback(
-    ({ item }: { item: Moment }) => (
-      <View 
+    ({ item }: { item: MomentListItem }) => (
+      <View
         style={styles.momentCard}
         accessible={true}
         accessibilityRole="button"
-        accessibilityLabel={`Moment in ${item.sphere.name}. ${item.contentText}. Captured ${formatDistanceToNow(new Date(item.capturedAt), { addSuffix: true })}`}
+        accessibilityLabel={`Moment in ${item.sphere?.name ?? 'Unknown sphere'}. ${item.contentText}. Captured ${formatDistanceToNow(new Date(item.capturedAt), { addSuffix: true })}`}
         accessibilityHint="Double tap to view moment details"
       >
         <View style={styles.momentHeader}>
-          <View 
+          <View
             style={styles.sphereBadge}
             accessible={true}
-            accessibilityLabel={`Sphere: ${item.sphere.name}`}
+            accessibilityLabel={`Sphere: ${item.sphere?.name ?? 'Unknown sphere'}`}
           >
-            <Text style={styles.sphereBadgeText}>{item.sphere.name}</Text>
+            <Text style={styles.sphereBadgeText}>{item.sphere?.name ?? 'Unknown sphere'}</Text>
           </View>
-          <Text 
+          <Text
             style={styles.momentTime}
             accessibilityLabel={formatDistanceToNow(new Date(item.capturedAt), { addSuffix: true })}
           >
@@ -117,7 +159,7 @@ export default function MomentsScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        <Text 
+        <Text
           style={styles.momentText}
           accessibilityLabel={`Content: ${item.contentText}`}
         >
@@ -125,7 +167,7 @@ export default function MomentsScreen({ navigation }: Props) {
         </Text>
 
         {item.emotions.length > 0 && (
-          <View 
+          <View
             style={styles.tagsRow}
             accessible={true}
             accessibilityLabel={`Emotions: ${item.emotions.join(', ')}`}
@@ -139,7 +181,7 @@ export default function MomentsScreen({ navigation }: Props) {
         )}
 
         {item.tags.length > 0 && (
-          <View 
+          <View
             style={styles.tagsRow}
             accessible={true}
             accessibilityLabel={`Tags: ${item.tags.join(', ')}`}
@@ -153,7 +195,7 @@ export default function MomentsScreen({ navigation }: Props) {
         )}
 
         <View style={styles.momentFooter}>
-          <Text 
+          <Text
             style={styles.dateText}
             accessibilityLabel={format(new Date(item.capturedAt), 'MMM d, yyyy')}
           >

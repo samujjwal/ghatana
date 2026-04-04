@@ -10,7 +10,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-type ContentAssetType = string;
+import type { ContentAssetType } from "../types.js";
 type HybridSearchResult = {
   asset: { id: string; title: string };
   ranking?: { score?: number };
@@ -20,7 +20,11 @@ import { RecommendationService } from "../recommendation/recommendation-service.
 import { SemanticSearchService } from "../semantic/semantic-search-service.js";
 
 export interface SearchValidationResult {
-  testType: "keyword_search" | "semantic_search" | "autocomplete" | "recommendations";
+  testType:
+    | "keyword_search"
+    | "semantic_search"
+    | "autocomplete"
+    | "recommendations";
   query: string;
   expectedResults: number;
   actualResults: number;
@@ -76,7 +80,9 @@ export class SearchSystemValidator {
       deps.searchService ?? new SemanticSearchService(prisma);
   }
 
-  async validateDiscoverySystem(tenantId: string): Promise<DiscoverySystemReport> {
+  async validateDiscoverySystem(
+    tenantId: string,
+  ): Promise<DiscoverySystemReport> {
     const assets = await this.loadValidationAssets(tenantId);
     if (assets.length === 0) {
       return {
@@ -84,7 +90,9 @@ export class SearchSystemValidator {
         searchTests: [],
         recommendationTests: [],
         autocompleteTests: [],
-        criticalIssues: ["No published content assets available for discovery validation"],
+        criticalIssues: [
+          "No published content assets available for discovery validation",
+        ],
         recommendations: [
           "Publish canonical content assets before running discovery validation",
         ],
@@ -93,14 +101,30 @@ export class SearchSystemValidator {
     }
 
     const searchTests = await Promise.all(
-      assets.slice(0, 3).map((asset, index) =>
-        this.runSearchTest(tenantId, asset, index === 0 ? "keyword_search" : "semantic_search"),
-      ),
+      assets
+        .slice(0, 3)
+        .map((asset, index) =>
+          this.runSearchTest(
+            tenantId,
+            asset,
+            index === 0 ? "keyword_search" : "semantic_search",
+          ),
+        ),
     );
-    const recommendationTests = await this.testRecommendationQuality(tenantId, assets);
-    const autocompleteTests = await this.testAutocompleteFunctionality(tenantId, assets);
+    const recommendationTests = await this.testRecommendationQuality(
+      tenantId,
+      assets,
+    );
+    const autocompleteTests = await this.testAutocompleteFunctionality(
+      tenantId,
+      assets,
+    );
 
-    const allTests = [...searchTests, ...recommendationTests, ...autocompleteTests];
+    const allTests = [
+      ...searchTests,
+      ...recommendationTests,
+      ...autocompleteTests,
+    ];
     const criticalIssues = allTests
       .filter((test) => !test.passed && test.relevanceScore < 55)
       .map((test) => `${test.testType} failed for "${test.query}"`);
@@ -127,7 +151,10 @@ export class SearchSystemValidator {
     for (const asset of targets) {
       const query = deriveAutocompletePrefix(asset);
       const startedAt = Date.now();
-      const suggestions = await this.getAutocompleteSuggestions(tenantId, query);
+      const suggestions = await this.getAutocompleteSuggestions(
+        tenantId,
+        query,
+      );
       const expectedCompletions = [asset.domain, asset.title];
       const relevanceScore = calculateAutocompleteRelevance(
         suggestions,
@@ -197,7 +224,10 @@ export class SearchSystemValidator {
         ...recommendations.alternatives,
       ];
       const diversityScore = calculateRecommendationDiversity(allSuggestions);
-      const relevanceScore = calculateRecommendationRelevance(allSuggestions, asset);
+      const relevanceScore = calculateRecommendationRelevance(
+        allSuggestions,
+        asset,
+      );
       const actualResults = allSuggestions.length;
 
       results.push({
@@ -206,7 +236,8 @@ export class SearchSystemValidator {
         expectedResults: 2,
         actualResults,
         relevanceScore,
-        passed: actualResults >= 2 && diversityScore >= 50 && relevanceScore >= 60,
+        passed:
+          actualResults >= 2 && diversityScore >= 50 && relevanceScore >= 60,
         issues: [
           ...(actualResults < 2
             ? [`Insufficient recommendations for asset ${asset.id}`]
@@ -241,10 +272,15 @@ export class SearchSystemValidator {
       query,
       limit: 6,
       explain: true,
-      ...(testType === "keyword_search" ? { assetTypes: [asset.assetType] } : {}),
+      ...(testType === "keyword_search"
+        ? { assetTypes: [asset.assetType] }
+        : {}),
     });
 
-    const relevanceScore = calculateSearchRelevance(searchResult.results, asset);
+    const relevanceScore = calculateSearchRelevance(
+      searchResult.results,
+      asset,
+    );
     const resultAccuracy = calculateSearchAccuracy(searchResult.results, asset);
     const rankingQuality = calculateRankingQuality(searchResult.results);
 
@@ -262,9 +298,7 @@ export class SearchSystemValidator {
         ...(searchResult.results.length === 0
           ? [`No results returned for query "${query}"`]
           : []),
-        ...(relevanceScore < 65
-          ? [`Low relevance for query "${query}"`]
-          : []),
+        ...(relevanceScore < 65 ? [`Low relevance for query "${query}"`] : []),
       ],
       metrics: {
         responseTime: Date.now() - startedAt,
@@ -274,7 +308,9 @@ export class SearchSystemValidator {
     };
   }
 
-  private async loadValidationAssets(tenantId: string): Promise<ValidationAsset[]> {
+  private async loadValidationAssets(
+    tenantId: string,
+  ): Promise<ValidationAsset[]> {
     const rows = await this.prisma.contentAsset.findMany({
       where: { tenantId, status: "PUBLISHED" },
       orderBy: [{ qualityScore: "desc" }, { updatedAt: "desc" }],
@@ -307,7 +343,7 @@ export class SearchSystemValidator {
         status: "PUBLISHED",
         OR: [
           { title: { contains: query } },
-          { domain: { contains: query } },
+          { searchableText: { contains: query } },
         ],
       },
       select: { title: true, domain: true },
@@ -341,20 +377,26 @@ export class SearchSystemValidator {
       );
     }
 
-    if (tests.some((test) => test.testType === "recommendations" && !test.passed)) {
+    if (
+      tests.some((test) => test.testType === "recommendations" && !test.passed)
+    ) {
       recommendations.push(
         "Recompute recommendation edges for recently published assets and review diversity weighting",
       );
     }
 
-    if (tests.some((test) => test.testType === "autocomplete" && !test.passed)) {
+    if (
+      tests.some((test) => test.testType === "autocomplete" && !test.passed)
+    ) {
       recommendations.push(
         "Improve prefix indexing for asset titles and domains used in learner discovery",
       );
     }
 
     if (recommendations.length === 0) {
-      recommendations.push("Discovery quality is within target thresholds for the sampled assets");
+      recommendations.push(
+        "Discovery quality is within target thresholds for the sampled assets",
+      );
     }
 
     return recommendations;
@@ -411,18 +453,16 @@ function calculateSearchAccuracy(
 ): number {
   if (results.length === 0) return 0;
 
-  const accurate = results.filter(
-    (result) => {
-      const resultAsset = result.asset as {
-        domain?: string;
-        assetType?: string;
-      };
-      return (
-        resultAsset.domain === asset.domain ||
-        resultAsset.assetType === asset.assetType
-      );
-    },
-  ).length;
+  const accurate = results.filter((result) => {
+    const resultAsset = result.asset as {
+      domain?: string;
+      assetType?: string;
+    };
+    return (
+      resultAsset.domain === asset.domain ||
+      resultAsset.assetType === asset.assetType
+    );
+  }).length;
 
   return (accurate / results.length) * 100;
 }
@@ -447,8 +487,12 @@ function calculateRecommendationDiversity(
 ): number {
   if (suggestions.length === 0) return 0;
 
-  const types = new Set(suggestions.map((suggestion) => suggestion.asset.assetType));
-  const domains = new Set(suggestions.map((suggestion) => suggestion.asset.domain));
+  const types = new Set(
+    suggestions.map((suggestion) => suggestion.asset.assetType),
+  );
+  const domains = new Set(
+    suggestions.map((suggestion) => suggestion.asset.domain),
+  );
   return Math.min(100, types.size * 25 + domains.size * 20);
 }
 
@@ -460,7 +504,11 @@ function calculateRecommendationRelevance(
 
   const matches = suggestions.map((suggestion) => {
     let score = suggestion.asset.domain === asset.domain ? 70 : 35;
-    if ((suggestion.asset.title ?? "").toLowerCase().includes(asset.domain.toLowerCase())) {
+    if (
+      (suggestion.asset.title ?? "")
+        .toLowerCase()
+        .includes(asset.domain.toLowerCase())
+    ) {
       score += 10;
     }
     return Math.min(score, 100);
@@ -478,9 +526,10 @@ function calculateAutocompleteRelevance(
   let matched = 0;
   for (const suggestion of suggestions) {
     if (
-      expectedCompletions.some((expected) =>
-        suggestion.text.toLowerCase().includes(expected.toLowerCase()) ||
-        expected.toLowerCase().includes(suggestion.text.toLowerCase()),
+      expectedCompletions.some(
+        (expected) =>
+          suggestion.text.toLowerCase().includes(expected.toLowerCase()) ||
+          expected.toLowerCase().includes(suggestion.text.toLowerCase()),
       )
     ) {
       matched += 1;
@@ -495,11 +544,15 @@ function calculateAutocompleteRanking(
 ): number {
   if (suggestions.length === 0) return 0;
 
-  return suggestions.reduce((sum, suggestion, index) => {
-    const specificityBonus = suggestion.type === "title" ? 15 : 5;
-    const brevityBonus = suggestion.text.length <= 24 ? 15 : 5;
-    return sum + Math.max(0, 100 - index * 12 + specificityBonus + brevityBonus);
-  }, 0) / suggestions.length;
+  return (
+    suggestions.reduce((sum, suggestion, index) => {
+      const specificityBonus = suggestion.type === "title" ? 15 : 5;
+      const brevityBonus = suggestion.text.length <= 24 ? 15 : 5;
+      return (
+        sum + Math.max(0, 100 - index * 12 + specificityBonus + brevityBonus)
+      );
+    }, 0) / suggestions.length
+  );
 }
 
 function calculateOverallScore(tests: SearchValidationResult[]): number {
@@ -507,8 +560,7 @@ function calculateOverallScore(tests: SearchValidationResult[]): number {
 
   const relevanceAverage =
     tests.reduce((sum, test) => sum + test.relevanceScore, 0) / tests.length;
-  const passRate =
-    tests.filter((test) => test.passed).length / tests.length;
+  const passRate = tests.filter((test) => test.passed).length / tests.length;
 
   return Number((relevanceAverage * 0.75 + passRate * 25).toFixed(2));
 }

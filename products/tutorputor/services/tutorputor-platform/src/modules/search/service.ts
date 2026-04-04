@@ -195,22 +195,30 @@ export class SearchServiceImpl {
     let threads: ThreadRecord[] = [];
     if (!filters?.type || filters.type.includes("thread")) {
       try {
-        const threadDelegate = (this.prisma as unknown as {
-          thread?: {
-            findMany: (args: {
-              where: {
-                tenantId: TenantId;
-                OR: Array<{ title: { contains: string } } | { content: { contains: string } }>;
-              };
-            }) => Promise<ThreadRecord[]>;
-          };
-        }).thread;
+        const threadDelegate = (
+          this.prisma as unknown as {
+            thread?: {
+              findMany: (args: {
+                where: {
+                  tenantId: TenantId;
+                  OR: Array<
+                    | { title: { contains: string } }
+                    | { content: { contains: string } }
+                  >;
+                };
+              }) => Promise<ThreadRecord[]>;
+            };
+          }
+        ).thread;
 
         if (threadDelegate) {
           threads = await threadDelegate.findMany({
             where: {
               tenantId,
-              OR: [{ title: { contains: query } }, { content: { contains: query } }],
+              OR: [
+                { title: { contains: query } },
+                { content: { contains: query } },
+              ],
             },
           });
         }
@@ -258,12 +266,7 @@ export class SearchServiceImpl {
           score:
             this.matchScore(`${m.title} ${m.description}`, query) * 0.65 +
             this.semanticScore(
-              [
-                m.title,
-                m.description,
-                m.slug,
-                m.domain,
-              ],
+              [m.title, m.description, m.slug, m.domain],
               query,
             ) *
               0.35,
@@ -280,7 +283,10 @@ export class SearchServiceImpl {
           title: this.toText(t.title),
           description: this.toText(t.content),
           metadata: {},
-          score: this.matchScore(`${this.toText(t.title)} ${this.toText(t.content)}`, query),
+          score: this.matchScore(
+            `${this.toText(t.title)} ${this.toText(t.content)}`,
+            query,
+          ),
           highlights: [
             this.createHighlight(
               this.toText(t.content) || this.toText(t.title),
@@ -432,9 +438,9 @@ export class SearchServiceImpl {
     return true;
   }
 
-  async indexModule(tenantId: TenantId, moduleId: ModuleId): Promise<void> {}
+  async indexModule(_tenantId: TenantId, _moduleId: ModuleId): Promise<void> {}
   async removeFromIndex(
-    tenantId: TenantId,
-    moduleId: ModuleId,
+    _tenantId: TenantId,
+    _moduleId: ModuleId,
   ): Promise<void> {}
 }

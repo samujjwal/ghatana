@@ -19,7 +19,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { atom, useAtom } from 'jotai';
+import { atom, useAtom, useSetAtom } from 'jotai';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -41,12 +41,32 @@ export const showToast = (
 ) => {
   const id = Date.now().toString();
   const toastMessage: ToastMessage = { id, type, message, duration };
-  
+
   // This will be set by the ToastProvider
   if (typeof window !== 'undefined' && (window as any).__showToast) {
     (window as any).__showToast(toastMessage);
   }
 };
+
+export function useToastNotifications() {
+  const setToast = useSetAtom(toastAtom);
+
+  const enqueue = (type: ToastType, message: string, duration?: number) => {
+    setToast({
+      id: Date.now().toString(),
+      type,
+      message,
+      duration,
+    });
+  };
+
+  return {
+    success: (message: string, duration?: number) => enqueue('success', message, duration),
+    error: (message: string, duration?: number) => enqueue('error', message, duration),
+    info: (message: string, duration?: number) => enqueue('info', message, duration),
+    warning: (message: string, duration?: number) => enqueue('warning', message, duration),
+  };
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useAtom(toastAtom);
@@ -136,17 +156,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             },
           ]}
           accessible={true}
-          accessibilityRole=\"alert\"
+          accessibilityRole="alert"
           accessibilityLabel={getAccessibilityLabel()}
-          accessibilityLiveRegion=\"polite\"
+          accessibilityLiveRegion="polite"
         >
           <TouchableOpacity
             style={[styles.toast, getToastStyle()]}
             onPress={hideToast}
             accessible={true}
-            accessibilityRole=\"button\"
+            accessibilityRole="button"
             accessibilityLabel={`Dismiss ${toast.type} notification`}
-            accessibilityHint=\"Double tap to dismiss\"
+            accessibilityHint="Double tap to dismiss"
           >
             <Text style={styles.message}>{toast.message}</Text>
           </TouchableOpacity>

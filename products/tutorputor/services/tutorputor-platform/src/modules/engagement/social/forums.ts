@@ -24,7 +24,22 @@ import type {
 } from "@tutorputor/contracts/v1/social";
 import slugify from "slugify";
 import { nanoid } from "nanoid";
+import { createHttpError } from "../../../core/http/requestContext.js";
 import { createSocialNotification } from "../../notifications/delivery.js";
+
+type ContentReportDelegate = {
+  create(args: {
+    data: {
+      tenantId: TenantId;
+      contentType: "topic" | "post";
+      contentId: string;
+      reporterId: UserId;
+      reason: string;
+      details: string | null;
+      status: "PENDING";
+    };
+  }): Promise<{ id: string }>;
+};
 
 /**
  * Configuration for ForumServiceImpl
@@ -71,7 +86,8 @@ export class ForumServiceImpl implements ForumService {
       color: c.color,
       order: i,
     }));
-    const studyGroupId = args.scope === "study_group" ? (args.scopeId ?? null) : null;
+    const studyGroupId =
+      args.scope === "study_group" ? (args.scopeId ?? null) : null;
 
     const forum = await this.prisma.forum.create({
       data: {
@@ -172,7 +188,9 @@ export class ForumServiceImpl implements ForumService {
     const topic = await this.prisma.forumTopic.create({
       data: {
         forumId: args.forumId,
-        ...(args.categoryId !== undefined ? { categoryId: args.categoryId } : {}),
+        ...(args.categoryId !== undefined
+          ? { categoryId: args.categoryId }
+          : {}),
         title: args.title,
         slug,
         authorId: args.authorId,
@@ -716,7 +734,21 @@ export class ForumServiceImpl implements ForumService {
     reason: string;
     details?: string;
   }): Promise<{ reportId: string }> {
-    const report = await this.prisma.contentReport.create({
+    const contentReport = (
+      this.prisma as PrismaClient & {
+        contentReport?: ContentReportDelegate;
+      }
+    ).contentReport;
+
+    if (!contentReport) {
+      throw createHttpError(
+        501,
+        "SOCIAL_MODERATION_UNAVAILABLE",
+        "Content moderation reporting is not configured",
+      );
+    }
+
+    const report = await contentReport.create({
       data: {
         tenantId: args.tenantId,
         contentType: args.contentType,
@@ -865,7 +897,16 @@ export class ForumServiceImpl implements ForumService {
   private async publishActivity(
     tenantId: string,
     activity: {
-      type: "JOINED_GROUP" | "CREATED_TOPIC" | "REPLIED_TOPIC" | "LIKED_POST" | "SCHEDULED_SESSION" | "COMPLETED_SESSION" | "SHARED_NOTE" | "EARNED_BADGE" | "HELPED_PEER";
+      type:
+        | "JOINED_GROUP"
+        | "CREATED_TOPIC"
+        | "REPLIED_TOPIC"
+        | "LIKED_POST"
+        | "SCHEDULED_SESSION"
+        | "COMPLETED_SESSION"
+        | "SHARED_NOTE"
+        | "EARNED_BADGE"
+        | "HELPED_PEER";
       actorId: string;
       targetType: string;
       targetId: string;
@@ -904,22 +945,25 @@ export class ForumServiceImpl implements ForumService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma, {
-      tenantId,
-      userId,
-      type: notification.type,
-      title: notification.title,
-      body: notification.body,
-      ...(notification.targetType !== undefined
-        ? { targetType: notification.targetType }
-        : {}),
-      ...(notification.targetId !== undefined
-        ? { targetId: notification.targetId }
-        : {}),
-      ...(notification.actorId !== undefined
-        ? { actorId: notification.actorId }
-        : {}),
-    });
+    await createSocialNotification(
+      this.prisma as unknown as Parameters<typeof createSocialNotification>[0],
+      {
+        tenantId,
+        userId,
+        type: notification.type,
+        title: notification.title,
+        body: notification.body,
+        ...(notification.targetType !== undefined
+          ? { targetType: notification.targetType }
+          : {}),
+        ...(notification.targetId !== undefined
+          ? { targetId: notification.targetId }
+          : {}),
+        ...(notification.actorId !== undefined
+          ? { actorId: notification.actorId }
+          : {}),
+      },
+    );
 
     if (this.redis) {
       await this.redis.publish(
@@ -930,8 +974,13 @@ export class ForumServiceImpl implements ForumService {
   }
 
   // Mapping helpers
-  private mapScopeToDb(scope: ForumScope): "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE" {
-    const map: Record<ForumScope, "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE"> = {
+  private mapScopeToDb(
+    scope: ForumScope,
+  ): "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE" {
+    const map: Record<
+      ForumScope,
+      "GLOBAL" | "STUDY_GROUP" | "CLASSROOM" | "MODULE"
+    > = {
       global: "GLOBAL",
       study_group: "STUDY_GROUP",
       classroom: "CLASSROOM",
@@ -950,8 +999,13 @@ export class ForumServiceImpl implements ForumService {
     return map[scope] ?? "global";
   }
 
-  private mapReactionToDb(reaction: ReactionType): "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE" {
-    const map: Record<ReactionType, "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE"> = {
+  private mapReactionToDb(
+    reaction: ReactionType,
+  ): "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE" {
+    const map: Record<
+      ReactionType,
+      "LIKE" | "HELPFUL" | "INSIGHTFUL" | "QUESTION" | "CELEBRATE"
+    > = {
       like: "LIKE",
       helpful: "HELPFUL",
       insightful: "INSIGHTFUL",
@@ -961,7 +1015,7 @@ export class ForumServiceImpl implements ForumService {
     return map[reaction];
   }
 
-  private mapReactionFromDb(reaction: string): ReactionType {
+  mapReactionFromDb(reaction: string): ReactionType {
     const map: Record<string, ReactionType> = {
       LIKE: "like",
       HELPFUL: "helpful",
@@ -989,7 +1043,10 @@ export class ForumServiceImpl implements ForumService {
       topicCount: forum.topicCount,
       postCount: forum.postCount,
       lastPostAt: forum.lastPostAt ?? undefined,
-      status: (forum.status as string).toLowerCase() as "active" | "archived" | "locked",
+      status: (forum.status as string).toLowerCase() as
+        | "active"
+        | "archived"
+        | "locked",
       createdAt: forum.createdAt,
       updatedAt: forum.updatedAt,
     };
@@ -1016,7 +1073,12 @@ export class ForumServiceImpl implements ForumService {
       isLocked: topic.isLocked,
       isAnswered: topic.isAnswered,
       answerId: topic.answerId ?? undefined,
-      status: (topic.status as string).toLowerCase() as "draft" | "pending" | "published" | "hidden" | "deleted",
+      status: (topic.status as string).toLowerCase() as
+        | "draft"
+        | "pending"
+        | "published"
+        | "hidden"
+        | "deleted",
       moderatedBy: topic.moderatedBy ?? undefined,
       moderatedAt: topic.moderatedAt ?? undefined,
       moderationNote: topic.moderationNote ?? undefined,
@@ -1036,12 +1098,19 @@ export class ForumServiceImpl implements ForumService {
       isAnonymous: post.isAnonymous,
       content: post.content,
       contentFormat: post.contentFormat as "markdown" | "html" | "plain",
-      attachments: post.attachments ? JSON.parse(post.attachments as string) : undefined,
+      attachments: post.attachments
+        ? JSON.parse(post.attachments as string)
+        : undefined,
       parentId: post.parentId ?? undefined,
       depth: post.depth,
       likeCount: post.likeCount,
       isAcceptedAnswer: post.isAcceptedAnswer,
-      status: (post.status as string).toLowerCase() as "draft" | "pending" | "published" | "hidden" | "deleted",
+      status: (post.status as string).toLowerCase() as
+        | "draft"
+        | "pending"
+        | "published"
+        | "hidden"
+        | "deleted",
       moderatedBy: post.moderatedBy ?? undefined,
       moderatedAt: post.moderatedAt ?? undefined,
       isEdited: post.isEdited,

@@ -1,6 +1,6 @@
 /**
  * Medicine Simulation Kernel
- * 
+ *
  * @doc.type class
  * @doc.purpose Execute pharmacokinetic/pharmacodynamic and epidemiology simulations
  * @doc.layer product
@@ -11,7 +11,7 @@ import type {
   MedicineKernel as IMedicineKernel,
   SimulationRunRequest,
   SimulationRunResult,
-  MedicineConfig
+  MedicineConfig,
 } from "@tutorputor/contracts/v1/simulation";
 import type {
   SimulationManifest,
@@ -20,7 +20,7 @@ import type {
   SimEntityId,
   MedCompartmentEntity,
   MedDoseEntity,
-  MedInfectionAgentEntity
+  MedInfectionAgentEntity,
 } from "@tutorputor/contracts/v1/simulation";
 
 /**
@@ -38,7 +38,7 @@ interface PKCompartmentState {
 
 /**
  * Create the medicine kernel.
- * 
+ *
  * @doc.type function
  * @doc.purpose Factory function for medicine kernel
  * @doc.layer product
@@ -62,7 +62,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
           keyframes: [],
           totalSteps: 0,
           executionTimeMs: Date.now() - startTime,
-          errors: ["Manifest domain is not MEDICINE"]
+          errors: ["Manifest domain is not MEDICINE"],
         };
       }
 
@@ -95,7 +95,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
             concentration: comp.concentration,
             ...(comp.ke !== undefined ? { ke: comp.ke } : {}),
             ...(comp.k12 !== undefined ? { k12: comp.k12 } : {}),
-            ...(comp.k21 !== undefined ? { k21: comp.k21 } : {})
+            ...(comp.k21 !== undefined ? { k21: comp.k21 } : {}),
           });
         } else if (entity.type === "dose") {
           doses.push(entity as MedDoseEntity);
@@ -112,11 +112,13 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
         stepIndex: -1,
         timestamp: 0,
         entities: Array.from(entities.values()),
-        annotations: []
+        annotations: [],
       });
 
       // Process simulation steps
-      const stepsToProcess = manifest.steps.sort((a, b) => a.orderIndex - b.orderIndex);
+      const stepsToProcess = manifest.steps.sort(
+        (a, b) => a.orderIndex - b.orderIndex,
+      );
       let currentTime = 0;
       const dt = 0.1; // Time step in hours
 
@@ -126,7 +128,13 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
 
         // Apply step actions
         for (const action of step.actions) {
-          applyMedicineAction(action, compartments, doses, infectionAgents, entities);
+          applyMedicineAction(
+            action,
+            compartments,
+            doses,
+            infectionAgents,
+            entities,
+          );
         }
 
         // Simulate for step duration (default 1 hour per step)
@@ -156,7 +164,12 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
               break;
             case "sir":
             case "seir":
-              simulateEpidemiology(infectionAgents, entities, modelType as "sir" | "seir", dt);
+              simulateEpidemiology(
+                infectionAgents,
+                entities,
+                modelType as "sir" | "seir",
+                dt,
+              );
               break;
           }
 
@@ -164,7 +177,8 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
           for (const [id, comp] of compartments) {
             const entity = entities.get(id);
             if (entity && entity.type === "pkCompartment") {
-              (entity as MedCompartmentEntity).concentration = comp.concentration;
+              (entity as MedCompartmentEntity).concentration =
+                comp.concentration;
             }
           }
 
@@ -173,7 +187,9 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
             for (const [, comp] of compartments) {
               if (comp.type === "central") {
                 if (comp.concentration > therapeuticRange.max) {
-                  warnings.push(`Concentration ${comp.concentration.toFixed(2)} exceeds therapeutic range`);
+                  warnings.push(
+                    `Concentration ${comp.concentration.toFixed(2)} exceeds therapeutic range`,
+                  );
                 }
               }
             }
@@ -187,7 +203,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
               annotations.push({
                 id: `annotation_${stepIndex}`,
                 text: step.narration,
-                position: { x: 450, y: 30 }
+                position: { x: 450, y: 30 },
               });
             }
 
@@ -197,7 +213,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
                 annotations.push({
                   id: `conc_${currentTime}`,
                   text: `C = ${comp.concentration.toFixed(2)} mg/L`,
-                  position: { x: 450, y: 60 }
+                  position: { x: 450, y: 60 },
                 });
               }
             }
@@ -205,8 +221,8 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
             keyframes.push({
               stepIndex,
               timestamp: currentTime * 3600 * 1000, // Convert hours to ms
-              entities: Array.from(entities.values()).map(e => ({ ...e })),
-              annotations
+              entities: Array.from(entities.values()).map((e) => ({ ...e })),
+              annotations,
             });
           }
         }
@@ -217,7 +233,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
         keyframes,
         totalSteps: stepsToProcess.length,
         executionTimeMs: Date.now() - startTime,
-        ...(warnings.length > 0 ? { warnings } : {})
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
 
@@ -225,12 +241,12 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       dose: number,
       volume: number,
       ke: number,
-      timePoints: number[]
+      timePoints: number[],
     ): Array<{ time: number; concentration: number }> {
       const c0 = dose / volume;
-      return timePoints.map(t => ({
+      return timePoints.map((t) => ({
         time: t,
-        concentration: c0 * Math.exp(-ke * t)
+        concentration: c0 * Math.exp(-ke * t),
       }));
     },
 
@@ -241,7 +257,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       k12: number,
       k21: number,
       ke: number,
-      timePoints: number[]
+      timePoints: number[],
     ): Array<{ time: number; c1: number; c2: number }> {
       // Solve two-compartment model using matrix exponential
       // Simplified: use numerical integration
@@ -253,7 +269,8 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
 
       for (const targetTime of timePoints) {
         while (true) {
-          const lastResult = results.length > 0 ? results[results.length - 1] : undefined;
+          const lastResult =
+            results.length > 0 ? results[results.length - 1] : undefined;
           if (lastResult && lastResult.time >= targetTime) {
             break;
           }
@@ -283,11 +300,13 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       concentrations: number[],
       emax: number,
       ec50: number,
-      hill: number = 1
+      hill: number = 1,
     ): Array<{ concentration: number; effect: number }> {
-      return concentrations.map(c => ({
+      return concentrations.map((c) => ({
         concentration: c,
-        effect: (emax * Math.pow(c, hill)) / (Math.pow(ec50, hill) + Math.pow(c, hill))
+        effect:
+          (emax * Math.pow(c, hill)) /
+          (Math.pow(ec50, hill) + Math.pow(c, hill)),
       }));
     },
 
@@ -298,7 +317,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
       beta: number,
       gamma: number,
       days: number,
-      sigma?: number
+      sigma?: number,
     ): Array<{
       day: number;
       susceptible: number;
@@ -326,14 +345,14 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
           susceptible: S,
           ...(model === "seir" ? { exposed: E } : {}),
           infected: I,
-          recovered: R
+          recovered: R,
         });
 
         // Simulate one day
         for (let t = 0; t < 1; t += dt) {
           if (model === "sir") {
-            const dS = -beta * S * I / population;
-            const dI = beta * S * I / population - gamma * I;
+            const dS = (-beta * S * I) / population;
+            const dI = (beta * S * I) / population - gamma * I;
             const dR = gamma * I;
 
             S += dS * dt;
@@ -342,8 +361,8 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
           } else {
             // SEIR model
             const sigmaVal = sigma || 0.2;
-            const dS = -beta * S * I / population;
-            const dE = beta * S * I / population - sigmaVal * E;
+            const dS = (-beta * S * I) / population;
+            const dE = (beta * S * I) / population - sigmaVal * E;
             const dI = sigmaVal * E - gamma * I;
             const dR = gamma * I;
 
@@ -394,7 +413,7 @@ export function createMedicineKernel(config?: MedicineConfig): IMedicineKernel {
 
     getAnalytics(): Record<string, unknown> {
       return {};
-    }
+    },
   };
 }
 
@@ -406,7 +425,7 @@ function applyMedicineAction(
   compartments: Map<SimEntityId, PKCompartmentState>,
   doses: MedDoseEntity[],
   infectionAgents: Map<SimEntityId, MedInfectionAgentEntity>,
-  entities: Map<SimEntityId, SimEntity>
+  entities: Map<SimEntityId, SimEntity>,
 ): void {
   switch (action.action) {
     case "ABSORB": {
@@ -414,7 +433,7 @@ function applyMedicineAction(
       const compartmentId = action.compartmentId as SimEntityId;
       const rate = action.rate as number;
 
-      const dose = doses.find(d => d.id === doseId);
+      const dose = doses.find((d) => d.id === doseId);
       const comp = compartments.get(compartmentId);
 
       if (dose && comp) {
@@ -431,7 +450,7 @@ function applyMedicineAction(
 
       const comp = compartments.get(compartmentId);
       if (comp) {
-        comp.concentration *= (1 - rate);
+        comp.concentration *= 1 - rate;
       }
       break;
     }
@@ -462,7 +481,7 @@ function applyMedicineAction(
           concentration: comp.concentration,
           ...(comp.ke !== undefined ? { ke: comp.ke } : {}),
           ...(comp.k12 !== undefined ? { k12: comp.k12 } : {}),
-          ...(comp.k21 !== undefined ? { k21: comp.k21 } : {})
+          ...(comp.k21 !== undefined ? { k21: comp.k21 } : {}),
         });
       } else if (entity.type === "dose") {
         doses.push(entity as MedDoseEntity);
@@ -485,13 +504,14 @@ function applyMedicineAction(
 function processOralAbsorption(
   dose: MedDoseEntity,
   compartments: Map<SimEntityId, PKCompartmentState>,
-  dt: number
+  dt: number,
 ): void {
   // Find central compartment
   for (const [, comp] of compartments) {
     if (comp.type === "central" && dose.amount > 0) {
       const ka = dose.absorptionRate || 1; // Absorption rate constant
-      const amount = dose.amount * (1 - Math.exp(-ka * dt)) * (dose.bioavailability || 1);
+      const amount =
+        dose.amount * (1 - Math.exp(-ka * dt)) * (dose.bioavailability || 1);
       comp.concentration += amount / comp.volume;
       dose.amount = Math.max(0, dose.amount - amount);
     }
@@ -503,7 +523,7 @@ function processOralAbsorption(
  */
 function processIVBolus(
   dose: MedDoseEntity,
-  compartments: Map<SimEntityId, PKCompartmentState>
+  compartments: Map<SimEntityId, PKCompartmentState>,
 ): void {
   for (const [, comp] of compartments) {
     if (comp.type === "central") {
@@ -517,7 +537,7 @@ function processIVBolus(
  */
 function simulateOneCompartmentPK(
   compartments: Map<SimEntityId, PKCompartmentState>,
-  dt: number
+  dt: number,
 ): void {
   for (const [, comp] of compartments) {
     if (comp.type === "central" && comp.ke) {
@@ -531,20 +551,26 @@ function simulateOneCompartmentPK(
  */
 function simulateTwoCompartmentPK(
   compartments: Map<SimEntityId, PKCompartmentState>,
-  dt: number
+  dt: number,
 ): void {
-  const central = Array.from(compartments.values()).find(c => c.type === "central");
-  const peripheral = Array.from(compartments.values()).find(c => c.type === "peripheral");
+  const central = Array.from(compartments.values()).find(
+    (c) => c.type === "central",
+  );
+  const peripheral = Array.from(compartments.values()).find(
+    (c) => c.type === "peripheral",
+  );
 
   if (central && peripheral) {
     const k12 = central.k12 || 0;
     const k21 = central.k21 || peripheral.k21 || 0;
     const ke = central.ke || 0;
 
-    const dc1 = -k12 * central.concentration +
+    const dc1 =
+      -k12 * central.concentration +
       k21 * peripheral.concentration * (peripheral.volume / central.volume) -
       ke * central.concentration;
-    const dc2 = k12 * central.concentration * (central.volume / peripheral.volume) -
+    const dc2 =
+      k12 * central.concentration * (central.volume / peripheral.volume) -
       k21 * peripheral.concentration;
 
     central.concentration += dc1 * dt;
@@ -561,10 +587,10 @@ function simulateTwoCompartmentPK(
 function simulateEpidemiology(
   infectionAgents: Map<SimEntityId, MedInfectionAgentEntity>,
   entities: Map<SimEntityId, SimEntity>,
-  model: "sir" | "seir",
-  dt: number
+  _model: "sir" | "seir",
+  dt: number,
 ): void {
-  for (const [id, agent] of infectionAgents) {
+  for (const [_id, agent] of infectionAgents) {
     const population = agent.population ?? agent.load ?? 0;
     const beta = agent.infectivity || 0.3;
     const gamma = 1 / 14; // Recovery rate (14 days)
@@ -577,8 +603,10 @@ function simulateEpidemiology(
       const newInfected = infected * beta * dt;
       const recovered = infected * gamma * dt;
 
-      (entity as MedInfectionAgentEntity).population =
-        Math.max(0, infected + newInfected - recovered);
+      (entity as MedInfectionAgentEntity).population = Math.max(
+        0,
+        infected + newInfected - recovered,
+      );
     }
   }
 }

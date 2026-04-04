@@ -7,13 +7,7 @@
 
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { AutoRevisionService } from "./service";
-import {
-  getTenantId,
-  getUserId,
-  roleGuard,
-  requireTenantAccess,
-  respondWithErrors,
-} from "../../core/http/requestContext.js";
+import { getTenantId, roleGuard } from "../../core/http/requestContext.js";
 
 export interface AutoRevisionRoutes {
   // Drift detection endpoints
@@ -55,7 +49,7 @@ export function registerAutoRevisionRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const { experienceId } = request.params as { experienceId: string };
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const signals = await autoRevisionService.detectDrift(experienceId);
@@ -73,7 +67,7 @@ export function registerAutoRevisionRoutes(
     "/monitor-drift",
     { preHandler: [adminGuard] },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const candidates = await autoRevisionService.monitorDrift();
@@ -92,7 +86,7 @@ export function registerAutoRevisionRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const { experienceId } = request.params as { experienceId: string };
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const signals = await autoRevisionService.detectDrift(experienceId);
@@ -114,7 +108,7 @@ export function registerAutoRevisionRoutes(
     "/process-queue",
     { preHandler: [roleGuard(["superadmin"])] },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         await autoRevisionService.processRegenerationQueue();
@@ -137,7 +131,7 @@ export function registerAutoRevisionRoutes(
     async (request, reply) => {
       const { experienceId } = request.params as { experienceId: string };
       const { treatmentVersion } = request.body as { treatmentVersion: number };
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const experiment = await autoRevisionService.createABExperiment(
@@ -158,7 +152,7 @@ export function registerAutoRevisionRoutes(
     "/evaluate-ab-experiments",
     { preHandler: [roleGuard(["superadmin"])] },
     async (request, reply) => {
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         await autoRevisionService.evaluateABExperiments();
@@ -177,7 +171,7 @@ export function registerAutoRevisionRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const { experienceId } = request.params as { experienceId: string };
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const history =
@@ -197,7 +191,7 @@ export function registerAutoRevisionRoutes(
     { preHandler: [adminGuard] },
     async (request, reply) => {
       const { experimentId } = request.params as { experimentId: string };
-      const tenantId = getTenantId(request);
+      void getTenantId(request);
 
       try {
         const result =

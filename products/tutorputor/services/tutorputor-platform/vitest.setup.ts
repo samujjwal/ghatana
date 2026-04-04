@@ -6,7 +6,7 @@
  * @doc.layer platform
  * @doc.pattern Config
  */
-import { vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 
 // ============================================================================
 // ENVIRONMENT VARIABLES FOR TESTS
@@ -14,7 +14,8 @@ import { vi } from "vitest";
 
 // Required for app startup
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/tutorputor_test";
+  process.env.DATABASE_URL =
+    "postgresql://test:test@localhost:5432/tutorputor_test";
 }
 
 if (!process.env.REDIS_URL) {

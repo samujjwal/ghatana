@@ -6,7 +6,7 @@
  */
 
 import type { PrismaClient } from "@tutorputor/core/db";
-import { createStandaloneLogger, logError } from '@tutorputor/core/logger';
+import { createStandaloneLogger } from "@tutorputor/core/logger";
 import type {
   ComplianceService,
   TenantId,
@@ -14,7 +14,6 @@ import type {
 } from "@tutorputor/contracts";
 import { randomBytes } from "crypto";
 import { DataExporter } from "./exporter";
-import { DataDeleter } from "./deleter";
 import type { ComplianceReport } from "./types";
 
 // Mock interface if not in Prisma
@@ -36,10 +35,6 @@ type DataExportRequest = DataRequest & {
 
 export class ComplianceServiceImpl implements ComplianceService {
   private prisma: PrismaClient;
-  private exporter: DataExporter;
-  private deleter: DataDeleter;
-  private uploadBaseUrl: string;
-  private logger = createStandaloneLogger({ service: 'ComplianceService' });
 
   constructor(
     prisma: PrismaClient,
@@ -49,10 +44,9 @@ export class ComplianceServiceImpl implements ComplianceService {
     } = {},
   ) {
     this.prisma = prisma;
-    this.exporter = new DataExporter(prisma, options.exportDir);
-    this.deleter = new DataDeleter(prisma);
-    this.uploadBaseUrl =
-      options.uploadBaseUrl ?? "https://exports.tutorputor.com";
+    void new DataExporter(prisma, options.exportDir);
+    void options.uploadBaseUrl;
+    void createStandaloneLogger({ service: "ComplianceService" });
   }
 
   async requestUserExport(params: {
@@ -159,20 +153,6 @@ export class ComplianceServiceImpl implements ComplianceService {
     tenantId: TenantId;
   }): Promise<any> {
     return { status: "pending" };
-  }
-
-  private async processExportAsync(
-    requestId: string,
-    userId: string,
-    tenantId: string,
-  ) {
-    try {
-      const result = await this.exporter.exportUserData(userId, tenantId);
-      this.logger.info({ requestId, userId, tenantId, filePath: result.filePath }, `Export completed`);
-      // Update status in DB if model existed
-    } catch (error) {
-      logError(this.logger, error as Error, { requestId, userId, tenantId });
-    }
   }
 
   async createDeletionVerification(params: {

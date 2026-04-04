@@ -4,17 +4,15 @@
  * Fastify routes for issuing and managing credentials.
  */
 
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyInstance } from "fastify";
 import { CredentialService } from "./service";
 import {
   getTenantId,
   getUserId,
-  requireOwnership,
   requireRole,
 } from "../../core/http/requestContext.js";
 import {
   createCredential,
-  isCredentialValid,
   getCredentialSummary,
   IssueCredentialDTOSchema,
   CredentialFilterSchema,
@@ -23,7 +21,6 @@ import {
 } from "./models/credential";
 import {
   evaluateAchievements,
-  getProgressTowardsAchievements,
   SimulationResult,
 } from "./rules/simulation-achievement-rules";
 
@@ -74,7 +71,7 @@ export async function credentialRoutes(
     async (request, reply) => {
       const dto = IssueCredentialDTOSchema.parse(request.body);
       const tenantId = getTenantId(request);
-      const requesterId = getUserId(request);
+      void getUserId(request);
       requireRole(request, privilegedCredentialRoles);
 
       const credentialInput: IssueCredentialDTO = {
@@ -133,7 +130,7 @@ export async function credentialRoutes(
                         ...(typeof criterion.threshold === "number"
                           ? { threshold: criterion.threshold }
                           : {}),
-                      }))
+                      })),
                     }
                   : {}),
               },
@@ -252,7 +249,9 @@ export async function credentialRoutes(
             achievement: {
               simulationId: result.simulationId,
               simulationName: result.simulationName,
-              ...(result.domainPackId ? { domainPackId: result.domainPackId } : {}),
+              ...(result.domainPackId
+                ? { domainPackId: result.domainPackId }
+                : {}),
               score: result.score,
               maxScore: result.maxScore,
               completionTime: result.completionTime,

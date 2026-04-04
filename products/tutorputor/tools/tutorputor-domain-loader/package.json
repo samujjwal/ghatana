@@ -21,16 +21,16 @@
   "dependencies": {
     "@tutorputor/contracts": "workspace:*",
     "@tutorputor/core": "workspace:*",
-    "@prisma/client": "7.3.0",
-    "@prisma/adapter-libsql": "^7.3.0",
-    "@libsql/client": "^0.17.0",
+    "@prisma/client": "7.6.0",
+    "@prisma/adapter-libsql": "^7.6.0",
+    "@libsql/client": "^0.17.2",
     "commander": "^14.0.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.2.0",
+    "@types/node": "^25.5.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   }
 }

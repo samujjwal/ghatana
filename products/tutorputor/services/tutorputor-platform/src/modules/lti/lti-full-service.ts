@@ -39,12 +39,7 @@ import type {
   LtiRosterService,
 } from "@tutorputor/contracts/v1/services";
 
-import type {
-  LtiIdTokenClaims,
-  OidcState,
-  LtiAccessToken,
-  ToolConfiguration,
-} from "./types.js";
+import type { LtiIdTokenClaims, OidcState, LtiAccessToken } from "./types.js";
 
 // In-memory state store (use Redis in production)
 const oidcStateStore = new Map<string, OidcState>();
@@ -172,7 +167,7 @@ export class LtiPlatformServiceImpl implements LtiPlatformService {
     });
   }
 
-  async getToolConfiguration(args: { tenantId: TenantId }): Promise<{
+  async getToolConfiguration(_args: { tenantId: TenantId }): Promise<{
     issuer: string;
     clientId: string;
     publicJwks: object;
@@ -242,13 +237,14 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
 
   constructor(
     private readonly prisma: LegacyLtiPrismaClient,
-    private readonly keyPair: {
+    _keyPair: {
       publicKey: LtiKeyMaterial;
       privateKey: LtiKeyMaterial;
     },
     jwksResolver?: (jwksUrl: string) => RemoteJwkResolver,
   ) {
-    this.jwksResolver = jwksResolver ?? ((url: string) => jose.createRemoteJWKSet(new URL(url)));
+    this.jwksResolver =
+      jwksResolver ?? ((url: string) => jose.createRemoteJWKSet(new URL(url)));
   }
 
   resolveLaunchTenantIdFromState(state: string): TenantId | null {
@@ -410,7 +406,10 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
         deploymentId:
           payload["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
         contextId: (contextClaim?.id ?? "") as LtiContextId,
-        contextType: (contextClaim?.type?.[0] ?? "CourseOffering") as "CourseOffering" | "CourseSection" | "Group",
+        contextType: (contextClaim?.type?.[0] ?? "CourseOffering") as
+          | "CourseOffering"
+          | "CourseSection"
+          | "Group",
         contextLabel: contextClaim?.label ?? "",
         contextTitle: contextClaim?.title ?? "",
         resourceLinkId: resourceLink.id as LtiResourceLinkId,
@@ -614,7 +613,9 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       contextId: session.contextId as LtiContextId,
       resourceLinkId: session.resourceLinkId as LtiResourceLinkId,
       roles: session.roles as LtiRole[],
-      ...(session.targetModuleId ? { targetModuleId: session.targetModuleId as ModuleId } : {}),
+      ...(session.targetModuleId
+        ? { targetModuleId: session.targetModuleId as ModuleId }
+        : {}),
       launchData: session.launchData as Record<string, unknown>,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
@@ -641,7 +642,9 @@ export class LtiLaunchServiceImpl implements LtiLaunchService {
       contextId: session.contextId as LtiContextId,
       resourceLinkId: session.resourceLinkId as LtiResourceLinkId,
       roles: session.roles as LtiRole[],
-      ...(session.targetModuleId ? { targetModuleId: session.targetModuleId as ModuleId } : {}),
+      ...(session.targetModuleId
+        ? { targetModuleId: session.targetModuleId as ModuleId }
+        : {}),
       launchData: session.launchData as Record<string, unknown>,
       createdAt: session.createdAt.toISOString(),
       expiresAt: session.expiresAt.toISOString(),
@@ -737,7 +740,9 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
         orderBy: { title: "asc" },
         take: args.pagination.limit,
         skip: args.pagination.cursor ? 1 : 0,
-        ...(args.pagination.cursor ? { cursor: { id: args.pagination.cursor } } : {}),
+        ...(args.pagination.cursor
+          ? { cursor: { id: args.pagination.cursor } }
+          : {}),
       }),
       this.prisma.module.count({ where }),
     ]);
@@ -822,8 +827,7 @@ export class LtiDeepLinkingServiceImpl implements LtiDeepLinkingService {
       "https://purl.imsglobal.org/spec/lti/claim/message_type":
         "LtiDeepLinkingResponse",
       "https://purl.imsglobal.org/spec/lti/claim/version": "1.3.0",
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id":
-        "",
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id": "",
       "https://purl.imsglobal.org/spec/lti-dl/claim/content_items":
         args.contentItems,
       "https://purl.imsglobal.org/spec/lti-dl/claim/data":
@@ -873,12 +877,16 @@ export class LtiGradeServiceImpl implements LtiGradeService {
           ? li.startDateTime.toISOString()
           : undefined;
       const endDateTime =
-        li.endDateTime instanceof Date ? li.endDateTime.toISOString() : undefined;
+        li.endDateTime instanceof Date
+          ? li.endDateTime.toISOString()
+          : undefined;
 
       return {
         scoreMaximum: Number(li.scoreMaximum),
         label: String(li.label),
-        ...(typeof li.resourceId === "string" ? { resourceId: li.resourceId } : {}),
+        ...(typeof li.resourceId === "string"
+          ? { resourceId: li.resourceId }
+          : {}),
         ...(typeof li.tag === "string" ? { tag: li.tag } : {}),
         ...(startDateTime ? { startDateTime } : {}),
         ...(endDateTime ? { endDateTime } : {}),
@@ -1409,7 +1417,7 @@ export class LtiGradeServiceImpl implements LtiGradeService {
 export class LtiRosterServiceImpl implements LtiRosterService {
   constructor(
     private readonly prisma: LegacyLtiPrismaClient,
-    private readonly keyPair: {
+    _keyPair: {
       publicKey: LtiKeyMaterial;
       privateKey: LtiKeyMaterial;
     },
@@ -1629,9 +1637,14 @@ export class LtiRosterServiceImpl implements LtiRosterService {
 
   private async getAccessToken(platformId: LtiPlatformId): Promise<string> {
     // Reuse grade service's token acquisition
-    return (this.gradeService as unknown as {
-      getAccessToken: (platformId: string, scopes: string[]) => Promise<string>;
-    }).getAccessToken(platformId, [
+    return (
+      this.gradeService as unknown as {
+        getAccessToken: (
+          platformId: string,
+          scopes: string[],
+        ) => Promise<string>;
+      }
+    ).getAccessToken(platformId, [
       "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly",
     ]);
   }

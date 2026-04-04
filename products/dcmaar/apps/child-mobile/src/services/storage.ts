@@ -1,4 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+type AsyncStorageWithBulkRemove = typeof AsyncStorage & {
+  multiRemove?: (keys: string[]) => Promise<void>;
+};
 
 interface CacheEntry<T> {
   data: T;
@@ -8,7 +12,11 @@ interface CacheEntry<T> {
 
 class StorageService {
   // Cache management
-  async setCache<T>(key: string, data: T, expiresIn: number = 5 * 60 * 1000): Promise<void> {
+  async setCache<T>(
+    key: string,
+    data: T,
+    expiresIn: number = 5 * 60 * 1000,
+  ): Promise<void> {
     const entry: CacheEntry<T> = {
       data,
       timestamp: Date.now(),
@@ -34,8 +42,15 @@ class StorageService {
 
   async clearCache(): Promise<void> {
     const keys = await AsyncStorage.getAllKeys();
-    const cacheKeys = keys.filter((key) => key.startsWith('cache:'));
-    await AsyncStorage.multiRemove(cacheKeys);
+    const cacheKeys = keys.filter((key) => key.startsWith("cache:"));
+    const storage = AsyncStorage as AsyncStorageWithBulkRemove;
+    if (typeof storage.multiRemove === "function") {
+      await storage.multiRemove(cacheKeys);
+      return;
+    }
+    await Promise.all(
+      cacheKeys.map((cacheKey) => AsyncStorage.removeItem(cacheKey)),
+    );
   }
 
   // User preferences
@@ -50,15 +65,15 @@ class StorageService {
 
   // Auth tokens
   async setAuthToken(token: string): Promise<void> {
-    await AsyncStorage.setItem('authToken', token);
+    await AsyncStorage.setItem("authToken", token);
   }
 
   async getAuthToken(): Promise<string | null> {
-    return await AsyncStorage.getItem('authToken');
+    return await AsyncStorage.getItem("authToken");
   }
 
   async clearAuthToken(): Promise<void> {
-    await AsyncStorage.removeItem('authToken');
+    await AsyncStorage.removeItem("authToken");
   }
 
   // Generic storage

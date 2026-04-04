@@ -1,6 +1,6 @@
 // TutorPutor Simulation - Consolidated Simulation Library
-export * from './engine';
-export * from './renderer';
-export * from './physics';
-export * from './animator';
-export * from './sdk';
+export * as engine from "./engine";
+export * as renderer from "./renderer";
+export * as physics from "./physics";
+export * as animator from "./animator";
+export * as sdk from "./sdk";

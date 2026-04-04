@@ -240,4 +240,108 @@ describe("GenerationRequestJobProcessor", () => {
       }),
     );
   });
+
+  describe("failure state machine — non-final retry", () => {
+    it("does NOT call recordJobResult on a non-final retry attempt (attemptsMade < attempts - 1)", async () => {
+      grpcClient.generateClaims.mockRejectedValue(new Error("gRPC timeout"));
+
+      // opts.attempts=3, attemptsMade=0 → isFinalAttempt = (0+1 >= 3) = false
+      await expect(
+        processor.process(
+          makeJob(
+            { generationJobId: "job-retry" },
+            { attemptsMade: 0, opts: { attempts: 3 } },
+          ),
+        ),
+      ).rejects.toThrow("gRPC timeout");
+
+      // Must NOT record a result on non-final attempts
+      expect(executionService.recordJobResult).not.toHaveBeenCalled();
+      // Must NOT collect dependency failures prematurely
+      expect(dispatcher.collectDependencyFailureResults).not.toHaveBeenCalled();
+      // Error must be logged
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ generationJobId: "job-retry" }),
+        expect.any(String),
+      );
+    });
+
+    it("re-throws the error on a non-final retry so BullMQ can reschedule", async () => {
+      grpcClient.generateClaims.mockRejectedValue(
+        new Error("transient failure"),
+      );
+
+      await expect(
+        processor.process(
+          makeJob(
+            { generationJobId: "job-transient" },
+            { attemptsMade: 1, opts: { attempts: 3 } },
+          ),
+        ),
+      ).rejects.toThrow("transient failure");
+    });
+  });
+
+  describe("failure state machine — cascade dependency skip", () => {
+    it("calls collectDependencyFailureResults and recordBatchResults when downstream jobs are blocked", async () => {
+      grpcClient.generateClaims.mockRejectedValue(
+        new Error("gRPC unavailable"),
+      );
+
+      const blockedResults = [
+        {
+          jobId: "job-dep-1",
+          status: "skipped" as const,
+          errorMessage: "upstream failed",
+          durationMs: 0,
+        },
+        {
+          jobId: "job-dep-2",
+          status: "skipped" as const,
+          errorMessage: "upstream failed",
+          durationMs: 0,
+        },
+      ];
+      dispatcher.collectDependencyFailureResults.mockResolvedValue(
+        blockedResults,
+      );
+
+      // Final attempt: attemptsMade=2, attempts=3 → isFinalAttempt = (2+1 >= 3) = true
+      await expect(
+        processor.process(
+          makeJob(
+            { generationJobId: "job-upstream" },
+            { attemptsMade: 2, opts: { attempts: 3 } },
+          ),
+        ),
+      ).rejects.toThrow("gRPC unavailable");
+
+      expect(dispatcher.collectDependencyFailureResults).toHaveBeenCalledWith(
+        "tenant-1",
+        "req-1",
+      );
+      expect(executionService.recordBatchResults).toHaveBeenCalledWith(
+        "req-1",
+        blockedResults,
+      );
+    });
+
+    it("does NOT call recordBatchResults when there are no blocked dependents", async () => {
+      grpcClient.generateClaims.mockRejectedValue(
+        new Error("gRPC unavailable"),
+      );
+      dispatcher.collectDependencyFailureResults.mockResolvedValue([]);
+
+      await expect(
+        processor.process(
+          makeJob(
+            { generationJobId: "job-no-deps" },
+            { attemptsMade: 2, opts: { attempts: 3 } },
+          ),
+        ),
+      ).rejects.toThrow();
+
+      expect(executionService.recordBatchResults).not.toHaveBeenCalled();
+    });
+  });
 });

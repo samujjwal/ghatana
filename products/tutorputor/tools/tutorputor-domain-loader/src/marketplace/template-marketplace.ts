@@ -812,22 +812,22 @@ export class TemplateMarketplace {
   private isVerifiedUser(userId: string): boolean {
     return (this.userReputations.get(userId)?.reputation ?? 0) > 70;
   }
-  private trackUserDownload(userId: string, templateId: string): void {
+  private trackUserDownload(_userId: string, _templateId: string): void {
     /* Track download */
   }
-  private isSuspiciousReport(report: any): boolean {
+  private isSuspiciousReport(_report: any): boolean {
     return false;
   }
-  private getReportCount(templateId: string): number {
+  private getReportCount(_templateId: string): number {
     return 0;
   }
-  private getTopAuthors(templates: MarketplaceTemplate[]): unknown[] {
+  private getTopAuthors(_templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
-  private getPopularCategories(templates: MarketplaceTemplate[]): unknown[] {
+  private getPopularCategories(_templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
-  private getRecentActivity(templates: MarketplaceTemplate[]): unknown[] {
+  private getRecentActivity(_templates: MarketplaceTemplate[]): unknown[] {
     return [];
   }
 }

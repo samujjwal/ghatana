@@ -38,6 +38,6 @@ declare module "fastify" {
     description?: string;
     tags?: string[];
     summary?: string;
-    security?: unknown[];
+    security?: any[];
   }
 }

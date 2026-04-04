@@ -8,9 +8,7 @@
  */
 
 import type { TutorPrismaClient } from "@tutorputor/core/db";
-import type {
-  SimulationAuthorService,
-} from "@tutorputor/contracts/v1/simulation/services";
+import type { SimulationAuthorService } from "@tutorputor/contracts/v1/simulation/services";
 import type {
   SimulationManifest,
   SimulationId,
@@ -137,8 +135,9 @@ export function createSimulationAuthorService(
           providerName,
         );
 
-        // Estimate confidence based on response characteristics
-        const confidence = estimateConfidence(response.content);
+        // Use provider's confidence if present, otherwise estimate from content
+        const confidence =
+          response.confidence ?? estimateConfidence(response.content);
 
         return {
           content: response.content,
@@ -308,7 +307,7 @@ Ensure all required fields are present and the manifest is valid.`;
       accessibility: parsed.accessibility,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      schemaVersion: "1.0.0",
+      schemaVersion: parsed.schemaVersion || "1.0.0",
     };
 
     return manifest;
@@ -451,7 +450,12 @@ Suggest appropriate parameter values.`;
 
     async checkHealth(): Promise<boolean> {
       try {
-        await prisma.$queryRaw`SELECT 1`;
+        await aiService.generate({
+          prompt: "health check",
+          systemPrompt: "respond with ok",
+          maxTokens: 5,
+          temperature: 0,
+        });
         return true;
       } catch {
         return false;

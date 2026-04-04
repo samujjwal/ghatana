@@ -171,25 +171,47 @@ export function migrateManifest(
   if (oldManifest.version === "1.0" && Array.isArray(oldManifest.entities)) {
     const migratedEntities: PhysicsEntity[] = (
       oldManifest.entities as unknown[]
-    ).map((e, index) => ({
-      id: `migrated-${Date.now()}-${index}`,
-      type: e.type,
-      x: e.position?.x ?? e.x ?? 0,
-      y: e.position?.y ?? e.y ?? 0,
-      width: e.dimensions?.width ?? e.width,
-      height: e.dimensions?.height ?? e.height,
-      radius: e.dimensions?.radius ?? e.radius,
-      rotation: e.rotation ?? 0,
-      appearance: {
-        color: e.appearance?.color ?? e.color ?? "#3b82f6",
-      },
-      physics: {
-        mass: e.properties?.mass ?? 1,
-        friction: e.properties?.friction ?? 0.5,
-        restitution: e.properties?.restitution ?? 0.3,
-        isStatic: e.properties?.isStatic ?? false,
-      },
-    }));
+    ).map((entity, index) => {
+      const e = entity as {
+        type?: PhysicsEntity["type"];
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        radius?: number;
+        rotation?: number;
+        color?: string;
+        position?: { x?: number; y?: number };
+        dimensions?: { width?: number; height?: number; radius?: number };
+        appearance?: { color?: string };
+        properties?: {
+          mass?: number;
+          friction?: number;
+          restitution?: number;
+          isStatic?: boolean;
+        };
+      };
+
+      return {
+        id: `migrated-${Date.now()}-${index}`,
+        type: e.type,
+        x: e.position?.x ?? e.x ?? 0,
+        y: e.position?.y ?? e.y ?? 0,
+        width: e.dimensions?.width ?? e.width,
+        height: e.dimensions?.height ?? e.height,
+        radius: e.dimensions?.radius ?? e.radius,
+        rotation: e.rotation ?? 0,
+        appearance: {
+          color: e.appearance?.color ?? e.color ?? "#3b82f6",
+        },
+        physics: {
+          mass: e.properties?.mass ?? 1,
+          friction: e.properties?.friction ?? 0.5,
+          restitution: e.properties?.restitution ?? 0.3,
+          isStatic: e.properties?.isStatic ?? false,
+        },
+      };
+    });
 
     return {
       version: MANIFEST_VERSION,

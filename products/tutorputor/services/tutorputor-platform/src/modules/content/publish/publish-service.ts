@@ -70,7 +70,7 @@ export class PublishService {
    */
   async publishAsset(
     tenantId: string,
-    publishedBy: string,
+    _publishedBy: string,
     input: PublishAssetInput,
   ): Promise<PublishResult> {
     // Fetch the asset
@@ -113,7 +113,12 @@ export class PublishService {
     }
 
     // Validate manifests for structured content types
-    const MANIFEST_TYPES = ["simulation", "animation", "assessment", "example_set"];
+    const MANIFEST_TYPES = [
+      "simulation",
+      "animation",
+      "assessment",
+      "example_set",
+    ];
     if (MANIFEST_TYPES.includes((asset.assetType ?? "").toLowerCase())) {
       const manifests = await this.prisma.artifactManifest.findMany({
         where: { assetId: input.assetId },
@@ -206,6 +211,11 @@ export class PublishService {
     let skipped = 0;
 
     for (const ev of evaluations) {
+      if (!ev.assetId) {
+        skipped++;
+        continue;
+      }
+
       const result = await this.publishAsset(tenantId, publishedBy, {
         assetId: ev.assetId,
         bypassEvaluationCheck: true, // already validated above

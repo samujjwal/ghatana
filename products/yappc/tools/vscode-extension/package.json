@@ -11,19 +11,14 @@
     "Visualization",
     "Other"
   ],
-  "activationEvents": [
-    "onView:yappcCanvasTree",
-    "onCommand:yappc.openCanvas",
-    "onCommand:yappc.openInCanvas",
-    "onCommand:yappc.scaffoldCode"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "views": {
       "explorer": [
         {
           "id": "yappcCanvasTree",
-          "name": "YAPPC Canvas"
+          "name": "YAPPC Canvas",
+          "icon": "media/canvas-view.svg"
         }
       ]
     },
@@ -31,12 +26,14 @@
       {
         "command": "yappc.openCanvas",
         "title": "YAPPC: Open Canvas Webview",
-        "category": "YAPPC"
+        "category": "YAPPC",
+        "icon": "$(globe)"
       },
       {
         "command": "yappc.openInCanvas",
         "title": "YAPPC: Open in Canvas",
-        "category": "YAPPC"
+        "category": "YAPPC",
+        "icon": "$(link-external)"
       },
       {
         "command": "yappc.scaffoldCode",
@@ -105,12 +102,12 @@
     "package": "vsce package"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/vscode": "^1.85.0",
-    "@types/ws": "^8.5.10",
-    "typescript": "^5.9.3"
+    "@types/node": "^25.5.2",
+    "@types/vscode": "^1.110.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.20.0"
   }
 }

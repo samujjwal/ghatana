@@ -39,7 +39,7 @@ export function setupErrorTracking(app: FastifyInstance) {
     },
   });
 
-  app.addHook("onError", (request, _reply, error, done) => {
+  app.addHook("onError", (_request, _reply, error, done) => {
     if (!error.validation) {
       Sentry.captureException(error);
     }

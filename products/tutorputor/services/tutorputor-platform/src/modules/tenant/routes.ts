@@ -6,9 +6,34 @@ import {
   requireTenantAccess,
   respondWithErrors,
 } from "../../core/http/requestContext.js";
-import { createTenantService, type DomainPack, type TenantSettings } from "./service.js";
+import type {
+  IdentityProviderType,
+  RoleMappingConfig,
+} from "@tutorputor/contracts/v1/types";
+import {
+  createTenantService,
+  SIMULATION_DOMAINS,
+  type DomainPack,
+  type PackStatus,
+  type SimulationDomain,
+  type TenantSettings,
+} from "./service.js";
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
+
+const DOMAIN_PACK_STATUSES = [
+  "draft",
+  "active",
+  "deprecated",
+  "archived",
+] as const;
+
+function isSimulationDomain(value: string): value is SimulationDomain {
+  return SIMULATION_DOMAINS.includes(value as SimulationDomain);
+}
+
+function isPackStatus(value: string): value is PackStatus {
+  return DOMAIN_PACK_STATUSES.includes(value as PackStatus);
+}
 
 /** Query parameters for domain pack listing */
 interface DomainPackListQuery {
@@ -24,11 +49,13 @@ type TenantConfigUpdate = Partial<TenantSettings>;
 
 /** Request body for SSO provider creation */
 interface SSOProviderCreateRequest {
-  type?: string;
+  type?: IdentityProviderType;
   displayName: string;
   discoveryEndpoint: string;
   clientId: string;
   clientSecret?: string | null;
+  enabled?: boolean;
+  roleMapping?: RoleMappingConfig;
   allowedDomains?: string[];
 }
 
@@ -38,6 +65,8 @@ interface SSOProviderUpdateRequest {
   discoveryEndpoint?: string;
   clientId?: string;
   clientSecret?: string | null;
+  enabled?: boolean;
+  roleMapping?: RoleMappingConfig;
   allowedDomains?: string[];
 }
 
@@ -106,12 +135,17 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get("/domain-packs", async (req, reply) => {
     const tenantId = getTenantId(req);
-    const { domain, status, search, page, limit } = (req.query ?? {}) as DomainPackListQuery;
+    const { domain, status, search, page, limit } = (req.query ??
+      {}) as DomainPackListQuery;
+    const normalizedDomain =
+      domain && isSimulationDomain(domain) ? domain : undefined;
+    const normalizedStatus =
+      status && isPackStatus(status) ? status : undefined;
 
     await respondWithErrors(reply, () =>
       tenantService.listDomainPacks(tenantId, {
-        domain,
-        status,
+        domain: normalizedDomain,
+        status: normalizedStatus,
         search,
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 20,
@@ -136,8 +170,12 @@ export const tenantRoutes: FastifyPluginAsync = async (app) => {
         version: body.metadata?.version || "1.0.0",
         domain: body.metadata?.domain || "CS_DISCRETE",
         tags: body.metadata?.tags || [],
-        ...(body.metadata?.description ? { description: body.metadata.description } : {}),
-        ...(body.metadata?.thumbnailUrl ? { thumbnailUrl: body.metadata.thumbnailUrl } : {}),
+        ...(body.metadata?.description
+          ? { description: body.metadata.description }
+          : {}),
+        ...(body.metadata?.thumbnailUrl
+          ? { thumbnailUrl: body.metadata.thumbnailUrl }
+          : {}),
         ...(body.metadata?.author ? { author: body.metadata.author } : {}),
         ...(body.metadata?.license ? { license: body.metadata.license } : {}),
       },

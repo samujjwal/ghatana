@@ -16,19 +16,11 @@ import type {
   TenantId,
   UserId,
 } from "@tutorputor/contracts";
-import {
-  ModalityValidator,
-  PublishingError,
-} from "../../utils/modality-validator";
+import { ModalityValidator } from "../../utils/modality-validator";
 import { createStandaloneLogger } from "@tutorputor/core/logger";
 import { NotFoundError, ConflictError } from "../../core/errors";
 
 const logger = createStandaloneLogger({ component: "ContentService" });
-
-// Using flexible typing for Prisma includes/payloads
-// These should be tightened to Prisma.Payload types with proper includes when schema is fully aligned
-type ModuleSummaryPayload = Record<string, unknown> | null;
-type ModuleDetailPayload = Record<string, unknown> | null;
 
 export class ContentServiceImpl implements ContentService {
   private readonly modalityValidator: ModalityValidator;
@@ -258,7 +250,10 @@ export class ContentServiceImpl implements ContentService {
   // Helpers
   // ===========================================================================
 
-  private buildSummaryInclude(tenantId: TenantId, userId?: UserId): Record<string, unknown> {
+  private buildSummaryInclude(
+    tenantId: TenantId,
+    userId?: UserId,
+  ): Record<string, unknown> {
     const include: Record<string, unknown> = {
       tags: true,
     };
@@ -270,7 +265,10 @@ export class ContentServiceImpl implements ContentService {
     return include;
   }
 
-  private buildDetailInclude(tenantId: TenantId, userId?: UserId): Record<string, unknown> {
+  private buildDetailInclude(
+    tenantId: TenantId,
+    userId?: UserId,
+  ): Record<string, unknown> {
     const include: Record<string, unknown> = {
       tags: true,
       learningObjectives: true,

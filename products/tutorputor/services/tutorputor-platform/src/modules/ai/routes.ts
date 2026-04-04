@@ -14,11 +14,7 @@ import type {
   UserId,
 } from "@tutorputor/contracts/v1/types";
 import { AIContentGenerationService } from "./AIContentGenerationService.js";
-import {
-  getTenantId,
-  getUserId,
-  requireRole,
-} from "../../core/http/requestContext.js";
+import { getTenantId, requireRole } from "../../core/http/requestContext.js";
 import { aiRegistryClient as defaultAiRegistryClient } from "../../clients/ai-registry.client.js";
 
 type AiRegistryClient = typeof defaultAiRegistryClient;
@@ -131,10 +127,13 @@ export async function registerAIRoutes(
 
     const rawTenantHdr = req.headers["x-tenant-id"];
     const rawUserHdr = req.headers["x-user-id"];
-    const tenantId = (((req as FastifyRequest & { user?: { tenantId?: string } }).user?.tenantId) ||
+    const tenantId = ((req as FastifyRequest & { user?: { tenantId?: string } })
+      .user?.tenantId ||
       (Array.isArray(rawTenantHdr) ? rawTenantHdr[0] : rawTenantHdr) ||
       "default") as TenantId;
-    const userId = (((req as FastifyRequest & { user?: { sub?: string; userId?: string } }).user?.sub) ||
+    const userId = ((
+      req as FastifyRequest & { user?: { sub?: string; userId?: string } }
+    ).user?.sub ||
       (Array.isArray(rawUserHdr) ? rawUserHdr[0] : rawUserHdr) ||
       "anonymous") as UserId;
     const { moduleId, question, locale } = req.body as {
@@ -193,7 +192,8 @@ export async function registerAIRoutes(
     }
 
     const rawTenantHdr2 = req.headers["x-tenant-id"];
-    const tenantId = (((req as FastifyRequest & { user?: { tenantId?: string } }).user?.tenantId) ||
+    const tenantId = ((req as FastifyRequest & { user?: { tenantId?: string } })
+      .user?.tenantId ||
       (Array.isArray(rawTenantHdr2) ? rawTenantHdr2[0] : rawTenantHdr2) ||
       "default") as TenantId;
     const {
@@ -277,8 +277,12 @@ export async function registerAIRoutes(
 
       requireRole(req, ["admin"]);
       const rawConceptTenantHdr = req.headers["x-tenant-id"];
-      const tenantId = (((req as FastifyRequest & { user?: { tenantId?: string } }).user?.tenantId) ||
-        (Array.isArray(rawConceptTenantHdr) ? rawConceptTenantHdr[0] : rawConceptTenantHdr) ||
+      const tenantId = ((
+        req as FastifyRequest & { user?: { tenantId?: string } }
+      ).user?.tenantId ||
+        (Array.isArray(rawConceptTenantHdr)
+          ? rawConceptTenantHdr[0]
+          : rawConceptTenantHdr) ||
         "default") as TenantId;
       const { conceptName, domain } = req.body as {
         conceptName: string;
@@ -304,7 +308,10 @@ export async function registerAIRoutes(
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      if ((error as { statusCode?: number }).statusCode === 403 || errorMessage.includes("Forbidden")) {
+      if (
+        (error as { statusCode?: number }).statusCode === 403 ||
+        errorMessage.includes("Forbidden")
+      ) {
         return reply.status(403).send({ error: errorMessage });
       }
 
@@ -329,8 +336,12 @@ export async function registerAIRoutes(
 
       requireRole(req, ["admin"]);
       const rawSimTenantHdr = req.headers["x-tenant-id"];
-      const tenantId = (((req as FastifyRequest & { user?: { tenantId?: string } }).user?.tenantId) ||
-        (Array.isArray(rawSimTenantHdr) ? rawSimTenantHdr[0] : rawSimTenantHdr) ||
+      const tenantId = ((
+        req as FastifyRequest & { user?: { tenantId?: string } }
+      ).user?.tenantId ||
+        (Array.isArray(rawSimTenantHdr)
+          ? rawSimTenantHdr[0]
+          : rawSimTenantHdr) ||
         "default") as TenantId;
       const { description, conceptName, domain } = req.body as {
         description: string;
@@ -360,7 +371,10 @@ export async function registerAIRoutes(
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
 
-      if ((error as { statusCode?: number }).statusCode === 403 || errorMessage.includes("Forbidden")) {
+      if (
+        (error as { statusCode?: number }).statusCode === 403 ||
+        errorMessage.includes("Forbidden")
+      ) {
         return reply.status(403).send({ error: errorMessage });
       }
 

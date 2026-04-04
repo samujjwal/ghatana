@@ -146,7 +146,7 @@ export default function SpheresScreen({ navigation }: Props) {
         <View style={styles.sphereHeader}>
           <Text style={styles.sphereName}>{item.name}</Text>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{item.userRole}</Text>
+            <Text style={styles.roleBadgeText}>{item.userRole ?? 'VIEWER'}</Text>
           </View>
         </View>
 
@@ -171,7 +171,7 @@ export default function SpheresScreen({ navigation }: Props) {
 
         <View style={styles.sphereFooter}>
           <View style={styles.momentCount}>
-            <Text style={styles.momentCountNumber}>{item.momentCount}</Text>
+            <Text style={styles.momentCountNumber}>{item.momentCount ?? 0}</Text>
             <Text style={styles.momentCountLabel}>moments</Text>
           </View>
           {item.userRole === 'OWNER' && (
@@ -193,7 +193,7 @@ export default function SpheresScreen({ navigation }: Props) {
 
   const renderEmpty = useCallback(
     () => (
-      <View 
+      <View
         style={styles.emptyContainer}
         accessible={true}
         accessibilityRole="text"
@@ -234,7 +234,7 @@ export default function SpheresScreen({ navigation }: Props) {
 
       {/* Spheres List */}
       <FlatList
-        data={spheresData?.spheres || []}
+        data={spheresData || []}
         renderItem={renderSphere}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
@@ -254,7 +254,12 @@ export default function SpheresScreen({ navigation }: Props) {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        presentationStyle="pag
+        presentationStyle="pageSheet"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
               onPress={() => setModalVisible(false)}
               accessible={true}
               accessibilityRole="button"
@@ -262,7 +267,7 @@ export default function SpheresScreen({ navigation }: Props) {
             >
               <Text style={styles.modalCancel}>Cancel</Text>
             </TouchableOpacity>
-            <Text 
+            <Text
               style={styles.modalTitle}
               accessibilityRole="header"
             >
@@ -274,12 +279,7 @@ export default function SpheresScreen({ navigation }: Props) {
               accessible={true}
               accessibilityRole="button"
               accessibilityLabel="Create sphere"
-              accessibilityState={{ disabled: createSphere.isPending, busy: createSphere.isPending }>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Create Sphere</Text>
-            <TouchableOpacity
-              onPress={handleCreate}
-              disabled={createSphere.isPending}
+              accessibilityState={{ disabled: createSphere.isPending, busy: createSphere.isPending }}
             >
               <Text
                 style={[
@@ -358,14 +358,14 @@ export default function SpheresScreen({ navigation }: Props) {
                   <TouchableOpacity
                     key={vis}
                     style={[
-                    accessible={true}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Set visibility to ${vis}`}
-                    accessibilityState={{ selected: newVisibility === vis }}
                       styles.optionChip,
                       newVisibility === vis && styles.optionChipSelected,
                     ]}
                     onPress={() => setNewVisibility(vis)}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set visibility to ${vis}`}
+                    accessibilityState={{ selected: newVisibility === vis }}
                   >
                     <Text
                       style={[

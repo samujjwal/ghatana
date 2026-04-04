@@ -19,6 +19,12 @@ import { GenerationReviewService } from "./review-service.js";
 type ReviewPath = "auto_publish" | "expert_review" | "human_review";
 type RegenerationTrigger = "safety_concern" | "low_evaluation_score";
 
+function toPersistedTrigger(
+  trigger: RegenerationTrigger,
+): "SAFETY_CONCERN" | "LOW_EVALUATION_SCORE" {
+  return trigger.toUpperCase() as "SAFETY_CONCERN" | "LOW_EVALUATION_SCORE";
+}
+
 interface EvaluationRecord {
   id: string;
   assetId?: string;
@@ -147,9 +153,8 @@ export class GenerationQualityLoopService {
       );
     }
 
-    const openCandidates = await this.candidateService.listOpenCandidates(
-      tenantId,
-    );
+    const openCandidates =
+      await this.candidateService.listOpenCandidates(tenantId);
 
     return {
       requestId: generationRequestId,
@@ -196,16 +201,14 @@ export class GenerationQualityLoopService {
         continue;
       }
 
-      const existing = await this.prisma.regenerationCandidate.findFirst(
-        {
-          where: {
-            tenantId,
-            assetId: record.assetId,
-            trigger: candidateConfig.trigger.toUpperCase(),
-            status: { in: ["OPEN", "QUEUED", "IN_PROGRESS"] },
-          },
+      const existing = await this.prisma.regenerationCandidate.findFirst({
+        where: {
+          tenantId,
+          assetId: record.assetId,
+          trigger: toPersistedTrigger(candidateConfig.trigger),
+          status: { in: ["OPEN", "QUEUED", "IN_PROGRESS"] },
         },
-      );
+      });
 
       if (existing) {
         continue;
@@ -305,7 +308,10 @@ function deriveNextAction(input: {
   if (input.autoPublished) {
     return "auto_published";
   }
-  if (input.evaluationRecommendation === "block" || input.blockedAssetIds.length > 0) {
+  if (
+    input.evaluationRecommendation === "block" ||
+    input.blockedAssetIds.length > 0
+  ) {
     return "regeneration_required";
   }
   if (input.eligibleAssetIds.length === 0) {

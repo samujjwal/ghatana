@@ -42,7 +42,7 @@ export class GenerationRequestJobProcessor {
 
   constructor(
     private readonly grpcClient: RealContentGenerationClient,
-    private readonly prisma: PrismaClient,
+    prisma: PrismaClient,
     private readonly logger: Logger,
     private readonly telemetry: ContentWorkerTelemetryPublisher,
     private readonly executionService: GenerationExecutionService,
@@ -71,7 +71,9 @@ export class GenerationRequestJobProcessor {
       const result: JobExecutionResult = {
         jobId: job.data.generationJobId,
         status: "completed",
-        ...(materializedAsset ? { outputAssetId: materializedAsset.assetId } : {}),
+        ...(materializedAsset
+          ? { outputAssetId: materializedAsset.assetId }
+          : {}),
         outputData: materializedAsset
           ? {
               ...outputData,
@@ -134,8 +136,7 @@ export class GenerationRequestJobProcessor {
         },
       });
     } catch (error: unknown) {
-      const asError =
-        error instanceof Error ? error : new Error(String(error));
+      const asError = error instanceof Error ? error : new Error(String(error));
 
       const attempts = Number(job.opts?.attempts ?? 1);
       const isFinalAttempt = job.attemptsMade + 1 >= attempts;
@@ -225,12 +226,15 @@ export class GenerationRequestJobProcessor {
       status: "running",
     });
 
-    const materialized = await this.assetMaterializationService.materializeJobOutput(
-      {
+    const materialized =
+      await this.assetMaterializationService.materializeJobOutput({
         tenantId: job.data.tenantId,
         requestId: job.data.generationRequestId,
         jobId: job.data.generationJobId,
-        jobType: job.data.generationJobType as Exclude<GenerationJobType, "claim" | "evaluation">,
+        jobType: job.data.generationJobType as Exclude<
+          GenerationJobType,
+          "claim" | "evaluation"
+        >,
         requestTitle: job.data.requestTitle,
         ...(job.data.requestDescription
           ? { requestDescription: job.data.requestDescription }
@@ -240,10 +244,11 @@ export class GenerationRequestJobProcessor {
         targetGrades: job.data.targetGrades,
         requestedBy: job.data.requestedBy,
         ...(job.data.targetRef ? { targetRef: job.data.targetRef } : {}),
-        ...(job.data.outputAssetId ? { existingAssetId: job.data.outputAssetId } : {}),
+        ...(job.data.outputAssetId
+          ? { existingAssetId: job.data.outputAssetId }
+          : {}),
         outputData,
-      },
-    );
+      });
 
     await this.telemetry.publishForJob(job, {
       stage: "asset_materialization_completed",
@@ -319,17 +324,21 @@ export class GenerationRequestJobProcessor {
     const examples = Array.isArray(response.examples)
       ? (response.examples as GrpcExampleLike[])
       : [];
-    const explainers = examples.map((example: GrpcExampleLike, index: number) => ({
-      id: example.example_id ?? `${job.data.generationJobId}-explainer-${index + 1}`,
-      title: example.title ?? `Explainer for ${job.data.requestTitle}`,
-      description: example.description ?? "",
-      narrative:
-        example.content ??
-        example.solution_content ??
-        example.description ??
-        "",
-      type: "explainer",
-    }));
+    const explainers = examples.map(
+      (example: GrpcExampleLike, index: number) => ({
+        id:
+          example.example_id ??
+          `${job.data.generationJobId}-explainer-${index + 1}`,
+        title: example.title ?? `Explainer for ${job.data.requestTitle}`,
+        description: example.description ?? "",
+        narrative:
+          example.content ??
+          example.solution_content ??
+          example.description ??
+          "",
+        type: "explainer",
+      }),
+    );
 
     await this.telemetry.publishForJob(job, {
       stage: "grpc_response_received",
@@ -470,13 +479,20 @@ export class GenerationRequestJobProcessor {
     const examples = Array.isArray(response.examples)
       ? (response.examples as GrpcExampleLike[])
       : [];
-    const assessments = examples.map((example: GrpcExampleLike, index: number) => ({
-      id: example.example_id ?? `${job.data.generationJobId}-assessment-${index + 1}`,
-      prompt: example.title ?? `Assessment item ${index + 1}`,
-      guidance: example.description ?? "",
-      solution:
-        example.solution_content ?? example.content ?? example.description ?? "",
-    }));
+    const assessments = examples.map(
+      (example: GrpcExampleLike, index: number) => ({
+        id:
+          example.example_id ??
+          `${job.data.generationJobId}-assessment-${index + 1}`,
+        prompt: example.title ?? `Assessment item ${index + 1}`,
+        guidance: example.description ?? "",
+        solution:
+          example.solution_content ??
+          example.content ??
+          example.description ??
+          "",
+      }),
+    );
 
     const cost = ContentWorkerTelemetryPublisher.extractCostFromMetadata(
       response.metadata,

@@ -99,7 +99,7 @@ export const ltiRoutes: FastifyPluginAsync = async (app) => {
    * Generate with: openssl genrsa -out lti.pem 2048 && openssl rsa -in lti.pem -pubout -out lti.pub
    * Then base64url-encode the modulus/exponent from the public key.
    */
-  app.get("/jwks", async (request, reply) => {
+  app.get("/jwks", async (_request, reply) => {
     try {
       const toolConfiguration =
         await fullLtiServices.platformService.getToolConfiguration({

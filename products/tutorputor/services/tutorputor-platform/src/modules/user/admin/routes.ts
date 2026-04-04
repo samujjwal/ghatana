@@ -125,7 +125,12 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post<{
     Body: {
-      users: unknown[];
+      users: Array<{
+        email: string;
+        role: string;
+        displayName?: string;
+        classroomIds?: string[];
+      }>;
       sendInvites?: boolean;
     };
   }>("/tenant/users/import", async (request, reply) => {

@@ -692,7 +692,7 @@ export class SimulationTracePersistenceService {
   /**
    * Retrieve traces for replay and analysis
    */
-  async getTracesForReplay(filters: {
+  async getTracesForReplay(_filters: {
     tenantId: string;
     simulationManifestId?: string;
     learnerId?: string;
@@ -707,7 +707,7 @@ export class SimulationTracePersistenceService {
   /**
    * Analyze trace patterns for learning insights
    */
-  async analyzeTracePatterns(tenantId: string, simulationManifestId: string): Promise<{
+  async analyzeTracePatterns(_tenantId: string, _simulationManifestId: string): Promise<{
     commonPaths: string[][];
     averageDurationMs: number;
     commonMistakes: string[];

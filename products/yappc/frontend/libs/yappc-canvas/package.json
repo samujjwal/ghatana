@@ -23,14 +23,14 @@
   "dependencies": {
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
-    "@xyflow/react": "^12.10.0",
+    "@xyflow/react": "^12.10.2",
     "@yappc/code-editor": "workspace:*",
     "@yappc/state": "workspace:*",
     "@yappc/ui": "workspace:*",
-    "jotai": "^2.17.0",
-    "lucide-react": "^0.563.0",
-    "react-konva": "^19.2.2",
-    "yjs": "^13.6.29",
+    "jotai": "^2.19.0",
+    "lucide-react": "^1.7.0",
+    "react-konva": "^19.2.3",
+    "yjs": "^13.6.30",
     "zod": "^4.3.6"
   },
   "peerDependencies": {
@@ -38,9 +38,9 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@types/react": "^19.2.10",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   }
 }

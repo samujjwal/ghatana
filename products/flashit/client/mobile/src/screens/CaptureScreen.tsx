@@ -21,20 +21,23 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { RootStackParamList } from '../navigation';
 import { useApi } from '../contexts/ApiContext';
 import { mobileAtoms } from '../state/localAtoms';
 import { EMOTION_OPTIONS, TAG_SUGGESTIONS } from '@flashit/shared';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Capture'>;
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+};
 
 export default function CaptureScreen({ navigation }: Props) {
   const { apiClient } = useApi();
   const queryClient = useQueryClient();
-  const [selectedSphereId, setSelectedSphereId] = useAtom(mobileAtoms.selectedSphereIdAtom);
+  const selectedSphereId = useAtomValue(mobileAtoms.selectedSphereIdAtom);
+  const setSelectedSphereId = useSetAtom(mobileAtoms.selectedSphereIdAtom);
 
   const handleGoBack = () => {
     try {
@@ -128,7 +131,7 @@ export default function CaptureScreen({ navigation }: Props) {
     );
   }
 
-  const spheres = spheresData?.spheres || [];
+  const spheres = spheresData || [];
   const selectedSphere = spheres.find((s) => s.id === selectedSphereId);
 
   return (
@@ -169,7 +172,7 @@ export default function CaptureScreen({ navigation }: Props) {
           </ScrollView>
           {selectedSphere && (
             <Text style={styles.sphereInfo}>
-              {selectedSphere.type} • {selectedSphere.momentCount} moments
+              {selectedSphere.type} • {selectedSphere.momentCount ?? 0} moments
             </Text>
           )}
         </View>
@@ -203,13 +206,13 @@ export default function CaptureScreen({ navigation }: Props) {
                 style={[
                   styles.emotionChip,
                   selectedEmotions.includes(emotion) && styles.emotionChipSelected,
+                ]}
+                onPress={() => toggleEmotion(emotion)}
+                disabled={createMoment.isPending}
                 accessible={true}
                 accessibilityRole="button"
                 accessibilityLabel={`Toggle emotion ${emotion}`}
                 accessibilityState={{ selected: selectedEmotions.includes(emotion) }}
-                ]}
-                onPress={() => toggleEmotion(emotion)}
-                disabled={createMoment.isPending}
               >
                 <Text
                   style={[
@@ -261,13 +264,13 @@ export default function CaptureScreen({ navigation }: Props) {
               onSubmitEditing={addCustomTag}
               editable={!createMoment.isPending}
             />
-              accessible={true}
-              accessibilityRole="button"
-              accessibilityLabel="Add custom tag"
             <TouchableOpacity
               style={styles.addTagButton}
               onPress={addCustomTag}
               disabled={createMoment.isPending}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Add custom tag"
             >
               <Text style={styles.addTagButtonText}>Add</Text>
             </TouchableOpacity>

@@ -51,7 +51,7 @@ export class RecommendationEngine {
   private readonly recommendationService: RecommendationService;
 
   constructor(
-    private readonly prisma: PrismaClient,
+    prisma: PrismaClient,
     deps: { recommendationService?: RecommendationService } = {},
   ) {
     this.recommendationService =
@@ -100,7 +100,11 @@ export class RecommendationEngine {
       .filter((suggestion) => !completedAssets.has(suggestion.asset.id))
       .map((suggestion) => ({
         suggestion,
-        score: this.calculateSuggestionScore(suggestion, averageProgress, context),
+        score: this.calculateSuggestionScore(
+          suggestion,
+          averageProgress,
+          context,
+        ),
       }))
       .sort((left, right) => right.score - left.score)
       .map(({ suggestion }) => suggestion);
@@ -120,24 +124,27 @@ export class RecommendationEngine {
     );
     const pathwayBoost =
       context?.currentPathway &&
-      suggestion.reason.toLowerCase().includes(context.currentPathway.toLowerCase())
+      suggestion.reason
+        .toLowerCase()
+        .includes(context.currentPathway.toLowerCase())
         ? 0.1
         : 0;
-    const goalBoost =
-      context?.learningGoals?.some(
-        (goal) =>
-          goal.toLowerCase() === suggestion.asset.domain.toLowerCase() ||
-          suggestion.asset.title.toLowerCase().includes(goal.toLowerCase()),
-      )
-        ? 0.12
-        : 0;
+    const goalBoost = context?.learningGoals?.some(
+      (goal) =>
+        goal.toLowerCase() === suggestion.asset.domain.toLowerCase() ||
+        suggestion.asset.title.toLowerCase().includes(goal.toLowerCase()),
+    )
+      ? 0.12
+      : 0;
 
-    return edgeWeight * 0.35 +
+    return (
+      edgeWeight * 0.35 +
       confidence * 0.15 +
       qualityScore * 0.2 +
       difficultyFit * 0.2 +
       pathwayBoost +
-      goalBoost;
+      goalBoost
+    );
   }
 
   private scoreDifficultyFit(

@@ -216,7 +216,10 @@ export class QueryOptimizer {
     }>;
   } {
     const slowQueries = this.queryLog.filter((q) => q.duration > 500);
-    const totalDuration = this.queryLog.reduce((sum: number, q) => sum + q.duration, 0);
+    const totalDuration = this.queryLog.reduce(
+      (sum: number, q) => sum + q.duration,
+      0,
+    );
 
     // Group by query pattern
     const queryGroups: Record<string, { durations: number[]; count: number }> =
@@ -234,7 +237,8 @@ export class QueryOptimizer {
       .map(([query, data]) => ({
         query,
         avgDuration:
-          data.durations.reduce((a: number, b) => a + b, 0) / data.durations.length,
+          data.durations.reduce((a: number, b) => a + b, 0) /
+          data.durations.length,
         count: data.count,
       }))
       .filter((q) => q.avgDuration > 100)
@@ -467,7 +471,7 @@ export function performanceMiddleware() {
     reply.header("X-Cache-Status", "MISS");
 
     // Monitor response time
-    reply.then(() => {
+    reply.raw.once("finish", () => {
       const duration = Date.now() - startTime;
 
       if (duration > 1000) {

@@ -8,16 +8,16 @@
  * @doc.pattern OptimizationService
  */
 
-import * as Battery from 'expo-battery';
-import * as Network from 'expo-network';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Battery from "expo-battery";
+import * as Network from "expo-network";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ============================================================================
 // Types & Interfaces
 // ============================================================================
 
-export type BatteryState = 'unknown' | 'charging' | 'unplugged' | 'full';
-export type PowerMode = 'normal' | 'low_power' | 'ultra_low_power' | 'charging';
+export type BatteryState = "unknown" | "charging" | "unplugged" | "full";
+export type PowerMode = "normal" | "low_power" | "ultra_low_power" | "charging";
 
 export interface BatteryStatus {
   level: number; // 0-1
@@ -60,7 +60,7 @@ export interface BatteryStats {
 
 const DEFAULT_SETTINGS: Record<PowerMode, PowerSettings> = {
   normal: {
-    mode: 'normal',
+    mode: "normal",
     syncInterval: 30000,
     enableBackgroundSync: true,
     enableImageCompression: true,
@@ -73,7 +73,7 @@ const DEFAULT_SETTINGS: Record<PowerMode, PowerSettings> = {
     locationUpdateInterval: 60000,
   },
   low_power: {
-    mode: 'low_power',
+    mode: "low_power",
     syncInterval: 120000,
     enableBackgroundSync: false,
     enableImageCompression: true,
@@ -86,7 +86,7 @@ const DEFAULT_SETTINGS: Record<PowerMode, PowerSettings> = {
     locationUpdateInterval: 300000,
   },
   ultra_low_power: {
-    mode: 'ultra_low_power',
+    mode: "ultra_low_power",
     syncInterval: 300000,
     enableBackgroundSync: false,
     enableImageCompression: true,
@@ -99,7 +99,7 @@ const DEFAULT_SETTINGS: Record<PowerMode, PowerSettings> = {
     locationUpdateInterval: 600000,
   },
   charging: {
-    mode: 'charging',
+    mode: "charging",
     syncInterval: 15000,
     enableBackgroundSync: true,
     enableImageCompression: true,
@@ -120,7 +120,7 @@ const DEFAULT_CONFIG: BatteryConfig = {
   persistSettings: true,
 };
 
-const STORAGE_KEY = '@ghatana/flashit-battery_optimizer';
+const STORAGE_KEY = "@ghatana/flashit-battery_optimizer";
 
 // ============================================================================
 // Battery Optimizer Service
@@ -131,14 +131,14 @@ const STORAGE_KEY = '@ghatana/flashit-battery_optimizer';
  */
 class BatteryOptimizerService {
   private static instance: BatteryOptimizerService | null = null;
-  
+
   private config: BatteryConfig;
   private currentSettings: PowerSettings;
   private currentStatus: BatteryStatus | null = null;
   private listeners: Set<(settings: PowerSettings) => void> = new Set();
   private batterySubscription: Battery.Subscription | null = null;
   private checkInterval: NodeJS.Timeout | null = null;
-  
+
   private sessionStartTime: number = Date.now();
   private sessionStartBattery: number = 1;
   private customOverrides: Partial<PowerSettings> = {};
@@ -171,9 +171,11 @@ class BatteryOptimizerService {
     await this.updateBatteryStatus();
 
     // Subscribe to battery state changes
-    this.batterySubscription = Battery.addBatteryStateListener(async ({ batteryState }) => {
-      await this.updateBatteryStatus();
-    });
+    this.batterySubscription = Battery.addBatteryStateListener(
+      async ({ batteryState }) => {
+        await this.updateBatteryStatus();
+      },
+    );
 
     // Start periodic checks
     this.checkInterval = setInterval(async () => {
@@ -197,28 +199,30 @@ class BatteryOptimizerService {
       ]);
 
       const stateMap: Record<number, BatteryState> = {
-        [Battery.BatteryState.UNKNOWN]: 'unknown',
-        [Battery.BatteryState.CHARGING]: 'charging',
-        [Battery.BatteryState.UNPLUGGED]: 'unplugged',
-        [Battery.BatteryState.FULL]: 'full',
+        [Battery.BatteryState.UNKNOWN]: "unknown",
+        [Battery.BatteryState.CHARGING]: "charging",
+        [Battery.BatteryState.UNPLUGGED]: "unplugged",
+        [Battery.BatteryState.FULL]: "full",
       };
 
       this.currentStatus = {
         level,
-        state: stateMap[state] || 'unknown',
+        state: stateMap[state] || "unknown",
         lowPowerMode,
-        isCharging: state === Battery.BatteryState.CHARGING || state === Battery.BatteryState.FULL,
+        isCharging:
+          state === Battery.BatteryState.CHARGING ||
+          state === Battery.BatteryState.FULL,
       };
 
       // Determine power mode
       const newMode = this.determinePowerMode(this.currentStatus);
-      
+
       // Update settings if mode changed
       if (this.currentSettings.mode !== newMode) {
         this.updateSettings(newMode);
       }
     } catch (error) {
-      console.warn('Failed to get battery status:', error);
+      console.warn("Failed to get battery status:", error);
     }
   }
 
@@ -228,25 +232,25 @@ class BatteryOptimizerService {
   private determinePowerMode(status: BatteryStatus): PowerMode {
     // Charging always gets charging mode
     if (status.isCharging) {
-      return 'charging';
+      return "charging";
     }
 
     // System low power mode triggers low power
     if (status.lowPowerMode) {
-      return 'low_power';
+      return "low_power";
     }
 
     // Ultra low battery
     if (status.level <= this.config.ultraLowBatteryThreshold) {
-      return 'ultra_low_power';
+      return "ultra_low_power";
     }
 
     // Low battery
     if (status.level <= this.config.lowBatteryThreshold) {
-      return 'low_power';
+      return "low_power";
     }
 
-    return 'normal';
+    return "normal";
   }
 
   /**
@@ -273,7 +277,7 @@ class BatteryOptimizerService {
       try {
         listener(this.currentSettings);
       } catch (error) {
-        console.error('Battery optimizer listener error:', error);
+        console.error("Battery optimizer listener error:", error);
       }
     }
   }
@@ -306,7 +310,7 @@ class BatteryOptimizerService {
     this.listeners.add(listener);
     // Immediately call with current settings
     listener(this.currentSettings);
-    
+
     return () => {
       this.listeners.delete(listener);
     };
@@ -315,11 +319,14 @@ class BatteryOptimizerService {
   /**
    * Override specific settings (persisted)
    */
-  setOverride<K extends keyof PowerSettings>(key: K, value: PowerSettings[K]): void {
+  setOverride<K extends keyof PowerSettings>(
+    key: K,
+    value: PowerSettings[K],
+  ): void {
     this.customOverrides[key] = value;
     this.currentSettings[key] = value;
     this.notifyListeners();
-    
+
     if (this.config.persistSettings) {
       this.persistOverrides();
     }
@@ -331,9 +338,12 @@ class BatteryOptimizerService {
   clearOverride(key: keyof PowerSettings): void {
     delete this.customOverrides[key];
     const baseSettings = DEFAULT_SETTINGS[this.currentSettings.mode];
-    (this.currentSettings as Record<string, unknown>)[key] = baseSettings[key];
+    this.currentSettings = {
+      ...this.currentSettings,
+      [key]: baseSettings[key],
+    };
     this.notifyListeners();
-    
+
     if (this.config.persistSettings) {
       this.persistOverrides();
     }
@@ -347,7 +357,7 @@ class BatteryOptimizerService {
     const mode = this.currentSettings.mode;
     this.currentSettings = { ...DEFAULT_SETTINGS[mode] };
     this.notifyListeners();
-    
+
     if (this.config.persistSettings) {
       this.persistOverrides();
     }
@@ -360,9 +370,10 @@ class BatteryOptimizerService {
     const currentLevel = await Battery.getBatteryLevelAsync();
     const sessionDuration = (Date.now() - this.sessionStartTime) / 1000 / 60; // minutes
     const batteryConsumed = this.sessionStartBattery - currentLevel;
-    const estimatedDrainPerHour = sessionDuration > 0
-      ? (batteryConsumed / sessionDuration) * 60 * 100 // percentage per hour
-      : 0;
+    const estimatedDrainPerHour =
+      sessionDuration > 0
+        ? (batteryConsumed / sessionDuration) * 60 * 100 // percentage per hour
+        : 0;
 
     return {
       estimatedDrainPerHour: Math.round(estimatedDrainPerHour * 10) / 10,
@@ -377,7 +388,7 @@ class BatteryOptimizerService {
    */
   shouldEnableFeature(feature: keyof PowerSettings): boolean {
     const value = this.currentSettings[feature];
-    return typeof value === 'boolean' ? value : true;
+    return typeof value === "boolean" ? value : true;
   }
 
   /**
@@ -408,10 +419,10 @@ class BatteryOptimizerService {
     try {
       await AsyncStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(this.customOverrides)
+        JSON.stringify(this.customOverrides),
       );
     } catch (error) {
-      console.warn('Failed to persist battery overrides:', error);
+      console.warn("Failed to persist battery overrides:", error);
     }
   }
 
@@ -425,7 +436,7 @@ class BatteryOptimizerService {
         this.customOverrides = JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load battery overrides:', error);
+      console.warn("Failed to load battery overrides:", error);
     }
   }
 
@@ -447,7 +458,9 @@ class BatteryOptimizerService {
 /**
  * Get the battery optimizer instance
  */
-export function getBatteryOptimizer(config?: Partial<BatteryConfig>): BatteryOptimizerService {
+export function getBatteryOptimizer(
+  config?: Partial<BatteryConfig>,
+): BatteryOptimizerService {
   return BatteryOptimizerService.getInstance(config);
 }
 
@@ -466,12 +479,12 @@ export function useBatterySettings(): {
   }>({
     settings: DEFAULT_SETTINGS.normal,
     status: null,
-    mode: 'normal',
+    mode: "normal",
   });
 
   React.useEffect(() => {
     const optimizer = getBatteryOptimizer();
-    
+
     const unsubscribe = optimizer.subscribe((settings) => {
       setState({
         settings,
@@ -486,6 +499,6 @@ export function useBatterySettings(): {
   return state;
 }
 
-import React from 'react';
+import React from "react";
 
 export default BatteryOptimizerService;

@@ -6,7 +6,7 @@
  * @module @tutorputor/platform/testing
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { it, expect, vi } from "vitest";
 import type { Mock } from "vitest";
 
 /**
@@ -246,7 +246,12 @@ export class CoverageAnalyzer {
   /**
    * Parse coverage report and identify gaps
    */
-  static analyzeCoverage(coverageData: Record<string, { total?: number; covered?: number; pct?: number; uncovered?: number }>): {
+  static analyzeCoverage(
+    coverageData: Record<
+      string,
+      { total?: number; covered?: number; pct?: number; uncovered?: number }
+    >,
+  ): {
     total: number;
     covered: number;
     gaps: Array<{ file: string; lines: number[]; functions: string[] }>;
@@ -263,7 +268,8 @@ export class CoverageAnalyzer {
       if (typeof data !== "object" || !data) continue;
 
       const fileData = data as Record<string, unknown>;
-      const lines = (fileData.lines as Record<string, unknown> | undefined) ?? {};
+      const lines =
+        (fileData.lines as Record<string, unknown> | undefined) ?? {};
       const functions =
         (fileData.functions as Record<string, unknown> | undefined) ?? {};
       total += Number(lines.total ?? 0);
@@ -361,7 +367,10 @@ export const TestPatterns = {
    * Test pagination
    */
   pagination: (
-    testFn: (params: { page: number; limit: number }) => Promise<{ data: Array<{ id: unknown }> }>,
+    testFn: (params: {
+      page: number;
+      limit: number;
+    }) => Promise<{ data: Array<{ id: unknown }> }>,
   ) => {
     it("should support pagination", async () => {
       const page1 = await testFn({ page: 1, limit: 10 });
@@ -376,7 +385,7 @@ export const TestPatterns = {
   /**
    * Test caching behavior
    */
-  caching: (testFn: () => Promise<unknown>, cacheKey: string) => {
+  caching: (testFn: () => Promise<unknown>, _cacheKey: string) => {
     it("should cache results", async () => {
       const result1 = await testFn();
       const result2 = await testFn();
@@ -437,7 +446,10 @@ export class PerformanceTestUtils {
       results.push(
         ...batchResults.map((r) => ({
           success: r.status === "fulfilled",
-          duration: r.status === "fulfilled" ? ((r.value as { duration?: number }).duration ?? 0) : 0,
+          duration:
+            r.status === "fulfilled"
+              ? ((r.value as { duration?: number }).duration ?? 0)
+              : 0,
         })),
       );
     }

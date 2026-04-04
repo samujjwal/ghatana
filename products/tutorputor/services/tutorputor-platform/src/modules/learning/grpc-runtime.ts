@@ -11,7 +11,7 @@
  */
 
 import type { FastifyBaseLogger } from "fastify";
-import type { Server, status } from "@grpc/grpc-js";
+import type { Server } from "@grpc/grpc-js";
 import {
   bindLearnerProfileGrpcServer,
   createLearnerProfileGrpcServer,
@@ -68,7 +68,7 @@ export async function startLearnerProfileGrpcRuntime(options: {
     options.learnerProfileService,
     options.logger,
   );
-  
+
   if (!serviceValidation.valid) {
     throw new Error(
       `Service dependency validation failed: ${serviceValidation.errors.join(", ")}`,
@@ -76,7 +76,7 @@ export async function startLearnerProfileGrpcRuntime(options: {
   }
 
   const server = createLearnerProfileGrpcServer(options.learnerProfileService);
-  
+
   // Add interceptors for monitoring
   const originalStart = server.start.bind(server);
   server.start = () => {
@@ -89,8 +89,11 @@ export async function startLearnerProfileGrpcRuntime(options: {
   try {
     port = await Promise.race([
       bindLearnerProfileGrpcServer(server, options.address),
-      new Promise<number>((_, reject) => 
-        setTimeout(() => reject(new Error("gRPC bind timeout")), startupTimeout),
+      new Promise<number>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("gRPC bind timeout")),
+          startupTimeout,
+        ),
       ),
     ]);
   } catch (error) {
@@ -105,7 +108,11 @@ export async function startLearnerProfileGrpcRuntime(options: {
   runtimeState.startTime = Date.now();
 
   options.logger.info(
-    { grpcAddress: options.address, grpcPort: port, startupTimeMs: Date.now() - startTime },
+    {
+      grpcAddress: options.address,
+      grpcPort: port,
+      startupTimeMs: Date.now() - startTime,
+    },
     "Learner profile gRPC server started",
   );
 
@@ -125,7 +132,8 @@ export async function startLearnerProfileGrpcRuntime(options: {
     port,
     stop: () => gracefulShutdown(server, options.address, port, options.logger),
     health: () => getHealthStatus(),
-    waitForReady: (timeoutMs = 5000) => waitForServerReady(server, timeoutMs, options.logger),
+    waitForReady: (timeoutMs = 5000) =>
+      waitForServerReady(server, timeoutMs, options.logger),
   };
 }
 
@@ -174,9 +182,8 @@ async function performStartupHealthCheck(
 }
 
 function getHealthStatus(): GrpcHealthStatus {
-  const uptimeMs = runtimeState.startTime > 0 
-    ? Date.now() - runtimeState.startTime 
-    : 0;
+  const uptimeMs =
+    runtimeState.startTime > 0 ? Date.now() - runtimeState.startTime : 0;
 
   if (runtimeState.isShuttingDown) {
     return {
@@ -189,7 +196,10 @@ function getHealthStatus(): GrpcHealthStatus {
     };
   }
 
-  if (runtimeState.errorCount > runtimeState.callCount * 0.1 && runtimeState.callCount > 10) {
+  if (
+    runtimeState.errorCount > runtimeState.callCount * 0.1 &&
+    runtimeState.callCount > 10
+  ) {
     return {
       status: "degraded",
       serving: true,
@@ -210,20 +220,20 @@ function getHealthStatus(): GrpcHealthStatus {
 }
 
 async function waitForServerReady(
-  server: Server,
+  _server: Server,
   timeoutMs: number,
   logger: FastifyBaseLogger,
 ): Promise<boolean> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeoutMs) {
     const health = getHealthStatus();
     if (health.status === "healthy" && health.serving) {
       return true;
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  
+
   logger.warn("Timeout waiting for gRPC server to be ready");
   return false;
 }
@@ -235,14 +245,14 @@ async function gracefulShutdown(
   logger: FastifyBaseLogger,
 ): Promise<void> {
   runtimeState.isShuttingDown = true;
-  
+
   logger.info(
     { grpcAddress: address, grpcPort: port },
     "Initiating gRPC server graceful shutdown",
   );
 
   const shutdownTimeout = 30000; // 30 seconds
-  
+
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       logger.warn("Graceful shutdown timeout, forcing close");
@@ -253,7 +263,7 @@ async function gracefulShutdown(
 
     server.tryShutdown((error) => {
       clearTimeout(timeoutId);
-      
+
       if (error) {
         logger.error(
           { error, grpcAddress: address, grpcPort: port },
@@ -263,7 +273,7 @@ async function gracefulShutdown(
         reject(error);
         return;
       }
-      
+
       runtimeState.startTime = 0;
       logger.info(
         { grpcAddress: address, grpcPort: port, graceful: true },

@@ -27,7 +27,6 @@ import type {
   StudySessionType,
   SessionRsvp,
 } from "@tutorputor/contracts/v1/social";
-import { nanoid } from "nanoid";
 import { createSocialNotification } from "../../notifications/delivery.js";
 
 /**
@@ -645,7 +644,9 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       data: {
         groupId: args.groupId,
         title: args.title,
-        ...(args.description !== undefined ? { description: args.description } : {}),
+        ...(args.description !== undefined
+          ? { description: args.description }
+          : {}),
         createdBy: args.createdBy,
         scheduledAt: args.scheduledAt,
         duration: args.duration,
@@ -666,10 +667,6 @@ export class StudyGroupServiceImpl implements StudyGroupService {
         userId: args.createdBy,
         status: "ATTENDING",
       },
-    });
-
-    const group = await this.prisma.studyGroup.findUnique({
-      where: { id: args.groupId },
     });
 
     await this.publishActivity(args.tenantId, {
@@ -966,7 +963,16 @@ export class StudyGroupServiceImpl implements StudyGroupService {
   private async publishActivity(
     tenantId: string,
     activity: {
-      type: "JOINED_GROUP" | "CREATED_TOPIC" | "REPLIED_TOPIC" | "LIKED_POST" | "SCHEDULED_SESSION" | "COMPLETED_SESSION" | "SHARED_NOTE" | "EARNED_BADGE" | "HELPED_PEER";
+      type:
+        | "JOINED_GROUP"
+        | "CREATED_TOPIC"
+        | "REPLIED_TOPIC"
+        | "LIKED_POST"
+        | "SCHEDULED_SESSION"
+        | "COMPLETED_SESSION"
+        | "SHARED_NOTE"
+        | "EARNED_BADGE"
+        | "HELPED_PEER";
       actorId: string;
       targetType: string;
       targetId: string;
@@ -1010,22 +1016,25 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       actorId?: string;
     },
   ): Promise<void> {
-    await createSocialNotification(this.prisma as unknown as Parameters<typeof createSocialNotification>[0], {
-      tenantId,
-      userId,
-      type: notification.type,
-      title: notification.title,
-      body: notification.body,
-      ...(notification.targetType !== undefined
-        ? { targetType: notification.targetType }
-        : {}),
-      ...(notification.targetId !== undefined
-        ? { targetId: notification.targetId }
-        : {}),
-      ...(notification.actorId !== undefined
-        ? { actorId: notification.actorId }
-        : {}),
-    });
+    await createSocialNotification(
+      this.prisma as unknown as Parameters<typeof createSocialNotification>[0],
+      {
+        tenantId,
+        userId,
+        type: notification.type,
+        title: notification.title,
+        body: notification.body,
+        ...(notification.targetType !== undefined
+          ? { targetType: notification.targetType }
+          : {}),
+        ...(notification.targetId !== undefined
+          ? { targetId: notification.targetId }
+          : {}),
+        ...(notification.actorId !== undefined
+          ? { actorId: notification.actorId }
+          : {}),
+      },
+    );
 
     if (this.redis) {
       await this.redis.publish(
@@ -1036,8 +1045,13 @@ export class StudyGroupServiceImpl implements StudyGroupService {
   }
 
   // Mapping helpers
-  private mapVisibilityToDb(visibility: StudyGroupVisibility): "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY" {
-    const map: Record<StudyGroupVisibility, "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY"> = {
+  private mapVisibilityToDb(
+    visibility: StudyGroupVisibility,
+  ): "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY" {
+    const map: Record<
+      StudyGroupVisibility,
+      "PUBLIC" | "PRIVATE" | "CLASSROOM_ONLY"
+    > = {
       public: "PUBLIC",
       private: "PRIVATE",
       classroom_only: "CLASSROOM_ONLY",
@@ -1054,8 +1068,13 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[visibility] ?? "public";
   }
 
-  private mapRoleToDb(role: StudyGroupRole): "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER" {
-    const map: Record<StudyGroupRole, "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER"> = {
+  private mapRoleToDb(
+    role: StudyGroupRole,
+  ): "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER" {
+    const map: Record<
+      StudyGroupRole,
+      "OWNER" | "ADMIN" | "MODERATOR" | "MEMBER"
+    > = {
       owner: "OWNER",
       admin: "ADMIN",
       moderator: "MODERATOR",
@@ -1074,8 +1093,18 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[role] ?? "member";
   }
 
-  private mapSessionTypeToDb(type: StudySessionType): "DISCUSSION" | "REVIEW" | "QUIZ_PRACTICE" | "VIDEO_CALL" | "COLLABORATIVE" {
-    const map: Record<StudySessionType, "DISCUSSION" | "REVIEW" | "QUIZ_PRACTICE" | "VIDEO_CALL" | "COLLABORATIVE"> = {
+  private mapSessionTypeToDb(
+    type: StudySessionType,
+  ):
+    | "DISCUSSION"
+    | "REVIEW"
+    | "QUIZ_PRACTICE"
+    | "VIDEO_CALL"
+    | "COLLABORATIVE" {
+    const map: Record<
+      StudySessionType,
+      "DISCUSSION" | "REVIEW" | "QUIZ_PRACTICE" | "VIDEO_CALL" | "COLLABORATIVE"
+    > = {
       discussion: "DISCUSSION",
       review: "REVIEW",
       quiz_practice: "QUIZ_PRACTICE",
@@ -1096,8 +1125,13 @@ export class StudyGroupServiceImpl implements StudyGroupService {
     return map[type] ?? "discussion";
   }
 
-  private mapRsvpStatusToDb(status: SessionRsvp["status"]): "ATTENDING" | "MAYBE" | "NOT_ATTENDING" {
-    const map: Record<SessionRsvp["status"], "ATTENDING" | "MAYBE" | "NOT_ATTENDING"> = {
+  private mapRsvpStatusToDb(
+    status: SessionRsvp["status"],
+  ): "ATTENDING" | "MAYBE" | "NOT_ATTENDING" {
+    const map: Record<
+      SessionRsvp["status"],
+      "ATTENDING" | "MAYBE" | "NOT_ATTENDING"
+    > = {
       attending: "ATTENDING",
       maybe: "MAYBE",
       not_attending: "NOT_ATTENDING",
@@ -1161,7 +1195,10 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       userId: request.userId,
       message: request.message ?? undefined,
       createdAt: request.createdAt,
-      status: request.status.toLowerCase() as "pending" | "approved" | "rejected",
+      status: request.status.toLowerCase() as
+        | "pending"
+        | "approved"
+        | "rejected",
       reviewedBy: request.reviewedBy ?? undefined,
       reviewedAt: request.reviewedAt ?? undefined,
       rejectionReason: request.rejectionReason ?? undefined,
@@ -1176,7 +1213,11 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       invitedBy: invite.invitedBy,
       createdAt: invite.createdAt,
       expiresAt: invite.expiresAt,
-      status: invite.status.toLowerCase() as "pending" | "accepted" | "declined" | "expired",
+      status: invite.status.toLowerCase() as
+        | "pending"
+        | "accepted"
+        | "declined"
+        | "expired",
       acceptedAt: invite.acceptedAt ?? undefined,
     };
   }
@@ -1201,7 +1242,11 @@ export class StudyGroupServiceImpl implements StudyGroupService {
       attachments: session.attachments
         ? JSON.parse(session.attachments)
         : undefined,
-      status: session.status.toLowerCase() as "scheduled" | "in_progress" | "completed" | "cancelled",
+      status: session.status.toLowerCase() as
+        | "scheduled"
+        | "in_progress"
+        | "completed"
+        | "cancelled",
       startedAt: session.startedAt ?? undefined,
       endedAt: session.endedAt ?? undefined,
       notes: session.notes ?? undefined,

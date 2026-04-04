@@ -9,9 +9,13 @@
  * @doc.pattern Cache Manager
  */
 
-import * as FileSystem from 'expo-file-system';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { database } from '../database';
+import * as FileSystem from "expo-file-system/legacy";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { database } from "../database";
+
+type AsyncStorageWithBulkRemove = typeof AsyncStorage & {
+  multiRemove?: (keys: string[]) => Promise<void>;
+};
 
 /**
  * Cache statistics.
@@ -57,25 +61,36 @@ class CacheManagerService {
         await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
       }
     }
-    console.log('[CacheManager] Initialized');
+    console.log("[CacheManager] Initialized");
   }
 
   /**
    * Get cache statistics.
    */
   async getStats(): Promise<CacheStats> {
-    const [mediaCache, tempFiles, thumbnails, compressed, databaseSize, offlineQueue] =
-      await Promise.all([
-        this.getDirectorySize(this.cacheDirs.media),
-        this.getDirectorySize(this.cacheDirs.temp),
-        this.getDirectorySize(this.cacheDirs.thumbnails),
-        this.getDirectorySize(this.cacheDirs.compressed),
-        database.getDatabaseSize(),
-        this.getAsyncStorageSize(),
-      ]);
+    const [
+      mediaCache,
+      tempFiles,
+      thumbnails,
+      compressed,
+      databaseSize,
+      offlineQueue,
+    ] = await Promise.all([
+      this.getDirectorySize(this.cacheDirs.media),
+      this.getDirectorySize(this.cacheDirs.temp),
+      this.getDirectorySize(this.cacheDirs.thumbnails),
+      this.getDirectorySize(this.cacheDirs.compressed),
+      database.getDatabaseSize(),
+      this.getAsyncStorageSize(),
+    ]);
 
     const totalSize =
-      mediaCache + tempFiles + thumbnails + compressed + databaseSize + offlineQueue;
+      mediaCache +
+      tempFiles +
+      thumbnails +
+      compressed +
+      databaseSize +
+      offlineQueue;
 
     return {
       totalSize,
@@ -97,25 +112,25 @@ class CacheManagerService {
 
     return [
       {
-        category: 'Media Cache',
+        category: "Media Cache",
         size: stats.mediaCache,
         percentage: Math.round((stats.mediaCache / total) * 100),
         formattedSize: this.formatSize(stats.mediaCache),
       },
       {
-        category: 'Temporary Files',
+        category: "Temporary Files",
         size: stats.tempFiles,
         percentage: Math.round((stats.tempFiles / total) * 100),
         formattedSize: this.formatSize(stats.tempFiles),
       },
       {
-        category: 'Database',
+        category: "Database",
         size: stats.databaseSize,
         percentage: Math.round((stats.databaseSize / total) * 100),
         formattedSize: this.formatSize(stats.databaseSize),
       },
       {
-        category: 'Offline Queue',
+        category: "Offline Queue",
         size: stats.offlineQueue,
         percentage: Math.round((stats.offlineQueue / total) * 100),
         formattedSize: this.formatSize(stats.offlineQueue),
@@ -146,7 +161,10 @@ class CacheManagerService {
 
       return totalSize;
     } catch (error) {
-      console.error(`[CacheManager] Error reading directory ${dirPath}:`, error);
+      console.error(
+        `[CacheManager] Error reading directory ${dirPath}:`,
+        error,
+      );
       return 0;
     }
   }
@@ -176,9 +194,9 @@ class CacheManagerService {
    * Format size in human-readable format.
    */
   formatSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
 
-    const units = ['B', 'KB', 'MB', 'GB'];
+    const units = ["B", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     const size = bytes / Math.pow(1024, i);
 
@@ -202,7 +220,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error('[CacheManager] Clear error:', error);
+      console.error("[CacheManager] Clear error:", error);
       return { success: false, cleared };
     }
   }
@@ -223,7 +241,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error('[CacheManager] Clear media cache error:', error);
+      console.error("[CacheManager] Clear media cache error:", error);
       return { success: false, cleared };
     }
   }
@@ -244,7 +262,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error('[CacheManager] Clear temp files error:', error);
+      console.error("[CacheManager] Clear temp files error:", error);
       return { success: false, cleared };
     }
   }
@@ -252,7 +270,9 @@ class CacheManagerService {
   /**
    * Clear old files (older than specified days).
    */
-  async clearOldFiles(daysOld: number = 7): Promise<{ success: boolean; cleared: number }> {
+  async clearOldFiles(
+    daysOld: number = 7,
+  ): Promise<{ success: boolean; cleared: number }> {
     let cleared = 0;
     const cutoff = Date.now() - daysOld * 24 * 60 * 60 * 1000;
 
@@ -263,7 +283,7 @@ class CacheManagerService {
 
       return { success: true, cleared };
     } catch (error) {
-      console.error('[CacheManager] Clear old files error:', error);
+      console.error("[CacheManager] Clear old files error:", error);
       return { success: false, cleared };
     }
   }
@@ -273,7 +293,7 @@ class CacheManagerService {
    */
   private async clearOldFilesInDirectory(
     dirPath: string,
-    cutoff: number
+    cutoff: number,
   ): Promise<number> {
     let cleared = 0;
 
@@ -311,15 +331,22 @@ class CacheManagerService {
     try {
       // Clear from AsyncStorage
       const keys = await AsyncStorage.getAllKeys();
-      const queueKeys = keys.filter((k) => k.startsWith('@offline_'));
-      await AsyncStorage.multiRemove(queueKeys);
+      const queueKeys = keys.filter((k) => k.startsWith("@offline_"));
+      const storage = AsyncStorage as AsyncStorageWithBulkRemove;
+      if (typeof storage.multiRemove === "function") {
+        await storage.multiRemove(queueKeys);
+      } else {
+        await Promise.all(
+          queueKeys.map((queueKey) => AsyncStorage.removeItem(queueKey)),
+        );
+      }
 
       // Clear from database
-      await database.execute('DELETE FROM sync_queue');
+      await database.execute("DELETE FROM sync_queue");
 
       return { success: true, count: queueKeys.length };
     } catch (error) {
-      console.error('[CacheManager] Clear offline queue error:', error);
+      console.error("[CacheManager] Clear offline queue error:", error);
       return { success: false, count: 0 };
     }
   }
@@ -327,7 +354,7 @@ class CacheManagerService {
   /**
    * Get cache directory path.
    */
-  getCacheDir(type: 'media' | 'temp' | 'thumbnails' | 'compressed'): string {
+  getCacheDir(type: "media" | "temp" | "thumbnails" | "compressed"): string {
     return this.cacheDirs[type];
   }
 
@@ -355,7 +382,7 @@ class CacheManagerService {
     const needsCleaning = await this.needsCleaning(thresholdMB);
 
     if (needsCleaning) {
-      console.log('[CacheManager] Auto-cleaning cache...');
+      console.log("[CacheManager] Auto-cleaning cache...");
 
       // First, clear old files
       await this.clearOldFiles(7);
@@ -370,7 +397,7 @@ class CacheManagerService {
         await this.clearMediaCache();
       }
 
-      console.log('[CacheManager] Auto-clean completed');
+      console.log("[CacheManager] Auto-clean completed");
     }
   }
 }
