@@ -26,7 +26,23 @@ package com.ghatana.agent;
  *
  * @author Ghatana AI Platform
  * @since 2.0.0
+ * 
+ * @deprecated Use {@link com.ghatana.platform.health.HealthStatus} instead.
+ *             This enum is kept for backward compatibility and provides converter methods
+ *             to/from the canonical HealthStatus. For new code, use the canonical platform
+ *             HealthStatus directly. 
+ *             <br><br>
+ *             <b>Migration Path</b>:<br>
+ *             <code>
+ *             // OLD: Using agent-specific enum
+ *             com.ghatana.agent.HealthStatus agentStatus = HealthStatus.HEALTHY;
+ *             <br>
+ *             // NEW: Using canonical platform health
+ *             com.ghatana.platform.health.HealthStatus status = 
+ *                 com.ghatana.platform.health.HealthStatus.healthy("Agent is healthy");
+ *             </code>
  */
+@Deprecated(since = "4.1.0", forRemoval = true)
 public enum HealthStatus {
 
     /** Agent is fully operational and accepting input. */

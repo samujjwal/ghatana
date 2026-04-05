@@ -50,6 +50,13 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.archunit.junit5)
+    
+    // Testcontainers for integration testing
+    testImplementation("org.testcontainers:testcontainers:1.19.7")
+    testImplementation("org.testcontainers:postgresql:1.19.7")
+    testImplementation("org.testcontainers:kafka:1.19.7")
+    testImplementation("org.testcontainers:localstack:1.19.7")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.7")
 }
 
 tasks.test {

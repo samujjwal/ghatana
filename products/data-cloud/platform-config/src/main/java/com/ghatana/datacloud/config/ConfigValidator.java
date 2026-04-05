@@ -23,7 +23,7 @@ import java.util.*;
  * @doc.layer core
  * @doc.pattern Validator
  */
-public class ConfigValidator {
+public class ConfigValidator implements ConfigValidatorInterface {
 
     /**
      * Event model required fields from libs:event-core.

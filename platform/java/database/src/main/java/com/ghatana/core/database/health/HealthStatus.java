@@ -127,7 +127,13 @@ import java.util.Map;
  * @doc.purpose Immutable health status value object with diagnostics
  * @doc.layer core
  * @doc.pattern Value Object
+ * 
+ * @deprecated Use {@link com.ghatana.platform.health.HealthStatus} instead.
+ *             This class is kept for backward compatibility. New code should use the canonical
+ *             platform HealthStatus and add database-specific details (response time, connection info)
+ *             to the details map.
  */
+@Deprecated(since = "4.1.0", forRemoval = true)
 public final class HealthStatus {
     
     /**

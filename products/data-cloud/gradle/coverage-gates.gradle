@@ -1,107 +1,49 @@
 /**
  * @doc.type gradle-plugin
- * @doc.purpose Enforces coverage thresholds per module for Data Cloud
+ * @doc.purpose Enforces 100% test coverage for Data Cloud
  * @doc.layer product
  * 
- * This file defines CI-enforced coverage requirements for the 100% test coverage program.
+ * This file defines CI-enforced 100% coverage requirements.
  * Usage: apply from: '../../gradle/coverage-gates.gradle' in data-cloud build.gradle.kts
  * 
- * Coverage Report: Run: ./gradlew projects:data-cloud:jacocoReport
- * Verify Gates: Run: ./gradlew projects:data-cloud:jacocoVerify
+ * Coverage Report: Run: ./gradlew products:data-cloud:jacocoReport
+ * Verify Gates: Run: ./gradlew products:data-cloud:jacocoVerify
  */
 
 jacoco {
-    toolVersion = "0.8.10"
+    toolVersion = "0.8.11"
 }
 
-/*
- * MILESTONE 1 (Weeks 1-4): P1 Features
- * - launcher: 71% → 85%
- * - platform-api: 62% → 75%
- * - platform-analytics: 38% → 60%
- * - feature-store-ingest: 44% → 65%
- * - platform-launcher: 58% → 70%
- */
-def milestone1Targets = [
-    'launcher': [
-        lineCoverageMin: 85,
-        branchCoverageMin: 80,
-        expectedLines: 1500
-    ],
-    'platform-api': [
-        lineCoverageMin: 75,
-        branchCoverageMin: 70,
-        expectedLines: 800
-    ],
-    'platform-analytics': [
-        lineCoverageMin: 60,
-        branchCoverageMin: 55,
-        expectedLines: 600
-    ],
-    'feature-store-ingest': [
-        lineCoverageMin: 65,
-        branchCoverageMin: 60,
-        expectedLines: 400
-    ],
-    'platform-launcher': [
-        lineCoverageMin: 70,
-        branchCoverageMin: 65,
-        expectedLines: 500
-    ]
+// 100% coverage targets for all modules
+def coverageTargets100 = [
+    'launcher': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-api': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-analytics': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-entity': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-event': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-config': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-client': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-launcher': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform-plugins': [line: 1.0, branch: 1.0, method: 1.0],
+    'feature-store-ingest': [line: 1.0, branch: 1.0, method: 1.0],
+    'agent-registry': [line: 1.0, branch: 1.0, method: 1.0],
+    'spi': [line: 1.0, branch: 1.0, method: 1.0],
+    'api': [line: 1.0, branch: 1.0, method: 1.0],
+    'sdk': [line: 1.0, branch: 1.0, method: 1.0],
+    'platform': [line: 1.0, branch: 1.0, method: 1.0],
+    'data-cloud-cache': [line: 1.0, branch: 1.0, method: 1.0]
 ]
 
-/*
- * MILESTONE 2 (Weeks 5-8): Real Integrations
- * All P1 modules reach 85%+, P2 features begin
- */
-def milestone2Targets = [
-    'launcher': [lineCoverageMin: 88, branchCoverageMin: 85],
-    'platform-api': [lineCoverageMin: 80, branchCoverageMin: 75],
-    'platform-analytics': [lineCoverageMin: 75, branchCoverageMin: 70],
-    'platform-entity': [lineCoverageMin: 70, branchCoverageMin: 65],
-    'platform-event': [lineCoverageMin: 70, branchCoverageMin: 65],
-    'platform-client': [lineCoverageMin: 65, branchCoverageMin: 60]
+// Exclusions for generated code, dead code (to be removed), and framework boilerplate
+def jacocoExclusions = [
+    '**/generated/**',
+    '**/proto/**',
+    '**/*Grpc*',
+    '**/*Protos*',
+    '**/*_Impl*',
+    '**/config/Generated*',
+    '**/build/**'
 ]
-
-/*
- * MILESTONE 3 (Weeks 9-12): P3 + UI
- * Test all 15 modules; UI contract + E2E added
- */
-def milestone3Targets = [
-    'launcher': [lineCoverageMin: 92, branchCoverageMin: 88],
-    'platform-api': [lineCoverageMin: 85, branchCoverageMin: 80],
-    'platform-analytics': [lineCoverageMin: 85, branchCoverageMin: 80],
-    'platform-entity': [lineCoverageMin: 80, branchCoverageMin: 75],
-    'platform-event': [lineCoverageMin: 80, branchCoverageMin: 75],
-    'platform-config': [lineCoverageMin: 75, branchCoverageMin: 70],
-    'spi': [lineCoverageMin: 75, branchCoverageMin: 70]
-]
-
-/*
- * MILESTONE 4 (Weeks 13-16): Completion
- * All modules at target; 100% ready
- */
-def milestone4Targets = [
-    'launcher': [lineCoverageMin: 95, branchCoverageMin: 90],
-    'platform-api': [lineCoverageMin: 95, branchCoverageMin: 90],
-    'platform-analytics': [lineCoverageMin: 95, branchCoverageMin: 90],
-    'platform-entity': [lineCoverageMin: 90, branchCoverageMin: 85],
-    'platform-event': [lineCoverageMin: 90, branchCoverageMin: 85],
-    'platform-client': [lineCoverageMin: 85, branchCoverageMin: 80],
-    'platform-config': [lineCoverageMin: 85, branchCoverageMin: 80],
-    'spi': [lineCoverageMin: 85, branchCoverageMin: 80],
-    'platform-plugins': [lineCoverageMin: 75, branchCoverageMin: 70],
-    'agent-registry': [lineCoverageMin: 75, branchCoverageMin: 70]
-]
-
-// Determine current milestone from environment or git tag
-ext.currentMilestone = System.getenv('DATA_CLOUD_MILESTONE') ?: '1'
-ext.coverageTargets = [
-    '1': milestone1Targets,
-    '2': milestone2Targets,
-    '3': milestone3Targets,
-    '4': milestone4Targets
-][ext.currentMilestone] ?: milestone1Targets
 
 tasks.register('jacocoReport') {
     group = 'coverage'
@@ -110,38 +52,90 @@ tasks.register('jacocoReport') {
 
 tasks.register('jacocoVerify') {
     group = 'coverage'
-    description = 'Verify coverage and fail if below thresholds (CI gate)'
-    dependsOn 'test', 'jacocoReport'
+    description = 'Verify 100% coverage and fail if below (CI gate)'
+    dependsOn 'test', 'jacocoTestReport'
     
     doLast {
-        println("\n=== Data Cloud Coverage Verification (Milestone ${ext.currentMilestone}) ===\n")
+        println("\n=== Data Cloud 100% Coverage Verification ===\n")
         
-        ext.coverageTargets.each { module, targets ->
-            println("Module: ${module}")
-            println("  Line Coverage Target: ${targets.lineCoverageMin}%")
-            println("  Branch Coverage Target: ${targets.branchCoverageMin}%")
+        def moduleName = project.name
+        def targets = coverageTargets100[moduleName]
+        
+        if (targets) {
+            println("Module: ${moduleName}")
+            println("  Line Coverage Target: ${targets.line * 100}%")
+            println("  Branch Coverage Target: ${targets.branch * 100}%")
+            println("  Method Coverage Target: ${targets.method * 100}%")
+        } else {
+            println("Warning: No coverage targets defined for ${moduleName}")
         }
         
-        println("\n✓ Coverage gates configured for Milestone ${ext.currentMilestone}")
-        println("✓ Run: ./gradlew jacocoReport to generate coverage report")
+        println("\nExclusions: ${jacocoExclusions}")
+        println("\n✓ Run: ./gradlew jacocoTestReport to generate coverage report")
         println("✓ Report location: build/reports/jacoco/test/html/index.html")
     }
 }
 
-// Task: Weekly Coverage Tracking
+// Configure JaCoCo test report with exclusions
+afterEvaluate {
+    tasks.withType(JacocoReport) {
+        classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: jacocoExclusions)
+            })
+        )
+    }
+    
+    tasks.withType(JacocoCoverageVerification) {
+        violationRules {
+            rule {
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = 1.0
+                }
+            }
+            rule {
+                limit {
+                    counter = 'BRANCH'
+                    value = 'COVEREDRATIO'
+                    minimum = 1.0
+                }
+            }
+            rule {
+                limit {
+                    counter = 'METHOD'
+                    value = 'COVEREDRATIO'
+                    minimum = 1.0
+                }
+            }
+        }
+        
+        classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: jacocoExclusions)
+            })
+        )
+    }
+}
+
+// Task: Coverage Tracking
 tasks.register('coverageTrack') {
     group = 'coverage'
-    description = 'Track weekly coverage progress (call with: -Dweek=1 -Dmodule=launcher)'
+    description = 'Track coverage progress (call with: -Dweek=N -Dmodule=name -Dline=X -Dbranch=Y)'
     
     doLast {
         def week = System.getProperty('week') ?: '?'
         def module = System.getProperty('module') ?: 'all'
-        def coverage = System.getProperty('coverage') ?: '?'
+        def line = System.getProperty('line') ?: '?'
+        def branch = System.getProperty('branch') ?: '?'
         
-        println("\n=== Weekly Coverage Tracking ===")
+        println("\n=== Coverage Tracking ===")
         println("Week: ${week}")
         println("Module: ${module}")
-        println("Line Coverage: ${coverage}%")
+        println("Line Coverage: ${line}%")
+        println("Branch Coverage: ${branch}%")
+        println("Target: 100% / 100%")
         println("\nUpdate: products/data-cloud/docs/testing/WEEKLY_COVERAGE_TRACKING.csv")
     }
 }
@@ -149,15 +143,17 @@ tasks.register('coverageTrack') {
 // Task: CI Gate Report
 tasks.register('coverageGateReport') {
     group = 'coverage'
-    description = 'Generate CI gate compliance report for sign-off'
+    description = 'Generate CI gate compliance report'
     
     doLast {
         println("\n=== CI Gate Compliance Report ===")
-        println("Milestone: ${ext.currentMilestone}")
-        println("Target Modules: ${ext.coverageTargets.keySet().size()}")
-        println("\nComply with gates by running:")
+        println("Target: 100% line, 100% branch, 100% method coverage")
+        println("Modules: ${coverageTargets100.keySet().size()}")
+        println("\nRun verification:")
         println("  ./gradlew jacocoVerify")
-        println("\nDebug coverage by reviewing:")
+        println("\nGenerate report:")
+        println("  ./gradlew jacocoTestReport")
+        println("\nReport location:")
         println("  build/reports/jacoco/test/html/index.html")
     }
 }
