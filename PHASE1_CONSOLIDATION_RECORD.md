@@ -121,35 +121,30 @@ For each duplicate symbol, team made these determinations:
 
 ---
 
-#### ApprovalRequest / ApprovalStatus (Decision: CONSOLIDATE)
-**Status**: TODO - Ready for implementation  
-**Duplicate Count**: 3-4  
+#### ApprovalRequest / ApprovalStatus (Decision: KEEP SEPARATE - Type 2 semantic)
+**Status**: DECISION DOCUMENTED  
+**Duplicate Count**: 2 (tool-runtime, agent-core)  
 **Files**:
-1. `platform/java/tool-runtime/approval/ApprovalRequest.java` - **Canonical**
-2. `platform/java/tool-runtime/approval/ApprovalStatus.java` - **Canonical**
-3. `platform/java/agent-core/framework/runtime/ApprovalRequest.java` - **DELETE**
-4. `platform/java/agent-core/framework/runtime/ApprovalStatus.java` - **DELETE**
-5. Products (yappc, virtual-org) - keep product-specific versions
+1. `platform/java/tool-runtime/approval/ApprovalRequest.java` - **Simple workflow approval** (generic)
+2. `platform/java/agent-core/framework/runtime/ApprovalRequest.java` - **Governance approval** (governance-specific)
+3. tool-runtime ApprovalStatus enum (PENDING, APPROVED, REJECTED, EXPIRED)
+4. agent-core ApprovalStatus enum (same + CANCELLED)
 
 **Analysis**:
-- tool-runtime versions are canonical, feature-complete
-- agent-core versions are older copies
-- Products have their own; leave as-is (product scope)
+- **tool-runtime ApprovalRequest**: Simpler, generic approval workflow (requestId, actionType, context, status, reviewer)
+- **agent-core ApprovalRequest**: Complex, governance-specific (actionIntent, riskSummary, approvingRoles, deadline)
+- agent-core actively uses its own versions internally (AgentApprovalRouter, ApprovalDecision)
+- tool-runtime versions used by products (AEP)
+- **These are semantically different - two different patterns, not duplicates**
 
-**Decision**: Consolidate agent-core → tool-runtime  
-- ✅ Keep tool-runtime as canonical
-- ✅ Delete agent-core copies
-- ✅ Migrate agent-core imports to tool-runtime
-- ✅ Leave product versions alone
+**Decision**: Keep separate with clear boundaries
+- ✅ tool-runtime owns simple workflow approval
+- ✅ agent-core owns governance approval
+- ✅ ApprovalStatus differences: consolidate status enum OR keep separate (CANCELLED only in agent-core)
 
-**Effort**: ~3 hours (2 classes × 2, few consumers)
+**Action**: Document as intentional architectural separation, not consolidation candidate
 
-**Action Items**:  
-- [ ] grep agent-core for ApprovalRequest/Status imports
-- [ ] Update imports to platform.toolruntime.approval
-- [ ] Delete agent-core copies
-- [ ] Verify agent-core compiles
-- [ ] Commit: "Consolidate ApprovalRequest/ApprovalStatus → platform/java/tool-runtime"
+**Rationale**: Forcing consolidation would reduce expressiveness of governance model without benefit.
 
 ---
 
@@ -311,11 +306,11 @@ These appear to be actual design system components that got duplicated.
 | 2 | Policy | Type 2 | 📋 DECISION | Document separation | 0h |
 | 3 | Feature | Type 2 | ✅ DONE | Rename MLFeature + Deprecate | 1h |
 | 4 | ValidationError | Type 2 | 📋 DECISION | Document separation | 0h |
-| 5 | ApprovalRequest/Status | Type 1 | TODO | Consolidate | 3h |
+| 5 | ApprovalRequest/Status | Type 2 | ✅ DECISION | Keep separate (governance vs workflow) | 0h |
 | 6 | AgentInfo/AgentSpec | Type 1 | TODO | Consolidate | 4h |
-| 7 | AuditEvent | Type 2 | 📋 DECISION | Document boundary | 0h |
-| 8 | Role | Type 2 | 📋 DECISION | Keep separate | 0h |
-| 9 | PluginLoader | Type 1 | TODO | Consolidate | 2h |
+| 7 | AuditEvent | Type 2 | ✅ DECISION | Document boundary | 0h |
+| 8 | Role | Type 2 | ✅ DECISION | Keep separate | 0h |
+| 9 | PluginLoader | Type 2 | ✅ DECISION | Keep separate (interface vs impl) | 0h |
 
 **Summary**:
 - ✅ 1 DONE
