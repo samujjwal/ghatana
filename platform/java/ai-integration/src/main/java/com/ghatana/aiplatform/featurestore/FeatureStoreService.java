@@ -29,7 +29,7 @@ import java.util.*;
  * FeatureStoreService store = new FeatureStoreService(dataSource, redisClient, metrics);
  *
  * // Ingest feature
- * Feature feature = Feature.builder()
+ * MLFeature feature = MLFeature.builder()
  *     .name("transaction_amount_7d_avg")
  *     .entityId("user-123")
  *     .value(542.50)
@@ -108,7 +108,7 @@ public class FeatureStoreService {
      * @param feature feature to ingest
      * @throws FeatureStoreException if ingestion fails
      */
-    public void ingest(String tenantId, Feature feature) {
+    public void ingest(String tenantId, MLFeature feature) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(feature, "feature must not be null");
 
@@ -234,7 +234,7 @@ public class FeatureStoreService {
     /**
      * Persists feature to PostgreSQL.
      */
-    private void persistToDatabase(String tenantId, Feature feature) throws SQLException {
+    private void persistToDatabase(String tenantId, MLFeature feature) throws SQLException {
         String sql = """
             INSERT INTO features (tenant_id, entity_id, feature_name, feature_value, timestamp, metadata)
             VALUES (?, ?, ?, ?, ?, ?::jsonb)

@@ -5,13 +5,17 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @deprecated Use {@link MLFeature} instead to clarify this is ML-specific (not feature flags).
- * Feature was renamed to MLFeature to avoid namespace collision with platform.core.feature.Feature.
- * This class remains for backward compatibility with existing product code.
- * All new code should use MLFeature.
+ * MLFeature value object representing a single ML feature.
+ *
+ * <p>Renamed from "Feature" to clarify this is an ML-specific feature representation,
+ * distinct from platform feature flags (see platform.core.feature.Feature).
+ *
+ * @doc.type class
+ * @doc.purpose ML feature value object for feature store
+ * @doc.layer platform
+ * @doc.pattern Value Object
  */
-@Deprecated(since = "1.0.0", forRemoval = true)
-public class Feature {
+public final class MLFeature {
 
     private final String name;
     private final String entityId;
@@ -20,7 +24,7 @@ public class Feature {
     private final String version;
     private final Map<String, String> metadata;
 
-    private Feature(Builder builder) {
+    private MLFeature(Builder builder) {
         this.name = Objects.requireNonNull(builder.name);
         this.entityId = Objects.requireNonNull(builder.entityId);
         this.value = builder.value;
@@ -55,23 +59,6 @@ public class Feature {
 
     public Map<String, String> getMetadata() {
         return metadata;
-    }
-
-    /**
-     * Converts this deprecated Feature to the new MLFeature class.
-     * Use this for migration from Feature to MLFeature.
-     *
-     * @return equivalent MLFeature instance
-     */
-    public MLFeature toMLFeature() {
-        return MLFeature.builder()
-                .name(this.name)
-                .entityId(this.entityId)
-                .value(this.value)
-                .timestamp(this.timestamp)
-                .version(this.version)
-                .metadata(this.metadata)
-                .build();
     }
 
     public static final class Builder {
@@ -113,8 +100,8 @@ public class Feature {
             return this;
         }
 
-        public Feature build() {
-            return new Feature(this);
+        public MLFeature build() {
+            return new MLFeature(this);
         }
     }
 }
