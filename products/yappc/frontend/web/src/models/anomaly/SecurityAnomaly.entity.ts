@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Immutable entity representing a detected security anomaly.
  *
@@ -39,24 +38,24 @@
  * @doc.pattern Entity
  */
 export type AnomalyType =
-  | "NETWORK_SPIKE"
-  | "FAILED_AUTHENTICATION"
-  | "UNUSUAL_DATA_ACCESS"
-  | "PRIVILEGE_ESCALATION"
-  | "MALWARE_SIGNATURE"
-  | "DDoS_PATTERN"
-  | "CRYPTOGRAPHIC_ANOMALY"
-  | "RESOURCE_EXHAUSTION"
-  | "POLICY_VIOLATION"
-  | "UNKNOWN";
+  | 'NETWORK_SPIKE'
+  | 'FAILED_AUTHENTICATION'
+  | 'UNUSUAL_DATA_ACCESS'
+  | 'PRIVILEGE_ESCALATION'
+  | 'MALWARE_SIGNATURE'
+  | 'DDoS_PATTERN'
+  | 'CRYPTOGRAPHIC_ANOMALY'
+  | 'RESOURCE_EXHAUSTION'
+  | 'POLICY_VIOLATION'
+  | 'UNKNOWN';
 
 export type AnomalyStatus =
-  | "DETECTED"
-  | "ACKNOWLEDGED"
-  | "INVESTIGATING"
-  | "MITIGATED"
-  | "RESOLVED"
-  | "FALSE_POSITIVE";
+  | 'DETECTED'
+  | 'ACKNOWLEDGED'
+  | 'INVESTIGATING'
+  | 'MITIGATED'
+  | 'RESOLVED'
+  | 'FALSE_POSITIVE';
 
 /**
  * Severity score 0.0-1.0 with interpretation:
@@ -65,7 +64,7 @@ export type AnomalyStatus =
  * 0.6-0.8: High (investigate immediately)
  * 0.8-1.0: Critical (activate incident response)
  */
-export type SeverityLevel = number & { readonly __brand: "SeverityLevel" };
+export type SeverityLevel = number & { readonly __brand: 'SeverityLevel' };
 
 /**
  * Result of anomaly validation.
@@ -80,7 +79,7 @@ export interface ValidationResult {
  */
 export interface JavaExecutionMetadata {
   readonly executionId: string;
-  readonly algorithm: "ISOLATION_FOREST" | "TREND_DETECTOR" | "RISK_SCORER";
+  readonly algorithm: 'ISOLATION_FOREST' | 'TREND_DETECTOR' | 'RISK_SCORER';
   readonly executedAt: Date;
   readonly processingTimeMs: number;
   readonly confidence: number; // 0.0-1.0
@@ -181,7 +180,7 @@ export class SecurityAnomaly {
 
     // Validate severity
     if (params.severity < 0 || params.severity > 1) {
-      throw new Error("Severity must be between 0.0 and 1.0");
+      throw new Error('Severity must be between 0.0 and 1.0');
     }
 
     const anomaly = new SecurityAnomaly(
@@ -192,7 +191,7 @@ export class SecurityAnomaly {
       params.observed,
       params.description,
       now,
-      "DETECTED",
+      'DETECTED',
       params.javaServiceExecutionId,
       params.javaExecutionMetadata,
       [],
@@ -205,7 +204,7 @@ export class SecurityAnomaly {
     // Validate on creation
     const validation = anomaly.validate();
     if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(", ")}`);
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     return anomaly;
@@ -221,16 +220,16 @@ export class SecurityAnomaly {
 
     // Type validation
     const validTypes: AnomalyType[] = [
-      "NETWORK_SPIKE",
-      "FAILED_AUTHENTICATION",
-      "UNUSUAL_DATA_ACCESS",
-      "PRIVILEGE_ESCALATION",
-      "MALWARE_SIGNATURE",
-      "DDoS_PATTERN",
-      "CRYPTOGRAPHIC_ANOMALY",
-      "RESOURCE_EXHAUSTION",
-      "POLICY_VIOLATION",
-      "UNKNOWN",
+      'NETWORK_SPIKE',
+      'FAILED_AUTHENTICATION',
+      'UNUSUAL_DATA_ACCESS',
+      'PRIVILEGE_ESCALATION',
+      'MALWARE_SIGNATURE',
+      'DDoS_PATTERN',
+      'CRYPTOGRAPHIC_ANOMALY',
+      'RESOURCE_EXHAUSTION',
+      'POLICY_VIOLATION',
+      'UNKNOWN',
     ];
     if (!validTypes.includes(this._type)) {
       errors.push(`Invalid anomaly type: ${this._type}`);
@@ -238,25 +237,25 @@ export class SecurityAnomaly {
 
     // Severity validation
     if (this._severity < 0 || this._severity > 1) {
-      errors.push("Severity must be between 0.0 and 1.0");
+      errors.push('Severity must be between 0.0 and 1.0');
     }
 
     // Description validation
     if (!this._description || this._description.trim().length === 0) {
-      errors.push("Description cannot be empty");
+      errors.push('Description cannot be empty');
     }
 
     // Baseline/Observed validation
     if (this._baseline < 0) {
-      errors.push("Baseline cannot be negative");
+      errors.push('Baseline cannot be negative');
     }
     if (this._observed < 0) {
-      errors.push("Observed value cannot be negative");
+      errors.push('Observed value cannot be negative');
     }
 
     // Java execution metadata validation
     if (!this._javaExecutionMetadata.executionId) {
-      errors.push("Java execution ID is required");
+      errors.push('Java execution ID is required');
     }
 
     return {
@@ -280,7 +279,7 @@ export class SecurityAnomaly {
       this._observed,
       this._description,
       this._detectedAt,
-      "ACKNOWLEDGED",
+      'ACKNOWLEDGED',
       this._javaServiceExecutionId,
       this._javaExecutionMetadata,
       [...this._investigationNotes, notes],
@@ -306,7 +305,7 @@ export class SecurityAnomaly {
       this._observed,
       this._description,
       this._detectedAt,
-      "MITIGATED",
+      'MITIGATED',
       this._javaServiceExecutionId,
       this._javaExecutionMetadata,
       this._investigationNotes,
@@ -331,7 +330,7 @@ export class SecurityAnomaly {
       this._observed,
       this._description,
       this._detectedAt,
-      "RESOLVED",
+      'RESOLVED',
       this._javaServiceExecutionId,
       this._javaExecutionMetadata,
       this._investigationNotes,
@@ -356,7 +355,7 @@ export class SecurityAnomaly {
       this._observed,
       this._description,
       this._detectedAt,
-      "FALSE_POSITIVE",
+      'FALSE_POSITIVE',
       this._javaServiceExecutionId,
       this._javaExecutionMetadata,
       this._investigationNotes,
@@ -446,11 +445,11 @@ export class SecurityAnomaly {
    *
    * @returns "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
    */
-  public severityCategory(): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" {
-    if (this._severity >= 0.8) return "CRITICAL";
-    if (this._severity >= 0.6) return "HIGH";
-    if (this._severity >= 0.3) return "MEDIUM";
-    return "LOW";
+  public severityCategory(): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+    if (this._severity >= 0.8) return 'CRITICAL';
+    if (this._severity >= 0.6) return 'HIGH';
+    if (this._severity >= 0.3) return 'MEDIUM';
+    return 'LOW';
   }
 
   /**
@@ -495,15 +494,15 @@ export class SecurityAnomalyFactory {
     overrides?: Partial<Parameters<typeof SecurityAnomaly.create>[0]>
   ): SecurityAnomaly {
     const defaults: Parameters<typeof SecurityAnomaly.create>[0] = {
-      type: "NETWORK_SPIKE",
+      type: 'NETWORK_SPIKE',
       severity: 0.75,
       baseline: 100,
       observed: 350,
-      description: "Test anomaly for unit testing",
-      javaServiceExecutionId: "test-exec-12345",
+      description: 'Test anomaly for unit testing',
+      javaServiceExecutionId: 'test-exec-12345',
       javaExecutionMetadata: {
-        executionId: "test-exec-12345",
-        algorithm: "ISOLATION_FOREST",
+        executionId: 'test-exec-12345',
+        algorithm: 'ISOLATION_FOREST',
         executedAt: new Date(),
         processingTimeMs: 145,
         confidence: 0.92,
@@ -523,8 +522,8 @@ export class SecurityAnomalyFactory {
   public static critical(): SecurityAnomaly {
     return this.create({
       severity: 0.95,
-      type: "PRIVILEGE_ESCALATION",
-      description: "Critical privilege escalation detected",
+      type: 'PRIVILEGE_ESCALATION',
+      description: 'Critical privilege escalation detected',
     });
   }
 
@@ -536,8 +535,8 @@ export class SecurityAnomalyFactory {
   public static low(): SecurityAnomaly {
     return this.create({
       severity: 0.15,
-      type: "POLICY_VIOLATION",
-      description: "Minor policy violation detected",
+      type: 'POLICY_VIOLATION',
+      description: 'Minor policy violation detected',
     });
   }
 }

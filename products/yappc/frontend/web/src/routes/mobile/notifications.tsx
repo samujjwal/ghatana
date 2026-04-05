@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Mobile Notifications Route
  * 

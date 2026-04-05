@@ -4,7 +4,7 @@
  *
  * Canonical location for app-level Jotai atoms.
  * Combines re-exports from @ghatana/yappc-canvas with stub atoms for missing ones.
- * 
+ *
  * This file serves as the migration bridge - all app code should import from here
  * instead of directly from @ghatana/yappc-canvas.
  *
@@ -104,19 +104,23 @@ export const currentUserAtom = _userAtom;
 export const activeProjectAtom = _currentProjectAtom;
 
 /** Navigation history with path and timestamp */
-export const navigationHistoryAtom = atom<Array<{ path: string; timestamp: number }>>([]);
+export const navigationHistoryAtom = atom<
+  Array<{ path: string; timestamp: number }>
+>([]);
 
 /** Projects list */
-export const projectsAtom = atom<Array<{
-  id: string;
-  name: string;
-  description: string;
-  status: 'active' | 'paused' | 'archived';
-  phase: string;
-  progress: number;
-  lastActivity: string;
-  team: Array<{ name: string; avatar?: string }>;
-}>>([]);
+export const projectsAtom = atom<
+  Array<{
+    id: string;
+    name: string;
+    description: string;
+    status: 'active' | 'paused' | 'archived';
+    phase: string;
+    progress: number;
+    lastActivity: string;
+    team: Array<{ name: string; avatar?: string }>;
+  }>
+>([]);
 
 /** Project phase */
 export const projectPhaseAtom = atom<string | null>(null);
@@ -140,12 +144,14 @@ export const activeSprintAtom = atom<{
 } | null>(null);
 
 /** Service health status */
-export const serviceHealthAtom = atom<Array<{
-  name: string;
-  status: 'healthy' | 'degraded' | 'down';
-  latency: number;
-  uptime: number;
-}>>([]);
+export const serviceHealthAtom = atom<
+  Array<{
+    name: string;
+    status: 'healthy' | 'degraded' | 'down';
+    latency: number;
+    uptime: number;
+  }>
+>([]);
 
 /** Compliance status atom */
 export const complianceStatusAtom = atom<{
@@ -169,42 +175,48 @@ export const securityScoreAtom = atom<{
 } | null>(null);
 
 /** Incidents atom for operations dashboard */
-export const incidentsAtom = atom<Array<{
-  id: string;
-  title: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  status: 'open' | 'investigating' | 'resolved';
-  createdAt: string;
-  startedAt?: string;
-  resolvedAt?: string;
-  assignee?: string;
-  description?: string;
-}>>([]);
+export const incidentsAtom = atom<
+  Array<{
+    id: string;
+    title: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    status: 'open' | 'investigating' | 'resolved';
+    createdAt: string;
+    startedAt?: string;
+    resolvedAt?: string;
+    assignee?: string;
+    description?: string;
+  }>
+>([]);
 
 /** Vulnerabilities atom for security dashboard */
-export const vulnerabilitiesAtom = atom<Array<{
-  id: string;
-  title: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  status: 'open' | 'fixed' | 'mitigated' | 'in-progress' | 'resolved';
-  package?: string;
-  cve?: string;
-  scanType?: string;
-  affectedComponent?: string;
-  description?: string;
-  detectedAt?: string;
-}>>([]);
+export const vulnerabilitiesAtom = atom<
+  Array<{
+    id: string;
+    title: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    status: 'open' | 'fixed' | 'mitigated' | 'in-progress' | 'resolved';
+    package?: string;
+    cve?: string;
+    scanType?: string;
+    affectedComponent?: string;
+    description?: string;
+    detectedAt?: string;
+  }>
+>([]);
 
 /** Theme atom */
 export const themeAtom = atom<'light' | 'dark' | 'system'>('system');
 
 /** Conversation history atom for AI chat */
-export const conversationHistoryAtom = atom<Array<{
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}>>([]);
+export const conversationHistoryAtom = atom<
+  Array<{
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+  }>
+>([]);
 
 /** AI agent state atom */
 export const aiAgentStateAtom = atom<{

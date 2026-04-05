@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Compliance Control Entity
  *
@@ -118,7 +117,9 @@ export class ComplianceControl implements IComplianceControl {
    * Schedule next assessment
    */
   scheduleNextAssessment(daysFromNow: number = 90): void {
-    this.nextAssessmentDate = new Date(Date.now() + daysFromNow * 24 * 60 * 60 * 1000);
+    this.nextAssessmentDate = new Date(
+      Date.now() + daysFromNow * 24 * 60 * 60 * 1000
+    );
     this.touch();
   }
 
@@ -183,8 +184,10 @@ export class ComplianceControl implements IComplianceControl {
     );
     if (data.status) control.status = data.status;
     if (data.score) control.score = data.score;
-    if (data.lastAssessmentDate) control.lastAssessmentDate = new Date(data.lastAssessmentDate);
-    if (data.nextAssessmentDate) control.nextAssessmentDate = new Date(data.nextAssessmentDate);
+    if (data.lastAssessmentDate)
+      control.lastAssessmentDate = new Date(data.lastAssessmentDate);
+    if (data.nextAssessmentDate)
+      control.nextAssessmentDate = new Date(data.nextAssessmentDate);
     if (data.evidenceIds) control.evidenceIds = data.evidenceIds;
     if (data.remediationPlan) control.remediationPlan = data.remediationPlan;
     return control;

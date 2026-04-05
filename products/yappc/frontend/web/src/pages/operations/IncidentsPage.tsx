@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Incidents List Page
  *

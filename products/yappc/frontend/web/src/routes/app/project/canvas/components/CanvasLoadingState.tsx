@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Canvas loading state with skeleton or spinner

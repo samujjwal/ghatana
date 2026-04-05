@@ -358,7 +358,7 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all',
                   'text-zinc-400 hover:text-white hover:bg-zinc-800',
                   (isActive || currentPhase === item.id) &&
-                    'bg-violet-500/10 text-violet-400 border border-violet-500/20',
+                  'bg-violet-500/10 text-violet-400 border border-violet-500/20',
                   collapsed && 'justify-center px-2'
                 )
               }

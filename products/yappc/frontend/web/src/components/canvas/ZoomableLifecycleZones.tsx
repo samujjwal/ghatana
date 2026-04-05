@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useMemo } from 'react';
 import { FileText as Description } from 'lucide-react';
 import { cn } from '@/lib/utils';

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Repository interface for security anomaly data access.
  *

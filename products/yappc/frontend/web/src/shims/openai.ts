@@ -1,4 +1,3 @@
-// @ts-nocheck
 type OpenAIConfig = {
   apiKey?: string;
   baseURL?: string;

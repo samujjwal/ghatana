@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Task-Focused Canvas Hook
  *

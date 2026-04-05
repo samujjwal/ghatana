@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Phase-Specific Color Theme System
  *

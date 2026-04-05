@@ -1,10 +1,9 @@
-// @ts-nocheck
 export type LifecyclePhase =
-	| 'INTENT'
-	| 'CONTEXT'
-	| 'PLAN'
-	| 'EXECUTE'
-	| 'VERIFY'
-	| 'OBSERVE'
-	| 'LEARN'
-	| 'INSTITUTIONALIZE';
+  | 'INTENT'
+  | 'CONTEXT'
+  | 'PLAN'
+  | 'EXECUTE'
+  | 'VERIFY'
+  | 'OBSERVE'
+  | 'LEARN'
+  | 'INSTITUTIONALIZE';

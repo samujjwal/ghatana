@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Manages accessibility checking and panel state

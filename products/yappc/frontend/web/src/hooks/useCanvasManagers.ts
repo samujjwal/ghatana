@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useCanvasManagers - Canvas Manager Initialization Hook
  *
@@ -55,8 +54,13 @@ export interface UseCanvasManagersReturn {
   canRedo: boolean;
   dispatchUndo: () => void;
   dispatchRedo: () => void;
-  updateNodeCallback: (nodeId: string, updates: Partial<HierarchicalNode>) => void;
-  updateViewportCallback: (updates: Partial<{ x: number; y: number; zoom: number }>) => void;
+  updateNodeCallback: (
+    nodeId: string,
+    updates: Partial<HierarchicalNode>
+  ) => void;
+  updateViewportCallback: (
+    updates: Partial<{ x: number; y: number; zoom: number }>
+  ) => void;
   getNode: (id: string) => HierarchicalNode | undefined;
 }
 
@@ -133,8 +137,7 @@ export function useCanvasManagers(): UseCanvasManagersReturn {
   const connectionManager = useMemo(() => new ConnectionManager(), []);
 
   const alignmentEngine = useMemo(
-    () =>
-      new AlignmentEngine(getNode, updateNodeCallback, (_nodeIds) => {}),
+    () => new AlignmentEngine(getNode, updateNodeCallback, (_nodeIds) => {}),
     [getNode, updateNodeCallback]
   );
 

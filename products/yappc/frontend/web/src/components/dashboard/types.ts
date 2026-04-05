@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Types for dashboard components
 export interface Project {
     id: string;

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Centralised API configuration for yappc web frontend.
  *

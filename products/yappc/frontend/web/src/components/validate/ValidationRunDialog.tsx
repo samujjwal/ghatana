@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Validation Run Dialog Component
  *

@@ -1,10 +1,10 @@
 // @ts-nocheck
 /**
  * useVoiceInput Hook
- * 
+ *
  * React hook for voice input functionality.
  * Provides easy integration with the VoiceInputService.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Voice input integration
  * @doc.layer product
@@ -12,8 +12,8 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  VoiceInputService, 
+import {
+  VoiceInputService,
   getVoiceInputService,
   type VoiceInputStatus,
   type VoiceInputResult,
@@ -34,14 +34,16 @@ interface UseVoiceInputResult {
   transcript: string;
   interimTranscript: string;
   confidence: number;
-  
+
   startListening: () => boolean;
   stopListening: () => void;
   toggleListening: () => void;
   clearTranscript: () => void;
 }
 
-export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputResult {
+export function useVoiceInput(
+  options: UseVoiceInputOptions = {}
+): UseVoiceInputResult {
   const [status, setStatus] = useState<VoiceInputStatus>('idle');
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -51,7 +53,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
 
   const service = useMemo(() => {
     if (!isSupported) return null;
-    
+
     return getVoiceInputService({
       language: options.language || 'en-US',
       continuous: options.continuous || false,
@@ -70,11 +72,11 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       },
     });
   }, [isSupported, options.language, options.continuous]);
-  
+
   // Handle callbacks separately to avoid recreating service
   useEffect(() => {
     if (!service) return;
-    
+
     service.setOptions({
       language: options.language,
       continuous: options.continuous,
@@ -91,7 +93,14 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       },
       onError: options.onError,
     });
-  }, [service, options.language, options.continuous, options.onTranscript, options.onFinalTranscript, options.onError]);
+  }, [
+    service,
+    options.language,
+    options.continuous,
+    options.onTranscript,
+    options.onFinalTranscript,
+    options.onError,
+  ]);
 
   const startListening = useCallback(() => {
     if (!service) return false;

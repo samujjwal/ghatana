@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Base interfaces for all canvas items and configurations
  * This provides the foundation for generic, composable canvas components

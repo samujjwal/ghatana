@@ -1,9 +1,8 @@
-// @ts-nocheck
 /**
  * Context Exports
- * 
+ *
  * Central export for all context providers and hooks.
- * 
+ *
  * @doc.type module
  * @doc.purpose Context barrel export
  * @doc.layer product
@@ -12,20 +11,20 @@
 
 // Workflow Context
 export {
-    WorkflowContextProvider,
-    useWorkflowContext,
-    usePhaseContext,
-    useGuidanceContext,
-    useSelectionContext,
-    useCapabilitiesContext,
+  WorkflowContextProvider,
+  useWorkflowContext,
+  usePhaseContext,
+  useGuidanceContext,
+  useSelectionContext,
+  useCapabilitiesContext,
 } from './WorkflowContextProvider';
 
 export type {
-    RouteContext,
-    ProjectContext,
-    SelectionContext,
-    CapabilitiesContext,
-    GuidanceStep,
-    GuidanceContext,
-    WorkflowContextValue,
+  RouteContext,
+  ProjectContext,
+  SelectionContext,
+  CapabilitiesContext,
+  GuidanceStep,
+  GuidanceContext,
+  WorkflowContextValue,
 } from './WorkflowContextProvider';

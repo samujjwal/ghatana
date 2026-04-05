@@ -28,11 +28,21 @@ function useStoreViewManagement() {
   const [viewMode, setViewMode] = useAtom(viewModeAtom);
   return { viewMode, setViewMode };
 }
-function useSearchQuery() { return useAtom(searchQueryAtom); }
-function useFilterConfig() { return useAtom(filterConfigAtom); }
-function useStoreCurrentPhase() { return useAtomValue(currentPhaseAtom); }
-function useSidePanel() { return useAtom(sidePanelOpenAtom); }
-function useSelectedItem() { return useAtom(selectedItemAtom); }
+function useSearchQuery() {
+  return useAtom(searchQueryAtom);
+}
+function useFilterConfig() {
+  return useAtom(filterConfigAtom);
+}
+function useStoreCurrentPhase() {
+  return useAtomValue(currentPhaseAtom);
+}
+function useSidePanel() {
+  return useAtom(sidePanelOpenAtom);
+}
+function useSelectedItem() {
+  return useAtom(selectedItemAtom);
+}
 
 /**
  * Logging utility for state management debugging.
@@ -63,42 +73,48 @@ export const personaDashboardsAtom = atom<PersonaDashboardSummary[]>([]);
 // Derived Atoms
 export const phasesWithItemsAtom = atom((get) => {
   const items = get(itemsAtom);
-  return get(phasesAtom).map(phase => ({
+  return get(phasesAtom).map((phase) => ({
     ...phase,
-    items: items.filter(item => item.phaseId === phase.id)
+    items: items.filter((item) => item.phaseId === phase.id),
   }));
 });
 
 // Hooks for canonical types
 export const usePhases = (): Phase[] => useAtomValue(phasesWithItemsAtom);
 export const useMilestones = () => useAtomValue(milestonesAtom);
-export const useRecentActivity = (): ActivityLog[] => useAtomValue(activityAtom);
-export const usePersonaDashboards = (): PersonaDashboardSummary[] => useAtomValue(personaDashboardsAtom);
+export const useRecentActivity = (): ActivityLog[] =>
+  useAtomValue(activityAtom);
+export const usePersonaDashboards = (): PersonaDashboardSummary[] =>
+  useAtomValue(personaDashboardsAtom);
 
 // Delegate current phase management to shared store hook
 export const useCurrentPhase = () => useStoreCurrentPhase();
 
 export const usePhase = (phaseId: string) => {
   const phases = usePhases();
-  return phases.find(phase => phase.id === phaseId);
+  return phases.find((phase) => phase.id === phaseId);
 };
 
 export const usePhaseItems = (phaseId: string) => {
   const items = useAtomValue(itemsAtom);
-  return items.filter(item => item.phaseId === phaseId);
+  return items.filter((item) => item.phaseId === phaseId);
 };
 
 export const useMilestoneItems = (milestoneId: string) => {
   const items = useAtomValue(itemsAtom);
-  return items.filter(item => item.childrenIds?.includes(milestoneId)); // Adjust based on your data model
+  return items.filter((item) => item.childrenIds?.includes(milestoneId)); // Adjust based on your data model
 };
 
 // KPI hooks calculated from items
 export const useKpiStats = () => {
   const items = useAtomValue(itemsAtom);
   const totalItems = items.length;
-  const completedItems = items.filter((item) => item.status === 'completed').length;
-  const inProgressItems = items.filter((item) => item.status === 'in-progress').length;
+  const completedItems = items.filter(
+    (item) => item.status === 'completed'
+  ).length;
+  const inProgressItems = items.filter(
+    (item) => item.status === 'in-progress'
+  ).length;
   const blockedItems = items.filter((item) => item.status === 'blocked').length;
 
   return {
@@ -107,7 +123,9 @@ export const useKpiStats = () => {
     inProgress: inProgressItems,
     blocked: blockedItems,
     onTrack:
-      totalItems > 0 && completedItems / totalItems > 0.7 ? 'on-track' : 'at-risk',
+      totalItems > 0 && completedItems / totalItems > 0.7
+        ? 'on-track'
+        : 'at-risk',
   };
 };
 
@@ -132,9 +150,15 @@ export const usePhaseKpiStats = (phaseId: string | 'all'): PhaseKpiStats => {
     phases.forEach((phase) => {
       const phaseItems = allItems.filter((item) => item.phaseId === phase.id);
       const total = phaseItems.length;
-      const completed = phaseItems.filter((item) => item.status === 'completed').length;
-      const inProgress = phaseItems.filter((item) => item.status === 'in-progress').length;
-      const blocked = phaseItems.filter((item) => item.status === 'blocked').length;
+      const completed = phaseItems.filter(
+        (item) => item.status === 'completed'
+      ).length;
+      const inProgress = phaseItems.filter(
+        (item) => item.status === 'in-progress'
+      ).length;
+      const blocked = phaseItems.filter(
+        (item) => item.status === 'blocked'
+      ).length;
 
       allPhaseStats[phase.id] = {
         total,
@@ -151,8 +175,12 @@ export const usePhaseKpiStats = (phaseId: string | 'all'): PhaseKpiStats => {
   // Return stats for a specific phase
   const phaseItems = allItems.filter((item) => item.phaseId === phaseId);
   const total = phaseItems.length;
-  const completed = phaseItems.filter((item) => item.status === 'completed').length;
-  const inProgress = phaseItems.filter((item) => item.status === 'in-progress').length;
+  const completed = phaseItems.filter(
+    (item) => item.status === 'completed'
+  ).length;
+  const inProgress = phaseItems.filter(
+    (item) => item.status === 'in-progress'
+  ).length;
   const blocked = phaseItems.filter((item) => item.status === 'blocked').length;
 
   return {
@@ -259,7 +287,10 @@ export const initializeDevSecOpsData = async ({
     logger.log('DevSecOps data initialized successfully from API');
     return canonical;
   } catch (error) {
-    logger.error('Failed to fetch data from API, falling back to fixtures', error);
+    logger.error(
+      'Failed to fetch data from API, falling back to fixtures',
+      error
+    );
 
     try {
       const fallback = createDevSecOpsOverview();
@@ -271,7 +302,9 @@ export const initializeDevSecOpsData = async ({
       setActivity?.(fallback.activity);
       setPersonaDashboards?.(fallback.personaDashboards || []);
 
-      logger.log('DevSecOps data initialized from local fixtures (API unavailable)');
+      logger.log(
+        'DevSecOps data initialized from local fixtures (API unavailable)'
+      );
       return fallback;
     } catch (fallbackError) {
       logger.error('Failed to initialize data from fixtures', fallbackError);

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Accessibility components barrel export
  * 

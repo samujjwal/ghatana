@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Pull Requests List Page
  *

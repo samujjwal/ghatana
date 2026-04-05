@@ -26,9 +26,13 @@ vi.mock('react-router', () => ({
   useNavigate: vi.fn(),
 }));
 
-vi.mock('jotai', () => ({
-  useAtomValue: vi.fn(),
-}));
+vi.mock('jotai', async (importOriginal) => {
+  const original = await importOriginal<typeof import('jotai')>();
+  return {
+    ...original,
+    useAtomValue: vi.fn(),
+  };
+});
 
 describe('Breadcrumbs', () => {
   const mockNavigate = vi.fn();

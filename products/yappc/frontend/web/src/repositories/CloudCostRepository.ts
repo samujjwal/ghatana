@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CloudCostRepository - Data access layer for cloud cost records
  *

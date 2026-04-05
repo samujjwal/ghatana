@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Security Alerts Page
  *

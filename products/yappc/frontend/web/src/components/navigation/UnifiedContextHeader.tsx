@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Context Header Component
  *

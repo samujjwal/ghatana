@@ -19,10 +19,10 @@ vi.mock('react-router', () => ({
   useNavigate: vi.fn(),
 }));
 
-vi.mock('jotai', () => ({
-  useAtomValue: vi.fn(),
-  useSetAtom: vi.fn(),
-}));
+vi.mock('jotai', async (importOriginal) => {
+  const original = await importOriginal<typeof import('jotai')>();
+  return { ...original, useAtomValue: vi.fn(), useSetAtom: vi.fn() };
+});
 
 vi.mock('framer-motion', () => ({
   motion: {
@@ -124,9 +124,9 @@ describe('GlobalSearch', () => {
 
       render(<GlobalSearch />);
       const input = screen.getByPlaceholderText('Search project...');
-      
+
       await userEvent.type(input, 'dashboard');
-      
+
       expect(mockSetQuery).toHaveBeenCalled();
     });
 
@@ -167,7 +167,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       const result = screen.getByText('Project Dashboard');
       fireEvent.click(result);
 
@@ -185,7 +185,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       fireEvent.keyDown(window, { key: 'Enter' });
 
       expect(mockNavigate).toHaveBeenCalled();
@@ -202,7 +202,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       fireEvent.keyDown(window, { key: 'k', metaKey: true });
 
       expect(mockSetIsOpen).toHaveBeenCalledWith(true);
@@ -217,7 +217,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
       expect(mockSetIsOpen).toHaveBeenCalledWith(true);
@@ -232,7 +232,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       fireEvent.keyDown(window, { key: 'Escape' });
 
       expect(mockSetIsOpen).toHaveBeenCalledWith(false);
@@ -248,11 +248,11 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Arrow down should move selection
       fireEvent.keyDown(window, { key: 'ArrowDown' });
       fireEvent.keyDown(window, { key: 'ArrowDown' });
-      
+
       // Arrow up should move selection back
       fireEvent.keyDown(window, { key: 'ArrowUp' });
 
@@ -271,7 +271,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Click on backdrop (the overlay div)
       const backdrop = document.querySelector('.bg-black\\/50');
       if (backdrop) {
@@ -291,7 +291,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Recent searches section should be visible when no query
       // This depends on internal state having recent searches
     });
@@ -305,7 +305,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       const result = screen.getByText('Project Dashboard');
       fireEvent.click(result);
 
@@ -323,7 +323,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       const input = screen.getByPlaceholderText('Search project...');
       expect(input).toHaveAttribute('type', 'text');
     });
@@ -337,7 +337,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       const input = screen.getByPlaceholderText('Search project...');
       expect(document.activeElement).toBe(input);
     });
@@ -351,7 +351,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Keyboard shortcuts should be visible in footer
       expect(screen.getByText('Navigate')).toBeInTheDocument();
       expect(screen.getByText('Select')).toBeInTheDocument();
@@ -369,7 +369,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Settings result should have settings icon
       expect(screen.getByText('Team Settings')).toBeInTheDocument();
     });
@@ -383,7 +383,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Canvas result should have code category color
       expect(screen.getByText('Development Canvas')).toBeInTheDocument();
     });
@@ -399,7 +399,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Should not show "no results" for whitespace-only query
     });
 
@@ -412,7 +412,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch />);
-      
+
       // Should safely display the query without executing
       expect(screen.getByText(/No results found/i)).toBeInTheDocument();
     });
@@ -426,7 +426,7 @@ describe('GlobalSearch', () => {
       });
 
       render(<GlobalSearch maxResults={2} />);
-      
+
       // Should only show 2 results max
     });
   });

@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CostForecast DTO - Data transfer object for cost forecasts and projections
  *
@@ -127,7 +126,11 @@ export function createCostForecast(data: Partial<CostForecast>): CostForecast {
   if (data.projectedCost === undefined || data.projectedCost < 0) {
     throw new Error('CostForecast: projectedCost must be non-negative');
   }
-  if (data.confidence === undefined || data.confidence < 0 || data.confidence > 1) {
+  if (
+    data.confidence === undefined ||
+    data.confidence < 0 ||
+    data.confidence > 1
+  ) {
     throw new Error('CostForecast: confidence must be between 0 and 1');
   }
 

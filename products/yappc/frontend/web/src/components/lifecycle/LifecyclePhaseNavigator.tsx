@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Lifecycle Phase Navigator Component
  * 

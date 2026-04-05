@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Code Association Types and Hooks
  * 

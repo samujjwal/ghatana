@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Evidence Entity
  *

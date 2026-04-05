@@ -19,9 +19,10 @@ vi.mock('react-router', () => ({
   Outlet: () => <div data-testid="outlet">Outlet Content</div>,
 }));
 
-vi.mock('jotai', () => ({
-  useAtomValue: vi.fn(),
-}));
+vi.mock('jotai', async (importOriginal) => {
+  const original = await importOriginal<typeof import('jotai')>();
+  return { ...original, useAtomValue: vi.fn() };
+});
 
 vi.mock('framer-motion', () => ({
   motion: {
@@ -78,7 +79,7 @@ describe('UnifiedProjectDashboard', () => {
 
     it('should render all phase tabs', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       expect(screen.getByText('Bootstrap')).toBeInTheDocument();
       expect(screen.getByText('Initialize')).toBeInTheDocument();
       expect(screen.getByText('Develop')).toBeInTheDocument();
@@ -111,41 +112,41 @@ describe('UnifiedProjectDashboard', () => {
   describe('Phase Navigation', () => {
     it('should navigate to bootstrap phase on tab click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Bootstrap'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/bootstrap');
     });
 
     it('should navigate to development phase on tab click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Develop'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/dev');
     });
 
     it('should navigate to operations phase on tab click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Operate'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/ops');
     });
 
     it('should navigate to collaboration phase on tab click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Collaborate'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/collab');
     });
 
     it('should navigate to security phase on tab click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Secure'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/security');
     });
   });
@@ -153,7 +154,7 @@ describe('UnifiedProjectDashboard', () => {
   describe('Quick Actions', () => {
     it('should show bootstrap quick actions by default', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       expect(screen.getByText('Upload Docs')).toBeInTheDocument();
       expect(screen.getByText('Browse Templates')).toBeInTheDocument();
       expect(screen.getByText('Import from URL')).toBeInTheDocument();
@@ -161,18 +162,18 @@ describe('UnifiedProjectDashboard', () => {
 
     it('should update quick actions when phase changes', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Click on Development phase
       fireEvent.click(screen.getByText('Develop'));
-      
+
       // Quick actions should update (this depends on internal state)
     });
 
     it('should navigate on quick action click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Upload Docs'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/bootstrap/upload');
     });
   });
@@ -180,26 +181,26 @@ describe('UnifiedProjectDashboard', () => {
   describe('AI Assistant Panel', () => {
     it('should toggle AI assistant panel on button click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       const aiButton = screen.getByText('AI Assistant');
       fireEvent.click(aiButton);
-      
+
       // Panel should be visible with the AI chat header
       expect(screen.getAllByText('AI Assistant').length).toBeGreaterThanOrEqual(1);
     });
 
     it('should close AI assistant panel on close button click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Open panel
       fireEvent.click(screen.getByText('AI Assistant'));
-      
+
       // Find and click close button (X icon)
       const closeButtons = screen.getAllByRole('button');
-      const closeButton = closeButtons.find(btn => 
+      const closeButton = closeButtons.find(btn =>
         btn.querySelector('svg') && btn.closest('aside')
       );
-      
+
       if (closeButton) {
         fireEvent.click(closeButton);
       }
@@ -209,13 +210,13 @@ describe('UnifiedProjectDashboard', () => {
   describe('Mobile Menu', () => {
     it('should toggle mobile menu on button click', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Find mobile menu button (hidden on desktop)
       const buttons = screen.getAllByRole('button');
-      const mobileMenuButton = buttons.find(btn => 
+      const mobileMenuButton = buttons.find(btn =>
         btn.className.includes('lg:hidden')
       );
-      
+
       if (mobileMenuButton) {
         fireEvent.click(mobileMenuButton);
         // Menu state should toggle
@@ -226,10 +227,10 @@ describe('UnifiedProjectDashboard', () => {
   describe('Search', () => {
     it('should update search query on input', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       const searchInput = screen.getByPlaceholderText('Search project...');
       fireEvent.change(searchInput, { target: { value: 'test query' } });
-      
+
       expect(searchInput).toHaveValue('test query');
     });
   });
@@ -248,7 +249,7 @@ describe('UnifiedProjectDashboard', () => {
       });
 
       render(<UnifiedProjectDashboard />);
-      
+
       expect(screen.getByText('Development')).toBeInTheDocument();
       expect(screen.getByText('Sprint Board')).toBeInTheDocument();
     });
@@ -265,9 +266,9 @@ describe('UnifiedProjectDashboard', () => {
       });
 
       render(<UnifiedProjectDashboard />);
-      
+
       fireEvent.click(screen.getByText('Development'));
-      
+
       expect(mockNavigate).toHaveBeenCalledWith('/project/123/dev');
     });
   });
@@ -283,7 +284,7 @@ describe('UnifiedProjectDashboard', () => {
       });
 
       render(<UnifiedProjectDashboard />);
-      
+
       // Should show default "Project" text
       expect(screen.getByText('Project')).toBeInTheDocument();
     });
@@ -292,7 +293,7 @@ describe('UnifiedProjectDashboard', () => {
       (useParams as unknown).mockReturnValue({});
 
       render(<UnifiedProjectDashboard />);
-      
+
       // Should still render without crashing
       expect(screen.getByText('Bootstrap')).toBeInTheDocument();
     });
@@ -307,7 +308,7 @@ describe('UnifiedProjectDashboard', () => {
       });
 
       render(<UnifiedProjectDashboard />);
-      
+
       // Badge should not be visible
       expect(screen.queryByText('0')).not.toBeInTheDocument();
     });
@@ -316,14 +317,14 @@ describe('UnifiedProjectDashboard', () => {
   describe('Accessibility', () => {
     it('should have proper heading structure', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       const heading = screen.getByRole('heading', { level: 1 });
       expect(heading).toHaveTextContent('Test Project');
     });
 
     it('should have accessible navigation', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Phase tabs should be accessible buttons
       const bootstrapTab = screen.getByText('Bootstrap');
       expect(bootstrapTab.closest('button')).toBeInTheDocument();
@@ -331,7 +332,7 @@ describe('UnifiedProjectDashboard', () => {
 
     it('should have accessible search input', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       const searchInput = screen.getByPlaceholderText('Search project...');
       expect(searchInput).toHaveAttribute('type', 'search');
     });
@@ -340,7 +341,7 @@ describe('UnifiedProjectDashboard', () => {
   describe('Responsive Design', () => {
     it('should render mobile menu toggle', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Mobile menu button should exist (hidden on desktop via CSS)
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
@@ -348,7 +349,7 @@ describe('UnifiedProjectDashboard', () => {
 
     it('should render sidebar (hidden on mobile via CSS)', () => {
       render(<UnifiedProjectDashboard />);
-      
+
       // Sidebar should exist
       expect(screen.getByText('Quick Actions')).toBeInTheDocument();
     });

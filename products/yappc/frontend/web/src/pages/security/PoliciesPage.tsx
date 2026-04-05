@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Policies List Page
  *

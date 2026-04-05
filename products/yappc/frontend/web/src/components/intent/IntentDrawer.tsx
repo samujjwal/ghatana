@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Intent Drawer Component
  *

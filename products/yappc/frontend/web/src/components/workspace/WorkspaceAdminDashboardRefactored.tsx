@@ -503,8 +503,8 @@ export const SecurityAlerts: React.FC<SecurityAlertsProps> = ({
   const activeAlerts = useMemo(() => {
     return alerts.filter(alert => !alert.resolved).sort((a, b) => {
       const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-      return (severityOrder[b.severity as keyof typeof severityOrder] || 0) - 
-             (severityOrder[a.severity as keyof typeof severityOrder] || 0);
+      return (severityOrder[b.severity as keyof typeof severityOrder] || 0) -
+        (severityOrder[a.severity as keyof typeof severityOrder] || 0);
     });
   }, [alerts]);
 
@@ -583,41 +583,11 @@ export const WorkspaceAdminDashboardRefactored: React.FC<WorkspaceAdminDashboard
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real implementation, this would come from API
-  const [members] = useState<WorkspaceMember[]>([
-    {
-      id: '1',
-      userId: 'user1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      role: 'OWNER',
-      status: 'active',
-      joinedAt: '2024-01-01',
-      lastActive: '2024-01-15',
-    },
-    {
-      id: '2',
-      userId: 'user2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      role: 'ADMIN',
-      status: 'active',
-      joinedAt: '2024-01-05',
-      lastActive: '2024-01-14',
-    },
-  ]);
+  // Members and audit logs fetched from API — empty until data layer is wired.
+  // The workspaceId prop is available for use when API endpoints are implemented.
+  const [members] = useState<WorkspaceMember[]>([]);
 
-  const [auditLogs] = useState<AuditLogEntry[]>([
-    {
-      id: '1',
-      action: 'User Login',
-      userId: 'user1',
-      userName: 'John Doe',
-      timestamp: '2024-01-15T10:00:00Z',
-      details: 'User logged in from IP 192.168.1.1',
-      severity: 'low',
-    },
-  ]);
+  const [auditLogs] = useState<AuditLogEntry[]>([]);
 
   const [securityAlerts] = useState<SecurityAlert[]>([
     {
@@ -714,7 +684,7 @@ export const WorkspaceAdminDashboardRefactored: React.FC<WorkspaceAdminDashboard
               ipWhitelist: [],
               auditLogging: true,
             }}
-            onUpdateSettings={() => {}}
+            onUpdateSettings={() => { }}
             loading={loading}
           />
         )}
@@ -722,7 +692,7 @@ export const WorkspaceAdminDashboardRefactored: React.FC<WorkspaceAdminDashboard
           <AuditLog
             logs={auditLogs}
             loading={loading}
-            onExport={() => {}}
+            onExport={() => { }}
           />
         )}
         {activeTab === 3 && (

@@ -1,14 +1,13 @@
 // @ts-nocheck
 /**
  * Canvas Tool API
- * 
+ *
  * Extensible tool system for the Implement Canvas.
  * Provides a plugin architecture for custom tools and interactions.
  */
 
 import type { CanvasState } from '../components/canvas/workspace/canvasAtoms';
 import type React from 'react';
-
 
 /**
  *
@@ -17,40 +16,40 @@ export interface CanvasContext {
   // State access
   getCanvasState(): CanvasState;
   updateCanvasState(updates: Partial<CanvasState>): void;
-  
+
   // Element manipulation
   addElement(element: Omit<CanvasElement, 'id'>): string;
   updateElement(id: string, updates: Partial<CanvasElement>): void;
   deleteElement(id: string): void;
   duplicateElement(id: string): string;
-  
+
   // Selection
   getSelection(): string[];
   setSelection(elementIds: string[]): void;
   addToSelection(elementIds: string[]): void;
   clearSelection(): void;
-  
+
   // Connections
   addConnection(connection: Omit<CanvasConnection, 'id'>): string;
   updateConnection(id: string, updates: Partial<CanvasConnection>): void;
   deleteConnection(id: string): void;
-  
+
   // Viewport
   getViewport(): { x: number; y: number; zoom: number };
   setViewport(viewport: { x: number; y: number; zoom: number }): void;
   fitView(elementIds?: string[]): void;
-  
+
   // Layers
   createLayer(name: string): string;
   deleteLayer(id: string): void;
   moveToLayer(elementIds: string[], layerId: string): void;
-  
+
   // Utilities
   exportSnapshot(): string;
   importSnapshot(data: string): void;
   undo(): void;
   redo(): void;
-  
+
   // Events
   on(event: string, handler: (...args: unknown[]) => void): () => void;
   emit(event: string, ...args: unknown[]): void;
@@ -65,16 +64,16 @@ export interface CanvasTool {
   description?: string;
   icon?: string;
   category?: 'selection' | 'drawing' | 'analysis' | 'export' | 'custom';
-  
+
   // Lifecycle
   initialize?(context: CanvasContext): void;
   cleanup?(): void;
-  
+
   // UI
   renderToolbar?(context: CanvasContext): React.ReactNode;
   renderPanel?(context: CanvasContext): React.ReactNode;
   renderOverlay?(context: CanvasContext): React.ReactNode;
-  
+
   // Event handlers
   onActivate?(context: CanvasContext): void;
   onDeactivate?(context: CanvasContext): void;
@@ -85,8 +84,11 @@ export interface CanvasTool {
   onKeyUp?(event: React.KeyboardEvent, context: CanvasContext): boolean;
   onSelectionChange?(selection: string[], context: CanvasContext): void;
   onElementsChange?(changes: ElementChange[], context: CanvasContext): void;
-  onConnectionsChange?(changes: ConnectionChange[], context: CanvasContext): void;
-  
+  onConnectionsChange?(
+    changes: ConnectionChange[],
+    context: CanvasContext
+  ): void;
+
   // Configuration
   settings?: Record<string, unknown>;
   shortcuts?: KeyboardShortcut[];
@@ -163,7 +165,7 @@ export class ToolRegistry {
   private tools = new Map<string, CanvasTool>();
   private activeTool: string | null = null;
   private context: CanvasContext | null = null;
-  
+
   /**
    *
    */
@@ -173,7 +175,7 @@ export class ToolRegistry {
       tool.initialize?.(this.context);
     }
   }
-  
+
   /**
    *
    */
@@ -187,32 +189,32 @@ export class ToolRegistry {
       this.tools.delete(toolId);
     }
   }
-  
+
   /**
    *
    */
   setContext(context: CanvasContext): void {
     this.context = context;
     // Initialize all registered tools
-    this.tools.forEach(tool => tool.initialize?.(context));
+    this.tools.forEach((tool) => tool.initialize?.(context));
   }
-  
+
   /**
    *
    */
   activateTool(toolId: string): void {
     if (this.activeTool === toolId) return;
-    
+
     // Deactivate current tool
     this.deactivateTool();
-    
+
     const tool = this.tools.get(toolId);
     if (tool && this.context) {
       this.activeTool = toolId;
       tool.onActivate?.(this.context);
     }
   }
-  
+
   /**
    *
    */
@@ -223,28 +225,30 @@ export class ToolRegistry {
       this.activeTool = null;
     }
   }
-  
+
   /**
    *
    */
   getActiveTool(): CanvasTool | null {
     return this.activeTool ? this.tools.get(this.activeTool) || null : null;
   }
-  
+
   /**
    *
    */
   getAllTools(): CanvasTool[] {
     return Array.from(this.tools.values());
   }
-  
+
   /**
    *
    */
   getToolsByCategory(category: string): CanvasTool[] {
-    return Array.from(this.tools.values()).filter(tool => tool.category === category);
+    return Array.from(this.tools.values()).filter(
+      (tool) => tool.category === category
+    );
   }
-  
+
   // Event delegation
   /**
    *
@@ -253,7 +257,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     return tool?.onPointerDown?.(event, this.context!) || false;
   }
-  
+
   /**
    *
    */
@@ -261,7 +265,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     return tool?.onPointerMove?.(event, this.context!) || false;
   }
-  
+
   /**
    *
    */
@@ -269,7 +273,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     return tool?.onPointerUp?.(event, this.context!) || false;
   }
-  
+
   /**
    *
    */
@@ -277,7 +281,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     return tool?.onKeyDown?.(event, this.context!) || false;
   }
-  
+
   /**
    *
    */
@@ -285,7 +289,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     return tool?.onKeyUp?.(event, this.context!) || false;
   }
-  
+
   /**
    *
    */
@@ -293,7 +297,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     tool?.onSelectionChange?.(selection, this.context!);
   }
-  
+
   /**
    *
    */
@@ -301,7 +305,7 @@ export class ToolRegistry {
     const tool = this.getActiveTool();
     tool?.onElementsChange?.(changes, this.context!);
   }
-  
+
   /**
    *
    */

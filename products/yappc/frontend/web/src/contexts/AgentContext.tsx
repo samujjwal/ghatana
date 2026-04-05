@@ -96,7 +96,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       const updatedAgent = await agentService.updateAgent(id, updates);
-      setAgents(prev => 
+      setAgents(prev =>
         prev.map(agent => agent.id === id ? updatedAgent : agent)
       );
       setError(null);
@@ -142,7 +142,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
   };
 
   const toggleAgentSelection = (id: string) => {
-    setSelectedAgents(prev => 
+    setSelectedAgents(prev =>
       prev.includes(id)
         ? prev.filter(agentId => agentId !== id)
         : [...prev, id]
@@ -178,7 +178,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
 
       // Execute the task using the agent service
       const result = await agentService.executeTask(taskDescription, selectedAgents);
-      
+
       // Update task status to completed
       const completedTask = {
         ...updatedTask,
@@ -189,12 +189,12 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
           completedAt: new Date().toISOString(),
         },
       };
-      
+
       setTasks(prev => prev.map(t => t.id === task.id ? completedTask : t));
       return completedTask;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Task execution failed';
-      
+
       // Update task status to failed
       const failedTask = {
         ...task,
@@ -207,7 +207,7 @@ export const AgentProvider: React.FC<AgentProviderProps> = ({ children }) => {
           completedAt: new Date().toISOString(),
         },
       };
-      
+
       setTasks(prev => prev.map(t => t.id === task.id ? failedTask : t));
       throw new Error(errorMessage);
     }

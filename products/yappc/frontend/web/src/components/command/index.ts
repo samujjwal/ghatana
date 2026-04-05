@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Command Components Barrel Export
  * 

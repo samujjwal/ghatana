@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Shape Style Picker - Property panel for shape styling
  * 

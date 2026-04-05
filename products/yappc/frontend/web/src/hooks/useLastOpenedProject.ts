@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Last Opened Project Hook
  * 

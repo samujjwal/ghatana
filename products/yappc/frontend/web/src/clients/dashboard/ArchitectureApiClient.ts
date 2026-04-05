@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Architecture Analysis API Client
  *

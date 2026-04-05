@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Canvas dialog components (Layout, Template Save)

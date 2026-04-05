@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Project Tasks Hook
  * 

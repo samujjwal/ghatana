@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Observability collector for metrics tracking and performance monitoring.
  *
@@ -158,10 +157,7 @@ export class MetricsCollector {
    * @param tags Optional key-value pairs for metric dimensions
    * @returns TimerResult with end() method
    */
-  startTimer(
-    metricName: string,
-    tags?: Record<string, string>
-  ): TimerResult {
+  startTimer(metricName: string, tags?: Record<string, string>): TimerResult {
     const startTime = Date.now();
     const key = this._buildMetricKey(metricName, tags);
 
@@ -180,10 +176,7 @@ export class MetricsCollector {
    * @param tags Optional tags for filtering
    * @returns Counter value or 0 if not found
    */
-  getCounterValue(
-    metricName: string,
-    tags?: Record<string, string>
-  ): number {
+  getCounterValue(metricName: string, tags?: Record<string, string>): number {
     const key = this._buildMetricKey(metricName, tags);
     return this._counterMap.get(key) || 0;
   }
@@ -195,10 +188,7 @@ export class MetricsCollector {
    * @param tags Optional tags for filtering
    * @returns Gauge value or 0 if not found
    */
-  getGaugeValue(
-    metricName: string,
-    tags?: Record<string, string>
-  ): number {
+  getGaugeValue(metricName: string, tags?: Record<string, string>): number {
     const key = this._buildMetricKey(metricName, tags);
     return this._gaugeMap.get(key) || 0;
   }
@@ -265,7 +255,7 @@ export class MetricsCollector {
     const tagParts = Object.entries(tags)
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .map(([key, value]) => `${key}=${value}`)
-      .join(",");
+      .join(',');
 
     return `${metricName}{${tagParts}}`;
   }

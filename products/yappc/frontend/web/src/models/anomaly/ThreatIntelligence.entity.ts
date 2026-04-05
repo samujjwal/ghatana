@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Immutable entity representing threat intelligence data.
  *
@@ -36,12 +35,12 @@
  * Threat source indicating where this threat was reported/discovered.
  */
 export type ThreatSource =
-  | "NVD" // National Vulnerability Database
-  | "MITRE"
-  | "VENDOR_ADVISORY"
-  | "EXPLOIT_DB"
-  | "CUSTOM_FEED"
-  | "THREAT_INTEL";
+  | 'NVD' // National Vulnerability Database
+  | 'MITRE'
+  | 'VENDOR_ADVISORY'
+  | 'EXPLOIT_DB'
+  | 'CUSTOM_FEED'
+  | 'THREAT_INTEL';
 
 /**
  * Result of threat validation.
@@ -140,7 +139,7 @@ export class ThreatIntelligence {
 
     // Validate severity
     if (params.severity < 0 || params.severity > 1) {
-      throw new Error("Severity must be between 0.0 and 1.0");
+      throw new Error('Severity must be between 0.0 and 1.0');
     }
 
     const threat = new ThreatIntelligence(
@@ -152,7 +151,7 @@ export class ThreatIntelligence {
       params.description,
       params.mitigation,
       params.affectedVersions ? Array.from(params.affectedVersions) : [],
-      params.source ?? "NVD",
+      params.source ?? 'NVD',
       params.references ? Array.from(params.references) : [],
       params.publishedAt ?? now,
       now,
@@ -162,7 +161,7 @@ export class ThreatIntelligence {
     // Validate on creation
     const validation = threat.validate();
     if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(", ")}`);
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     return threat;
@@ -185,25 +184,25 @@ export class ThreatIntelligence {
 
     // Title validation
     if (!this._title || this._title.trim().length === 0) {
-      errors.push("Title cannot be empty");
+      errors.push('Title cannot be empty');
     }
     if (this._title.length > 500) {
-      errors.push("Title cannot exceed 500 characters");
+      errors.push('Title cannot exceed 500 characters');
     }
 
     // Severity validation
     if (this._severity < 0 || this._severity > 1) {
-      errors.push("Severity must be between 0.0 and 1.0");
+      errors.push('Severity must be between 0.0 and 1.0');
     }
 
     // Description validation
     if (!this._description || this._description.trim().length === 0) {
-      errors.push("Description cannot be empty");
+      errors.push('Description cannot be empty');
     }
 
     // Mitigation validation
     if (!this._mitigation || this._mitigation.trim().length === 0) {
-      errors.push("Mitigation cannot be empty");
+      errors.push('Mitigation cannot be empty');
     }
 
     // Reference URLs validation
@@ -337,11 +336,11 @@ export class ThreatIntelligence {
    *
    * @returns "LOW" | "MEDIUM" | "HIGH" | "CRITICAL"
    */
-  public severityCategory(): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" {
-    if (this._severity >= 0.8) return "CRITICAL";
-    if (this._severity >= 0.6) return "HIGH";
-    if (this._severity >= 0.3) return "MEDIUM";
-    return "LOW";
+  public severityCategory(): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+    if (this._severity >= 0.8) return 'CRITICAL';
+    if (this._severity >= 0.6) return 'HIGH';
+    if (this._severity >= 0.3) return 'MEDIUM';
+    return 'LOW';
   }
 
   /**
@@ -396,14 +395,14 @@ export class ThreatIntelligenceFactory {
     overrides?: Partial<Parameters<typeof ThreatIntelligence.create>[0]>
   ): ThreatIntelligence {
     const defaults: Parameters<typeof ThreatIntelligence.create>[0] = {
-      cveId: "CVE-2025-0001",
-      title: "Test vulnerability",
+      cveId: 'CVE-2025-0001',
+      title: 'Test vulnerability',
       severity: 0.75,
       exploitAvailable: false,
-      description: "Test threat for unit testing",
-      mitigation: "Apply security patch",
-      affectedVersions: ["1.0.0", "1.0.1"],
-      source: "NVD",
+      description: 'Test threat for unit testing',
+      mitigation: 'Apply security patch',
+      affectedVersions: ['1.0.0', '1.0.1'],
+      source: 'NVD',
       ...overrides,
     };
 
@@ -417,8 +416,8 @@ export class ThreatIntelligenceFactory {
    */
   public static criticalExploitable(): ThreatIntelligence {
     return this.create({
-      cveId: "CVE-2025-9999",
-      title: "Critical RCE vulnerability",
+      cveId: 'CVE-2025-9999',
+      title: 'Critical RCE vulnerability',
       severity: 0.95,
       exploitAvailable: true,
     });
@@ -431,7 +430,7 @@ export class ThreatIntelligenceFactory {
    */
   public static lowNonExploitable(): ThreatIntelligence {
     return this.create({
-      cveId: "CVE-2025-0001",
+      cveId: 'CVE-2025-0001',
       severity: 0.15,
       exploitAvailable: false,
     });

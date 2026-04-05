@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Compliance Report Entity
  *
@@ -92,7 +91,8 @@ export class ComplianceReport implements IComplianceReport {
     this.controlsTotal = total;
     this.controlsCompliant = compliant;
     this.controlsNonCompliant = total - compliant;
-    this.compliancePercentage = total > 0 ? Math.round((compliant / total) * 100) : 0;
+    this.compliancePercentage =
+      total > 0 ? Math.round((compliant / total) * 100) : 0;
   }
 
   /**
