@@ -1,7 +1,12 @@
 // @ts-nocheck
 import { useQuery } from '@apollo/client';
 import { useCallback, useMemo } from 'react';
-import { CostAnalysis, CostRecommendation, CostForecast, CostAlert } from '../types/cost';
+import {
+  CostAnalysis,
+  CostRecommendation,
+  CostForecast,
+  CostAlert,
+} from '../types/cost';
 
 /**
  * GraphQL query for cost analysis with filters
@@ -48,11 +53,18 @@ interface UseCostAnalysisReturn {
  * @param options - Configuration options
  * @returns Cost analysis data with loading/error states
  */
-export const useCostAnalysis = (options: UseCostAnalysisOptions): UseCostAnalysisReturn => {
+export const useCostAnalysis = (
+  options: UseCostAnalysisOptions
+): UseCostAnalysisReturn => {
   const { tenantId, dateRange, provider } = options;
 
   // Query GraphQL endpoint for cost analysis
-  const { data, loading, error, refetch: apolloRefetch } = useQuery(
+  const {
+    data,
+    loading,
+    error,
+    refetch: apolloRefetch,
+  } = useQuery(
     gql`
       query GetCostAnalysis(
         $tenantId: ID!
@@ -100,11 +112,7 @@ export const useCostAnalysis = (options: UseCostAnalysisOptions): UseCostAnalysi
             percentageChange
           }
         }
-        costRecommendations(
-          tenantId: $tenantId
-          limit: 10
-          minSavings: 100
-        ) {
+        costRecommendations(tenantId: $tenantId, limit: 10, minSavings: 100) {
           id
           title
           description
@@ -116,11 +124,7 @@ export const useCostAnalysis = (options: UseCostAnalysisOptions): UseCostAnalysi
           status
           estimatedMonthsSavings
         }
-        costForecast(
-          tenantId: $tenantId
-          months: 12
-          bufferPercent: 10
-        ) {
+        costForecast(tenantId: $tenantId, months: 12, bufferPercent: 10) {
           period {
             start
             end

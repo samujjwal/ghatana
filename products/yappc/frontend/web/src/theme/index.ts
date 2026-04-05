@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * YAPPC Theme System
  *
@@ -10,17 +9,21 @@
  */
 
 // Provider and components
-export { AppThemeProvider, ThemeToggleButton, ThemeStatusIndicator } from './AppThemeProvider';
+export {
+  AppThemeProvider,
+  ThemeToggleButton,
+  ThemeStatusIndicator,
+} from './AppThemeProvider';
 
 // Re-export @ghatana/theme hooks for convenience
 export {
-    useTheme,
-    useThemeMode,
-    useResolvedTheme,
-    useThemeToggle,
-    useSystemTheme,
-    useIsDarkMode,
-    useIsLightMode,
+  useTheme,
+  useThemeMode,
+  useResolvedTheme,
+  useThemeToggle,
+  useSystemTheme,
+  useIsDarkMode,
+  useIsLightMode,
 } from '@ghatana/theme';
 
 // Re-export types

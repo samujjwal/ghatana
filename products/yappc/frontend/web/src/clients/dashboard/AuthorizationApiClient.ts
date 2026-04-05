@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Authorization API Client
  *

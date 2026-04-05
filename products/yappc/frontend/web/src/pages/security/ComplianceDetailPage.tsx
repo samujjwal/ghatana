@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Compliance Detail Page
  *

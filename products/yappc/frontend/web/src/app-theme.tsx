@@ -33,11 +33,11 @@ interface AppThemeProviderProps {
  */
 function MuiThemeConnector({ children }: { children: React.ReactNode }) {
   const { resolvedTheme, themeDefinition } = useGhatanaTheme();
-  
+
   // Create MUI theme based on resolved theme mode
   const muiTheme = useMemo(() => {
     const baseTheme = resolvedTheme === 'dark' ? darkTheme : lightTheme;
-    
+
     // Merge with any custom colors from @ghatana/theme if available
     if (themeDefinition?.computed?.colors) {
       const colors = themeDefinition.computed.colors;
@@ -57,7 +57,7 @@ function MuiThemeConnector({ children }: { children: React.ReactNode }) {
         },
       });
     }
-    
+
     return baseTheme;
   }, [resolvedTheme, themeDefinition]);
 
@@ -74,7 +74,7 @@ function MuiThemeConnector({ children }: { children: React.ReactNode }) {
  */
 function ThemedContent({ children }: { children: React.ReactNode }) {
   return (
-    <GhatanaThemeProvider 
+    <GhatanaThemeProvider
       defaultTheme="system"
       attribute="class"
       enableStorage={true}

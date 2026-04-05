@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Rate Limit Custom Hook
  *
@@ -119,10 +118,7 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
   /**
    * Fetch available tiers
    */
-  const {
-    data: tiers,
-    isLoading: tiersLoading,
-  } = useQuery<RateLimitTier[]>({
+  const { data: tiers, isLoading: tiersLoading } = useQuery<RateLimitTier[]>({
     queryKey: ['rateLimitTiers'],
     queryFn: async () => {
       const response = await fetch('/api/rate-limit/tiers');
@@ -134,10 +130,9 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
   /**
    * Fetch user's upgrade requests
    */
-  const {
-    data: upgradeRequests,
-    isLoading: requestsLoading,
-  } = useQuery<UpgradeRequest[]>({
+  const { data: upgradeRequests, isLoading: requestsLoading } = useQuery<
+    UpgradeRequest[]
+  >({
     queryKey: ['upgradeRequests', userId],
     queryFn: async () => {
       const response = await fetch('/api/rate-limit/upgrade-requests');
@@ -271,7 +266,9 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
    */
   const isApproachingLimit = useCallback(
     (threshold: number = 80) => {
-      return status ? status.percentage >= threshold && !status.isLimited : false;
+      return status
+        ? status.percentage >= threshold && !status.isLimited
+        : false;
     },
     [status]
   );
@@ -339,4 +336,3 @@ export const useRateLimit = (options: UseRateLimitOptions = {}) => {
 };
 
 export default useRateLimit;
-

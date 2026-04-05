@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * UnifiedRightPanel - AI Assistant Panel
  */

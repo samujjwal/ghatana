@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Immutable entity representing baseline metrics for anomaly detection.
  *
@@ -42,26 +41,22 @@
  * Type of metric being baselined.
  */
 export type MetricType =
-  | "network_traffic_bytes"
-  | "network_connections"
-  | "cpu_utilization"
-  | "memory_utilization"
-  | "disk_io_rate"
-  | "process_count"
-  | "failed_logins"
-  | "privilege_escalations"
-  | "api_request_rate"
-  | "data_transfer_bytes"
-  | "custom";
+  | 'network_traffic_bytes'
+  | 'network_connections'
+  | 'cpu_utilization'
+  | 'memory_utilization'
+  | 'disk_io_rate'
+  | 'process_count'
+  | 'failed_logins'
+  | 'privilege_escalations'
+  | 'api_request_rate'
+  | 'data_transfer_bytes'
+  | 'custom';
 
 /**
  * Status of baseline calculation.
  */
-export type BaselineStatus =
-  | "CALCULATING"
-  | "ACTIVE"
-  | "STALE"
-  | "INVALIDATED";
+export type BaselineStatus = 'CALCULATING' | 'ACTIVE' | 'STALE' | 'INVALIDATED';
 
 /**
  * Result of baseline validation.
@@ -167,7 +162,9 @@ export class AnomalyBaseline {
     const id = `baseline-${params.metricType}-${params.resourceId}`;
     const now = new Date();
     const validityDays = params.validityDays ?? 7;
-    const validUntil = new Date(now.getTime() + validityDays * 24 * 60 * 60 * 1000);
+    const validUntil = new Date(
+      now.getTime() + validityDays * 24 * 60 * 60 * 1000
+    );
 
     const baseline = new AnomalyBaseline(
       id,
@@ -177,7 +174,7 @@ export class AnomalyBaseline {
       params.threshold,
       params.standardDeviation ?? 0,
       params.confidenceInterval ?? 0.95,
-      "ACTIVE",
+      'ACTIVE',
       params.calculatedAt ?? now,
       validUntil,
       params.previousBaseline ?? null,
@@ -190,7 +187,7 @@ export class AnomalyBaseline {
     // Validate on creation
     const validation = baseline.validate();
     if (!validation.isValid) {
-      throw new Error(`Validation failed: ${validation.errors.join(", ")}`);
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
 
     return baseline;
@@ -206,17 +203,17 @@ export class AnomalyBaseline {
 
     // Metric type validation
     const validTypes: MetricType[] = [
-      "network_traffic_bytes",
-      "network_connections",
-      "cpu_utilization",
-      "memory_utilization",
-      "disk_io_rate",
-      "process_count",
-      "failed_logins",
-      "privilege_escalations",
-      "api_request_rate",
-      "data_transfer_bytes",
-      "custom",
+      'network_traffic_bytes',
+      'network_connections',
+      'cpu_utilization',
+      'memory_utilization',
+      'disk_io_rate',
+      'process_count',
+      'failed_logins',
+      'privilege_escalations',
+      'api_request_rate',
+      'data_transfer_bytes',
+      'custom',
     ];
     if (!validTypes.includes(this._metricType)) {
       errors.push(`Invalid metric type: ${this._metricType}`);
@@ -224,35 +221,35 @@ export class AnomalyBaseline {
 
     // Resource ID validation
     if (!this._resourceId || this._resourceId.trim().length === 0) {
-      errors.push("Resource ID cannot be empty");
+      errors.push('Resource ID cannot be empty');
     }
 
     // Baseline value validation
     if (this._baselineValue < 0) {
-      errors.push("Baseline value cannot be negative");
+      errors.push('Baseline value cannot be negative');
     }
 
     // Threshold validation
     if (this._threshold < 0) {
-      errors.push("Threshold cannot be negative");
+      errors.push('Threshold cannot be negative');
     }
     if (this._threshold < this._baselineValue) {
-      errors.push("Threshold should be >= baseline value");
+      errors.push('Threshold should be >= baseline value');
     }
 
     // Standard deviation validation
     if (this._standardDeviation < 0) {
-      errors.push("Standard deviation cannot be negative");
+      errors.push('Standard deviation cannot be negative');
     }
 
     // Confidence interval validation
     if (this._confidenceInterval <= 0 || this._confidenceInterval > 1) {
-      errors.push("Confidence interval must be between 0 and 1");
+      errors.push('Confidence interval must be between 0 and 1');
     }
 
     // Data points validation
     if (this._dataPointsUsed < 100) {
-      errors.push("At least 100 data points required for reliable baseline");
+      errors.push('At least 100 data points required for reliable baseline');
     }
 
     return {
@@ -315,7 +312,9 @@ export class AnomalyBaseline {
    */
   public marginOfSafetyPercent(): number {
     if (this._baselineValue === 0) return 0;
-    return ((this._threshold - this._baselineValue) / this._baselineValue) * 100;
+    return (
+      ((this._threshold - this._baselineValue) / this._baselineValue) * 100
+    );
   }
 
   /**
@@ -337,7 +336,7 @@ export class AnomalyBaseline {
       newThreshold,
       this._standardDeviation,
       this._confidenceInterval,
-      "ACTIVE",
+      'ACTIVE',
       new Date(),
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       this._baselineValue, // Keep old as previous
@@ -362,7 +361,7 @@ export class AnomalyBaseline {
       this._threshold,
       this._standardDeviation,
       this._confidenceInterval,
-      "INVALIDATED",
+      'INVALIDATED',
       this._calculatedAt,
       this._validUntil,
       this._previousBaseline,
@@ -478,13 +477,13 @@ export class AnomalyBaselineFactory {
     overrides?: Partial<Parameters<typeof AnomalyBaseline.create>[0]>
   ): AnomalyBaseline {
     const defaults: Parameters<typeof AnomalyBaseline.create>[0] = {
-      metricType: "network_traffic_bytes",
-      resourceId: "test-resource-1",
+      metricType: 'network_traffic_bytes',
+      resourceId: 'test-resource-1',
       baselineValue: 100,
       threshold: 350,
       standardDeviation: 50,
       confidenceInterval: 0.95,
-      javaServiceExecutionId: "baseline-exec-test",
+      javaServiceExecutionId: 'baseline-exec-test',
       dataPointsUsed: 1000,
       ...overrides,
     };
@@ -499,7 +498,7 @@ export class AnomalyBaselineFactory {
    */
   public static cpuUtilization(): AnomalyBaseline {
     return this.create({
-      metricType: "cpu_utilization",
+      metricType: 'cpu_utilization',
       baselineValue: 45, // 45% normal
       threshold: 85, // Alert at 85%
       standardDeviation: 15,
@@ -513,7 +512,7 @@ export class AnomalyBaselineFactory {
    */
   public static networkTraffic(): AnomalyBaseline {
     return this.create({
-      metricType: "network_traffic_bytes",
+      metricType: 'network_traffic_bytes',
       baselineValue: 1000000, // 1MB/sec
       threshold: 5000000, // 5MB/sec alert
       standardDeviation: 500000,

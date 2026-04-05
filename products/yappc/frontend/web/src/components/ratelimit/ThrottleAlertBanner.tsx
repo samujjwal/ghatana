@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Throttle Alert Banner Component
  *

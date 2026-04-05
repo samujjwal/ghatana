@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Route Module Contract Types
  *

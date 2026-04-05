@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Centralized TanStack Query key definitions for YAPPC.
  *

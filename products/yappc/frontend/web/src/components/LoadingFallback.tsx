@@ -1,4 +1,3 @@
-// @ts-nocheck
 import LoadingFallback from './ui/LoadingFallback';
 
 /**

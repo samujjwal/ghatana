@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * KeyboardShortcutsPanel Component
  * 

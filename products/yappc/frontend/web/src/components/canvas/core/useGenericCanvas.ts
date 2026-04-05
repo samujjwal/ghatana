@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Generic Canvas State Management Hook
  * Provides unified state management for all canvas implementations

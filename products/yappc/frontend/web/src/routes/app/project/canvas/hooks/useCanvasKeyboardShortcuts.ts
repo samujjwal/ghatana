@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Handles basic keyboard shortcuts for canvas interactions

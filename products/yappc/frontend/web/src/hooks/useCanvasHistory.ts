@@ -1,9 +1,8 @@
-// @ts-nocheck
 /**
  * Canvas History Manager
- * 
+ *
  * Manages undo/redo state for canvas operations.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Canvas history management
  * @doc.layer product
@@ -13,100 +12,104 @@
 import { useState, useCallback } from 'react';
 
 export interface HistoryState<T> {
-    past: T[];
-    present: T;
-    future: T[];
+  past: T[];
+  present: T;
+  future: T[];
 }
 
 export interface CanvasAction {
-    type: 'create' | 'update' | 'delete' | 'move' | 'link';
-    artifactId: string;
-    data: unknown;
-    timestamp: Date;
+  type: 'create' | 'update' | 'delete' | 'move' | 'link';
+  artifactId: string;
+  data: unknown;
+  timestamp: Date;
 }
 
 export interface UseCanvasHistoryReturn {
-    canUndo: boolean;
-    canRedo: boolean;
-    undo: () => void;
-    redo: () => void;
-    pushAction: (action: CanvasAction) => void;
-    clear: () => void;
-    history: CanvasAction[];
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
+  pushAction: (action: CanvasAction) => void;
+  clear: () => void;
+  history: CanvasAction[];
 }
 
 const MAX_HISTORY_SIZE = 50;
 
-export const useCanvasHistory = (initialState?: CanvasAction[]): UseCanvasHistoryReturn => {
-    const [state, setState] = useState<HistoryState<CanvasAction[]>>({
-        past: [],
-        present: initialState || [],
-        future: [],
+export const useCanvasHistory = (
+  initialState?: CanvasAction[]
+): UseCanvasHistoryReturn => {
+  const [state, setState] = useState<HistoryState<CanvasAction[]>>({
+    past: [],
+    present: initialState || [],
+    future: [],
+  });
+
+  const canUndo = state.past.length > 0;
+  const canRedo = state.future.length > 0;
+
+  const pushAction = useCallback((action: CanvasAction) => {
+    setState((current) => {
+      const newPresent = [...current.present, action];
+
+      // Limit history size
+      const newPast = [...current.past, current.present].slice(
+        -MAX_HISTORY_SIZE
+      );
+
+      return {
+        past: newPast,
+        present: newPresent,
+        future: [], // Clear future on new action
+      };
     });
+  }, []);
 
-    const canUndo = state.past.length > 0;
-    const canRedo = state.future.length > 0;
+  const undo = useCallback(() => {
+    setState((current) => {
+      if (current.past.length === 0) return current;
 
-    const pushAction = useCallback((action: CanvasAction) => {
-        setState((current) => {
-            const newPresent = [...current.present, action];
+      const previous = current.past[current.past.length - 1];
+      const newPast = current.past.slice(0, -1);
 
-            // Limit history size
-            const newPast = [...current.past, current.present].slice(-MAX_HISTORY_SIZE);
+      return {
+        past: newPast,
+        present: previous,
+        future: [current.present, ...current.future],
+      };
+    });
+  }, []);
 
-            return {
-                past: newPast,
-                present: newPresent,
-                future: [], // Clear future on new action
-            };
-        });
-    }, []);
+  const redo = useCallback(() => {
+    setState((current) => {
+      if (current.future.length === 0) return current;
 
-    const undo = useCallback(() => {
-        setState((current) => {
-            if (current.past.length === 0) return current;
+      const next = current.future[0];
+      const newFuture = current.future.slice(1);
 
-            const previous = current.past[current.past.length - 1];
-            const newPast = current.past.slice(0, -1);
+      return {
+        past: [...current.past, current.present],
+        present: next,
+        future: newFuture,
+      };
+    });
+  }, []);
 
-            return {
-                past: newPast,
-                present: previous,
-                future: [current.present, ...current.future],
-            };
-        });
-    }, []);
+  const clear = useCallback(() => {
+    setState({
+      past: [],
+      present: [],
+      future: [],
+    });
+  }, []);
 
-    const redo = useCallback(() => {
-        setState((current) => {
-            if (current.future.length === 0) return current;
-
-            const next = current.future[0];
-            const newFuture = current.future.slice(1);
-
-            return {
-                past: [...current.past, current.present],
-                present: next,
-                future: newFuture,
-            };
-        });
-    }, []);
-
-    const clear = useCallback(() => {
-        setState({
-            past: [],
-            present: [],
-            future: [],
-        });
-    }, []);
-
-    return {
-        canUndo,
-        canRedo,
-        undo,
-        redo,
-        pushAction,
-        clear,
-        history: state.present,
-    };
+  return {
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    pushAction,
+    clear,
+    history: state.present,
+  };
 };

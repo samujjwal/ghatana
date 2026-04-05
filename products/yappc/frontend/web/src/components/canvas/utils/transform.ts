@@ -35,13 +35,9 @@ export const toReactFlowEdge = (connection: CanvasConnection): Edge => ({
   source: connection.source,
   target: connection.target,
   sourceHandle:
-    connection.sourceHandle == null
-      ? undefined
-      : connection.sourceHandle,
+    connection.sourceHandle == null ? undefined : connection.sourceHandle,
   targetHandle:
-    connection.targetHandle == null
-      ? undefined
-      : connection.targetHandle,
+    connection.targetHandle == null ? undefined : connection.targetHandle,
   type: connection.type || 'default',
   animated: connection.animated,
   style: connection.style,
@@ -71,13 +67,9 @@ export const fromReactFlowEdges = (edges: Edge[]): CanvasConnection[] =>
     source: edge.source,
     target: edge.target,
     sourceHandle:
-      edge.sourceHandle == null
-        ? undefined
-        : edge.sourceHandle || undefined,
+      edge.sourceHandle == null ? undefined : edge.sourceHandle || undefined,
     targetHandle:
-      edge.targetHandle == null
-        ? undefined
-        : edge.targetHandle || undefined,
+      edge.targetHandle == null ? undefined : edge.targetHandle || undefined,
     type: edge.type,
     animated: edge.animated,
     style: edge.style,

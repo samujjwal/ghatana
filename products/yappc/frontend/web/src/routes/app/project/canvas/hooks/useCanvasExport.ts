@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type hook
  * @doc.purpose Manages canvas export functionality

@@ -1,220 +1,211 @@
 // @ts-nocheck
 /**
  * Incident Management Panel
- * 
+ *
  * Incident tracking, root cause analysis, and postmortem management for OBSERVE phase.
- * 
+ * Incident data is persisted as lifecycle artifacts of kind `incident_report`.
+ *
  * @doc.type component
  * @doc.purpose OBSERVE phase incident management
  * @doc.layer product
  * @doc.pattern Panel Component
  */
 
-import React, { useState } from 'react';
-import { AlertCircle as ErrorIcon, CheckCircle, Clock as Schedule, User as Person, Plus as Add } from 'lucide-react';
-import { useLifecycleArtifacts } from '../../services/canvas/lifecycle';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    AlertCircle as ErrorIcon,
+    CheckCircle,
+    Clock as Schedule,
+    User as Person,
+    Plus as Add,
+    X as Close,
+} from 'lucide-react';
+import {
+    useLifecycleArtifacts,
+    type ArtifactSummary,
+    type LifecycleArtifact,
+} from '../../services/canvas/lifecycle';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
+import type { IncidentReportPayload } from '@/shared/types/lifecycle-artifacts';
+import { useCurrentUser } from '../../providers/AuthProvider';
 
 export interface IncidentManagementPanelProps {
     projectId: string;
 }
 
-interface Incident {
-    id: string;
-    title: string;
-    severity: 'critical' | 'high' | 'medium' | 'low';
-    status: 'open' | 'investigating' | 'mitigated' | 'resolved';
+/** Operational status of an incident — stored in the artifact payload. */
+type IncidentStatus = 'open' | 'investigating' | 'mitigated' | 'resolved';
+
+/** Severity of an incident — stored in the artifact payload. */
+type IncidentSeverity = 'critical' | 'high' | 'medium' | 'low';
+
+/**
+ * Extended payload shape for incident_report artifacts.
+ * Extends `IncidentReportPayload` with incident-specific operational fields.
+ */
+interface IncidentArtifactPayload extends IncidentReportPayload {
+    incidentStatus: IncidentStatus;
+    severity: IncidentSeverity;
     detectedAt: string;
     resolvedAt?: string;
     assignedTo?: string;
-    impact: string;
-    rootCause?: string;
-    timeline: TimelineEvent[];
 }
 
-interface TimelineEvent {
-    timestamp: string;
-    event: string;
-    user?: string;
+/** Form state for creating a new incident. */
+interface NewIncidentForm {
+    title: string;
+    severity: IncidentSeverity;
+    impact: string;
+}
+
+const INITIAL_FORM: NewIncidentForm = {
+    title: '',
+    severity: 'medium',
+    impact: '',
+};
+
+function getSeverityColor(severity: IncidentSeverity): string {
+    switch (severity) {
+        case 'critical':
+            return 'bg-error-color text-white';
+        case 'high':
+            return 'bg-warning-color text-white';
+        case 'medium':
+            return 'bg-blue-500 text-white';
+        case 'low':
+            return 'bg-grey-400 text-white';
+    }
+}
+
+function getStatusColor(status: IncidentStatus): string {
+    switch (status) {
+        case 'resolved':
+            return 'text-success-color';
+        case 'mitigated':
+            return 'text-blue-600';
+        case 'investigating':
+            return 'text-warning-color';
+        case 'open':
+            return 'text-error-color';
+    }
+}
+
+function getStatusIcon(status: IncidentStatus): React.ReactNode {
+    switch (status) {
+        case 'resolved':
+            return <CheckCircle className="w-5 h-5" />;
+        case 'investigating':
+            return <Schedule className="w-5 h-5" />;
+        default:
+            return <ErrorIcon className="w-5 h-5" />;
+    }
+}
+
+function formatTimestamp(timestamp: string): string {
+    return new Date(timestamp).toLocaleString();
+}
+
+function calculateDuration(start: string, end?: string): string {
+    const startTime = new Date(start).getTime();
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    const durationMs = endTime - startTime;
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function getIncidentPayload(artifact: LifecycleArtifact): IncidentArtifactPayload {
+    const p = artifact.payload as Partial<IncidentArtifactPayload>;
+    return {
+        incidentStatus: p.incidentStatus ?? 'open',
+        severity: p.severity ?? 'medium',
+        detectedAt: p.detectedAt ?? artifact.createdAt,
+        resolvedAt: p.resolvedAt,
+        assignedTo: p.assignedTo,
+        timeline: Array.isArray(p.timeline) ? p.timeline : [],
+        rootCause: p.rootCause ?? '',
+        impact: p.impact ?? '',
+        mitigations: Array.isArray(p.mitigations) ? p.mitigations : [],
+        postMortemUrl: p.postMortemUrl ?? '',
+    };
 }
 
 export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = ({ projectId }) => {
-    const { createArtifact } = useLifecycleArtifacts(projectId);
-    const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
-    const [setShowNewIncidentDialog] = useState(false);
+    const { artifacts, createArtifact, updateArtifact, service } = useLifecycleArtifacts(projectId);
+    const currentUser = useCurrentUser();
 
-    // Mock incidents (in production, fetch from incident management system)
-    const [incidents] = useState<Incident[]>([
-        {
-            id: 'inc-001',
-            title: 'API Response Time Degradation',
-            severity: 'high',
-            status: 'resolved',
-            detectedAt: '2026-01-10T08:30:00Z',
-            resolvedAt: '2026-01-10T10:15:00Z',
-            assignedTo: 'John Doe',
-            impact: '25% of API requests experiencing 3-5s delays',
-            rootCause: 'Database connection pool exhaustion due to memory leak in ORM query builder',
-            timeline: [
-                {
-                    timestamp: '2026-01-10T08:30:00Z',
-                    event: 'Alert triggered: API latency p95 > 3s',
-                },
-                {
-                    timestamp: '2026-01-10T08:35:00Z',
-                    event: 'Incident created and assigned to on-call engineer',
-                    user: 'System',
-                },
-                {
-                    timestamp: '2026-01-10T08:45:00Z',
-                    event: 'Identified database connection pool exhaustion',
-                    user: 'John Doe',
-                },
-                {
-                    timestamp: '2026-01-10T09:00:00Z',
-                    event: 'Mitigation: Restarted application servers to clear connections',
-                    user: 'John Doe',
-                },
-                {
-                    timestamp: '2026-01-10T09:30:00Z',
-                    event: 'Root cause identified: memory leak in ORM',
-                    user: 'John Doe',
-                },
-                {
-                    timestamp: '2026-01-10T10:00:00Z',
-                    event: 'Deployed hotfix with connection pool cleanup',
-                    user: 'John Doe',
-                },
-                {
-                    timestamp: '2026-01-10T10:15:00Z',
-                    event: 'Incident resolved, monitoring for 24h',
-                    user: 'John Doe',
-                },
-            ],
+    const [selectedSummary, setSelectedSummary] = useState<ArtifactSummary | null>(null);
+    const [selectedArtifact, setSelectedArtifact] = useState<LifecycleArtifact | null>(null);
+    const [showNewIncidentDialog, setShowNewIncidentDialog] = useState(false);
+    const [newIncidentForm, setNewIncidentForm] = useState<NewIncidentForm>(INITIAL_FORM);
+    const [isCreating, setIsCreating] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+    // Filter to incident_report artifacts only
+    const incidentSummaries = artifacts.filter(
+        (a) => a.kind === LifecycleArtifactKind.INCIDENT_REPORT,
+    );
+
+    // Load full artifact when a summary is selected
+    const handleSelectIncident = useCallback(
+        async (summary: ArtifactSummary) => {
+            setSelectedSummary(summary);
+            setIsLoadingDetail(true);
+            try {
+                const full = await service.getArtifact(summary.id);
+                setSelectedArtifact(full);
+            } finally {
+                setIsLoadingDetail(false);
+            }
         },
-        {
-            id: 'inc-002',
-            title: 'Payment Gateway Timeout',
-            severity: 'critical',
-            status: 'investigating',
-            detectedAt: '2026-01-10T11:20:00Z',
-            assignedTo: 'Jane Smith',
-            impact: 'Payment processing failing for 100% of transactions',
-            timeline: [
-                {
-                    timestamp: '2026-01-10T11:20:00Z',
-                    event: 'Alert triggered: Payment success rate < 50%',
-                },
-                {
-                    timestamp: '2026-01-10T11:22:00Z',
-                    event: 'Incident escalated to critical',
-                    user: 'System',
-                },
-                {
-                    timestamp: '2026-01-10T11:25:00Z',
-                    event: 'Investigating third-party payment gateway status',
-                    user: 'Jane Smith',
-                },
-            ],
-        },
-        {
-            id: 'inc-003',
-            title: 'Disk Space Alert - Production DB',
-            severity: 'medium',
-            status: 'mitigated',
-            detectedAt: '2026-01-09T14:00:00Z',
-            assignedTo: 'Bob Wilson',
-            impact: 'Database disk usage at 85%, approaching threshold',
-            timeline: [
-                {
-                    timestamp: '2026-01-09T14:00:00Z',
-                    event: 'Alert triggered: Disk usage > 80%',
-                },
-                {
-                    timestamp: '2026-01-09T14:30:00Z',
-                    event: 'Cleaned up old logs, gained 15GB',
-                    user: 'Bob Wilson',
-                },
-                {
-                    timestamp: '2026-01-09T15:00:00Z',
-                    event: 'Scheduled disk expansion for next maintenance window',
-                    user: 'Bob Wilson',
-                },
-            ],
-        },
-    ]);
+        [service],
+    );
 
-    const handleSaveIncidentReport = (incident: Incident) => {
-        const userId = 'current-user'; // NOTE: Get from auth
-
-        const reportPayload = {
-            incidentId: incident.id,
-            title: incident.title,
-            severity: incident.severity,
-            detectedAt: incident.detectedAt,
-            resolvedAt: incident.resolvedAt,
-            impact: incident.impact,
-            rootCause: incident.rootCause,
-            timeline: incident.timeline,
-            mitigations: [
-                'Implemented connection pool monitoring',
-                'Added automated cleanup job',
-            ],
-            followUps: [
-                'Upgrade ORM to latest version',
-                'Review all query patterns for leaks',
-                'Add load testing to CI/CD',
-            ],
-        };
-
-        createArtifact(LifecycleArtifactKind.INCIDENT_REPORT, userId);
-        // In production, also update the artifact with payload
-    };
-
-    const getSeverityColor = (severity: Incident['severity']) => {
-        switch (severity) {
-            case 'critical': return 'bg-error-color text-white';
-            case 'high': return 'bg-warning-color text-white';
-            case 'medium': return 'bg-blue-500 text-white';
-            case 'low': return 'bg-grey-400 text-white';
+    // Create a new incident_report artifact from the form
+    const handleCreateIncident = useCallback(async () => {
+        if (!newIncidentForm.title.trim()) return;
+        setIsCreating(true);
+        try {
+            const now = new Date().toISOString();
+            const payload: IncidentArtifactPayload = {
+                incidentStatus: 'open',
+                severity: newIncidentForm.severity,
+                detectedAt: now,
+                timeline: [
+                    {
+                        timestamp: now,
+                        event: 'Incident created',
+                        user: currentUser.name,
+                    },
+                ],
+                rootCause: '',
+                impact: newIncidentForm.impact,
+                mitigations: [],
+                postMortemUrl: '',
+            };
+            await createArtifact(LifecycleArtifactKind.INCIDENT_REPORT, currentUser.id);
+            // createArtifact returns the new artifact; update it with full payload and title
+            const created = await service.getArtifactByKind(projectId, LifecycleArtifactKind.INCIDENT_REPORT);
+            if (created) {
+                await updateArtifact(created.id, { title: newIncidentForm.title, payload }, currentUser.id);
+            }
+            setNewIncidentForm(INITIAL_FORM);
+            setShowNewIncidentDialog(false);
+        } finally {
+            setIsCreating(false);
         }
-    };
+    }, [createArtifact, currentUser, newIncidentForm, projectId, service, updateArtifact]);
 
-    const getStatusColor = (status: Incident['status']) => {
-        switch (status) {
-            case 'resolved': return 'text-success-color';
-            case 'mitigated': return 'text-blue-600';
-            case 'investigating': return 'text-warning-color';
-            case 'open': return 'text-error-color';
+    // Reload detail when artifact list updates (e.g., after creation)
+    useEffect(() => {
+        if (selectedSummary) {
+            void service.getArtifact(selectedSummary.id).then((full) => {
+                if (full) setSelectedArtifact(full);
+            });
         }
-    };
+    }, [artifacts, selectedSummary, service]);
 
-    const getStatusIcon = (status: Incident['status']) => {
-        switch (status) {
-            case 'resolved': return <CheckCircle className="w-5 h-5" />;
-            case 'investigating': return <Schedule className="w-5 h-5" />;
-            default: return <ErrorIcon className="w-5 h-5" />;
-        }
-    };
-
-    const formatTimestamp = (timestamp: string) => {
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    };
-
-    const calculateDuration = (start: string, end?: string) => {
-        const startTime = new Date(start).getTime();
-        const endTime = end ? new Date(end).getTime() : Date.now();
-        const durationMs = endTime - startTime;
-
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-
-        if (hours > 0) {
-            return `${hours}h ${minutes}m`;
-        }
-        return `${minutes}m`;
-    };
+    const selectedPayload = selectedArtifact ? getIncidentPayload(selectedArtifact) : null;
 
     return (
         <div className="flex flex-col h-full bg-bg-default">
@@ -222,7 +213,7 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
             <div className="flex items-center justify-between px-4 py-3 border-b border-divider bg-bg-paper">
                 <div>
                     <h2 className="text-lg font-semibold text-text-primary">Incident Management</h2>
-                    <p className="text-sm text-text-secondary">OBSERVE Phase - Issue Tracking</p>
+                    <p className="text-sm text-text-secondary">OBSERVE Phase – Issue Tracking</p>
                 </div>
                 <button
                     onClick={() => setShowNewIncidentDialog(true)}
@@ -238,61 +229,68 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                 {/* Incident List */}
                 <div className="w-1/3 border-r border-divider overflow-auto">
                     <div className="p-4 space-y-3">
-                        {incidents.map((incident) => (
-                            <div
-                                key={incident.id}
-                                onClick={() => setSelectedIncident(incident)}
-                                className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedIncident?.id === incident.id
-                                    ? 'border-primary-600 bg-primary-50'
-                                    : 'border-divider bg-bg-paper hover:border-primary-200'
-                                    }`}
-                            >
-                                <div className="flex items-start justify-between mb-2">
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm font-medium text-text-primary truncate">{incident.title}</h4>
-                                        <p className="text-xs text-text-secondary mt-1">{incident.id}</p>
+                        {incidentSummaries.length === 0 && (
+                            <p className="text-sm text-text-secondary text-center py-8">
+                                No incidents recorded yet
+                            </p>
+                        )}
+                        {incidentSummaries.map((summary) => {
+                            const isSelected = selectedSummary?.id === summary.id;
+                            return (
+                                <button
+                                    key={summary.id}
+                                    type="button"
+                                    onClick={() => void handleSelectIncident(summary)}
+                                    className={`w-full text-left p-3 rounded-lg border cursor-pointer transition-colors ${isSelected
+                                            ? 'border-primary-600 bg-primary-50'
+                                            : 'border-divider bg-bg-paper hover:border-primary-200'
+                                        }`}
+                                >
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-medium text-text-primary truncate">
+                                                {summary.title}
+                                            </h4>
+                                            <p className="text-xs text-text-secondary mt-1">
+                                                {formatTimestamp(summary.updatedAt)}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ml-2 ${getSeverityColor(incident.severity)}`}>
-                                        {incident.severity}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs mt-2">
-                                    <span className={`flex items-center gap-1 ${getStatusColor(incident.status)}`}>
-                                        {getStatusIcon(incident.status)}
-                                        {incident.status}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="text-text-secondary">
-                                        {calculateDuration(incident.detectedAt, incident.resolvedAt)}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
+                                    <div className="text-xs text-text-secondary">{summary.status}</div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {/* Incident Details */}
                 <div className="flex-1 overflow-auto">
-                    {selectedIncident ? (
+                    {isLoadingDetail && (
+                        <div className="flex items-center justify-center h-full">
+                            <p className="text-sm text-text-secondary">Loading&hellip;</p>
+                        </div>
+                    )}
+
+                    {!isLoadingDetail && selectedArtifact && selectedPayload && (
                         <div className="p-6 space-y-6">
                             {/* Header */}
                             <div>
                                 <div className="flex items-start justify-between mb-2">
-                                    <h3 className="text-xl font-semibold text-text-primary">{selectedIncident.title}</h3>
-                                    <button
-                                        onClick={() => handleSaveIncidentReport(selectedIncident)}
-                                        className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
-                                    >
-                                        Generate Report
-                                    </button>
+                                    <h3 className="text-xl font-semibold text-text-primary">
+                                        {selectedArtifact.title}
+                                    </h3>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">
-                                    <span className={`px-2 py-1 rounded-full font-medium ${getSeverityColor(selectedIncident.severity)}`}>
-                                        {selectedIncident.severity}
+                                    <span
+                                        className={`px-2 py-1 rounded-full font-medium text-xs ${getSeverityColor(selectedPayload.severity)}`}
+                                    >
+                                        {selectedPayload.severity}
                                     </span>
-                                    <span className={`flex items-center gap-1 ${getStatusColor(selectedIncident.status)}`}>
-                                        {getStatusIcon(selectedIncident.status)}
-                                        {selectedIncident.status}
+                                    <span
+                                        className={`flex items-center gap-1 ${getStatusColor(selectedPayload.incidentStatus)}`}
+                                    >
+                                        {getStatusIcon(selectedPayload.incidentStatus)}
+                                        {selectedPayload.incidentStatus}
                                     </span>
                                 </div>
                             </div>
@@ -302,24 +300,24 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 <div className="p-4 rounded-lg border border-divider bg-bg-paper">
                                     <div className="text-xs text-text-secondary mb-1">Detected At</div>
                                     <div className="text-sm font-medium text-text-primary">
-                                        {formatTimestamp(selectedIncident.detectedAt)}
+                                        {formatTimestamp(selectedPayload.detectedAt)}
                                     </div>
                                 </div>
-                                {selectedIncident.resolvedAt && (
+                                {selectedPayload.resolvedAt && (
                                     <div className="p-4 rounded-lg border border-divider bg-bg-paper">
                                         <div className="text-xs text-text-secondary mb-1">Resolved At</div>
                                         <div className="text-sm font-medium text-text-primary">
-                                            {formatTimestamp(selectedIncident.resolvedAt)}
+                                            {formatTimestamp(selectedPayload.resolvedAt)}
                                         </div>
                                     </div>
                                 )}
-                                {selectedIncident.assignedTo && (
+                                {selectedPayload.assignedTo && (
                                     <div className="p-4 rounded-lg border border-divider bg-bg-paper">
                                         <div className="text-xs text-text-secondary mb-1">Assigned To</div>
                                         <div className="flex items-center gap-2">
                                             <Person className="w-4 h-4 text-text-secondary" />
                                             <span className="text-sm font-medium text-text-primary">
-                                                {selectedIncident.assignedTo}
+                                                {selectedPayload.assignedTo}
                                             </span>
                                         </div>
                                     </div>
@@ -327,56 +325,178 @@ export const IncidentManagementPanel: React.FC<IncidentManagementPanelProps> = (
                                 <div className="p-4 rounded-lg border border-divider bg-bg-paper">
                                     <div className="text-xs text-text-secondary mb-1">Duration</div>
                                     <div className="text-sm font-medium text-text-primary">
-                                        {calculateDuration(selectedIncident.detectedAt, selectedIncident.resolvedAt)}
+                                        {calculateDuration(
+                                            selectedPayload.detectedAt,
+                                            selectedPayload.resolvedAt,
+                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Impact */}
-                            <div className="p-4 rounded-lg border border-divider bg-bg-paper">
-                                <h4 className="text-sm font-medium text-text-primary mb-2">Impact</h4>
-                                <p className="text-sm text-text-secondary">{selectedIncident.impact}</p>
-                            </div>
+                            {selectedPayload.impact && (
+                                <div className="p-4 rounded-lg border border-divider bg-bg-paper">
+                                    <h4 className="text-sm font-medium text-text-primary mb-2">Impact</h4>
+                                    <p className="text-sm text-text-secondary">{selectedPayload.impact}</p>
+                                </div>
+                            )}
 
                             {/* Root Cause */}
-                            {selectedIncident.rootCause && (
+                            {selectedPayload.rootCause && (
                                 <div className="p-4 rounded-lg border border-divider bg-bg-paper">
                                     <h4 className="text-sm font-medium text-text-primary mb-2">Root Cause</h4>
-                                    <p className="text-sm text-text-secondary">{selectedIncident.rootCause}</p>
+                                    <p className="text-sm text-text-secondary">{selectedPayload.rootCause}</p>
                                 </div>
                             )}
 
                             {/* Timeline */}
-                            <div>
-                                <h4 className="text-sm font-medium text-text-primary mb-3">Timeline</h4>
-                                <div className="space-y-3">
-                                    {selectedIncident.timeline.map((event, idx) => (
-                                        <div key={idx} className="flex gap-3">
-                                            <div className="flex flex-col items-center">
-                                                <div className="w-3 h-3 rounded-full bg-primary-600" />
-                                                {idx < selectedIncident.timeline.length - 1 && (
-                                                    <div className="w-0.5 flex-1 bg-grey-200 mt-1" />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 pb-4">
-                                                <div className="text-xs text-text-secondary mb-1">
-                                                    {formatTimestamp(event.timestamp)}
-                                                    {event.user && ` • ${event.user}`}
+                            {selectedPayload.timeline.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-medium text-text-primary mb-3">Timeline</h4>
+                                    <div className="space-y-3">
+                                        {selectedPayload.timeline.map((event, idx) => (
+                                            <div key={idx} className="flex gap-3">
+                                                <div className="flex flex-col items-center">
+                                                    <div className="w-3 h-3 rounded-full bg-primary-600" />
+                                                    {idx < selectedPayload.timeline.length - 1 && (
+                                                        <div className="w-0.5 flex-1 bg-grey-200 mt-1" />
+                                                    )}
                                                 </div>
-                                                <p className="text-sm text-text-primary">{event.event}</p>
+                                                <div className="flex-1 pb-4">
+                                                    <div className="text-xs text-text-secondary mb-1">
+                                                        {formatTimestamp(event.timestamp)}
+                                                        {event.user && ` • ${event.user}`}
+                                                    </div>
+                                                    <p className="text-sm text-text-primary">{event.event}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
-                    ) : (
+                    )}
+
+                    {!isLoadingDetail && !selectedArtifact && (
                         <div className="flex items-center justify-center h-full">
                             <p className="text-sm text-text-secondary">Select an incident to view details</p>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* New Incident Dialog */}
+            {showNewIncidentDialog && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="new-incident-title"
+                >
+                    <div className="bg-bg-paper rounded-lg shadow-xl w-full max-w-md p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3
+                                id="new-incident-title"
+                                className="text-lg font-semibold text-text-primary"
+                            >
+                                New Incident
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowNewIncidentDialog(false)}
+                                className="text-text-secondary hover:text-text-primary"
+                                aria-label="Close dialog"
+                            >
+                                <Close className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <label
+                                    htmlFor="incident-title"
+                                    className="block text-sm font-medium text-text-primary mb-1"
+                                >
+                                    Title <span aria-hidden="true">*</span>
+                                </label>
+                                <input
+                                    id="incident-title"
+                                    type="text"
+                                    value={newIncidentForm.title}
+                                    onChange={(e) =>
+                                        setNewIncidentForm((f) => ({ ...f, title: e.target.value }))
+                                    }
+                                    placeholder="Brief incident description"
+                                    className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="incident-severity"
+                                    className="block text-sm font-medium text-text-primary mb-1"
+                                >
+                                    Severity
+                                </label>
+                                <select
+                                    id="incident-severity"
+                                    value={newIncidentForm.severity}
+                                    onChange={(e) =>
+                                        setNewIncidentForm((f) => ({
+                                            ...f,
+                                            severity: e.target.value as IncidentSeverity,
+                                        }))
+                                    }
+                                    className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                                >
+                                    <option value="critical">Critical</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label
+                                    htmlFor="incident-impact"
+                                    className="block text-sm font-medium text-text-primary mb-1"
+                                >
+                                    Impact
+                                </label>
+                                <textarea
+                                    id="incident-impact"
+                                    value={newIncidentForm.impact}
+                                    onChange={(e) =>
+                                        setNewIncidentForm((f) => ({ ...f, impact: e.target.value }))
+                                    }
+                                    placeholder="Describe the business or user impact"
+                                    rows={3}
+                                    className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowNewIncidentDialog(false)}
+                                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary border border-divider rounded-md transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => void handleCreateIncident()}
+                                disabled={isCreating || !newIncidentForm.title.trim()}
+                                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                            >
+                                {isCreating ? 'Creating…' : 'Create Incident'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

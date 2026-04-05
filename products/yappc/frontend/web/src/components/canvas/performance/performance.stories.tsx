@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Box, Button } from '@ghatana/design-system';
 import { useState } from 'react';
 

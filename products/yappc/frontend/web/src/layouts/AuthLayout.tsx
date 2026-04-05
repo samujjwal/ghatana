@@ -24,7 +24,7 @@ const AuthLayout: React.FC = () => {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-zinc-950 to-fuchsia-900/30" />
-        
+
         {/* Animated Grid */}
         <div className="absolute inset-0 opacity-20">
           <div

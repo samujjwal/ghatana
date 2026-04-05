@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Loading Spinner Component for Route Transitions
  * 

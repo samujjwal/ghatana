@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Shared Persona Types
  * 

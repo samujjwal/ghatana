@@ -2,13 +2,16 @@
 /**
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC Frontend - Real-time Lifecycle Hook
- * 
+ *
  * Integrates WebSocket service with lifecycle API hooks to provide
  * real-time updates for project lifecycle state changes.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { LifecycleWebSocketService, LifecycleStateUpdate } from '../services/LifecycleWebSocketService';
+import {
+  LifecycleWebSocketService,
+  LifecycleStateUpdate,
+} from '../services/LifecycleWebSocketService';
 
 // Import types from existing lifecycle API
 interface Project {
@@ -29,7 +32,13 @@ interface Task {
   projectId: string;
   title: string;
   description: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   stage: string;
   assignedAgentId?: string;
@@ -71,7 +80,7 @@ const useLifecycleApi = () => ({
       startedAt: new Date().toISOString(),
       lastActivityAt: new Date().toISOString(),
       createdBy: 'user-123',
-      taskIds: []
+      taskIds: [],
     };
   },
   getProjectTasks: async (projectId: string): Promise<Task[]> => {
@@ -83,7 +92,7 @@ const useLifecycleApi = () => ({
     // Mock implementation - replace with actual API call
     console.log('Fetching phases for project:', projectId);
     return [];
-  }
+  },
 });
 
 export interface RealtimeLifecycleState {
@@ -104,10 +113,10 @@ export interface UseRealtimeLifecycleOptions {
 
 /**
  * Hook for real-time lifecycle state management.
- * 
+ *
  * Combines REST API data with WebSocket updates to provide
  * live synchronization of project lifecycle state.
- * 
+ *
  * @example
  * ```tsx
  * const {
@@ -128,7 +137,7 @@ export function useRealtimeLifecycle({
   projectId,
   enableRealtime = true,
   reconnectInterval = 5000,
-  maxReconnectAttempts = 10
+  maxReconnectAttempts = 10,
 }: UseRealtimeLifecycleOptions) {
   const [state, setState] = useState<RealtimeLifecycleState>({
     project: null,
@@ -136,7 +145,7 @@ export function useRealtimeLifecycle({
     phases: [],
     isConnected: false,
     lastUpdate: null,
-    error: null
+    error: null,
   });
 
   const wsServiceRef = useRef<LifecycleWebSocketService | null>(null);
@@ -147,7 +156,7 @@ export function useRealtimeLifecycle({
     if (enableRealtime && projectId) {
       wsServiceRef.current = new LifecycleWebSocketService({
         reconnectIntervalMs: reconnectInterval,
-        maxReconnectAttempts
+        maxReconnectAttempts,
       });
     }
 
@@ -166,69 +175,73 @@ export function useRealtimeLifecycle({
       const [project, tasks, phases] = await Promise.all([
         getProject(projectId),
         getProjectTasks(projectId),
-        getProjectPhases(projectId)
+        getProjectPhases(projectId),
       ]);
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         project,
         tasks: tasks || [],
         phases: phases || [],
-        error: null
+        error: null,
       }));
     } catch (err) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        error: err instanceof Error ? err.message : 'Failed to load data'
+        error: err instanceof Error ? err.message : 'Failed to load data',
       }));
     }
   }, [projectId, getProject, getProjectTasks, getProjectPhases]);
 
   // Handle WebSocket updates
   const handleWebSocketUpdate = useCallback((update: LifecycleStateUpdate) => {
-    setState(prev => {
+    setState((prev) => {
       const newState = { ...prev, lastUpdate: update };
 
       switch (update.type) {
         case 'phase_transition':
           // Update phase state
-          newState.phases = prev.phases.map(phase => 
-            phase.id === update.data.phaseId 
+          newState.phases = prev.phases.map((phase) =>
+            phase.id === update.data.phaseId
               ? { ...phase, ...update.data }
               : phase
           );
 
           // Update project current stage if needed
           if (prev.project && update.data.currentStage) {
-            newState.project = { ...prev.project, currentStage: update.data.currentStage };
+            newState.project = {
+              ...prev.project,
+              currentStage: update.data.currentStage,
+            };
           }
           break;
 
         case 'task_status':
           // Update task state
-          newState.tasks = prev.tasks.map(task => 
-            task.id === update.data.taskId 
-              ? { ...task, ...update.data }
-              : task
+          newState.tasks = prev.tasks.map((task) =>
+            task.id === update.data.taskId ? { ...task, ...update.data } : task
           );
 
           // Update project task activity
           if (prev.project && update.data.lastActivityAt) {
-            newState.project = { ...prev.project, lastActivityAt: update.data.lastActivityAt };
+            newState.project = {
+              ...prev.project,
+              lastActivityAt: update.data.lastActivityAt,
+            };
           }
           break;
 
         case 'agent_result':
           // Handle agent execution results
           if (update.data.taskId) {
-            newState.tasks = prev.tasks.map(task => 
-              task.id === update.data.taskId 
-                ? { 
-                    ...task, 
+            newState.tasks = prev.tasks.map((task) =>
+              task.id === update.data.taskId
+                ? {
+                    ...task,
                     status: update.data.success ? 'COMPLETED' : 'FAILED',
                     resultSummary: update.data.resultSummary,
                     errorMessage: update.data.errorMessage,
-                    completedAt: update.data.completedAt
+                    completedAt: update.data.completedAt,
                   }
                 : task
             );
@@ -241,14 +254,17 @@ export function useRealtimeLifecycle({
   }, []);
 
   // Handle WebSocket connection changes
-  const handleConnectionChange = useCallback((connected: boolean) => {
-    setState(prev => ({ ...prev, isConnected: connected }));
-    
-    // Refresh data when reconnecting
-    if (connected && projectId) {
-      loadInitialData();
-    }
-  }, [projectId, loadInitialData]);
+  const handleConnectionChange = useCallback(
+    (connected: boolean) => {
+      setState((prev) => ({ ...prev, isConnected: connected }));
+
+      // Refresh data when reconnecting
+      if (connected && projectId) {
+        loadInitialData();
+      }
+    },
+    [projectId, loadInitialData]
+  );
 
   // Connect to WebSocket
   useEffect(() => {
@@ -257,7 +273,9 @@ export function useRealtimeLifecycle({
 
       // Set up event handlers
       const unsubscribeUpdates = wsService.onUpdate(handleWebSocketUpdate);
-      const unsubscribeConnection = wsService.onConnectionChange(handleConnectionChange);
+      const unsubscribeConnection = wsService.onConnectionChange(
+        handleConnectionChange
+      );
 
       // Connect to project-specific WebSocket
       wsService.connect(projectId);
@@ -267,7 +285,12 @@ export function useRealtimeLifecycle({
         unsubscribeConnection();
       };
     }
-  }, [enableRealtime, projectId, handleWebSocketUpdate, handleConnectionChange]);
+  }, [
+    enableRealtime,
+    projectId,
+    handleWebSocketUpdate,
+    handleConnectionChange,
+  ]);
 
   // Load initial data when project changes
   useEffect(() => {
@@ -281,27 +304,30 @@ export function useRealtimeLifecycle({
 
   // Update local state functions
   const updateTask = useCallback((taskId: string, updates: Partial<Task>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      tasks: prev.tasks.map(task => 
+      tasks: prev.tasks.map((task) =>
         task.id === taskId ? { ...task, ...updates } : task
-      )
+      ),
     }));
   }, []);
 
-  const updatePhase = useCallback((phaseId: string, updates: Partial<PhaseState>) => {
-    setState(prev => ({
-      ...prev,
-      phases: prev.phases.map(phase => 
-        phase.id === phaseId ? { ...phase, ...updates } : phase
-      )
-    }));
-  }, []);
+  const updatePhase = useCallback(
+    (phaseId: string, updates: Partial<PhaseState>) => {
+      setState((prev) => ({
+        ...prev,
+        phases: prev.phases.map((phase) =>
+          phase.id === phaseId ? { ...phase, ...updates } : phase
+        ),
+      }));
+    },
+    []
+  );
 
   const updateProject = useCallback((updates: Partial<Project>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
-      project: prev.project ? { ...prev.project, ...updates } : null
+      project: prev.project ? { ...prev.project, ...updates } : null,
     }));
   }, []);
 
@@ -325,6 +351,6 @@ export function useRealtimeLifecycle({
       if (wsServiceRef.current) {
         wsServiceRef.current.disconnect();
       }
-    }
+    },
   };
 }

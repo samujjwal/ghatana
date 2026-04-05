@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Left Rail Type Definitions
  *

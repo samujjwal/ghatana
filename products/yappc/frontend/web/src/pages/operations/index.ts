@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Operations Pages Index
  *

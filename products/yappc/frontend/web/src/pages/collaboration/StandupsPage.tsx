@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Standups Page
  *

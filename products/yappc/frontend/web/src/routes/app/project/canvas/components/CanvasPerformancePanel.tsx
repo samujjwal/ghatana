@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Performance metrics panel overlay

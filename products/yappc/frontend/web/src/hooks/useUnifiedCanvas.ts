@@ -174,9 +174,16 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
   // Viewport culling for large canvases
   const spatialIndex = useMemo(() => new SpatialIndex(), []);
   const culledVisibleNodes = useMemo(() => {
-    console.log('[useUnifiedCanvas] Culling nodes:', nodes.length, 'total, viewport:', viewport);
+    console.log(
+      '[useUnifiedCanvas] Culling nodes:',
+      nodes.length,
+      'total, viewport:',
+      viewport
+    );
     if (nodes.length < 50) {
-      console.log('[useUnifiedCanvas] Skipping culling (< 50 nodes), returning all nodes');
+      console.log(
+        '[useUnifiedCanvas] Skipping culling (< 50 nodes), returning all nodes'
+      );
       return nodes;
     }
     const viewportBounds: Viewport = {
@@ -187,9 +194,13 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
       height: typeof window !== 'undefined' ? window.innerHeight : 1080,
     };
     const visible = getVisibleNodes(nodes, viewportBounds);
-    console.log('[useUnifiedCanvas] After culling:', visible.length, 'visible nodes');
+    console.log(
+      '[useUnifiedCanvas] After culling:',
+      visible.length,
+      'visible nodes'
+    );
     return visible;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, viewport, spatialIndex]);
 
   // Sub-hooks
@@ -198,8 +209,14 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
   const drawingOps = useCanvasDrawing(managers.drawingManager, nodeOps.addNode);
 
   // History operations — delegate to command-pattern atoms
-  const undo = useCallback(() => { managers.dispatchUndo(); return true; }, [managers]);
-  const redo = useCallback(() => { managers.dispatchRedo(); return true; }, [managers]);
+  const undo = useCallback(() => {
+    managers.dispatchUndo();
+    return true;
+  }, [managers]);
+  const redo = useCallback(() => {
+    managers.dispatchRedo();
+    return true;
+  }, [managers]);
 
   // Export/Import operations
   const { canvasExporter, mindMapEngine, updateNodeCallback } = managers;
@@ -244,11 +261,30 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
 
     // Export/Import
     exportToJSON: useCallback(
-      () => canvasExporter.exportToJSON(nodes, connections, canvasState.drawings || [], viewport, projectId),
-      [canvasExporter, nodes, connections, canvasState.drawings, viewport, projectId]
+      () =>
+        canvasExporter.exportToJSON(
+          nodes,
+          connections,
+          canvasState.drawings || [],
+          viewport,
+          projectId
+        ),
+      [
+        canvasExporter,
+        nodes,
+        connections,
+        canvasState.drawings,
+        viewport,
+        projectId,
+      ]
     ),
     exportToSVG: useCallback(
-      () => canvasExporter.exportToSVG(nodes, connections, canvasState.drawings || []),
+      () =>
+        canvasExporter.exportToSVG(
+          nodes,
+          connections,
+          canvasState.drawings || []
+        ),
       [canvasExporter, nodes, connections, canvasState.drawings]
     ),
     exportToPNG: useCallback(
@@ -270,15 +306,40 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
     ),
     downloadJSON: useCallback(
       (filename?: string) => {
-        const json = canvasExporter.exportToJSON(nodes, connections, canvasState.drawings || [], viewport, projectId);
-        canvasExporter.downloadFile(json, filename || `canvas-${Date.now()}.json`, 'application/json');
+        const json = canvasExporter.exportToJSON(
+          nodes,
+          connections,
+          canvasState.drawings || [],
+          viewport,
+          projectId
+        );
+        canvasExporter.downloadFile(
+          json,
+          filename || `canvas-${Date.now()}.json`,
+          'application/json'
+        );
       },
-      [canvasExporter, nodes, connections, canvasState.drawings, viewport, projectId]
+      [
+        canvasExporter,
+        nodes,
+        connections,
+        canvasState.drawings,
+        viewport,
+        projectId,
+      ]
     ),
     downloadSVG: useCallback(
       (filename?: string) => {
-        const svg = canvasExporter.exportToSVG(nodes, connections, canvasState.drawings || []);
-        canvasExporter.downloadFile(svg, filename || `canvas-${Date.now()}.svg`, 'image/svg+xml');
+        const svg = canvasExporter.exportToSVG(
+          nodes,
+          connections,
+          canvasState.drawings || []
+        );
+        canvasExporter.downloadFile(
+          svg,
+          filename || `canvas-${Date.now()}.svg`,
+          'image/svg+xml'
+        );
       },
       [canvasExporter, nodes, connections, canvasState.drawings]
     ),
@@ -287,12 +348,16 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
     applyMindMapLayout: useCallback(
       (layoutType: 'tree' | 'radial' | 'fishbone' = 'tree') => {
         mindMapEngine.updateConfig({ type: layoutType });
-        const mindMapNodes = nodes.filter((n) => n.type === 'mindmap' || n.data.isMindMap);
+        const mindMapNodes = nodes.filter(
+          (n) => n.type === 'mindmap' || n.data.isMindMap
+        );
         if (mindMapNodes.length === 0) {
           console.warn('[Canvas] No mind map nodes to layout');
           return;
         }
-        const layoutedNodes = mindMapEngine.layoutNodes(mindMapNodes as unknown);
+        const layoutedNodes = mindMapEngine.layoutNodes(
+          mindMapNodes as unknown
+        );
         layoutedNodes.forEach((layouted) => {
           updateNodeCallback(layouted.id, { position: layouted.position });
         });

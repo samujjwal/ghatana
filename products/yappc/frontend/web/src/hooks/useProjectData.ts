@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Project Data Hooks - Custom hooks for project phases and progress
  * 

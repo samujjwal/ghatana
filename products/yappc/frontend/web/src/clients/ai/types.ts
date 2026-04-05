@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * TypeScript type definitions matching Java AI Service contract
  * 

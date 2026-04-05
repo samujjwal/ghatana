@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * INTENT Phase Components Index
  *

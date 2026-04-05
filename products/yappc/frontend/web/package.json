@@ -18,8 +18,7 @@
     "test:canvas:all": "node ../../test-runner.js",
     "test:canvas:unit": "node ../../test-runner.js --unit",
     "test:canvas:coverage": "node ../../test-runner.js --coverage",
-    "test:canvas:watch": "node ../../test-runner.js --watch",
-    "codegen": "graphql-codegen --config codegen.yml"
+    "test:canvas:watch": "node ../../test-runner.js --watch"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
@@ -75,10 +74,6 @@
     "@yappc/state": "workspace:*"
   },
   "devDependencies": {
-    "@graphql-codegen/introspection": "^5.0.1",
-    "@graphql-codegen/typescript": "^5.0.9",
-    "@graphql-codegen/typescript-operations": "^5.0.9",
-    "@graphql-codegen/typescript-urql": "^5.0.0",
     "@react-router/dev": "^7.14.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@tailwindcss/vite": "^4.2.2",

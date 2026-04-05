@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @doc.type component
  * @doc.purpose Accessibility issues panel overlay

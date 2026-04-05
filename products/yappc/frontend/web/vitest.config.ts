@@ -15,6 +15,10 @@ export default defineConfig({
       '@ghatana/yappc-types': resolve(__dirname, '../../libs/types/src'),
       '@ghatana/yappc-api': resolve(__dirname, '../../libs/api/src'),
       '@ghatana/yappc-testing': resolve(__dirname, '../../libs/testing/src'),
+      '@ghatana/platform-utils': resolve(
+        __dirname,
+        '../../../../platform/typescript/foundation/platform-utils/src'
+      ),
       react: resolve(__dirname, 'node_modules/react'),
       'react/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime'),
       'react-dom': resolve(__dirname, 'node_modules/react-dom'),

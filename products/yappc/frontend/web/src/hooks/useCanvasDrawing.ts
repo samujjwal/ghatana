@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * useCanvasDrawing - Canvas Drawing Operations Hook
  *
@@ -85,7 +84,12 @@ export function useCanvasDrawing(
       position: { x: number; y: number },
       color: 'yellow' | 'pink' | 'blue' | 'green' | 'purple' = 'yellow'
     ): HierarchicalNode => {
-      console.log('[Canvas] Creating sticky note at:', position, 'color:', color);
+      console.log(
+        '[Canvas] Creating sticky note at:',
+        position,
+        'color:',
+        color
+      );
       return addNode({
         type: 'sticky',
         position,

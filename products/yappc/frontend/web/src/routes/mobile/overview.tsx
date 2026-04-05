@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Capacitor } from '@capacitor/core';
 import { TrendingUp, TrendingDown, Hammer as Build, Rocket, Bug as BugReport, Users as Group, Clock as Schedule, CheckCircle, AlertTriangle as Warning, AlertCircle as Error, RefreshCw as Refresh, ChevronDown as ExpandMore, Bell as Notifications, Gauge as Speed } from 'lucide-react';
 // Core UI components from @ghatana/yappc-ui

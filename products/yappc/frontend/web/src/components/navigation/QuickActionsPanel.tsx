@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Quick Actions Panel
  * 

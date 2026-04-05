@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * CostAnalysis DTO - Data transfer object for cost analysis results
  *

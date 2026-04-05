@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * PersonaContext
  * 
@@ -14,7 +13,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 
 // Persona types
-export type PersonaType = 
+export type PersonaType =
   | 'product-owner'
   | 'developer'
   | 'designer'
@@ -120,30 +119,30 @@ export const ALL_PERSONA_TYPES: PersonaType[] = [
 export interface PersonaContextValue {
   // Active human personas (selected by user)
   activePersonas: PersonaType[];
-  
+
   // Primary persona (main role for the user)
   primaryPersona: PersonaType;
-  
+
   // Virtual personas (AI-filled roles)
   virtualPersonas: PersonaType[];
-  
+
   // All personas (human + virtual)
   allActivePersonas: PersonaType[];
-  
+
   // Actions
   togglePersona: (id: PersonaType) => void;
   setPrimaryPersona: (id: PersonaType) => void;
   setActivePersonas: (ids: PersonaType[]) => void;
-  
+
   // Queries
   hasPersona: (id: PersonaType) => boolean;
   isVirtualPersona: (id: PersonaType) => boolean;
   getPersonaDefinition: (id: PersonaType) => PersonaDefinition;
-  
+
   // Virtual Agent controls
   enableVirtualPersona: (id: PersonaType) => void;
   disableVirtualPersona: (id: PersonaType) => void;
-  
+
   // Persistence
   isLoaded: boolean;
 }
@@ -163,14 +162,14 @@ const defaultContextValue: PersonaContextValue = {
   primaryPersona: 'developer',
   virtualPersonas: ['product-owner', 'designer', 'devops', 'qa', 'security'],
   allActivePersonas: ALL_PERSONA_TYPES,
-  togglePersona: () => {},
-  setPrimaryPersona: () => {},
-  setActivePersonas: () => {},
+  togglePersona: () => { },
+  setPrimaryPersona: () => { },
+  setActivePersonas: () => { },
   hasPersona: () => false,
   isVirtualPersona: () => false,
   getPersonaDefinition: (id) => PERSONA_DEFINITIONS[id],
-  enableVirtualPersona: () => {},
-  disableVirtualPersona: () => {},
+  enableVirtualPersona: () => { },
+  disableVirtualPersona: () => { },
   isLoaded: false,
 };
 
@@ -225,7 +224,7 @@ export function PersonaProvider({
   // Persist to localStorage on change
   useEffect(() => {
     if (!isLoaded) return;
-    
+
     try {
       const state: StoredPersonaState = {
         activePersonas,
@@ -241,8 +240,8 @@ export function PersonaProvider({
   // Calculate virtual personas (roles not filled by humans, unless disabled)
   const virtualPersonas = useMemo(() => {
     return ALL_PERSONA_TYPES.filter(
-      (id) => 
-        !activePersonas.includes(id) && 
+      (id) =>
+        !activePersonas.includes(id) &&
         !disabledVirtualPersonas.includes(id) &&
         PERSONA_DEFINITIONS[id].canBeVirtual
     );
@@ -259,13 +258,13 @@ export function PersonaProvider({
       if (prev.includes(id)) {
         // Don't allow removing the last persona
         if (prev.length === 1) return prev;
-        
+
         // If removing primary, set new primary
         if (id === primaryPersona) {
           const remaining = prev.filter((p) => p !== id);
           setPrimaryPersonaState(remaining[0]);
         }
-        
+
         return prev.filter((p) => p !== id);
       } else {
         return [...prev, id];
@@ -288,9 +287,9 @@ export function PersonaProvider({
   // Set all active personas at once
   const setActivePersonas = useCallback((ids: PersonaType[]) => {
     if (ids.length === 0) return;
-    
+
     setActivePersonasState(ids);
-    
+
     // Ensure primary is in the list
     if (!ids.includes(primaryPersona)) {
       setPrimaryPersonaState(ids[0]);

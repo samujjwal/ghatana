@@ -1,10 +1,10 @@
 // @ts-nocheck
 /**
  * useVirtualAgents Hook
- * 
+ *
  * React hook for integrating Virtual Agent Service with components.
  * Manages agent lifecycle and provides reactive access to agent actions.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Virtual Agent integration
  * @doc.layer product
@@ -13,10 +13,10 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
-import { 
-  getVirtualAgentService, 
-  type AgentAction, 
-  type PersonaType 
+import {
+  getVirtualAgentService,
+  type AgentAction,
+  type PersonaType,
 } from '../services/VirtualAgentService';
 import { canvasAtom } from '../components/canvas/workspace/canvasAtoms';
 import { usePersona } from '../context/PersonaContext';
@@ -31,17 +31,20 @@ interface UseVirtualAgentsResult {
   actions: AgentAction[];
   activeActions: AgentAction[];
   blockingActions: AgentAction[];
-  
+
   actionsByPersona: (persona: PersonaType) => AgentAction[];
-  
+
   dismissAction: (actionId: string) => void;
   overrideAction: (actionId: string) => void;
   clearActions: () => void;
-  
+
   runCheck: (persona: PersonaType) => Promise<void>;
   runAllChecks: () => Promise<void>;
-  checkDeployBlocked: () => Promise<{ blocked: boolean; blockers: AgentAction[] }>;
-  
+  checkDeployBlocked: () => Promise<{
+    blocked: boolean;
+    blockers: AgentAction[];
+  }>;
+
   isChecking: boolean;
   lastCheckTime: Date | null;
 }
@@ -54,10 +57,10 @@ export function useVirtualAgents({
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [isChecking, setIsChecking] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
-  
+
   const canvasState = useAtomValue(canvasAtom);
   const { virtualPersonas } = usePersona();
-  
+
   const service = useMemo(() => getVirtualAgentService(), []);
 
   // Update service context when dependencies change
@@ -100,38 +103,47 @@ export function useVirtualAgents({
   }, [service, virtualPersonas, autoStart]);
 
   // Derived state
-  const activeActions = useMemo(() => 
-    actions.filter(a => !a.dismissed),
+  const activeActions = useMemo(
+    () => actions.filter((a) => !a.dismissed),
     [actions]
   );
 
-  const blockingActions = useMemo(() => 
-    actions.filter(a => a.type === 'block_deploy' && !a.dismissed),
+  const blockingActions = useMemo(
+    () => actions.filter((a) => a.type === 'block_deploy' && !a.dismissed),
     [actions]
   );
 
   // Action handlers
-  const dismissAction = useCallback((actionId: string) => {
-    service.dismissAction(actionId);
-  }, [service]);
+  const dismissAction = useCallback(
+    (actionId: string) => {
+      service.dismissAction(actionId);
+    },
+    [service]
+  );
 
-  const overrideAction = useCallback((actionId: string) => {
-    service.overrideAction(actionId);
-  }, [service]);
+  const overrideAction = useCallback(
+    (actionId: string) => {
+      service.overrideAction(actionId);
+    },
+    [service]
+  );
 
   const clearActions = useCallback(() => {
     service.clearActions();
   }, [service]);
 
-  const runCheck = useCallback(async (persona: PersonaType) => {
-    setIsChecking(true);
-    try {
-      await service.runAgentCheck(persona);
-      setLastCheckTime(new Date());
-    } finally {
-      setIsChecking(false);
-    }
-  }, [service]);
+  const runCheck = useCallback(
+    async (persona: PersonaType) => {
+      setIsChecking(true);
+      try {
+        await service.runAgentCheck(persona);
+        setLastCheckTime(new Date());
+      } finally {
+        setIsChecking(false);
+      }
+    },
+    [service]
+  );
 
   const runAllChecks = useCallback(async () => {
     setIsChecking(true);
@@ -154,9 +166,12 @@ export function useVirtualAgents({
     }
   }, [service]);
 
-  const actionsByPersona = useCallback((persona: PersonaType) => {
-    return actions.filter(a => a.agentPersona === persona);
-  }, [actions]);
+  const actionsByPersona = useCallback(
+    (persona: PersonaType) => {
+      return actions.filter((a) => a.agentPersona === persona);
+    },
+    [actions]
+  );
 
   return {
     actions,

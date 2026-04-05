@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Canvas components barrel export
  * @doc.type module

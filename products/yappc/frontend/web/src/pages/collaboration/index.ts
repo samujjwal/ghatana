@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Collaboration Pages Barrel Export
  *
