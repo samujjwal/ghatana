@@ -13,18 +13,16 @@ import type { WorkflowDefinition, WorkflowNode, WorkflowEdge, CreateWorkflowRequ
 
 describe('WorkflowServiceImpl', () => {
   let service: WorkflowServiceImpl;
-  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    vi.clearAllMocks();
     service = new WorkflowServiceImpl('/api/v1');
   });
 
   describe('getWorkflows', () => {
     it('should fetch workflows with options', async () => {
       const mockWorkflows = [{ id: '1', name: 'Test', tenantId: 'tenant-1', description: '', definition: { nodes: [], edges: [], variables: [], triggers: [], config: { timeout: 0, retryPolicy: { maxAttempts: 0, backoffMultiplier: 0, initialDelay: 0, maxDelay: 0 }, concurrency: 0, logLevel: 'info' } }, status: 'draft' as const, executions: 0, createdAt: '', updatedAt: '', createdBy: '' }];
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflows) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflows) });
 
       const result = await service.getWorkflows('tenant-1', { search: 'test', status: 'draft' });
 
@@ -35,7 +33,7 @@ describe('WorkflowServiceImpl', () => {
   describe('getWorkflow', () => {
     it('should return workflow when found', async () => {
       const mockWorkflow = { id: '1', name: 'Test', tenantId: 'tenant-1', description: '', definition: { nodes: [], edges: [], variables: [], triggers: [], config: { timeout: 0, retryPolicy: { maxAttempts: 0, backoffMultiplier: 0, initialDelay: 0, maxDelay: 0 }, concurrency: 0, logLevel: 'info' } }, status: 'draft' as const, executions: 0, createdAt: '', updatedAt: '', createdBy: '' };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
 
       const result = await service.getWorkflow('1', 'tenant-1');
 
@@ -43,7 +41,7 @@ describe('WorkflowServiceImpl', () => {
     });
 
     it('should return null when not found', async () => {
-      mockFetch.mockResolvedValue({ status: 404 });
+      global.fetch = vi.fn().mockResolvedValue({ status: 404 });
 
       const result = await service.getWorkflow('1', 'tenant-1');
 
@@ -56,7 +54,7 @@ describe('WorkflowServiceImpl', () => {
       const definition = createDefaultWorkflowDefinition();
       const request: CreateWorkflowRequest = { tenantId: 'tenant-1', name: 'Test', definition };
       const mockWorkflow = { id: '1', ...request, description: '', status: 'draft' as const, executions: 0, createdAt: '', updatedAt: '', createdBy: '' };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
 
       const result = await service.createWorkflow(request);
 
@@ -259,7 +257,7 @@ describe('WorkflowServiceImpl', () => {
   describe('executeWorkflow', () => {
     it('should execute with input', async () => {
       const mockExecution = { id: 'exec-1', workflowId: '1', status: 'pending', startedAt: '', input: { key: 'value' }, steps: [], logs: [] };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockExecution) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockExecution) });
 
       const result = await service.executeWorkflow('1', { key: 'value' });
 
@@ -270,7 +268,7 @@ describe('WorkflowServiceImpl', () => {
   describe('cloneWorkflow', () => {
     it('should clone with new name', async () => {
       const mockWorkflow = { id: '2', name: 'Cloned', tenantId: 'tenant-1', description: '', definition: createDefaultWorkflowDefinition(), status: 'draft' as const, executions: 0, createdAt: '', updatedAt: '', createdBy: '' };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockWorkflow) });
 
       const result = await service.cloneWorkflow('1', 'Cloned');
 

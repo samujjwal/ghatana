@@ -29,11 +29,11 @@ describe('CollectionServiceImpl', () => {
       const result = await service.getCollections('tenant-1', { search: 'test', page: 1, limit: 10 });
 
       expect(result).toEqual(mockCollections);
-      expect(mockFetch).toHaveBeenCalledWith('/api/v1/tenants/tenant-1/collections?search=test&page=1&limit=10');
+      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tenants/tenant-1/collections?search=test&page=1&limit=10');
     });
 
     it('should throw on fetch error', async () => {
-      mockFetch.mockResolvedValue({ ok: false, status: 500 });
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(service.getCollections('tenant-1')).rejects.toThrow('Failed to fetch collections: 500');
     });
@@ -42,7 +42,7 @@ describe('CollectionServiceImpl', () => {
   describe('getCollection', () => {
     it('should return collection when found', async () => {
       const mockCollection: Collection = { id: '1', name: 'Test', tenantId: 'tenant-1', description: '', schema: { fields: [], indexes: [], validations: [] }, settings: { versioning: false, softDelete: false, auditLog: false, caching: false }, entityCount: 0, createdAt: '', updatedAt: '', createdBy: '', version: 1 };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockCollection) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockCollection) });
 
       const result = await service.getCollection('1', 'tenant-1');
 
@@ -50,7 +50,7 @@ describe('CollectionServiceImpl', () => {
     });
 
     it('should return null when not found', async () => {
-      mockFetch.mockResolvedValue({ status: 404 });
+      global.fetch = vi.fn().mockResolvedValue({ status: 404 });
 
       const result = await service.getCollection('1', 'tenant-1');
 
@@ -66,7 +66,7 @@ describe('CollectionServiceImpl', () => {
         schema: { fields: [{ name: 'name', type: 'string' as FieldType, required: true }], indexes: [], validations: [] }
       };
       const mockCollection: Collection = { id: '1', ...request, description: '', settings: { versioning: false, softDelete: false, auditLog: false, caching: false }, entityCount: 0, createdAt: '', updatedAt: '', createdBy: '', version: 1 };
-      mockFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCollection) });
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockCollection) });
 
       const result = await service.createCollection(request);
 
@@ -165,13 +165,13 @@ describe('CollectionServiceImpl', () => {
 
   describe('deleteCollection', () => {
     it('should delete successfully', async () => {
-      mockFetch.mockResolvedValue({ ok: true });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true });
 
       await expect(service.deleteCollection('1', 'tenant-1')).resolves.not.toThrow();
     });
 
     it('should not throw on 404', async () => {
-      mockFetch.mockResolvedValue({ ok: false, status: 404 });
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
 
       await expect(service.deleteCollection('1', 'tenant-1')).resolves.not.toThrow();
     });
@@ -180,7 +180,7 @@ describe('CollectionServiceImpl', () => {
   describe('exportCollection', () => {
     it('should return blob', async () => {
       const blob = new Blob(['data']);
-      mockFetch.mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
 
       const result = await service.exportCollection('1', 'csv');
 
@@ -192,7 +192,7 @@ describe('CollectionServiceImpl', () => {
     it('should import with options', async () => {
       const file = new File(['data'], 'import.csv');
       const mockResult = { total: 10, inserted: 10, updated: 0, failed: 0, errors: [] };
-      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockResult) });
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(mockResult) });
 
       const result = await service.importCollection('1', file, { skipValidation: true, upsert: true });
 
