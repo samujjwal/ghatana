@@ -38,15 +38,15 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test, Contract
  */
-@DisplayName("Auth Gateway OpenAPI Contract Tests")
-class AuthGatewayContractTest {
+@DisplayName("Auth Gateway OpenAPI API Contract Tests")
+class AuthGatewayApiContractTest {
 
     private static JsonNode spec;
 
     @BeforeAll
     static void loadSpec() throws IOException {
         ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-        try (InputStream is = AuthGatewayContractTest.class.getResourceAsStream(
+        try (InputStream is = AuthGatewayApiContractTest.class.getResourceAsStream(
                 "/auth-gateway.yaml")) {
             assertThat(is).as("auth-gateway.yaml must be on classpath").isNotNull();
             spec = yamlMapper.readTree(is);
@@ -79,7 +79,7 @@ class AuthGatewayContractTest {
         @Test
         @DisplayName("spec must define auth security scheme")
         void specMustDefineSecurityScheme() {
-            JsonNode schemes = spec.path("components/securitySchemes");
+            JsonNode schemes = spec.at("/components/securitySchemes");
             assertThat(schemes.has("bearerAuth") || schemes.has("jwt"))
                     .as("Must define at least one auth scheme (bearerAuth or jwt)")
                     .isTrue();
@@ -107,21 +107,23 @@ class AuthGatewayContractTest {
         @Test
         @DisplayName("POST /auth/login success response must include token and user")
         void loginResponseMustIncludeTokenAndUser() {
-            JsonNode loginResponse = spec.at("/paths/~1auth~1login/post/responses/200/content/application~1json/schema");
-            assertThat(loginResponse.isMissingNode()).isFalse();
+            JsonNode schemaRef = spec.at("/paths/~1auth~1login/post/responses/200/content/application~1json/schema");
+            assertThat(schemaRef.isMissingNode()).isFalse();
 
-            JsonNode properties = loginResponse.path("properties");
-            assertThat(properties.has("token")).as("login response must include 'token' property").isTrue();
-            assertThat(properties.has("user")).as("login response must include 'user' property").isTrue();
+            // Navigate to the referenced component schema to check properties
+            JsonNode properties = spec.at("/components/schemas/LoginResponse/properties");
+            assertThat(properties.has("accessToken")).as("login response must include 'accessToken' (token) property").isTrue();
+            assertThat(properties.has("userId")).as("login response must include 'userId' (user identity) property").isTrue();
         }
 
         @Test
         @DisplayName("POST /auth/login must accept email and password in request body")
         void loginRequestMustAcceptCredentials() {
-            JsonNode loginRequest = spec.at("/paths/~1auth~1login/post/requestBody/content/application~1json/schema");
-            assertThat(loginRequest.isMissingNode()).isFalse();
+            JsonNode requestRef = spec.at("/paths/~1auth~1login/post/requestBody/content/application~1json/schema");
+            assertThat(requestRef.isMissingNode()).isFalse();
 
-            JsonNode properties = loginRequest.path("properties");
+            // Navigate to the referenced component schema to check properties
+            JsonNode properties = spec.at("/components/schemas/LoginRequest/properties");
             assertThat(properties.has("email")).as("login request must include 'email' property").isTrue();
             assertThat(properties.has("password")).as("login request must include 'password' property").isTrue();
         }
@@ -163,18 +165,21 @@ class AuthGatewayContractTest {
         @DisplayName("GET /auth/validate must accept Authorization header")
         void validateMustAcceptAuthHeader() {
             JsonNode endpoint = spec.at("/paths/~1auth~1validate/get");
-            JsonNode parameters = endpoint.path("parameters");
 
+            // Auth can be specified via an explicit header parameter OR a security scheme
             boolean hasAuthParam = false;
-            for (JsonNode param : parameters) {
-                if ("authorization".equalsIgnoreCase(param.path("name").asText())
-                        || "Authorization".equalsIgnoreCase(param.path("name").asText())) {
+            for (JsonNode param : endpoint.path("parameters")) {
+                if ("authorization".equalsIgnoreCase(param.path("name").asText())) {
                     hasAuthParam = true;
                     break;
                 }
             }
-            assertThat(hasAuthParam)
-                    .as("Must accept Authorization parameter for token validation")
+            // bearerAuth security requirement means Authorization: Bearer <token> is required
+            JsonNode security = endpoint.path("security");
+            boolean hasBearerSecurity = !security.isMissingNode() && security.isArray() && security.size() > 0;
+
+            assertThat(hasAuthParam || hasBearerSecurity)
+                    .as("Must accept Authorization via security scheme or explicit header parameter for token validation")
                     .isTrue();
         }
 

@@ -24,12 +24,12 @@ paths:
       tags:
         - Health
       responses:
-        '200':
+        "200":
           description: Service is healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                $ref: "#/components/schemas/HealthResponse"
 
   /auth/login:
     post:
@@ -45,26 +45,51 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: Authentication successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
           description: Missing or malformed request body
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Invalidate user session
+      description: Invalidates the user's current session and refresh token.
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout successful
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/validate:
     get:
@@ -78,18 +103,18 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Token is valid
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidateResponse'
-        '401':
+                $ref: "#/components/schemas/ValidateResponse"
+        "401":
           description: Missing, malformed, or invalid token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ValidateErrorResponse'
+                $ref: "#/components/schemas/ValidateErrorResponse"
 
   /auth/refresh:
     post:
@@ -103,18 +128,18 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Token refreshed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RefreshResponse'
-        '401':
+                $ref: "#/components/schemas/RefreshResponse"
+        "401":
           description: Missing or invalid refresh token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/exchange:
     post:
@@ -135,36 +160,36 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Exchange successful — platform token returned
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ExchangeResponse'
-        '400':
+                $ref: "#/components/schemas/ExchangeResponse"
+        "400":
           description: Missing or malformed Authorization header
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Product JWT is invalid or expired
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '429':
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
           description: Rate limit exceeded
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Internal error during token issuance
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /auth/tenant:
     get:
@@ -178,12 +203,12 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Tenant context extracted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TenantResponse'
+                $ref: "#/components/schemas/TenantResponse"
 
 components:
   securitySchemes:
@@ -218,7 +243,7 @@ components:
           type: string
           format: password
           description: User password
-          example: '********'
+          example: "********"
       required:
         - email
         - password
@@ -244,7 +269,7 @@ components:
           items:
             type: string
           description: User roles
-          example: ['ADMIN', 'USER']
+          example: ["ADMIN", "USER"]
       required:
         - accessToken
         - refreshToken
@@ -326,4 +351,3 @@ components:
       required:
         - platformToken
         - expiresIn
-
