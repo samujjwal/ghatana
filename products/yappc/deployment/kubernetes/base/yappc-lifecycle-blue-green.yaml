@@ -53,6 +53,11 @@ spec:
                 secretKeyRef:
                   name: yappc-lifecycle-secrets
                   key: encryption-key
+            - name: YAPPC_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yappc-lifecycle-secrets
+                  key: jwt-secret
             - name: YAPPC_API_KEYS
               valueFrom:
                 secretKeyRef:

@@ -13,8 +13,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
@@ -22,13 +23,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,6 +49,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("AdvancePhaseUseCase Integration Tests")
 class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
@@ -71,7 +69,6 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         useCase = new AdvancePhaseUseCase(
                 transitionConfig,
                 policyEngine,
@@ -79,12 +76,11 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                 dlqPublisher
         );
 
-        // Default: DLQ publisher succeeds
-        when(dlqPublisher.publish(anyString(), anyString(), anyString(), anyString(), any(Map.class), anyString(), anyString()))
+        // Default: DLQ publisher succeeds (lenient — not used in every test)
+        lenient().when(dlqPublisher.publish(anyString(), anyString(), anyString(), anyString(), any(Map.class), anyString(), anyString()))
                 .thenReturn(Promise.complete());
-        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
-        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
-        when(artifactRepository.list(anyString())).thenReturn(io.activej.promise.Promise.of(java.util.List.of()));
+        // Default artifact list: empty (lenient — overridden per-test when presence matters)
+        lenient().when(artifactRepository.list(anyString())).thenReturn(Promise.of(List.of()));
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -245,6 +241,122 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
             // AND DLQ should NOT be called
             // (verify was not called check would fail if called, so we're implicitly testing non-call)
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("AI Readiness Gate Path")
+    class AiReadinessGatePath {
+
+        @Mock
+        private com.ghatana.yappc.services.lifecycle.assessment.AIReadinessAssessor readinessAssessor;
+
+        private AdvancePhaseUseCase useCaseWithAi;
+        private TransitionSpec spec;
+
+        @BeforeEach
+        void setUpAiUseCase() {
+            spec = mock(TransitionSpec.class);
+            when(spec.getRequiredArtifacts()).thenReturn(List.of());
+            useCaseWithAi = new AdvancePhaseUseCase(
+                    transitionConfig,
+                    policyEngine,
+                    artifactRepository,
+                    dlqPublisher,
+                    readinessAssessor);
+        }
+
+        @Test
+        @DisplayName("should block when AI readiness assessor returns not-ready")
+        void shouldBlockWhenAiReadinessBlocked() {
+            // GIVEN: Transition rule exists
+            when(transitionConfig.findTransition("intent", "shape"))
+                    .thenReturn(Optional.of(spec));
+
+            // AND: AI assessor returns blocked report
+            com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport blockedReport =
+                    com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport.blocked(
+                            "intent", "shape", 0.4,
+                            List.of("No requirements captured"),
+                            List.of("Add requirements before advancing"),
+                            "AI gate blocked.");
+            when(readinessAssessor.assess(
+                    org.mockito.ArgumentMatchers.eq("intent"),
+                    org.mockito.ArgumentMatchers.eq("shape"),
+                    any()))
+                    .thenReturn(Promise.of(blockedReport));
+
+            TransitionRequest request = new TransitionRequest(
+                    "proj-ai-1", "intent", "shape", "tenant-ai", "user-ai");
+
+            // WHEN
+            TransitionResult result = runPromise(() -> useCaseWithAi.execute(request));
+
+            // THEN: Should be blocked with AI_READINESS_GATE code
+            assertThat(result.isSuccess()).isFalse();
+            assertThat(result.blockCode()).isEqualTo("AI_READINESS_GATE");
+            assertThat(result.blockReason()).contains("No requirements captured");
+
+            // AND DLQ published
+            verify(dlqPublisher).publish(
+                    eq("tenant-ai"), anyString(), anyString(), anyString(),
+                    any(Map.class), eq("AI_READINESS_GATE"), eq("proj-ai-1"));
+        }
+
+        @Test
+        @DisplayName("should proceed to policy gate when AI assessor returns ready")
+        void shouldProceedToPolicyGateWhenAiReady() {
+            // GIVEN: Transition rule exists
+            when(transitionConfig.findTransition("intent", "shape"))
+                    .thenReturn(Optional.of(spec));
+
+            // AND: AI assessor returns ready
+            com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport readyReport =
+                    com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport.ready(
+                            "intent", "shape", 0.9, "Ready.");
+            when(readinessAssessor.assess(
+                    org.mockito.ArgumentMatchers.eq("intent"),
+                    org.mockito.ArgumentMatchers.eq("shape"),
+                    any()))
+                    .thenReturn(Promise.of(readyReport));
+
+            // AND: Policy engine approves
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
+                    .thenReturn(Promise.of(true));
+
+            TransitionRequest request = new TransitionRequest(
+                    "proj-ai-2", "intent", "shape", "tenant-ai", "user-ai");
+
+            // WHEN
+            TransitionResult result = runPromise(() -> useCaseWithAi.execute(request));
+
+            // THEN: Should succeed
+            assertThat(result.isSuccess()).isTrue();
+            assertThat(result.toPhase()).isEqualTo("shape");
+        }
+
+        @Test
+        @DisplayName("should skip AI gate and use 4-arg constructor path")
+        void shouldSkipAiGateWithNoAssessor() {
+            // GIVEN: 4-arg constructor (no assessor)
+            AdvancePhaseUseCase useCaseNoAi = new AdvancePhaseUseCase(
+                    transitionConfig, policyEngine, artifactRepository, dlqPublisher);
+
+            when(transitionConfig.findTransition("intent", "shape"))
+                    .thenReturn(Optional.of(spec));
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
+                    .thenReturn(Promise.of(true));
+
+            TransitionRequest request = new TransitionRequest(
+                    "proj-noai", "intent", "shape", "tenant-noai", "user-noai");
+
+            // WHEN
+            TransitionResult result = runPromise(() -> useCaseNoAi.execute(request));
+
+            // THEN: Should succeed (AI gate skipped)
+            assertThat(result.isSuccess()).isTrue();
         }
     }
 

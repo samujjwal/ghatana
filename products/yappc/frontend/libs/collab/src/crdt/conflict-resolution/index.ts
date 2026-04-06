@@ -107,11 +107,26 @@ export class ConflictResolutionEngine {
       return conflicts;
     }
 
+    // Only concurrent operations can conflict.
+    if (!this.isConcurrent(operationA.vectorClock, operationB.vectorClock)) {
+      return conflicts;
+    }
+
+    if (
+      this.config.detectorConfig.detectOrderingConflicts &&
+      operationA.type === 'insert' &&
+      operationB.type === 'insert' &&
+      this.targetsSamePosition(operationA, operationB)
+    ) {
+      conflicts.push(this.createConflict('ordering-conflict', operationA, operationB));
+    }
+
     // Concurrent update conflict
     if (
       this.config.detectorConfig.detectConcurrentUpdates &&
       operationA.type === 'update' &&
-      operationB.type === 'update'
+      operationB.type === 'update' &&
+      this.touchesSameField(operationA, operationB)
     ) {
       conflicts.push(this.createConflict('concurrent-update', operationA, operationB));
     }
@@ -130,7 +145,15 @@ export class ConflictResolutionEngine {
       (operationA.type === 'update' && operationB.type === 'delete') ||
       (operationA.type === 'delete' && operationB.type === 'update')
     ) {
-      conflicts.push(this.createConflict('concurrent-update', operationA, operationB));
+      conflicts.push(this.createConflict('structural-conflict', operationA, operationB));
+    }
+
+    if (
+      this.config.detectorConfig.detectOrderingConflicts &&
+      ((operationA.type === 'delete' && operationB.type === 'insert') ||
+        (operationA.type === 'insert' && operationB.type === 'delete'))
+    ) {
+      conflicts.push(this.createConflict('structural-conflict', operationA, operationB));
     }
 
     // Move conflict
@@ -143,6 +166,92 @@ export class ConflictResolutionEngine {
     }
 
     return conflicts;
+  }
+
+  private isConcurrent(a: CRDTOperation['vectorClock'], b: CRDTOperation['vectorClock']): boolean {
+    let aGreater = false;
+    let bGreater = false;
+
+    const allKeys = new Set([...a.values.keys(), ...b.values.keys()]);
+
+    for (const key of allKeys) {
+      const aValue = a.values.get(key) ?? 0;
+      const bValue = b.values.get(key) ?? 0;
+
+      if (aValue > bValue) {
+        aGreater = true;
+      }
+      if (bValue > aValue) {
+        bGreater = true;
+      }
+    }
+
+    return aGreater && bGreater;
+  }
+
+  private touchesSameField(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
+    const fieldsA = this.extractFieldNames(operationA.data);
+    const fieldsB = this.extractFieldNames(operationB.data);
+
+    if (fieldsA.size === 0 || fieldsB.size === 0) {
+      return true;
+    }
+
+    for (const field of fieldsA) {
+      if (fieldsB.has(field)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private extractFieldNames(data: unknown): Set<string> {
+    if (!this.isObjectRecord(data)) {
+      return new Set();
+    }
+
+    const explicitField = data['field'];
+    if (typeof explicitField === 'string' && explicitField.length > 0) {
+      return new Set([explicitField]);
+    }
+
+    const payload = data['value'];
+    if (this.isObjectRecord(payload)) {
+      return new Set(Object.keys(payload));
+    }
+
+    const keys = Object.keys(data).filter((key) => !['field', 'value', 'position', 'index'].includes(key));
+    return new Set(keys);
+  }
+
+  private targetsSamePosition(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
+    const positionA = this.extractPosition(operationA.data);
+    const positionB = this.extractPosition(operationB.data);
+
+    return positionA !== null && positionB !== null && positionA === positionB;
+  }
+
+  private extractPosition(data: unknown): number | null {
+    if (!this.isObjectRecord(data)) {
+      return null;
+    }
+
+    const directPosition = data['position'];
+    if (typeof directPosition === 'number') {
+      return directPosition;
+    }
+
+    const directIndex = data['index'];
+    if (typeof directIndex === 'number') {
+      return directIndex;
+    }
+
+    return null;
+  }
+
+  private isObjectRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 
   /**

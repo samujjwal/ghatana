@@ -96,17 +96,59 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
   });
 
   it('detects a concurrent-update conflict on same target', () => {
-    const opA = makeOp({ targetId: 'doc-1', type: 'update' });
+    const opA = makeOp({ targetId: 'doc-1', type: 'update', data: { field: 'title', value: 'A' } });
     const opB = makeOp({
       targetId: 'doc-1',
       type: 'update',
       replicaId: 'replica-b',
       vectorClock: makeVectorClock('replica-b'),
+      data: { field: 'title', value: 'B' },
     });
 
     const conflicts = engine.detectConflicts(opA, opB);
     expect(conflicts.length).toBeGreaterThan(0);
     expect(conflicts[0]!.type).toBe('concurrent-update');
+  });
+
+  it('does not flag causally ordered updates as conflicting', () => {
+    const sharedClock: VectorClock = {
+      id: 'vc-shared',
+      values: new Map([
+        ['replica-a', 2],
+        ['replica-b', 1],
+      ]),
+      timestamp: Date.now(),
+    };
+
+    const opA = makeOp({ targetId: 'doc-1', type: 'update', vectorClock: sharedClock });
+    const opB = makeOp({
+      targetId: 'doc-1',
+      type: 'update',
+      replicaId: 'replica-b',
+      vectorClock: {
+        id: 'vc-earlier',
+        values: new Map([
+          ['replica-a', 1],
+          ['replica-b', 1],
+        ]),
+        timestamp: Date.now(),
+      },
+    });
+
+    expect(engine.detectConflicts(opA, opB)).toHaveLength(0);
+  });
+
+  it('does not flag concurrent updates when they touch different fields', () => {
+    const opA = makeOp({ targetId: 'doc-1', type: 'update', data: { field: 'title', value: 'A' } });
+    const opB = makeOp({
+      targetId: 'doc-1',
+      type: 'update',
+      replicaId: 'replica-b',
+      vectorClock: makeVectorClock('replica-b'),
+      data: { field: 'description', value: 'B' },
+    });
+
+    expect(engine.detectConflicts(opA, opB)).toHaveLength(0);
   });
 
   it('returns empty array when operations target different resources', () => {
@@ -150,6 +192,21 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
 
     const conflicts = engine.detectConflicts(opA, opB);
     expect(conflicts.length).toBeGreaterThan(0);
+    expect(conflicts[0]!.type).toBe('structural-conflict');
+  });
+
+  it('detects delete-insert conflict as structural conflict', () => {
+    const opA = makeOp({ targetId: 'x', type: 'delete' });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'insert',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+      data: { position: 3, value: 'new node' },
+    });
+
+    const conflicts = engine.detectConflicts(opA, opB);
+    expect(conflicts.some(c => c.type === 'structural-conflict')).toBe(true);
   });
 
   it('detects move conflict when detectMoveConflicts is enabled', () => {
@@ -158,6 +215,45 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
 
     const conflicts = engine.detectConflicts(opA, opB);
     expect(conflicts.some(c => c.type === 'move-conflict')).toBe(true);
+  });
+
+  it('detects insert ordering conflict at the same position', () => {
+    const cfg: ConflictResolutionEngineConfig = {
+      ...BASE_CONFIG,
+      detectorConfig: { ...BASE_CONFIG.detectorConfig, detectOrderingConflicts: true },
+    };
+    const eng = new ConflictResolutionEngine(cfg);
+
+    const opA = makeOp({ targetId: 'x', type: 'insert', data: { position: 2, value: 'A' } });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'insert',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+      data: { position: 2, value: 'B' },
+    });
+
+    const conflicts = eng.detectConflicts(opA, opB);
+    expect(conflicts.some(c => c.type === 'ordering-conflict')).toBe(true);
+  });
+
+  it('does not flag concurrent inserts at different positions', () => {
+    const cfg: ConflictResolutionEngineConfig = {
+      ...BASE_CONFIG,
+      detectorConfig: { ...BASE_CONFIG.detectorConfig, detectOrderingConflicts: true },
+    };
+    const eng = new ConflictResolutionEngine(cfg);
+
+    const opA = makeOp({ targetId: 'x', type: 'insert', data: { position: 1, value: 'A' } });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'insert',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+      data: { position: 5, value: 'B' },
+    });
+
+    expect(eng.detectConflicts(opA, opB)).toHaveLength(0);
   });
 });
 

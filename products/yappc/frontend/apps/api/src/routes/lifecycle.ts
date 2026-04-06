@@ -14,6 +14,134 @@ import { FastifyPluginAsync } from 'fastify';
 import { getPrismaClient } from '../database/client.js';
 import { requirePermission, requireRole } from '../middleware/rbac.middleware';
 
+type LifecyclePhaseId =
+  | 'INTENT'
+  | 'SHAPE'
+  | 'VALIDATE'
+  | 'GENERATE'
+  | 'RUN'
+  | 'OBSERVE'
+  | 'IMPROVE';
+
+interface LifecyclePhaseDefinition {
+  id: LifecyclePhaseId;
+  name: string;
+  description: string;
+  stage: number;
+  color: string;
+  icon: string;
+  gates: string[];
+  personas: string[];
+  keyArtifacts: string[];
+}
+
+interface TransitionTimingPrediction {
+  estimatedReadyIn: string | null;
+  estimatedReadyInHours: number | null;
+  predictionConfidence: number | null;
+}
+
+const LIFECYCLE_PHASES: LifecyclePhaseDefinition[] = [
+  {
+    id: 'INTENT',
+    name: 'Intent',
+    description: 'Define the problem and strategic intent',
+    stage: 0,
+    color: '#3B82F6',
+    icon: '💡',
+    gates: ['problem-defined', 'stakeholders-aligned'],
+    personas: ['Product Owner', 'Product Manager'],
+    keyArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+  },
+  {
+    id: 'SHAPE',
+    name: 'Shape',
+    description: 'Design the solution architecture',
+    stage: 1,
+    color: '#8B5CF6',
+    icon: '🎨',
+    gates: ['architecture-approved', 'tech-stack-selected'],
+    personas: ['Architect', 'Tech Lead'],
+    keyArtifacts: ['Architecture Diagram', 'Tech Stack', 'API Design'],
+  },
+  {
+    id: 'VALIDATE',
+    name: 'Validate',
+    description: 'Test and validate the solution',
+    stage: 2,
+    color: '#10B981',
+    icon: '✅',
+    gates: ['tests-passed', 'quality-gates-met'],
+    personas: ['QA Engineer', 'Test Lead'],
+    keyArtifacts: ['Test Plan', 'Test Cases', 'Test Results'],
+  },
+  {
+    id: 'GENERATE',
+    name: 'Generate',
+    description: 'Build and implement the solution',
+    stage: 3,
+    color: '#F59E0B',
+    icon: '⚙️',
+    gates: ['code-complete', 'code-reviewed'],
+    personas: ['Developer', 'Engineer'],
+    keyArtifacts: ['Source Code', 'Documentation', 'Build Artifacts'],
+  },
+  {
+    id: 'RUN',
+    name: 'Run',
+    description: 'Deploy and run the solution',
+    stage: 4,
+    color: '#EF4444',
+    icon: '🚀',
+    gates: ['deployment-successful', 'smoke-tests-passed'],
+    personas: ['DevOps Engineer', 'SRE'],
+    keyArtifacts: [
+      'Deployment Scripts',
+      'Infrastructure Code',
+      'Monitoring Setup',
+    ],
+  },
+  {
+    id: 'OBSERVE',
+    name: 'Observe',
+    description: 'Monitor and observe solution performance',
+    stage: 5,
+    color: '#6366F1',
+    icon: '👁️',
+    gates: ['metrics-stable', 'alerts-configured'],
+    personas: ['SRE', 'Operations'],
+    keyArtifacts: ['Dashboards', 'Alerts', 'SLOs'],
+  },
+  {
+    id: 'IMPROVE',
+    name: 'Improve',
+    description: 'Continuous improvement and optimization',
+    stage: 6,
+    color: '#EC4899',
+    icon: '📈',
+    gates: ['improvements-identified', 'next-iteration-planned'],
+    personas: ['Product Manager', 'All'],
+    keyArtifacts: [
+      'Improvement Backlog',
+      'Metrics Analysis',
+      'Lessons Learned',
+    ],
+  },
+];
+
+const LIFECYCLE_PHASE_ORDER: LifecyclePhaseId[] = LIFECYCLE_PHASES.map(
+  (phase) => phase.id
+);
+
+const LIFECYCLE_PHASES_BY_ID: Record<LifecyclePhaseId, LifecyclePhaseDefinition> =
+  LIFECYCLE_PHASES.reduce(
+    (accumulator, phase) => ({
+      ...accumulator,
+      [phase.id]: phase,
+    }),
+    {} as Record<LifecyclePhaseId, LifecyclePhaseDefinition>
+  );
+
 // ============================================================================
 // Utilities
 // ============================================================================
@@ -23,6 +151,149 @@ import { requirePermission, requireRole } from '../middleware/rbac.middleware';
  */
 function validateProjectId(projectId: string | undefined): projectId is string {
   return !!(projectId && projectId.trim().length > 0);
+}
+
+function isLifecyclePhaseId(value: string): value is LifecyclePhaseId {
+  return value in LIFECYCLE_PHASES_BY_ID;
+}
+
+function getNextLifecyclePhase(
+  currentPhase: LifecyclePhaseId
+): LifecyclePhaseId | null {
+  const currentIndex = LIFECYCLE_PHASE_ORDER.indexOf(currentPhase);
+  if (currentIndex === -1 || currentIndex >= LIFECYCLE_PHASE_ORDER.length - 1) {
+    return null;
+  }
+
+  return LIFECYCLE_PHASE_ORDER[currentIndex + 1] ?? null;
+}
+
+function buildNextPhasePreview(
+  currentPhase: LifecyclePhaseId,
+  approvedArtifacts: string[]
+): {
+  nextPhase: LifecyclePhaseId | null;
+  canAdvance: boolean;
+  blockers: string[];
+  readiness: number;
+  requiredArtifacts: string[];
+} {
+  const nextPhase = getNextLifecyclePhase(currentPhase);
+  const phaseDefinition = LIFECYCLE_PHASES_BY_ID[currentPhase];
+  const requiredArtifacts = phaseDefinition.keyArtifacts;
+  const missingArtifacts = requiredArtifacts.filter(
+    (artifact) => !approvedArtifacts.includes(artifact)
+  );
+  const blockers = missingArtifacts.map(
+    (artifact) => `Missing approved artifact: ${artifact}`
+  );
+
+  if (nextPhase === null) {
+    blockers.unshift('Project is already at the final lifecycle phase.');
+  }
+
+  if (nextPhase !== null && approvedArtifacts.length < 2) {
+    blockers.push(
+      `At least 2 approved artifacts are required before advancing from ${currentPhase} to ${nextPhase}.`
+    );
+  }
+
+  const readiness =
+    requiredArtifacts.length === 0
+      ? 100
+      : Math.max(
+          0,
+          Math.round(
+            ((requiredArtifacts.length - missingArtifacts.length) /
+              requiredArtifacts.length) *
+              100
+          )
+        );
+
+  return {
+    nextPhase,
+    canAdvance: blockers.length === 0,
+    blockers,
+    readiness,
+    requiredArtifacts,
+  };
+}
+
+function formatEstimatedReadyIn(estimatedHours: number): string {
+  if (estimatedHours <= 0) {
+    return 'Ready now';
+  }
+
+  if (estimatedHours < 24) {
+    return `~${Math.max(1, Math.round(estimatedHours))} hours`;
+  }
+
+  const estimatedDays = Math.max(1, Math.round(estimatedHours / 24));
+  return `~${estimatedDays} day${estimatedDays === 1 ? '' : 's'}`;
+}
+
+function buildTransitionTimingPrediction(
+  currentPhase: LifecyclePhaseId,
+  preview: {
+    nextPhase: LifecyclePhaseId | null;
+    canAdvance: boolean;
+    blockers: string[];
+    readiness: number;
+    requiredArtifacts: string[];
+  },
+  completedArtifacts: string[]
+): TransitionTimingPrediction {
+  if (preview.nextPhase === null) {
+    return {
+      estimatedReadyIn: null,
+      estimatedReadyInHours: null,
+      predictionConfidence: null,
+    };
+  }
+
+  if (preview.canAdvance) {
+    return {
+      estimatedReadyIn: 'Ready now',
+      estimatedReadyInHours: 0,
+      predictionConfidence: 0.95,
+    };
+  }
+
+  const baseHoursByPhase: Record<LifecyclePhaseId, number> = {
+    INTENT: 16,
+    SHAPE: 24,
+    VALIDATE: 12,
+    GENERATE: 20,
+    RUN: 8,
+    OBSERVE: 12,
+    IMPROVE: 10,
+  };
+
+  const requiredCount = preview.requiredArtifacts.length;
+  const completedCount = completedArtifacts.length;
+  const missingArtifacts = Math.max(requiredCount - completedCount, 0);
+  const readinessGap = Math.max(100 - preview.readiness, 0);
+  const extraBlockers = Math.max(preview.blockers.length - missingArtifacts, 0);
+  const estimatedReadyInHours =
+    baseHoursByPhase[currentPhase] +
+    missingArtifacts * 8 +
+    Math.ceil(readinessGap / 10) * 2 +
+    extraBlockers * 4;
+
+  const completionRatio = requiredCount === 0 ? 1 : completedCount / requiredCount;
+  const predictionConfidence = Math.max(
+    0.3,
+    Math.min(
+      0.95,
+      0.45 + completionRatio * 0.35 - preview.blockers.length * 0.04 + (preview.readiness / 100) * 0.15
+    )
+  );
+
+  return {
+    estimatedReadyIn: formatEstimatedReadyIn(estimatedReadyInHours),
+    estimatedReadyInHours,
+    predictionConfidence: Number(predictionConfidence.toFixed(2)),
+  };
 }
 
 const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
@@ -35,95 +306,78 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
    * Returns the list of all lifecycle phases in the Framework of Work
    */
   fastify.get('/phases', async (request, reply) => {
-    const phases = [
-      {
-        id: 'INTENT',
-        name: 'Intent',
-        description: 'Define the problem and strategic intent',
-        stage: 0,
-        color: '#3B82F6',
-        icon: '💡',
-        gates: ['problem-defined', 'stakeholders-aligned'],
-        personas: ['Product Owner', 'Product Manager'],
-        keyArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
-      },
-      {
-        id: 'SHAPE',
-        name: 'Shape',
-        description: 'Design the solution architecture',
-        stage: 1,
-        color: '#8B5CF6',
-        icon: '🎨',
-        gates: ['architecture-approved', 'tech-stack-selected'],
-        personas: ['Architect', 'Tech Lead'],
-        keyArtifacts: ['Architecture Diagram', 'Tech Stack', 'API Design'],
-      },
-      {
-        id: 'VALIDATE',
-        name: 'Validate',
-        description: 'Test and validate the solution',
-        stage: 2,
-        color: '#10B981',
-        icon: '✅',
-        gates: ['tests-passed', 'quality-gates-met'],
-        personas: ['QA Engineer', 'Test Lead'],
-        keyArtifacts: ['Test Plan', 'Test Cases', 'Test Results'],
-      },
-      {
-        id: 'GENERATE',
-        name: 'Generate',
-        description: 'Build and implement the solution',
-        stage: 3,
-        color: '#F59E0B',
-        icon: '⚙️',
-        gates: ['code-complete', 'code-reviewed'],
-        personas: ['Developer', 'Engineer'],
-        keyArtifacts: ['Source Code', 'Documentation', 'Build Artifacts'],
-      },
-      {
-        id: 'RUN',
-        name: 'Run',
-        description: 'Deploy and run the solution',
-        stage: 4,
-        color: '#EF4444',
-        icon: '🚀',
-        gates: ['deployment-successful', 'smoke-tests-passed'],
-        personas: ['DevOps Engineer', 'SRE'],
-        keyArtifacts: [
-          'Deployment Scripts',
-          'Infrastructure Code',
-          'Monitoring Setup',
-        ],
-      },
-      {
-        id: 'OBSERVE',
-        name: 'Observe',
-        description: 'Monitor and observe solution performance',
-        stage: 5,
-        color: '#6366F1',
-        icon: '👁️',
-        gates: ['metrics-stable', 'alerts-configured'],
-        personas: ['SRE', 'Operations'],
-        keyArtifacts: ['Dashboards', 'Alerts', 'SLOs'],
-      },
-      {
-        id: 'IMPROVE',
-        name: 'Improve',
-        description: 'Continuous improvement and optimization',
-        stage: 6,
-        color: '#EC4899',
-        icon: '📈',
-        gates: ['improvements-identified', 'next-iteration-planned'],
-        personas: ['Product Manager', 'All'],
-        keyArtifacts: [
-          'Improvement Backlog',
-          'Metrics Analysis',
-          'Lessons Learned',
-        ],
-      },
-    ];
+    return { phases: LIFECYCLE_PHASES, total: LIFECYCLE_PHASES.length };
+  });
 
-    return { phases, total: phases.length };
+  /**
+   * GET /lifecycle/phases/:phase/next?projectId=:projectId
+   * Returns the next phase and readiness blockers for the current phase.
+   */
+  fastify.get('/phases/:phase/next', async (request, reply) => {
+    const { phase } = request.params as { phase: string };
+    const { projectId } = request.query as { projectId?: string };
+
+    if (!validateProjectId(projectId)) {
+      return reply.status(400).send({
+        error: 'Invalid projectId. Must be a non-empty string.',
+        received: projectId,
+      });
+    }
+
+    const normalizedPhase = phase.toUpperCase();
+    if (!isLifecyclePhaseId(normalizedPhase)) {
+      return reply.status(400).send({
+        error: 'Invalid phase',
+        validPhases: LIFECYCLE_PHASE_ORDER,
+        received: phase,
+      });
+    }
+
+    const prisma = getPrismaClient();
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!project) {
+      return reply.status(404).send({ error: 'Project not found' });
+    }
+
+    const approvedArtifacts = await prisma.lifecycleArtifact.findMany({
+      where: {
+        projectId,
+        phase: normalizedPhase,
+        status: 'approved',
+      },
+      select: {
+        type: true,
+      },
+    });
+
+    const completedArtifacts = approvedArtifacts.map((artifact) => artifact.type);
+    const preview = buildNextPhasePreview(normalizedPhase, completedArtifacts);
+    const timingPrediction = buildTransitionTimingPrediction(
+      normalizedPhase,
+      preview,
+      completedArtifacts
+    );
+
+    return {
+      projectId,
+      currentPhase: normalizedPhase,
+      nextPhase: preview.nextPhase,
+      canAdvance: preview.canAdvance,
+      readiness: preview.readiness,
+      blockers: preview.blockers,
+      requiredArtifacts: preview.requiredArtifacts,
+      completedArtifacts,
+      estimatedReadyIn: timingPrediction.estimatedReadyIn,
+      estimatedReadyInHours: timingPrediction.estimatedReadyInHours,
+      predictionConfidence: timingPrediction.predictionConfidence,
+      checkedAt: new Date().toISOString(),
+    };
   });
 
   /**
@@ -158,18 +412,10 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     // Get phase details
-    const phaseMap: Record<string, unknown> = {
-      INTENT: { stage: 0, name: 'Intent', color: '#3B82F6' },
-      SHAPE: { stage: 1, name: 'Shape', color: '#8B5CF6' },
-      VALIDATE: { stage: 2, name: 'Validate', color: '#10B981' },
-      GENERATE: { stage: 3, name: 'Generate', color: '#F59E0B' },
-      RUN: { stage: 4, name: 'Run', color: '#EF4444' },
-      OBSERVE: { stage: 5, name: 'Observe', color: '#6366F1' },
-      IMPROVE: { stage: 6, name: 'Improve', color: '#EC4899' },
-    };
-
-    const currentPhase = project.lifecyclePhase || 'INTENT';
-    const phaseInfo = phaseMap[currentPhase] || phaseMap['INTENT'];
+    const currentPhase = isLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
+      ? (project.lifecyclePhase || 'INTENT')
+      : 'INTENT';
+    const phaseInfo = LIFECYCLE_PHASES_BY_ID[currentPhase];
 
     // Get readiness for next phase
     const artifacts = await prisma.lifecycleArtifact.findMany({

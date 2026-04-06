@@ -57,12 +57,34 @@ public class HumanApprovalService {
     private final Map<String, Map<String, ApprovalRequest>> store = new ConcurrentHashMap<>();
 
     private final AepEventPublisher publisher;
+    private final ApprovalNotificationService notificationService;
+    private final ApprovalRiskScorer riskScorer;
+    private final ApprovalAuditLogger auditLogger;
 
     /**
+     * @param publisher           AEP event publisher for request / decision events
+     * @param notificationService notification broadcaster; may be null (disabled)
+     * @param riskScorer          AI risk scorer for approval routing; may be null (disabled)
+     * @param auditLogger         compliance audit logger; may be null (disabled)
+     */
+    public HumanApprovalService(
+            AepEventPublisher publisher,
+            ApprovalNotificationService notificationService,
+            ApprovalRiskScorer riskScorer,
+            ApprovalAuditLogger auditLogger) {
+        this.publisher            = Objects.requireNonNull(publisher, "publisher must not be null");
+        this.notificationService  = notificationService;
+        this.riskScorer           = riskScorer;
+        this.auditLogger          = auditLogger;
+    }
+
+    /**
+     * Minimal constructor for backward-compatible usage and unit tests.
+     *
      * @param publisher AEP event publisher for request / decision events
      */
     public HumanApprovalService(AepEventPublisher publisher) {
-        this.publisher = Objects.requireNonNull(publisher, "publisher must not be null");
+        this(publisher, null, null, null);
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -113,6 +135,29 @@ public class HumanApprovalService {
                     }
                 });
 
+        // Fire-and-forget: structured notification + async risk scoring
+        if (notificationService != null) {
+            notificationService.notifyRequested(req)
+                    .whenComplete((v, e) -> {
+                        if (e != null) log.warn("[tenant={}] Notification failed id={}: {}", tenantId, req.id(), e.getMessage());
+                    });
+        }
+        if (auditLogger != null) {
+            auditLogger.logCreated(req).whenComplete((v, e) -> {
+                if (e != null) log.warn("[tenant={}] Audit write failed id={}: {}", tenantId, req.id(), e.getMessage());
+            });
+        }
+        if (riskScorer != null) {
+            riskScorer.score(req).whenComplete((riskScore, e) -> {
+                if (e != null) {
+                    log.warn("[tenant={}] Risk scoring failed id={}: {}", tenantId, req.id(), e.getMessage());
+                } else if (riskScore != null) {
+                    log.info("[tenant={}] Risk score id={} level={} requiredApprovers={}",
+                            tenantId, req.id(), riskScore.level(), riskScore.requiredApproverCount());
+                }
+            });
+        }
+
         return Promise.of(req);
     }
 
@@ -129,6 +174,17 @@ public class HumanApprovalService {
         ApprovalRequest updated = transition(tenantId, requestId, decidedBy, true);
         log.info("[tenant={}] Approval approved id={} by={}", tenantId, requestId, decidedBy);
         publishDecision(updated);
+        if (notificationService != null) {
+            notificationService.notifyApproved(updated, decidedBy)
+                    .whenComplete((v, e) -> {
+                        if (e != null) log.warn("[tenant={}] Notify-approved failed id={}: {}", tenantId, requestId, e.getMessage());
+                    });
+        }
+        if (auditLogger != null) {
+            auditLogger.logApproved(updated, decidedBy).whenComplete((v, e) -> {
+                if (e != null) log.warn("[tenant={}] Audit-approved failed id={}: {}", tenantId, requestId, e.getMessage());
+            });
+        }
         return Promise.of(updated);
     }
 
@@ -145,7 +201,50 @@ public class HumanApprovalService {
         ApprovalRequest updated = transition(tenantId, requestId, decidedBy, false);
         log.info("[tenant={}] Approval rejected id={} by={}", tenantId, requestId, decidedBy);
         publishDecision(updated);
+        if (notificationService != null) {
+            notificationService.notifyRejected(updated, decidedBy)
+                    .whenComplete((v, e) -> {
+                        if (e != null) log.warn("[tenant={}] Notify-rejected failed id={}: {}", tenantId, requestId, e.getMessage());
+                    });
+        }
+        if (auditLogger != null) {
+            auditLogger.logRejected(updated, decidedBy).whenComplete((v, e) -> {
+                if (e != null) log.warn("[tenant={}] Audit-rejected failed id={}: {}", tenantId, requestId, e.getMessage());
+            });
+        }
         return Promise.of(updated);
+    }
+
+    /**
+     * Transitions a PENDING request to the REVIEWING state, indicating that a human
+     * reviewer has picked it up and is actively examining the request.
+     *
+     * @param tenantId  tenant context
+     * @param requestId ID of the request to move into review
+     * @return the updated (REVIEWING) {@link ApprovalRequest}
+     * @throws IllegalArgumentException if the request is not found
+     * @throws IllegalStateException    if the transition is not allowed
+     */
+    public Promise<ApprovalRequest> startReview(String tenantId, String requestId) {
+        Objects.requireNonNull(tenantId,  "tenantId");
+        Objects.requireNonNull(requestId, "requestId");
+
+        Map<String, ApprovalRequest> tenantStore = store.get(tenantId);
+        if (tenantStore == null || !tenantStore.containsKey(requestId)) {
+            throw new IllegalArgumentException("Approval request not found: " + requestId);
+        }
+        ApprovalRequest current = tenantStore.get(requestId);
+        ApprovalStateMachine.assertCanStartReview(current.status(), requestId);
+
+        ApprovalRequest reviewing = current.asReviewing();
+        tenantStore.put(requestId, reviewing);
+        log.info("[tenant={}] Approval review started id={}", tenantId, requestId);
+        if (auditLogger != null) {
+            auditLogger.logReviewStarted(reviewing).whenComplete((v, e) -> {
+                if (e != null) log.warn("[tenant={}] Audit-review-started failed id={}: {}", tenantId, requestId, e.getMessage());
+            });
+        }
+        return Promise.of(reviewing);
     }
 
     /**
@@ -206,10 +305,7 @@ public class HumanApprovalService {
             throw new IllegalArgumentException("Approval request not found: " + requestId);
         }
         ApprovalRequest current = tenantStore.get(requestId);
-        if (!current.isPending()) {
-            throw new IllegalStateException(
-                    "Approval request " + requestId + " is already in state " + current.status());
-        }
+        ApprovalStateMachine.assertCanDecide(current.status(), requestId);
 
         ApprovalRequest updated = approve ? current.asApproved(decidedBy) : current.asRejected(decidedBy);
         tenantStore.put(requestId, updated);

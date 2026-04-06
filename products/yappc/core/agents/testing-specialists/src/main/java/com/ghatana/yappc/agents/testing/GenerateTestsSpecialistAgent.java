@@ -10,6 +10,8 @@ import com.ghatana.yappc.agent.YAPPCAgentBase;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class GenerateTestsSpecialistAgent
     if (input.testPlanId() == null || input.testPlanId().isEmpty()) {
       return ValidationResult.fail("Test plan ID cannot be empty");
     }
-    if (input.testCases() == null || input.testCases().isEmpty()) {
+    if (input.testCases().isEmpty()) {
       return ValidationResult.fail("At least one test case required");
     }
     return ValidationResult.success();
@@ -75,6 +77,21 @@ public class GenerateTestsSpecialistAgent
       implements OutputGenerator<StepRequest<GenerateTestsInput>, StepResult<GenerateTestsOutput>> {
 
     private static final Logger log = LoggerFactory.getLogger(GenerateTestsGenerator.class);
+    private static final Pattern CLASS_NAME_PATTERN =
+        Pattern.compile("(?:class|interface|record)\\s+([A-Za-z_][A-Za-z0-9_]*)");
+
+    private final TestSpecificationGenerator specificationGenerator;
+    private final TestCodeGenerator codeGenerator;
+
+    public GenerateTestsGenerator() {
+      this(null, new TestCodeGenerator());
+    }
+
+    GenerateTestsGenerator(
+        TestSpecificationGenerator specificationGenerator, TestCodeGenerator codeGenerator) {
+      this.specificationGenerator = specificationGenerator;
+      this.codeGenerator = Objects.requireNonNull(codeGenerator, "codeGenerator");
+    }
 
     @Override
     public @NotNull Promise<StepResult<GenerateTestsOutput>> generate(
@@ -84,91 +101,124 @@ public class GenerateTestsSpecialistAgent
       GenerateTestsInput testsInput = input.input();
 
       log.info("Generating {} tests for plan {}", testsInput.testType(), testsInput.testPlanId());
+      return resolveScenarios(testsInput)
+          .then(
+              scenarios -> {
+                TestCodeGenerator.TestFramework framework = resolveFramework(testsInput);
+                String className = deriveClassName(testsInput);
+                return codeGenerator
+                    .generateTestCode(className, testsInput.classSource(), scenarios, framework)
+                    .map(artifact -> toOutput(testsInput, scenarios, artifact, start));
+              });
+    }
 
-      List<String> generatedTestFiles = new ArrayList<>();
-      int totalTests = 0;
-      int linesOfTestCode = 0;
+    private Promise<List<TestScenario>> resolveScenarios(GenerateTestsInput input) {
+      if (specificationGenerator != null
+          && input.classSource() != null
+          && !input.classSource().isBlank()) {
+        return specificationGenerator.generateSpecifications(
+            new TestSpecificationRequest(
+                deriveClassName(input), input.classSource(), input.requirements()));
+      }
+      return Promise.of(deriveScenariosFromCases(input));
+    }
 
-      for (String testCase : testsInput.testCases()) {
-        String fileName =
-            generateTestFileName(testCase, testsInput.testType(), testsInput.targetLanguage());
-        generatedTestFiles.add(fileName);
-
-        int testsPerFile = estimateTestsPerFile(testsInput.testType());
-        int linesPerFile = estimateLinesPerFile(testsInput.testType());
-
-        totalTests += testsPerFile;
-        linesOfTestCode += linesPerFile;
-
-        log.debug("Generated: {} with ~{} tests", fileName, testsPerFile);
+    private List<TestScenario> deriveScenariosFromCases(GenerateTestsInput input) {
+      List<String> cases = input.testCases();
+      if (cases.isEmpty()) {
+        return List.of(
+            new TestScenario(
+                input.resolvedClassName() + " can be instantiated",
+                TestScenario.ScenarioCategory.HAPPY_PATH,
+                "a valid subject setup exists",
+                "the subject is constructed",
+                "the construction succeeds",
+                List.of("instantiation")));
       }
 
-      double estimatedCoverage = estimateCoverage(testsInput.testType(), totalTests);
+      List<TestScenario> scenarios = new ArrayList<>();
+      for (int index = 0; index < cases.size(); index++) {
+        String testCase = cases.get(index);
+        TestScenario.ScenarioCategory category = switch (index) {
+          case 0 -> TestScenario.ScenarioCategory.HAPPY_PATH;
+          case 1 -> TestScenario.ScenarioCategory.EDGE_CASE;
+          default -> TestScenario.ScenarioCategory.BOUNDARY_VALUE;
+        };
+        scenarios.add(
+            new TestScenario(
+                testCase,
+                category,
+                "the preconditions for '" + testCase + "' are satisfied",
+                "the test exercises the target behaviour",
+                "the expected outcome for '" + testCase + "' is observed",
+                List.of("generated", category.name().toLowerCase(Locale.ROOT))));
+      }
+      return List.copyOf(scenarios);
+    }
 
+    private StepResult<GenerateTestsOutput> toOutput(
+        GenerateTestsInput input,
+        List<TestScenario> scenarios,
+        TestCodeGenerator.GeneratedTestArtifact artifact,
+        Instant start) {
       GenerateTestsOutput output =
           new GenerateTestsOutput(
-              testsInput.testPlanId(),
-              generatedTestFiles,
-              totalTests,
-              linesOfTestCode,
-              testsInput.testType(),
-              estimatedCoverage);
+              input.testPlanId(),
+              List.of(artifact.fileName()),
+              scenarios.size(),
+              countLines(artifact.sourceCode()),
+              input.testType(),
+              estimateCoverage(input.testType(), scenarios.size()),
+            Map.of(artifact.fileName(), artifact.sourceCode() == null ? "" : artifact.sourceCode()),
+              scenarios.stream().map(TestScenario::title).toList(),
+              artifact.framework().name());
 
-      return Promise.of(
-          StepResult.success(
-              output,
-              Map.of(
-                  "testPlanId",
-                  testsInput.testPlanId(),
-                  "fileCount",
-                  generatedTestFiles.size(),
-                  "totalTests",
-                  totalTests),
-              start,
-              Instant.now()));
+      return StepResult.success(
+          output,
+          Map.of(
+              "testPlanId", input.testPlanId(),
+              "fileCount", output.generatedTestFiles().size(),
+              "totalTests", output.totalTests(),
+              "framework", output.framework()),
+          start,
+          Instant.now());
     }
 
-    private String generateTestFileName(String testCase, String testType, String language) {
-      String sanitized = testCase.replaceAll("[^a-zA-Z0-9]", "");
-      String extension = getFileExtension(language);
-      return sanitized + "Test" + extension;
+    private int countLines(String sourceCode) {
+      if (sourceCode == null || sourceCode.isBlank()) {
+        return 0;
+      }
+      return sourceCode.split("\\R", -1).length;
     }
 
-    private String getFileExtension(String language) {
-      return switch (language.toLowerCase()) {
-        case "java" -> ".java";
-        case "kotlin" -> ".kt";
-        case "typescript" -> ".ts";
-        default -> ".java";
-      };
+    private TestCodeGenerator.TestFramework resolveFramework(GenerateTestsInput input) {
+      String framework = input.testFramework() == null ? "" : input.testFramework().toLowerCase(Locale.ROOT);
+      String language = input.targetLanguage() == null ? "" : input.targetLanguage().toLowerCase(Locale.ROOT);
+      if (framework.contains("vitest") || language.contains("typescript") || language.contains("javascript")) {
+        return TestCodeGenerator.TestFramework.VITEST;
+      }
+      return TestCodeGenerator.TestFramework.JUNIT5;
     }
 
-    private int estimateTestsPerFile(String testType) {
-      return switch (testType.toLowerCase()) {
-        case "unit" -> 5;
-        case "integration" -> 3;
-        case "performance" -> 2;
-        case "security" -> 4;
-        default -> 3;
-      };
-    }
-
-    private int estimateLinesPerFile(String testType) {
-      return switch (testType.toLowerCase()) {
-        case "unit" -> 80;
-        case "integration" -> 150;
-        case "performance" -> 200;
-        case "security" -> 120;
-        default -> 100;
-      };
+    private String deriveClassName(GenerateTestsInput input) {
+      if (input.className() != null && !input.className().isBlank()) {
+        return input.className();
+      }
+      if (input.classSource() != null && !input.classSource().isBlank()) {
+        Matcher matcher = CLASS_NAME_PATTERN.matcher(input.classSource());
+        if (matcher.find()) {
+          return matcher.group(1);
+        }
+      }
+      return input.resolvedClassName();
     }
 
     private double estimateCoverage(String testType, int totalTests) {
-      return switch (testType.toLowerCase()) {
-        case "unit" -> Math.min(85.0, totalTests * 5.0);
-        case "integration" -> Math.min(70.0, totalTests * 10.0);
-        case "performance", "security" -> 0.0;
-        default -> 50.0;
+      return switch (testType.toLowerCase(Locale.ROOT)) {
+        case "unit" -> Math.min(95.0, 55.0 + (totalTests * 10.0));
+        case "integration" -> Math.min(80.0, 40.0 + (totalTests * 8.0));
+        case "performance", "security" -> Math.min(35.0, totalTests * 5.0);
+        default -> Math.min(75.0, 30.0 + (totalTests * 10.0));
       };
     }
 

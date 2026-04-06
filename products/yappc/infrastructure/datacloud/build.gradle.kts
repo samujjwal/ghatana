@@ -14,6 +14,7 @@ dependencies {
     // YAPPC domain models (for mapping)
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:core:yappc-domain-impl"))
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     
     // Platform libs
     implementation(project(":platform:java:core"))

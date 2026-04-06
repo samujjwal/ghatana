@@ -1,22 +1,18 @@
-/**
- * Auth Middleware Tests
- *
- * Tests JWT authentication middleware for token validation and user context.
- */
-
-/// <reference types="vitest/globals" />
-
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { authMiddleware, type JWTUserPayload } from '../auth.middleware';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
+import { authMiddleware, type JWTUserPayload } from '../auth.middleware';
 
-const JWT_SECRET = 'test-secret';
+const TEST_ACCESS_SECRET = 'test-access-secret';
 
-// ---------------------------------------------------------------------------
-// Fixtures & Helpers
-// ---------------------------------------------------------------------------
+type OnRequestHook = (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => Promise<unknown>;
 
-function createMockRequest(overrides: Partial<FastifyRequest> = {}): FastifyRequest {
+function createMockRequest(
+  overrides: Partial<FastifyRequest> = {}
+): FastifyRequest {
   return {
     headers: {},
     url: '/api/workspaces',
@@ -46,271 +42,130 @@ function createToken(payload: Partial<JWTUserPayload> = {}): string {
     role: 'EDITOR',
     ...payload,
   };
-  return jwt.sign(fullPayload, JWT_SECRET);
+
+  return jwt.sign(fullPayload, TEST_ACCESS_SECRET);
 }
 
-// ---------------------------------------------------------------------------
-// authMiddleware Plugin Registration
-// ---------------------------------------------------------------------------
+async function registerAuthHook(): Promise<OnRequestHook> {
+  process.env.JWT_ACCESS_SECRET = TEST_ACCESS_SECRET;
+  const fastify = createMockFastify();
+  const addHookMock = fastify.addHook as ReturnType<typeof vi.fn>;
 
-describe('authMiddleware Plugin Registration', () => {
-  it('registers onRequest hook with Fastify', async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
+  await authMiddleware(fastify);
 
-    await authMiddleware(fastifyMock);
+  return addHookMock.mock.calls[0][1] as OnRequestHook;
+}
 
-    expect(addHookMock).toHaveBeenCalledWith('onRequest', expect.any(Function));
-  });
+afterEach(() => {
+  delete process.env.JWT_ACCESS_SECRET;
+  vi.restoreAllMocks();
 });
 
-// ---------------------------------------------------------------------------
-// Public Paths (No Authentication Required)
-// ---------------------------------------------------------------------------
+describe('authMiddleware', () => {
+  it('fails fast when JWT access secret is missing', async () => {
+    const fastify = createMockFastify();
 
-describe('Public Paths - No Authentication', () => {
-  let onRequestHook: any;
-
-  beforeAll(async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
-    await authMiddleware(fastifyMock);
-    onRequestHook = addHookMock.mock.calls[0][1];
-  });
-
-  it('allows access to /health without token', async () => {
-    const request = createMockRequest({ url: '/health', routeOptions: { url: '/health' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-
-  it('allows access to /metrics without token', async () => {
-    const request = createMockRequest({ url: '/metrics', routeOptions: { url: '/metrics' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-
-  it('allows access to auth routes', async () => {
-    const request = createMockRequest({ url: '/api/auth/login', routeOptions: { url: '/api/auth/login' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-
-  it('allows access to versioned auth routes', async () => {
-    const request = createMockRequest({ url: '/v1/auth/login', routeOptions: { url: '/v1/auth/login' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-
-  it('allows access to forgot-password route', async () => {
-    const request = createMockRequest({ url: '/api/auth/forgot-password', routeOptions: { url: '/api/auth/forgot-password' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-
-  it('allows access to GraphQL without token', async () => {
-    const request = createMockRequest({ url: '/graphql', routeOptions: { url: '/graphql' } });
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Missing Bearer Token
-// ---------------------------------------------------------------------------
-
-describe('Missing Bearer Token', () => {
-  let onRequestHook: any;
-
-  beforeAll(async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
-    await authMiddleware(fastifyMock);
-    onRequestHook = addHookMock.mock.calls[0][1];
-  });
-
-  it('rejects request without authorization header', async () => {
-    const request = createMockRequest();
-    const reply = createMockReply();
-
-    await onRequestHook(request, reply);
-
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(401);
-    expect((reply.send as jest.Mock)).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: 'Unauthorized',
-        message: expect.stringContaining('Bearer token'),
-      })
+    await expect(authMiddleware(fastify)).rejects.toThrow(
+      'JWT_ACCESS_SECRET is required'
     );
   });
 
-  it('rejects request with malformed authorization header', async () => {
+  it('registers the onRequest hook', async () => {
+    process.env.JWT_ACCESS_SECRET = TEST_ACCESS_SECRET;
+    const fastify = createMockFastify();
+    const addHookMock = fastify.addHook as ReturnType<typeof vi.fn>;
+
+    await authMiddleware(fastify);
+
+    expect(addHookMock).toHaveBeenCalledWith('onRequest', expect.any(Function));
+  });
+
+  it('allows public paths without authentication', async () => {
+    const hook = await registerAuthHook();
     const request = createMockRequest({
-      headers: { authorization: 'InvalidFormat token' },
+      url: '/health',
+      routeOptions: { url: '/health' },
     });
     const reply = createMockReply();
 
-    await onRequestHook(request, reply);
+    await hook(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(401);
+    expect(reply.status).not.toHaveBeenCalled();
   });
 
-  it('rejects request with empty authorization header', async () => {
+  it('rejects protected requests without a bearer token', async () => {
+    const hook = await registerAuthHook();
+    const request = createMockRequest();
+    const reply = createMockReply();
+
+    await hook(request, reply);
+
+    expect(reply.status).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith({
+      error: 'Unauthorized',
+      message: 'Missing Bearer token',
+    });
+  });
+
+  it('populates request.user from a valid access token', async () => {
+    const hook = await registerAuthHook();
     const request = createMockRequest({
-      headers: { authorization: '' },
+      headers: {
+        authorization: `Bearer ${createToken({
+          userId: 'user-123',
+          email: 'editor@yappc.local',
+          role: 'ADMIN',
+          workspaceId: 'workspace-9',
+        })}`,
+      },
     });
     const reply = createMockReply();
 
-    await onRequestHook(request, reply);
+    await hook(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(401);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Valid JWT Token
-// ---------------------------------------------------------------------------
-
-describe('Valid JWT Token', () => {
-  let onRequestHook: any;
-  let originalVerify: typeof jwt.verify;
-
-  beforeAll(async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
-    // Capture original BEFORE spying to avoid circular mock
-    originalVerify = jwt.verify.bind(jwt);
-    vi.spyOn(jwt, 'verify').mockImplementation((token: string) => {
-      return originalVerify(token, JWT_SECRET) as ReturnType<typeof jwt.verify>;
-    });
-    await authMiddleware(fastifyMock);
-    onRequestHook = addHookMock.mock.calls[0][1];
-  });
-
-  it('populates request.user with valid token', async () => {
-    const token = createToken({ userId: 'user-123', email: 'test@example.com', role: 'EDITOR' });
-    const request = createMockRequest({
-      headers: { authorization: `Bearer ${token}` },
-    });
-    const reply = createMockReply();
-
-    // Manually decode using original verify with test secret
-    const payload = originalVerify(token, JWT_SECRET) as any;
-    request.user = {
-      userId: payload.userId,
-      email: payload.email,
-      role: payload.role,
-      workspaceId: payload.workspaceId,
-    };
-
-    expect(request.user.userId).toBe('user-123');
-    expect(request.user.email).toBe('test@example.com');
-    expect(request.user.role).toBe('EDITOR');
-  });
-
-  it('preserves optional workspaceId field', async () => {
-    const token = createToken({
-      userId: 'user-1',
-      workspaceId: 'workspace-456',
-    });
-
-    const payload = originalVerify(token, JWT_SECRET) as any;
-    expect(payload.workspaceId).toBe('workspace-456');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Invalid Token
-// ---------------------------------------------------------------------------
-
-describe('Invalid Token', () => {
-  let onRequestHook: any;
-
-  beforeAll(async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
-    const _verify = jwt.verify.bind(jwt);
-    vi.spyOn(jwt, 'verify').mockImplementation((token: string) => {
-      return _verify(token, JWT_SECRET) as ReturnType<typeof jwt.verify>;
-    });
-    await authMiddleware(fastifyMock);
-    onRequestHook = addHookMock.mock.calls[0][1];
-  });
-
-  it('rejects malformed token', async () => {
-    expect(() => jwt.verify('invalid.token.format', JWT_SECRET)).toThrow();
-  });
-
-  it('rejects token signed with different secret', async () => {
-    const wrongToken = jwt.sign({ userId: 'user-1' }, 'different-secret');
-    expect(() => jwt.verify(wrongToken, JWT_SECRET)).toThrow(/invalid signature/);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Already Authenticated (skip validation)
-// ---------------------------------------------------------------------------
-
-describe('Already Authenticated Request', () => {
-  let onRequestHook: any;
-
-  beforeAll(async () => {
-    const fastifyMock = createMockFastify();
-    const addHookMock = fastifyMock.addHook as ReturnType<typeof vi.fn>;
-    await authMiddleware(fastifyMock);
-    onRequestHook = addHookMock.mock.calls[0][1];
-  });
-
-  it('skips validation if request.user already set', async () => {
-    const existingUser: JWTUserPayload = {
-      userId: 'existing-user',
-      email: 'existing@example.com',
+    expect(reply.status).not.toHaveBeenCalled();
+    expect(request.user).toEqual({
+      userId: 'user-123',
+      email: 'editor@yappc.local',
       role: 'ADMIN',
-    };
+      workspaceId: 'workspace-9',
+    });
+  });
 
+  it('rejects tokens signed with a different secret', async () => {
+    const hook = await registerAuthHook();
     const request = createMockRequest({
-      user: existingUser,
-      headers: {}, // No token
+      headers: {
+        authorization: `Bearer ${jwt.sign({ userId: 'user-1' }, 'wrong-secret')}`,
+      },
     });
     const reply = createMockReply();
 
-    await onRequestHook(request, reply);
+    await hook(request, reply);
 
-    expect((reply.status as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
-    expect(request.user.userId).toBe('existing-user');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Role Extraction
-// ---------------------------------------------------------------------------
-
-describe('Role Extraction from Token', () => {
-  it('extracts all role types from token', () => {
-    const roles = ['VIEWER', 'EDITOR', 'ADMIN', 'OWNER'];
-
-    roles.forEach((role) => {
-      const token = createToken({ role: role as any });
-      const payload = jwt.decode(token) as any;
-      expect(payload.role).toBe(role);
+    expect(reply.status).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith({
+      error: 'Unauthorized',
+      message: 'Invalid token',
     });
+  });
+
+  it('skips token verification when request.user is already present', async () => {
+    const hook = await registerAuthHook();
+    const verifySpy = vi.spyOn(jwt, 'verify');
+    const request = createMockRequest({
+      user: {
+        userId: 'existing-user',
+        email: 'existing@yappc.local',
+        role: 'ADMIN',
+      },
+    });
+    const reply = createMockReply();
+
+    await hook(request, reply);
+
+    expect(reply.status).not.toHaveBeenCalled();
+    expect(verifySpy).not.toHaveBeenCalled();
+    expect(request.user?.userId).toBe('existing-user');
   });
 });

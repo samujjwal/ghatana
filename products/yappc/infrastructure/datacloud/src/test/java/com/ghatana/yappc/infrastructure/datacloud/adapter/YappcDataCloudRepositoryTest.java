@@ -3,20 +3,26 @@ package com.ghatana.yappc.infrastructure.datacloud.adapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.platform.governance.security.TenantContext;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.yappc.infrastructure.datacloud.entity.ProjectEntity;
+import com.ghatana.yappc.infrastructure.security.EncryptionService;
 import com.ghatana.products.yappc.domain.Identifiable;
 import io.activej.promise.Promise;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +46,12 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
     private YappcEntityMapper mapper;
     private YappcDataCloudRepository<TestEntity> repository;
+
+    @AfterEach
+    void tearDown() {
+        runBlocking(TenantContext::clear);
+        TenantContext.clear();
+    }
 
     @BeforeEach
     void setUp() {
@@ -113,6 +125,55 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         Promise<Void> result = repository.deleteById(id);
 
         verify(client).delete(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should encrypt project environment variables before saving")
+    void shouldEncryptProjectEnvironmentVariablesBeforeSaving() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        YappcEntityMapper encryptedMapper = new YappcEntityMapper(
+            objectMapper,
+            new EncryptionService(Base64.getDecoder().decode(EncryptionService.generateKey()))
+        );
+        YappcDataCloudRepository<ProjectEntity> projectRepository = new YappcDataCloudRepository<>(
+            client,
+            encryptedMapper,
+            ProjectEntity.getCollectionName(),
+            ProjectEntity.class
+        );
+        ProjectEntity project = new ProjectEntity("Secure Project", "Desc", "user-1");
+        project.setTenantId("tenant-alpha");
+        project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-live-secret"));
+
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
+
+        AtomicReference<Map<String, Object>> savedPayloadRef = new AtomicReference<>();
+        when(client.save(anyString(), anyString(), any()))
+            .thenAnswer(invocation -> {
+                Map<String, Object> payload = invocation.getArgument(2);
+                savedPayloadRef.set(payload);
+                return Promise.of(DataCloudClient.Entity.of(
+                    project.getId().toString(),
+                    ProjectEntity.getCollectionName(),
+                    payload
+                ));
+            });
+
+        ProjectEntity saved = runPromise(() -> projectRepository.save(project));
+
+        verify(client).save(eq("tenant-alpha"), eq(ProjectEntity.getCollectionName()), any());
+        Map<String, Object> savedPayload = savedPayloadRef.get();
+        @SuppressWarnings("unchecked")
+        Map<String, String> persistedEnvironmentVariables =
+            (Map<String, String>) savedPayload.get("environmentVariables");
+
+        assertThat(persistedEnvironmentVariables.get("OPENAI_API_KEY"))
+            .startsWith("enc::")
+            .isNotEqualTo("sk-live-secret");
+        assertThat(saved.getEnvironmentVariables())
+            .containsEntry("OPENAI_API_KEY", "sk-live-secret");
     }
 
     record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> {

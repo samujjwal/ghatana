@@ -14,6 +14,8 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '../../generated/prisma';
 import type { Role } from '../../generated/prisma';
+import { getJwtRuntimeConfig } from './jwt-config';
+import { SessionService } from './session.service';
 
 // ============================================================================
 // Types
@@ -24,6 +26,8 @@ export interface JWTPayload {
   email: string;
   role: Role;
   workspaceId?: string;
+  /** Opaque session token linking this refresh JWT to a {@link UserSession} row. */
+  sessionToken?: string;
   iat?: number;
   exp?: number;
 }
@@ -65,10 +69,7 @@ export interface RegisterData {
 // ============================================================================
 
 const JWT_CONFIG = {
-  accessTokenSecret: process.env.JWT_ACCESS_SECRET || 'your-access-secret',
-  refreshTokenSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-  accessTokenExpiry: '15m',
-  refreshTokenExpiry: '7d',
+  ...getJwtRuntimeConfig(),
   bcryptRounds: 12,
 } as const;
 
@@ -78,6 +79,7 @@ const JWT_CONFIG = {
 
 export class AuthService {
   private prisma: PrismaClient;
+  private sessionService: SessionService;
 
   /**
    * In-process token revocation registry.
@@ -95,6 +97,7 @@ export class AuthService {
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+    this.sessionService = new SessionService(prisma);
   }
 
   // -------------------------------------------------------------------------
@@ -198,8 +201,15 @@ export class AuthService {
 
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
-      // Verify refresh token
+      // Verify JWT signature and extract session token
       const decoded = jwt.verify(refreshToken, JWT_CONFIG.refreshTokenSecret) as JWTPayload;
+
+      // Validate the database session (not revoked, not expired)
+      if (decoded.sessionToken) {
+        await this.sessionService.validateSession(decoded.sessionToken);
+        // Revoke old session before issuing new one (token rotation)
+        await this.sessionService.revoke(decoded.sessionToken);
+      }
 
       // Find user
       const user = await this.prisma.user.findUnique({
@@ -217,7 +227,7 @@ export class AuthService {
         throw new Error('User not found');
       }
 
-      // Generate new tokens
+      // Generate new token pair (creates a new session row)
       return await this.generateTokens(user, decoded.workspaceId);
     } catch (error) {
       throw new Error('Invalid or expired refresh token');
@@ -324,11 +334,10 @@ export class AuthService {
   async logout(refreshToken: string): Promise<void> {
     try {
       const decoded = jwt.verify(refreshToken, JWT_CONFIG.refreshTokenSecret) as JWTPayload;
-      
-      // In a real implementation, you'd add the token to a blacklist
-      // For now, we'll just validate it exists
-      await this.validateAccessToken(refreshToken);
-    } catch (error) {
+      if (decoded.sessionToken) {
+        await this.sessionService.revoke(decoded.sessionToken);
+      }
+    } catch {
       // Token is already invalid, which is fine for logout
     }
   }
@@ -339,6 +348,9 @@ export class AuthService {
     // will be rejected in validateAccessToken().
     const revocationTimestamp = Math.floor(Date.now() / 1000);
     AuthService.tokenRevocationRegistry.set(userId, revocationTimestamp);
+
+    // Revoke all database sessions for this user
+    await this.sessionService.revokeAll(userId);
 
     // Persist a lightweight signal to the DB so that if this process restarts
     // the revocation intent is not silently lost.  We bump `updatedAt` which
@@ -358,9 +370,9 @@ export class AuthService {
 
   private async generateTokens(user: unknown, workspaceId?: string): Promise<AuthTokens> {
     const payload: JWTPayload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
+      userId: (user as { id: string }).id,
+      email: (user as { email: string }).email,
+      role: (user as { role: Role }).role,
       workspaceId,
     };
 
@@ -368,11 +380,20 @@ export class AuthService {
       expiresIn: JWT_CONFIG.accessTokenExpiry,
     });
 
-    const refreshToken = jwt.sign(payload, JWT_CONFIG.refreshTokenSecret, {
+    // Refresh token TTL → 7 days; create a durable DB session for rotation
+    const refreshTtlMs = 7 * 24 * 60 * 60 * 1000;
+    const expiresAt = new Date(Date.now() + refreshTtlMs);
+    const sessionToken = await this.sessionService.create({
+      userId: (user as { id: string }).id,
+      workspaceId,
+      expiresAt,
+    });
+
+    const refreshPayload: JWTPayload = { ...payload, sessionToken };
+    const refreshToken = jwt.sign(refreshPayload, JWT_CONFIG.refreshTokenSecret, {
       expiresIn: JWT_CONFIG.refreshTokenExpiry,
     });
 
-    // Calculate expiration time in seconds
     const expiresIn = 15 * 60; // 15 minutes
 
     return {

@@ -9,6 +9,7 @@ labels:
 
 resources:
   - platform-resources.yaml
+  - predictive-scaling-cronjob.yaml
 
 # Note: Kustomize overlays are for pure-yaml workflows.
 # For Helm-based deployments, use: helm install -f values-<env>.yaml

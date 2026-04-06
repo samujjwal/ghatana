@@ -43,7 +43,10 @@ public final class RequirementResponse {
   private final UUID projectId;
   private final String text;
   private final String status;
+  private final double qualityScore;
+  private final String qualityLevel;
   private final List<SuggestionResponse> suggestions;
+  private final List<DuplicateWarningResponse> duplicateWarnings;
   private final List<SimilarRequirementResponse> similarRequirements;
   private final Instant createdAt;
   private final Instant updatedAt;
@@ -55,7 +58,10 @@ public final class RequirementResponse {
    * @param projectId project ID
    * @param text requirement text
    * @param status requirement status
+   * @param qualityScore aggregate quality score
+   * @param qualityLevel quality level label
    * @param suggestions list of suggestions
+   * @param duplicateWarnings list of duplicate warnings
    * @param similarRequirements list of similar requirements
    * @param createdAt creation timestamp
    * @param updatedAt last update timestamp
@@ -65,7 +71,10 @@ public final class RequirementResponse {
       UUID projectId,
       String text,
       String status,
+      double qualityScore,
+      String qualityLevel,
       List<SuggestionResponse> suggestions,
+      List<DuplicateWarningResponse> duplicateWarnings,
       List<SimilarRequirementResponse> similarRequirements,
       Instant createdAt,
       Instant updatedAt) {
@@ -73,7 +82,10 @@ public final class RequirementResponse {
     this.projectId = projectId;
     this.text = text;
     this.status = status;
+    this.qualityScore = qualityScore;
+    this.qualityLevel = qualityLevel;
     this.suggestions = suggestions != null ? suggestions : List.of();
+    this.duplicateWarnings = duplicateWarnings != null ? duplicateWarnings : List.of();
     this.similarRequirements = similarRequirements != null ? similarRequirements : List.of();
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -83,7 +95,10 @@ public final class RequirementResponse {
   public UUID getProjectId() { return projectId; }
   public String getText() { return text; }
   public String getStatus() { return status; }
+  public double getQualityScore() { return qualityScore; }
+  public String getQualityLevel() { return qualityLevel; }
   public List<SuggestionResponse> getSuggestions() { return suggestions; }
+  public List<DuplicateWarningResponse> getDuplicateWarnings() { return duplicateWarnings; }
   public List<SimilarRequirementResponse> getSimilarRequirements() { return similarRequirements; }
   public Instant getCreatedAt() { return createdAt; }
   public Instant getUpdatedAt() { return updatedAt; }

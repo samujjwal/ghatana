@@ -48,6 +48,7 @@ module.exports = [
       "ghatana/no-deprecated-ghatana-ui": "error",
       "ghatana/no-deleted-v41-packages": "error",
       "ghatana/no-design-system-internal-reimplementation": "error",
+      "ghatana/no-dev-auth-in-prod": "error",
     },
   },
 ];

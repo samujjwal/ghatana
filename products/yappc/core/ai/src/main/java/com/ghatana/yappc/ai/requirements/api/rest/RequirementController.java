@@ -1,26 +1,26 @@
 package com.ghatana.yappc.ai.requirements.api.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.ai.vectorstore.VectorSearchResult;
 import com.ghatana.platform.core.util.JsonUtils;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
+import com.ghatana.platform.security.model.User;
 import com.ghatana.yappc.ai.requirements.api.error.ErrorResponse;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.CreateRequirementRequest;
+import com.ghatana.yappc.ai.requirements.api.rest.dto.DuplicateWarningResponse;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.GenerateSuggestionsRequest;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.RecordFeedbackRequest;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.RequirementResponse;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.SimilarRequirementResponse;
 import com.ghatana.yappc.ai.requirements.api.rest.dto.SuggestionResponse;
-import com.ghatana.platform.security.model.User;
 import com.ghatana.yappc.ai.requirements.api.validation.Validation;
 import com.ghatana.yappc.ai.requirements.ai.RequirementEmbeddingService;
 import com.ghatana.yappc.ai.requirements.ai.feedback.FeedbackType;
 import com.ghatana.yappc.ai.requirements.ai.feedback.SuggestionFeedback;
 import com.ghatana.yappc.ai.requirements.ai.persona.Persona;
 import com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion;
-import com.ghatana.yappc.ai.requirements.ai.suggestions.SuggestionStatus;
-import com.ghatana.ai.vectorstore.VectorSearchResult;
-import com.ghatana.yappc.ai.requirements.domain.requirement.RequirementStatus;
+import com.ghatana.yappc.ai.requirements.application.requirement.RequirementService;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
@@ -28,7 +28,6 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -98,10 +97,10 @@ public final class RequirementController {
   private static final float DEFAULT_MIN_SIMILARITY = 0.75f;
   private static final int MAX_SUGGESTION_CACHE_SIZE = 4096;
 
+  private final RequirementService requirementService;
   private final RequirementEmbeddingService embeddingService;
   private final ObjectMapper objectMapper;
   private final Executor blockingExecutor;
-  private final ConcurrentMap<UUID, RequirementSnapshot> requirements = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, AISuggestion> suggestionCache = new ConcurrentHashMap<>();
 
   /**
@@ -110,7 +109,17 @@ public final class RequirementController {
    * @param embeddingService the orchestrator service (non-null)
    */
   public RequirementController(RequirementEmbeddingService embeddingService) {
-    this(embeddingService, JsonUtils.getDefaultMapper(), ForkJoinPool.commonPool());
+    this(
+        new RequirementService(embeddingService),
+        embeddingService,
+        JsonUtils.getDefaultMapper(),
+        ForkJoinPool.commonPool());
+  }
+
+  public RequirementController(
+      RequirementService requirementService,
+      RequirementEmbeddingService embeddingService) {
+    this(requirementService, embeddingService, JsonUtils.getDefaultMapper(), ForkJoinPool.commonPool());
   }
 
   /**
@@ -124,6 +133,15 @@ public final class RequirementController {
       RequirementEmbeddingService embeddingService,
       ObjectMapper objectMapper,
       Executor blockingExecutor) {
+    this(new RequirementService(embeddingService), embeddingService, objectMapper, blockingExecutor);
+  }
+
+  public RequirementController(
+      RequirementService requirementService,
+      RequirementEmbeddingService embeddingService,
+      ObjectMapper objectMapper,
+      Executor blockingExecutor) {
+    this.requirementService = Objects.requireNonNull(requirementService, "requirementService");
     this.embeddingService = Objects.requireNonNull(embeddingService, "embeddingService");
     this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor");
@@ -166,31 +184,20 @@ public final class RequirementController {
 
     Promise<HttpResponse> pipeline =
         parseRequestBody(request, CreateRequirementRequest.class, null)
-            .then(req -> {
-              UUID requirementId = UUID.randomUUID();
-              Instant now = Instant.now();
-              RequirementSnapshot snapshot =
-                  new RequirementSnapshot(
-                      requirementId,
-                      projectId,
-                      req.text().trim(),
-                      req.priority(),
-                      RequirementStatus.DRAFT.name(),
-                      now,
-                      now);
-
-              return embeddingService
-                  .embedAndStore(
-                      requirementId.toString(),
-                      snapshot.text(),
-                      projectId.toString())
-                  .map(ignored -> {
-                    requirements.put(requirementId, snapshot);
-                    return ResponseBuilder.created()
-                        .json(toRequirementResponse(snapshot, List.of(), List.of()))
-                        .build();
-                  });
-            });
+        .then(req -> requirementService
+          .createRequirement(
+            projectId,
+            req.text().trim(),
+            req.priority(),
+            resolveUserId(request),
+            resolveTenantId(request))
+          .map(created -> ResponseBuilder.created()
+            .json(toRequirementResponse(
+              created,
+              toSuggestionResponses(created.enrichmentSuggestions()),
+              toDuplicateWarningResponses(created.duplicateWarnings()),
+              List.of()))
+            .build()));
 
     return withErrorHandling(pipeline, "createRequirement");
   }
@@ -213,8 +220,8 @@ public final class RequirementController {
           ErrorResponse.badRequest(ex.getMessage(), Map.of("field", "id", "error", "INVALID")));
     }
 
-    RequirementSnapshot snapshot = requirements.get(requirementId);
-    if (snapshot == null) {
+    RequirementService.StoredRequirement storedRequirement = requirementService.getRequirement(requirementId).orElse(null);
+    if (storedRequirement == null) {
       logger.warn("Requirement not found: {}", requirementId);
       return Promise.of(
           ErrorResponse.notFound(
@@ -233,13 +240,13 @@ public final class RequirementController {
     Promise<List<SuggestionResponse>> suggestionsPromise =
         includeSuggestions
             ? generateSuggestionsInternal(
-                snapshot.id(),
-                snapshot.text(),
+          requirementId,
+          storedRequirement.requirement().getDescription(),
                 resolveUserId(request),
                 Collections.emptySet(),
                 DEFAULT_SUGGESTION_LIMIT,
                 null)
-            : Promise.of(List.of());
+        : Promise.of(toSuggestionResponses(storedRequirement.enrichmentSuggestions()));
 
     int similarLimit =
         includeSimilar
@@ -260,7 +267,7 @@ public final class RequirementController {
 
     Promise<List<SimilarRequirementResponse>> similarPromise =
         includeSimilar
-            ? findSimilarInternal(snapshot, similarLimit, minSimilarity)
+        ? findSimilarInternal(storedRequirement, similarLimit, minSimilarity)
             : Promise.of(List.of());
 
     Promise<HttpResponse> pipeline =
@@ -269,7 +276,11 @@ public final class RequirementController {
                 similarPromise.map(
                     similar ->
                         ResponseBuilder.ok()
-                            .json(toRequirementResponse(snapshot, suggestions, similar))
+                        .json(toRequirementResponse(
+                          storedRequirement,
+                          suggestions,
+                          toDuplicateWarningResponses(storedRequirement.duplicateWarnings()),
+                          similar))
                             .build()));
 
     return withErrorHandling(pipeline, "getRequirement");
@@ -293,8 +304,8 @@ public final class RequirementController {
           ErrorResponse.badRequest(ex.getMessage(), Map.of("field", "id", "error", "INVALID")));
     }
 
-    RequirementSnapshot snapshot = requirements.get(requirementId);
-    if (snapshot == null) {
+    RequirementService.StoredRequirement storedRequirement = requirementService.getRequirement(requirementId).orElse(null);
+    if (storedRequirement == null) {
       logger.warn("Requirement not found for similarity search: {}", requirementId);
       return Promise.of(
           ErrorResponse.notFound(
@@ -323,7 +334,7 @@ public final class RequirementController {
         minSimilarity);
 
     Promise<HttpResponse> pipeline =
-        findSimilarInternal(snapshot, limit, minSimilarity)
+      findSimilarInternal(storedRequirement, limit, minSimilarity)
             .map(similar -> ResponseBuilder.ok().json(similar).build());
 
     return withErrorHandling(pipeline, "findSimilarRequirements");
@@ -347,7 +358,7 @@ public final class RequirementController {
           ErrorResponse.badRequest(ex.getMessage(), Map.of("field", "id", "error", "INVALID")));
     }
 
-    RequirementSnapshot snapshot = requirements.get(requirementId);
+    RequirementService.StoredRequirement storedRequirement = requirementService.getRequirement(requirementId).orElse(null);
 
     Promise<HttpResponse> pipeline =
         parseRequestBody(
@@ -358,8 +369,8 @@ public final class RequirementController {
               String featureDescription =
                   dto.featureDescription() != null
                       ? dto.featureDescription().trim()
-                      : snapshot != null
-                          ? snapshot.text()
+                    : storedRequirement != null
+                      ? storedRequirement.requirement().getDescription()
                           : null;
               if (featureDescription == null || featureDescription.isEmpty()) {
                 return Promise.ofException(
@@ -543,25 +554,49 @@ public final class RequirementController {
   }
 
   private Promise<List<SimilarRequirementResponse>> findSimilarInternal(
-      RequirementSnapshot snapshot, int limit, float minSimilarity) {
+      RequirementService.StoredRequirement storedRequirement, int limit, float minSimilarity) {
     return embeddingService
-        .findSimilarRequirements(snapshot.text(), snapshot.projectId().toString(), limit, minSimilarity)
+        .findSimilarRequirements(
+            storedRequirement.requirement().getDescription(),
+            storedRequirement.requirement().getProjectId(),
+            limit,
+            minSimilarity)
         .map(this::toSimilarResponses);
   }
 
   private RequirementResponse toRequirementResponse(
-      RequirementSnapshot snapshot,
+      RequirementService.StoredRequirement storedRequirement,
       List<SuggestionResponse> suggestions,
+      List<DuplicateWarningResponse> duplicateWarnings,
       List<SimilarRequirementResponse> similarRequirements) {
+    UUID requirementId = safeUuid(storedRequirement.requirement().getRequirementId());
+    UUID projectId = safeUuid(storedRequirement.requirement().getProjectId());
     return new RequirementResponse(
-        snapshot.id(),
-        snapshot.projectId(),
-        snapshot.text(),
-        snapshot.status(),
+        requirementId,
+        projectId,
+        storedRequirement.requirement().getDescription(),
+        storedRequirement.requirement().getStatus().name(),
+        storedRequirement.qualityResult().getOverallScore(),
+        storedRequirement.qualityResult().getQualityLevel().name(),
         suggestions,
+        duplicateWarnings,
         similarRequirements,
-        snapshot.createdAt(),
-        snapshot.updatedAt());
+        storedRequirement.requirement().getCreatedAt(),
+        storedRequirement.requirement().getUpdatedAt());
+  }
+
+  private List<SuggestionResponse> toSuggestionResponses(List<AISuggestion> suggestions) {
+    return suggestions.stream().map(this::toSuggestionResponse).toList();
+  }
+
+  private List<DuplicateWarningResponse> toDuplicateWarningResponses(
+      List<RequirementService.DuplicateWarning> warnings) {
+    return warnings.stream()
+        .map(warning -> new DuplicateWarningResponse(
+            safeUuid(warning.requirementId()),
+            warning.text(),
+            warning.similarityScore()))
+        .toList();
   }
 
   private SuggestionResponse toSuggestionResponse(AISuggestion suggestion) {
@@ -621,6 +656,23 @@ public final class RequirementController {
     }
 
     return "system";
+  }
+
+  private String resolveTenantId(HttpRequest request) {
+    User principal = extractUser(request);
+    if (principal != null) {
+      Object tenantId = principal.getAttributes().get("tenantId");
+      if (tenantId instanceof String tenant && !tenant.isBlank()) {
+        return tenant;
+      }
+    }
+
+    String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
+    if (header != null && !header.isBlank()) {
+      return header;
+    }
+
+    return null;
   }
 
   private User extractUser(HttpRequest request) {
@@ -722,13 +774,4 @@ public final class RequirementController {
       return UUID.nameUUIDFromBytes(candidate.getBytes(StandardCharsets.UTF_8));
     }
   }
-
-  private record RequirementSnapshot(
-      UUID id,
-      UUID projectId,
-      String text,
-      String priority,
-      String status,
-      Instant createdAt,
-      Instant updatedAt) {}
 }

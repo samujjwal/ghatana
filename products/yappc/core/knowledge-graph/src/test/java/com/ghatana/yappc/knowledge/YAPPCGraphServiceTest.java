@@ -4,6 +4,10 @@ import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.knowledge.embedding.KGEmbeddingService;
+import com.ghatana.yappc.knowledge.persistence.KGEdgeRepository;
+import com.ghatana.yappc.knowledge.persistence.KGNodeRepository;
+import com.ghatana.yappc.knowledge.query.KGSemanticSearchService;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
@@ -37,6 +41,10 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     private KnowledgeGraphPlugin graphPlugin;
     private YAPPCGraphMapper mapper;
     private YAPPCGraphValidator validator;
+    private KGNodeRepository nodeRepository;
+    private KGEdgeRepository edgeRepository;
+    private KGEmbeddingService embeddingService;
+    private KGSemanticSearchService semanticSearchService;
     private YAPPCGraphService service;
 
     @BeforeEach
@@ -44,6 +52,10 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         graphPlugin = mock(KnowledgeGraphPlugin.class);
         mapper = mock(YAPPCGraphMapper.class);
         validator = mock(YAPPCGraphValidator.class);
+        nodeRepository = mock(KGNodeRepository.class);
+        edgeRepository = mock(KGEdgeRepository.class);
+        embeddingService = mock(KGEmbeddingService.class);
+        semanticSearchService = mock(KGSemanticSearchService.class);
         service = new YAPPCGraphService(graphPlugin, mapper, validator);
     }
 
@@ -131,6 +143,34 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
             verify(graphPlugin, never()).createNode(any());
         }
+
+        @Test
+        @DisplayName("persists to JDBC repository before publishing to plugin when repository is configured")
+        void shouldPersistToRepositoryWhenConfigured() {
+            YAPPCGraphNode input = yappcNode("node-2", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+            GraphNode dc = dcNode("node-2");
+
+            service = new YAPPCGraphService(
+                    graphPlugin,
+                    mapper,
+                    validator,
+                    nodeRepository,
+                    edgeRepository,
+                    embeddingService,
+                    semanticSearchService);
+            when(nodeRepository.saveNode(input)).thenReturn(Promise.of(input));
+            when(mapper.toDataCloudNode(input)).thenReturn(dc);
+            when(graphPlugin.createNode(dc)).thenReturn(Promise.of(dc));
+            when(mapper.fromDataCloudNode(dc)).thenReturn(input);
+            when(embeddingService.indexNode(input)).thenReturn(Promise.of((Void) null));
+
+            YAPPCGraphNode result = runPromise(() -> service.createYAPPCNode(input));
+
+            assertThat(result).isEqualTo(input);
+            verify(nodeRepository).saveNode(input);
+            verify(graphPlugin).createNode(dc);
+            verify(embeddingService).indexNode(input);
+        }
     }
 
     @Nested
@@ -164,6 +204,23 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
                     () -> service.findCodeDependencies("comp-X", "tenant-1"));
 
             assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("uses JDBC edge repository when configured")
+        void shouldUseEdgeRepositoryWhenConfigured() {
+            YAPPCGraphEdge e1 = yappcEdge("comp-A", "comp-B");
+            service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository);
+            when(edgeRepository.findEdgesFromSource(
+                    eq("comp-A"),
+                    eq("tenant-1"),
+                    eq(Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"))))
+                    .thenReturn(Promise.of(List.of(e1)));
+
+            List<YAPPCGraphEdge> result = runPromise(() -> service.findCodeDependencies("comp-A", "tenant-1"));
+
+            assertThat(result).containsExactly(e1);
+            verify(graphPlugin, never()).queryEdges(any());
         }
     }
 
@@ -225,7 +282,50 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
             assertThat(result).hasSize(1);
             assertThat(result.get(0).type()).isEqualTo(YAPPCGraphNode.YAPPCNodeType.SERVICE);
         }
+
+        @Test
+        @DisplayName("uses JDBC node repository when configured")
+        void shouldUseNodeRepositoryWhenConfigured() {
+            YAPPCGraphNode yn1 = yappcNode("svc-2", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+            service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository);
+            when(nodeRepository.findNodesByType("SERVICE", "tenant-1", 1000))
+                    .thenReturn(Promise.of(List.of(yn1)));
+
+            List<YAPPCGraphNode> result = runPromise(() -> service.findComponentsByType("SERVICE", "tenant-1"));
+
+            assertThat(result).containsExactly(yn1);
+            verify(graphPlugin, never()).queryNodes(any());
+        }
     }
+
+        @Nested
+        @DisplayName("semanticSearch")
+        class SemanticSearchTests {
+
+        @Test
+        @DisplayName("returns semantic node matches when semantic search service is configured")
+        void shouldReturnSemanticMatches() {
+            YAPPCGraphNode node = yappcNode("svc-3", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+            KGSemanticSearchService.SemanticNodeMatch match =
+                new KGSemanticSearchService.SemanticNodeMatch(node, 0.91, Map.of("tenantId", "tenant-1"));
+
+            service = new YAPPCGraphService(
+                graphPlugin,
+                mapper,
+                validator,
+                nodeRepository,
+                edgeRepository,
+                embeddingService,
+                semanticSearchService);
+            when(semanticSearchService.findSimilarNodes("billing service", "tenant-1", 5, 0.75))
+                .thenReturn(Promise.of(List.of(match)));
+
+            List<KGSemanticSearchService.SemanticNodeMatch> result = runPromise(
+                () -> service.semanticSearch("billing service", "tenant-1", 5, 0.75));
+
+            assertThat(result).containsExactly(match);
+        }
+        }
 
     @Nested
     @DisplayName("createCodeRelationship()")
@@ -248,6 +348,24 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
                     "comp-A".equals(e.getSourceNodeId()) &&
                     "comp-B".equals(e.getTargetNodeId()) &&
                     "DEPENDS_ON".equals(e.getRelationshipType())));
+        }
+
+        @Test
+        @DisplayName("persists relationship to JDBC repository when configured")
+        void shouldPersistRelationshipWhenConfigured() {
+            GraphEdge createdEdge = dcEdge("comp-A", "comp-B", "DEPENDS_ON");
+            YAPPCGraphEdge expected = yappcEdge("comp-A", "comp-B");
+
+            service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository);
+            when(edgeRepository.saveEdge(any(YAPPCGraphEdge.class))).thenReturn(Promise.of(expected));
+            when(graphPlugin.createEdge(any(GraphEdge.class))).thenReturn(Promise.of(createdEdge));
+            when(mapper.fromDataCloudEdge(createdEdge)).thenReturn(expected);
+
+            YAPPCGraphEdge result = runPromise(
+                    () -> service.createCodeRelationship("comp-A", "comp-B", "DEPENDS_ON", "tenant-1"));
+
+            assertThat(result).isEqualTo(expected);
+            verify(edgeRepository).saveEdge(any(YAPPCGraphEdge.class));
         }
     }
 

@@ -32,6 +32,7 @@ public record YAPPCGraphNode(
     public enum YAPPCNodeType {
         CLASS, INTERFACE, SERVICE, COMPONENT,
         CONFIG, TEST, DOCUMENT, WORKSPACE,
-        USER, TEAM, PROJECT, API, DATABASE
+        USER, TEAM, PROJECT, API, DATABASE,
+        REQUIREMENT
     }
 }

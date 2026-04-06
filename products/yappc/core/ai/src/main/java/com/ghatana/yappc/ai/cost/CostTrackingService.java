@@ -4,8 +4,8 @@ import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @doc.type class
@@ -15,8 +15,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class CostTrackingService {
     private final Eventloop eventloop;
+    private final CostRepository costRepository;
     private final Map<String, ModelPricing> pricingRegistry = new ConcurrentHashMap<>();
-    // In-memory storage for demo purposes. In production, this would be a TimescaleDB or ClickHouse.
+    // In-memory cache keeps real-time budget totals for the current runtime.
     private final Map<String, UserCostState> userCosts = new ConcurrentHashMap<>();
 
     public record ModelPricing(double inputCostPer1k, double outputCostPer1k) {}
@@ -37,9 +38,23 @@ public class CostTrackingService {
         final java.util.List<UsageRecord> history = new java.util.ArrayList<>();
     }
 
-    public CostTrackingService(Eventloop eventloop) {
+    /**
+     * Creates a service backed by JDBC persistence.
+     *
+     * @param eventloop      ActiveJ event loop for async DB offload
+     * @param costRepository repository to durably persist cost events
+     */
+    public CostTrackingService(Eventloop eventloop, CostRepository costRepository) {
         this.eventloop = eventloop;
+        this.costRepository = costRepository;
         initializePricing();
+    }
+
+    /**
+     * In-memory constructor for testing or environments without a database.
+     */
+    public CostTrackingService(Eventloop eventloop) {
+        this(eventloop, null);
     }
 
     private void initializePricing() {
@@ -51,24 +66,70 @@ public class CostTrackingService {
     }
 
     /**
-     * Tracks usage for a specific request.
+     * Tracks usage for a specific request and durably persists the cost event.
+     *
+     * @param tenantId     tenant scope for the call
+     * @param userId       user or agent that made the call
+     * @param model        model identifier used
+     * @param provider     LLM provider name
+     * @param inputTokens  prompt tokens consumed
+     * @param outputTokens completion tokens generated
+     * @param featureId    optional feature tag for cost attribution
+     * @return Promise resolving to the estimated cost in USD
      */
-    public Promise<Double> trackUsage(String userId, String model, int inputTokens, int outputTokens, String featureId) {
+    public Promise<Double> trackUsage(
+            String tenantId, String userId, String model, String provider,
+            int inputTokens, int outputTokens, String featureId) {
         return Promise.ofBlocking(eventloop, () -> {
             ModelPricing pricing = pricingRegistry.getOrDefault(model, new ModelPricing(0.0, 0.0));
-            
+            Instant now = Instant.now();
+
             double cost = (inputTokens / 1000.0 * pricing.inputCostPer1k) +
                           (outputTokens / 1000.0 * pricing.outputCostPer1k);
 
+            // Update in-memory budget cache (keyed by userId for budget enforcement)
             userCosts.compute(userId, (k, v) -> {
                 if (v == null) v = new UserCostState();
                 v.totalCost += cost;
-                v.history.add(new UsageRecord(model, inputTokens, outputTokens, cost, Instant.now(), featureId));
+                v.history.add(new UsageRecord(model, inputTokens, outputTokens, cost, now, featureId));
                 return v;
             });
 
             return cost;
+        }).then(cost -> {
+            // Fire-and-forget JDBC persistence; failure is logged but does not bubble up
+            if (costRepository != null) {
+                CostRepository.CostEvent event = new CostRepository.CostEvent(
+                    UUID.randomUUID().toString(),
+                    UUID.randomUUID().toString(), // callId — caller may override in future
+                    tenantId,
+                    userId,
+                    model,
+                    provider,
+                    featureId,
+                    inputTokens,
+                    outputTokens,
+                    cost,
+                    Instant.now()
+                );
+                costRepository.save(event)
+                    .whenException(ex ->
+                        org.slf4j.LoggerFactory.getLogger(CostTrackingService.class)
+                            .error("Failed to persist cost event: {}", ex.getMessage(), ex));
+            }
+            return Promise.of(cost);
         });
+    }
+
+    /**
+     * Tracks usage without tenant context (backward-compatible overload).
+     *
+     * @deprecated Prefer {@link #trackUsage(String, String, String, String, int, int, String)}
+     *             which includes tenant and provider context for proper isolation.
+     */
+    @Deprecated
+    public Promise<Double> trackUsage(String userId, String model, int inputTokens, int outputTokens, String featureId) {
+        return trackUsage("unknown", userId, model, "unknown", inputTokens, outputTokens, featureId);
     }
 
     /**

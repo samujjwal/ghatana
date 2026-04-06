@@ -51,13 +51,20 @@ async function getDevUser() {
     return devUserId;
 }
 
-export async function devAuthBypass(fastify: FastifyInstance) {
-    // Skip auth for all /api/* routes UNLESS explicitly in production
-    const isProduction = process.env.NODE_ENV === 'production';
+export async function devAuthBypass(fastify: FastifyInstance): Promise<void> {
+    // Hard fail: this function must never be called in a production environment.
+    // The call site in index.ts already guards this with a NODE_ENV + ENABLE_DEV_AUTH_BYPASS
+    // check, but we enforce it here as a defence-in-depth measure.
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+            '[DevAuth] devAuthBypass must not be registered in a production environment. ' +
+            'Remove or guard the call site immediately.'
+        );
+    }
 
-    console.log('[DevAuth] Plugin loaded. NODE_ENV:', process.env.NODE_ENV, 'isProduction:', isProduction);
+    console.log('[DevAuth] Plugin loaded. NODE_ENV:', process.env.NODE_ENV);
 
-    if (!isProduction) {
+    {
         // Initialize dev user on startup
         const userId = await getDevUser();
         console.log('[DevAuth] Initialized with userId:', userId);
@@ -77,8 +84,6 @@ export async function devAuthBypass(fastify: FastifyInstance) {
         });
 
         console.log('[DevAuth] Hook registered successfully');
-    } else {
-        console.log('[DevAuth] Skipped - running in production mode');
     }
 }
 

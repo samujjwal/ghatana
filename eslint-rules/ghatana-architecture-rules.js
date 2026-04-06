@@ -515,6 +515,54 @@ module.exports = {
         };
       },
     },
+
+    /**
+     * Rule: no-dev-auth-in-prod
+     *
+     * Prevents any file from importing or re-exporting `devAuth.ts` /
+     * `devAuthBypass` outside of files that are already guarded by a
+     * `process.env.NODE_ENV !== 'production'` or `ENABLE_DEV_AUTH_BYPASS`
+     * check.  This is a defence-in-depth ESLint guard complementing the
+     * runtime throw already present in devAuth.ts itself.
+     */
+    "no-dev-auth-in-prod": {
+      meta: {
+        type: "error",
+        docs: {
+          description: "Disallow imports of devAuth bypass middleware outside explicitly guarded call sites",
+          category: "Security",
+          recommended: true,
+        },
+        messages: {
+          devAuthImport:
+            "🚨 Importing devAuth is not allowed here. " +
+            "devAuthBypass is a development-only middleware — " +
+            "guard the import site with `if (process.env.NODE_ENV !== 'production')` before enabling.",
+        },
+        schema: [],
+      },
+
+      create(context) {
+        const DEV_AUTH_PATTERNS = [
+          /devAuth/,
+          /dev-auth/,
+        ];
+
+        return {
+          ImportDeclaration(node) {
+            const importPath = String(node.source.value);
+            if (DEV_AUTH_PATTERNS.some(p => p.test(importPath))) {
+              // Allow within the devAuth file itself
+              const filename = context.getFilename();
+              if (DEV_AUTH_PATTERNS.some(p => p.test(filename))) {
+                return;
+              }
+              context.report({ node, messageId: "devAuthImport" });
+            }
+          },
+        };
+      },
+    },
   },
 };
 

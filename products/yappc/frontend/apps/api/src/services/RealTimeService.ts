@@ -151,7 +151,8 @@ export class RealTimeService {
             // Validate JWT token from client
             try {
               const jwt = await import('jsonwebtoken');
-              const secret = process.env.JWT_ACCESS_SECRET || 'your-access-secret';
+              const { getJwtAccessSecret } = await import('./auth/jwt-config');
+              const secret = getJwtAccessSecret();
               const decoded = jwt.default.verify(message.token, secret) as {
                 userId: string;
                 email: string;

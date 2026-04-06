@@ -3,6 +3,7 @@ package com.ghatana.yappc.ai.service;
 import com.ghatana.yappc.ai.integration.AIRouterOutputGenerator;
 import com.ghatana.yappc.ai.integration.PromptTemplateEngine;
 import com.ghatana.yappc.ai.integration.DefaultResultMapper;
+import com.ghatana.yappc.ai.metrics.AIMetricsCollector;
 import com.ghatana.yappc.ai.router.*;
 import com.ghatana.yappc.ai.router.AIRequest.TaskType;
 import com.ghatana.yappc.ai.router.ModelSelector.SelectionStrategy;
@@ -61,11 +62,13 @@ public final class YAPPCAIService {
     
     private final AIModelRouter router;
     private final AIServiceConfig config;
+    private final AIMetricsCollector metricsCollector;
     private final AtomicLong requestCounter = new AtomicLong(0);
     private volatile boolean initialized = false;
     
     private YAPPCAIService(Builder builder) {
         this.config = builder.config;
+        this.metricsCollector = builder.metricsCollector;
         
         // Build router configuration
         AIRouterConfig routerConfig = AIRouterConfig.builder()
@@ -74,7 +77,7 @@ public final class YAPPCAIService {
             .defaultModel(builder.defaultModel)
             .build();
         
-        this.router = new AIModelRouter(routerConfig);
+        this.router = builder.router != null ? builder.router : new AIModelRouter(routerConfig);
     }
     
     /**
@@ -252,16 +255,39 @@ public final class YAPPCAIService {
         long requestId = requestCounter.incrementAndGet();
         logger.debug("Executing AI request #{}: taskType={}", requestId, request.getTaskType());
         
+        long startMs = System.currentTimeMillis();
         return router.route(request)
             .whenComplete((response, error) -> {
+                long latencyMs = System.currentTimeMillis() - startMs;
                 if (error != null) {
                     logger.error("AI request #{} failed", requestId, error);
+                    if (metricsCollector != null) {
+                        metricsCollector.recordLlmError(
+                            "unknown", request.getTaskType().name().toLowerCase(), "unknown",
+                            error.getClass().getSimpleName());
+                    }
                 } else {
-                    logger.debug("AI request #{} completed: model={}, latency={}ms, cacheHit={}", 
+                    logger.debug("AI request #{} completed: model={}, latency={}ms, cacheHit={}",
                         requestId,
                         response.getModelId(),
                         response.getMetrics().getLatencyMs(),
                         response.isCacheHit());
+                    if (metricsCollector != null) {
+                        metricsCollector.recordLlmCall(
+                            response.getModelId(),
+                            request.getTaskType().name().toLowerCase(),
+                            "unknown",   // tenantId: propagate via AIRequest in a future iteration
+                            true,
+                            latencyMs,
+                            response.getMetrics().getPromptTokens(),
+                            response.getMetrics().getCompletionTokens(),
+                            response.getMetrics().getCost());
+                        if (response.isCacheHit()) {
+                            metricsCollector.recordCacheHit(response.getModelId(), "unknown");
+                        } else {
+                            metricsCollector.recordCacheMiss(response.getModelId(), "unknown");
+                        }
+                    }
                 }
             });
     }
@@ -399,6 +425,8 @@ public final class YAPPCAIService {
         private SelectionStrategy selectionStrategy = SelectionStrategy.TASK_BASED;
         private CacheConfig cacheConfig = CacheConfig.defaults();
         private String defaultModel = "llama3.2";
+        private AIModelRouter router;
+        private AIMetricsCollector metricsCollector;
         
         public Builder config(AIServiceConfig config) {
             this.config = config;
@@ -426,6 +454,16 @@ public final class YAPPCAIService {
         
         public Builder defaultModel(String model) {
             this.defaultModel = model;
+            return this;
+        }
+
+        public Builder router(AIModelRouter router) {
+            this.router = router;
+            return this;
+        }
+
+        public Builder metricsCollector(AIMetricsCollector collector) {
+            this.metricsCollector = collector;
             return this;
         }
         

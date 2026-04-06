@@ -86,6 +86,30 @@ public class JdbcHumanApprovalService extends HumanApprovalService {
             """;
 
     /**
+     * Full constructor with notification, risk-scoring, and audit support.
+     *
+     * @param publisher           AEP event publisher (forwarded to parent)
+     * @param dataSource          YAPPC PostgreSQL data source
+     * @param objectMapper        Jackson mapper for JSONB serialization of {@link ApprovalRequest.ApprovalContext}
+     * @param notificationService optional notification broadcaster; may be null
+     * @param riskScorer          optional AI risk scorer; may be null
+     * @param auditLogger         optional compliance audit logger; may be null
+     */
+    public JdbcHumanApprovalService(
+            AepEventPublisher publisher,
+            DataSource dataSource,
+            ObjectMapper objectMapper,
+            ApprovalNotificationService notificationService,
+            ApprovalRiskScorer riskScorer,
+            ApprovalAuditLogger auditLogger) {
+        super(publisher, notificationService, riskScorer, auditLogger);
+        this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+    }
+
+    /**
+     * Minimal constructor for backward-compatible usage and unit tests.
+     *
      * @param publisher    AEP event publisher (forwarded to parent)
      * @param dataSource   YAPPC PostgreSQL data source
      * @param objectMapper Jackson mapper for JSONB serialization of {@link ApprovalRequest.ApprovalContext}
@@ -94,9 +118,7 @@ public class JdbcHumanApprovalService extends HumanApprovalService {
             AepEventPublisher publisher,
             DataSource dataSource,
             ObjectMapper objectMapper) {
-        super(publisher);
-        this.dataSource = Objects.requireNonNull(dataSource, "dataSource");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
+        this(publisher, dataSource, objectMapper, null, null, null);
     }
 
     // ─── Overridden mutation methods — write to DB in addition to in-memory ─

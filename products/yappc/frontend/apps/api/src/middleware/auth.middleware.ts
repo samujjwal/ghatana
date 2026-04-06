@@ -15,12 +15,11 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
+import { getJwtAccessSecret } from '../services/auth/jwt-config';
 
 // ============================================================================
 // Config
 // ============================================================================
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 /** Routes that are always publicly accessible */
 const PUBLIC_PATHS = new Set([
@@ -86,6 +85,8 @@ declare module 'fastify' {
  * @doc.pattern Middleware
  */
 export async function authMiddleware(fastify: FastifyInstance): Promise<void> {
+  const jwtSecret = getJwtAccessSecret();
+
   fastify.addHook(
     'onRequest',
     async (request: FastifyRequest, reply: FastifyReply) => {
@@ -110,7 +111,7 @@ export async function authMiddleware(fastify: FastifyInstance): Promise<void> {
       const token = authHeader.slice(7);
 
       try {
-        const payload = jwt.verify(token, JWT_SECRET) as JWTUserPayload &
+        const payload = jwt.verify(token, jwtSecret) as JWTUserPayload &
           jwt.JwtPayload;
         request.user = {
           userId: payload.userId,

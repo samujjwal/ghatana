@@ -33,13 +33,19 @@ public final class AIModelRouter {
     private final Map<String, ModelAdapter> modelAdapters;
     private final SemanticCache semanticCache;
     private final ModelSelector selector;
+    private final ModelAdapterFactory modelAdapterFactory;
     private volatile boolean initialized = false;
     
     public AIModelRouter(AIRouterConfig config) {
+        this(config, AIModelRouter::createAdapter);
+    }
+
+    public AIModelRouter(AIRouterConfig config, ModelAdapterFactory modelAdapterFactory) {
         this.modelConfigs = new ConcurrentHashMap<>();
         this.modelAdapters = new ConcurrentHashMap<>();
         this.semanticCache = new SemanticCache(config.getCacheConfig());
         this.selector = new ModelSelector(config.getSelectionStrategy());
+        this.modelAdapterFactory = Objects.requireNonNull(modelAdapterFactory, "modelAdapterFactory is required");
         
         // Register default models
         registerDefaultModels();
@@ -224,17 +230,19 @@ public final class AIModelRouter {
      */
     public void registerModel(ModelConfig config) {
         modelConfigs.put(config.getModelId(), config);
-        
-        // Create adapter based on provider
-        ModelAdapter adapter = switch (config.getProvider()) {
+
+        ModelAdapter adapter = modelAdapterFactory.create(config);
+        modelAdapters.put(config.getModelId(), adapter);
+        logger.info("Registered model: {} ({})", config.getDisplayName(), config.getModelId());
+    }
+
+    private static ModelAdapter createAdapter(ModelConfig config) {
+        return switch (config.getProvider()) {
             case "ollama" -> new OllamaModelAdapter(config);
             case "openai" -> new OpenAIModelAdapter(config);
             case "anthropic" -> new AnthropicModelAdapter(config);
             default -> throw new IllegalArgumentException("Unknown provider: " + config.getProvider());
         };
-        
-        modelAdapters.put(config.getModelId(), adapter);
-        logger.info("Registered model: {} ({})", config.getDisplayName(), config.getModelId());
     }
     
     /**
@@ -271,5 +279,10 @@ public final class AIModelRouter {
                     cb.set(null);
                 });
         });
+    }
+
+    @FunctionalInterface
+    public interface ModelAdapterFactory {
+        ModelAdapter create(ModelConfig config);
     }
 }

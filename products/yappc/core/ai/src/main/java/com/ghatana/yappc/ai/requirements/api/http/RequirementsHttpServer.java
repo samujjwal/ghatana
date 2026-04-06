@@ -1,7 +1,7 @@
 package com.ghatana.yappc.ai.requirements.api.http;
 
+import com.ghatana.yappc.ai.api.http.filter.AuthenticationFilter;
 import com.ghatana.yappc.ai.requirements.api.config.RequirementsConfig;
-import com.ghatana.yappc.ai.requirements.api.http.filter.AuthenticationFilter;
 import com.ghatana.yappc.ai.requirements.api.http.filter.CorsFilter;
 import com.ghatana.yappc.ai.requirements.api.rest.ExportController;
 import com.ghatana.yappc.ai.requirements.api.rest.ProjectController;

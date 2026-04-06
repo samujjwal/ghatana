@@ -13,9 +13,11 @@ description = "YAPPC Services: Platform — Combined domain and infrastructure s
 dependencies {
     // YAPPC domain library
     implementation(project(":products:yappc:libs:java:yappc-domain"))
+    implementation(project(":products:yappc:core:ai"))
 
     // Core lifecycle and infrastructure
     implementation(project(":products:yappc:core:yappc-services"))
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
     // backend:auth removed (2026-03-23) — functionality consolidated into core modules
 
@@ -50,6 +52,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.testcontainers:junit-jupiter:1.19.3")
     testImplementation("org.testcontainers:postgresql:1.19.3")

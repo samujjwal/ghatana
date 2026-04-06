@@ -56,9 +56,15 @@ public record ApprovalRequest(
 
     /** Lifecycle of an approval request. */
     public enum ApprovalStatus {
+        /** Initial state: awaiting a reviewer to pick up the request. */
         PENDING,
+        /** A reviewer has started examining the request but not yet decided. */
+        REVIEWING,
+        /** Terminal: approved by a human reviewer. */
         APPROVED,
+        /** Terminal: rejected by a human reviewer. */
         REJECTED,
+        /** Terminal: SLA deadline elapsed without a decision. */
         EXPIRED
     }
 
@@ -89,9 +95,20 @@ public record ApprovalRequest(
         return status == ApprovalStatus.PENDING;
     }
 
+    /** Returns {@code true} when the request is currently under review. */
+    public boolean isReviewing() {
+        return status == ApprovalStatus.REVIEWING;
+    }
+
     /** Returns {@code true} when the request has been approved. */
     public boolean isApproved() {
         return status == ApprovalStatus.APPROVED;
+    }
+
+    /** Returns a copy of this request transitioned to the REVIEWING state. */
+    ApprovalRequest asReviewing() {
+        return new ApprovalRequest(id, projectId, requestingAgentId, approvalType,
+                context, ApprovalStatus.REVIEWING, tenantId, createdAt, null, null, expiresAt);
     }
 
     /** Returns an expired copy of this request. */

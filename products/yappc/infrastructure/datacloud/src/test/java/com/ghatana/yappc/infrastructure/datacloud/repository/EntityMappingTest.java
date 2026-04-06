@@ -8,12 +8,14 @@ import com.ghatana.yappc.infrastructure.datacloud.entity.PhaseStateEntity;
 import com.ghatana.yappc.infrastructure.datacloud.entity.ProjectEntity;
 import com.ghatana.yappc.infrastructure.datacloud.entity.TaskEntity;
 import com.ghatana.yappc.infrastructure.datacloud.mapper.YappcEntityMapper;
+import com.ghatana.yappc.infrastructure.security.EncryptionService;
 import com.ghatana.datacloud.DataCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Base64;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -50,10 +52,16 @@ class EntityMappingTest {
   @Test
   void testProjectEntityRoundTrip() {
     // Given
+    mapper = new YappcEntityMapper(objectMapper, new EncryptionService(
+      Base64.getDecoder().decode(EncryptionService.generateKey())));
     ProjectEntity original = new ProjectEntity("Test Project", "Description", "user-123");
     original.setTenantId("tenant-1");
     original.setCurrentStage("plan");
     original.setStatus("ACTIVE");
+    original.setEnvironmentVariables(Map.of(
+      "OPENAI_API_KEY", "sk-roundtrip-secret",
+      "DATABASE_URL", "jdbc:postgresql://localhost/yappc"
+    ));
     original.advanceStage("execute");
 
     // When
@@ -69,6 +77,7 @@ class EntityMappingTest {
     assertEquals(original.getCurrentStage(), restored.getCurrentStage());
     assertEquals(original.getCreatedBy(), restored.getCreatedBy());
     assertEquals(original.getTenantId(), restored.getTenantId());
+    assertEquals(original.getEnvironmentVariables(), restored.getEnvironmentVariables());
   }
 
   @Test

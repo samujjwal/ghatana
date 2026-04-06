@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.yappc.ai.requirements.application.requirement.RequirementService;
 import com.ghatana.yappc.ai.requirements.ai.RequirementEmbeddingService;
 import com.ghatana.yappc.ai.requirements.ai.persona.Persona;
 import com.ghatana.yappc.ai.requirements.ai.suggestions.AISuggestion;
@@ -57,6 +58,7 @@ class RequirementControllerTest extends EventloopTestBase {
   @Mock private RequirementEmbeddingService embeddingService;
 
   private RequirementController controller;
+    private RequirementService requirementService;
   private ObjectMapper objectMapper;
   private static final String BASE_URL = "http://localhost:8080";
 
@@ -68,7 +70,17 @@ class RequirementControllerTest extends EventloopTestBase {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     objectMapper = new ObjectMapper();
-    controller = new RequirementController(embeddingService);
+    when(embeddingService.generateSuggestions(anyString(), anyString(), anyString()))
+        .thenReturn(Promise.of(List.of()));
+    when(embeddingService.findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat()))
+        .thenReturn(Promise.of(List.of()));
+    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
+        .thenReturn(Promise.of((Void) null));
+    when(embeddingService.updateEmbedding(anyString(), anyString()))
+        .thenReturn(Promise.of((Void) null));
+
+    requirementService = new RequirementService(embeddingService);
+    controller = new RequirementController(requirementService, embeddingService);
   }
 
   @Test
@@ -87,42 +99,35 @@ class RequirementControllerTest extends EventloopTestBase {
   @Test
   @DisplayName("Should create requirement when valid request")
   void shouldCreateRequirementWhenValidRequest() throws Exception {
-    // Given
     CreateRequirementRequest request = new CreateRequirementRequest("Test requirement", "HIGH");
     UUID projectId = UUID.randomUUID();
-    
-    // Mock the embedAndStore method to return a completed promise
-    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.complete());
 
-    // Create a proper HTTP request with the project ID in the path
     HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
         .withBody(objectMapper.writeValueAsBytes(request))
         .withHeader(HttpHeaders.CONTENT_TYPE, "application/json")
         .build();
 
-    // When
     HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest));
 
-    // Then
     assertThat(response.getCode()).isEqualTo(201);
     assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
-    
-    // Parse the response body (use runPromise to avoid .getResult() which is forbidden)
+
     ByteBuf bodyBuf = runPromise(() -> response.loadBody());
     String responseBody = bodyBuf.asString(StandardCharsets.UTF_8);
     JsonNode jsonResponse = objectMapper.readTree(responseBody);
-    
-    // Verify the response structure
+
     assertThat(jsonResponse.has("id")).isTrue();
     assertThat(jsonResponse.has("text")).isTrue();
     assertThat(jsonResponse.get("text").asText()).isEqualTo("Test requirement");
     assertThat(jsonResponse.has("status")).isTrue();
     assertThat(jsonResponse.get("status").asText()).isEqualTo("DRAFT");
+    assertThat(jsonResponse.has("qualityScore")).isTrue();
+    assertThat(jsonResponse.get("qualityScore").asDouble()).isGreaterThan(0.0);
+    assertThat(jsonResponse.has("duplicateWarnings")).isTrue();
+    assertThat(jsonResponse.get("duplicateWarnings").isArray()).isTrue();
     assertThat(jsonResponse.has("suggestions")).isTrue();
     assertThat(jsonResponse.get("suggestions").isArray()).isTrue();
-    
-    // Verify service interaction
+
     verify(embeddingService)
         .embedAndStore(anyString(), eq("Test requirement"), eq(projectId.toString()));
   }
@@ -131,19 +136,16 @@ class RequirementControllerTest extends EventloopTestBase {
   @DisplayName("Should return detailed requirement with suggestions and similar items")
   void shouldGetRequirementWithSuggestionsAndSimilar() throws Exception {
     UUID projectId = UUID.randomUUID();
-    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.of(null));
 
     CreateRequirementRequest create = new CreateRequirementRequest("Initial requirement", "HIGH");
     HttpResponse createResponse =
         runPromise(
             () ->
                 controller.createRequirement(
-                    HttpRequest.post(url("/api/projects/" + projectId + "/requirements"))
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
                         .withBody(objectMapper.writeValueAsBytes(create))
                         .build()));
-    JsonNode created =
-        objectMapper.readTree(createResponse.getBody().asString(StandardCharsets.UTF_8));
+    JsonNode created = objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8));
     String requirementId = created.get("id").asText();
 
     when(embeddingService.generateSuggestions(anyString(), anyString(), any()))
@@ -162,7 +164,7 @@ class RequirementControllerTest extends EventloopTestBase {
     HttpRequest getRequest =
         HttpRequest.get(
             url(
-                "/api/requirements/"
+                "/api/v1/requirements/"
                     + requirementId
                     + "?includeSuggestions=true&includeSimilar=true"))
             .build();
@@ -170,9 +172,10 @@ class RequirementControllerTest extends EventloopTestBase {
     HttpResponse getResponse = runPromise(() -> controller.getRequirement(getRequest));
 
     assertThat(getResponse.getCode()).isEqualTo(200);
-    JsonNode body = objectMapper.readTree(getResponse.getBody().asString(StandardCharsets.UTF_8));
+    JsonNode body = objectMapper.readTree(runPromise(() -> getResponse.loadBody()).asString(StandardCharsets.UTF_8));
     assertThat(body.get("suggestions")).hasSize(1);
     assertThat(body.get("similarRequirements")).hasSize(1);
+    assertThat(body.get("qualityScore").asDouble()).isGreaterThan(0.0);
   }
 
   @Test
@@ -180,7 +183,7 @@ class RequirementControllerTest extends EventloopTestBase {
   void shouldReturn400WhenCreatingRequirementWithInvalidData() throws Exception {
     UUID projectId = UUID.randomUUID();
     HttpRequest httpRequest =
-        HttpRequest.post(url("/api/projects/" + projectId + "/requirements"))
+                HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
             .withBody(new byte[0])
             .build();
 
@@ -194,20 +197,17 @@ class RequirementControllerTest extends EventloopTestBase {
   @DisplayName("Should find similar requirements when valid request")
   void shouldFindSimilarRequirementsWhenValidRequest() throws Exception {
     UUID projectId = UUID.randomUUID();
-    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.of(null));
-
     HttpResponse createResponse =
         runPromise(
             () ->
                 controller.createRequirement(
-                    HttpRequest.post(url("/api/projects/" + projectId + "/requirements"))
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
                         .withBody(
                             objectMapper.writeValueAsBytes(
                                 new CreateRequirementRequest("Req text", "HIGH")))
                         .build()));
     String requirementId =
-        objectMapper.readTree(createResponse.getBody().asString(StandardCharsets.UTF_8))
+        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8))
             .get("id")
             .asText();
 
@@ -219,12 +219,12 @@ class RequirementControllerTest extends EventloopTestBase {
 
     HttpRequest httpRequest =
         HttpRequest.get(
-            url("/api/requirements/" + requirementId + "/similar?limit=2&minSimilarity=0.8"))
+                        url("/api/v1/requirements/" + requirementId + "/similar?limit=2&minSimilarity=0.8"))
             .build();
 
     HttpResponse response = runPromise(() -> controller.findSimilar(httpRequest));
     assertThat(response.getCode()).isEqualTo(200);
-    JsonNode body = objectMapper.readTree(response.getBody().asString(StandardCharsets.UTF_8));
+        JsonNode body = objectMapper.readTree(runPromise(() -> response.loadBody()).asString(StandardCharsets.UTF_8));
     assertThat(body.isArray()).isTrue();
     assertThat(body).hasSize(1);
   }
@@ -233,20 +233,17 @@ class RequirementControllerTest extends EventloopTestBase {
   @DisplayName("Should generate suggestions and allow recording feedback")
   void shouldGenerateSuggestionsAndRecordFeedback() throws Exception {
     UUID projectId = UUID.randomUUID();
-    when(embeddingService.embedAndStore(anyString(), anyString(), anyString()))
-        .thenReturn(Promise.of(null));
-
     HttpResponse createResponse =
         runPromise(
             () ->
                 controller.createRequirement(
-                    HttpRequest.post(url("/api/projects/" + projectId + "/requirements"))
+                    HttpRequest.post(url("/api/v1/projects/" + projectId + "/requirements"))
                         .withBody(
                             objectMapper.writeValueAsBytes(
                                 new CreateRequirementRequest("Req text", "HIGH")))
                         .build()));
     String requirementId =
-        objectMapper.readTree(createResponse.getBody().asString(StandardCharsets.UTF_8))
+        objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8))
             .get("id")
             .asText();
 
@@ -258,7 +255,7 @@ class RequirementControllerTest extends EventloopTestBase {
         .thenReturn(Promise.of(suggestion.withStatus(SuggestionStatus.APPROVED)));
 
     HttpRequest generateRequest =
-        HttpRequest.post(url("/api/requirements/" + requirementId + "/suggestions"))
+        HttpRequest.post(url("/api/v1/requirements/" + requirementId + "/suggestions"))
             .withBody(
                 """
                 {
@@ -273,8 +270,7 @@ class RequirementControllerTest extends EventloopTestBase {
         runPromise(() -> controller.generateSuggestions(generateRequest));
     assertThat(suggestionsResponse.getCode()).isEqualTo(200);
     JsonNode suggestions =
-        objectMapper.readTree(
-            suggestionsResponse.getBody().asString(StandardCharsets.UTF_8));
+        objectMapper.readTree(runPromise(() -> suggestionsResponse.loadBody()).asString(StandardCharsets.UTF_8));
     String suggestionId = suggestions.get(0).get("id").asText();
 
     RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", 5, "Great insight");
@@ -282,7 +278,7 @@ class RequirementControllerTest extends EventloopTestBase {
         runPromise(
             () ->
                 controller.recordFeedback(
-                    HttpRequest.post(url("/api/suggestions/" + suggestionId + "/feedback"))
+                    HttpRequest.post(url("/api/v1/suggestions/" + suggestionId + "/feedback"))
                         .withBody(objectMapper.writeValueAsBytes(feedback))
                         .build()));
 

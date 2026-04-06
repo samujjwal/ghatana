@@ -5,9 +5,12 @@
 package com.ghatana.yappc.services.lifecycle;
 
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.yappc.services.lifecycle.assessment.AIReadinessAssessor;
+import com.ghatana.yappc.services.lifecycle.assessment.ProjectContext;
 import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.storage.YappcArtifactRepository;
 import io.activej.promise.Promise;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +28,7 @@ import java.util.Optional;
  *       {@code lifecycle/transitions.yaml}.</li>
  *   <li>Check all required artifacts from the transition spec are present in the
  *       artifact store for the project.</li>
+ *   <li>Run the AI + hard readiness assessment ({@link AIReadinessAssessor}) if configured.</li>
  *   <li>Evaluate the {@code phase_advance_policy} against the policy engine.</li>
  *   <li>If all gates pass, return {@link TransitionResult#success(String)}.</li>
  *   <li>Otherwise, return an appropriate {@link TransitionResult#blocked(String, String)}
@@ -35,7 +39,7 @@ import java.util.Optional;
  * DLQ publication is fire-and-forget — failures do not block the response.
  *
  * @doc.type class
- * @doc.purpose Core lifecycle phase transition use case with policy and artifact gate enforcement
+ * @doc.purpose Core lifecycle phase transition use case with policy, artifact, and AI readiness gate enforcement
  * @doc.layer product
  * @doc.pattern Service
  * @doc.gaa.lifecycle act
@@ -51,9 +55,11 @@ public class AdvancePhaseUseCase {
     private final PolicyEngine policyEngine;
     private final YappcArtifactRepository artifactRepository;
     private final DlqPublisher dlqPublisher;
+    /** Optional AI readiness assessor; if null, AI gate is skipped. */
+    private final @Nullable AIReadinessAssessor readinessAssessor;
 
     /**
-     * Constructs the use case with its required dependencies.
+     * Constructs the use case without an AI readiness assessor (AI gate skipped).
      *
      * @param transitionConfig   loaded transition rules from {@code transitions.yaml}
      * @param policyEngine       policy gate evaluator
@@ -65,10 +71,29 @@ public class AdvancePhaseUseCase {
             PolicyEngine policyEngine,
             YappcArtifactRepository artifactRepository,
             DlqPublisher dlqPublisher) {
-        this.transitionConfig   = transitionConfig;
-        this.policyEngine       = policyEngine;
-        this.artifactRepository = artifactRepository;
-        this.dlqPublisher       = dlqPublisher;
+        this(transitionConfig, policyEngine, artifactRepository, dlqPublisher, null);
+    }
+
+    /**
+     * Constructs the use case with an optional AI readiness assessor.
+     *
+     * @param transitionConfig   loaded transition rules from {@code transitions.yaml}
+     * @param policyEngine       policy gate evaluator
+     * @param artifactRepository artifact presence checker
+     * @param dlqPublisher       DLQ sink for blocked / invalid transitions
+     * @param readinessAssessor  AI readiness assessor; {@code null} to skip AI gate
+     */
+    public AdvancePhaseUseCase(
+            TransitionConfigLoader transitionConfig,
+            PolicyEngine policyEngine,
+            YappcArtifactRepository artifactRepository,
+            DlqPublisher dlqPublisher,
+            @Nullable AIReadinessAssessor readinessAssessor) {
+        this.transitionConfig    = transitionConfig;
+        this.policyEngine        = policyEngine;
+        this.artifactRepository  = artifactRepository;
+        this.dlqPublisher        = dlqPublisher;
+        this.readinessAssessor   = readinessAssessor;
     }
 
     /**
@@ -112,32 +137,32 @@ public class AdvancePhaseUseCase {
                     return Promise.of(result);
                 }
 
-                // ── Step 3: Evaluate policy gate ─────────────────────────────
-                Map<String, Object> policyContext = Map.of(
-                    "from_phase",   request.fromPhase(),
-                    "to_phase",     request.toPhase(),
-                    "project_id",   request.projectId(),
-                    "tenant_id",    request.tenantId(),
-                    "requested_by", request.requestedBy() != null ? request.requestedBy() : "unknown"
-                );
+                // ── Step 3: AI readiness gate (optional) ─────────────────────
+                if (readinessAssessor != null) {
+                    // Build a minimal ProjectContext from the request; full context
+                    // is populated by ProjectContextBuilder when wired in production.
+                    ProjectContext minimalContext = new ProjectContext(
+                            request.projectId(), request.tenantId(), request.fromPhase(),
+                            0, 0.0, 0, -1, null, 0, 0);
 
-                return policyEngine.evaluate("phase_advance_policy", policyContext)
-                    .then(allowed -> {
-                        if (!allowed) {
-                            log.info("AdvancePhaseUseCase: policy BLOCKED for project={}", request.projectId());
-                            TransitionResult result = TransitionResult.blocked(
-                                "POLICY_GATE",
-                                "phase_advance_policy denied the transition from '" +
-                                request.fromPhase() + "' to '" + request.toPhase() + "'");
-                            publishToDlq(request, result);
-                            return Promise.of(result);
-                        }
+                    return readinessAssessor.assess(
+                            request.fromPhase(), request.toPhase(), minimalContext)
+                        .then(report -> {
+                            if (!report.ready()) {
+                                log.info("AdvancePhaseUseCase: AI readiness BLOCKED for project={} blockers={}",
+                                        request.projectId(), report.blockers());
+                                TransitionResult result = TransitionResult.blocked(
+                                        "AI_READINESS_GATE",
+                                        "AI readiness check failed: " + String.join("; ", report.blockers()));
+                                publishToDlq(request, result);
+                                return Promise.of(result);
+                            }
+                            return evaluatePolicyGate(request);
+                        });
+                }
 
-                        // ── Step 4: Transition approved ───────────────────────
-                        log.info("AdvancePhaseUseCase: transition approved {} → {} for project={}",
-                            request.fromPhase(), request.toPhase(), request.projectId());
-                        return Promise.of(TransitionResult.success(request.toPhase()));
-                    });
+                // ── Step 4: Evaluate policy gate ─────────────────────────────
+                return evaluatePolicyGate(request);
             });
     }
 
@@ -147,6 +172,38 @@ public class AdvancePhaseUseCase {
      * Checks all required artifacts for the transition spec.
      * Returns a Promise of the list of missing artifact IDs (empty = all present).
      */
+    /**
+     * Evaluates the policy gate for the given transition request.
+     * Returns a {@link TransitionResult} indicating success or policy block.
+     */
+    private Promise<TransitionResult> evaluatePolicyGate(TransitionRequest request) {
+        Map<String, Object> policyContext = Map.of(
+            "from_phase",   request.fromPhase(),
+            "to_phase",     request.toPhase(),
+            "project_id",   request.projectId(),
+            "tenant_id",    request.tenantId(),
+            "requested_by", request.requestedBy() != null ? request.requestedBy() : "unknown"
+        );
+
+        return policyEngine.evaluate("phase_advance_policy", policyContext)
+            .then(allowed -> {
+                if (!allowed) {
+                    log.info("AdvancePhaseUseCase: policy BLOCKED for project={}", request.projectId());
+                    TransitionResult result = TransitionResult.blocked(
+                        "POLICY_GATE",
+                        "phase_advance_policy denied the transition from '" +
+                        request.fromPhase() + "' to '" + request.toPhase() + "'");
+                    publishToDlq(request, result);
+                    return Promise.of(result);
+                }
+
+                // Transition approved
+                log.info("AdvancePhaseUseCase: transition approved {} → {} for project={}",
+                    request.fromPhase(), request.toPhase(), request.projectId());
+                return Promise.of(TransitionResult.success(request.toPhase()));
+            });
+    }
+
     private Promise<List<String>> checkArtifacts(TransitionRequest request, TransitionSpec spec) {
         List<String> requiredArtifacts = spec.getRequiredArtifacts();
         if (requiredArtifacts.isEmpty()) {

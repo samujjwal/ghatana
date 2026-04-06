@@ -12,6 +12,8 @@ This module provides the infrastructure layer for integrating YAPPC with the Dat
 2. **YappcDataCloudRepository** - Generic repository adapter providing CRUD operations for any YAPPC entity
 3. **Specialized Adapters** - Domain-specific adapters for Dashboard, Knowledge Graph, and Refactorer storage
 
+Project environment variables are treated as sensitive data. When `YAPPC_ENCRYPTION_KEY` is configured, `YappcEntityMapper` transparently encrypts `ProjectEntity.environmentVariables` before persistence and decrypts them on load. Persisting project environment variables without the key now fails fast instead of silently storing plaintext.
+
 ### Module Structure
 
 ```

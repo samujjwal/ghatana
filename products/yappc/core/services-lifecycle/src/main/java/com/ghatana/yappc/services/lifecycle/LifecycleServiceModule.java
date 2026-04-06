@@ -784,15 +784,69 @@ public class LifecycleServiceModule extends AbstractModule {
     // ========== Human Approval Gate (3.5) ==========
 
     /**
+     * Provides {@link ApprovalAuditLogger} — compliance audit log for all human approval
+     * lifecycle actions. Delegates to the existing {@link AuditLogger} (JdbcAuditLogger).
+     *
+     * @doc.type method
+     * @doc.purpose Provides compliance audit logging for approval lifecycle events
+     * @doc.layer product
+     * @doc.pattern Adapter
+     */
+    @Provides
+    ApprovalAuditLogger approvalAuditLogger(AuditLogger auditLogger) {
+        logger.info("Creating ApprovalAuditLogger (compliance audit for approval events)");
+        return new ApprovalAuditLogger(auditLogger);
+    }
+
+    /**
+     * Provides {@link ApprovalNotificationService} — broadcasts structured AEP notification
+     * events on approval state changes so downstream adapters (email, WebSocket, Slack)
+     * can react without coupling to approval internals.
+     *
+     * @doc.type method
+     * @doc.purpose Provides AEP-backed approval notification broadcaster
+     * @doc.layer product
+     * @doc.pattern Service
+     */
+    @Provides
+    ApprovalNotificationService approvalNotificationService(AepEventPublisher publisher) {
+        logger.info("Creating ApprovalNotificationService");
+        return new ApprovalNotificationService(publisher);
+    }
+
+    /**
+     * Provides {@link ApprovalRiskScorer} — uses the platform {@link CompletionService} to
+     * classify approval risk (LOW / MEDIUM / HIGH) and determine required approver count.
+     * Falls back to a deterministic heuristic when the LLM is unavailable.
+     *
+     * @doc.type method
+     * @doc.purpose Provides AI-assisted risk scorer for approval request routing
+     * @doc.layer product
+     * @doc.pattern Service
+     */
+    @Provides
+    ApprovalRiskScorer approvalRiskScorer(CompletionService completionService) {
+        logger.info("Creating ApprovalRiskScorer (LLM-backed risk assessment with heuristic fallback)");
+        return new ApprovalRiskScorer(completionService);
+    }
+
+    /**
      * Provides HumanApprovalService — manages phase-advance human-approval gates.
      * Uses {@link JdbcHumanApprovalService} for durable persistence to the
      * {@code approval_requests} table (V2_0_0__YAPPC_APPROVAL_REQUESTS migration).
      * Falls back gracefully to the in-memory store when the DB is unavailable.
+     * Integrates {@link ApprovalNotificationService} and {@link ApprovalRiskScorer}.
      */
     @Provides
-    HumanApprovalService humanApprovalService(AepEventPublisher publisher, DataSource dataSource) {
-        logger.info("Creating JdbcHumanApprovalService (durable approval persistence)");
-        return new JdbcHumanApprovalService(publisher, dataSource, new ObjectMapper());
+    HumanApprovalService humanApprovalService(
+            AepEventPublisher publisher,
+            DataSource dataSource,
+            ApprovalNotificationService notificationService,
+            ApprovalRiskScorer riskScorer,
+            ApprovalAuditLogger approvalAuditLogger) {
+        logger.info("Creating JdbcHumanApprovalService (durable approval persistence + notifications + risk scoring + audit)");
+        return new JdbcHumanApprovalService(publisher, dataSource, new ObjectMapper(),
+                notificationService, riskScorer, approvalAuditLogger);
     }
 
     // ========== Lifecycle Pipeline Operators (7.1) ==========

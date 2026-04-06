@@ -109,6 +109,7 @@ deploy_kubectl() {
     kubectl apply -f k8s/yappc-deployment.yaml
     kubectl apply -f k8s/ingress.yaml
     kubectl apply -f k8s/hpa.yaml
+    kubectl apply -f k8s/predictive-scaling-cronjob.yaml
     
     # Optional: Monitoring
     read -p "Deploy monitoring (Prometheus/Grafana)? (y/N): " -n 1 -r

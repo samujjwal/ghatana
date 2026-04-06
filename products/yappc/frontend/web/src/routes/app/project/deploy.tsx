@@ -12,14 +12,15 @@
  */
 
 import { useParams } from "react-router";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
 
 import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
 import { DeployPanelHost } from "../../../components/deploy";
 import { useLifecycleArtifacts, usePhaseGates } from "../../../services/canvas/lifecycle";
-import { LifecyclePhase } from '@/types/lifecycle';
+import type { TransitionResult } from '../../../services/canvas/lifecycle';
+import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
 
 /**
  * Project Deploy Component
@@ -29,15 +30,99 @@ export default function Component() {
 
     // Initialize lifecycle services
     const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(projectId || '');
-    const { transition, service: phaseGateService } = usePhaseGates(projectId || '');
+    const { currentPhase, transition } = usePhaseGates(projectId || '');
 
     const currentUser = useAtomValue(currentUserAtom);
     const userId = currentUser?.id ?? 'anonymous';
+    const [phasePreview, setPhasePreview] = useState<PhaseTransitionPreview | null>(null);
+    const [phasePreviewError, setPhasePreviewError] = useState<string | null>(null);
+    const [isPhasePreviewLoading, setIsPhasePreviewLoading] = useState<boolean>(false);
+    const [isAdvancing, setIsAdvancing] = useState<boolean>(false);
+
+    const phasePredictionSummary = phasePreview?.estimatedReadyIn
+        ? phasePreview.estimatedReadyIn === 'Ready now'
+            ? `Ready now (${Math.round((phasePreview.predictionConfidence ?? 0) * 100)}% confidence)`
+            : `Ready in ${phasePreview.estimatedReadyIn} (${Math.round((phasePreview.predictionConfidence ?? 0) * 100)}% confidence)`
+        : 'No readiness prediction available.';
 
     type ArtifactKindValue = Parameters<typeof createArtifact>[0];
     const DELIVERY_PLAN_KIND = 'delivery_plan' as ArtifactKindValue;
     const RELEASE_STRATEGY_KIND = 'release_strategy' as ArtifactKindValue;
     const INCIDENT_REPORT_KIND = 'incident_report' as ArtifactKindValue;
+
+    useEffect(() => {
+        if (!projectId) {
+            setPhasePreview(null);
+            return;
+        }
+
+        let isMounted = true;
+        setIsPhasePreviewLoading(true);
+        setPhasePreviewError(null);
+
+        void phaseTransitionAPI
+            .getNextPhase(currentPhase, projectId)
+            .then((preview) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                setPhasePreview(preview);
+            })
+            .catch((error: unknown) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                setPhasePreview(null);
+                setPhasePreviewError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Unable to load lifecycle readiness.'
+                );
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setIsPhasePreviewLoading(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [currentPhase, projectId]);
+
+    const handleAdvancePhase = useCallback(async (comments?: string): Promise<TransitionResult | void> => {
+        if (!projectId) return;
+
+        if (!phasePreview?.nextPhase) {
+            setPhasePreviewError('No next lifecycle phase is available for this project.');
+            return;
+        }
+
+        if (!phasePreview.canAdvance) {
+            setPhasePreviewError('Resolve the listed blockers before advancing the phase.');
+            return;
+        }
+
+        setIsAdvancing(true);
+        setPhasePreviewError(null);
+
+        try {
+            const result = await transition(phasePreview.nextPhase, userId, {
+                bypass: false,
+                bypassReason: comments,
+            });
+
+            if (!result.success) {
+                setPhasePreviewError(result.errors.join(' ') || 'Unable to advance lifecycle phase.');
+            }
+
+            return result;
+        } finally {
+            setIsAdvancing(false);
+        }
+    }, [phasePreview, projectId, transition, userId]);
 
     // Handler: Save delivery plan
     const handleSaveDeliveryPlan = useCallback(async (data: unknown) => {
@@ -67,28 +152,8 @@ export default function Component() {
 
     // Handler: Approve gate with bypass support
     const handleApprove = useCallback(async (_gateId: string, comments?: string) => {
-        if (!projectId) return;
-
-        const state = await phaseGateService.getProjectState(projectId);
-        if (!state) return;
-
-        const nextPhaseMap: Record<LifecyclePhase, LifecyclePhase> = {
-            [LifecyclePhase.INTENT]: LifecyclePhase.SHAPE,
-            [LifecyclePhase.SHAPE]: LifecyclePhase.VALIDATE,
-            [LifecyclePhase.VALIDATE]: LifecyclePhase.GENERATE,
-            [LifecyclePhase.GENERATE]: LifecyclePhase.RUN,
-            [LifecyclePhase.RUN]: LifecyclePhase.OBSERVE,
-            [LifecyclePhase.OBSERVE]: LifecyclePhase.IMPROVE,
-            [LifecyclePhase.IMPROVE]: LifecyclePhase.IMPROVE,
-        };
-
-        const nextPhase = nextPhaseMap[state.currentPhase as LifecyclePhase] ?? LifecyclePhase.IMPROVE;
-
-        await transition(nextPhase, userId, {
-            bypass: false,
-            bypassReason: comments,
-        });
-    }, [projectId, phaseGateService, transition]);
+        await handleAdvancePhase(comments);
+    }, [handleAdvancePhase]);
 
     // Handler: Reject gate transition
     const handleReject = useCallback(async (gateId: string, reason: string) => {
@@ -130,8 +195,52 @@ export default function Component() {
                     <p className="text-sm text-text-secondary mt-0.5">
                         Multi-environment deployment management
                     </p>
+                    <p className="text-xs text-text-secondary mt-2" data-testid="phase-preview-summary">
+                        {isPhasePreviewLoading
+                            ? 'Loading lifecycle readiness...'
+                            : phasePreview?.nextPhase
+                                ? `${phasePreview.currentPhase} -> ${phasePreview.nextPhase}`
+                                : `${currentPhase} is the final lifecycle phase`}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1" data-testid="phase-prediction-summary">
+                        {isPhasePreviewLoading ? 'Predicting readiness window...' : phasePredictionSummary}
+                    </p>
                 </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        void handleAdvancePhase();
+                    }}
+                    disabled={
+                        isAdvancing ||
+                        isPhasePreviewLoading ||
+                        !phasePreview?.canAdvance ||
+                        !phasePreview?.nextPhase
+                    }
+                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {isAdvancing
+                        ? 'Advancing...'
+                        : phasePreview?.nextPhase
+                            ? `Advance to ${phasePreview.nextPhase}`
+                            : 'Advance Phase'}
+                </button>
             </div>
+
+            {(phasePreviewError || (phasePreview?.blockers.length ?? 0) > 0) && (
+                <div className="border-b border-divider bg-amber-50 px-6 py-3 text-sm text-amber-900">
+                    {phasePreviewError && (
+                        <p className="font-medium" data-testid="phase-preview-error">{phasePreviewError}</p>
+                    )}
+                    {(phasePreview?.blockers.length ?? 0) > 0 && (
+                        <ul className="mt-2 list-disc pl-5" data-testid="phase-blockers">
+                            {phasePreview?.blockers.map((blocker) => (
+                                <li key={blocker}>{blocker}</li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            )}
 
             {/* DeployPanelHost - URL-driven segment navigation */}
             <div className="flex-1 overflow-hidden">

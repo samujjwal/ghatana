@@ -315,6 +315,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
             LifecycleWorkflowService workflowService) {
 
         ObjectMapper objectMapper = new ObjectMapper();
+                ApprovalHttpHandlers approvalHttpHandlers = new ApprovalHttpHandlers(humanApprovalService, objectMapper);
 
         return RoutingServlet.builder(eventloop)
 
@@ -396,100 +397,15 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
                 .with(POST, "/api/v1/yappc/validate/with-policy",   validationController::validateWithPolicy)
 
                 // ── Human Approval Gate (Lifecycle 3.5) ─────────────────────
-                .with(GET, "/api/v1/approvals/pending", request -> {
-                    String tenantId = request.getHeader(
-                            io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    if (tenantId == null || tenantId.isBlank()) {
-                        return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
-                                .build());
-                    }
-                    try {
-                        String json = objectMapper.writeValueAsString(
-                                humanApprovalService.allPending(tenantId));
-                        return HttpResponse.ok200().withJson(json).toPromise();
-                    } catch (Exception e) {
-                        return Promise.of(HttpResponse.ofCode(500).withPlainText("Serialization error").build());
-                    }
-                })
-                .with(POST, "/api/v1/approvals/:id/approve", request -> {
-                    String requestId = request.getPathParameter("id");
-                    String rawTenantId  = request.getHeader(
-                            io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    if (rawTenantId == null || rawTenantId.isBlank()) {
-                        return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
-                                .build());
-                    }
-                    final String tenantId = rawTenantId;
-                    return request.loadBody().then(body -> {
-                        try {
-                            @SuppressWarnings("unchecked")
-                            java.util.Map<String, Object> payload = objectMapper.readValue(
-                                    body.getString(StandardCharsets.UTF_8), java.util.Map.class);
-                            String decidedBy = (String) payload.getOrDefault("decidedBy", "unknown");
-                            return humanApprovalService.approve(tenantId, requestId, decidedBy)
-                                    .map(r -> {
-                                        try {
-                                            return HttpResponse.ok200()
-                                                    .withJson(objectMapper.writeValueAsString(r))
-                                                    .build();
-                                        } catch (Exception ex) {
-                                            return HttpResponse.ofCode(500).withPlainText("Serialization error")
-                                                    .build();
-                                        }
-                                    })
-                                    .then(
-                                        r -> Promise.of(r),
-                                        e -> Promise.of(HttpResponse.ofCode(409)
-                                                .withJson("{\"error\":\"" + e.getMessage() + "\"}")
-                                                .build())
-                                    );
-                        } catch (Exception e) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"" + e.getMessage() + "\"}").build());
-                        }
-                    });
-                })
-                .with(POST, "/api/v1/approvals/:id/reject", request -> {
-                    String requestId = request.getPathParameter("id");
-                    String rawTenantId  = request.getHeader(
-                            io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-                    if (rawTenantId == null || rawTenantId.isBlank()) {
-                        return Promise.of(HttpResponse.ofCode(400)
-                                .withJson("{\"error\":\"Missing required X-Tenant-Id header\"}")
-                                .build());
-                    }
-                    final String tenantId = rawTenantId;
-                    return request.loadBody().then(body -> {
-                        try {
-                            @SuppressWarnings("unchecked")
-                            java.util.Map<String, Object> payload = objectMapper.readValue(
-                                    body.getString(StandardCharsets.UTF_8), java.util.Map.class);
-                            String decidedBy = (String) payload.getOrDefault("decidedBy", "unknown");
-                            return humanApprovalService.reject(tenantId, requestId, decidedBy)
-                                    .map(r -> {
-                                        try {
-                                            return HttpResponse.ok200()
-                                                    .withJson(objectMapper.writeValueAsString(r))
-                                                    .build();
-                                        } catch (Exception ex) {
-                                            return HttpResponse.ofCode(500).withPlainText("Serialization error")
-                                                    .build();
-                                        }
-                                    })
-                                    .then(
-                                        r -> Promise.of(r),
-                                        e -> Promise.of(HttpResponse.ofCode(409)
-                                                .withJson("{\"error\":\"" + e.getMessage() + "\"}")
-                                                .build())
-                                    );
-                        } catch (Exception e) {
-                            return Promise.of(HttpResponse.ofCode(400)
-                                    .withJson("{\"error\":\"" + e.getMessage() + "\"}").build());
-                        }
-                    });
-                })
+                                .with(GET, "/api/v1/approvals/pending", approvalHttpHandlers::listPending)
+                                .with(POST, "/api/v1/approvals",
+                                                approvalHttpHandlers::create)
+                                .with(GET, "/api/v1/approvals/:id",
+                                                request -> approvalHttpHandlers.getById(request, request.getPathParameter("id")))
+                                .with(POST, "/api/v1/approvals/:id/approve",
+                                                request -> approvalHttpHandlers.approve(request, request.getPathParameter("id")))
+                                .with(POST, "/api/v1/approvals/:id/reject",
+                                                request -> approvalHttpHandlers.reject(request, request.getPathParameter("id")))
 
                 // ── API info ────────────────────────────────────────────────
                 .with(GET, "/api/v1/yappc/info",

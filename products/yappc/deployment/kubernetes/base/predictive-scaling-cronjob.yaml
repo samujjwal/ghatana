@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: yappc-predictive-scaler
+  namespace: yappc
+  labels:
+    app: yappc-predictive-scaler
+    component: sdlc-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: yappc-predictive-scaler
+  namespace: yappc
+  labels:
+    app: yappc-predictive-scaler
+    component: sdlc-platform
+rules:
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: yappc-predictive-scaler
+  namespace: yappc
+  labels:
+    app: yappc-predictive-scaler
+    component: sdlc-platform
+subjects:
+  - kind: ServiceAccount
+    name: yappc-predictive-scaler
+    namespace: yappc
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: yappc-predictive-scaler
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: yappc-predictive-scaler
+  namespace: yappc
+  labels:
+    app: yappc-predictive-scaler
+    component: sdlc-platform
+spec:
+  schedule: "5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: yappc-predictive-scaler
+            component: sdlc-platform
+        spec:
+          serviceAccountName: yappc-predictive-scaler
+          restartPolicy: OnFailure
+          containers:
+            - name: predictive-scaler
+              image: bitnami/kubectl:1.30.2
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PROMETHEUS_URL
+                  value: http://prometheus-operated.monitoring.svc.cluster.local:9090
+                - name: TARGET_HPA
+                  value: yappc-agents-hpa
+                - name: TARGET_DEPLOYMENT
+                  value: yappc-agents
+                - name: PEAK_RPS_THRESHOLD
+                  value: "450"
+                - name: SCALE_UP_REPLICAS
+                  value: "6"
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  query='quantile_over_time(0.95,http_requests_per_second{app="yappc-agents"}[30d:1h])'
+                  peak_rps=$(curl -fsS --get "$PROMETHEUS_URL/api/v1/query" --data-urlencode "query=$query" | sed -n 's/.*\[.*,"\([0-9.]*\)"\].*/\1/p' | head -n 1)
+
+                  if [ -z "$peak_rps" ]; then
+                    echo "No Prometheus peak RPS result returned; leaving current scale unchanged."
+                    exit 0
+                  fi
+
+                  printf 'Predicted peak RPS in the next comparable hour: %s\n' "$peak_rps"
+
+                  if awk "BEGIN {exit !($peak_rps >= $PEAK_RPS_THRESHOLD)}"; then
+                    echo "Predicted load exceeds threshold; raising minReplicas and target replicas."
+                    kubectl patch hpa "$TARGET_HPA" -n yappc --type merge -p "{\"spec\":{\"minReplicas\":$SCALE_UP_REPLICAS}}"
+                    kubectl scale deployment "$TARGET_DEPLOYMENT" -n yappc --replicas="$SCALE_UP_REPLICAS"
+                  else
+                    echo "Predicted load is below threshold; no scale-up required."
+                  fi

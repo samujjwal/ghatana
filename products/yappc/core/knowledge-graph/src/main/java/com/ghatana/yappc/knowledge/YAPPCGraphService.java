@@ -5,14 +5,20 @@ import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
 import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
+import com.ghatana.yappc.knowledge.embedding.KGEmbeddingService;
+import com.ghatana.yappc.knowledge.persistence.KGEdgeRepository;
+import com.ghatana.yappc.knowledge.persistence.KGNodeRepository;
+import com.ghatana.yappc.knowledge.query.KGSemanticSearchService;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
 import com.ghatana.yappc.knowledge.model.YAPPCImpactAnalysis;
 import io.activej.promise.Promise;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,14 +48,42 @@ public class YAPPCGraphService {
     private final KnowledgeGraphPlugin graphPlugin;
     private final YAPPCGraphMapper mapper;
     private final YAPPCGraphValidator validator;
+        private final @Nullable KGNodeRepository nodeRepository;
+        private final @Nullable KGEdgeRepository edgeRepository;
+        private final @Nullable KGEmbeddingService embeddingService;
+        private final @Nullable KGSemanticSearchService semanticSearchService;
     
     public YAPPCGraphService(
             KnowledgeGraphPlugin graphPlugin,
             YAPPCGraphMapper mapper,
             YAPPCGraphValidator validator) {
+                this(graphPlugin, mapper, validator, null, null, null, null);
+        }
+
+        public YAPPCGraphService(
+                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        YAPPCGraphMapper mapper,
+                        YAPPCGraphValidator validator,
+                        @Nullable KGNodeRepository nodeRepository,
+                        @Nullable KGEdgeRepository edgeRepository) {
+                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, null, null);
+        }
+
+        public YAPPCGraphService(
+                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        YAPPCGraphMapper mapper,
+                        YAPPCGraphValidator validator,
+                        @Nullable KGNodeRepository nodeRepository,
+                        @Nullable KGEdgeRepository edgeRepository,
+                        @Nullable KGEmbeddingService embeddingService,
+                        @Nullable KGSemanticSearchService semanticSearchService) {
         this.graphPlugin = graphPlugin;
-        this.mapper = mapper;
-        this.validator = validator;
+                this.mapper = Objects.requireNonNull(mapper, "mapper must not be null");
+                this.validator = Objects.requireNonNull(validator, "validator must not be null");
+                this.nodeRepository = nodeRepository;
+                this.edgeRepository = edgeRepository;
+                this.embeddingService = embeddingService;
+                this.semanticSearchService = semanticSearchService;
         log.info("YAPPCGraphService initialized");
     }
     
@@ -58,15 +92,27 @@ public class YAPPCGraphService {
      */
     public Promise<YAPPCGraphNode> createYAPPCNode(YAPPCGraphNode yappcNode) {
         log.debug("Creating YAPPC node: id={}, type={}", yappcNode.id(), yappcNode.type());
-        
-        // Validate synchronously
+
         validator.validateNode(yappcNode);
-        GraphNode dcNode = mapper.toDataCloudNode(yappcNode);
-        
-        // Convert Promise to Promise using PromiseUtils
-        return PromiseUtils.fromCompletableFuture(
-                graphPlugin.createNode(dcNode).toCompletableFuture()
-        ).map(mapper::fromDataCloudNode);
+
+                Promise<YAPPCGraphNode> persisted = nodeRepository != null
+                                ? nodeRepository.saveNode(yappcNode)
+                                : Promise.of(yappcNode);
+
+                Promise<YAPPCGraphNode> published = graphPlugin == null
+                                ? persisted
+                                : persisted.then(savedNode -> {
+                                        GraphNode dcNode = mapper.toDataCloudNode(savedNode);
+                                        return PromiseUtils.fromCompletableFuture(
+                                                        graphPlugin.createNode(dcNode).toCompletableFuture()
+                                        ).map(mapper::fromDataCloudNode);
+                                });
+
+                if (embeddingService == null) {
+                        return published;
+                }
+
+                return published.then(savedNode -> embeddingService.indexNode(savedNode).map(ignored -> savedNode));
     }
     
     /**
@@ -74,6 +120,13 @@ public class YAPPCGraphService {
      */
     public Promise<List<YAPPCGraphEdge>> findCodeDependencies(String componentId, String tenantId) {
         log.debug("Finding code dependencies for component: {}", componentId);
+
+                if (edgeRepository != null) {
+                        return edgeRepository.findEdgesFromSource(
+                                        componentId,
+                                        tenantId,
+                                        Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"));
+                }
         
         GraphQuery query = GraphQuery.builder()
                 .sourceNodeId(componentId)
@@ -113,6 +166,10 @@ public class YAPPCGraphService {
      */
     public Promise<List<YAPPCGraphNode>> findComponentsByType(String type, String tenantId) {
         log.debug("Finding components by type: {}", type);
+
+                if (nodeRepository != null) {
+                        return nodeRepository.findNodesByType(type, tenantId, 1000);
+                }
         
         GraphQuery query = GraphQuery.builder()
                 .nodeTypes(Set.of(type))
@@ -125,6 +182,17 @@ public class YAPPCGraphService {
                         .map(mapper::fromDataCloudNode)
                         .collect(Collectors.toList()));
     }
+
+        public Promise<List<KGSemanticSearchService.SemanticNodeMatch>> semanticSearch(
+                        String query,
+                        String tenantId,
+                        int limit,
+                        double minSimilarity) {
+                if (semanticSearchService == null) {
+                        return Promise.of(List.of());
+                }
+                return semanticSearchService.findSimilarNodes(query, tenantId, limit, minSimilarity);
+        }
     
     /**
      * Creates a code relationship between components.
@@ -145,9 +213,34 @@ public class YAPPCGraphService {
                 .properties(Map.of("createdBy", "yappc"))
                 .tenantId(tenantId)
                 .build();
-        
-        return graphPlugin.createEdge(edge)
-                .map(mapper::fromDataCloudEdge);
+
+        YAPPCGraphEdge yappcEdge = YAPPCGraphEdge.builder()
+                .id(edge.getId())
+                .sourceNodeId(sourceId)
+                .targetNodeId(targetId)
+                .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.valueOf(relationshipType))
+                .properties(edge.getProperties())
+                .metadata(new com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata(
+                        tenantId,
+                        null,
+                        null,
+                        "yappc",
+                        java.time.Instant.now(),
+                        java.time.Instant.now(),
+                        "1.0",
+                        Map.of()))
+                .build();
+
+        Promise<YAPPCGraphEdge> persisted = edgeRepository != null
+                ? edgeRepository.saveEdge(yappcEdge)
+                : Promise.of(yappcEdge);
+
+        if (graphPlugin == null) {
+            return persisted;
+        }
+
+        return persisted.then(savedEdge -> graphPlugin.createEdge(edge)
+                .map(mapper::fromDataCloudEdge));
     }
     
     /**
@@ -174,6 +267,15 @@ public class YAPPCGraphService {
             String tenantId) {
         
         log.debug("Getting workspace dependencies: {}", workspaceId);
+
+        if (edgeRepository != null) {
+            return edgeRepository.findEdgesForWorkspace(
+                            workspaceId,
+                            tenantId,
+                            Set.of("DEPENDS_ON", "USES", "CALLS"))
+                    .map(edges -> edges.stream()
+                            .collect(Collectors.groupingBy(edge -> edge.relationshipType().name())));
+        }
         
         GraphQuery query = GraphQuery.builder()
                 .propertyFilters(Map.of("workspaceId", workspaceId))

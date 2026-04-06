@@ -36,12 +36,50 @@ model User {
   pages           Page[]
   ownedItems      ItemOwner[]
   aiPreferences   UserAIPreferences?
+  sessions        UserSession[]
 
   // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
+}
+
+///
+/// UserSession tracks active refresh-token sessions for JWT rotation.
+///
+/// Each row represents one live browser/device session. When a refresh token
+/// is used to obtain a new access token, the old session is revoked and a new
+/// one is created, preventing refresh-token reuse attacks.
+///
+/// @doc.type model
+/// @doc.purpose Persistent refresh-token session for JWT rotation
+/// @doc.layer product
+/// @doc.pattern Entity
+///
+model UserSession {
+  id          String  @id @default(cuid())
+  userId      String
+  workspaceId String?
+
+  /// Opaque session identifier embedded in the refresh JWT payload.
+  /// Indexed for O(1) lookup during token refresh.
+  sessionToken String @unique
+
+  /// UTC instant after which this session (and its refresh token) is invalid.
+  expiresAt DateTime
+
+  /// Set when the session is explicitly revoked ({@code logout} or {@code revokeAll}).
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([userId, revokedAt])
 }
 
 ///
