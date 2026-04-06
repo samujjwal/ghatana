@@ -14,7 +14,7 @@
     "@ghatana/design-system": "workspace:*",
     "@ghatana/ai-voice-ui-react": "workspace:*",
     "@tauri-apps/api": "^2.10.1",
-    "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "clsx": "^2.1.1",
     "jotai": "^2.19.0",
