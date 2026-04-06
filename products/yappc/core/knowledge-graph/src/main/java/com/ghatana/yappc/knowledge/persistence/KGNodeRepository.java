@@ -18,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -55,14 +56,13 @@ public final class KGNodeRepository {
                         tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
                         version, labels_json
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (node_id) DO UPDATE SET
+                    ON CONFLICT (tenant_id, node_id) DO UPDATE SET
                         node_type = EXCLUDED.node_type,
                         label = EXCLUDED.label,
                         description = EXCLUDED.description,
                         embedding = EXCLUDED.embedding,
                         properties_json = EXCLUDED.properties_json,
                         tags_json = EXCLUDED.tags_json,
-                        tenant_id = EXCLUDED.tenant_id,
                         project_id = EXCLUDED.project_id,
                         workspace_id = EXCLUDED.workspace_id,
                         created_by = EXCLUDED.created_by,
@@ -134,6 +134,115 @@ public final class KGNodeRepository {
                     }
                     return nodes;
                 }
+            }
+        });
+    }
+
+    public Promise<Optional<YAPPCGraphNode>> findNodeById(String nodeId, String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ? AND node_id = ?
+                    """;
+            Connection connection = dataSource.getConnection();
+            try {
+                PreparedStatement statement = connection.prepareStatement(sql);
+                try {
+                statement.setString(1, tenantId);
+                statement.setString(2, nodeId);
+                    ResultSet resultSet = statement.executeQuery();
+                    try {
+                    if (!resultSet.next()) {
+                        return Optional.empty();
+                    }
+                    return Optional.of(mapNode(resultSet));
+                    } finally {
+                        resultSet.close();
+                    }
+                } finally {
+                    statement.close();
+                }
+            } finally {
+                connection.close();
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphNode>> findNodesByProject(String projectId, String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT node_id, node_type, label, description, properties_json, tags_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at, updated_at,
+                           version, labels_json
+                    FROM kg_nodes
+                    WHERE tenant_id = ? AND project_id = ?
+                    ORDER BY updated_at DESC
+                    """;
+            Connection connection = dataSource.getConnection();
+            try {
+                PreparedStatement statement = connection.prepareStatement(sql);
+                try {
+                statement.setString(1, tenantId);
+                statement.setString(2, projectId);
+                    ResultSet resultSet = statement.executeQuery();
+                    try {
+                        if (!resultSet.next()) {
+                            return List.of();
+                        }
+                        java.util.ArrayList<YAPPCGraphNode> nodes = new java.util.ArrayList<>();
+                        do {
+                        nodes.add(mapNode(resultSet));
+                        } while (resultSet.next());
+                        return nodes;
+                    } finally {
+                        resultSet.close();
+                    }
+                } finally {
+                    statement.close();
+                }
+            } finally {
+                connection.close();
+            }
+        });
+    }
+
+    public Promise<Integer> countNodesByTenant(String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = "SELECT COUNT(*) AS node_count FROM kg_nodes WHERE tenant_id = ?";
+            Connection connection = dataSource.getConnection();
+            try {
+                PreparedStatement statement = connection.prepareStatement(sql);
+                try {
+                statement.setString(1, tenantId);
+                    ResultSet resultSet = statement.executeQuery();
+                    try {
+                    if (!resultSet.next()) {
+                        return 0;
+                    }
+                    return resultSet.getInt("node_count");
+                    } finally {
+                        resultSet.close();
+                    }
+                } finally {
+                    statement.close();
+                }
+            } finally {
+                connection.close();
+            }
+        });
+    }
+
+    public Promise<Boolean> deleteNode(String nodeId, String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = "DELETE FROM kg_nodes WHERE tenant_id = ? AND node_id = ?";
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, nodeId);
+                return statement.executeUpdate() > 0;
             }
         });
     }

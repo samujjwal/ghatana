@@ -2,6 +2,21 @@ plugins {
     id("java-library")
 }
 
+val integrationTest by sourceSets.creating {
+    java.srcDir("src/integrationTest/java")
+    resources.srcDir("src/integrationTest/resources")
+    compileClasspath += sourceSets["main"].output + sourceSets["test"].output + configurations.testRuntimeClasspath.get()
+    runtimeClasspath += output + compileClasspath
+}
+
+val kgScaleValidationRuntime by configurations.creating
+
+configurations[integrationTest.implementationConfigurationName].extendsFrom(configurations.testImplementation.get())
+configurations[integrationTest.runtimeOnlyConfigurationName].extendsFrom(configurations.testRuntimeOnly.get())
+dependencies {
+    kgScaleValidationRuntime("org.junit.platform:junit-platform-console-standalone:1.10.2")
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
@@ -16,6 +31,7 @@ dependencies {
     implementation(project(":products:data-cloud:platform-launcher"))
     implementation(project(":products:data-cloud:platform-plugins"))
     implementation(project(":products:yappc:core:yappc-services"))
+    implementation(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:core:ai"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:observability"))
@@ -40,6 +56,37 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.postgresql)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
 }
 
 description = "YAPPC Knowledge Graph - Consolidated integration module"
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs knowledge-graph integration tests."
+    group = "verification"
+    testClassesDirs = integrationTest.output.classesDirs
+    classpath = integrationTest.runtimeClasspath
+    shouldRunAfter(tasks.test)
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+    }
+}
+
+tasks.register<JavaExec>("kgScaleValidation") {
+    description = "Runs the knowledge-graph production-scale validation suite via JUnit ConsoleLauncher."
+    group = "verification"
+    dependsOn("integrationTestClasses")
+    classpath = integrationTest.runtimeClasspath + kgScaleValidationRuntime
+    mainClass.set("org.junit.platform.console.ConsoleLauncher")
+    args(
+        "--select-class",
+        "com.ghatana.yappc.knowledge.persistence.KGScaleValidationTest",
+        "--details",
+        "tree"
+    )
+}

@@ -67,6 +67,10 @@ spec:
     - name: "lifecycle-state-updates"
       topic: "lifecycle.state.updated"
       description: "Updated lifecycle state for UI synchronization"
+
+    - name: "knowledge-graph-updates"
+      topic: "knowledge.graph.updated"
+      description: "Knowledge graph update notifications for downstream graph consumers"
     
     - name: "agent-dispatch-events"
       topic: "agent.dispatch.requested"
@@ -102,6 +106,24 @@ spec:
           strategy: "BLOCK"
           buffer_size: 256
       description: "Execute gate agent approvals in parallel"
+
+    - name: "knowledge-graph-updater"
+      type: "agent"
+      agent_id: "agent.yappc.knowledge-graph-updater"
+      config:
+        subscribed_event_types:
+          - "RequirementCreated"
+          - "RequirementUpdated"
+          - "PhaseTransitioned"
+          - "CodeCommitted"
+          - "ApprovalDecided"
+          - "AgentTaskCompleted"
+        output_topic: "knowledge.graph.updated"
+        tenant_scoped: true
+        backpressure:
+          strategy: "DROP_OLDEST"
+          buffer_size: 512
+      description: "Extract and persist knowledge graph updates from lifecycle and delivery events"
 
     - name: "lifecycle-state-publisher"
       type: "transformer"

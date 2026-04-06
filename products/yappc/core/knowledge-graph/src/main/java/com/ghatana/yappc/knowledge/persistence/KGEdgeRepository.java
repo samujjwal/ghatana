@@ -53,12 +53,11 @@ public final class KGEdgeRepository {
                         tenant_id, project_id, workspace_id, created_by, created_at,
                         updated_at, version, labels_json
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT (edge_id) DO UPDATE SET
+                    ON CONFLICT (tenant_id, edge_id) DO UPDATE SET
                         from_node_id = EXCLUDED.from_node_id,
                         to_node_id = EXCLUDED.to_node_id,
                         relationship_type = EXCLUDED.relationship_type,
                         properties_json = EXCLUDED.properties_json,
-                        tenant_id = EXCLUDED.tenant_id,
                         project_id = EXCLUDED.project_id,
                         workspace_id = EXCLUDED.workspace_id,
                         created_by = EXCLUDED.created_by,
@@ -128,6 +127,100 @@ public final class KGEdgeRepository {
                     }
                     return edges;
                 }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphEdge>> findEdgesToTarget(String targetNodeId, String tenantId, Set<String> relationshipTypes) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT edge_id, from_node_id, to_node_id, relationship_type, properties_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at,
+                           updated_at, version, labels_json
+                    FROM kg_edges
+                    WHERE tenant_id = ? AND to_node_id = ?
+                    ORDER BY updated_at DESC
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, targetNodeId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphEdge> edges = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        YAPPCGraphEdge edge = mapEdge(resultSet);
+                        if (relationshipTypes.isEmpty() || relationshipTypes.contains(edge.relationshipType().name())) {
+                            edges.add(edge);
+                        }
+                    }
+                    return edges;
+                }
+            }
+        });
+    }
+
+    public Promise<List<YAPPCGraphEdge>> findEdgesByProject(String projectId, String tenantId, Set<String> relationshipTypes) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = """
+                    SELECT edge_id, from_node_id, to_node_id, relationship_type, properties_json,
+                           tenant_id, project_id, workspace_id, created_by, created_at,
+                           updated_at, version, labels_json
+                    FROM kg_edges
+                    WHERE tenant_id = ? AND project_id = ?
+                    ORDER BY updated_at DESC
+                    """;
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, projectId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    java.util.ArrayList<YAPPCGraphEdge> edges = new java.util.ArrayList<>();
+                    while (resultSet.next()) {
+                        YAPPCGraphEdge edge = mapEdge(resultSet);
+                        if (relationshipTypes.isEmpty() || relationshipTypes.contains(edge.relationshipType().name())) {
+                            edges.add(edge);
+                        }
+                    }
+                    return edges;
+                }
+            }
+        });
+    }
+
+    public Promise<Integer> countEdgesByTenant(String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = "SELECT COUNT(*) AS edge_count FROM kg_edges WHERE tenant_id = ?";
+            Connection connection = dataSource.getConnection();
+            try {
+                PreparedStatement statement = connection.prepareStatement(sql);
+                try {
+                statement.setString(1, tenantId);
+                    ResultSet resultSet = statement.executeQuery();
+                    try {
+                    if (!resultSet.next()) {
+                        return 0;
+                    }
+                    return resultSet.getInt("edge_count");
+                    } finally {
+                        resultSet.close();
+                    }
+                } finally {
+                    statement.close();
+                }
+            } finally {
+                connection.close();
+            }
+        });
+    }
+
+    public Promise<Boolean> deleteEdge(String edgeId, String tenantId) {
+        return Promise.ofBlocking(executor, () -> {
+            String sql = "DELETE FROM kg_edges WHERE tenant_id = ? AND edge_id = ?";
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenantId);
+                statement.setString(2, edgeId);
+                return statement.executeUpdate() > 0;
             }
         });
     }

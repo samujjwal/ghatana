@@ -7,6 +7,7 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.knowledge.embedding.KGEmbeddingService;
 import com.ghatana.yappc.knowledge.persistence.KGEdgeRepository;
 import com.ghatana.yappc.knowledge.persistence.KGNodeRepository;
+import com.ghatana.yappc.knowledge.query.KGQueryService;
 import com.ghatana.yappc.knowledge.query.KGSemanticSearchService;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata;
@@ -45,6 +46,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     private KGEdgeRepository edgeRepository;
     private KGEmbeddingService embeddingService;
     private KGSemanticSearchService semanticSearchService;
+    private KGQueryService queryService;
     private YAPPCGraphService service;
 
     @BeforeEach
@@ -56,6 +58,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         edgeRepository = mock(KGEdgeRepository.class);
         embeddingService = mock(KGEmbeddingService.class);
         semanticSearchService = mock(KGSemanticSearchService.class);
+        queryService = mock(KGQueryService.class);
         service = new YAPPCGraphService(graphPlugin, mapper, validator);
     }
 
@@ -171,6 +174,20 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
             verify(graphPlugin).createNode(dc);
             verify(embeddingService).indexNode(input);
         }
+
+        @Test
+        @DisplayName("returns persisted node without publishing when plugin is absent")
+        void shouldReturnPersistedNodeWhenPluginIsAbsent() {
+            YAPPCGraphNode input = yappcNode("node-3", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+
+            service = new YAPPCGraphService(null, mapper, validator, nodeRepository, edgeRepository);
+            when(nodeRepository.saveNode(input)).thenReturn(Promise.of(input));
+
+            YAPPCGraphNode result = runPromise(() -> service.createYAPPCNode(input));
+
+            assertThat(result).isEqualTo(input);
+            verify(mapper, never()).toDataCloudNode(any());
+        }
     }
 
     @Nested
@@ -261,6 +278,35 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
             assertThat(analysis.affectedNodes()).isEmpty();
             assertThat(analysis.impactScore()).isEqualTo(0.0);
         }
+
+            @Test
+            @DisplayName("uses KGQueryService traversal when configured")
+            void shouldUseQueryServiceWhenConfigured() {
+                YAPPCGraphNode serviceNode = yappcNode("dep-svc", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+                YAPPCGraphNode apiNode = yappcNode("dep-api", YAPPCGraphNode.YAPPCNodeType.API);
+                YAPPCGraphNode testNode = yappcNode("dep-test", YAPPCGraphNode.YAPPCNodeType.TEST);
+
+                service = new YAPPCGraphService(
+                    graphPlugin,
+                    mapper,
+                    validator,
+                    nodeRepository,
+                    edgeRepository,
+                    embeddingService,
+                    semanticSearchService,
+                    queryService);
+                when(queryService.traverse("comp-A", 3, "tenant-1"))
+                    .thenReturn(Promise.of(List.of(serviceNode, apiNode, testNode)));
+
+                YAPPCImpactAnalysis analysis = runPromise(() -> service.analyzeChangeImpact("comp-A", "tenant-1"));
+
+                assertThat(analysis.affectedNodes()).containsExactly(serviceNode, apiNode, testNode);
+                    assertThat(analysis.impactScore()).isCloseTo(0.7, org.assertj.core.data.Offset.offset(0.0000001));
+                assertThat(analysis.recommendations())
+                    .contains("Update service contracts and API documentation")
+                    .contains("Review and update affected tests");
+                verify(graphPlugin, never()).getNeighbors(any(), anyInt(), any());
+            }
     }
 
     @Nested
@@ -325,6 +371,12 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
             assertThat(result).containsExactly(match);
         }
+
+        @Test
+        @DisplayName("returns empty list when semantic search service is absent")
+        void shouldReturnEmptyWhenSemanticSearchServiceIsAbsent() {
+            assertThat(runPromise(() -> service.semanticSearch("billing service", "tenant-1", 5, 0.75))).isEmpty();
+        }
         }
 
     @Nested
@@ -367,6 +419,20 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
             assertThat(result).isEqualTo(expected);
             verify(edgeRepository).saveEdge(any(YAPPCGraphEdge.class));
         }
+
+        @Test
+        @DisplayName("returns persisted relationship when plugin is absent")
+        void shouldReturnPersistedRelationshipWhenPluginIsAbsent() {
+            YAPPCGraphEdge expected = yappcEdge("comp-A", "comp-B");
+
+            service = new YAPPCGraphService(null, mapper, validator, nodeRepository, edgeRepository);
+            when(edgeRepository.saveEdge(any(YAPPCGraphEdge.class))).thenReturn(Promise.of(expected));
+
+            YAPPCGraphEdge result = runPromise(
+                    () -> service.createCodeRelationship("comp-A", "comp-B", "DEPENDS_ON", "tenant-1"));
+
+            assertThat(result).isEqualTo(expected);
+        }
     }
 
     @Nested
@@ -399,6 +465,127 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
                     () -> service.findDependencyPath("X", "Y", "tenant-1"));
 
             assertThat(path).isEmpty();
+        }
+
+        @Test
+        @DisplayName("uses KGQueryService path search when configured")
+        void shouldUseQueryServiceForDependencyPath() {
+            YAPPCGraphNode source = yappcNode("A", YAPPCGraphNode.YAPPCNodeType.CLASS);
+            YAPPCGraphNode target = yappcNode("B", YAPPCGraphNode.YAPPCNodeType.SERVICE);
+
+            service = new YAPPCGraphService(
+                    graphPlugin,
+                    mapper,
+                    validator,
+                    nodeRepository,
+                    edgeRepository,
+                    embeddingService,
+                    semanticSearchService,
+                    queryService);
+            when(queryService.findPaths("A", "B", "tenant-1"))
+                    .thenReturn(Promise.of(List.of(List.of(source, target))));
+
+            List<YAPPCGraphNode> path = runPromise(() -> service.findDependencyPath("A", "B", "tenant-1"));
+
+            assertThat(path).containsExactly(source, target);
+            verify(graphPlugin, never()).findShortestPath(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("returns empty path when query service has no paths")
+        void shouldReturnEmptyPathWhenQueryServiceHasNoPaths() {
+            service = new YAPPCGraphService(
+                    graphPlugin,
+                    mapper,
+                    validator,
+                    nodeRepository,
+                    edgeRepository,
+                    embeddingService,
+                    semanticSearchService,
+                    queryService);
+            when(queryService.findPaths("A", "B", "tenant-1")).thenReturn(Promise.of(List.of()));
+
+            List<YAPPCGraphNode> path = runPromise(() -> service.findDependencyPath("A", "B", "tenant-1"));
+
+            assertThat(path).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("getWorkspaceDependencies()")
+    class GetWorkspaceDependenciesTests {
+
+        @Test
+        @DisplayName("uses JDBC repository when configured")
+        void shouldUseRepositoryWhenConfigured() {
+            YAPPCGraphEdge calls = YAPPCGraphEdge.builder()
+                    .id("edge-calls")
+                    .sourceNodeId("comp-A")
+                    .targetNodeId("comp-B")
+                    .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.CALLS)
+                    .properties(Map.of())
+                    .metadata(new YAPPCGraphMetadata("tenant-1", "proj-1", "ws-1", "tester", Instant.now(), Instant.now(), "1.0", Map.of()))
+                    .build();
+
+            service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository);
+            when(edgeRepository.findEdgesForWorkspace("ws-1", "tenant-1", Set.of("DEPENDS_ON", "USES", "CALLS")))
+                    .thenReturn(Promise.of(List.of(calls)));
+
+            Map<String, List<YAPPCGraphEdge>> grouped = runPromise(() -> service.getWorkspaceDependencies("ws-1", "tenant-1"));
+
+            assertThat(grouped).containsKey("CALLS");
+            assertThat(grouped.get("CALLS")).containsExactly(calls);
+            verify(graphPlugin, never()).queryEdges(any());
+        }
+
+        @Test
+        @DisplayName("uses plugin query when repository is absent")
+        void shouldUsePluginWhenRepositoryIsAbsent() {
+            GraphEdge dcCall = dcEdge("comp-A", "comp-B", "CALLS");
+            YAPPCGraphEdge mapped = YAPPCGraphEdge.builder()
+                    .id("edge-calls")
+                    .sourceNodeId("comp-A")
+                    .targetNodeId("comp-B")
+                    .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.CALLS)
+                    .properties(Map.of())
+                    .metadata(new YAPPCGraphMetadata("tenant-1", "proj-1", "ws-1", "tester", Instant.now(), Instant.now(), "1.0", Map.of()))
+                    .build();
+
+            when(graphPlugin.queryEdges(any())).thenReturn(Promise.of(List.of(dcCall)));
+            when(mapper.fromDataCloudEdge(dcCall)).thenReturn(mapped);
+
+            Map<String, List<YAPPCGraphEdge>> grouped = runPromise(() -> service.getWorkspaceDependencies("ws-1", "tenant-1"));
+
+            assertThat(grouped).containsKey("CALLS");
+            assertThat(grouped.get("CALLS")).containsExactly(mapped);
+        }
+    }
+
+    @Nested
+    @DisplayName("impact recommendations")
+    class ImpactRecommendationTests {
+
+        @Test
+        @DisplayName("adds high impact recommendation when more than ten nodes are affected")
+        void shouldAddHighImpactRecommendationForLargeImpactSets() {
+            List<YAPPCGraphNode> affectedNodes = java.util.stream.IntStream.range(0, 11)
+                    .mapToObj(index -> yappcNode("node-" + index, YAPPCGraphNode.YAPPCNodeType.CLASS))
+                    .toList();
+
+            service = new YAPPCGraphService(
+                    graphPlugin,
+                    mapper,
+                    validator,
+                    nodeRepository,
+                    edgeRepository,
+                    embeddingService,
+                    semanticSearchService,
+                    queryService);
+            when(queryService.traverse("large-impact", 3, "tenant-1")).thenReturn(Promise.of(affectedNodes));
+
+            YAPPCImpactAnalysis analysis = runPromise(() -> service.analyzeChangeImpact("large-impact", "tenant-1"));
+
+            assertThat(analysis.recommendations()).contains("High impact change - consider breaking into smaller changes");
         }
     }
 }

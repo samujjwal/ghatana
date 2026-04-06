@@ -8,6 +8,7 @@ import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
 import com.ghatana.yappc.knowledge.embedding.KGEmbeddingService;
 import com.ghatana.yappc.knowledge.persistence.KGEdgeRepository;
 import com.ghatana.yappc.knowledge.persistence.KGNodeRepository;
+import com.ghatana.yappc.knowledge.query.KGQueryService;
 import com.ghatana.yappc.knowledge.query.KGSemanticSearchService;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphNode;
 import com.ghatana.yappc.knowledge.model.YAPPCGraphEdge;
@@ -52,12 +53,13 @@ public class YAPPCGraphService {
         private final @Nullable KGEdgeRepository edgeRepository;
         private final @Nullable KGEmbeddingService embeddingService;
         private final @Nullable KGSemanticSearchService semanticSearchService;
+        private final @Nullable KGQueryService queryService;
     
     public YAPPCGraphService(
             KnowledgeGraphPlugin graphPlugin,
             YAPPCGraphMapper mapper,
             YAPPCGraphValidator validator) {
-                this(graphPlugin, mapper, validator, null, null, null, null);
+                this(graphPlugin, mapper, validator, null, null, null, null, null);
         }
 
         public YAPPCGraphService(
@@ -66,7 +68,7 @@ public class YAPPCGraphService {
                         YAPPCGraphValidator validator,
                         @Nullable KGNodeRepository nodeRepository,
                         @Nullable KGEdgeRepository edgeRepository) {
-                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, null, null);
+                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, null, null, null);
         }
 
         public YAPPCGraphService(
@@ -77,6 +79,18 @@ public class YAPPCGraphService {
                         @Nullable KGEdgeRepository edgeRepository,
                         @Nullable KGEmbeddingService embeddingService,
                         @Nullable KGSemanticSearchService semanticSearchService) {
+                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, embeddingService, semanticSearchService, null);
+        }
+
+        public YAPPCGraphService(
+                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        YAPPCGraphMapper mapper,
+                        YAPPCGraphValidator validator,
+                        @Nullable KGNodeRepository nodeRepository,
+                        @Nullable KGEdgeRepository edgeRepository,
+                        @Nullable KGEmbeddingService embeddingService,
+                        @Nullable KGSemanticSearchService semanticSearchService,
+                        @Nullable KGQueryService queryService) {
         this.graphPlugin = graphPlugin;
                 this.mapper = Objects.requireNonNull(mapper, "mapper must not be null");
                 this.validator = Objects.requireNonNull(validator, "validator must not be null");
@@ -84,6 +98,7 @@ public class YAPPCGraphService {
                 this.edgeRepository = edgeRepository;
                 this.embeddingService = embeddingService;
                 this.semanticSearchService = semanticSearchService;
+                this.queryService = queryService;
         log.info("YAPPCGraphService initialized");
     }
     
@@ -145,6 +160,16 @@ public class YAPPCGraphService {
      */
     public Promise<YAPPCImpactAnalysis> analyzeChangeImpact(String componentId, String tenantId) {
         log.debug("Analyzing change impact for component: {}", componentId);
+
+        if (queryService != null) {
+            return queryService.traverse(componentId, 3, tenantId)
+                    .map(affectedNodes -> new YAPPCImpactAnalysis(
+                            componentId,
+                            affectedNodes,
+                            calculateImpactScore(affectedNodes),
+                            generateImpactRecommendations(affectedNodes)
+                    ));
+        }
         
         return graphPlugin.getNeighbors(componentId, 5, tenantId)
                 .map(neighbors -> {
@@ -252,6 +277,11 @@ public class YAPPCGraphService {
             String tenantId) {
         
         log.debug("Finding dependency path: {} -> {}", sourceId, targetId);
+
+        if (queryService != null) {
+            return queryService.findPaths(sourceId, targetId, tenantId)
+                    .map(paths -> paths.isEmpty() ? List.of() : paths.getFirst());
+        }
         
         return graphPlugin.findShortestPath(sourceId, targetId, tenantId)
                 .map(path -> path.stream()
@@ -302,7 +332,8 @@ public class YAPPCGraphService {
         
         // Simple impact score based on number of affected nodes and their types
         long criticalNodes = affectedNodes.stream()
-                .filter(node -> "SERVICE".equals(node.type()) || "API".equals(node.type()))
+                .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.SERVICE
+                        || node.type() == YAPPCGraphNode.YAPPCNodeType.API)
                 .count();
         
         return Math.min(1.0, (affectedNodes.size() * 0.1) + (criticalNodes * 0.2));
@@ -316,7 +347,7 @@ public class YAPPCGraphService {
         }
         
         long serviceNodes = affectedNodes.stream()
-                .filter(node -> "SERVICE".equals(node.type()))
+                .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.SERVICE)
                 .count();
         
         if (serviceNodes > 0) {
@@ -324,7 +355,7 @@ public class YAPPCGraphService {
         }
         
         long testNodes = affectedNodes.stream()
-                .filter(node -> "TEST".equals(node.type()))
+                .filter(node -> node.type() == YAPPCGraphNode.YAPPCNodeType.TEST)
                 .count();
         
         if (testNodes > 0) {

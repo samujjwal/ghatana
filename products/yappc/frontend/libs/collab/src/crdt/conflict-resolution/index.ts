@@ -30,6 +30,8 @@ import type {
   ConflictStatistics,
 } from './types';
 import type { CRDTOperation } from '../core/index.js';
+import { autoResolveOperations } from './auto-resolver.js';
+import type { AutoResolutionResult } from './auto-resolver.js';
 
 /**
  * Conflict resolution engine service.
@@ -313,7 +315,8 @@ export class ConflictResolutionEngine {
    */
   public analyzeConflict(conflict: Conflict): ConflictAnalysis {
     const suggestions = this.generateResolutionSuggestions(conflict);
-    const canAutoResolve = suggestions.some((s) => s.confidence > 0.8);
+    const autoResolution = this.getAutoResolution(conflict);
+    const canAutoResolve = autoResolution.resolved || suggestions.some((s) => s.confidence > 0.8);
 
     return {
       id: `analysis-${Date.now()}`,
@@ -333,6 +336,19 @@ export class ConflictResolutionEngine {
    */
   private generateResolutionSuggestions(conflict: Conflict): ResolutionSuggestion[] {
     const suggestions: ResolutionSuggestion[] = [];
+    const autoResolution = this.getAutoResolution(conflict);
+
+    if (autoResolution.resolved) {
+      suggestions.push({
+        id: `suggestion-auto-${Date.now()}`,
+        strategy: autoResolution.operations.length > 1 ? 'merge' : 'custom',
+        description: autoResolution.description,
+        confidence: 0.95,
+        resultingValue: autoResolution.operations,
+        pros: ['Deterministic', 'Fast', 'Preserves collaboration flow'],
+        cons: ['Rule-based resolution may still need user review for semantic intent'],
+      });
+    }
 
     // Last-write-wins suggestion
     const lwwValue =
@@ -388,6 +404,39 @@ export class ConflictResolutionEngine {
     }
 
     return suggestions;
+  }
+
+  public getAutoResolution(conflict: Conflict): AutoResolutionResult {
+    return autoResolveOperations(conflict.operationA, conflict.operationB);
+  }
+
+  public autoResolveConflict(conflict: Conflict): ConflictResolutionResult {
+    const startTime = Date.now();
+    const autoResolution = this.getAutoResolution(conflict);
+
+    if (!autoResolution.resolved) {
+      return {
+        id: `resolution-${Date.now()}`,
+        conflictId: conflict.id,
+        resolved: false,
+        strategy: 'custom',
+        error: autoResolution.description,
+        timestamp: Date.now(),
+        duration: Date.now() - startTime,
+      };
+    }
+
+    this.recordResolution(conflict.id, 'custom', autoResolution.operations);
+
+    return {
+      id: `resolution-${Date.now()}`,
+      conflictId: conflict.id,
+      resolved: true,
+      strategy: 'custom',
+      resolvedValue: autoResolution.operations,
+      timestamp: Date.now(),
+      duration: Date.now() - startTime,
+    };
   }
 
   /**
@@ -683,3 +732,5 @@ export type {
   OperationResult,
   ConflictStatistics,
 };
+export { autoResolveOperations } from './auto-resolver.js';
+export type { AutoResolutionResult, AutoResolutionRule } from './auto-resolver.js';

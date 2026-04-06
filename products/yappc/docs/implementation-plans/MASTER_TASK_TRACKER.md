@@ -3,15 +3,15 @@
 **Version:** 1.1  
 **Date:** 2026-04-06  
 **Status:** In Progress  
-**Remaining Tasks:** 104 actionable items  
-**Estimated Effort:** ~271 engineer-days across 4 phases
+**Remaining Tasks:** 3 streams, 4 explicitly scoped tasks  
+**Estimated Effort:** ~88 engineer-days across 2 active phases
 
 ---
 
 ## Quick Navigation
 
-- [P1 High Priority Features (6 streams, 50 tasks)](#p1-high-priority)
-- [P2 Medium Priority (1 stream, 4 tasks)](#p2-medium-priority)
+- [P1 High Priority Features (1 stream, 4 tasks)](#p1-high-priority)
+- [P2 Medium Priority (2 streams)](#p2-medium-priority)
 - [Dependencies Graph](#dependencies)
 - [Timeline & Phasing](#timeline)
 - [Success Metrics](#success-metrics)
@@ -20,19 +20,9 @@
 
 ## P1 High Priority
 
----
-
-### 🟠 **F2: Knowledge Graph Enterprise Scale**
-**Priority:** P1 HIGH  
-**Current Status:** 2/10 (In-memory only; breaks at 10K nodes)  
-**Target:** 10/10 (JDBC persistence; scales to 1M+ nodes; real-time updates)  
-**Duration:** 5 sprints (40 days)  
-**Owner:** Platform + AI Engineering
-
-
 ### 🟠 **F6: Real-Time Collaboration (Scale & Complete)**
 **Priority:** P1 MEDIUM  
-**Current Status:** 75% (CRDT framework mostly works; conflict resolution incomplete)  
+**Current Status:** 85% (conflict detection, auto-resolution, manual resolver UI, and load-validation harness implemented; runtime verification blocked by local Vitest install)  
 **Target:** 90%+ (Full conflict resolution + AI-assisted merges)  
 **Duration:** 4 sprints (28 days)  
 **Owner:** Frontend + Full-Stack Engineering
@@ -128,27 +118,10 @@
 ## Dependencies Graph
 
 ```
-B0 ──────────────────────────┬─→ B1 (unify models)
-     (Approval complete)      │
-                              └─→ B2 (auth baseline)
-                                   │
-                                   └────────┬─→ F1 (phase transitions)
-                                            │
-B3 ──────────────────────────────────────┬─→ F2 (KG scale) [optional dep]
-     (AI verification)                    │
-                                          ├─→ F3 (code gen)
-                                          │
-                                          ├─→ F4 (req AI)
-                                          │
-                                          └─→ F5 (test AI)
-
-B4 (encryption)
-   └─→ No major blockers (security layer)
-
 F1 (phase transitions)
    └─→ F7 (implicit AI) [Month 3+]
 
-F2 + F3 + F4 (knowledge graph + gen + req)
+F3 + F4 (code generation + requirements AI)
    └─→ F7 (implicit AI)
 
 F8 (deployment ops)
@@ -160,27 +133,16 @@ F8 (deployment ops)
 ## Timeline
 
 **Week 1-2 (2026-04-08 to 2026-04-19):** P1 Feature Sprint 0
-- F1.5: Predictive transition timing
-- F2 planning + schema design kickoff
-- F3 generation pipeline implementation start
-- **Effort:** ~20 engineer-days
+- F6.1-F6.3: Collaboration conflict resolution
+- **Effort:** ~11 engineer-days
 
 **Week 3-4 (2026-04-22 to 2026-05-03):** P1 Feature Sprint 1
-- F3.1-F3.5: Code generation context + quality validation
-- F4.1-F4.3: Requirement enrichment + quality + duplicates
-- F1.5: Phase timing prediction rollout
-- **Effort:** ~24 engineer-days
+- F6.5: Collaboration load testing
+- **Effort:** ~3 engineer-days
 
 **Week 5-6 (2026-05-06 to 2026-05-17):** P1 Feature Sprint 2
-- F2.1-F2.3: KG persistence + embeddings + event pipeline
-- F6.1-F6.3: Collaboration conflict resolution
-- **Effort:** ~26 engineer-days
-
-**Week 7-8 (2026-05-20 to 2026-05-31):** P1 Feature Sprint 3
-- F6.5: Collaboration load testing
-- F4.4-F4.5: Requirement service integration + traceability
-- F2.4: KG multi-tenant isolation
-- **Effort:** ~14 engineer-days
+- F7 preparation and F8 deployment operations planning
+- **Effort:** ~10 engineer-days
 
 **Week 9+ (2026-06-03+):** P2 & Polish
 - F7 (implicit AI layer) — 6 sprints, Month 3-6
@@ -193,7 +155,6 @@ F8 (deployment ops)
 
 ### P1 Features (Completion = Feature Go)
 - [ ] Predictive phase timing available in deploy flows
-- [ ] Knowledge graph persists 1M+ nodes; queries < 500ms
 - [ ] Code generation LLM-powered; 80%+ valid code rate
 - [ ] Requirements auto-enriched; duplicate detection active
 - [ ] Test generation produces valid, runnable tests; 70%+ code coverage
@@ -218,5 +179,5 @@ F8 (deployment ops)
 
 ---
 
-**Next Step:** Continue with the remaining open items in dependency order, prioritizing the blocked F6 frontend work once the local toolchain is usable and otherwise taking the next backend slice from F2.
+**Next Step:** Repair the local frontend Vitest installation, run the focused F6 collab suites and load harness, then remove the verified F6 items from this tracker before moving to the remaining AI-assisted collaboration work.
 

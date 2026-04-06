@@ -10,10 +10,17 @@ import type { CRDTOperation, VectorClock } from '../crdt/core/types.js';
 // Fixtures
 // ---------------------------------------------------------------------------
 
-function makeVectorClock(replicaId: string, value = 1): VectorClock {
+function makeVectorClock(replicaId: string, value?: number): VectorClock;
+function makeVectorClock(values: Array<[string, number]>): VectorClock;
+function makeVectorClock(
+  input: string | Array<[string, number]>,
+  value = 1
+): VectorClock {
+  const entries = typeof input === 'string' ? [[input, value] as const] : input;
+
   return {
-    id: `vc-${replicaId}`,
-    values: new Map([[replicaId, value]]),
+    id: `vc-${entries.map(([replicaId]) => replicaId).join('-')}`,
+    values: new Map(entries),
     timestamp: Date.now(),
   };
 }
@@ -398,5 +405,59 @@ describe('ConflictResolutionEngine.resolveConflict()', () => {
     const conflict = makeConflict();
     const result = engine.resolveConflict(conflict, 'last-write-wins');
     expect(result.conflictId).toBe(conflict.id);
+  });
+});
+
+describe('ConflictResolutionEngine.autoResolveConflict()', () => {
+  let engine: ConflictResolutionEngine;
+
+  beforeEach(() => {
+    engine = new ConflictResolutionEngine(BASE_CONFIG);
+  });
+
+  it('returns auto-resolved operations for same-position inserts', () => {
+    const conflict = makeConflict(
+      {
+        type: 'insert',
+        replicaId: 'replica-z',
+        vectorClock: makeVectorClock([
+          ['replica-a', 1],
+          ['replica-z', 2],
+        ]),
+        data: { position: 3, value: 'Z' },
+      },
+      {
+        type: 'insert',
+        replicaId: 'replica-a',
+        vectorClock: makeVectorClock([
+          ['replica-a', 2],
+          ['replica-z', 1],
+        ]),
+        data: { position: 3, value: 'A' },
+      },
+      'ordering-conflict'
+    );
+
+    const result = engine.autoResolveConflict(conflict);
+
+    expect(result.resolved).toBe(true);
+    expect(result.strategy).toBe('custom');
+    expect(result.resolvedValue).toMatchObject([
+      { replicaId: 'replica-a' },
+      { replicaId: 'replica-z' },
+    ]);
+  });
+
+  it('returns an error when no auto-resolution rule matches', () => {
+    const conflict = makeConflict(
+      { type: 'delete', data: null },
+      { type: 'delete', data: null },
+      'concurrent-delete'
+    );
+
+    const result = engine.autoResolveConflict(conflict);
+
+    expect(result.resolved).toBe(false);
+    expect(result.error).toContain('No automatic resolution rule matched');
   });
 });
