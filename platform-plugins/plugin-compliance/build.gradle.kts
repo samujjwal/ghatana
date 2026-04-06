@@ -7,6 +7,7 @@
  */
 plugins {
     `java-library`
+    jacoco
 }
 
 group = "com.ghatana.plugin"
@@ -41,4 +42,19 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+// JaCoCo configuration for test coverage measurement
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
 }

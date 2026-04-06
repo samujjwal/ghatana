@@ -28,8 +28,8 @@ import java.util.UUID;
  *   <li>When a new key is ready, call {@link #rotateKey} to atomically move the previous
  *       key to {@code SUPERSEDED} and make the new one {@code ACTIVE}.  A rotation job
  *       row is created in {@code key_rotation_jobs} for background re-encryption tracking.</li>
- *   <li>Consumers call {@link #currentEncryptionService} to get the {@code EncryptionService}
- *       backed by the active key, and {@link #decryptWithVersion} to decrypt older
+ *   <li>Consumers call {@link #encryptionServiceForKey} to get the {@code EncryptionService}
+ *       backed by the active key, and {@link #decryptWithOldKey} to decrypt older
  *       ciphertexts produced by a superseded key.</li>
  * </ol>
  *

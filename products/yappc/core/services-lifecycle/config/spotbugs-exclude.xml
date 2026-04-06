@@ -43,4 +43,13 @@
     <Match>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
     </Match>
+    <!-- AI prompt builders intentionally use \n for consistent cross-platform LLM input -->
+    <Match>
+        <Class name="com.ghatana.yappc.services.lifecycle.ApprovalRiskScorer" />
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
+    </Match>
+    <Match>
+        <Class name="com.ghatana.yappc.services.lifecycle.assessment.AIReadinessAssessor" />
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE" />
+    </Match>
 </FindBugsFilter>
