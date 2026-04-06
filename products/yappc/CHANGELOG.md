@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: Yappc progress 1 [`52182d5`](https://github.com/samujjwal/ghatana/commit/52182d5dc10d4bf9f928b9213a0db905db145123)
 - **Changed**: kernel + phr + finance + yappc [`f80c465`](https://github.com/samujjwal/ghatana/commit/f80c4655372795af0b188e2d829e302c02143435)
 - **Changed**: tutorputor buikd + other docs [`ba0af83`](https://github.com/samujjwal/ghatana/commit/ba0af83682a9519e8caf7be5f16b83d9fcdf9594)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`61eac4a`](https://github.com/samujjwal/ghatana/commit/61eac4a8b3691141d6f37b2b04c294b105c334ae)
