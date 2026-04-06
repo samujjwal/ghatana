@@ -2,7 +2,7 @@ package com.ghatana.virtualorg.adapter;
 
 import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
-import com.ghatana.agent.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
@@ -305,7 +305,7 @@ public class VirtualOrgEventAdapter {
             
             @Override
             public HealthStatus getHealthStatus() {
-                return isHealthy.get() ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY;
+                return isHealthy.get() ? HealthStatus.healthy("Adapter is healthy") : HealthStatus.unhealthy("Adapter is unhealthy");
             }
         };
     }

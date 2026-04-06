@@ -1,7 +1,7 @@
 package com.ghatana.finance.kernel.service;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.platform.billing.BillingTransaction;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import io.activej.promise.Promise;

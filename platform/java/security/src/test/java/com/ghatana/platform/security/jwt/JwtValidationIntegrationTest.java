@@ -7,6 +7,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +34,8 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() {
-        tokenProvider = new JwtTokenProvider(JwtKeyManager.newInstance());
+        // Use simple constructor with secret key and 1 hour validity
+        tokenProvider = new JwtTokenProvider("test-secret-key-32bytes-long!!", 3_600_000);
     }
 
     // ── Token creation and validation ─────────────────────────────────────────
@@ -42,7 +47,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @Test
         @DisplayName("valid token is accepted by provider")
         void validToken_isAcceptedByProvider() {
-            String token = tokenProvider.generateToken("user-123", "tenant-abc");
+            String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             assertThat(token).isNotBlank();
             assertThat(tokenProvider.validateToken(token)).isTrue();
@@ -52,9 +57,9 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @DisplayName("token subject can be extracted after validation")
         void tokenSubject_canBeExtractedAfterValidation() {
             String subject = "user-456";
-            String token = tokenProvider.generateToken(subject, "tenant-abc");
+            String token = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            String extracted = tokenProvider.extractSubject(token);
+            String extracted = tokenProvider.getUserIdFromToken(token).orElse(null);
 
             assertThat(extracted).isEqualTo(subject);
         }
@@ -62,7 +67,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @Test
         @DisplayName("tampered token signature is rejected")
         void tamperedTokenSignature_isRejected() {
-            String token = tokenProvider.generateToken("user-123", "tenant-abc");
+            String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Tamper with the signature (last portion after final '.')
             int lastDot = token.lastIndexOf('.');
@@ -107,7 +112,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @Test
         @DisplayName("non-expired token is accepted by provider")
         void nonExpiredToken_isAcceptedByProvider() {
-            String token = tokenProvider.generateToken("user-789", "tenant-abc");
+            String token = tokenProvider.createToken("user-789", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Freshly generated token should be valid
             assertThat(tokenProvider.validateToken(token)).isTrue();
@@ -155,8 +160,8 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @Test
         @DisplayName("refresh produces a new token with extended expiry")
         void refresh_producesNewTokenWithExtendedExpiry() {
-            String original = tokenProvider.generateToken("user-123", "tenant-abc");
-            String refreshed = tokenProvider.generateToken("user-123", "tenant-abc");
+            String original = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
+            String refreshed = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Both tokens should be valid, but they should be distinct
             assertThat(tokenProvider.validateToken(original)).isTrue();
@@ -167,11 +172,11 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @DisplayName("refreshed token carries same subject as original")
         void refreshedToken_carriesSameSubjectAsOriginal() {
             String subject = "user-refresh-test";
-            String original  = tokenProvider.generateToken(subject, "tenant-abc");
-            String refreshed = tokenProvider.generateToken(subject, "tenant-abc");
+            String original  = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
+            String refreshed = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            assertThat(tokenProvider.extractSubject(original)).isEqualTo(subject);
-            assertThat(tokenProvider.extractSubject(refreshed)).isEqualTo(subject);
+            assertThat(tokenProvider.getUserIdFromToken(original)).hasValue(subject);
+            assertThat(tokenProvider.getUserIdFromToken(refreshed)).hasValue(subject);
         }
     }
 
@@ -185,8 +190,8 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         @DisplayName("token signed with different key is rejected")
         void tokenSignedWithDifferentKey_isRejected() {
             // Provider 2 uses a different key
-            JwtTokenProvider otherProvider = new JwtTokenProvider(JwtKeyManager.newInstance());
-            String foreignToken = otherProvider.generateToken("user-x", "tenant-abc");
+            JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-32bytes!", 3_600_000);
+            String foreignToken = otherProvider.createToken("user-x", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Our provider should reject a token signed by a different key
             // (In the real implementation this would fail HMAC/RSA verification)

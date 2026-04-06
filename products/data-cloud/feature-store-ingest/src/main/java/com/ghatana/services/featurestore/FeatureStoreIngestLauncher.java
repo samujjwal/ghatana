@@ -1,7 +1,7 @@
 package com.ghatana.services.featurestore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.aiplatform.featurestore.Feature;
+import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.datacloud.spi.TenantContext;
@@ -331,7 +331,7 @@ public class FeatureStoreIngestLauncher {
         String eventId = entry.eventId().toString();
 
         // ── Feature extraction ───────────────────────────────────────────────
-        List<Feature> features;
+        List<MLFeature> features;
         try {
             byte[] raw = new byte[entry.payload().remaining()];
             entry.payload().duplicate().get(raw);
@@ -353,7 +353,7 @@ public class FeatureStoreIngestLauncher {
         }
 
         // ── Feature store writes (circuit-breaker protected) ─────────────────
-        for (Feature feature : features) {
+        for (MLFeature feature : features) {
             try {
                 featureStoreCircuitBreaker.executeSync(
                     () -> { featureStore.ingest(tenant.value(), feature); return null; },
@@ -406,10 +406,10 @@ public class FeatureStoreIngestLauncher {
      * @param eventTimestamp timestamp of the originating event (used for all feature records)
      * @return immutable list of extracted {@link Feature} objects (never null)
      */
-    static List<Feature> extractFeatures(String entityId, Map<String, Object> payload, Instant eventTimestamp) {
+    static List<MLFeature> extractFeatures(String entityId, Map<String, Object> payload, Instant eventTimestamp) {
         Instant ts = eventTimestamp != null ? eventTimestamp : Instant.now();
         String resolvedEntityId = entityId != null ? entityId : Identifier.random().raw();
-        var features = new java.util.ArrayList<Feature>();
+        var features = new java.util.ArrayList<MLFeature>();
 
         // ── Numeric pass-through ─────────────────────────────────────────
         // DC3-H7: Sort by key to guarantee deterministic feature-vector ordering across
@@ -427,7 +427,7 @@ public class FeatureStoreIngestLauncher {
             } else {
                 continue; // skip null / complex objects
             }
-            features.add(Feature.builder()
+            features.add(MLFeature.builder()
                 .name(sanitizeFeatureName(kv.getKey()))
                 .value(numeric)
                 .entityId(resolvedEntityId)
@@ -436,13 +436,13 @@ public class FeatureStoreIngestLauncher {
         }
 
         // ── Derived time features ────────────────────────────────────────
-        features.add(Feature.builder()
+        features.add(MLFeature.builder()
             .name("hour_of_day")
             .value((double) ts.atZone(java.time.ZoneOffset.UTC).getHour())
             .entityId(resolvedEntityId)
             .timestamp(ts)
             .build());
-        features.add(Feature.builder()
+        features.add(MLFeature.builder()
             .name("day_of_week")
             .value((double) ts.atZone(java.time.ZoneOffset.UTC).getDayOfWeek().getValue())
             .entityId(resolvedEntityId)

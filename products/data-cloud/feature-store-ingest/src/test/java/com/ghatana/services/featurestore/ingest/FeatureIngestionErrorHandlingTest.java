@@ -172,7 +172,7 @@ class FeatureIngestionErrorHandlingTest {
         List<ExtractedFeature> extractNumeric(String entityId, Map<String, Object> payload, Instant ts) {
             List<ExtractedFeature> features = new ArrayList<>();
             if (payload == null || payload.isEmpty())
-                throw new FeatureExtractionException("Empty or null payload for entity: " + entityId);
+                throw new FeatureExtractionException("evt-1", "test-tenant", "Empty or null payload for entity: " + entityId, null);
             payload.forEach((k, v) -> {
                 if (v instanceof Number n) {
                     features.add(new ExtractedFeature(k, n.doubleValue(), ts));
@@ -183,11 +183,13 @@ class FeatureIngestionErrorHandlingTest {
 
         void ingestStrict(String entityId, Map<String, Object> payload, Instant ts) {
             if (entityId == null || entityId.isBlank())
-                throw new FeatureIngestException("entityId must not be blank");
+                throw new FeatureIngestException(
+                        "entityId must not be blank",
+                        FeatureIngestException.ErrorCategory.EXTRACTION_FAILURE);
             if (payload == null || payload.isEmpty())
-                throw new FeatureExtractionException("Cannot extract features — payload is null or empty");
+                throw new FeatureExtractionException("evt-2", "test-tenant", "Cannot extract features — payload is null or empty", null);
             if (writeFailure)
-                throw new FeatureStoreWriteException("Simulated write failure for entity: " + entityId);
+                throw new FeatureStoreWriteException("feature-1", "test-tenant", 3, "Simulated write failure for entity: " + entityId, null);
             List<ExtractedFeature> features = extractNumeric(entityId, payload, ts);
             store.computeIfAbsent(entityId, k -> new ArrayList<>()).addAll(features);
         }

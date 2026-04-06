@@ -1,6 +1,6 @@
 package com.ghatana.virtualorg.observability;
 
-import com.ghatana.agent.HealthStatus;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.micrometer.core.instrument.*;
 import org.jetbrains.annotations.NotNull;
@@ -402,13 +402,13 @@ public class VirtualOrgAgentMetrics implements com.ghatana.platform.domain.agent
         long errorCount = getErrorCount();
 
         if (successRate >= 0.95 && errorCount < 10) {
-            return HealthStatus.HEALTHY;
+            return HealthStatus.healthy("Success rate >= 95%");
         } else if (successRate >= 0.80 && errorCount < 50) {
-            return HealthStatus.DEGRADED;
+            return HealthStatus.degraded("Degraded performance");
         } else if (successRate > 0.0) {
-            return HealthStatus.UNHEALTHY;
+            return HealthStatus.unhealthy("Poor success rate");
         } else {
-            return HealthStatus.UNKNOWN;
+            return HealthStatus.unknown("Unknown status");
         }
     }
 }

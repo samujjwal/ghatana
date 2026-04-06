@@ -467,6 +467,8 @@ class ModelSchemaValidationTest extends EventloopTestBase {
                 );
 
             assertThat(result.isValid()).isFalse();
+            assertThat(withNull).containsKey(result.errors().get(0).field());
+            assertThat(withNull.get(result.errors().get(0).field())).isNull();
         }
     }
 }

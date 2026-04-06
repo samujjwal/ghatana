@@ -1,9 +1,12 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.phr.kernel.service.BillingService.*;
-import com.ghatana.platform.billing.BillingTransaction;
-import com.ghatana.platform.billing.BillingTransactionCoordinator;
-import com.ghatana.platform.billing.LedgerPostingService;
+import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
+import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +15,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -31,12 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class BillingServiceTest extends EventloopTestBase {
 
     private BillingService service;
-
-    /** Service wired with the capturing ledger stub. */
     private BillingService serviceWithLedger;
-    private BillingService serviceWithCoordinator;
-    private CapturingLedgerPostingService capturingLedger;
-    private CapturingCoordinator capturingCoordinator;
+    private CapturingLedger capturingLedger;
 
     @BeforeEach
     void setUp() {
@@ -44,18 +44,10 @@ class BillingServiceTest extends EventloopTestBase {
                 new PhrTestInfrastructure.StubDataCloudAdapter();
         service = new BillingService(PhrTestInfrastructure.createTestContext(dataCloud));
         runPromise(service::start);
-        capturingLedger = new CapturingLedgerPostingService();
+        capturingLedger = new CapturingLedger();
         serviceWithLedger = new BillingService(
             PhrTestInfrastructure.createTestContext(dataCloud), capturingLedger);
         runPromise(serviceWithLedger::start);
-
-        capturingCoordinator = new CapturingCoordinator();
-        serviceWithCoordinator = new BillingService(
-            PhrTestInfrastructure.createTestContext(dataCloud),
-            capturingLedger,
-            capturingCoordinator
-        );
-        runPromise(serviceWithCoordinator::start);
     }
 
     @Nested
@@ -234,21 +226,9 @@ class BillingServiceTest extends EventloopTestBase {
 
             runPromise(() -> serviceWithLedger.closeEncounter(enc.id()));
 
-            BillingTransaction tx = capturingLedger.posted.get(0);
-            assertTrue(tx.getTransactionId().contains(enc.id()),
+            assertEquals(1, capturingLedger.posted.size());
+            assertEquals("enc-ledger:" + enc.id(), capturingLedger.posted.get(0).getTransactionId(),
                 "Transaction ID must contain encounter ID for ledger idempotency");
-        }
-
-        @Test
-        @DisplayName("coordinator path is used when BillingTransactionCoordinator is wired")
-        void coordinatorPathUsedWhenConfigured() {
-            BillingEncounter enc = runPromise(() ->
-                serviceWithCoordinator.createEncounter(buildEncounter("p-L4", "dr-L4", null)));
-
-            runPromise(() -> serviceWithCoordinator.closeEncounter(enc.id()));
-
-            assertEquals(1, capturingCoordinator.invocations.size());
-            assertEquals("phr-encounter-close:" + enc.id(), capturingCoordinator.invocations.get(0));
         }
     }
 
@@ -274,11 +254,11 @@ class BillingServiceTest extends EventloopTestBase {
      * Captures every posted {@link BillingTransaction} for assertion in tests.
      *
      * @doc.type class
-     * @doc.purpose Stub LedgerPostingService for PHR billing integration tests
+     * @doc.purpose Stub BillingLedgerPlugin for PHR billing integration tests
      * @doc.layer product
      * @doc.pattern TestDouble
      */
-    static final class CapturingLedgerPostingService implements LedgerPostingService {
+    static final class CapturingLedger implements BillingLedgerPlugin {
 
         final List<BillingTransaction> posted = new ArrayList<>();
         private int counter = 0;
@@ -300,16 +280,52 @@ class BillingServiceTest extends EventloopTestBase {
                 .anyMatch(t -> t.getTransactionId().equals(transactionId));
             return Promise.of(found ? PostingStatus.POSTED : PostingStatus.NOT_FOUND);
         }
-    }
-
-    static final class CapturingCoordinator implements BillingTransactionCoordinator {
-        final List<String> invocations = new ArrayList<>();
 
         @Override
-        public Promise<CoordinationResult> coordinate(String workflowId, List<BillingTransaction> transactions) {
-            invocations.add(workflowId);
-            List<String> txIds = transactions.stream().map(BillingTransaction::getTransactionId).toList();
-            return Promise.of(new CoordinationResult(workflowId, true, txIds, List.of(), null));
+        public Promise<LedgerAccount> createAccount(String accountId, AccountType type) {
+            return Promise.of(new LedgerAccount(accountId, type, "NPR", BigDecimal.ZERO, Instant.now()));
+        }
+
+        @Override
+        public Promise<Optional<LedgerEntry>> getEntry(String entryId) {
+            return Promise.of(Optional.empty());
+        }
+
+        @Override
+        public Promise<List<LedgerEntry>> queryEntries(String accountId, TimeRange range) {
+            return Promise.of(List.of());
+        }
+
+        // Plugin interface methods
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("test-ledger")
+                .name("Test Ledger")
+                .version("1.0.0")
+                .description("Test billing ledger plugin")
+                .type(PluginType.CUSTOM)
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.complete();
         }
     }
 }

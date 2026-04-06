@@ -1,5 +1,6 @@
 package com.ghatana.platform.security.rbac;
 
+import com.ghatana.platform.security.model.User;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +43,7 @@ class RbacIntegrationTest extends EventloopTestBase {
         policyService.createPolicy("editor-write-data","editor write on data","EDITOR", "data", Set.of("write"));
         policyService.createPolicy("viewer-read-data", "viewer read on data", "VIEWER", "data", Set.of("read"));
 
-        authorizationService = new SyncAuthorizationService(policyService);
+        authorizationService = new SyncAuthorizationService(registry);
     }
 
     // ── Role assignment and revocation ─────────────────────────────────────────
@@ -81,37 +82,42 @@ class RbacIntegrationTest extends EventloopTestBase {
     class PermissionChecksAcrossModules {
 
         @Test
-        @DisplayName("ADMIN can write to data resource")
+        @DisplayName("ADMIN user can write permission")
         void admin_canWriteToDataResource() {
-            boolean allowed = authorizationService.hasPermission("ADMIN", "write", "data");
+            User adminUser = new User("admin-id", "admin", Set.of("ADMIN"));
+            boolean allowed = authorizationService.hasPermission(adminUser, "write");
             assertThat(allowed).isTrue();
         }
 
         @Test
-        @DisplayName("VIEWER cannot write to data resource")
+        @DisplayName("VIEWER user cannot write permission")
         void viewer_cannotWriteToDataResource() {
-            boolean allowed = authorizationService.hasPermission("VIEWER", "write", "data");
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "write");
             assertThat(allowed).isFalse();
         }
 
         @Test
-        @DisplayName("VIEWER can read data resource")
+        @DisplayName("VIEWER user can read permission")
         void viewer_canReadDataResource() {
-            boolean allowed = authorizationService.hasPermission("VIEWER", "read", "data");
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "read");
             assertThat(allowed).isTrue();
         }
 
         @Test
-        @DisplayName("EDITOR can write to data resource")
+        @DisplayName("EDITOR user can write permission")
         void editor_canWriteToDataResource() {
-            boolean allowed = authorizationService.hasPermission("EDITOR", "write", "data");
+            User editorUser = new User("editor-id", "editor", Set.of("EDITOR"));
+            boolean allowed = authorizationService.hasPermission(editorUser, "write");
             assertThat(allowed).isTrue();
         }
 
         @Test
-        @DisplayName("unknown role denied access to any resource")
+        @DisplayName("unknown role denied access")
         void unknownRole_deniedAccessToAnyResource() {
-            boolean allowed = authorizationService.hasPermission("GHOST", "read", "data");
+            User ghostUser = new User("ghost-id", "ghost", Set.of("GHOST"));
+            boolean allowed = authorizationService.hasPermission(ghostUser, "read");
             assertThat(allowed).isFalse();
         }
     }
@@ -162,21 +168,23 @@ class RbacIntegrationTest extends EventloopTestBase {
         @Test
         @DisplayName("policy that grants permission is enforced correctly")
         void policy_thatGrantsPermission_isEnforcedCorrectly() {
-            boolean adminCanWrite = authorizationService.hasPermission("ADMIN", "write", "data");
+            User adminUser = new User("admin-id", "admin", Set.of("ADMIN"));
+            boolean adminCanWrite = authorizationService.hasPermission(adminUser, "write");
             assertThat(adminCanWrite).isTrue();
         }
 
         @Test
         @DisplayName("no matching policy denies access by default")
         void noMatchingPolicy_deniesAccessByDefault() {
-            boolean allowed = authorizationService.hasPermission("VIEWER", "delete", "data");
+            User viewerUser = new User("viewer-id", "viewer", Set.of("VIEWER"));
+            boolean allowed = authorizationService.hasPermission(viewerUser, "delete");
             assertThat(allowed).isFalse();
         }
 
         @Test
-        @DisplayName("null role is denied without exception")
-        void nullRole_isDeniedWithoutException() {
-            boolean allowed = authorizationService.hasPermission(null, "read", "data");
+        @DisplayName("null user is denied without exception")
+        void nullUser_isDeniedWithoutException() {
+            boolean allowed = authorizationService.hasPermission(null, "read");
             assertThat(allowed).isFalse();
         }
     }

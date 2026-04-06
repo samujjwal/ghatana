@@ -1,6 +1,6 @@
 package com.ghatana.services.featurestore;
 
-import com.ghatana.aiplatform.featurestore.Feature;
+import com.ghatana.aiplatform.featurestore.MLFeature;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,16 +23,16 @@ class FeatureStoreIngestLauncherTest {
         payload.put("amount", 12.5);
         payload.put("active?", true);
 
-        List<Feature> features = FeatureStoreIngestLauncher.extractFeatures("entity-7", payload, timestamp);
+        List<MLFeature> features = FeatureStoreIngestLauncher.extractFeatures("entity-7", payload, timestamp);
 
         assertThat(features)
-                .extracting(Feature::getName)
+                .extracting(MLFeature::getName)
                 .containsExactly("active_", "amount", "z_score", "hour_of_day", "day_of_week");
         assertThat(features)
-                .extracting(Feature::getValue)
+                .extracting(MLFeature::getValue)
                 .containsExactly(1.0, 12.5, 7.0, 14.0, 5.0);
         assertThat(features)
-                .extracting(Feature::getTimestamp)
+                .extracting(MLFeature::getTimestamp)
                 .containsOnly(timestamp);
     }
 
@@ -42,11 +42,11 @@ class FeatureStoreIngestLauncherTest {
         Instant timestamp = Instant.parse("2026-03-27T00:00:00Z");
         Map<String, Object> payload = Map.of("segment", "gold");
 
-        List<Feature> features = FeatureStoreIngestLauncher.extractFeatures(null, payload, timestamp);
+        List<MLFeature> features = FeatureStoreIngestLauncher.extractFeatures(null, payload, timestamp);
 
         assertThat(features).hasSize(3);
         assertThat(features)
-                .extracting(Feature::getEntityId)
+                .extracting(MLFeature::getEntityId)
                 .doesNotContainNull()
                 .containsOnly(features.get(0).getEntityId());
         assertThat(features.get(0).getValue()).isEqualTo((double) ("gold".hashCode() & 0x7FFFFFFF));

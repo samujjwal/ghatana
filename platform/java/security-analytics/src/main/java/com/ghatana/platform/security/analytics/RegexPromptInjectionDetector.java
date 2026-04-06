@@ -59,6 +59,23 @@ public final class RegexPromptInjectionDetector implements PromptInjectionDetect
         return Promise.of(DetectionResult.safe());
     }
 
+    /**
+     * Synchronous check for suspicious prompts (used by tests).
+     * @param input the input to check
+     * @return true if suspicious patterns are detected
+     */
+    public boolean isSuspiciousPrompt(String input) {
+        if (input == null || input.isBlank()) {
+            return false;
+        }
+        for (Rule rule : RULES) {
+            if (rule.pattern().matcher(input).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static Rule rule(String regex, String name, double confidence) {
         return new Rule(Pattern.compile(regex), name, confidence);
     }

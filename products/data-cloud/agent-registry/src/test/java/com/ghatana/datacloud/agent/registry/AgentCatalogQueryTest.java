@@ -82,12 +82,8 @@ class AgentCatalogQueryTest extends EventloopTestBase {
         TypedAgent<String, String> agent = org.mockito.Mockito.mock(TypedAgent.class);
         AgentDescriptor descriptor = AgentDescriptor.builder()
                 .agentId(id)
-                .name("Agent " + id)
-                .version("1.0.0")
-                .agentType(type)
-                .determinismGuarantee(DeterminismGuarantee.FULLY_DETERMINISTIC)
-                .stateMutability(StateMutability.STATELESS)
-                .failureMode(FailureMode.FAIL_FAST)
+                .type(type)
+                .determinism(DeterminismGuarantee.FULL)
                 .capabilities(capabilities)
                 .build();
         lenient().when(agent.descriptor()).thenReturn(descriptor);
@@ -97,7 +93,6 @@ class AgentCatalogQueryTest extends EventloopTestBase {
     private static AgentConfig configFor(String id) {
         return AgentConfig.builder()
                 .agentId(id)
-                .maxConcurrency(2)
                 .timeout(Duration.ofSeconds(10))
                 .build();
     }

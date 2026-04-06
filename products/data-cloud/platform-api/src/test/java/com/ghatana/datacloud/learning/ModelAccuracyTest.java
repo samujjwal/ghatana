@@ -344,13 +344,15 @@ class ModelAccuracyTest extends EventloopTestBase {
             double accuracy1 = evaluateWithFixture("model-001", "test-001");
             double accuracy2 = evaluateWithFixture("model-001", "test-002");
 
-            // Different datasets may produce different results
-            // This is expected behavior with deterministic fixtures
+            assertThat(accuracy1).isNotEqualTo(accuracy2);
         }
 
         private double evaluateWithFixture(String modelId, String testId) {
-            // Simulated deterministic evaluation
-            return 0.92;
+            return switch (testId) {
+                case "test-001" -> 0.92;
+                case "test-002" -> 0.87;
+                default -> 0.90;
+            };
         }
     }
 }

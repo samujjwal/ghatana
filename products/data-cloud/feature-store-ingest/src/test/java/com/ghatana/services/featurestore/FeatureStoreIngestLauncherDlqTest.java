@@ -4,7 +4,7 @@
  */
 package com.ghatana.services.featurestore;
 
-import com.ghatana.aiplatform.featurestore.Feature;
+import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
 import com.ghatana.datacloud.spi.EventLogStore;
 import com.ghatana.platform.domain.auth.TenantId;
@@ -165,7 +165,7 @@ class FeatureStoreIngestLauncherDlqTest {
         @Test
         @DisplayName("write failure routes entry to DLQ with write-failure reason")
         void writeFailureRoutesToDlq() throws Exception {
-            doThrow(new RuntimeException("DB down")).when(featureStore).ingest(anyString(), any(Feature.class));
+            doThrow(new RuntimeException("DB down")).when(featureStore).ingest(anyString(), any(MLFeature.class));
 
             launcher.processEntryForTesting(TENANT, validEntry());
 

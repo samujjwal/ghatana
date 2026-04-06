@@ -1,8 +1,8 @@
 package com.ghatana.virtualorg.agent;
 
-import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
-import com.ghatana.agent.HealthStatus;
+import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.domain.event.Event;
 import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
@@ -298,7 +298,7 @@ public abstract class AbstractVirtualOrgAgent implements VirtualOrgAgent {
 
             @Override
             public HealthStatus getHealthStatus() {
-                return isHealthy() ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY;
+                return isHealthy() ? HealthStatus.healthy("Agent is healthy") : HealthStatus.unhealthy("Agent is unhealthy");
             }
 
             @Override

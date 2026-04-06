@@ -73,14 +73,12 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("released connections are returned to the pool for reuse")
-    void releasedConnectionsReturnedToPoolForReuse() {
+    @DisplayName("released connections free capacity for another acquire")
+    void releasedConnectionsFreeCapacityForAnotherAcquire() {
         InMemoryDatabase.Connection c1 = db.acquire();
-        int id1 = c1.connectionId();
         c1.release();
 
         InMemoryDatabase.Connection c2 = db.acquire();
-        // Connection from the pool may be reused
         assertThat(c2.isOpen()).isTrue();
         c2.release();
     }
@@ -179,6 +177,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
         int writers = 20;
         CyclicBarrier barrier = new CyclicBarrier(writers);
         Thread[] threads = new Thread[writers];
+        Queue<Throwable> failures = new ConcurrentLinkedQueue<>();
 
         for (int i = 0; i < writers; i++) {
             final int idx = i;
@@ -189,10 +188,16 @@ class DatabaseIntegrationTest extends EventloopTestBase {
                     c.execute("INSERT", "concurrent_table",
                             Map.of("id", "row-" + idx, "value", idx));
                     c.release();
-                } catch (Exception ignored) {}
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    failures.add(e);
+                } catch (BrokenBarrierException | RuntimeException e) {
+                    failures.add(e);
+                }
             });
         }
         for (Thread t : threads) t.join();
+        assertThat(failures).isEmpty();
 
         InMemoryDatabase.Connection readConn = db.acquire();
         assertThat(readConn.query("SELECT", "concurrent_table")).hasSize(writers);
@@ -250,6 +255,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
                         Object id = row.get("id");
                         db.table(table).removeIf(r -> id.equals(r.get("id")));
                     }
+                    default -> throw new IllegalArgumentException("Unsupported operation: " + op);
                 }
             }
 
