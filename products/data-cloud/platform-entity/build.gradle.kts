@@ -38,6 +38,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:data-cloud:spi"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 
     compileOnly(libs.lombok)

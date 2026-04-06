@@ -28,17 +28,33 @@ sourceSets {
 }
 
 dependencies {
-    // Kernel platform — provides KernelContext, KernelModule, KernelExtension,
-    // DataCloudKernelAdapter, ClassificationDescriptor, etc.
-    api(project(":platform:java:kernel"))
+    // =================================================================
+    // Platform Kernel (NEW: extracted from platform/java)
+    // =================================================================
+    api(project(":platform-kernel:kernel-core"))
+    api(project(":platform-kernel:kernel-plugin"))
 
-    // Platform libraries
+    // =================================================================
+    // Platform Plugins (NEW: shared product-agnostic plugins)
+    // =================================================================
+    api(project(":platform-plugins:plugin-billing-ledger"))
+    api(project(":platform-plugins:plugin-fraud-detection"))
+    api(project(":platform-plugins:plugin-compliance"))
+    api(project(":platform-plugins:plugin-consent"))
+    api(project(":platform-plugins:plugin-audit-trail"))
+
+    // =================================================================
+    // Platform Libraries (legacy - will be migrated in future phases)
+    // =================================================================
     api(project(":platform:java:security"))
     api(project(":platform:java:database"))
     api(project(":platform:java:audit"))
 
-    // Shared billing contracts — integrates PHR encounter closing with Finance ledger
-    api(project(":platform:java:billing"))
+    // Kernel platform — MIGRATED: use platform-kernel:kernel-core
+    // api(project(":platform:java:kernel"))
+
+    // Shared billing contracts — MIGRATED: use platform-plugins:plugin-billing-ledger
+    // api(project(":platform:java:billing"))
 
     // Distributed cache (ISSUE-X02 / KRQ-05)
     implementation(project(":platform:java:distributed-cache"))
@@ -67,7 +83,7 @@ dependencies {
     implementation(libs.log4j.slf4j.impl)
 
     // Testing
-    testImplementation(project(":platform:java:kernel"))
+    testImplementation(project(":platform-kernel:kernel-testing"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)

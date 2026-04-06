@@ -7,8 +7,11 @@ package com.ghatana.datacloud.ai;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -58,23 +61,21 @@ public class AIAssistController implements AsyncServlet {
             return renderTemplate(request, extractId(path, "templates"));
         }
 
-        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found"));
+        return notFound();
     }
 
     private Promise<HttpResponse> processQuery(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String query = (String) bodyMap.get("query");
                     AIAssistService.QueryContext context = parseQueryContext(bodyMap);
 
                     return aiAssistService.processQuery(query, context)
-                        .then(result -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(result))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request: " + e.getMessage()));
+                    return badRequest("Invalid request: " + e.getMessage());
                 }
             });
     }
@@ -83,16 +84,14 @@ public class AIAssistController implements AsyncServlet {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String description = (String) bodyMap.get("description");
                     AIAssistService.DatabaseSchema schema = parseSchema(bodyMap);
 
                     return aiAssistService.generateSQL(description, schema)
-                        .then(result -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(result))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -101,18 +100,16 @@ public class AIAssistController implements AsyncServlet {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String query = (String) bodyMap.get("query");
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> results = (List<Map<String, Object>>) bodyMap.get("results");
                     AIAssistService.QueryContext context = parseQueryContext(bodyMap);
 
                     return aiAssistService.explainResults(query, results, context)
-                        .then(result -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(result))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -120,53 +117,48 @@ public class AIAssistController implements AsyncServlet {
     private Promise<HttpResponse> getSuggestions(HttpRequest request) {
         String tenantId = extractTenantId(request);
         String conversationId = request.getQueryParameter("conversationId");
-        int limit = Integer.parseInt(request.getQueryParameterOrDefault("limit", "5"));
+        String limitParam = request.getQueryParameter("limit");
+        int limit = limitParam != null ? Integer.parseInt(limitParam) : 5;
 
         AIAssistService.QueryContext context = new AIAssistService.QueryContext(
             tenantId, null, conversationId, null, null, null, null
         );
 
         return aiAssistService.suggestQueries(context, limit)
-            .then(suggestions -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("suggestions", suggestions)))));
+            .then(suggestions -> okJson(Map.of("suggestions", suggestions)));
     }
 
     private Promise<HttpResponse> createConversation(HttpRequest request) {
         String tenantId = extractTenantId(request);
-        String userId = request.getHeader("X-User-ID");
+        String userId = request.getHeader(HttpHeaders.of("X-User-ID"));
 
         return aiAssistService.createConversation(tenantId, userId)
-            .then(conv -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(conv))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> getConversation(HttpRequest request, String conversationId) {
         return aiAssistService.getConversation(conversationId)
-            .then(conv -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(conv))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> addMessage(HttpRequest request, String conversationId) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     AIAssistService.Message message = parseMessage(bodyMap);
 
                     return aiAssistService.addMessage(conversationId, message)
-                        .then(conv -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(conv))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
 
     private Promise<HttpResponse> getStatus(HttpRequest request) {
         return aiAssistService.getStatus()
-            .then(status -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(status))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> listTemplates(HttpRequest request) {
@@ -174,21 +166,18 @@ public class AIAssistController implements AsyncServlet {
         String category = request.getQueryParameter("category");
 
         return templateManager.listTemplates(tenantId, category)
-            .then(templates -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("templates", templates, "total", templates.size())))));
+            .then(templates -> okJson(Map.of("templates", templates, "total", templates.size())));
     }
 
     private Promise<HttpResponse> createTemplate(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    PromptTemplateManager.PromptTemplate template = parseTemplate(body.getStringUtf8());
+                    PromptTemplateManager.PromptTemplate template = parseTemplate(body.asString(StandardCharsets.UTF_8));
                     return templateManager.registerTemplate(template)
-                        .then(t -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(t))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -198,13 +187,11 @@ public class AIAssistController implements AsyncServlet {
             .then(body -> {
                 try {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> variables = parseJson(body.getStringUtf8());
+                    Map<String, Object> variables = parseJson(body.asString(StandardCharsets.UTF_8));
                     return templateManager.render(templateId, variables)
-                        .then(rendered -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(Map.of("rendered", rendered)))));
+                        .then(rendered -> okJson(Map.of("rendered", rendered)));
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -220,7 +207,7 @@ public class AIAssistController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
         return tenantId != null ? tenantId : "default-tenant";
     }
 
@@ -261,5 +248,17 @@ public class AIAssistController implements AsyncServlet {
 
     private String toJson(Object obj) {
         return "{}";
+    }
+
+    private Promise<HttpResponse> okJson(Object payload) {
+        return Promise.of(HttpResponse.ok200().withJson(toJson(payload)).build());
+    }
+
+    private Promise<HttpResponse> badRequest(String message) {
+        return Promise.of(HttpResponse.ofCode(400).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound() {
+        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found").build());
     }
 }

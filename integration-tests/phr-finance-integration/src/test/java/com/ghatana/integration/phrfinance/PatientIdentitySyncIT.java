@@ -1,7 +1,7 @@
 package com.ghatana.integration.phrfinance;
 
-import com.ghatana.platform.billing.BillingTransaction;
-import com.ghatana.platform.billing.LedgerPostingService;
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -26,7 +26,7 @@ class PatientIdentitySyncIT extends EventloopTestBase {
     @DisplayName("encounter close keeps patient identity in ledger debit account")
     void patientIdentityIsPreservedAcrossBoundary() {
         PhrFinanceTestFixtures.StubDataCloudAdapter dataCloud = new PhrFinanceTestFixtures.StubDataCloudAdapter();
-        IdentityAssertingLedgerService ledger = new IdentityAssertingLedgerService("patient-identity-77");
+        IdentityAssertingLedgerAdapter ledger = new IdentityAssertingLedgerAdapter("patient-identity-77");
 
         BillingService billingService = new BillingService(
             PhrFinanceTestFixtures.createTestContext(dataCloud),
@@ -55,12 +55,12 @@ class PatientIdentitySyncIT extends EventloopTestBase {
         assertThat(ledger.validated).isTrue();
     }
 
-    private static final class IdentityAssertingLedgerService implements LedgerPostingService {
+    private static final class IdentityAssertingLedgerAdapter implements BillingLedgerPlugin {
 
         private final String expectedPatientId;
         private boolean validated;
 
-        private IdentityAssertingLedgerService(String expectedPatientId) {
+        private IdentityAssertingLedgerAdapter(String expectedPatientId) {
             this.expectedPatientId = expectedPatientId;
         }
 
@@ -78,8 +78,53 @@ class PatientIdentitySyncIT extends EventloopTestBase {
         }
 
         @Override
-        public Promise<PostingStatus> getPostingStatus(String transactionId) {
-            return Promise.of(validated ? PostingStatus.POSTED : PostingStatus.NOT_FOUND);
+        public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
+            return Promise.of(validated ? BillingLedgerPlugin.PostingStatus.POSTED : BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        }
+
+        @Override
+        public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginMetadata metadata() {
+            return com.ghatana.platform.plugin.PluginMetadata.builder().id("test").name("Test").version("1.0").build();
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginState getState() {
+            return com.ghatana.platform.plugin.PluginState.STARTED;
+        }
+
+        @Override
+        public Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            return Promise.complete();
         }
     }
 }

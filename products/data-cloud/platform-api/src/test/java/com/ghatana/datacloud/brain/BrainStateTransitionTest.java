@@ -70,7 +70,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
             );
 
             assertThat(can).isTrue();
-            assertThat(result.successful()).isTrue();
+            assertThat(result.isSuccessful()).isTrue();
             assertThat(result.fromState()).isEqualTo(BrainStateManager.BrainState.UNINITIALIZED);
             assertThat(result.toState()).isEqualTo(BrainStateManager.BrainState.INITIALIZING);
         }

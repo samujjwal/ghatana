@@ -11,7 +11,7 @@ plugins {
 
 dependencies {
     // Kernel framework (provides KernelExtension, KernelContext)
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
 
     // Canonical platform ports used by extensions
     implementation(project(":platform:java:audit"))

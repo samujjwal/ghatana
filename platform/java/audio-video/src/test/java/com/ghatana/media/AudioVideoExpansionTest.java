@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Paths;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -165,13 +165,15 @@ class AudioVideoExpansionTest {
 
             int[] sampleRates = {8000, 16000, 44100, 48000};
             for (int sampleRate : sampleRates) {
-                AudioConfig config = AudioConfig.builder()
-                        .sampleRateHz(sampleRate)
+            AudioData config = AudioData.builder()
+                .data(new byte[256])
+                .sampleRate(sampleRate)
                         .channels(1)
                         .bitsPerSample(16)
+                .format(AudioFormat.WAV)
                         .build();
 
-                assertThat(config.sampleRateHz()).isEqualTo(sampleRate);
+            assertThat(config.sampleRate()).isEqualTo(sampleRate);
             }
         }
 
@@ -183,13 +185,11 @@ class AudioVideoExpansionTest {
             String[] languages = {"en", "es", "fr", "de", "zh", "ja", "ar", "hi", "pt", "ru"};
 
             for (String lang : languages) {
-                SttConfig config = SttConfig.builder()
-                        .modelPath(Paths.get("/models/whisper-" + lang + ".onnx"))
-                        .modelId("whisper-" + lang)
-                        .language(lang)
+                TranscriptionOptions config = TranscriptionOptions.builder()
+                        .language(Locale.forLanguageTag(lang))
                         .build();
 
-                assertThat(config.language()).isEqualTo(lang);
+                assertThat(config.language().toLanguageTag()).isEqualTo(lang);
             }
         }
     }
@@ -227,13 +227,12 @@ class AudioVideoExpansionTest {
 
             for (String voice : voices) {
                 for (float speed : speeds) {
-                    TtsConfig config = TtsConfig.builder()
-                            .voiceModelPath(Paths.get("/models/" + voice + ".onnx"))
-                            .defaultVoiceId(voice)
-                            .speechRate(speed)
+                    SynthesisOptions config = SynthesisOptions.builder()
+                            .voiceId(voice)
+                            .speed(speed)
                             .build();
 
-                    assertThat(config.speechRate()).isEqualTo(speed);
+                    assertThat(config.speed()).isEqualTo((double) speed);
                 }
             }
         }
@@ -269,12 +268,13 @@ class AudioVideoExpansionTest {
 
             int[] widths = {320, 640, 1280, 1920, 3840};
             int[] heights = {240, 480, 720, 1080, 2160};
-            String[] formats = {"jpg", "png", "webp", "bmp"};
+            ImageFormat[] formats = {ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP, ImageFormat.BMP};
 
             for (int width : widths) {
                 for (int height : heights) {
-                    for (String format : formats) {
-                        ImageConfig config = ImageConfig.builder()
+                    for (ImageFormat format : formats) {
+                        ImageData config = ImageData.builder()
+                                .data(new byte[1])
                                 .width(width)
                                 .height(height)
                                 .format(format)
@@ -406,10 +406,11 @@ class AudioVideoExpansionTest {
             assertThat(veryLongText.length()).isGreaterThan(100000);
 
             // Very high resolution images
-            ImageConfig ultraHD = ImageConfig.builder()
+                ImageData ultraHD = ImageData.builder()
+                    .data(new byte[1])
                     .width(7680)
                     .height(4320)
-                    .format("webp")
+                    .format(ImageFormat.WEBP)
                     .build();
             assertThat(ultraHD.width()).isEqualTo(7680);
         }

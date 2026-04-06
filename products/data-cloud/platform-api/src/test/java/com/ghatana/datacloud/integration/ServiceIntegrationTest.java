@@ -6,7 +6,6 @@ package com.ghatana.datacloud.integration;
 
 import com.ghatana.datacloud.application.*;
 import com.ghatana.datacloud.entity.*;
-import com.ghatana.datacloud.event.*;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -18,9 +17,11 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -36,9 +37,6 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
     @Mock
     private EntityRepository entityRepository;
-
-    @Mock
-    private EventRepository eventRepository;
 
     @Mock
     private MetricsCollector metrics;
@@ -73,7 +71,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
             .version(1)
             .build();
 
-        when(entityRepository.save(any(Entity.class))).thenReturn(Promise.of(savedEntity));
+        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity));
 
         // When - Create entity through service
         Entity result = runPromise(() -> entityService.createEntity(tenantId, collectionName, data, userId));
@@ -111,9 +109,9 @@ class ServiceIntegrationTest extends EventloopTestBase {
             .build();
 
         when(entityRepository.findById(tenantId, collectionName, entityId))
-            .thenReturn(Promise.of(existingEntity));
-        when(entityRepository.save(any(Entity.class)))
-            .thenAnswer(invocation -> Promise.of(invocation.getArgument(0)));
+            .thenReturn(Promise.of(Optional.of(existingEntity)));
+        when(entityRepository.save(eq(tenantId), any(Entity.class)))
+            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1)));
 
         // When - Update entity
         Map<String, Object> newData = Map.of("name", "New Name");
@@ -156,7 +154,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
             .version(1)
             .build();
 
-        when(entityRepository.save(any(Entity.class))).thenReturn(Promise.of(createdEntity));
+        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(createdEntity));
 
         Entity createResult = runPromise(() -> 
             entityService.createEntity(tenantId, collectionName, createData, userId));
@@ -166,9 +164,9 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
         // Step 2: Update
         when(entityRepository.findById(tenantId, collectionName, entityId))
-            .thenReturn(Promise.of(createdEntity));
-        when(entityRepository.save(any(Entity.class)))
-            .thenAnswer(invocation -> Promise.of(invocation.getArgument(0)));
+            .thenReturn(Promise.of(Optional.of(createdEntity)));
+        when(entityRepository.save(eq(tenantId), any(Entity.class)))
+            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1)));
 
         Map<String, Object> updateData = Map.of(
             "name", "Product A Updated",
@@ -184,7 +182,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
 
         // Step 3: Get
         when(entityRepository.findById(tenantId, collectionName, entityId))
-            .thenReturn(Promise.of(updateResult));
+            .thenReturn(Promise.of(Optional.of(updateResult)));
 
         Entity getResult = runPromise(() -> entityService.getEntity(tenantId, collectionName, entityId));
 
@@ -224,9 +222,9 @@ class ServiceIntegrationTest extends EventloopTestBase {
             .build();
 
         when(entityRepository.findById(tenantA, collectionName, entityId))
-            .thenReturn(Promise.of(entityA));
+            .thenReturn(Promise.of(Optional.of(entityA)));
         when(entityRepository.findById(tenantB, collectionName, entityId))
-            .thenReturn(Promise.of(entityB));
+            .thenReturn(Promise.of(Optional.of(entityB)));
 
         // When - Get from both tenants
         Entity resultA = runPromise(() -> entityService.getEntity(tenantA, collectionName, entityId));

@@ -189,13 +189,12 @@ class RetryExhaustionTest extends EventloopTestBase {
 
     private <T> Promise<T> retryInternal(java.util.function.Supplier<Promise<T>> supplier,
                                           int maxRetries, Duration delay, int attempt) {
-        return supplier.get().thenCatch(e -> {
-            if (attempt < maxRetries - 1) {
-                return Promise.ofDelay(delay)
-                    .then(() -> retryInternal(supplier, maxRetries, delay, attempt + 1));
-            }
-            return Promise.ofException(e);
-        });
+        return supplier.get().then(
+            Promise::of,
+            e -> attempt < maxRetries - 1
+                ? retryInternal(supplier, maxRetries, delay, attempt + 1)
+                : Promise.ofException(e)
+        );
     }
 
     private <T> Promise<T> retryWithClassification(java.util.function.Supplier<Promise<T>> supplier,

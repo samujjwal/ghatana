@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Avatar } from '../Avatar';
 
 describe('Avatar', () => {
@@ -28,6 +29,23 @@ describe('Avatar', () => {
     it('uses default alt text when not provided', () => {
       render(<Avatar src="https://example.com/img.png" />);
       expect(screen.getByAltText('Avatar')).toBeInTheDocument();
+    });
+
+    it('falls back to fallback text when the image fails to load', () => {
+      render(<Avatar src="https://example.com/broken.png" alt="Broken" fallback="AB" />);
+
+      fireEvent.error(screen.getByRole('img', { name: 'Broken' }));
+
+      expect(screen.getByText('AB')).toBeInTheDocument();
+      expect(screen.queryByRole('img', { name: 'Broken' })).not.toBeInTheDocument();
+    });
+
+    it('renders the default avatar glyph when the image fails without fallback content', () => {
+      const { container } = render(<Avatar src="https://example.com/broken.png" alt="Broken" />);
+
+      fireEvent.error(screen.getByRole('img', { name: 'Broken' }));
+
+      expect(container.querySelector('svg')).toBeTruthy();
     });
   });
 
@@ -104,6 +122,21 @@ describe('Avatar', () => {
       fireEvent.click(container.firstChild as HTMLElement);
       expect(onClick).toHaveBeenCalledTimes(1);
     });
+
+    it('is keyboard accessible when interactive', async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      render(<Avatar fallback="AB" onClick={onClick} />);
+
+      const avatar = screen.getByRole('button');
+      await user.tab();
+      expect(avatar).toHaveFocus();
+
+      await user.keyboard('{Enter}');
+      await user.keyboard(' ');
+
+      expect(onClick).toHaveBeenCalledTimes(2);
+    });
   });
 
   // ── className forwarding ──────────────────────────────────────────────────
@@ -117,6 +150,11 @@ describe('Avatar', () => {
     it('applies title attribute when provided', () => {
       const { container } = render(<Avatar title="User name" fallback="AB" />);
       expect(container.firstChild).toHaveAttribute('title', 'User name');
+    });
+
+    it('does not expose button semantics when not interactive', () => {
+      render(<Avatar fallback="AB" />);
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
     });
   });
 });

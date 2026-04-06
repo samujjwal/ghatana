@@ -11,7 +11,7 @@ dependencies {
     implementation(project(":products:aura:domain:catalog"))
     implementation(project(":platform:java:core"))
     // Kernel — event-store for cross-process events, audit-trail for decision audit
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)

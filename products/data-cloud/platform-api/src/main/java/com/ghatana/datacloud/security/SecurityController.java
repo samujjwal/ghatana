@@ -7,8 +7,10 @@ package com.ghatana.datacloud.security;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -54,7 +56,7 @@ public class SecurityController implements AsyncServlet {
             return checkPermission(request);
         }
 
-        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found"));
+        return notFound();
     }
 
     private Promise<HttpResponse> queryAuditLogs(HttpRequest request) {
@@ -66,19 +68,16 @@ public class SecurityController implements AsyncServlet {
             .build();
 
         return auditLogService.query(tenantId, query)
-            .then(events -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("events", events, "total", events.size())))));
+            .then(events -> okJson(Map.of("events", events, "total", events.size())));
     }
 
     private Promise<HttpResponse> getAuditLog(HttpRequest request, String eventId) {
         return auditLogService.getEvent(eventId)
             .then(eventOpt -> {
                 if (eventOpt.isPresent()) {
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(eventOpt.get())));
+                    return okJson(eventOpt.get());
                 } else {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Event not found"));
+                    return notFound("Event not found");
                 }
             });
     }
@@ -87,7 +86,7 @@ public class SecurityController implements AsyncServlet {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String tenantId = extractTenantId(request);
                     String format = (String) bodyMap.getOrDefault("format", "JSON");
 
@@ -97,12 +96,12 @@ public class SecurityController implements AsyncServlet {
                         java.time.Instant.parse((String) bodyMap.get("endTime")),
                         AuditLogService.ExportFormat.valueOf(format)
                     ).then(data -> Promise.of(HttpResponse.ok200()
-                        .withHeader("Content-Type", "application/octet-stream")
-                        .withHeader("Content-Disposition", "attachment; filename=\"audit-export." + format.toLowerCase() + "\"")
-                        .withBody(data)));
+                        .withHeader(HttpHeaders.of("Content-Type"), "application/octet-stream")
+                        .withHeader(HttpHeaders.of("Content-Disposition"), "attachment; filename=\"audit-export." + format.toLowerCase() + "\"")
+                        .withBody(data)
+                        .build()));
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -110,19 +109,16 @@ public class SecurityController implements AsyncServlet {
     private Promise<HttpResponse> listRoles(HttpRequest request) {
         String tenantId = extractTenantId(request);
         return rbacService.listRoles(tenantId)
-            .then(roles -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("roles", roles, "total", roles.size())))));
+            .then(roles -> okJson(Map.of("roles", roles, "total", roles.size())));
     }
 
     private Promise<HttpResponse> getRole(HttpRequest request, String roleId) {
         return rbacService.getRole(roleId)
             .then(roleOpt -> {
                 if (roleOpt.isPresent()) {
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(roleOpt.get())));
+                    return okJson(roleOpt.get());
                 } else {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Role not found"));
+                    return notFound("Role not found");
                 }
             });
     }
@@ -132,13 +128,11 @@ public class SecurityController implements AsyncServlet {
             .then(body -> {
                 try {
                     // Parse role definition
-                    RBACService.Role role = parseRole(body.getStringUtf8());
+                    RBACService.Role role = parseRole(body.asString(StandardCharsets.UTF_8));
                     return rbacService.saveRole(role)
-                        .then(saved -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(saved))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -148,15 +142,13 @@ public class SecurityController implements AsyncServlet {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String roleId = (String) bodyMap.get("roleId");
 
                     return rbacService.assignRole(userId, tenantId, roleId)
-                        .then(v -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(Map.of("assigned", true)))));
+                        .then(v -> okJson(Map.of("assigned", true)));
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -164,30 +156,27 @@ public class SecurityController implements AsyncServlet {
     private Promise<HttpResponse> getUserPermissions(HttpRequest request, String userId) {
         String tenantId = extractTenantId(request);
         return rbacService.getUserPermissions(userId, tenantId)
-            .then(permissions -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("permissions", permissions)))));
+            .then(permissions -> okJson(Map.of("permissions", permissions)));
     }
 
     private Promise<HttpResponse> checkPermission(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String userId = (String) bodyMap.get("userId");
                     String tenantId = extractTenantId(request);
                     RBACService.Permission permission = RBACService.Permission.valueOf((String) bodyMap.get("permission"));
                     String resource = (String) bodyMap.get("resource");
 
                     return rbacService.hasPermission(userId, tenantId, permission, resource)
-                        .then(hasPermission -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(Map.of(
+                        .then(hasPermission -> okJson(Map.of(
                                 "userId", userId,
                                 "permission", permission.toString(),
                                 "granted", hasPermission
-                            )))));
+                            )));
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -213,7 +202,7 @@ public class SecurityController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
         return tenantId != null ? tenantId : "default-tenant";
     }
 
@@ -233,5 +222,21 @@ public class SecurityController implements AsyncServlet {
     private String toJson(Object obj) {
         // Simplified - in production use Jackson
         return "{}";
+    }
+
+    private Promise<HttpResponse> okJson(Object payload) {
+        return Promise.of(HttpResponse.ok200().withJson(toJson(payload)).build());
+    }
+
+    private Promise<HttpResponse> badRequest(String message) {
+        return Promise.of(HttpResponse.ofCode(400).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound(String message) {
+        return Promise.of(HttpResponse.ofCode(404).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound() {
+        return notFound("Not Found");
     }
 }

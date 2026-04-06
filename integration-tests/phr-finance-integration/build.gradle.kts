@@ -11,8 +11,8 @@ java {
 }
 
 dependencies {
-    testImplementation(project(":platform:java:kernel"))
-    testImplementation(project(":platform:java:billing"))
+    testImplementation(project(":platform-kernel:kernel-core"))
+    testImplementation(project(":platform-plugins:plugin-billing-ledger"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(project(":products:phr"))
     testImplementation(project(":products:finance"))

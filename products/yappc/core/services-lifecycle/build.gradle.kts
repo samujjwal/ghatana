@@ -49,7 +49,7 @@ dependencies {
     // Absorbed from services:scaffold (merged)
     implementation(project(":products:yappc:core:scaffold:core"))
     implementation(project(":products:yappc:core:yappc-shared"))
-    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform-kernel:kernel-plugin"))
 
     // ActiveJ for async + HTTP
     implementation(libs.activej.promise)

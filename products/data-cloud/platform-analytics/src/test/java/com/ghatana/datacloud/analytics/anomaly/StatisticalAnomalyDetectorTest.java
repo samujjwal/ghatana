@@ -121,7 +121,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         @Test
         @DisplayName("returns empty list when collection is empty")
         void emptyCollectionReturnsNoAnomalies() {
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(Collections.emptyList()));
 
             List<Anomaly> result = runPromise(() -> detector.detect(basicContext()));
@@ -136,7 +136,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
                     entityWithData(Map.of("value", 999.0)), // extreme outlier
                     entityWithData(Map.of("value", 1.0)));
 
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(entities));
 
             List<Anomaly> result = runPromise(() -> detector.detect(basicContext()));
@@ -152,7 +152,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
             entityWithNoData.setId(UUID.randomUUID());
             entityWithNoData.setData(null);
 
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(List.of(entityWithNoData)));
 
             List<Anomaly> result = runPromise(() -> detector.detect(basicContext()));
@@ -339,7 +339,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         @DisplayName("updateBaseline stores descriptive stats for numeric fields")
         void updateBaselineStoresStats() {
             List<Entity> training = numericalEntities("price", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(training));
 
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION));
@@ -358,7 +358,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         void insufficientSamplesAreSkipped() {
             // Only 3 entities — less than MIN_SAMPLE_COUNT (5)
             List<Entity> sparse = numericalEntities("rare", 1, 2, 3);
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(sparse));
 
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION));
@@ -374,7 +374,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
             List<Entity> round1 = numericalEntities("metric", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
             List<Entity> round2 = numericalEntities("metric", 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000);
 
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(round1))
                     .thenReturn(Promise.of(round2));
 
@@ -391,7 +391,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         @DisplayName("p25 < median < p75 for normally distributed data")
         void percentileOrderIsCorrect() {
             List<Entity> training = numericalEntities("v", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100);
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(training));
 
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION));
@@ -572,7 +572,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         @Test
         @DisplayName("baseline_updates counter increments on each updateBaseline call")
         void baselineUpdateCounterIncrements() {
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(Collections.emptyList()));
 
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION));
@@ -585,7 +585,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         @Test
         @DisplayName("detected counter is zero when no anomalies found")
         void noAnomaliesNoCounterIncrement() {
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(Collections.emptyList()));
 
             runPromise(() -> detector.detect(basicContext()));
@@ -646,7 +646,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
      * (used by {@code detect}).
      */
     private void stubRepository(List<Entity> trainingData, List<Entity> detectionData) {
-        when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                 .thenReturn(Promise.of(trainingData))
                 .thenReturn(Promise.of(detectionData));
     }

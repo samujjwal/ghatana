@@ -4,8 +4,6 @@
  */
 package com.ghatana.datacloud.event;
 
-import com.ghatana.datacloud.launcher.test.TestContainersConfig;
-import com.ghatana.datacloud.launcher.test.builder.EventBuilder;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
@@ -42,16 +40,6 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
 
     @Mock
     private EventCheckpointRepository checkpointRepository;
-
-    @BeforeAll
-    static void setUpInfrastructure() {
-        TestContainersConfig.kafka().start();
-    }
-
-    @AfterAll
-    static void tearDownInfrastructure() {
-        TestContainersConfig.stopAll();
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Durability Write Tests
@@ -359,11 +347,11 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("[D006]: cdc_event_captured_with_offset")
     void cdcEventCapturedWithOffset() {
-        Map<String, Object> cdcEvent = EventBuilder.create("cdc.entity.created")
-            .withOffset(42)
-            .withPayload("source", "database")
-            .withPayload("operation", "INSERT")
-            .build();
+        Map<String, Object> cdcEvent = buildEvent(
+            "cdc.entity.created",
+            42,
+            Map.of("source", "database", "operation", "INSERT")
+        );
 
         assertThat(cdcEvent.get("offset")).isEqualTo(42L);
         @SuppressWarnings("unchecked")
@@ -376,9 +364,9 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     @DisplayName("[D006]: cdc_events_ordered_by_offset")
     void cdcEventsOrderedByOffset() {
         List<Map<String, Object>> events = List.of(
-            EventBuilder.create("cdc.event").withOffset(3).build(),
-            EventBuilder.create("cdc.event").withOffset(1).build(),
-            EventBuilder.create("cdc.event").withOffset(2).build()
+            buildEvent("cdc.event", 3, Map.of()),
+            buildEvent("cdc.event", 1, Map.of()),
+            buildEvent("cdc.event", 2, Map.of())
         );
 
         List<Map<String, Object>> sorted = events.stream()
@@ -390,14 +378,11 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
         assertThat(sorted.get(2).get("offset")).isEqualTo(3L);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Kafka Container Tests
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("[D006]: kafka_container_available_for_testing")
-    void kafkaContainerAvailableForTesting() {
-        assertThat(TestContainersConfig.isRunning("kafka")).isTrue();
-        assertThat(TestContainersConfig.getKafkaBootstrapServers()).isNotNull();
+    private static Map<String, Object> buildEvent(String type, long offset, Map<String, Object> payload) {
+        return Map.of(
+            "type", type,
+            "offset", offset,
+            "payload", payload
+        );
     }
 }

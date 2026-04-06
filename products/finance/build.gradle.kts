@@ -8,7 +8,26 @@ plugins {
 }
 
 dependencies {
-    // Platform core dependencies
+    // =================================================================
+    // Platform Kernel (NEW: extracted from platform/java)
+    // =================================================================
+    api(project(":platform-kernel:kernel-core"))
+    api(project(":platform-kernel:kernel-plugin"))
+    api(project(":platform-kernel:kernel-testing"))
+
+    // =================================================================
+    // Platform Plugins (NEW: shared product-agnostic plugins)
+    // =================================================================
+    api(project(":platform-plugins:plugin-billing-ledger"))
+    api(project(":platform-plugins:plugin-fraud-detection"))
+    api(project(":platform-plugins:plugin-compliance"))
+    api(project(":platform-plugins:plugin-consent"))
+    api(project(":platform-plugins:plugin-risk-management"))
+    api(project(":platform-plugins:plugin-audit-trail"))
+
+    // =================================================================
+    // Platform Core (legacy - will be migrated in future phases)
+    // =================================================================
     api(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:database"))
@@ -16,15 +35,15 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
-    implementation(project(":platform:java:plugin"))
+    // implementation(project(":platform:java:plugin"))  // MIGRATED: use platform-kernel:kernel-plugin
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:java:agent-core"))
 
-    // Kernel modules
-    implementation(project(":platform:java:kernel"))
+    // Kernel modules (MIGRATED: use platform-kernel:kernel-core)
+    // implementation(project(":platform:java:kernel"))
 
-    // Shared billing contracts (PHR-Finance ledger integration)
-    api(project(":platform:java:billing"))
+    // Shared billing contracts (MIGRATED: use platform-plugins:plugin-billing-ledger)
+    // api(project(":platform:java:billing"))
 
     // AI-specific dependencies
     implementation("dev.langchain4j:langchain4j:0.34.0")

@@ -40,7 +40,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:runtime"))
-    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform-kernel:kernel-plugin"))
     implementation(project(":platform:java:agent-core"))
     
     // YAPPC modules

@@ -4,6 +4,8 @@
  */
 package com.ghatana.agent.memory.model;
 
+import com.ghatana.agent.memory.model.procedure.EnhancedProcedure;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -67,7 +69,7 @@ class AgentMemoryExpansionTest {
         void differentLinkTypes() {
             LinkType[] types = {
                 LinkType.RELATED, LinkType.SUPPORTS, LinkType.CONTRADICTS,
-                LinkType.DERIVED_FROM, LinkType.DEPENDS_ON
+                LinkType.DERIVED_FROM, LinkType.SUPERSEDES
             };
 
             for (int i = 0; i < 50; i++) {
@@ -116,7 +118,7 @@ class AgentMemoryExpansionTest {
                         .description(longDesc)
                         .build();
 
-                assertThat(link.getDescription()).hasLength(longDesc.length());
+                assertThat(link.getDescription()).hasSize(longDesc.length());
             }
         }
     }
@@ -215,10 +217,10 @@ class AgentMemoryExpansionTest {
 
             for (int i = 0; i < 100; i++) {
                 final int idx = i;
-                MemoryItem item = MemoryItem.builder()
+                MemoryItem item = EnhancedProcedure.builder()
                         .id("item-" + idx)
-                        .type("EntityType")
-                        .content("Content for item " + idx)
+                    .situation("Situation for item " + idx)
+                    .action("Action for item " + idx)
                         .build();
                 items.add(item);
             }
@@ -233,10 +235,10 @@ class AgentMemoryExpansionTest {
 
             for (int i = 0; i < 50; i++) {
                 final int idx = i;
-                MemoryItem item = MemoryItem.builder()
+                MemoryItem item = EnhancedProcedure.builder()
                         .id("item-" + idx)
-                        .type("Type")
-                        .content("Content")
+                    .situation("Situation")
+                    .action("Action")
                         .build();
                 items.add(item);
             }
@@ -345,7 +347,7 @@ class AgentMemoryExpansionTest {
                     .targetItemId(longTargetId)
                     .linkType(LinkType.RELATED)
                     .build();
-            assertThat(longIdLink.getTargetItemId()).hasLength(longTargetId.length());
+                assertThat(longIdLink.getTargetItemId()).hasSize(longTargetId.length());
 
             // Extreme strength values
             MemoryLink minStrength = MemoryLink.builder()

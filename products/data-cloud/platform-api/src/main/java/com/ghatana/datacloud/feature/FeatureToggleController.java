@@ -7,8 +7,10 @@ package com.ghatana.datacloud.feature;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -48,21 +50,18 @@ public class FeatureToggleController implements AsyncServlet {
             return evaluateFlag(request);
         }
 
-        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found"));
+        return notFound();
     }
 
     private Promise<HttpResponse> createFlag(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    // Parse request body and create flag
-                    FeatureFlagService.FeatureFlag flag = parseFlag(body.getStringUtf8());
+                    FeatureFlagService.FeatureFlag flag = parseFlag(body.asString(StandardCharsets.UTF_8));
                     return featureFlagService.createFlag(flag)
-                        .then(saved -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(saved))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request: " + e.getMessage()));
+                    return badRequest("Invalid request: " + e.getMessage());
                 }
             });
     }
@@ -71,62 +70,53 @@ public class FeatureToggleController implements AsyncServlet {
         return featureFlagService.getFlag(key)
             .then(flagOpt -> {
                 if (flagOpt.isPresent()) {
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(flagOpt.get())));
-                } else {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Flag not found"));
+                    return okJson(flagOpt.get());
                 }
+                return Promise.of(HttpResponse.ofCode(404).withPlainText("Flag not found").build());
             });
     }
 
     private Promise<HttpResponse> listFlags(HttpRequest request) {
         String tenantId = extractTenantId(request);
         return featureFlagService.listFlags(tenantId)
-            .then(flags -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("flags", flags, "total", flags.size())))));
+            .then(flags -> okJson(Map.of("flags", flags, "total", flags.size())));
     }
 
     private Promise<HttpResponse> toggleFlag(HttpRequest request, String key) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     boolean enabled = Boolean.TRUE.equals(bodyMap.get("enabled"));
                     return featureFlagService.toggle(key, enabled)
-                        .then(updated -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(updated))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
 
     private Promise<HttpResponse> deleteFlag(HttpRequest request, String key) {
         return featureFlagService.deleteFlag(key)
-            .then(v -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("deleted", true)))));
+            .then(v -> okJson(Map.of("deleted", true)));
     }
 
     private Promise<HttpResponse> evaluateFlag(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    Map<String, Object> bodyMap = parseJson(body.getStringUtf8());
+                    Map<String, Object> bodyMap = parseJson(body.asString(StandardCharsets.UTF_8));
                     String key = (String) bodyMap.get("key");
                     FeatureFlagService.FeatureContext context = parseContext(bodyMap);
 
                     return featureFlagService.isEnabled(key, context)
-                        .then(enabled -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(Map.of(
-                                "key", key,
-                                "enabled", enabled,
-                                "timestamp", System.currentTimeMillis()
-                            )))));
+                        .then(enabled -> okJson(Map.of(
+                            "key", key,
+                            "enabled", enabled,
+                            "timestamp", System.currentTimeMillis()
+                        )));
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -142,7 +132,7 @@ public class FeatureToggleController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
         return tenantId != null ? tenantId : "default-tenant";
     }
 
@@ -158,11 +148,17 @@ public class FeatureToggleController implements AsyncServlet {
     private FeatureFlagService.FeatureContext parseContext(Map<String, Object> bodyMap) {
         @SuppressWarnings("unchecked")
         Map<String, Object> ctx = (Map<String, Object>) bodyMap.getOrDefault("context", Map.of());
+        Object attributes = ctx.getOrDefault("attributes", Map.of());
 
         return FeatureFlagService.FeatureContext.builder()
             .userId((String) ctx.get("userId"))
             .tenantId((String) ctx.get("tenantId"))
-            .attributes((Map<String, Object>) ctx.getOrDefault("attributes", Map.of()))
+            .attributes(attributes instanceof Map<?, ?> attributeMap
+                ? attributeMap.entrySet().stream().collect(java.util.stream.Collectors.toMap(
+                    entry -> String.valueOf(entry.getKey()),
+                    Map.Entry::getValue
+                ))
+                : Map.of())
             .build();
     }
 
@@ -174,5 +170,17 @@ public class FeatureToggleController implements AsyncServlet {
     private String toJson(Object obj) {
         // Simplified - in production use Jackson
         return "{}";
+    }
+
+    private Promise<HttpResponse> okJson(Object payload) {
+        return Promise.of(HttpResponse.ok200().withJson(toJson(payload)).build());
+    }
+
+    private Promise<HttpResponse> badRequest(String message) {
+        return Promise.of(HttpResponse.ofCode(400).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound() {
+        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found").build());
     }
 }

@@ -10,7 +10,7 @@ java {
 
 dependencies {
     // Platform plugin dependency
-    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform-kernel:kernel-plugin"))
     // TODO(ADAPTER-SEAM): knowledge-graph access should be hidden behind a DataStorePort.
     //   Move the actual DataCloud dependency to infrastructure:datacloud; inject via interface.
     implementation(project(":products:data-cloud:platform-launcher"))

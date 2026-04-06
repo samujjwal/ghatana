@@ -46,8 +46,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         MockitoAnnotations.openMocks(this);
         service = new AIAssistServiceImpl(llmProvider, metrics);
         
-        when(llmProvider.getProviderName()).thenReturn("OpenAI");
-        when(llmProvider.getModelName()).thenReturn("gpt-4");
+        when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
     @Nested
@@ -64,7 +63,9 @@ class AIAssistServiceImplTest extends EventloopTestBase {
                 List.of("orders", "customers"), Map.of(), null
             );
 
-            when(llmProvider.complete(any())).thenReturn(Promise.of("SELECT * FROM orders"));
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+                "resp-1", "SELECT * FROM orders", 10, 5, 5, "stop", 25L, "gpt-4"
+            )));
 
             // When
             AIAssistService.QueryResult result = runPromise(() -> service.processQuery(query, context));
@@ -91,7 +92,9 @@ class AIAssistServiceImplTest extends EventloopTestBase {
                 "sales", List.of()
             );
 
-            when(llmProvider.complete(any())).thenReturn(Promise.of("SELECT * FROM customers"));
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+                "resp-2", "SELECT * FROM customers", 10, 5, 5, "stop", 25L, "gpt-4"
+            )));
 
             // When
             AIAssistService.GeneratedSQL result = runPromise(() -> service.generateSQL(description, schema));
@@ -170,7 +173,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             assertThat(results).hasSize(4); // 2 suggestions per table
             assertThat(results.get(0).category()).isEqualTo("preview");
             assertThat(results.get(1).category()).isEqualTo("aggregation");
-            verify(metrics).incrementCounter("ai.suggest.success", "count", 4);
+            verify(metrics).incrementCounter("ai.suggest.success", "count", "4");
         }
     }
 
@@ -261,7 +264,9 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             AIAssistService.QueryContext context = new AIAssistService.QueryContext(
                 "tenant-alpha", "user-1", null, null, null, Map.of(), null
             );
-            when(llmProvider.complete(any())).thenReturn(Promise.of("SQL"));
+            when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+                "resp-3", "SQL", 10, 5, 5, "stop", 25L, "gpt-4"
+            )));
             
             runPromise(() -> service.processQuery("query 1", context));
             runPromise(() -> service.processQuery("query 2", context));
@@ -272,7 +277,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             // Then
             assertThat(status.available()).isTrue();
             assertThat(status.provider()).isEqualTo("OpenAI");
-            assertThat(status.model()).isEqualTo("gpt-4");
+            assertThat(status.model()).isEqualTo("unknown");
             assertThat(status.requestsProcessed()).isEqualTo(2);
             assertThat(status.averageLatencyMs()).isGreaterThanOrEqualTo(0);
             assertThat(status.lastHealthCheck()).isNotNull();

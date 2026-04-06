@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -420,21 +421,6 @@ class MemoryTierTest extends EventloopTestBase {
             );
 
             assertThat(important.importance()).isGreaterThan(0.9);
-        }
-    }
-
-    private static class Map {
-        static <K, V> java.util.Map<K, V> of(K k1, V v1) {
-            java.util.Map<K, V> map = new java.util.HashMap<>();
-            map.put(k1, v1);
-            return java.util.Collections.unmodifiableMap(map);
-        }
-
-        static <K, V> java.util.Map<K, V> of(K k1, V v1, K k2, V v2) {
-            java.util.Map<K, V> map = new java.util.HashMap<>();
-            map.put(k1, v1);
-            map.put(k2, v2);
-            return java.util.Collections.unmodifiableMap(map);
         }
     }
 }

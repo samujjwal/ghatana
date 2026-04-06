@@ -54,7 +54,6 @@ class SecurityAuditTrailTest extends EventloopTestBase {
                 .resourceId("entity-123")
                 .success(true)
                 .ipAddress("192.168.1.1")
-                .timestamp(Instant.now())
                 .build();
 
             when(auditLogService.log(any()))
@@ -153,7 +152,6 @@ class SecurityAuditTrailTest extends EventloopTestBase {
                 .action("read")
                 .resource("Entity")
                 .success(true)
-                .timestamp(Instant.now())
                 .ipAddress("10.0.0.1")
                 .userAgent("Test/1.0")
                 .build();
@@ -238,21 +236,18 @@ class SecurityAuditTrailTest extends EventloopTestBase {
             Instant investigationEnd = Instant.now();
 
             List<AuditLogService.AuditEvent> events = List.of(
-                AuditLogService.AuditEvent.builder()
-                    .id("evt-1")
-                    .userId(userId)
-                    .timestamp(investigationStart.plusSeconds(100))
-                    .build(),
-                AuditLogService.AuditEvent.builder()
-                    .id("evt-2")
-                    .userId(userId)
-                    .timestamp(investigationStart.plusSeconds(500))
-                    .build(),
-                AuditLogService.AuditEvent.builder()
-                    .id("evt-3")
-                    .userId(userId)
-                    .timestamp(investigationEnd.minusSeconds(100))
-                    .build()
+                new AuditLogService.AuditEvent(
+                    "evt-1", null, userId, null, null, null, null,
+                    false, Map.of(), null, null, investigationStart.plusSeconds(100)
+                ),
+                new AuditLogService.AuditEvent(
+                    "evt-2", null, userId, null, null, null, null,
+                    false, Map.of(), null, null, investigationStart.plusSeconds(500)
+                ),
+                new AuditLogService.AuditEvent(
+                    "evt-3", null, userId, null, null, null, null,
+                    false, Map.of(), null, null, investigationEnd.minusSeconds(100)
+                )
             );
 
             AuditLogService.AuditQuery query = AuditLogService.AuditQuery.builder()

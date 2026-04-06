@@ -17,7 +17,7 @@ dependencies {
     implementation(project(":platform:java:agent-core"))
     implementation(project(":platform:java:observability"))
     // Kernel — event-store for episodic memory sourcing, kernel module lifecycle
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
     implementation(libs.activej.promise)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

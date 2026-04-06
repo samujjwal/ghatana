@@ -201,7 +201,8 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
 
             // Invalidate specific high-access keys
             for (int i = 0; i < 100; i++) {
-                runPromise(() -> cache.invalidate("key-" + i));
+                final int idx = i;
+                runPromise(() -> cache.invalidate("key-" + idx));
             }
 
             // Verify correct subset removed
@@ -395,8 +396,9 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
                     exec.submit(() -> {
                         try {
                             for (int i = 0; i < 500; i++) {
+                                final int idx = i;
                                 Optional<String> result = runPromise(() -> 
-                                    cache.get("hot-" + (i % 10)));
+                                    cache.get("hot-" + (idx % 10)));
                                 if (result.isPresent()) {
                                     hitCount.incrementAndGet();
                                 }
@@ -482,7 +484,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
             
             Optional<String> retrieved = runPromise(() -> cache.get("large-key"));
             assertThat(retrieved).isPresent();
-            assertThat(retrieved.get()).hasLength(10_000);
+            assertThat(retrieved.get()).satisfies(s -> assertThat(s.length()).isEqualTo(10_000));
         }
     }
 }

@@ -20,11 +20,29 @@
  */
 plugins {
     base
+    id("java-library")
     alias(libs.plugins.openapi.generator)
 }
 
 group = "com.ghatana.datacloud"
 version = rootProject.version
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.assertj.core)
+    testImplementation(project(":platform:java:testing"))
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Java SDK — okhttp-gson, Java 8+ compatible

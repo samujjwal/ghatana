@@ -441,7 +441,7 @@ class CoreUtilitiesExpansionTest {
         void stringProcessingPipeline() {
             String input = "HelloWorld";
 
-            Result<String, String> step1 = Result.success(input)
+            Result<String, String> step1 = Result.<String, String>success(input)
                 .map(s -> StringUtils.toSnakeCase(s));
 
             Result<String, String> step2 = step1
@@ -470,7 +470,7 @@ class CoreUtilitiesExpansionTest {
             String snaked = StringUtils.toSnakeCase(longString);
             assertThat(snaked).isNotNull();
 
-            Result<Integer, String> result = Result.success(longString)
+            Result<Integer, String> result = Result.<String, String>success(longString)
                 .map(String::length);
 
             assertThat(result.get()).isEqualTo(10000);

@@ -17,10 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,12 +58,10 @@ class ReportServiceImplTest extends EventloopTestBase {
         void generateReportSuccessfully() {
             // Given
             String tenantId = "tenant-alpha";
-            ReportTemplate template = ReportTemplate.builder()
-                .id("template-1")
-                .name("Monthly Sales")
-                .type("sales")
-                .parameters(Map.of("month", "2024-01"))
-                .build();
+            ReportTemplate template = new ReportTemplate()
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withQuery("SELECT * FROM sales WHERE month = '2024-01'");
 
             when(repository.save(any(Report.class))).thenAnswer(invocation -> 
                 Promise.of(invocation.getArgument(0)));
@@ -77,9 +73,9 @@ class ReportServiceImplTest extends EventloopTestBase {
             assertThat(result).isNotNull();
             assertThat(result.getTenantId()).isEqualTo(tenantId);
             assertThat(result.getName()).isEqualTo("Monthly Sales");
-            assertThat(result.getType()).isEqualTo("sales");
-            assertThat(result.getStatus()).isEqualTo("completed");
-            verify(metrics).incrementCounter("report.generate.success", "tenant", tenantId, "type", "sales");
+            assertThat(result.getFormat()).isEqualTo("CSV");
+            assertThat(result.getStatus()).isEqualTo("COMPLETED");
+            verify(metrics).incrementCounter("report.generate.success", "tenant", tenantId, "format", "CSV");
         }
 
         @Test
@@ -87,12 +83,10 @@ class ReportServiceImplTest extends EventloopTestBase {
         void generateReportError() {
             // Given
             String tenantId = "tenant-alpha";
-            ReportTemplate template = ReportTemplate.builder()
-                .id("template-1")
-                .name("Monthly Sales")
-                .type("sales")
-                .parameters(Map.of())
-                .build();
+            ReportTemplate template = new ReportTemplate()
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withQuery("SELECT 1");
 
             when(repository.save(any(Report.class)))
                 .thenReturn(Promise.ofException(new RuntimeException("DB error")));
@@ -121,13 +115,12 @@ class ReportServiceImplTest extends EventloopTestBase {
             String tenantId = "tenant-alpha";
             String reportId = "report-1";
 
-            Report report = Report.builder()
-                .id(reportId)
-                .tenantId(tenantId)
-                .name("Monthly Sales")
-                .type("sales")
-                .status("completed")
-                .build();
+            Report report = new Report()
+                .withId(reportId)
+                .withTenantId(tenantId)
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withStatus("COMPLETED");
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report));
 
@@ -169,8 +162,8 @@ class ReportServiceImplTest extends EventloopTestBase {
             String tenantId = "tenant-alpha";
 
             List<Report> reports = List.of(
-                Report.builder().id("r1").tenantId(tenantId).name("Report 1").build(),
-                Report.builder().id("r2").tenantId(tenantId).name("Report 2").build()
+                new Report().withId("r1").withTenantId(tenantId).withName("Report 1").withFormat("CSV"),
+                new Report().withId("r2").withTenantId(tenantId).withName("Report 2").withFormat("PDF")
             );
 
             when(repository.findAllByTenant(tenantId)).thenReturn(Promise.of(reports));
@@ -196,16 +189,14 @@ class ReportServiceImplTest extends EventloopTestBase {
             String reportId = "report-1";
             Map<String, String> updates = Map.of("name", "Updated Name");
 
-            Report existing = Report.builder()
-                .id(reportId)
-                .tenantId(tenantId)
-                .name("Original Name")
-                .type("sales")
-                .status("completed")
-                .createdAt(Instant.now())
-                .templateId("template-1")
-                .parameters(Map.of())
-                .build();
+            Report existing = new Report()
+                .withId(reportId)
+                .withTenantId(tenantId)
+                .withName("Original Name")
+                .withFormat("CSV")
+                .withStatus("COMPLETED")
+                .withCreatedAt(System.currentTimeMillis())
+                .withCreatedBy("system");
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(existing));
             when(repository.save(any(Report.class))).thenAnswer(invocation -> 
@@ -216,7 +207,7 @@ class ReportServiceImplTest extends EventloopTestBase {
 
             // Then
             assertThat(result.getName()).isEqualTo("Updated Name");
-            assertThat(result.getUpdatedAt()).isNotNull();
+            assertThat(result.getFormat()).isEqualTo("CSV");
             verify(metrics).incrementCounter("report.update.success", "tenant", tenantId);
         }
 
@@ -277,11 +268,11 @@ class ReportServiceImplTest extends EventloopTestBase {
             String reportId = "report-1";
             String format = "csv";
 
-            Report report = Report.builder()
-                .id(reportId)
-                .tenantId(tenantId)
-                .name("Sales Report")
-                .build();
+            Report report = new Report()
+                .withId(reportId)
+                .withTenantId(tenantId)
+                .withName("Sales Report")
+                .withFormat(format);
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report));
 

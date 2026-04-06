@@ -17,7 +17,7 @@ class FeatureStoreServiceTest {
     @DisplayName("cache-only mode ingests and serves features without a datasource")
     void cacheOnlyModeIngestsAndServesFeaturesWithoutDatasource() {
         FeatureStoreService service = new FeatureStoreService(null, MetricsCollector.create());
-        Feature feature = Feature.builder()
+        MLFeature feature = MLFeature.builder()
                 .name("purchase_amount")
                 .entityId("entity-1")
                 .value(42.5)

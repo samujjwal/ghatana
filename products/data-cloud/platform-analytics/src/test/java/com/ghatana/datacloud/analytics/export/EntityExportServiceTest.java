@@ -331,7 +331,7 @@ class EntityExportServiceTest extends EventloopTestBase {
             // Should not throw, and should issue at least one repository call
             runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), 0));
             verify(repository, atLeastOnce())
-                    .findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt());
+                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt());
         }
 
         @Test
@@ -341,7 +341,7 @@ class EntityExportServiceTest extends EventloopTestBase {
             runPromise(() -> service.exportCsv(TENANT, COLLECTION, Map.of(), Integer.MAX_VALUE));
             // If limit was clamped, the first page call should have limit <= HARD_LIMIT
             verify(repository, atLeastOnce())
-                    .findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(),
+                    .findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(),
                             intThat(l -> l <= EntityExportService.HARD_LIMIT));
         }
 
@@ -353,7 +353,7 @@ class EntityExportServiceTest extends EventloopTestBase {
             // Second call returns 3 entities (partial page -> stop)
             List<Entity> partial = buildEntities(3, "v", 99.0);
 
-            when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+                    when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                     .thenReturn(Promise.of(fullPage))
                     .thenReturn(Promise.of(partial));
 
@@ -422,13 +422,13 @@ class EntityExportServiceTest extends EventloopTestBase {
     // =========================================================================
 
     private void stub(List<Entity> entities) {
-        when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                 .thenReturn(Promise.of(entities))
                 .thenReturn(Promise.of(Collections.emptyList())); // second page = empty
     }
 
     private void stubEmpty() {
-        when(repository.findAll(eq(TENANT), eq(COLLECTION), any(), any(), anyInt(), anyInt()))
+        when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt()))
                 .thenReturn(Promise.of(Collections.emptyList()));
     }
 

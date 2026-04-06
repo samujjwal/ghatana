@@ -1,8 +1,8 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.ai.AIModelManager;
-import com.ghatana.aiplatform.featurestore.Feature;
 import com.ghatana.aiplatform.featurestore.FeatureStoreService;
+import com.ghatana.aiplatform.featurestore.MLFeature;
 import com.ghatana.aiplatform.registry.ModelMetadata;
 import com.ghatana.aiplatform.registry.DeploymentStatus;
 import com.ghatana.datacloud.launcher.http.DataCloudHttpMetrics;
@@ -234,7 +234,7 @@ public class AiModelHandler {
                         return Promise.of(http.errorResponse(400, "Field 'value' must be a number"));
                     }
 
-                    Feature.Builder fb = Feature.builder()
+                        MLFeature.Builder fb = MLFeature.builder()
                             .entityId(entityId)
                             .name(name)
                             .value(value)
@@ -248,7 +248,7 @@ public class AiModelHandler {
                         fb.metadata(meta);
                     }
 
-                    Feature feature = fb.build();
+                    MLFeature feature = fb.build();
                     try {
                         featureStoreService.ingest(tenantId, feature);
                         Map<String, Object> resp = new LinkedHashMap<>();

@@ -116,7 +116,7 @@ class PlatformExceptionTest {
         @Test
         @DisplayName("uses RESOURCE_NOT_FOUND code")
         void usesResourceNotFoundCode() {
-            ResourceNotFoundException ex = new ResourceNotFoundException("User", "42");
+            ResourceNotFoundException ex = ResourceNotFoundException.forResource("User", "42");
             assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND);
             assertThat(ex.getMessage()).contains("User").contains("42");
         }

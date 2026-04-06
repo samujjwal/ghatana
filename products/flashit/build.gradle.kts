@@ -8,7 +8,7 @@ version = rootProject.version
 dependencies {
     // Platform core dependencies
     api(project(":platform:java:core"))
-    api(project(":platform:java:kernel"))
+    api(project(":platform-kernel:kernel-core"))
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:http"))
     implementation(project(":platform:java:config"))

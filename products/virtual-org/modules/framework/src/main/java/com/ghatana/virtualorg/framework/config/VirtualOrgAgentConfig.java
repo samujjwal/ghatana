@@ -352,20 +352,3 @@ record EventSubscription(
         ) {
 
 }
-
-/**
- * Condition configuration.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record ConditionConfig(
-        @JsonProperty("field")
-        String field,
-        @JsonProperty("operator")
-        String operator,
-        @JsonProperty("value")
-        Object value,
-        @JsonProperty("values")
-        List<Object> values
-        ) {
-
-}

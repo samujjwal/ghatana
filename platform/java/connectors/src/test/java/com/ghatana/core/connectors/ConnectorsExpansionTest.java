@@ -188,47 +188,47 @@ class ConnectorsExpansionTest extends EventloopTestBase {
     class LifecycleTests {
 
         @Test
-        @DisplayName("Initialize connector successful")
-        void initializeConnector() {
+        @DisplayName("Initialize all connectors")
+        void initializeAllConnectors() {
             Connector connector = mockConnector("init-test", "kafka");
             registry.register(connector);
 
-            runPromise(() -> registry.initializeConnector("init-test"));
+            runPromise(() -> registry.initializeAll());
 
             assertThat(registry.getConnector("init-test")).isPresent();
         }
 
         @Test
-        @DisplayName("Start connector lifecycle")
-        void startConnector() {
+        @DisplayName("Start all connectors")
+        void startAllConnectors() {
             Connector connector = mockConnector("start-test", "kafka");
             registry.register(connector);
 
-            runPromise(() -> registry.startConnector("start-test"));
+            runPromise(() -> registry.startAll());
 
             assertThat(registry.getConnector("start-test")).isPresent();
         }
 
         @Test
-        @DisplayName("Stop connector lifecycle")
-        void stopConnector() {
+        @DisplayName("Stop all connectors")
+        void stopAllConnectors() {
             Connector connector = mockConnector("stop-test", "kafka");
             registry.register(connector);
 
-            runPromise(() -> registry.stopConnector("stop-test"));
+            runPromise(() -> registry.stopAll());
 
             assertThat(registry.getConnector("stop-test")).isPresent();
         }
 
         @Test
-        @DisplayName("Full lifecycle: init, start, stop")
+        @DisplayName("Full lifecycle: init all, start all, stop all")
         void fullLifecycle() {
             Connector connector = mockConnector("lifecycle-test", "kafka");
             registry.register(connector);
 
-            runPromise(() -> registry.initializeConnector("lifecycle-test"));
-            runPromise(() -> registry.startConnector("lifecycle-test"));
-            runPromise(() -> registry.stopConnector("lifecycle-test"));
+            runPromise(() -> registry.initializeAll());
+            runPromise(() -> registry.startAll());
+            runPromise(() -> registry.stopAll());
 
             assertThat(registry.getConnector("lifecycle-test")).isPresent();
         }
@@ -339,11 +339,9 @@ class ConnectorsExpansionTest extends EventloopTestBase {
                     final int threadIdx = t;
                     exec.submit(() -> {
                         try {
-                            for (int i = 0; i < connectorNames.size(); i++) {
-                                String connName = connectorNames.get(i);
-                                runPromise(() -> registry.initializeConnector(connName));
-                                runPromise(() -> registry.startConnector(connName));
-                            }
+                            // Each thread runs batch lifecycle operations
+                            runPromise(() -> registry.initializeAll());
+                            runPromise(() -> registry.startAll());
                         } finally {
                             latch.countDown();
                         }

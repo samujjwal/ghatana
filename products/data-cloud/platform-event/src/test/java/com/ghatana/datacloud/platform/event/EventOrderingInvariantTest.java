@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.platform.event;
 
-import com.ghatana.datacloud.launcher.test.builder.EventBuilder;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

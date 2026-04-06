@@ -51,7 +51,7 @@ class ConfigValidationTest {
     @DisplayName("[Metadata]: missing_metadata_section_returns_error")
     void missingMetadataSectionReturnsError() {
         RawCollectionConfig config = createMinimalConfig()
-            .withMetadata(null)
+            .withMetadata((RawCollectionConfig.RawMetadata) null)
             .build();
 
         ConfigValidator.ValidationResult result = validator.validate(config);
@@ -117,7 +117,7 @@ class ConfigValidationTest {
     @DisplayName("[Spec]: missing_spec_section_returns_error")
     void missingSpecSectionReturnsError() {
         RawCollectionConfig config = createMinimalConfig()
-            .withSpec(null)
+            .withSpec((RawCollectionConfig.RawSpec) null)
             .build();
 
         ConfigValidator.ValidationResult result = validator.validate(config);
@@ -156,7 +156,7 @@ class ConfigValidationTest {
     @DisplayName("[Spec]: missing_schema_returns_error")
     void missingSchemaReturnsError() {
         RawCollectionConfig config = createMinimalConfig()
-            .withSpec(createSpec().withSchema(null))
+            .withSpec(createSpec().withSchema((RawCollectionConfig.RawSchema) null))
             .build();
 
         ConfigValidator.ValidationResult result = validator.validate(config);
@@ -444,7 +444,7 @@ class ConfigValidationTest {
     @DisplayName("[validateOrFail]: invalid_config_throws_exception")
     void invalidConfigThrowsException() {
         RawCollectionConfig config = createMinimalConfig()
-            .withMetadata(null)
+            .withMetadata((RawCollectionConfig.RawMetadata) null)
             .build();
 
         assertThatThrownBy(() -> validator.validateOrFail(config))
@@ -540,7 +540,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig build() {
-            return new RawCollectionConfig(metadata, spec);
+            return new RawCollectionConfig("v1", "Collection", metadata, spec);
         }
     }
 
@@ -559,7 +559,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig.RawMetadata build() {
-            return new RawCollectionConfig.RawMetadata(name, namespace, "v1", Map.of(), List.of());
+            return new RawCollectionConfig.RawMetadata(name, namespace, Map.of(), Map.of());
         }
     }
 
@@ -590,7 +590,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig.RawSpec build() {
-            return new RawCollectionConfig.RawSpec(recordType, schema, null, indexes, storage, null, null);
+            return new RawCollectionConfig.RawSpec(recordType, null, null, null, schema, storage, indexes, null, null, null, null, null, null);
         }
     }
 
@@ -598,7 +598,8 @@ class ConfigValidationTest {
         private String recordType = "EVENT";
         private RawCollectionConfig.RawSchema schema;
         private List<RawCollectionConfig.RawIndex> indexes = List.of();
-        private RawCollectionConfig.RawEventSourcing eventSourcing = new RawCollectionConfig.RawEventSourcing(true, 30);
+        private RawCollectionConfig.RawEventSourcing eventSourcing =
+            new RawCollectionConfig.RawEventSourcing(true, true, null, null);
 
         RawEventSpecBuilder withRecordType(String recordType) {
             this.recordType = recordType;
@@ -611,7 +612,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig.RawSpec build() {
-            return new RawCollectionConfig.RawSpec(recordType, schema, null, indexes, null, eventSourcing, null);
+            return new RawCollectionConfig.RawSpec(recordType, null, null, null, schema, null, indexes, null, null, null, eventSourcing, null, null);
         }
     }
 
@@ -630,7 +631,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig.RawSchema build() {
-            return new RawCollectionConfig.RawSchema(version, fields, null, null);
+            return new RawCollectionConfig.RawSchema(version, null, fields);
         }
     }
 
@@ -641,7 +642,7 @@ class ConfigValidationTest {
         private boolean immutable = false;
         private Boolean unique = null;
         private Boolean indexed = null;
-        private RawCollectionConfig.RawItems items = null;
+        private RawCollectionConfig.RawArrayItems items = null;
         private List<String> values = null;
         private String reference = null;
         private String join = null;
@@ -668,8 +669,25 @@ class ConfigValidationTest {
 
         RawCollectionConfig.RawField build() {
             return new RawCollectionConfig.RawField(
-                name, type, null, required, immutable, null, unique, indexed,
-                items, values, reference, join, null, null, null
+                name,
+                type,
+                null,
+                required,
+                Boolean.TRUE.equals(unique),
+                Boolean.TRUE.equals(indexed),
+                false,
+                false,
+                immutable,
+                null,
+                null,
+                null,
+                null,
+                values,
+                null,
+                items,
+                null,
+                reference,
+                join
             );
         }
     }
@@ -690,7 +708,7 @@ class ConfigValidationTest {
         }
 
         RawCollectionConfig.RawIndex build() {
-            return new RawCollectionConfig.RawIndex(name, fields, type, null, null);
+            return new RawCollectionConfig.RawIndex(name, fields, false, type);
         }
     }
 }

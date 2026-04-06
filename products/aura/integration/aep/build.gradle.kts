@@ -15,7 +15,7 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:contracts"))
     // Kernel — event-store for AEP event publishing and schema registry validation
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
     implementation(libs.activej.promise)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

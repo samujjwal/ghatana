@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Checkbox } from '../Checkbox';
 
 describe('Checkbox', () => {
@@ -33,12 +34,12 @@ describe('Checkbox', () => {
 
   describe('Controlled checked state', () => {
     it('renders checked when checked=true', () => {
-      render(<Checkbox checked onChange={() => {}} />);
+      render(<Checkbox checked onChange={() => { }} />);
       expect(screen.getByRole('checkbox')).toBeChecked();
     });
 
     it('renders unchecked when checked=false', () => {
-      render(<Checkbox checked={false} onChange={() => {}} />);
+      render(<Checkbox checked={false} onChange={() => { }} />);
       expect(screen.getByRole('checkbox')).not.toBeChecked();
     });
   });
@@ -47,15 +48,27 @@ describe('Checkbox', () => {
 
   describe('Indeterminate state', () => {
     it('sets indeterminate property when indeterminate=true', () => {
-      render(<Checkbox indeterminate onChange={() => {}} />);
+      render(<Checkbox indeterminate onChange={() => { }} />);
       const input = screen.getByRole('checkbox') as HTMLInputElement;
       expect(input.indeterminate).toBe(true);
     });
 
     it('does not set indeterminate when not provided', () => {
-      render(<Checkbox onChange={() => {}} />);
+      render(<Checkbox onChange={() => { }} />);
       const input = screen.getByRole('checkbox') as HTMLInputElement;
       expect(input.indeterminate).toBe(false);
+    });
+
+    it('renders a custom indeterminate icon when provided', () => {
+      render(
+        <Checkbox
+          indeterminate
+          indeterminateIcon={<span data-testid="indeterminate-icon">-</span>}
+          onChange={() => { }}
+        />
+      );
+
+      expect(screen.getByTestId('indeterminate-icon')).toBeInTheDocument();
     });
   });
 
@@ -67,10 +80,11 @@ describe('Checkbox', () => {
       expect(screen.getByRole('checkbox')).toBeDisabled();
     });
 
-    it('does not call onChange when disabled and clicked', () => {
+    it('does not call onChange when disabled and clicked', async () => {
+      const user = userEvent.setup();
       const onChange = vi.fn();
       render(<Checkbox disabled onChange={onChange} />);
-      fireEvent.click(screen.getByRole('checkbox'));
+      await user.click(screen.getByRole('checkbox'));
       expect(onChange).not.toHaveBeenCalled();
     });
   });
@@ -133,6 +147,43 @@ describe('Checkbox', () => {
     it('displays helperText below the checkbox', () => {
       render(<Checkbox label="Option" helperText="Required field" />);
       expect(screen.getByText('Required field')).toBeInTheDocument();
+    });
+
+    it('links helper text to the checkbox through aria-describedby', () => {
+      render(<Checkbox id="terms" label="Terms" helperText="Read carefully" />);
+
+      expect(screen.getByRole('checkbox')).toHaveAttribute('aria-describedby', 'terms-helper');
+      expect(screen.getByText('Read carefully')).toHaveAttribute('id', 'terms-helper');
+    });
+  });
+
+  // ── Accessibility ─────────────────────────────────────────────────────────
+
+  describe('Accessibility', () => {
+    it('is keyboard reachable through tab navigation', async () => {
+      const user = userEvent.setup();
+      render(
+        <>
+          <button type="button">Before</button>
+          <Checkbox label="Keyboard checkbox" />
+        </>
+      );
+
+      await user.tab();
+      await user.tab();
+
+      expect(screen.getByRole('checkbox')).toHaveFocus();
+    });
+
+    it('toggles when activated with the keyboard', async () => {
+      const user = userEvent.setup();
+      render(<Checkbox label="Keyboard toggle" />);
+
+      const checkbox = screen.getByRole('checkbox');
+      await user.tab();
+      await user.keyboard(' ');
+
+      expect(checkbox).toBeChecked();
     });
   });
 });

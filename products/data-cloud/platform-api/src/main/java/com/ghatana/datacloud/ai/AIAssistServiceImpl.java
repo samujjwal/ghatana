@@ -78,10 +78,14 @@ public class AIAssistServiceImpl implements AIAssistService {
 
         // Use LLM provider to generate SQL
         String prompt = buildSQLGenerationPrompt(description, schema);
-        
-        return llmProvider.complete(prompt)
+
+        LLMProvider.CompletionRequest request = LLMProvider.CompletionRequest.builder()
+            .prompt(prompt)
+            .build();
+
+        return llmProvider.complete(request)
             .then(response -> {
-                String generatedSQL = extractSQLFromResponse(response);
+                String generatedSQL = extractSQLFromResponse(response.text());
                 
                 GeneratedSQL result = new GeneratedSQL(
                     generatedSQL,
@@ -158,7 +162,7 @@ public class AIAssistServiceImpl implements AIAssistService {
             .limit(Math.max(1, limit))
             .collect(Collectors.toList());
 
-        metrics.incrementCounter("ai.suggest.success", "count", limited.size());
+        metrics.incrementCounter("ai.suggest.success", "count", String.valueOf(limited.size()));
         return Promise.of(limited);
     }
 
@@ -254,8 +258,8 @@ public class AIAssistServiceImpl implements AIAssistService {
         
         ServiceStatus status = new ServiceStatus(
             true,
-            llmProvider.getProviderName(),
-            llmProvider.getModelName(),
+            llmProvider.getName(),
+            "unknown",
             requestsProcessed,
             avgLatency,
             Instant.now()

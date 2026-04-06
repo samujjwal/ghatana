@@ -50,8 +50,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         aiService = new AIAssistServiceImpl(llmProvider, metrics);
         pluginRegistry = new PluginRegistryImpl(metrics);
         
-        when(llmProvider.getProviderName()).thenReturn("OpenAI");
-        when(llmProvider.getModelName()).thenReturn("gpt-4");
+        when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
     @Test
@@ -95,7 +94,9 @@ class AIPluginIntegrationTest extends EventloopTestBase {
     @DisplayName("[INTEGRATION-006]: ai_service_status_with_plugins")
     void aiServiceStatusWithPlugins() {
         // Given - AI service processing queries
-        when(llmProvider.complete(any())).thenReturn(Promise.of("SQL result"));
+        when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse(
+            "resp-1", "SQL result", 10, 5, 5, "stop", 25L, "gpt-4"
+        )));
         
         AIAssistService.QueryContext context = new AIAssistService.QueryContext(
             "tenant-alpha", "user-1", null, null, null, Map.of(), null
@@ -103,7 +104,8 @@ class AIPluginIntegrationTest extends EventloopTestBase {
 
         // Process multiple queries
         for (int i = 0; i < 5; i++) {
-            runPromise(() -> aiService.processQuery("Query " + i, context));
+            int queryIndex = i;
+            runPromise(() -> aiService.processQuery("Query " + queryIndex, context));
         }
 
         // When - Get service status
@@ -127,7 +129,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             "Enhances queries with AI",
             "1.0.0",
             "tenant-alpha",
-            PluginRegistry.PluginType.SYSTEM,
+            PluginRegistry.PluginType.ANALYTICS,
             PluginRegistry.PluginStatus.REGISTERED,
             List.of("enhanceQuery", "validateSQL"),
             List.of(),

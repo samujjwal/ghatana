@@ -89,11 +89,10 @@ class AuditLogRetentionTest extends EventloopTestBase {
             Instant cutoff = now.minusSeconds(86400 * 30); // 30 days ago
 
             // Simulate that logs newer than cutoff should be kept
-            AuditLogService.AuditEvent recent = AuditLogService.AuditEvent.builder()
-                .id("event-1")
-                .tenantId(tenantId)
-                .timestamp(now.minusSeconds(86400 * 7)) // 7 days ago (recent)
-                .build();
+            AuditLogService.AuditEvent recent = new AuditLogService.AuditEvent(
+                "event-1", tenantId, null, null, null, null, null,
+                false, Map.of(), null, null, now.minusSeconds(86400 * 7)
+            );
 
             assertThat(recent.timestamp()).isAfter(cutoff);
         }
@@ -106,11 +105,10 @@ class AuditLogRetentionTest extends EventloopTestBase {
             Instant cutoff = now.minusSeconds(86400 * 30); // 30 days ago
 
             // Simulate that logs older than cutoff should be removed
-            AuditLogService.AuditEvent old = AuditLogService.AuditEvent.builder()
-                .id("event-old")
-                .tenantId(tenantId)
-                .timestamp(now.minusSeconds(86400 * 60)) // 60 days ago (old)
-                .build();
+            AuditLogService.AuditEvent old = new AuditLogService.AuditEvent(
+                "event-old", tenantId, null, null, null, null, null,
+                false, Map.of(), null, null, now.minusSeconds(86400 * 60)
+            );
 
             assertThat(old.timestamp()).isBefore(cutoff);
         }
@@ -134,13 +132,11 @@ class AuditLogRetentionTest extends EventloopTestBase {
                     .id("e1")
                     .tenantId(tenantId)
                     .type(AuditLogService.EventType.ACCESS)
-                    .timestamp(Instant.now())
                     .build(),
                 AuditLogService.AuditEvent.builder()
                     .id("e2")
                     .tenantId(tenantId)
                     .type(AuditLogService.EventType.CREATE)
-                    .timestamp(Instant.now())
                     .build()
             );
 
@@ -261,7 +257,6 @@ class AuditLogRetentionTest extends EventloopTestBase {
                 .success(true)
                 .ipAddress("192.168.1.1")
                 .userAgent("Mozilla/5.0")
-                .timestamp(Instant.now())
                 .build();
 
             when(auditLogService.log(event))
@@ -289,7 +284,6 @@ class AuditLogRetentionTest extends EventloopTestBase {
                 .details(Map.of("filter", "sales"))
                 .ipAddress("10.0.0.1")
                 .userAgent("TestAgent/1.0")
-                .timestamp(now)
                 .build();
 
             assertThat(event.id()).isEqualTo("event-001");

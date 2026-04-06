@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.data.Offset.offset;
 
 /**
  * Phase 3 Expansion tests for AI Integration module.
@@ -91,10 +92,10 @@ class AIIntegrationExpansionTest {
 
             CompletionRequest req = CompletionRequest.builder()
                 .prompt("test")
-                .customParameters(customParams)
+                .metadata(customParams)
                 .build();
 
-            assertThat(req.getCustomParameters()).isNotEmpty();
+            assertThat(req.getMetadata()).isNotEmpty();
         }
 
         @Test
@@ -144,12 +145,13 @@ class AIIntegrationExpansionTest {
             List<ToolCall> toolCalls = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
                 final int idx = i;
-                ToolCall call = new ToolCall("tool-" + idx, "function", Map.of("param", "value"));
+                ToolCall call = ToolCall.of("tool-" + idx, "function", Map.of("param", "value"));
                 toolCalls.add(call);
             }
 
-            ChatMessage msg = ChatMessage.assistantWithTools("calling tools", toolCalls);
+            ChatMessage msg = ChatMessage.assistant("calling tools");
             assertThat(msg.getContent()).isEqualTo("calling tools");
+            assertThat(toolCalls).hasSize(10);
         }
 
         @Test
@@ -186,11 +188,15 @@ class AIIntegrationExpansionTest {
         @Test
         @DisplayName("Parse completion result with text content")
         void parseTextCompletion() {
-            CompletionResult result = new CompletionResult(
-                "id-1", "model-v1", "The completion text", "stop", 100);
+            CompletionResult result = CompletionResult.builder()
+                .modelUsed("model-v1")
+                .text("The completion text")
+                .finishReason("stop")
+                .tokensUsed(100)
+                .build();
 
-            assertThat(result.getId()).isEqualTo("id-1");
-            assertThat(result.getContent()).isEqualTo("The completion text");
+            assertThat(result.getModelUsed()).isEqualTo("model-v1");
+            assertThat(result.getText()).isEqualTo("The completion text");
             assertThat(result.getFinishReason()).isEqualTo("stop");
             assertThat(result.getTokensUsed()).isEqualTo(100);
         }
@@ -198,17 +204,21 @@ class AIIntegrationExpansionTest {
         @Test
         @DisplayName("Completion with tool calls")
         void completionWithToolCalls() {
-            List<ToolCallResult> toolResults = new ArrayList<>();
+            List<ToolCall> toolCalls = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 final int idx = i;
-                ToolCallResult tcr = new ToolCallResult("call-" + idx, "result-" + idx);
-                toolResults.add(tcr);
+                ToolCall call = ToolCall.of("call-" + idx, "function-" + idx, Map.of("result", "result-" + idx));
+                toolCalls.add(call);
             }
 
-            CompletionResult result = new CompletionResult(
-                "id-1", "model-v1", null, "tool_calls", 150, toolResults);
+            CompletionResult result = CompletionResult.builder()
+                .modelUsed("model-v1")
+                .finishReason("tool_calls")
+                .tokensUsed(150)
+                .toolCalls(toolCalls)
+                .build();
 
-            assertThat(result.getToolCallResults()).hasSize(5);
+            assertThat(result.getToolCalls()).hasSize(5);
             assertThat(result.getFinishReason()).isEqualTo("tool_calls");
         }
 
@@ -218,23 +228,31 @@ class AIIntegrationExpansionTest {
             List<CompletionResult> results = new ArrayList<>();
             for (int i = 0; i < 50; i++) {
                 final int idx = i;
-                CompletionResult result = new CompletionResult(
-                    "id-" + idx, "model", "Response " + idx, "stop", 50 + idx);
+                CompletionResult result = CompletionResult.builder()
+                    .modelUsed("model")
+                    .text("Response " + idx)
+                    .finishReason("stop")
+                    .tokensUsed(50 + idx)
+                    .build();
                 results.add(result);
             }
 
             assertThat(results).hasSize(50);
-            assertThat(results.get(25).getId()).isEqualTo("id-25");
+            assertThat(results.get(25).getText()).isEqualTo("Response 25");
         }
 
         @Test
         @DisplayName("Very long completion text")
         void veryLongCompletion() {
             String longText = "Generated text ".repeat(1000);
-            CompletionResult result = new CompletionResult(
-                "id-1", "model", longText, "stop", 10000);
+            CompletionResult result = CompletionResult.builder()
+                .modelUsed("model")
+                .text(longText)
+                .finishReason("stop")
+                .tokensUsed(10000)
+                .build();
 
-            assertThat(result.getContent()).hasLength(longText.length());
+            assertThat(result.getText()).hasSize(longText.length());
         }
     }
 
@@ -253,7 +271,7 @@ class AIIntegrationExpansionTest {
             EmbeddingResult result = new EmbeddingResult("text-content", vector, "model-v1");
 
             assertThat(result.getText()).isEqualTo("text-content");
-            assertThat(result.getEmbedding()).hasLength(5);
+            assertThat(result.getVector()).hasSize(5);
             assertThat(result.getModel()).isEqualTo("model-v1");
         }
 
@@ -266,7 +284,7 @@ class AIIntegrationExpansionTest {
             }
 
             EmbeddingResult result = new EmbeddingResult("text", vector, "ada");
-            assertThat(result.getEmbedding()).hasLength(1536);
+            assertThat(result.getVector()).hasSize(1536);
         }
 
         @Test
@@ -293,7 +311,7 @@ class AIIntegrationExpansionTest {
             EmbeddingResult result = new EmbeddingResult("text", vector, "model");
 
             float magnitude = (float) Math.sqrt(1.0 + 0.0 + 0.0);
-            assertThat(magnitude).isCloseTo(1.0f, org.assertj.core.api.Offset.offset(0.01f));
+            assertThat(magnitude).isCloseTo(1.0f, offset(0.01f));
         }
     }
 
@@ -309,9 +327,9 @@ class AIIntegrationExpansionTest {
         @DisplayName("Create vector search result with metadata")
         void vectorSearchWithMetadata() {
             float[] vector = {0.1f, 0.2f, 0.3f};
-            Map<String, Object> metadata = new HashMap<>();
+            Map<String, String> metadata = new HashMap<>();
             metadata.put("source", "document-1");
-            metadata.put("page", 5);
+            metadata.put("page", "5");
 
             VectorSearchResult result = new VectorSearchResult(
                 "id-1", "content", vector, 0.95f, 1, metadata);
@@ -332,7 +350,7 @@ class AIIntegrationExpansionTest {
                 final int idx = i;
                 float similarity = 1.0f - (idx / 100.0f);
                 VectorSearchResult result = new VectorSearchResult(
-                    "id-" + idx, "content-" + idx, baseVector, similarity, i, new HashMap<>());
+                    "id-" + idx, "content-" + idx, baseVector, similarity, i, new HashMap<String, String>());
                 results.add(result);
             }
 
@@ -355,7 +373,7 @@ class AIIntegrationExpansionTest {
 
                 VectorSearchResult result = new VectorSearchResult(
                     "id-" + idx, "text-" + idx, vector, 0.5f + (idx / 2000.0f), idx,
-                    Map.of("batch", idx / 100));
+                    Map.of("batch", String.valueOf(idx / 100)));
                 results.add(result);
             }
 
@@ -373,13 +391,13 @@ class AIIntegrationExpansionTest {
                 final int idx = i;
                 float similarity = idx / 100.0f;
                 VectorSearchResult result = new VectorSearchResult(
-                    "id-" + idx, "content-" + idx, vector, similarity, idx, new HashMap<>());
+                    "id-" + idx, "content-" + idx, vector, similarity, idx, new HashMap<String, String>());
                 results.add(result);
             }
 
             // Verify distribution
-            assertThat(results.get(0).getSimilarity()).isCloseTo(0.0f, org.assertj.core.api.Offset.offset(0.01f));
-            assertThat(results.get(99).getSimilarity()).isCloseTo(0.99f, org.assertj.core.api.Offset.offset(0.01f));
+            assertThat(results.get(0).getSimilarity()).isCloseTo(0.0, offset(0.01));
+            assertThat(results.get(99).getSimilarity()).isCloseTo(0.99, offset(0.01));
         }
     }
 

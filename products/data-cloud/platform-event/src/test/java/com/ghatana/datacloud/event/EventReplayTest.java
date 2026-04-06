@@ -81,7 +81,7 @@ class EventReplayTest extends EventloopTestBase {
                 replayService.replayFromOffset(consumerId, fromOffset, captureHandler)
             );
 
-            assertThat(result.successful()).isTrue();
+            assertThat(result.isSuccessful()).isTrue();
             assertThat(result.startOffset()).isEqualTo(100);
             assertThat(result.endOffset()).isEqualTo(200);
             assertThat(result.eventsReplayed()).isEqualTo(100);
@@ -233,7 +233,7 @@ class EventReplayTest extends EventloopTestBase {
                 replayService.replayForTimeRange(startTime, endTime, captureHandler)
             );
 
-            assertThat(result.successful()).isTrue();
+            assertThat(result.isSuccessful()).isTrue();
         }
     }
 

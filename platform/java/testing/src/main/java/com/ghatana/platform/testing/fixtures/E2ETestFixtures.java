@@ -30,6 +30,11 @@ import org.testcontainers.utility.DockerImageName;
  *   }
  * }
  * ```
+ *
+ * @doc.type class
+ * @doc.purpose Preconfigured testcontainers fixtures for end-to-end platform tests
+ * @doc.layer core
+ * @doc.pattern Test Support
  */
 public class E2ETestFixtures {
 

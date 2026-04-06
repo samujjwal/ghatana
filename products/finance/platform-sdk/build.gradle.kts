@@ -37,10 +37,10 @@ dependencies {
     api(project(":platform:java:core"))
     
     // ─── Platform Kernel (for migrated modules) ───────────────────────────────
-    api(project(":platform:java:kernel"))
+    api(project(":platform-kernel:kernel-core"))
     
     // ─── Platform Libraries ───────────────────────────────────────────────────
-    api(project(":platform:java:plugin"))
+    api(project(":platform-kernel:kernel-plugin"))
     api(project(":platform:java:workflow"))
     
     // ─── ActiveJ (Mandatory for platform compliance) ───────────────────────────

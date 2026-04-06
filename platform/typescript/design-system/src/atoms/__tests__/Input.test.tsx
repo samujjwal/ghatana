@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Input } from '../Input';
 
 describe('Input (TextField)', () => {
@@ -38,7 +39,7 @@ describe('Input (TextField)', () => {
 
   describe('Value and onChange', () => {
     it('reflects a controlled value', () => {
-      render(<Input value="hello" onChange={() => {}} />);
+      render(<Input value="hello" onChange={() => { }} />);
       const input = screen.getByRole('textbox') as HTMLInputElement;
       expect(input.value).toBe('hello');
     });
@@ -72,6 +73,56 @@ describe('Input (TextField)', () => {
       render(<Input error="This field is required" />);
       expect(screen.getByText('This field is required')).toBeInTheDocument();
     });
+
+    it('associates error, helper, and description text through aria-describedby', () => {
+      render(
+        <Input
+          id="email"
+          label="Email"
+          error="Invalid email"
+          helperText="Use a company address"
+          description="Only administrators are notified"
+        />
+      );
+
+      expect(screen.getByRole('textbox')).toHaveAttribute(
+        'aria-describedby',
+        'email-error email-helper email-description'
+      );
+      expect(screen.getByRole('alert')).toHaveTextContent('Invalid email');
+    });
+  });
+
+  // ── Validation and input attributes ──────────────────────────────────────
+
+  describe('Validation and input attributes', () => {
+    it('supports native required validation', () => {
+      render(<Input label="Name" required />);
+      const input = screen.getByRole('textbox');
+
+      expect(input).toBeRequired();
+      expect(input).toBeInvalid();
+    });
+
+    it('supports masked-input consumers by forwarding native mask-related attributes', () => {
+      render(
+        <Input
+          label="PIN"
+          InputProps={{
+            inputProps: {
+              inputMode: 'numeric',
+              pattern: '[0-9]{4}',
+              maxLength: 4,
+            },
+          }}
+        />
+      );
+
+      const input = screen.getByRole('textbox');
+      expect(input).toHaveAttribute('inputmode', 'numeric');
+      expect(input).toHaveAttribute('pattern', '[0-9]{4}');
+      expect(input).toHaveAttribute('maxlength', '4');
+    });
   });
 
   // ── Disabled state ────────────────────────────────────────────────────────
@@ -83,10 +134,12 @@ describe('Input (TextField)', () => {
     });
 
     it('does not fire onChange when disabled', () => {
+      const user = userEvent.setup();
       const onChange = vi.fn();
       render(<Input disabled onChange={onChange} />);
-      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'x' } });
-      expect(onChange).not.toHaveBeenCalled();
+      return user.type(screen.getByRole('textbox'), 'x').then(() => {
+        expect(onChange).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -112,6 +165,22 @@ describe('Input (TextField)', () => {
     });
   });
 
+  // ── Rapid updates ─────────────────────────────────────────────────────────
+
+  describe('Rapid updates', () => {
+    it('surfaces each rapid change event without swallowing updates', () => {
+      const onChange = vi.fn();
+      render(<Input onChange={onChange} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: '1' } });
+      fireEvent.change(input, { target: { value: '12' } });
+      fireEvent.change(input, { target: { value: '123' } });
+
+      expect(onChange).toHaveBeenCalledTimes(3);
+    });
+  });
+
   // ── Input type ────────────────────────────────────────────────────────────
 
   describe('Input type', () => {
@@ -132,7 +201,7 @@ describe('Input (TextField)', () => {
 
   describe('Read-only', () => {
     it('renders as readOnly when readOnly=true', () => {
-      render(<Input readOnly value="static" onChange={() => {}} />);
+      render(<Input readOnly value="static" onChange={() => { }} />);
       expect(screen.getByRole('textbox')).toHaveAttribute('readonly');
     });
   });

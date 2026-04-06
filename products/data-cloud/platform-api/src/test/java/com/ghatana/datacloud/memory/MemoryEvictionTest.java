@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -398,14 +397,6 @@ class MemoryEvictionTest extends EventloopTestBase {
             );
 
             assertThat(procedural.importance()).isGreaterThan(0.9);
-        }
-    }
-
-    private static class Map {
-        static <K, V> java.util.Map<K, V> of(K k1, V v1) {
-            java.util.Map<K, V> map = new LinkedHashMap<>();
-            map.put(k1, v1);
-            return java.util.Collections.unmodifiableMap(map);
         }
     }
 }

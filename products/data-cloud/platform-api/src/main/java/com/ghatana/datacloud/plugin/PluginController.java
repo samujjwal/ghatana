@@ -7,8 +7,10 @@ package com.ghatana.datacloud.plugin;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -50,20 +52,18 @@ public class PluginController implements AsyncServlet {
             return executeHook(request, extractId(path), extractHookName(path));
         }
 
-        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found"));
+        return notFound();
     }
 
     private Promise<HttpResponse> registerPlugin(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    PluginRegistry.PluginMetadata plugin = parsePlugin(body.getStringUtf8());
+                    PluginRegistry.PluginMetadata plugin = parsePlugin(body.asString(StandardCharsets.UTF_8));
                     return pluginRegistry.register(plugin)
-                        .then(registered -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(registered))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request: " + e.getMessage()));
+                    return badRequest("Invalid request: " + e.getMessage());
                 }
             });
     }
@@ -72,11 +72,9 @@ public class PluginController implements AsyncServlet {
         return pluginRegistry.getPlugin(pluginId)
             .then(pluginOpt -> {
                 if (pluginOpt.isPresent()) {
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(pluginOpt.get())));
+                    return okJson(pluginOpt.get());
                 } else {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Plugin not found"));
+                    return notFound("Plugin not found");
                 }
             });
     }
@@ -89,32 +87,27 @@ public class PluginController implements AsyncServlet {
             : null;
 
         return pluginRegistry.listPlugins(tenantId, status)
-            .then(plugins -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("plugins", plugins, "total", plugins.size())))));
+            .then(plugins -> okJson(Map.of("plugins", plugins, "total", plugins.size())));
     }
 
     private Promise<HttpResponse> activatePlugin(HttpRequest request, String pluginId) {
         return pluginRegistry.activate(pluginId)
-            .then(plugin -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(plugin))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> deactivatePlugin(HttpRequest request, String pluginId) {
         return pluginRegistry.deactivate(pluginId)
-            .then(plugin -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(plugin))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> unregisterPlugin(HttpRequest request, String pluginId) {
         return pluginRegistry.unregister(pluginId)
-            .then(v -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(Map.of("unregistered", true)))));
+            .then(v -> okJson(Map.of("unregistered", true)));
     }
 
     private Promise<HttpResponse> getPluginHealth(HttpRequest request, String pluginId) {
         return pluginRegistry.getHealth(pluginId)
-            .then(health -> Promise.of(HttpResponse.ok200()
-                .withJson(toJson(health))));
+            .then(this::okJson);
     }
 
     private Promise<HttpResponse> executeHook(HttpRequest request, String pluginId, String hookName) {
@@ -122,13 +115,11 @@ public class PluginController implements AsyncServlet {
             .then(body -> {
                 try {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> context = parseJson(body.getStringUtf8());
+                    Map<String, Object> context = parseJson(body.asString(StandardCharsets.UTF_8));
                     return pluginRegistry.executeHook(pluginId, hookName, context)
-                        .then(result -> Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(result))));
+                        .then(this::okJson);
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request"));
+                    return badRequest("Invalid request");
                 }
             });
     }
@@ -154,7 +145,7 @@ public class PluginController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
         return tenantId != null ? tenantId : "default-tenant";
     }
 
@@ -177,5 +168,21 @@ public class PluginController implements AsyncServlet {
     private String toJson(Object obj) {
         // Simplified - in production use Jackson
         return "{}";
+    }
+
+    private Promise<HttpResponse> okJson(Object payload) {
+        return Promise.of(HttpResponse.ok200().withJson(toJson(payload)).build());
+    }
+
+    private Promise<HttpResponse> badRequest(String message) {
+        return Promise.of(HttpResponse.ofCode(400).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound(String message) {
+        return Promise.of(HttpResponse.ofCode(404).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound() {
+        return notFound("Not Found");
     }
 }

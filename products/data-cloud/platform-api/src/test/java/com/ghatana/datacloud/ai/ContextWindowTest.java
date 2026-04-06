@@ -47,11 +47,11 @@ class ContextWindowTest extends EventloopTestBase {
 
             List<ContextWindowManager.ContextContent> contents = List.of(
                 new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContentType.USER_MESSAGE,
+                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
                     "Hello", 5, 1.0, Instant.now(), Map.of()
                 ),
                 new ContextWindowManager.ContextContent(
-                    "c2", ContextWindowManager.ContentType.ASSISTANT_MESSAGE,
+                    "c2", ContextWindowManager.ContextContent.ContentType.ASSISTANT_MESSAGE,
                     "Hi!", 5, 1.0, Instant.now(), Map.of()
                 )
             );
@@ -84,13 +84,13 @@ class ContextWindowTest extends EventloopTestBase {
         void addContentIncreasesWindow() {
             String conversationId = "conv-001";
             ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent(
-                "c3", ContextWindowManager.ContentType.USER_MESSAGE,
+                "c3", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
                 "New message", 8, 1.0, Instant.now(), Map.of()
             );
 
             List<ContextWindowManager.ContextContent> contents = List.of(
                 new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContentType.USER_MESSAGE, "Hello", 5, 1.0, Instant.now(), Map.of()
+                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Hello", 5, 1.0, Instant.now(), Map.of()
                 ),
                 content
             );
@@ -135,7 +135,7 @@ class ContextWindowTest extends EventloopTestBase {
 
             List<ContextWindowManager.ContextContent> trimmedContents = List.of(
                 new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContentType.USER_MESSAGE, "Recent", 50, 1.0, Instant.now(), Map.of()
+                    "c1", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE, "Recent", 50, 1.0, Instant.now(), Map.of()
                 )
             );
 
@@ -264,11 +264,11 @@ class ContextWindowTest extends EventloopTestBase {
 
             List<ContextWindowManager.ContextContent> optimizedContents = List.of(
                 new ContextWindowManager.ContextContent(
-                    "c1", ContextWindowManager.ContentType.QUERY_RESULT,
+                    "c1", ContextWindowManager.ContextContent.ContentType.QUERY_RESULT,
                     "Sales: $100K", 20, 0.95, Instant.now(), Map.of("topic", "sales")
                 ),
                 new ContextWindowManager.ContextContent(
-                    "c2", ContextWindowManager.ContentType.USER_MESSAGE,
+                    "c2", ContextWindowManager.ContextContent.ContentType.USER_MESSAGE,
                     "Show sales", 10, 0.90, Instant.now(), Map.of()
                 )
             );
@@ -297,7 +297,7 @@ class ContextWindowTest extends EventloopTestBase {
         @Test
         @DisplayName("[AI005]: all_content_types_supported")
         void allContentTypesSupported() {
-            for (ContextWindowManager.ContentType type : ContextWindowManager.ContentType.values()) {
+            for (ContextWindowManager.ContextContent.ContentType type : ContextWindowManager.ContextContent.ContentType.values()) {
                 ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent(
                     "id", type, "content", 10, 1.0, Instant.now(), Map.of()
                 );

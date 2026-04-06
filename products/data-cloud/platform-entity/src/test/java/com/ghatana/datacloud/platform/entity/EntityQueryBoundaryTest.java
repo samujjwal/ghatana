@@ -4,7 +4,6 @@
  */
 package com.ghatana.datacloud.platform.entity;
 
-import com.ghatana.datacloud.launcher.test.builder.EntityBuilder;
 import com.ghatana.datacloud.spi.EntityStore;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -183,7 +182,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("[Entity]: builder_creates_entity_with_all_fields")
     void builderCreatesEntityWithAllFields() {
-        Map<String, Object> entity = EntityBuilder.create("products")
+        Map<String, Object> entity = TestEntityBuilder.create("products")
             .withId("prod-001")
             .withField("name", "Test Product")
             .withField("price", 29.99)
@@ -202,7 +201,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("[Entity]: product_template_creates_valid_product")
     void productTemplateCreatesValidProduct() {
-        Map<String, Object> product = EntityBuilder.product()
+        Map<String, Object> product = TestEntityBuilder.product()
             .withId("prod-template-001")
             .build();
 
@@ -213,7 +212,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     @Test
     @DisplayName("[Entity]: customer_template_creates_valid_customer")
     void customerTemplateCreatesValidCustomer() {
-        Map<String, Object> customer = EntityBuilder.customer()
+        Map<String, Object> customer = TestEntityBuilder.customer()
             .withId("cust-001")
             .build();
 
@@ -306,5 +305,58 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
         assertThat(updated.version()).isEqualTo(original.version() + 1);
         assertThat(updated.updatedBy()).hasValue("user-123");
         assertThat(updated.createdAt()).isEqualTo(original.createdAt());
+    }
+
+    private static final class TestEntityBuilder {
+        private final Map<String, Object> entity = new java.util.HashMap<>();
+
+        private TestEntityBuilder(String collection) {
+            entity.put("collection", collection);
+        }
+
+        static TestEntityBuilder create(String collection) {
+            return new TestEntityBuilder(collection);
+        }
+
+        static TestEntityBuilder product() {
+            return create("products")
+                .withField("name", "Test Product")
+                .withField("sku", "SKU-001")
+                .withField("price", 29.99)
+                .withField("quantity", 10)
+                .withField("category", "general");
+        }
+
+        static TestEntityBuilder customer() {
+            return create("customers")
+                .withField("name", "Test Customer")
+                .withField("email", "customer@example.com")
+                .withField("phone", "+977-0000000000")
+                .withField("status", "active");
+        }
+
+        TestEntityBuilder withId(String id) {
+            entity.put("id", id);
+            return this;
+        }
+
+        TestEntityBuilder withField(String name, Object value) {
+            entity.put(name, value);
+            return this;
+        }
+
+        TestEntityBuilder withTenant(String tenantId) {
+            entity.put("tenantId", tenantId);
+            return this;
+        }
+
+        TestEntityBuilder withVersion(int version) {
+            entity.put("version", version);
+            return this;
+        }
+
+        Map<String, Object> build() {
+            return Map.copyOf(entity);
+        }
     }
 }

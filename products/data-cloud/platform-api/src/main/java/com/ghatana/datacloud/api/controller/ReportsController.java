@@ -7,13 +7,16 @@ package com.ghatana.datacloud.api.controller;
 import com.ghatana.datacloud.analytics.Report;
 import com.ghatana.datacloud.analytics.ReportCacheService;
 import com.ghatana.datacloud.analytics.ReportService;
+import com.ghatana.datacloud.analytics.ReportTemplate;
 import com.ghatana.datacloud.api.dto.report.GenerateReportRequest;
 import com.ghatana.datacloud.api.dto.report.ReportResponse;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.http.HttpHeaders;
 import io.activej.promise.Promise;
 import io.activej.http.AsyncServlet;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -63,26 +66,26 @@ public class ReportsController implements AsyncServlet {
             return deleteReport(request, extractId(path));
         }
 
-        return Promise.of(HttpResponse.ofCode(404).withPlainText("Not Found"));
+        return notFound();
     }
 
     private Promise<HttpResponse> generateReport(HttpRequest request) {
         return request.loadBody()
             .then(body -> {
                 try {
-                    GenerateReportRequest req = parseRequest(body.getStringUtf8());
-                    Report report = reportService.generate(req.toReport());
-                    
-                    // Cache the report if configured
-                    if (req.cache()) {
-                        cacheService.cache(report.getId(), report);
-                    }
-                    
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(ReportResponse.from(report))));
+                    GenerateReportRequest req = parseRequest(body.asString(StandardCharsets.UTF_8));
+                    ReportTemplate template = req.toTemplate();
+                    String tenantId = extractTenantId(request);
+
+                    return reportService.generateReport(tenantId, template)
+                        .then(report -> {
+                            Promise<Void> cachePromise = req.cache()
+                                ? cacheService.cache(report.getId(), report)
+                                : Promise.of((Void) null);
+                            return cachePromise.then(v -> okJson(ReportResponse.from(report)));
+                        });
                 } catch (Exception e) {
-                    return Promise.of(HttpResponse.ofCode(400)
-                        .withPlainText("Invalid request: " + e.getMessage()));
+                    return badRequest("Invalid request: " + e.getMessage());
                 }
             });
     }
@@ -90,13 +93,17 @@ public class ReportsController implements AsyncServlet {
     private Promise<HttpResponse> listReports(HttpRequest request) {
         String tenantId = extractTenantId(request);
         String status = request.getQueryParameter("status");
-        
-        List<Report> reports = reportService.list(tenantId, status);
-        return Promise.of(HttpResponse.ok200()
-            .withJson(toJson(Map.of(
-                "reports", reports.stream().map(ReportResponse::from).toList(),
-                "total", reports.size()
-            ))));
+
+        return reportService.listReports(tenantId)
+            .then(reports -> {
+                List<Report> filteredReports = status == null
+                    ? reports
+                    : reports.stream().filter(report -> status.equals(report.getStatus())).toList();
+                return okJson(Map.of(
+                    "reports", filteredReports.stream().map(ReportResponse::from).toList(),
+                    "total", filteredReports.size()
+                ));
+            });
     }
 
     private Promise<HttpResponse> getReport(HttpRequest request, String id) {
@@ -106,62 +113,57 @@ public class ReportsController implements AsyncServlet {
         return cacheService.get(id)
             .then(cached -> {
                 if (cached != null && cached.getTenantId().equals(tenantId)) {
-                    return Promise.of(HttpResponse.ok200()
-                        .withJson(toJson(ReportResponse.from(cached))));
+                    return okJson(ReportResponse.from(cached));
                 }
-                
+
                 // Fall back to service
-                return reportService.get(id)
+                return reportService.getReport(tenantId, id)
                     .then(report -> {
                         if (report == null || !report.getTenantId().equals(tenantId)) {
-                            return Promise.of(HttpResponse.ofCode(404)
-                                .withPlainText("Report not found"));
+                            return notFound("Report not found");
                         }
-                        return Promise.of(HttpResponse.ok200()
-                            .withJson(toJson(ReportResponse.from(report))));
+                        return okJson(ReportResponse.from(report));
                     });
             });
     }
 
     private Promise<HttpResponse> downloadReport(HttpRequest request, String id) {
         String tenantId = extractTenantId(request);
-        
-        return reportService.get(id)
+
+        return reportService.getReport(tenantId, id)
             .then(report -> {
                 if (report == null || !report.getTenantId().equals(tenantId)) {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Report not found"));
+                    return notFound("Report not found");
                 }
-                
-                byte[] content = reportService.download(id);
-                if (content == null) {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Report content not available"));
-                }
-                
-                return Promise.of(HttpResponse.ok200()
-                    .withHeader("Content-Type", getContentType(report.getFormat()))
-                    .withHeader("Content-Disposition", 
-                        "attachment; filename=\"" + report.getName() + "\"")
-                    .withBody(content));
+
+                return reportService.downloadReport(tenantId, id, report.getFormat())
+                    .then(content -> {
+                        if (content == null) {
+                            return notFound("Report content not available");
+                        }
+
+                        return Promise.of(HttpResponse.ok200()
+                            .withHeader(HttpHeaders.of("Content-Type"), getContentType(report.getFormat()))
+                            .withHeader(HttpHeaders.of("Content-Disposition"),
+                                "attachment; filename=\"" + report.getName() + "\"")
+                            .withBody(content)
+                            .build());
+                    });
             });
     }
 
     private Promise<HttpResponse> deleteReport(HttpRequest request, String id) {
         String tenantId = extractTenantId(request);
-        
-        return reportService.get(id)
+
+        return reportService.getReport(tenantId, id)
             .then(report -> {
                 if (report == null || !report.getTenantId().equals(tenantId)) {
-                    return Promise.of(HttpResponse.ofCode(404)
-                        .withPlainText("Report not found"));
+                    return notFound("Report not found");
                 }
-                
-                reportService.delete(id);
-                cacheService.invalidate(id);
-                
-                return Promise.of(HttpResponse.ok200()
-                    .withJson(toJson(Map.of("deleted", true))));
+
+                return reportService.deleteReport(tenantId, id)
+                    .then(v -> cacheService.invalidate(id))
+                    .then(v -> okJson(Map.of("deleted", true)));
             });
     }
 
@@ -176,7 +178,7 @@ public class ReportsController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader("X-Tenant-ID");
+        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
         return tenantId != null ? tenantId : "default-tenant";
     }
 
@@ -199,6 +201,22 @@ public class ReportsController implements AsyncServlet {
     private String toJson(Object obj) {
         // Simplified - in production use Jackson
         return "{}";
+    }
+
+    private Promise<HttpResponse> okJson(Object payload) {
+        return Promise.of(HttpResponse.ok200().withJson(toJson(payload)).build());
+    }
+
+    private Promise<HttpResponse> badRequest(String message) {
+        return Promise.of(HttpResponse.ofCode(400).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound(String message) {
+        return Promise.of(HttpResponse.ofCode(404).withPlainText(message).build());
+    }
+
+    private Promise<HttpResponse> notFound() {
+        return notFound("Not Found");
     }
 
     private String getContentType(String format) {

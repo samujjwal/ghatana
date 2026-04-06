@@ -122,11 +122,11 @@ class ProvenanceTrackingTest extends EventloopTestBase {
         void provenance_canRecordHumanFeedbackAsConfidenceSource() {
             Provenance provenance = Provenance.builder()
                     .source("user:feedback")
-                    .confidenceSource(Provenance.ConfidenceSource.HUMAN_FEEDBACK)
+                .confidenceSource(Provenance.ConfidenceSource.HUMAN)
                     .build();
 
             assertThat(provenance.getConfidenceSource())
-                    .isEqualTo(Provenance.ConfidenceSource.HUMAN_FEEDBACK);
+                .isEqualTo(Provenance.ConfidenceSource.HUMAN);
         }
     }
 

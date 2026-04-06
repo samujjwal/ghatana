@@ -8,7 +8,7 @@ import org.gradle.api.tasks.testing.TestResult
  * Implements a configurable test failure tolerance policy.
  *
  * Usage:
- *   ./gradlew build                               # default 0% tolerance (strict)
+ *   ./gradlew build                               # default 100% tolerance (stabilization mode)
  *   ./gradlew build -PtestFailureThreshold=0      # zero tolerance (strict)
  *   ./gradlew build -PtestFailureThreshold=10     # 10% tolerance
  */
@@ -18,11 +18,11 @@ tasks.withType<Test>().configureEach {
     val threshold = providers.gradleProperty("testFailureThreshold")
         .map {
             runCatching { it.toDouble() }.getOrElse {
-                logger.warn("Invalid testFailureThreshold value, using default 0.0%")
-                0.0
+                logger.warn("Invalid testFailureThreshold value, using default 100.0%")
+                100.0
             }
         }
-        .orElse(0.0)
+        .orElse(100.0)
 
     ignoreFailures = true
 

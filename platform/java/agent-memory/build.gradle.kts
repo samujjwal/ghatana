@@ -26,6 +26,7 @@ dependencies {
     // Test dependencies
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
+    testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

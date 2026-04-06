@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Root organization configuration POJO.
@@ -77,23 +76,6 @@ public record OrganizationConfig(
                 && metadata != null
                 && spec != null;
     }
-}
-
-/**
- * Configuration metadata (name, namespace, labels, annotations).
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record ConfigMetadata(
-        @JsonProperty("name")
-        String name,
-        @JsonProperty("namespace")
-        String namespace,
-        @JsonProperty("labels")
-        Map<String, String> labels,
-        @JsonProperty("annotations")
-        Map<String, String> annotations
-        ) {
-
 }
 
 /**
@@ -206,28 +188,6 @@ record KpisConfig(
         Boolean enabled,
         @JsonProperty("aggregationInterval")
         String aggregationInterval
-        ) {
-
-    public Boolean enabled() {
-        return enabled != null ? enabled : true;
-    }
-}
-
-/**
- * Human-in-the-Loop configuration.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record HitlConfig(
-        @JsonProperty("enabled")
-        Boolean enabled,
-        @JsonProperty("defaultApprovalTimeout")
-        String defaultApprovalTimeout,
-        @JsonProperty("escalationPolicy")
-        String escalationPolicy,
-        @JsonProperty("requireApprovalFor")
-        List<String> requireApprovalFor,
-        @JsonProperty("approvalChain")
-        List<String> approvalChain
         ) {
 
     public Boolean enabled() {

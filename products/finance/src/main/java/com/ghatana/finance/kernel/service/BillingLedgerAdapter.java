@@ -5,8 +5,8 @@
 
 package com.ghatana.finance.kernel.service;
 
-import com.ghatana.platform.billing.BillingTransaction;
-import com.ghatana.platform.billing.LedgerPostingService;
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.resilience.CircuitBreakerProfiles;
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class BillingLedgerAdapter implements LedgerPostingService {
+public class BillingLedgerAdapter implements BillingLedgerPlugin {
 
     private static final Logger log = LoggerFactory.getLogger(BillingLedgerAdapter.class);
     private static final int DEFAULT_LEDGER_BULKHEAD_LIMIT = 32;
@@ -156,16 +156,16 @@ public class BillingLedgerAdapter implements LedgerPostingService {
     }
 
     @Override
-    public Promise<PostingStatus> getPostingStatus(String transactionId) {
+    public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
         Objects.requireNonNull(transactionId, "transactionId must not be null");
 
         if (!postedEntries.containsKey(transactionId)) {
-            return Promise.of(PostingStatus.NOT_FOUND);
+            return Promise.of(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
         }
         if (reversalEntries.containsKey(transactionId)) {
-            return Promise.of(PostingStatus.REVERSED);
+            return Promise.of(BillingLedgerPlugin.PostingStatus.REVERSED);
         }
-        return Promise.of(PostingStatus.POSTED);
+        return Promise.of(BillingLedgerPlugin.PostingStatus.POSTED);
     }
 
     private <T> T executeWithResilience(java.util.concurrent.Callable<T> operation) {
@@ -175,5 +175,58 @@ public class BillingLedgerAdapter implements LedgerPostingService {
         } catch (Exception exception) {
             throw new IllegalStateException("Ledger resilient execution failed", exception);
         }
+    }
+
+    @Override
+    public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+        // Not implemented in this adapter - would need to integrate with ledger management service
+        return Promise.ofException(new UnsupportedOperationException("createAccount not implemented"));
+    }
+
+    @Override
+    public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+        // Not implemented in this adapter
+        return Promise.ofException(new UnsupportedOperationException("getEntry not implemented"));
+    }
+
+    @Override
+    public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+        // Not implemented in this adapter
+        return Promise.ofException(new UnsupportedOperationException("queryEntries not implemented"));
+    }
+
+    // Plugin interface methods
+    @Override
+    public com.ghatana.platform.plugin.PluginMetadata metadata() {
+        return com.ghatana.platform.plugin.PluginMetadata.builder()
+            .id("billing-ledger-adapter")
+            .name("Billing Ledger Adapter")
+            .version("1.0.0")
+            .build();
+    }
+
+    @Override
+    public com.ghatana.platform.plugin.PluginState getState() {
+        return com.ghatana.platform.plugin.PluginState.STARTED;
+    }
+
+    @Override
+    public Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> start() {
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> stop() {
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> shutdown() {
+        return Promise.complete();
     }
 }

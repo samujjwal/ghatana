@@ -17,7 +17,7 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:observability"))
     // Kernel — resilience-patterns (circuit breaker, timeouts) for long-horizon task stability
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
     implementation(libs.activej.promise)
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)

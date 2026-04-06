@@ -52,7 +52,7 @@ class DomainExpansionTest {
                 final int idx = i;
                 PipelineStageSpec stage = PipelineStageSpec.builder()
                     .name("stage-" + idx)
-                    .type(idx % 2 == 0 ? PipelineStageSpec.StageType.STREAM : PipelineStageSpec.StageType.BATCH)
+                    .type(idx % 2 == 0 ? PipelineStageSpec.StageType.STREAM : PipelineStageSpec.StageType.PATTERN)
                     .workflow(List.of(
                         AgentSpec.builder()
                             .id("agent-" + idx)
@@ -79,7 +79,7 @@ class DomainExpansionTest {
                 final int idx = i;
                 ConnectorSpec connector = ConnectorSpec.builder()
                     .id("connector-" + idx)
-                    .type(idx % 3 == 0 ? ConnectorSpec.ConnectorType.EVENT_CLOUD_SOURCE : ConnectorSpec.ConnectorType.HTTP)
+                    .type(idx % 3 == 0 ? ConnectorSpec.ConnectorType.EVENT_CLOUD_SOURCE : ConnectorSpec.ConnectorType.HTTP_INGRESS)
                     .endpoint("endpoint-" + idx)
                     .topicOrStream("stream-" + idx)
                     .tenantId("tenant-1")
@@ -133,7 +133,7 @@ class DomainExpansionTest {
         @Test
         @DisplayName("Many agent hints and tags")
         void agentHintsAndTags() {
-            Map<String, Object> hints = new HashMap<>();
+            Map<String, String> hints = new HashMap<>();
             for (int i = 0; i < 50; i++) {
                 hints.put("hint-" + i, "value-" + i);
             }
@@ -238,7 +238,7 @@ class DomainExpansionTest {
                 workflow.add(AgentSpec.builder()
                     .id("agent-" + idx)
                     .agent("agent-type")
-                    .config(Map.of("param-" + idx, "value-" + idx))
+                    .references(List.of("param-" + idx + "=value-" + idx))
                     .build());
             }
 
@@ -285,19 +285,20 @@ class DomainExpansionTest {
         @Test
         @DisplayName("Agent with complex configuration")
         void agentComplexConfig() {
-            Map<String, Object> config = new HashMap<>();
-            config.put("model", "gpt-4");
-            config.put("temperature", 0.7);
-            config.put("tools", List.of("tool-1", "tool-2", "tool-3"));
+            List<String> references = List.of(
+                "model:gpt-4",
+                "temperature:0.7",
+                "tools:tool-1,tool-2,tool-3"
+            );
 
             AgentSpec agent = AgentSpec.builder()
                 .id("agent-1")
                 .agent("llm-agent")
-                .config(config)
+                .references(references)
                 .build();
 
             assertThat(agent.getId()).isEqualTo("agent-1");
-            assertThat(agent.getConfig()).hasSize(3);
+            assertThat(agent.getReferences()).hasSize(3);
         }
 
         @Test
@@ -309,7 +310,7 @@ class DomainExpansionTest {
                 AgentSpec agent = AgentSpec.builder()
                     .id("agent-" + idx)
                     .agent("type-" + (idx % 5))
-                    .config(Map.of("priority", idx))
+                    .dependencies(List.of("priority:" + idx))
                     .build();
                 agents.add(agent);
             }
@@ -353,13 +354,13 @@ class DomainExpansionTest {
             AgentSpec agent1 = AgentSpec.builder()
                 .id("a1")
                 .agent("type")
-                .config(Map.of("key", "value"))
+                .references(List.of("key=value"))
                 .build();
 
             AgentSpec agent2 = AgentSpec.builder()
                 .id("a1")
                 .agent("type")
-                .config(Map.of("key", "value"))
+                .references(List.of("key=value"))
                 .build();
 
             assertThat(agent1).isEqualTo(agent2);
@@ -376,14 +377,14 @@ class DomainExpansionTest {
     class StageTypeTests {
 
         @Test
-        @DisplayName("Mix STREAM and BATCH stages")
+        @DisplayName("Mix STREAM and PATTERN stages")
         void mixedStageTypes() {
             List<PipelineStageSpec> stages = new ArrayList<>();
 
             for (int i = 0; i < 20; i++) {
                 final int idx = i;
                 PipelineStageSpec.StageType type = idx % 3 == 0 ? 
-                    PipelineStageSpec.StageType.BATCH : 
+                    PipelineStageSpec.StageType.PATTERN : 
                     PipelineStageSpec.StageType.STREAM;
 
                 PipelineStageSpec stage = PipelineStageSpec.builder()
@@ -404,11 +405,11 @@ class DomainExpansionTest {
             long streamCount = spec.getStages().stream()
                 .filter(s -> s.getType() == PipelineStageSpec.StageType.STREAM)
                 .count();
-            long batchCount = spec.getStages().stream()
-                .filter(s -> s.getType() == PipelineStageSpec.StageType.BATCH)
+            long patternCount = spec.getStages().stream()
+                .filter(s -> s.getType() == PipelineStageSpec.StageType.PATTERN)
                 .count();
 
-            assertThat(streamCount + batchCount).isEqualTo(20);
+            assertThat(streamCount + patternCount).isEqualTo(20);
         }
 
         @Test
@@ -436,16 +437,16 @@ class DomainExpansionTest {
         }
 
         @Test
-        @DisplayName("Batch processing pipeline")
-        void batchPipeline() {
+        @DisplayName("Pattern processing pipeline")
+        void patternPipeline() {
             List<PipelineStageSpec> stages = new ArrayList<>();
             for (int i = 0; i < 5; i++) {
                 final int idx = i;
                 PipelineStageSpec stage = PipelineStageSpec.builder()
-                    .name("batch-stage-" + idx)
-                    .type(PipelineStageSpec.StageType.BATCH)
+                    .name("pattern-stage-" + idx)
+                    .type(PipelineStageSpec.StageType.PATTERN)
                     .workflow(List.of(
-                        AgentSpec.builder().id("batcher-" + idx).agent("batch-processor").build()
+                        AgentSpec.builder().id("matcher-" + idx).agent("pattern-processor").build()
                     ))
                     .build();
                 stages.add(stage);
@@ -456,7 +457,7 @@ class DomainExpansionTest {
                 .tenantId("t1")
                 .build();
 
-            assertThat(spec.getStages()).allMatch(s -> s.getType() == PipelineStageSpec.StageType.BATCH);
+            assertThat(spec.getStages()).allMatch(s -> s.getType() == PipelineStageSpec.StageType.PATTERN);
         }
 
         @Test
@@ -473,7 +474,7 @@ class DomainExpansionTest {
 
             connectors.add(ConnectorSpec.builder()
                 .id("http-source")
-                .type(ConnectorSpec.ConnectorType.HTTP)
+                .type(ConnectorSpec.ConnectorType.HTTP_INGRESS)
                 .endpoint("http://endpoint")
                 .tenantId("t1")
                 .build());
@@ -558,10 +559,14 @@ class DomainExpansionTest {
                                 .tenantId("t-" + idx)
                                 .build();
 
-                            String yaml = yamlMapper.writeValueAsString(spec);
-                            PipelineSpec deserialized = yamlMapper.readValue(yaml, PipelineSpec.class);
-                            if (deserialized.equals(spec)) {
-                                successCount.incrementAndGet();
+                            try {
+                                String yaml = yamlMapper.writeValueAsString(spec);
+                                PipelineSpec deserialized = yamlMapper.readValue(yaml, PipelineSpec.class);
+                                if (deserialized.equals(spec)) {
+                                    successCount.incrementAndGet();
+                                }
+                            } catch (Exception e) {
+                                // Serialization failure doesn't count as success
                             }
                         } finally {
                             latch.countDown();
@@ -597,13 +602,12 @@ class DomainExpansionTest {
                     workflow.add(AgentSpec.builder()
                         .id("agent-" + stageIdx + "-" + agentIdx)
                         .agent("agent-type")
-                        .config(Map.of())
                         .build());
                 }
 
                 stages.add(PipelineStageSpec.builder()
                     .name("stage-" + stageIdx)
-                    .type(stageIdx % 2 == 0 ? PipelineStageSpec.StageType.STREAM : PipelineStageSpec.StageType.BATCH)
+                    .type(stageIdx % 2 == 0 ? PipelineStageSpec.StageType.STREAM : PipelineStageSpec.StageType.PATTERN)
                     .workflow(workflow)
                     .build());
             }

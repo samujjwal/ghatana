@@ -2,9 +2,8 @@ package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
-import com.ghatana.platform.billing.BillingTransaction;
-import com.ghatana.platform.billing.BillingTransactionCoordinator;
-import com.ghatana.platform.billing.LedgerPostingService;
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -42,8 +41,7 @@ public class BillingService extends AbstractDataService {
 
     /** Retained for tenant-context lookup in async callbacks. */
     private final KernelContext kernelContext;
-    private final LedgerPostingService ledgerPostingService;
-    private final BillingTransactionCoordinator billingTransactionCoordinator;
+    private final BillingLedgerPlugin billingLedgerPlugin;
 
     public BillingService(KernelContext context) {
         this(context, null);
@@ -53,23 +51,13 @@ public class BillingService extends AbstractDataService {
      * Creates a BillingService with Finance ledger integration enabled.
      *
      * @param context              kernel context providing DataCloudKernelAdapter
-     * @param ledgerPostingService ledger service for cross-domain billing integration;
+     * @param billingLedgerPlugin  ledger plugin for cross-domain billing integration;
      *                             may be {@code null} to disable ledger posting
      */
-    public BillingService(KernelContext context, LedgerPostingService ledgerPostingService) {
-        this(context, ledgerPostingService, null);
-    }
-
-    /**
-     * Creates a BillingService with optional coordinated saga posting support.
-     */
-    public BillingService(KernelContext context,
-                          LedgerPostingService ledgerPostingService,
-                          BillingTransactionCoordinator billingTransactionCoordinator) {
+    public BillingService(KernelContext context, BillingLedgerPlugin billingLedgerPlugin) {
         super(context);
         this.kernelContext = context;
-        this.ledgerPostingService = ledgerPostingService;
-        this.billingTransactionCoordinator = billingTransactionCoordinator;
+        this.billingLedgerPlugin = billingLedgerPlugin;
     }
 
     @Override
@@ -178,10 +166,10 @@ public class BillingService extends AbstractDataService {
 
     /**
      * Posts a closed encounter as a {@link BillingTransaction} to the Finance ledger.
-     * A no-op when no {@link LedgerPostingService} was injected.
+     * A no-op when no {@link BillingLedgerPlugin} was injected.
      */
     private Promise<Void> postEncounterToLedger(BillingEncounter encounter) {
-        if (ledgerPostingService == null) {
+        if (billingLedgerPlugin == null) {
             return Promise.complete();
         }
         String tenantId = Optional.ofNullable(kernelContext.getTenantContext())
@@ -201,22 +189,7 @@ public class BillingService extends AbstractDataService {
             .occurredAt(encounter.closedAt())
             .build();
 
-        if (billingTransactionCoordinator != null) {
-            return billingTransactionCoordinator.coordinate(
-                    "phr-encounter-close:" + encounter.id(),
-                    List.of(tx)
-                )
-                .map(result -> {
-                    if (!result.succeeded()) {
-                        throw new IllegalStateException("Billing coordination failed: " + result.failureReason());
-                    }
-                    log.info("Encounter '{}' coordinated to ledger workflow='{}'",
-                        encounter.id(), result.workflowId());
-                    return (Void) null;
-                });
-        }
-
-        return ledgerPostingService.postTransaction(tx)
+        return billingLedgerPlugin.postTransaction(tx)
             .map(entryId -> {
                 log.info("Encounter '{}' posted to ledger as entry '{}'", encounter.id(), entryId);
                 return (Void) null;

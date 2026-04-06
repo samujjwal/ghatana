@@ -218,7 +218,7 @@ class MemoryLifecycleTest extends EventloopTestBase {
         @DisplayName("procedure item can have typed links to other items")
         void procedureItem_canHaveTypedLinksToOtherItems() {
             MemoryLink link = MemoryLink.builder()
-                    .targetId("episode-001")
+                    .targetItemId("episode-001")
                     .linkType(LinkType.DERIVED_FROM)
                     .build();
 
@@ -230,7 +230,7 @@ class MemoryLifecycleTest extends EventloopTestBase {
                     .build();
 
             assertThat(procedure.getLinks()).hasSize(1);
-            assertThat(procedure.getLinks().getFirst().getTargetId()).isEqualTo("episode-001");
+            assertThat(procedure.getLinks().getFirst().getTargetItemId()).isEqualTo("episode-001");
             assertThat(procedure.getLinks().getFirst().getLinkType()).isEqualTo(LinkType.DERIVED_FROM);
         }
     }

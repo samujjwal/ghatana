@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.api.dto.report;
 
+import com.ghatana.datacloud.analytics.ReportTemplate;
 import lombok.Builder;
 import lombok.Data;
 
@@ -30,5 +31,16 @@ public class GenerateReportRequest {
         this.query = query;
         this.format = format != null ? format : "CSV";
         this.cache = cache;
+    }
+
+    public ReportTemplate toTemplate() {
+        return new ReportTemplate()
+            .withName(name)
+            .withQuery(query)
+            .withFormat(format);
+    }
+
+    public boolean cache() {
+        return cache;
     }
 }

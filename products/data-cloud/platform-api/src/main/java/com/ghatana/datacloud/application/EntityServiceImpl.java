@@ -53,7 +53,7 @@ public class EntityServiceImpl implements EntityService {
             .version(1)
             .build();
 
-        return repository.save(entity)
+        return repository.save(tenantId, entity)
             .whenComplete((result, ex) -> {
                 if (ex == null) {
                     metrics.incrementCounter("entity.create.success",
@@ -74,11 +74,13 @@ public class EntityServiceImpl implements EntityService {
         Objects.requireNonNull(entityId, "Entity ID required");
 
         return repository.findById(tenantId, collectionName, entityId)
-            .then(existing -> {
-                if (existing == null) {
+            .then(existingOpt -> {
+                if (existingOpt.isEmpty()) {
                     return Promise.ofException(
                         new IllegalArgumentException("Entity not found: " + entityId));
                 }
+
+                Entity existing = existingOpt.get();
 
                 Entity updated = Entity.builder()
                     .id(existing.getId())
@@ -92,7 +94,7 @@ public class EntityServiceImpl implements EntityService {
                     .version(existing.getVersion() + 1)
                     .build();
 
-                return repository.save(updated);
+                return repository.save(tenantId, updated);
             })
             .whenComplete((result, ex) -> {
                 if (ex == null) {
@@ -112,6 +114,7 @@ public class EntityServiceImpl implements EntityService {
         Objects.requireNonNull(entityId, "Entity ID required");
 
         return repository.findById(tenantId, collectionName, entityId)
+            .map(optional -> optional.orElse(null))
             .whenComplete((result, ex) -> {
                 if (ex == null) {
                     if (result != null) {

@@ -10,7 +10,7 @@ dependencies {
     api(project(":platform:java:domain"))
     api(project(":platform:contracts"))
     // Kernel — observability hooks, IAM contracts, resilience-patterns
-    api(project(":platform:java:kernel"))
+    api(project(":platform-kernel:kernel-core"))
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)

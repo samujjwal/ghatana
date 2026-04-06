@@ -1,8 +1,9 @@
 package com.ghatana.integration.phrfinance;
 
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.finance.kernel.service.BillingLedgerAdapter;
 import com.ghatana.finance.kernel.service.LedgerManagementService;
-import com.ghatana.platform.billing.BillingTransaction;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -51,9 +52,8 @@ class CrossDomainAuditTrailIT extends EventloopTestBase {
             .contains("src=phr")
             .contains("ref=enc-audit-9");
 
-        com.ghatana.platform.billing.LedgerPostingService.PostingStatus status =
-            runPromise(() -> adapter.getPostingStatus("tx-audit-1"));
-        assertThat(status).isEqualTo(com.ghatana.platform.billing.LedgerPostingService.PostingStatus.POSTED);
+        BillingLedgerPlugin.PostingStatus status = runPromise(() -> adapter.getPostingStatus("tx-audit-1"));
+        assertThat(status).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
     }
 
     private static final class StubLedgerManagementService extends LedgerManagementService {

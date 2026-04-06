@@ -23,7 +23,7 @@ java {
 
 dependencies {
     // ─── Kernel Platform ───────────────────────────────────────────────────────
-    api(project(":platform:java:kernel"))
+    api(project(":platform-kernel:kernel-core"))
     
     // ─── Kernel Modules (Generic Capabilities) ───────────────────────────────────
     

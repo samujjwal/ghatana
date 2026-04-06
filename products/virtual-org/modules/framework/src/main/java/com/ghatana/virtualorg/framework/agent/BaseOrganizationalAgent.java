@@ -4,8 +4,8 @@ import com.ghatana.contracts.agent.v1.AgentInputProto;
 import com.ghatana.contracts.agent.v1.AgentResultProto;
 import com.ghatana.platform.domain.agent.registry.AgentExecutionContext;
 import com.ghatana.platform.domain.agent.registry.AgentMetrics;
-import com.ghatana.agent.HealthStatus;
 import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.core.exception.ServiceException;
 import com.ghatana.virtualorg.framework.hierarchy.Authority;
 import com.ghatana.virtualorg.framework.hierarchy.EscalationPath;
@@ -345,7 +345,9 @@ public abstract class BaseOrganizationalAgent implements OrganizationalAgent {
 
         @Override
         public HealthStatus getHealthStatus() {
-            return errorCount > 0 ? HealthStatus.UNHEALTHY : HealthStatus.HEALTHY;
+            return errorCount > 0
+                    ? HealthStatus.unhealthy("Agent encountered execution errors")
+                    : HealthStatus.healthy("Agent operational");
         }
 
         public long getEscalatedCount() {

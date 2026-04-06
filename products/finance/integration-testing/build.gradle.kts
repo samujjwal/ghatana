@@ -17,9 +17,9 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
-    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform-kernel:kernel-plugin"))
     implementation(project(":platform:java:audit"))
-    implementation(project(":platform:java:billing"))
+    implementation(project(":platform-plugins:plugin-billing-ledger"))
 
     // Kernel modules
 

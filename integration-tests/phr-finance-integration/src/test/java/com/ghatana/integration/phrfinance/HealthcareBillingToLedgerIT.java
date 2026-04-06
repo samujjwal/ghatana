@@ -1,7 +1,7 @@
 package com.ghatana.integration.phrfinance;
 
-import com.ghatana.platform.billing.BillingTransaction;
-import com.ghatana.platform.billing.LedgerPostingService;
+import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.billing.BillingTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -27,7 +27,7 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
     @DisplayName("closing encounter emits CHARGE transaction with patient/provider accounts")
     void closingEncounterEmitsChargeTransaction() {
         PhrFinanceTestFixtures.StubDataCloudAdapter dataCloud = new PhrFinanceTestFixtures.StubDataCloudAdapter();
-        CapturingLedgerPostingService ledger = new CapturingLedgerPostingService();
+        CapturingLedgerAdapter ledger = new CapturingLedgerAdapter();
 
         BillingService billingService = new BillingService(
             PhrFinanceTestFixtures.createTestContext(dataCloud),
@@ -56,14 +56,14 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         assertThat(closed.status()).isEqualTo(BillingService.EncounterStatus.CLOSED);
         assertThat(ledger.posted).hasSize(1);
 
-        BillingTransaction posted = ledger.posted.getFirst();
+        com.ghatana.plugin.billing.BillingTransaction posted = ledger.posted.getFirst();
         assertThat(posted.getTransactionId()).isEqualTo("enc:" + created.id());
-        assertThat(posted.getType()).isEqualTo(BillingTransaction.TransactionType.CHARGE);
+        assertThat(posted.getType()).isEqualTo(com.ghatana.plugin.billing.BillingTransaction.TransactionType.CHARGE);
         assertThat(posted.getDebitAccount()).isEqualTo("PHR:AR:patient-cross-1");
         assertThat(posted.getCreditAccount()).isEqualTo("PHR:REVENUE:provider-cross-1");
     }
 
-    private static final class CapturingLedgerPostingService implements LedgerPostingService {
+    private static final class CapturingLedgerAdapter implements BillingLedgerPlugin {
 
         private final List<BillingTransaction> posted = new ArrayList<>();
 
@@ -79,9 +79,54 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         }
 
         @Override
-        public Promise<PostingStatus> getPostingStatus(String transactionId) {
+        public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
             boolean found = posted.stream().anyMatch(tx -> tx.getTransactionId().equals(transactionId));
-            return Promise.of(found ? PostingStatus.POSTED : PostingStatus.NOT_FOUND);
+            return Promise.of(found ? BillingLedgerPlugin.PostingStatus.POSTED : BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        }
+
+        @Override
+        public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+            return Promise.ofException(new UnsupportedOperationException());
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginMetadata metadata() {
+            return com.ghatana.platform.plugin.PluginMetadata.builder().id("test").name("Test").version("1.0").build();
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginState getState() {
+            return com.ghatana.platform.plugin.PluginState.STARTED;
+        }
+
+        @Override
+        public Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            return Promise.complete();
         }
     }
 }

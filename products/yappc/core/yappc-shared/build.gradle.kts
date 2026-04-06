@@ -8,7 +8,7 @@ description = "YAPPC Consolidated Shared Utilities Module"
 
 dependencies {
     // Platform modules
-    api(project(":platform:java:plugin"))
+    api(project(":platform-kernel:kernel-plugin"))
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:agent-core"))

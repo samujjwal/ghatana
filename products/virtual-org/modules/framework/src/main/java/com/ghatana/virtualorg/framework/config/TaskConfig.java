@@ -157,25 +157,6 @@ record TaskPriorityConfig(
 }
 
 /**
- * Priority escalation rule.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record PriorityEscalationRule(
-        @JsonProperty("name")
-        String name,
-        @JsonProperty("condition")
-        String condition,
-        @JsonProperty("from")
-        String from,
-        @JsonProperty("to")
-        String to,
-        @JsonProperty("notify")
-        List<String> notifyList
-        ) {
-
-}
-
-/**
  * Priority factor for dynamic priority calculation.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -227,30 +208,6 @@ record TaskAssignmentRulesConfig(
 
     public String timeout() {
         return timeout != null ? timeout : "5m";
-    }
-}
-
-/**
- * Load balancing configuration for task assignment.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record LoadBalancingConfig(
-        @JsonProperty("enabled")
-        Boolean enabled,
-        @JsonProperty("algorithm")
-        String algorithm,
-        @JsonProperty("maxConcurrentTasks")
-        Integer maxConcurrentTasks,
-        @JsonProperty("weightByCapacity")
-        Boolean weightByCapacity
-        ) {
-
-    public Boolean enabled() {
-        return enabled != null ? enabled : true;
-    }
-
-    public String algorithm() {
-        return algorithm != null ? algorithm : "least-loaded";
     }
 }
 
@@ -638,30 +595,6 @@ record SlaBreachActionConfig(
         String escalateTo
         ) {
 
-}
-
-/**
- * SLA tracking configuration.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record SlaTrackingConfig(
-        @JsonProperty("enabled")
-        Boolean enabled,
-        @JsonProperty("excludeWeekends")
-        Boolean excludeWeekends,
-        @JsonProperty("businessHours")
-        BusinessHoursConfig businessHours,
-        @JsonProperty("pauseOnBlocked")
-        Boolean pauseOnBlocked
-        ) {
-
-    public Boolean enabled() {
-        return enabled != null ? enabled : true;
-    }
-
-    public Boolean pauseOnBlocked() {
-        return pauseOnBlocked != null ? pauseOnBlocked : true;
-    }
 }
 
 /**

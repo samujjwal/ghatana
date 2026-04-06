@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -75,7 +76,7 @@ class EntityServiceImplTest extends EventloopTestBase {
                 .version(1)
                 .build();
 
-            when(repository.save(any(Entity.class))).thenReturn(Promise.of(savedEntity));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity));
 
             // When
             Entity result = runPromise(() -> service.createEntity(tenantId, collectionName, data, userId));
@@ -130,7 +131,7 @@ class EntityServiceImplTest extends EventloopTestBase {
             String userId = "user-123";
             Map<String, Object> data = Map.of("name", "John");
 
-            when(repository.save(any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error")));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error")));
 
             // When
             clearFatalError();
@@ -164,7 +165,7 @@ class EntityServiceImplTest extends EventloopTestBase {
                 .data(Map.of("name", "John"))
                 .build();
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(entity));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(entity)));
 
             // When
             Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId));
@@ -183,7 +184,7 @@ class EntityServiceImplTest extends EventloopTestBase {
             String collectionName = "customers";
             UUID entityId = UUID.randomUUID();
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(null));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty()));
 
             // When
             Entity result = runPromise(() -> service.getEntity(tenantId, collectionName, entityId));
@@ -221,9 +222,9 @@ class EntityServiceImplTest extends EventloopTestBase {
 
             Map<String, Object> newData = Map.of("name", "John Updated");
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(existingEntity));
-            when(repository.save(any(Entity.class))).thenAnswer(invocation -> {
-                Entity arg = invocation.getArgument(0);
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.of(existingEntity)));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenAnswer(invocation -> {
+                Entity arg = invocation.getArgument(1);
                 return Promise.of(arg);
             });
 
@@ -248,7 +249,7 @@ class EntityServiceImplTest extends EventloopTestBase {
             String userId = "user-123";
             Map<String, Object> data = Map.of("name", "John");
 
-            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(null));
+            when(repository.findById(tenantId, collectionName, entityId)).thenReturn(Promise.of(Optional.empty()));
 
             // When
             clearFatalError();

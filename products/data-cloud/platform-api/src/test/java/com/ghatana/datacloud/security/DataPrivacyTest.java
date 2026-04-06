@@ -104,7 +104,7 @@ class DataPrivacyTest extends EventloopTestBase {
                 .thenReturn(Promise.of(true));
 
             Boolean isAdmin = runPromise(() ->
-                rbacService.hasPermission(userId, tenantId, RBACPermission.TENANT_ADMIN, null)
+                rbacService.hasPermission(userId, tenantId, RBACService.Permission.TENANT_ADMIN, null)
             );
 
             assertThat(isAdmin).isTrue();

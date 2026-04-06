@@ -13,6 +13,18 @@
  */
 rootProject.name = "ghatana"
 
+// =============================================================================
+// Platform Kernel — Core kernel framework with plugin system (Composite Build)
+// =============================================================================
+
+includeBuild("platform-kernel")
+
+// =============================================================================
+// Platform Plugins — Shared product-agnostic plugins (Composite Build)
+// =============================================================================
+
+includeBuild("platform-plugins")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -40,10 +52,12 @@ include(":platform:java:database")
 include(":platform:java:http")
 include(":platform:java:observability")
 include(":platform:java:testing")
+// RELOCATING to platform-kernel:kernel-testing (2026-04-05 — see PLATFORM_KERNEL_EXTRACTION_PLAN.md)
 include(":platform:java:runtime")
 include(":platform:java:config")
 include(":platform:java:workflow")
-include(":platform:java:plugin")
+// ARCHIVED: plugin moved to platform-kernel:kernel-plugin (2026-04-05)
+// include(":platform:java:plugin")
 include(":platform:java:ai-integration")  // Merged: registry + observability + feature-store + experimental consolidated
 include(":platform:java:governance")
 include(":platform:java:security")
@@ -54,8 +68,10 @@ include(":platform:java:agent-memory")
 // schema-registry merged into platform:java:domain (SCHM-1, 2026)
 include(":platform:java:connectors")
 include(":platform:java:audit")
-include(":platform:java:kernel")
-include(":platform:java:kernel-persistence")    // Durable adapters: PostgresAuditTrailPersistence, RedisKernelConfigResolver, JdbcModuleRegistry
+// ARCHIVED: kernel moved to platform-kernel:kernel-core (2026-04-05)
+// include(":platform:java:kernel")
+// ARCHIVED: kernel-persistence moved to platform-kernel:kernel-persistence (2026-04-05)
+// include(":platform:java:kernel-persistence")    // Durable adapters: PostgresAuditTrailPersistence, RedisKernelConfigResolver, JdbcModuleRegistry
 include(":platform:java:audio-video")   // STT, TTS, Vision engine library (com.ghatana.media.*)
 // kernel-capabilities DELETED (zero consumers, capabilities merged into kernel/observability — Sprint 5, 2026-03-25)
 include(":platform:java:distributed-cache")    // KRQ-05: Generic Redis-backed distributed cache abstraction
@@ -65,7 +81,8 @@ include(":platform:java:tool-runtime")          // Phase 3 — Tool sandboxing, 
 include(":platform:java:policy-as-code")        // Phase 4 — OPA integration, policy-as-code engine, risk scoring
 include(":platform:java:security-analytics")    // Phase 5 — Egress monitoring, prompt-injection detection
 include(":platform:java:incident-response")     // Phase 6 — Kill-switch, taxonomy, graceful degradation
-include(":platform:java:billing")               // Shared billing contracts: BillingTransaction, LedgerPostingService, HealthcareBillingExtension
+// ARCHIVED: billing transformed to platform-plugins:plugin-billing-ledger (2026-04-05)
+// include(":platform:java:billing")
 
 // =============================================================================
 // Product: AEP — Autonomous Event Processing

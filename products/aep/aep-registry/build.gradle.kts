@@ -25,7 +25,7 @@ dependencies {
 
     // Agent registry (absorbed from aep-agent — 2026-03-22; agent-registry merged into agent-core 2026-03-24)
     implementation(project(":platform:java:agent-core"))
-    implementation(project(":platform:java:kernel"))
+    implementation(project(":platform-kernel:kernel-core"))
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:contracts"))
     compileOnly(libs.jakarta.persistence.api)

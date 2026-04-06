@@ -18,7 +18,7 @@ dependencies {
     api(project(":products:data-cloud:platform-entity"))
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
-    api(project(":platform:java:plugin"))
+    api(project(":platform-kernel:kernel-plugin"))
 
     api(libs.activej.promise)
     api(libs.activej.eventloop)

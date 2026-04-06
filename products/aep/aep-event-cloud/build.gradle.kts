@@ -24,7 +24,7 @@ dependencies {
     api(project(":products:aep:aep-operator-contracts"))  // AEP EventCloud facade, EventCloudConnector SPI
 
     // ── Platform infrastructure ─────────────────────────────────────────────
-    api(project(":platform:java:plugin"))            // Plugin, PluginContext, PluginMetadata
+    api(project(":platform-kernel:kernel-plugin"))   // Plugin, PluginContext, PluginMetadata
     api(project(":platform:java:core"))              // Offset, TenantId
     api(project(":platform:java:domain"))            // Domain types
     implementation(project(":platform:java:observability"))  // Metrics

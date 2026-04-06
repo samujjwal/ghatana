@@ -40,7 +40,7 @@ dependencies {
     api(project(":products:data-cloud:platform-config"))
 
     implementation(project(":platform:java:observability"))
-    implementation(project(":platform:java:plugin"))
+    implementation(project(":platform-kernel:kernel-plugin"))
     implementation(project(":platform:java:security"))
     implementation(project(":platform:java:config"))
 

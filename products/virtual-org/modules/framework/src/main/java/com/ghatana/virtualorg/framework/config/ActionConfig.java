@@ -180,31 +180,6 @@ record ActionInputConfig(
 }
 
 /**
- * Input validation rules.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record InputValidationConfig(
-        @JsonProperty("pattern")
-        String pattern,
-        @JsonProperty("minLength")
-        Integer minLength,
-        @JsonProperty("maxLength")
-        Integer maxLength,
-        @JsonProperty("minimum")
-        Double minimum,
-        @JsonProperty("maximum")
-        Double maximum,
-        @JsonProperty("enum")
-        List<String> enumValues,
-        @JsonProperty("format")
-        String format,
-        @JsonProperty("customValidator")
-        String customValidator
-        ) {
-
-}
-
-/**
  * Action output parameter configuration.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -284,38 +259,6 @@ record ActionExecutionConfig(
 
     public Boolean idempotent() {
         return idempotent != null ? idempotent : false;
-    }
-}
-
-/**
- * Retry policy configuration.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record RetryPolicyConfig(
-        @JsonProperty("maxRetries")
-        Integer maxRetries,
-        @JsonProperty("initialDelay")
-        String initialDelay,
-        @JsonProperty("maxDelay")
-        String maxDelay,
-        @JsonProperty("backoffMultiplier")
-        Double backoffMultiplier,
-        @JsonProperty("retryOn")
-        List<String> retryOn,
-        @JsonProperty("noRetryOn")
-        List<String> noRetryOn
-        ) {
-
-    public Integer maxRetries() {
-        return maxRetries != null ? maxRetries : 3;
-    }
-
-    public String initialDelay() {
-        return initialDelay != null ? initialDelay : "1s";
-    }
-
-    public Double backoffMultiplier() {
-        return backoffMultiplier != null ? backoffMultiplier : 2.0;
     }
 }
 
@@ -790,23 +733,6 @@ record ActionMetricsConfig(
     public Boolean enabled() {
         return enabled != null ? enabled : true;
     }
-}
-
-/**
- * Custom metric definition for actions.
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
-record CustomMetricConfig(
-        @JsonProperty("name")
-        String name,
-        @JsonProperty("type")
-        String type,
-        @JsonProperty("description")
-        String description,
-        @JsonProperty("labels")
-        List<String> labels
-        ) {
-
 }
 
 /**

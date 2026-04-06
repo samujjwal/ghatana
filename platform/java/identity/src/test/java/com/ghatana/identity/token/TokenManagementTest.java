@@ -62,9 +62,9 @@ class TokenManagementTest extends EventloopTestBase {
             CredentialToken token = runPromise(
                     () -> identityService.issueCredential("tenant-a", "agent-rev", Duration.ofMinutes(30)));
 
-            runPromise(() -> identityService.revoke(token.tokenId()));
+            runPromise(() -> identityService.revokeCredential(token.tokenId()));
 
-            boolean isValid = runPromise(() -> identityService.isValid(token.tokenId()));
+            boolean isValid = runPromise(() -> identityService.isCredentialValid(token.tokenId()));
             assertThat(isValid).isFalse();
         }
 
@@ -75,7 +75,7 @@ class TokenManagementTest extends EventloopTestBase {
             CredentialToken token = runPromise(
                     () -> identityService.issueCredential("tenant-a", "agent-valid", Duration.ofMinutes(30)));
 
-            boolean isValid = runPromise(() -> identityService.isValid(token.tokenId()));
+            boolean isValid = runPromise(() -> identityService.isCredentialValid(token.tokenId()));
             assertThat(isValid).isTrue();
         }
 
@@ -86,10 +86,10 @@ class TokenManagementTest extends EventloopTestBase {
             CredentialToken token = runPromise(
                     () -> identityService.issueCredential("tenant-a", "agent-double-rev", Duration.ofMinutes(30)));
 
-            runPromise(() -> identityService.revoke(token.tokenId()));
-            runPromise(() -> identityService.revoke(token.tokenId())); // second revoke is no-op
+            runPromise(() -> identityService.revokeCredential(token.tokenId()));
+            runPromise(() -> identityService.revokeCredential(token.tokenId())); // second revoke is no-op
 
-            boolean isValid = runPromise(() -> identityService.isValid(token.tokenId()));
+            boolean isValid = runPromise(() -> identityService.isCredentialValid(token.tokenId()));
             assertThat(isValid).isFalse();
         }
     }

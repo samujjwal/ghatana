@@ -44,23 +44,21 @@ public class ReportServiceImpl implements ReportService {
         validateTenantId(tenantId);
         Objects.requireNonNull(template, "Template required");
 
-        Report report = Report.builder()
-            .id(UUID.randomUUID().toString())
-            .tenantId(tenantId)
-            .name(template.getName())
-            .type(template.getType())
-            .status("generating")
-            .createdAt(Instant.now())
-            .templateId(template.getId())
-            .parameters(template.getParameters())
-            .build();
+        Report report = new Report()
+            .withId(UUID.randomUUID().toString())
+            .withTenantId(tenantId)
+            .withName(template.getName())
+            .withFormat(template.getFormat())
+            .withStatus("PENDING")
+            .withCreatedAt(System.currentTimeMillis())
+            .withCreatedBy("system");
 
         return repository.save(report)
             .then(saved -> executeReportGeneration(saved, template))
             .whenComplete((result, ex) -> {
                 if (ex == null) {
                     metrics.incrementCounter("report.generate.success",
-                        "tenant", tenantId, "type", template.getType());
+                        "tenant", tenantId, "format", template.getFormat());
                 } else {
                     metrics.incrementCounter("report.generate.error",
                         "tenant", tenantId, "error", ex.getClass().getSimpleName());
@@ -117,17 +115,14 @@ public class ReportServiceImpl implements ReportService {
                         new IllegalArgumentException("Report not found: " + reportId));
                 }
 
-                Report updated = Report.builder()
-                    .id(existing.getId())
-                    .tenantId(existing.getTenantId())
-                    .name(updates.getOrDefault("name", existing.getName()))
-                    .type(existing.getType())
-                    .status(existing.getStatus())
-                    .createdAt(existing.getCreatedAt())
-                    .updatedAt(Instant.now())
-                    .templateId(existing.getTemplateId())
-                    .parameters(existing.getParameters())
-                    .build();
+                Report updated = new Report()
+                    .withId(existing.getId())
+                    .withTenantId(existing.getTenantId())
+                    .withName(updates.getOrDefault("name", existing.getName()))
+                    .withFormat(updates.getOrDefault("format", existing.getFormat()))
+                    .withStatus(updates.getOrDefault("status", existing.getStatus()))
+                    .withCreatedAt(existing.getCreatedAt())
+                    .withCreatedBy(existing.getCreatedBy());
 
                 return repository.save(updated);
             })
@@ -187,10 +182,7 @@ public class ReportServiceImpl implements ReportService {
 
     private Promise<Report> executeReportGeneration(Report report, ReportTemplate template) {
         // Simulate async report generation
-        return Promise.of(report.toBuilder()
-            .status("completed")
-            .completedAt(Instant.now())
-            .build());
+        return Promise.of(report.withStatus("COMPLETED"));
     }
 
     private byte[] generateReportBinary(Report report, String format) {

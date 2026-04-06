@@ -17,7 +17,7 @@ java {
 }
 
 dependencies {
-    api(project(":platform:java:kernel"))
+    api(project(":platform-kernel:kernel-core"))
     api(project(":products:finance:domains:pms"))
     api(libs.activej.promise)
 

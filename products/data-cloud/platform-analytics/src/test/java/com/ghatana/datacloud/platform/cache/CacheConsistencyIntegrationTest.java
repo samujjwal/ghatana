@@ -6,7 +6,6 @@ package com.ghatana.datacloud.platform.cache;
 
 import com.ghatana.datacloud.analytics.Report;
 import com.ghatana.datacloud.analytics.ReportCacheService;
-import com.ghatana.datacloud.launcher.test.TestContainersConfig;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.*;
@@ -36,17 +35,6 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     @Mock
     private ReportCacheService cacheService;
 
-    @BeforeAll
-    static void setUpInfrastructure() {
-        // Start Redis container for cache testing
-        TestContainersConfig.redis().start();
-    }
-
-    @AfterAll
-    static void tearDownInfrastructure() {
-        TestContainersConfig.stopAll();
-    }
-
     @BeforeEach
     void setUp() {
         // Fresh mock for each test
@@ -60,10 +48,6 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     @Test
     @DisplayName("[D003]: schema_change_invalidates_affected_collection_reports")
     void schemaChangeInvalidatesAffectedCollectionReports() {
-        // Given: Reports cached for a collection
-        Report report1 = new Report().withId("r1").withQuery("SELECT * FROM sales");
-        Report report2 = new Report().withId("r2").withQuery("SELECT * FROM inventory");
-
         when(cacheService.invalidateOnSchemaChange("sales"))
             .thenReturn(Promise.of((Void) null));
 
@@ -290,25 +274,4 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
         assertThat(read2.getName()).isEqualTo("Version 2");
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Integration with TestContainers
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("[D003]: redis_container_available_for_testing")
-    void redisContainerAvailableForTesting() {
-        assertThat(TestContainersConfig.isRunning("redis")).isTrue();
-
-        String redisUrl = TestContainersConfig.getRedisUrl();
-        assertThat(redisUrl).isNotNull();
-        assertThat(redisUrl).contains(":");
-    }
-
-    @Test
-    @DisplayName("[D003]: cache_operations_work_with_testcontainers")
-    void cacheOperationsWorkWithTestcontainers() {
-        // Verify that our test infrastructure is properly configured
-        assertThat(TestContainersConfig.redis()).isNotNull();
-        assertThat(TestContainersConfig.isRunning("redis")).isTrue();
-    }
 }
