@@ -73,11 +73,16 @@ export * from './aiAtoms';
 
 // Cross-tab synchronization
 export {
-  CrossTabSync,
-  getCrossTabSync,
-  createSyncedAtom,
+  syncStateAcrossTabs,
+  writeAtomToStorage,
+  readAtomFromStorage,
+  subscribeToSync,
+  getSyncStatistics,
+} from './cross-tab-sync';
+export type { StorageEvent as SyncMessage, SyncConfig as CrossTabSyncOptions } from './cross-tab-sync';
+export {
   useSyncedAtom,
-  destroyCrossTabSync,
-  SyncMessageType,
-} from './CrossTabSync';
-export type { SyncMessage, CrossTabSyncOptions } from './CrossTabSync';
+  useSyncedAtomValue,
+  useSyncedSetAtom,
+  useAutoSyncAtom,
+} from './hooks/useSyncedAtom';

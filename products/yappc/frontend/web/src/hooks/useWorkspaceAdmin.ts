@@ -59,6 +59,34 @@ interface UseWorkspaceAdminResult {
     hasPermission: (permission: WorkspacePermission) => boolean;
 }
 
+interface WorkspaceService {
+    getWorkspace: (workspaceId: string) => Workspace | null;
+    getWorkspaceMembers: (workspaceId: string) => WorkspaceMember[];
+    addMember: (
+        workspaceId: string,
+        payload: {
+            userId: string;
+            email: string;
+            role: WorkspaceRole;
+            personas: PersonaType[];
+            invitedBy: string;
+        }
+    ) => Promise<void>;
+    removeMember: (workspaceId: string, userId: string, actorId: string) => Promise<void>;
+    updateMemberRole: (
+        workspaceId: string,
+        userId: string,
+        role: WorkspaceRole,
+        actorId: string
+    ) => Promise<void>;
+    updateMemberPersonas: (
+        workspaceId: string,
+        userId: string,
+        personas: PersonaType[],
+        actorId: string
+    ) => Promise<void>;
+}
+
 // ============================================================================
 // Hook Implementation
 // ============================================================================
@@ -77,7 +105,8 @@ export function useWorkspaceAdmin(): UseWorkspaceAdminResult {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const workspaceService = useMemo(() => getWorkspaceService(), []);
+    const workspaceServiceFactory = getWorkspaceService as () => WorkspaceService;
+    const workspaceService = useMemo(() => workspaceServiceFactory(), []);
 
     /**
      * Load workspace data and members.

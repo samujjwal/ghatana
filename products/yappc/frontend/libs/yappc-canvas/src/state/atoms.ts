@@ -25,7 +25,6 @@ export {
   hybridCanvasStateAtom,
   renderingModeAtom,
   activeLayerAtom,
-  cameraAtom,
   selectionAtom,
   toolAtom,
   readOnlyAtom,
@@ -34,6 +33,7 @@ export {
   nodesAtom,
   edgesAtom,
 } from '@ghatana/canvas/hybrid/state';
+export { cameraAtom } from './canvas-atoms';
 
 import type {
   CanvasDocument,

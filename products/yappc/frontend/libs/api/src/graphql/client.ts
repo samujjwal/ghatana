@@ -17,14 +17,10 @@ import {
   from,
   ApolloLink,
   NormalizedCacheObject,
-  split,
   Observable,
 } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
-import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
-import { getMainDefinition } from '@apollo/client/utilities';
-import { createClient } from 'graphql-ws';
 
 // =============================================================================
 // CONFIGURATION
@@ -32,7 +28,6 @@ import { createClient } from 'graphql-ws';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7002';
 const GRAPHQL_ENDPOINT = `${API_BASE_URL}/graphql`;
-const WS_ENDPOINT = API_BASE_URL.replace('http', 'ws') + '/graphql';
 
 // =============================================================================
 // TOKEN MANAGEMENT
@@ -274,43 +269,6 @@ const httpLink = new HttpLink({
   },
 });
 
-// WebSocket link for subscriptions
-const wsLink = new GraphQLWsLink(
-  createClient({
-    url: WS_ENDPOINT,
-    connectionParams: () => ({
-      authorization: getAccessToken() ? `Bearer ${getAccessToken()}` : undefined,
-    }),
-    retryAttempts: 5,
-    shouldRetry: () => true,
-    on: {
-      connected: () => {
-        window.dispatchEvent(new CustomEvent('ws:connected'));
-      },
-      closed: () => {
-        window.dispatchEvent(new CustomEvent('ws:disconnected'));
-      },
-      error: (error) => {
-        console.error('[WebSocket Error]:', error);
-        window.dispatchEvent(new CustomEvent('ws:error', { detail: error }));
-      },
-    },
-  })
-);
-
-// Split link for queries/mutations vs subscriptions
-const splitLink = split(
-  ({ query }) => {
-    const definition = getMainDefinition(query);
-    return (
-      definition.kind === 'OperationDefinition' &&
-      definition.operation === 'subscription'
-    );
-  },
-  wsLink,
-  httpLink
-);
-
 // =============================================================================
 // CACHE CONFIGURATION
 // =============================================================================
@@ -429,7 +387,7 @@ export const createGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
       errorLink,
       retryLink,
       authLink,
-      splitLink,
+      httpLink,
     ]),
     cache,
     defaultOptions: {

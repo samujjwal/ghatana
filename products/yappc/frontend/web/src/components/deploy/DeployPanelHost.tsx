@@ -28,11 +28,17 @@ const BuildProgressTracker = lazy(() =>
 const ReleasePacketPanel = lazy(() =>
     import('./ReleasePacketPanel').then((m) => ({ default: m.ReleasePacketPanel })),
 );
+const DeploymentPanel = lazy(() =>
+    import('./DeploymentPanel').then((m) => ({ default: m.DeploymentPanel })),
+);
 const HealthPanel = lazy(() =>
     import('../observe/HealthPanel').then((m) => ({ default: m.HealthPanel })),
 );
 const IncidentsPanel = lazy(() =>
     import('../observe/IncidentsPanel').then((m) => ({ default: m.IncidentsPanel })),
+);
+const CapacityDashboard = lazy(() =>
+    import('./CapacityDashboard').then((m) => ({ default: m.CapacityDashboard })),
 );
 
 export type DeploySegment = 'configure' | 'deployments' | 'health';
@@ -46,12 +52,12 @@ const SEGMENT_CONFIG: Record<DeploySegment, { icon: React.ReactNode; label: stri
     deployments: {
         icon: <RocketLaunch className="w-4 h-4" />,
         label: 'Deployments',
-        panels: ['builds', 'releases'],
+        panels: ['builds', 'releases', 'strategy'],
     },
     health: {
         icon: <Favorite className="w-4 h-4" />,
         label: 'Health',
-        panels: ['metrics', 'incidents'],
+        panels: ['metrics', 'incidents', 'capacity'],
     },
 };
 
@@ -66,6 +72,7 @@ export interface DeployPanelHostProps {
         // Deployments segment data
         currentBuild?: unknown;
         releasePacket?: unknown;
+        deploymentPlan?: unknown;
         evidencePack?: unknown;
         approvalGates?: unknown[];
         onRefreshBuild?: () => Promise<void>;
@@ -78,6 +85,7 @@ export interface DeployPanelHostProps {
         slos?: unknown[];
         services?: unknown[];
         incidents?: unknown[];
+        capacityRecommendation?: unknown;
         onRefreshHealth?: () => Promise<void>;
         onCreateIncident?: () => void;
         onUpdateIncidentStatus?: (id: string, status: string) => Promise<void>;
@@ -236,6 +244,15 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                         View artifacts, evidence, and approvals
                                     </p>
                                 </button>
+                                <button
+                                    onClick={() => handlePanelChange('strategy')}
+                                    className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
+                                >
+                                    <h3 className="font-medium text-text-primary mb-1">AI Strategy</h3>
+                                    <p className="text-xs text-text-secondary">
+                                        Review deployment risk, rollout recommendation, and blockers
+                                    </p>
+                                </button>
                             </div>
                         </div>
                     )}
@@ -256,6 +273,9 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                             onApprove={dataContext.onApprove}
                             onReject={dataContext.onReject}
                         />
+                    )}
+                    {currentSegment === 'deployments' && currentPanel === 'strategy' && dataContext.deploymentPlan && (
+                        <DeploymentPanel plan={dataContext.deploymentPlan as never} />
                     )}
 
                     {/* Health Segment */}
@@ -284,6 +304,15 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                         Track and manage active incidents
                                     </p>
                                 </button>
+                                <button
+                                    onClick={() => handlePanelChange('capacity')}
+                                    className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
+                                >
+                                    <h3 className="font-medium text-text-primary mb-1">Capacity</h3>
+                                    <p className="text-xs text-text-secondary">
+                                        Review scaling recommendation and monthly cost outlook
+                                    </p>
+                                </button>
                             </div>
                         </div>
                     )}
@@ -304,6 +333,9 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                             onUpdateStatus={dataContext.onUpdateIncidentStatus as unknown}
                             onAddNote={dataContext.onAddIncidentNote}
                         />
+                    )}
+                    {currentSegment === 'health' && currentPanel === 'capacity' && dataContext.capacityRecommendation && (
+                        <CapacityDashboard recommendation={dataContext.capacityRecommendation as never} />
                     )}
                 </Suspense>
             </div>

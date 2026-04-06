@@ -58,6 +58,28 @@ class InsightPublisherTest extends EventloopTestBase {
     assertThat(metricCount.get()).isZero();
   }
 
+  @Test
+  @DisplayName("publish suppresses duplicate insights before save and broadcast")
+  void publishSuppressesDuplicateInsightsBeforeSaveAndBroadcast() {
+    List<AIInsight> saved = new ArrayList<>();
+    AtomicInteger metricCount = new AtomicInteger(-1);
+
+    InsightPublisher publisher =
+        new InsightPublisher(
+            insights -> {
+              saved.addAll(insights);
+              return Promise.of(insights);
+            },
+            (tenantId, insights) -> Promise.complete(),
+            metricCount::set,
+            new InsightDeduplicator());
+
+    runPromise(() -> publisher.publish(List.of(insight("tenant-a"), insight("tenant-a")), "tenant-a"));
+
+    assertThat(saved).hasSize(1);
+    assertThat(metricCount.get()).isEqualTo(1);
+  }
+
   private AIInsight insight(String tenantId) {
     return new AIInsight(
         null,

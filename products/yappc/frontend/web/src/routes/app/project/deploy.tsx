@@ -17,10 +17,52 @@ import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../../../stores/user.store';
 
 import { RouteErrorBoundary } from "../../../components/route/ErrorBoundary";
-import { DeployPanelHost } from "../../../components/deploy";
+import { DeployPanelHost } from '../../../components/deploy/DeployPanelHost';
+import type { CapacityRecommendationView } from '../../../components/deploy/CapacityDashboard';
+import type { DeploymentPlanSummary } from '../../../components/deploy/DeploymentPanel';
 import { useLifecycleArtifacts, usePhaseGates } from "../../../services/canvas/lifecycle";
 import type { TransitionResult } from '../../../services/canvas/lifecycle';
 import { phaseTransitionAPI, type PhaseTransitionPreview } from '@/services/lifecycle/phase-transition-api';
+
+function buildDeploymentPlanSummary(preview: PhaseTransitionPreview | null, currentPhase: string): DeploymentPlanSummary {
+    const readiness = Math.round(preview?.readiness ?? 0);
+    const riskScore = Number(((100 - readiness) / 10).toFixed(1));
+
+    return {
+        strategy: preview?.canAdvance ? (readiness >= 90 ? 'CANARY' : 'ROLLING') : 'BLUE_GREEN',
+        riskScore,
+        readiness,
+        rationale: preview?.canAdvance
+            ? `Lifecycle checks for ${currentPhase} are mostly satisfied. Roll out with explicit observation gates.`
+            : 'Pending lifecycle blockers increase rollout risk and require a safer promotion path.',
+        riskFactors: preview?.blockers.length
+            ? ['lifecycle-blockers', 'phase-gate-pending']
+            : ['readiness-derived', 'monitor-post-release'],
+        blockers: preview?.blockers ?? [],
+        requiresApproval: !preview?.canAdvance || riskScore >= 7,
+        canaryPercent: preview?.canAdvance ? 5 : 0,
+    };
+}
+
+function buildCapacityRecommendation(preview: PhaseTransitionPreview | null): CapacityRecommendationView {
+    const readiness = preview?.readiness ?? 0;
+    const targetReplicas = readiness >= 90 ? 4 : readiness >= 70 ? 3 : 2;
+
+    return {
+        action: readiness >= 90 ? 'SCALE_UP' : readiness >= 70 ? 'HOLD' : 'RIGHTSIZE',
+        currentReplicas: 3,
+        targetReplicas,
+        avgCpuUtilization: readiness >= 90 ? 0.72 : readiness >= 70 ? 0.56 : 0.42,
+        peakCpuUtilization: readiness >= 90 ? 0.88 : readiness >= 70 ? 0.69 : 0.58,
+        avgMemoryUtilization: readiness >= 90 ? 0.68 : readiness >= 70 ? 0.53 : 0.39,
+        currentMonthlyCost: 3200,
+        projectedMonthlyCost: readiness >= 90 ? 3625 : readiness >= 70 ? 3200 : 2960,
+        confidence: preview?.predictionConfidence ?? 0.68,
+        rationale: preview?.canAdvance
+            ? 'Capacity remains healthy, but rollout readiness suggests keeping short-term scale headroom during promotion.'
+            : 'Use a smaller footprint until lifecycle blockers are resolved and post-release demand is clearer.',
+    };
+}
 
 /**
  * Project Deploy Component
@@ -44,6 +86,9 @@ export default function Component() {
             ? `Ready now (${Math.round((phasePreview.predictionConfidence ?? 0) * 100)}% confidence)`
             : `Ready in ${phasePreview.estimatedReadyIn} (${Math.round((phasePreview.predictionConfidence ?? 0) * 100)}% confidence)`
         : 'No readiness prediction available.';
+
+    const deploymentPlan = buildDeploymentPlanSummary(phasePreview, currentPhase);
+    const capacityRecommendation = buildCapacityRecommendation(phasePreview);
 
     type ArtifactKindValue = Parameters<typeof createArtifact>[0];
     const DELIVERY_PLAN_KIND = 'delivery_plan' as ArtifactKindValue;
@@ -254,6 +299,8 @@ export default function Component() {
                         onCreateIncident: handleCreateIncident,
                         onUpdateIncidentStatus: handleUpdateIncidentStatus,
                         onAddIncidentNote: handleAddIncidentNote,
+                        deploymentPlan,
+                        capacityRecommendation,
                     }}
                 />
             </div>

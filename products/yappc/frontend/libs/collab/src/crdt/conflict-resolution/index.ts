@@ -151,7 +151,6 @@ export class ConflictResolutionEngine {
     }
 
     if (
-      this.config.detectorConfig.detectOrderingConflicts &&
       ((operationA.type === 'delete' && operationB.type === 'insert') ||
         (operationA.type === 'insert' && operationB.type === 'delete'))
     ) {

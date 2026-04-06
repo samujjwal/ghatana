@@ -7,6 +7,51 @@
  *
  * @deprecated @yappc/crdt — Use @yappc/collab/crdt instead
  */
-export * from './core/index.js';
-export * from './conflict-resolution/index.js';
-export * from './ide/index.js';
+export { CRDTCore } from './core/index.js';
+export type {
+	VectorClock,
+	CRDTOperation,
+	OperationLogEntry,
+	StateVector,
+	CRDTValue,
+	MergeResult,
+	Conflict as CoreConflict,
+	ConflictMetadata,
+	CRDTState,
+	CRDTOperationResult,
+	SyncMessage,
+	MergeStrategy,
+	CRDTConfig,
+	Snapshot,
+	CRDTStatistics,
+} from './core/index.js';
+export { ConflictResolutionEngine, autoResolveOperations } from './conflict-resolution/index.js';
+export type {
+	Conflict,
+	ConflictType,
+	ResolutionStrategy,
+	ConflictSeverity,
+	ConflictAnalysis,
+	ResolutionSuggestion,
+	MergeStrategyConfig,
+	ThreeWayMergeInput,
+	ThreeWayMergeResult,
+	ConflictResolutionResult,
+	ConflictReport,
+	ResolutionHistoryEntry,
+	ConflictDetectorConfig,
+	ConflictResolutionEngineConfig,
+	OperationResult,
+	ConflictStatistics,
+	AutoResolutionResult,
+	AutoResolutionRule,
+} from './conflict-resolution/index.js';
+export { recordToYMap, yMapToRecord } from './ide/index.js';
+export type {
+	CanvasNodeLite,
+	IDEFileCRDT,
+	IDEFolderCRDT,
+	IDEPresenceCRDT,
+	IDECRDTState,
+	IDECRDTStateWrapper,
+} from './ide/index.js';

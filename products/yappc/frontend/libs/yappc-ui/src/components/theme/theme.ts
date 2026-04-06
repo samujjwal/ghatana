@@ -17,7 +17,7 @@ import {
   durations,
   easings,
   zIndex,
-} from '../tokens';
+} from '../tokens/index';
 
 import type { PaletteMode, ThemeOptions } from './types';
 

@@ -9,7 +9,7 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Menu, X, ChevronDown, Github, Twitter, Linkedin } from 'lucide-react';
+import { Menu, X, ChevronDown, GitBranch, Twitter, Linkedin } from 'lucide-react';
 
 import { cn } from '../utils/cn';
 import { ROUTES } from '../router/paths';
@@ -285,7 +285,7 @@ const Footer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
               >
-                <Github className="w-4 h-4" />
+                <GitBranch className="w-4 h-4" />
               </a>
               <a
                 href="https://twitter.com/yappc"

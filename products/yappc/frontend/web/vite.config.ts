@@ -7,6 +7,8 @@ import path from 'path';
 import fs from 'fs';
 import type { Plugin } from 'vite';
 
+const enableBuildSourcemaps = process.env.VITE_BUILD_SOURCEMAP === 'true';
+
 // https://vitejs.dev/config/
 const rrPlugin = reactRouter();
 
@@ -208,11 +210,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
 
       // Library aliases (matching tsconfig.base.json)
-      '@yappc/ui': path.resolve(__dirname, '../libs/ui/src'),
-      '@yappc/state': path.resolve(__dirname, '../libs/state/src'),
+      '@yappc/ui': path.resolve(__dirname, '../libs/yappc-ui/src'),
+      '@yappc/state': path.resolve(__dirname, '../libs/yappc-state/src'),
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
       '@ghatana/yappc-storage': path.resolve(__dirname, '../libs/storage/src'),
-      '@yappc/ai': path.resolve(__dirname, '../libs/ai/src'),
+      '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
       '@ghatana/yappc-ai-requirements-service': path.resolve(
         __dirname,
         '../libs/ai-requirements-service/src'
@@ -278,7 +280,7 @@ export default defineConfig({
       // Platform shared packages used by YAPPC and transitive UI deps
       '@ghatana/design-system': path.resolve(
         __dirname,
-        '../../../../platform/typescript/capabilities/design-system/src/index.ts'
+        'src/shims/ghatana-design-system.ts'
       ),
       '@ghatana/theme': path.resolve(
         __dirname,
@@ -300,7 +302,7 @@ export default defineConfig({
       // Legacy compatibility
       '@ghatana/canvas': path.resolve(
         __dirname,
-        '../../../../platform/typescript/canvas/src/index.ts'
+        '../../../../platform/typescript/canvas/src'
       ),
       '@ghatana/types': path.resolve(__dirname, '../libs/types/src'),
 
@@ -429,7 +431,7 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 500, // Enforce 500KB limit per chunk
-    sourcemap: true,
+    sourcemap: enableBuildSourcemaps,
     // Enable CSS code splitting
     cssCodeSplit: true,
     // Optimize asset inlining

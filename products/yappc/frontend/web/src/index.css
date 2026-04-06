@@ -1,4 +1,4 @@
-@import '../../../../../../platform/typescript/tokens/safe-area.css';
+@import '../../../../../platform/typescript/tokens/safe-area.css';
 @import 'tailwindcss';
 @import './styles/color-utilities.css';
 @import './styles/mobile-touch.css';

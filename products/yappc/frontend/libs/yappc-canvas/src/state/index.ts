@@ -9,6 +9,11 @@
 
 // Core atoms for canvas state
 export {
+  // Platform hybrid atoms
+  hybridCanvasStateAtom,
+  renderingModeAtom,
+  activeLayerAtom,
+
   // Document state
   canvasDocumentAtom,
   updateDocumentAtom,
@@ -49,6 +54,60 @@ export {
   // Collaboration state
   canvasCollaborationAtom,
 
+  // Interaction mode & sketch/diagram
+  canvasInteractionModeAtom,
+  sketchToolAtom,
+  sketchColorAtom,
+  sketchStrokeWidthAtom,
+  diagramTypeAtom,
+  diagramContentAtom,
+  diagramZoomAtom,
+  showDiagramEditorAtom,
+
+  // Command registry
+  commandRegistryAtom,
+  sortedCommandsAtom,
+  registerCommandsAtom,
+  unregisterCommandsAtom,
+
+  // Workspace UI
+  activePersonaAtom,
+  isAIModalOpenAtom,
+  isProjectSwitcherOpenAtom,
+  isInspectorOpenAtom,
+  isCommandPaletteOpenAtom,
+  isSearchOpenAtom,
+
+  // Accessibility
+  prefersReducedMotionAtom,
+  prefersDarkModeAtom,
+  canvasAnnouncementAtom,
+
+  // Alignment and constants
+  alignmentGuidesAtom,
+  PHASE_ZONE_CENTERS,
+  MAX_HISTORY_SIZE,
+
+  // Lifecycle & tasks
+  lifecyclePhaseAtom,
+  phaseProgressAtom,
+  canvasTasksAtom,
+  tasksByPhaseAtom,
+  blockedTasksAtom,
+  nextBestTaskAtom,
+
+  // AI & validation
+  aiSuggestionsAtom,
+  validationIssuesAtom,
+  validationScoreAtom,
+
+  // Collaboration presence
+  collaboratorsAtom,
+  onlineCollaboratorsAtom,
+
+  // Project metadata
+  canvasProjectMetadataAtom,
+
   // Derived computed atoms
   canvasElementsArrayAtom,
   selectedElementsAtom,
@@ -80,4 +139,19 @@ export type {
   CanvasHistoryEntry,
   CanvasUIState,
   CanvasPerformanceMetrics,
+  CanvasInteractionMode,
+  SketchTool,
+  DiagramType,
+  CanvasCommandAction,
+  LifecyclePhase,
+  PhaseProgress,
+  TaskStatus,
+  TaskPriority,
+  CanvasTask,
+  AISuggestion,
+  ValidationIssue,
+  Collaborator,
+  CanvasProjectMetadata,
 } from '../types/canvas-document';
+
+export { cameraAtom } from './canvas-atoms';

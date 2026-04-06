@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, type Atom } from 'jotai';
 import { Plus, Circle } from 'lucide-react';
 import { activeSprintAtom, sprintStoriesAtom } from '../../state/atoms';
 
@@ -162,7 +162,7 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
   className = '',
 }) => {
   const activeSprint = useAtomValue(activeSprintAtom);
-  const allStories = useAtomValue(sprintStoriesAtom) as StoryRecord[];
+  const allStories = useAtomValue(sprintStoriesAtom as Atom<StoryRecord[]>);
 
   // Apply filters
   const filteredStories = allStories.filter((story) => {

@@ -25,6 +25,7 @@ interface WebSocketContextValue extends UseWebSocketReturn {
     subscribeToBuildUpdates: (projectId: string) => () => void;
     subscribeToDeploymentUpdates: (projectId: string) => () => void;
     subscribeToMonitoringUpdates: (projectId: string) => () => void;
+    subscribeToAIInsights: (projectId: string) => () => void;
     sendBuildAction: (projectId: string, action: string, payload?: unknown) => boolean;
     sendDeploymentAction: (projectId: string, action: string, payload?: unknown) => boolean;
 }
@@ -94,6 +95,23 @@ export function WebSocketProvider({
         });
     };
 
+    const subscribeToAIInsights = (projectId: string) => {
+        return subscribe(`ai_insight_${projectId}`, (message: unknown) => {
+            const payload = typeof message === 'object' && message !== null && 'payload' in message
+                ? (message as { payload?: unknown }).payload
+                : undefined;
+
+            console.log(`AI insight update for project ${projectId}:`, payload);
+
+            window.dispatchEvent(new CustomEvent('yappc:ai-insight', {
+                detail: {
+                    projectId,
+                    payload,
+                },
+            }));
+        });
+    };
+
     const sendBuildAction = (projectId: string, action: string, payload?: unknown) => {
         return send({
             type: 'build_action',
@@ -121,6 +139,7 @@ export function WebSocketProvider({
         subscribeToBuildUpdates,
         subscribeToDeploymentUpdates,
         subscribeToMonitoringUpdates,
+        subscribeToAIInsights,
         sendBuildAction,
         sendDeploymentAction
     };

@@ -17,6 +17,8 @@ export { ReleasePacketPanel } from './ReleasePacketPanel';
 export { DeployPanelHost } from './DeployPanelHost';
 export { OpsBaselineDashboard } from './OpsBaselineDashboard';
 export { IncidentManagementPanel } from './IncidentManagementPanel';
+export { DeploymentPanel } from './DeploymentPanel';
+export { CapacityDashboard } from './CapacityDashboard';
 
 export type { DeliveryPlanEditorProps } from './DeliveryPlanEditor';
 export type { ReleaseStrategyConfiguratorProps } from './ReleaseStrategyConfigurator';
@@ -25,3 +27,5 @@ export type { ApprovalGate, ReleasePacketPanelProps } from './ReleasePacketPanel
 export type { DeploySegment, DeployPanelHostProps } from './DeployPanelHost';
 export type { OpsBaselineDashboardProps } from './OpsBaselineDashboard';
 export type { IncidentManagementPanelProps } from './IncidentManagementPanel';
+export type { DeploymentPanelProps, DeploymentPlanSummary } from './DeploymentPanel';
+export type { CapacityDashboardProps, CapacityRecommendationView } from './CapacityDashboard';

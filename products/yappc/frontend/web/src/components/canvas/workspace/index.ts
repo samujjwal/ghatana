@@ -62,7 +62,6 @@ export {
     PHASE_ZONE_CENTERS,
     type CanvasHistoryEntry,
     // New architectural atoms
-    cameraAtom,
     cameraZoomAtom,
     commandRegistryAtom,
     sortedCommandsAtom,

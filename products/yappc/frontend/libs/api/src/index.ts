@@ -9,6 +9,8 @@
  * @doc.pattern Barrel
  */
 
+import type { ReactNode } from 'react';
+
 // =============================================================================
 // Authentication Service
 // =============================================================================
@@ -45,6 +47,13 @@ export {
 } from './graphql/client';
 
 export type { ApolloClient, NormalizedCacheObject } from './graphql/client';
+
+export interface GraphQLProviderProps {
+  children: ReactNode;
+}
+
+export const GraphQLProvider = ({ children }: GraphQLProviderProps) =>
+  ApolloProvider({ client: getGraphQLClient(), children });
 
 // =============================================================================
 // Bootstrapping Operations
@@ -93,7 +102,7 @@ export {
   useSubscription,
   useApolloClient,
   ApolloProvider,
-} from '@apollo/client';
+} from '@apollo/client/react';
 
 // =============================================================================
 // DevSecOps API Client (Legacy)
@@ -108,14 +117,6 @@ export { devsecopsClient } from './devsecops/client';
 
 export * from './ai';
 export { aiClient } from './ai';
-
-// =============================================================================
-// GraphQL (consolidated from @ghatana/yappc-api)
-// Re-exported here as the canonical API client entry point.
-// Direct imports from '@yappc/core/api' still work but are deprecated.
-// =============================================================================
-
-export * from '../../graphql/src';
 
 // ============================================================================
 // DEPRECATION WARNING

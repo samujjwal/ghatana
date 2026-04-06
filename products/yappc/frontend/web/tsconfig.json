@@ -69,8 +69,6 @@
     "src/components/canvas/versioning/**/*",
     "src/factories/canvasAPIFactory.ts",
     "src/utils/**/*",
-    "src/state/**/*",
-    "src/services/**/*",
     "src/routes/mobile/**/*",
     "src/test/**/*",
     "src/test-utils/**/*",

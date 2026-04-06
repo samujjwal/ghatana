@@ -20,3 +20,6 @@ export type { RecentProjectsStripProps } from './RecentProjectsStrip';
 
 export { AICommandBar } from './AICommandBar';
 export type { AICommandBarProps, AISubmitOptions } from './AICommandBar';
+
+export { InsightPanel } from './InsightPanel';
+export type { InsightPanelProps } from './InsightPanel';

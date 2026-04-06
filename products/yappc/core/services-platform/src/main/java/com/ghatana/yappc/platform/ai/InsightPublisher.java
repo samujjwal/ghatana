@@ -16,14 +16,24 @@ public final class InsightPublisher {
   private final InsightRepository repository;
   private final TenantInsightBroadcaster broadcaster;
   private final InsightMetrics metrics;
+  private final InsightDeduplicator deduplicator;
 
   public InsightPublisher(
       InsightRepository repository,
       TenantInsightBroadcaster broadcaster,
       InsightMetrics metrics) {
+    this(repository, broadcaster, metrics, new InsightDeduplicator());
+  }
+
+  public InsightPublisher(
+      InsightRepository repository,
+      TenantInsightBroadcaster broadcaster,
+      InsightMetrics metrics,
+      InsightDeduplicator deduplicator) {
     this.repository = Objects.requireNonNull(repository, "repository");
     this.broadcaster = Objects.requireNonNull(broadcaster, "broadcaster");
     this.metrics = Objects.requireNonNull(metrics, "metrics");
+    this.deduplicator = Objects.requireNonNull(deduplicator, "deduplicator");
   }
 
   public Promise<Void> publish(List<AIInsight> insights, String tenantId) {
@@ -32,13 +42,14 @@ public final class InsightPublisher {
 
     List<AIInsight> tenantInsights =
         insights.stream().filter(insight -> resolvedTenantId.equals(insight.tenantId())).toList();
-    if (tenantInsights.isEmpty()) {
+    List<AIInsight> uniqueInsights = deduplicator.filter(tenantInsights);
+    if (uniqueInsights.isEmpty()) {
       metrics.recordInsightsPublished(0);
       return Promise.complete();
     }
 
     return repository
-        .saveAll(tenantInsights)
+      .saveAll(uniqueInsights)
         .then(
             saved ->
                 broadcaster.broadcast(resolvedTenantId, saved)

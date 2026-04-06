@@ -84,11 +84,9 @@ describe('ConflictResolver', () => {
 
     expect(screen.getByTestId('conflict-resolver')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Resolve concurrent-update' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Version A')).toBeInTheDocument();
-    expect(screen.getByLabelText('Version B')).toBeInTheDocument();
+    expect(screen.getByLabelText('Version A')).toHaveTextContent('Keep the billing requirement explicit');
+    expect(screen.getByLabelText('Version B')).toHaveTextContent('Rename the billing requirement to invoicing story');
     expect(screen.getByText('Merge the descriptive intent while preserving the stronger title.')).toBeInTheDocument();
-    expect(screen.getByText('Keep the billing requirement explicit')).toBeInTheDocument();
-    expect(screen.getByText('Rename the billing requirement to invoicing story')).toBeInTheDocument();
   });
 
   it('submits the selected version to the resolution callback', () => {

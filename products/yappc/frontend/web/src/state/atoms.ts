@@ -15,32 +15,6 @@
  */
 
 import { atom } from 'jotai';
-import {
-  userAtom as _userAtom,
-  isAuthenticatedAtom as _isAuthenticatedAtom,
-  breadcrumbsAtom as _breadcrumbsAtom,
-  currentProjectAtom as _currentProjectAtom,
-  sidebarCollapsedAtom as _sidebarCollapsedAtom,
-  notificationsAtom as _notificationsAtom,
-  unreadNotificationsCountAtom as _unreadNotificationsCountAtom,
-  globalSearchOpenAtom as _globalSearchOpenAtom,
-  globalSearchQueryAtom as _globalSearchQueryAtom,
-  globalSearchResultsAtom as _globalSearchResultsAtom,
-  globalSearchLoadingAtom as _globalSearchLoadingAtom,
-  bootstrapSessionAtom as _bootstrapSessionAtom,
-  savedSessionsAtom as _savedSessionsAtom,
-  selectedTemplateAtom as _selectedTemplateAtom,
-  canvasNodesAtom as _canvasNodesAtom,
-  canvasEdgesAtom as _canvasEdgesAtom,
-  uploadedDocsAtom as _uploadedDocsAtom,
-  sprintStoriesAtom as _sprintStoriesAtom,
-  selectedStoryAtom as _selectedStoryAtom,
-  sprintsAtom as _sprintsAtom,
-  alertsAtom as _alertsAtom,
-  metricsAtom as _metricsAtom,
-  securityAlertsAtom as _securityAlertsAtom,
-  getWorkspaceService as _getWorkspaceService,
-} from '@yappc/canvas';
 
 // Re-export types
 export type {
@@ -62,34 +36,43 @@ export interface SecurityAlert {
   description?: string;
 }
 
+const createWorkspaceService = () => ({
+  getWorkspace: () => null,
+  getWorkspaceMembers: () => [],
+  addMember: async () => {},
+  removeMember: async () => {},
+  updateMemberRole: async () => {},
+  updateMemberPersonas: async () => {},
+});
+
 // ============================================================================
 // Re-export Existing Atoms
 // ============================================================================
 
-export const userAtom = _userAtom;
-export const isAuthenticatedAtom = _isAuthenticatedAtom;
-export const breadcrumbsAtom = _breadcrumbsAtom;
-export const currentProjectAtom = _currentProjectAtom;
-export const sidebarCollapsedAtom = _sidebarCollapsedAtom;
-export const notificationsAtom = _notificationsAtom;
-export const unreadNotificationsCountAtom = _unreadNotificationsCountAtom;
-export const globalSearchOpenAtom = _globalSearchOpenAtom;
-export const globalSearchQueryAtom = _globalSearchQueryAtom;
-export const globalSearchResultsAtom = _globalSearchResultsAtom;
-export const globalSearchLoadingAtom = _globalSearchLoadingAtom;
-export const bootstrapSessionAtom = _bootstrapSessionAtom;
-export const savedSessionsAtom = _savedSessionsAtom;
-export const selectedTemplateAtom = _selectedTemplateAtom;
-export const canvasNodesAtom = _canvasNodesAtom;
-export const canvasEdgesAtom = _canvasEdgesAtom;
-export const uploadedDocsAtom = _uploadedDocsAtom;
-export const sprintStoriesAtom = _sprintStoriesAtom;
-export const selectedStoryAtom = _selectedStoryAtom;
-export const sprintsAtom = _sprintsAtom;
-export const alertsAtom = _alertsAtom;
-export const metricsAtom = _metricsAtom;
-export const securityAlertsAtom = _securityAlertsAtom;
-export const getWorkspaceService = _getWorkspaceService;
+export const userAtom = atom(null);
+export const isAuthenticatedAtom = atom(false);
+export const breadcrumbsAtom = atom([]);
+export const currentProjectAtom = atom(null);
+export const sidebarCollapsedAtom = atom(false);
+export const notificationsAtom = atom([]);
+export const unreadNotificationsCountAtom = atom(0);
+export const globalSearchOpenAtom = atom(false);
+export const globalSearchQueryAtom = atom('');
+export const globalSearchResultsAtom = atom([]);
+export const globalSearchLoadingAtom = atom(false);
+export const bootstrapSessionAtom = atom(null);
+export const savedSessionsAtom = atom([]);
+export const selectedTemplateAtom = atom(null);
+export const canvasNodesAtom = atom([]);
+export const canvasEdgesAtom = atom([]);
+export const uploadedDocsAtom = atom([]);
+export const sprintStoriesAtom = atom([]);
+export const selectedStoryAtom = atom(null);
+export const sprintsAtom = atom([]);
+export const alertsAtom = atom([]);
+export const metricsAtom = atom([]);
+export const securityAlertsAtom = atom([]);
+export const getWorkspaceService = createWorkspaceService;
 
 // ============================================================================
 // Stub Atoms for Missing Exports
@@ -98,10 +81,10 @@ export const getWorkspaceService = _getWorkspaceService;
 // Creating stubs here to unblock migration. TODO: Implement properly.
 
 /** Stub: Current user atom (alias for userAtom) */
-export const currentUserAtom = _userAtom;
+export const currentUserAtom = userAtom;
 
 /** Stub: Active project atom (alias for currentProjectAtom) */
-export const activeProjectAtom = _currentProjectAtom;
+export const activeProjectAtom = currentProjectAtom;
 
 /** Navigation history with path and timestamp */
 export const navigationHistoryAtom = atom<

@@ -51,6 +51,7 @@ import { GuidancePanel } from '../components/guidance';
 import { CommandPalette } from '../components/command/CommandPalette';
 import { CreateWorkspaceDialog } from '../components/workspace';
 import { UnifiedContextHeader } from '../components/navigation';
+import { InsightPanel } from '../components/ai';
 import type { Action } from '../components/navigation/ActionsToolbar';
 import type { CanvasMode as BreadcrumbCanvasMode } from '../components/navigation/NavigationBreadcrumb';
 import {
@@ -58,6 +59,8 @@ import {
   useKeyboardShortcutsPanel,
 } from '../components/help/KeyboardShortcutsPanel';
 import { SkipLink } from '../components/accessibility';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
+import { useInsightStream } from '../hooks/useInsightStream';
 import { useCurrentUser } from '../providers/AuthProvider';
 
 /**
@@ -216,6 +219,7 @@ function ShellContent({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showInsightPanel, setShowInsightPanel] = useState(false);
   const isHeaderVisible = useAtomValue(headerVisibleAtom);
   const contextActions = useAtomValue(headerContextActionsAtom);
   const actionContext = useAtomValue(headerActionContextAtom);
@@ -279,6 +283,30 @@ function ShellContent({
     canvasMode === 'plan' ? 'design' : canvasMode;
   const headerCanvasModeChange =
     onCanvasModeChange as ((mode: BreadcrumbCanvasMode) => void) | undefined;
+  const setNotificationCount = useSetAtom(headerNotificationCountAtom);
+  const insightScopeId = projectId ?? currentWorkspace?.id ?? 'workspace-overview';
+  const { subscribeToAIInsights } = useWebSocketContext();
+  const {
+    insights,
+    unreadCount,
+    dismissInsight,
+    markAllRead,
+  } = useInsightStream({ projectId: insightScopeId });
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAIInsights(insightScopeId);
+    return () => {
+      unsubscribe();
+    };
+  }, [insightScopeId, subscribeToAIInsights]);
+
+  useEffect(() => {
+    setNotificationCount(unreadCount);
+
+    return () => {
+      setNotificationCount(0);
+    };
+  }, [setNotificationCount, unreadCount]);
 
   // Set up global keyboard shortcuts
   useKeyboardNavigation({
@@ -329,7 +357,7 @@ function ShellContent({
               })
             );
           }}
-          onNotifications={() => navigate('/notifications')}
+          onNotifications={() => setShowInsightPanel((currentValue) => !currentValue)}
           onHelp={() => window.open('/docs', '_blank')}
           onKeyboardShortcuts={() => {
             /* Open shortcuts panel */
@@ -363,6 +391,15 @@ function ShellContent({
         >
           <Outlet />
         </main>
+
+        <InsightPanel
+          open={showInsightPanel}
+          insights={insights}
+          unreadCount={unreadCount}
+          onClose={() => setShowInsightPanel(false)}
+          onDismiss={dismissInsight}
+          onMarkAllRead={markAllRead}
+        />
       </div>
 
       {/* Command Palette - Global action discovery (Cmd+K) */}

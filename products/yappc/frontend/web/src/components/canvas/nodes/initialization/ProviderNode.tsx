@@ -15,8 +15,7 @@ import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import {
-  Github,
-  Gitlab,
+  GitBranch,
   Cloud,
   Database,
   Server,
@@ -59,7 +58,7 @@ const providerConfig: Record<
     name: string;
     color: string;
     bgColor: string;
-    icon: typeof Github;
+    icon: typeof GitBranch;
     description: string;
   }
 > = {
@@ -67,21 +66,21 @@ const providerConfig: Record<
     name: 'GitHub',
     color: 'text-white',
     bgColor: 'bg-[#24292e]',
-    icon: Github,
+    icon: GitBranch,
     description: 'Code hosting & CI/CD',
   },
   GITLAB: {
     name: 'GitLab',
     color: 'text-orange-400',
     bgColor: 'bg-[#FC6D26]/20',
-    icon: Gitlab,
+    icon: GitBranch,
     description: 'DevOps platform',
   },
   BITBUCKET: {
     name: 'Bitbucket',
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/20',
-    icon: Github,
+    icon: GitBranch,
     description: 'Code collaboration',
   },
   VERCEL: {

@@ -9,8 +9,8 @@
  * @doc.layer design-system
  */
 
-export { Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
+export { Button } from '@ghatana/design-system';
+export type { ButtonProps } from '@ghatana/design-system';
 
 export { HeaderButton } from './HeaderButton';
 export type { HeaderButtonProps } from './HeaderButton';
