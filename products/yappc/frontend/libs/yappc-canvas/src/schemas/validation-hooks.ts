@@ -30,9 +30,26 @@ export interface UseComponentValidationOptions {
   onValidationError?: (errors: string[]) => void;
 }
 
+/**
+ * Return type for useComponentValidation hook
+ */
+export interface UseComponentValidationReturn {
+  validate: (type: string, data: unknown) => ValidationResult<CanvasComponent>;
+  validateBatch: (
+    components: Array<{ type: string; data: unknown }>
+  ) => Array<ValidationResult<CanvasComponent>>;
+  createValidated: (
+    type: string,
+    overrides?: Partial<CanvasComponent>
+  ) => CanvasComponent;
+  validationErrors: string[];
+  isValidating: boolean;
+  clearErrors: () => void;
+}
+
 export const useComponentValidation = (
   options: UseComponentValidationOptions = {}
-) => {
+): UseComponentValidationReturn => {
   const {
     strictMode = false,
     autoValidate = true,
@@ -138,10 +155,23 @@ export interface UseCanvasValidationOptions {
   onValidationComplete?: (stats: ReturnType<typeof getValidationStats>) => void;
 }
 
+/**
+ * Return type for useCanvasValidation hook
+ */
+export interface UseCanvasValidationReturn {
+  validationStats: ReturnType<typeof getValidationStats> | null;
+  isValidating: boolean;
+  validateCanvas: () => Promise<ReturnType<typeof getValidationStats>>;
+  validateImport: (importData: unknown) => ImportValidationResult;
+  validateExport: () => ReturnType<typeof validateExportData>;
+  validator: ReturnType<typeof createCanvasAPIValidator>;
+  isHealthy: boolean;
+}
+
 export const useCanvasValidation = (
   canvas: { nodes: CanvasComponent[]; edges: unknown[] },
   options: UseCanvasValidationOptions = {}
-) => {
+): UseCanvasValidationReturn => {
   const {
     autoValidateOnChange = true,
     validationConfig = PRODUCTION_VALIDATION_CONFIG,
@@ -207,7 +237,19 @@ export const useCanvasValidation = (
 };
 
 // Hook for schema registry management
-export const useSchemaRegistry = () => {
+/**
+ * Return type for useSchemaRegistry hook
+ */
+export interface UseSchemaRegistryReturn {
+  registeredSchemas: string[];
+  registerSchema: (type: string, schema: unknown) => void;
+  getSchema: (type: string) => unknown;
+  getDefaultData: (type: string) => Partial<CanvasComponent>;
+  setDefaultData: (type: string, factory: () => Partial<CanvasComponent>) => void;
+  registry: typeof componentSchemaRegistry;
+}
+
+export const useSchemaRegistry = (): UseSchemaRegistryReturn => {
   const [registeredSchemas, setRegisteredSchemas] = useState<string[]>([]);
 
   useEffect(() => {
@@ -263,9 +305,24 @@ export interface UseComponentCreatorOptions {
   onCreateError?: (error: string) => void;
 }
 
+/**
+ * Return type for useComponentCreator hook
+ */
+export interface UseComponentCreatorReturn {
+  create: (
+    type: string,
+    customData?: Partial<CanvasComponent>
+  ) => CanvasComponent | null;
+  createBatch: (
+    specs: Array<{ type: string; data?: Partial<CanvasComponent> }>
+  ) => CanvasComponent[];
+  getAvailableTypes: () => string[];
+  getTypeDefault: (type: string) => Partial<CanvasComponent>;
+}
+
 export const useComponentCreator = (
   options: UseComponentCreatorOptions = {}
-) => {
+): UseComponentCreatorReturn => {
   const {
     defaultPosition = { x: 0, y: 0 },
     defaultSize = { width: 200, height: 100 },
@@ -361,10 +418,21 @@ export interface UseRealTimeValidationOptions {
   enableRealTime?: boolean;
 }
 
+/**
+ * Return type for useRealTimeValidation hook
+ */
+export interface UseRealTimeValidationReturn {
+  isValid: boolean;
+  errors: string[];
+  lastValidated: Date | null;
+  forceValidate: () => ValidationResult<CanvasComponent>;
+  isRealTimeEnabled: boolean;
+}
+
 export const useRealTimeValidation = (
   component: CanvasComponent,
   options: UseRealTimeValidationOptions = {}
-) => {
+): UseRealTimeValidationReturn => {
   const { debounceMs = 300, enableRealTime = true } = options;
 
   const [validationState, setValidationState] = useState<{
@@ -425,7 +493,7 @@ export const useRealTimeValidation = (
 // Development vs Production configuration
 export const useValidationConfig = (
   environment: 'development' | 'production' = 'production'
-) => {
+): CanvasAPIValidationConfig => {
   const config = useMemo(() => {
     return environment === 'development'
       ? DEVELOPMENT_VALIDATION_CONFIG

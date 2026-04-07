@@ -510,7 +510,15 @@ export class AutoLayoutEngine {
  * React hook for auto-layout functionality
  * @doc.purpose Integrate auto-layout into React components
  */
-export function useAutoLayout() {
+export interface UseAutoLayoutReturn {
+  applyLayout: (
+    elements: LayoutElement[],
+    edges: LayoutEdge[],
+    config: LayoutConfig
+  ) => LayoutResult;
+}
+
+export function useAutoLayout(): UseAutoLayoutReturn {
   const applyLayout = (
     elements: LayoutElement[],
     edges: LayoutEdge[],

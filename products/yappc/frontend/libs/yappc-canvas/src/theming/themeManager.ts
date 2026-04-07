@@ -414,9 +414,21 @@ export class ThemeManager {
 export const globalThemeManager = new ThemeManager();
 
 /**
+ * Return type for useTheme hook
+ */
+export interface UseThemeReturn {
+  theme: CanvasTheme;
+  mode: ThemeMode;
+  switchTheme: (newMode: ThemeMode, customThemeId?: string) => void;
+  mergeTheme: (partialTheme: Partial<CanvasTheme>) => void;
+  registerCustomTheme: (id: string, theme: CanvasTheme) => Promise<void>;
+  getCustomThemeIds: () => string[];
+}
+
+/**
  * React hook for theme management
  */
-export function useTheme() {
+export function useTheme(): UseThemeReturn {
   const [theme, setTheme] = React.useState(
     globalThemeManager.getCurrentTheme()
   );

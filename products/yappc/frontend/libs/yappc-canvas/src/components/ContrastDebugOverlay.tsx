@@ -197,7 +197,7 @@ export const ContrastDebugOverlay: React.FC<ContrastDebugOverlayProps> = ({
 /**
  * Hook to enable contrast debugging
  */
-export function useContrastDebug(enabled = false) {
+export function useContrastDebug(enabled = false): void {
   useEffect(() => {
     if (!enabled) return;
 

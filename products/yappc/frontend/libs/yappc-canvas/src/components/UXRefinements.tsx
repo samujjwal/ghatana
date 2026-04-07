@@ -210,8 +210,32 @@ const defaultUXSettings: UXSettings = {
   },
 };
 
+/**
+ * Return type for useUXRefinements hook
+ */
+export interface UseUXRefinementsReturn {
+  settings: UXSettings;
+  updateSettings: (path: string, value: unknown) => void;
+  notifications: UXNotification[];
+  showNotification: (
+    notification: Omit<UXNotification, 'id' | 'timestamp'>
+  ) => void;
+  dismissNotification: (id: string) => void;
+  currentTutorial: string | null;
+  tutorialStep: number;
+  startTutorial: (tutorialId: string) => void;
+  nextTutorialStep: () => void;
+  completeTutorial: () => void;
+  suggestions: SmartSuggestion[];
+  addSuggestion: (suggestion: Omit<SmartSuggestion, 'id'>) => void;
+  dismissSuggestion: (id: string) => void;
+  applySuggestion: (id: string) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+}
+
 // UX Hook
-export const useUXRefinements = () => {
+export const useUXRefinements = (): UseUXRefinementsReturn => {
   const theme = useTheme();
   const [settings, setSettings] = useState<UXSettings>(defaultUXSettings);
   const [notifications, setNotifications] = useState<UXNotification[]>([]);

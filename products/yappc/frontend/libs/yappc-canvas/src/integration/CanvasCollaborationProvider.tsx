@@ -225,7 +225,7 @@ export const CanvasCollaborationProvider: React.FC<
 /**
  * Hook to use canvas collaboration context
  */
-export function useCanvasCollaboration() {
+export function useCanvasCollaboration(): CanvasCollaborationContextValue {
   const context = useContext(CanvasCollaborationContext);
   if (!context) {
     throw new Error(

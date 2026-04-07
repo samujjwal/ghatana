@@ -37,9 +37,27 @@ export interface SyncState {
 }
 
 /**
+ * useBidirectionalSync hook return type
+ */
+export interface UseBidirectionalSyncReturn extends SyncState {
+  syncVisualToCode: (visualData: unknown, debounce?: boolean) => void;
+  syncCodeToVisual: (codeData: unknown, debounce?: boolean) => void;
+  resolveConflict: (conflictId: string, preferredSource: 'visual' | 'code') => void;
+  getHistory: () => SyncEvent[];
+  clearHistory: () => void;
+  getState: () => SyncState;
+  syncComponentTree: (tree: unknown) => void;
+  syncCodeChanges: (code: unknown) => void;
+  syncPropertyChange: (path: string[], value: unknown) => void;
+  syncStyleChange: (nodeId: string, styles: Record<string, unknown>) => void;
+}
+
+/**
  * useBidirectionalSync hook
  */
-export function useBidirectionalSync(config?: Partial<SyncConfig>) {
+export function useBidirectionalSync(
+  config?: Partial<SyncConfig>
+): UseBidirectionalSyncReturn {
   const coordinatorRef = useRef<BidirectionalSyncCoordinator | null>(null);
   const [syncState, setSyncState] = useState<SyncState>({
     issyncing: false,

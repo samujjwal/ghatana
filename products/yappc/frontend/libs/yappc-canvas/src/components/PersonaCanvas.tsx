@@ -183,7 +183,9 @@ export function usePersonaFeature(
 /**
  * Hook to get toolbar configuration for current persona
  */
-export function usePersonaToolbar(persona: PersonaType) {
+export function usePersonaToolbar(
+  persona: PersonaType
+): PersonaCanvasConfig['toolbar'] {
   const config = usePersonaConfig(persona);
   return config.toolbar;
 }
@@ -191,7 +193,9 @@ export function usePersonaToolbar(persona: PersonaType) {
 /**
  * Hook to get panel configuration for current persona
  */
-export function usePersonaPanels(persona: PersonaType) {
+export function usePersonaPanels(
+  persona: PersonaType
+): PersonaCanvasConfig['panels'] {
   const config = usePersonaConfig(persona);
   return config.panels;
 }

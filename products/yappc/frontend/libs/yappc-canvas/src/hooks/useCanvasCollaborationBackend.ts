@@ -118,6 +118,25 @@ export interface UseCanvasCollaborationBackendConfig {
  * Connects canvas to backend CanvasCollaborationHandler via WebSocket.
  * Handles join/leave, updates, cursor tracking, and selection sync.
  *
+ * Return type for useCanvasCollaborationBackend hook
+ */
+export interface UseCanvasCollaborationBackendReturn {
+  state: CanvasCollaborationState;
+  isConnected: boolean;
+  remoteUsers: RemoteUser[];
+  joinCanvas: () => Promise<void>;
+  leaveCanvas: () => void;
+  sendCanvasUpdate: (nodes: Node[], edges: Edge[]) => void;
+  sendCursorPosition: (x: number, y: number) => void;
+  sendSelection: (nodeIds: string[], edgeIds: string[]) => void;
+}
+
+/**
+ * Canvas Collaboration Backend Integration Hook
+ *
+ * Connects canvas to backend CanvasCollaborationHandler via WebSocket.
+ * Handles join/leave, updates, cursor tracking, and selection sync.
+ *
  * Features:
  * - Automatic join on mount, leave on unmount
  * - Real-time canvas updates broadcast to all users
@@ -177,7 +196,7 @@ export interface UseCanvasCollaborationBackendConfig {
  */
 export function useCanvasCollaborationBackend(
   config: UseCanvasCollaborationBackendConfig
-) {
+): UseCanvasCollaborationBackendReturn {
   const {
     wsClient,
     canvasId,
