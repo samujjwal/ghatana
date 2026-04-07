@@ -523,15 +523,21 @@ export function useDashboard(dashboardId?: string) {
  * Hook for dashboard mutations
  */
 export function useDashboardMutations() {
+  type _DashboardMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown } };
+  const runMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const setDashboards = useSetAtom(dashboardsAtom);
   const setActiveDashboard = useSetAtom(activeDashboardAtom);
 
-  const [create] = useMutation(CREATE_DASHBOARD);
-  const [update] = useMutation(UPDATE_DASHBOARD);
-  const [remove] = useMutation(DELETE_DASHBOARD);
-  const [addWidget] = useMutation(ADD_DASHBOARD_WIDGET);
-  const [updateWidget] = useMutation(UPDATE_DASHBOARD_WIDGET);
-  const [removeWidget] = useMutation(REMOVE_DASHBOARD_WIDGET);
+  const [create] = runMutation(CREATE_DASHBOARD);
+  const [update] = runMutation(UPDATE_DASHBOARD);
+  const [remove] = runMutation(DELETE_DASHBOARD);
+  const [addWidget] = runMutation(ADD_DASHBOARD_WIDGET);
+  const [updateWidget] = runMutation(UPDATE_DASHBOARD_WIDGET);
+  const [removeWidget] = runMutation(REMOVE_DASHBOARD_WIDGET);
 
   const createDashboard = useCallback(
     async (input: DashboardInput) => {
@@ -649,9 +655,23 @@ export function useDashboardMutations() {
  * Hook for fetching runbooks
  */
 export function useRunbooks(serviceId?: string) {
+  type RunbooksData = { runbooks?: Record<string, unknown>[] };
+  type RunbooksState = {
+    data?: RunbooksData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: RunbooksData }>;
+  };
+  const runRunbooksQuery = useQuery as unknown as (query: unknown, options: unknown) => RunbooksState;
+
+  type RunbookMutationResult = { [key: string]: unknown };
+  const runRunbookMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: RunbookMutationResult }>, { loading: boolean }];
+
   const [runbooks, setRunbooks] = useAtom(runbooksAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_RUNBOOKS, {
+  const { data, loading, error, refetch } = runRunbooksQuery(GET_RUNBOOKS, {
     variables: { serviceId },
     onCompleted: (data) => {
       if (data?.runbooks) {
@@ -660,7 +680,7 @@ export function useRunbooks(serviceId?: string) {
     },
   });
 
-  const [execute] = useMutation(EXECUTE_RUNBOOK);
+  const [execute] = runRunbookMutation(EXECUTE_RUNBOOK);
 
   const executeRunbook = useCallback(
     async (runbookId: string, params?: Record<string, unknown>) => {
@@ -687,9 +707,18 @@ export function useRunbooks(serviceId?: string) {
  * Hook for service health status
  */
 export function useServiceHealth(projectId?: string) {
+  type ServiceHealthData = { serviceHealth?: Record<string, unknown>[] };
+  type ServiceHealthState = {
+    data?: ServiceHealthData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: ServiceHealthData }>;
+  };
+  const runServiceHealthQuery = useQuery as unknown as (query: unknown, options: unknown) => ServiceHealthState;
+
   const [serviceHealth, setServiceHealth] = useAtom(serviceHealthAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SERVICE_HEALTH, {
+  const { data, loading, error, refetch } = runServiceHealthQuery(GET_SERVICE_HEALTH, {
     variables: { projectId },
     skip: !projectId,
     pollInterval: 30000, // Poll every 30 seconds
@@ -716,9 +745,18 @@ export function useServiceHealth(projectId?: string) {
  * Hook for on-call schedule
  */
 export function useOnCallSchedule(teamId?: string) {
+  type OnCallData = { onCallSchedule?: Record<string, unknown> };
+  type OnCallState = {
+    data?: OnCallData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: OnCallData }>;
+  };
+  const runOnCallQuery = useQuery as unknown as (query: unknown, options: unknown) => OnCallState;
+
   const [schedule, setSchedule] = useAtom(onCallScheduleAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_ON_CALL_SCHEDULE, {
+  const { data, loading, error, refetch } = runOnCallQuery(GET_ON_CALL_SCHEDULE, {
     variables: { teamId },
     skip: !teamId,
     onCompleted: (data) => {
@@ -752,9 +790,21 @@ export function useMetrics(
     stream?: boolean;
   }
 ) {
+  type MetricsData = { metrics?: Record<string, unknown>[] };
+  type MetricsState = {
+    data?: MetricsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: MetricsData }>;
+  };
+  const runMetricsQuery = useQuery as unknown as (query: unknown, options: unknown) => MetricsState;
+
+  type MetricsStreamState = { data?: { metricsStream?: Record<string, unknown> } };
+  const runMetricsSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => MetricsStreamState;
+
   const [metrics, setMetrics] = useAtom(metricsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_METRICS, {
+  const { data, loading, error, refetch } = runMetricsQuery(GET_METRICS, {
     variables: { query, ...options },
     skip: !query,
     onCompleted: (data) => {
@@ -765,7 +815,7 @@ export function useMetrics(
   });
 
   // Stream metrics in real-time if enabled
-  useSubscription(METRICS_STREAM_SUBSCRIPTION, {
+  runMetricsSubscription(METRICS_STREAM_SUBSCRIPTION, {
     variables: { query },
     skip: !query || !options?.stream,
     onData: ({ data }) => {

@@ -549,9 +549,23 @@ export function useComplianceControls(frameworkId?: string) {
  * Hook for secrets management
  */
 export function useSecrets(projectId?: string) {
+  type SecretsData = { secrets?: Record<string, unknown>[] };
+  type SecretsState = {
+    data?: SecretsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: SecretsData }>;
+  };
+  const runSecretsQuery = useQuery as unknown as (query: unknown, options: unknown) => SecretsState;
+
+  type SecretMutationResult = { [key: string]: unknown };
+  const runSecretMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: SecretMutationResult }>, { loading: boolean }];
+
   const [secrets, setSecrets] = useAtom(secretsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SECRETS, {
+  const { data, loading, error, refetch } = runSecretsQuery(GET_SECRETS, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -561,10 +575,10 @@ export function useSecrets(projectId?: string) {
     },
   });
 
-  const [create] = useMutation(CREATE_SECRET);
-  const [update] = useMutation(UPDATE_SECRET);
-  const [remove] = useMutation(DELETE_SECRET);
-  const [rotate] = useMutation(ROTATE_SECRET);
+  const [create] = runSecretMutation(CREATE_SECRET);
+  const [update] = runSecretMutation(UPDATE_SECRET);
+  const [remove] = runSecretMutation(DELETE_SECRET);
+  const [rotate] = runSecretMutation(ROTATE_SECRET);
 
   const createSecret = useCallback(
     async (input: SecretInput) => {
@@ -635,9 +649,23 @@ export function useSecrets(projectId?: string) {
  * Hook for security policies
  */
 export function useSecurityPolicies(projectId?: string) {
+  type PoliciesData = { securityPolicies?: Record<string, unknown>[] };
+  type PoliciesState = {
+    data?: PoliciesData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: PoliciesData }>;
+  };
+  const runPoliciesQuery = useQuery as unknown as (query: unknown, options: unknown) => PoliciesState;
+
+  type PolicyMutationResult = { [key: string]: unknown };
+  const runPolicyMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: PolicyMutationResult }>, { loading: boolean }];
+
   const [policies, setPolicies] = useAtom(securityPoliciesAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SECURITY_POLICIES, {
+  const { data, loading, error, refetch } = runPoliciesQuery(GET_SECURITY_POLICIES, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -647,10 +675,10 @@ export function useSecurityPolicies(projectId?: string) {
     },
   });
 
-  const [create] = useMutation(CREATE_SECURITY_POLICY);
-  const [update] = useMutation(UPDATE_SECURITY_POLICY);
-  const [remove] = useMutation(DELETE_SECURITY_POLICY);
-  const [createException] = useMutation(CREATE_POLICY_EXCEPTION);
+  const [create] = runPolicyMutation(CREATE_SECURITY_POLICY);
+  const [update] = runPolicyMutation(UPDATE_SECURITY_POLICY);
+  const [remove] = runPolicyMutation(DELETE_SECURITY_POLICY);
+  const [createException] = runPolicyMutation(CREATE_POLICY_EXCEPTION);
 
   const createPolicy = useCallback(
     async (input: PolicyInput) => {
@@ -724,9 +752,18 @@ export function useSecurityPolicies(projectId?: string) {
  * Hook for security posture score
  */
 export function useSecurityScore(projectId?: string) {
+  type SecurityScoreData = { securityScore?: Record<string, unknown> };
+  type SecurityScoreState = {
+    data?: SecurityScoreData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: SecurityScoreData }>;
+  };
+  const runSecurityScoreQuery = useQuery as unknown as (query: unknown, options: unknown) => SecurityScoreState;
+
   const [score, setScore] = useAtom(securityScoreAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SECURITY_SCORE, {
+  const { data, loading, error, refetch } = runSecurityScoreQuery(GET_SECURITY_SCORE, {
     variables: { projectId },
     skip: !projectId,
     pollInterval: 60000, // Poll every minute
@@ -753,9 +790,26 @@ export function useSecurityScore(projectId?: string) {
  * Hook for security alerts
  */
 export function useSecurityAlerts(projectId?: string) {
+  type SecurityAlertsData = { securityAlerts?: Record<string, unknown>[] };
+  type SecurityAlertsState = {
+    data?: SecurityAlertsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: SecurityAlertsData }>;
+  };
+  const runSecurityAlertsQuery = useQuery as unknown as (query: unknown, options: unknown) => SecurityAlertsState;
+
+  type SecurityAlertSubscriptionState = { data?: { securityAlert?: Record<string, unknown> } };
+  const runSecurityAlertSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => SecurityAlertSubscriptionState;
+
+  type AlertMutationResult = { [key: string]: unknown };
+  const runAlertMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: AlertMutationResult }>, { loading: boolean }];
+
   const [alerts, setAlerts] = useAtom(securityAlertsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SECURITY_ALERTS, {
+  const { data, loading, error, refetch } = runSecurityAlertsQuery(GET_SECURITY_ALERTS, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -765,10 +819,10 @@ export function useSecurityAlerts(projectId?: string) {
     },
   });
 
-  const [acknowledge] = useMutation(ACKNOWLEDGE_SECURITY_ALERT);
+  const [acknowledge] = runAlertMutation(ACKNOWLEDGE_SECURITY_ALERT);
 
   // Subscribe to new alerts
-  useSubscription(SECURITY_ALERT_SUBSCRIPTION, {
+  runSecurityAlertSubscription(SECURITY_ALERT_SUBSCRIPTION, {
     variables: { projectId },
     skip: !projectId,
     onData: ({ data }) => {
@@ -818,9 +872,19 @@ export function useAuditLogs(filters?: {
   actor?: string;
   resource?: string;
 }) {
+  type AuditLogsData = { auditLogs?: { nodes?: Record<string, unknown>[]; pageInfo?: Record<string, unknown> } };
+  type AuditLogsState = {
+    data?: AuditLogsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: AuditLogsData }>;
+    fetchMore: (opts: unknown) => Promise<{ data?: AuditLogsData }>;
+  };
+  const runAuditLogsQuery = useQuery as unknown as (query: unknown, options: unknown) => AuditLogsState;
+
   const [logs, setLogs] = useAtom(auditLogsAtom);
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(
+  const { data, loading, error, refetch, fetchMore } = runAuditLogsQuery(
     GET_AUDIT_LOGS,
     {
       variables: { filters, first: 50 },
