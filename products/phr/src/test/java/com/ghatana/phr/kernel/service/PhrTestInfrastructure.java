@@ -143,8 +143,6 @@ final class PhrTestInfrastructure {
                 return java.util.Optional.empty();
             }
 
-            @Override
-            public <T> void registerService(Class<T> type, T service) {}
             public <T> void registerService(Class<T> type, T service) {
                 registeredDependencies.put(type, service);
             }

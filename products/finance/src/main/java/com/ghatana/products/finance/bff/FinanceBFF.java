@@ -4,8 +4,12 @@
  */
 package com.ghatana.products.finance.bff;
 
+import com.ghatana.finance.service.Transaction;
+import com.ghatana.finance.service.TransactionResult;
+import com.ghatana.finance.service.TransactionService;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.products.finance.FinanceApiBoundaryValidationUtils;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +94,10 @@ public final class FinanceBFF implements KernelLifecycleAware {
             throw new IllegalStateException("Finance BFF not started");
         }
 
-        log.debug("Getting trade data for user: {} trade: {}", userId, tradeId);
+        String safeUserId = FinanceApiBoundaryValidationUtils.requirePrincipalId(userId, "userId");
+        String safeTradeId = FinanceApiBoundaryValidationUtils.requireResourceId(tradeId, "tradeId");
+
+        log.debug("Getting trade data for user: {} trade: {}", safeUserId, safeTradeId);
 
         return "Trade data composed";
     }
@@ -107,8 +114,27 @@ public final class FinanceBFF implements KernelLifecycleAware {
             throw new IllegalStateException("Finance BFF not started");
         }
 
-        log.debug("Getting portfolio data for user: {} portfolio: {}", userId, portfolioId);
+        String safeUserId = FinanceApiBoundaryValidationUtils.requirePrincipalId(userId, "userId");
+        String safePortfolioId = FinanceApiBoundaryValidationUtils.requireResourceId(portfolioId, "portfolioId");
+
+        log.debug("Getting portfolio data for user: {} portfolio: {}", safeUserId, safePortfolioId);
 
         return "Portfolio data composed";
+    }
+
+    /**
+     * Routes transaction processing through the Finance product runtime.
+     *
+     * @param transaction transaction request
+     * @return transaction result
+     */
+    public TransactionResult processTransaction(Transaction transaction) {
+        if (!started) {
+            throw new IllegalStateException("Finance BFF not started");
+        }
+
+        Transaction safeTransaction = FinanceApiBoundaryValidationUtils.requirePayload(transaction, "transaction");
+
+        return context.getDependency(TransactionService.class).processTransaction(safeTransaction);
     }
 }

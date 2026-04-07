@@ -6,6 +6,7 @@ package com.ghatana.products.finance.shell;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.products.finance.FinanceApiBoundaryValidationUtils;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +90,10 @@ public final class FinanceProductShell implements KernelLifecycleAware {
             throw new IllegalStateException("Finance product shell not started");
         }
 
-        log.debug("Handling trade execution for user: {}", userId);
+        String safeUserId = FinanceApiBoundaryValidationUtils.requirePrincipalId(userId, "userId");
+        FinanceApiBoundaryValidationUtils.requirePayload(tradeRequest, "tradeRequest");
+
+        log.debug("Handling trade execution for user: {}", safeUserId);
 
         return "Trade execution handled";
     }
@@ -106,7 +110,10 @@ public final class FinanceProductShell implements KernelLifecycleAware {
             throw new IllegalStateException("Finance product shell not started");
         }
 
-        log.debug("Handling portfolio management for user: {}", userId);
+        String safeUserId = FinanceApiBoundaryValidationUtils.requirePrincipalId(userId, "userId");
+        FinanceApiBoundaryValidationUtils.requirePayload(portfolioRequest, "portfolioRequest");
+
+        log.debug("Handling portfolio management for user: {}", safeUserId);
 
         return "Portfolio management handled";
     }

@@ -34,18 +34,18 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
     protected Promise<Void> initializeDatasets() {
         return createSchema(
             OUTBOX_DATASET,
-            Map.of(
-                "id", "string",
-                "patientId", "string",
-                "recipientId", "string",
-                "providerId", "string",
-                "referenceId", "string",
-                "referenceType", "string",
-                "notificationType", "string",
-                "channel", "string",
-                "status", "string",
-                "scheduledFor", "timestamp",
-                "createdAt", "timestamp"
+            Map.ofEntries(
+                Map.entry("id", "string"),
+                Map.entry("patientId", "string"),
+                Map.entry("recipientId", "string"),
+                Map.entry("providerId", "string"),
+                Map.entry("referenceId", "string"),
+                Map.entry("referenceType", "string"),
+                Map.entry("notificationType", "string"),
+                Map.entry("channel", "string"),
+                Map.entry("status", "string"),
+                Map.entry("scheduledFor", "timestamp"),
+                Map.entry("createdAt", "timestamp")
             ),
             Map.of("retention", "2years")
         );

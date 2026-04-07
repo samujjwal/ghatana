@@ -3,6 +3,7 @@ package com.ghatana.finance.ai;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -163,5 +164,31 @@ class DefaultFraudModelInferenceServiceTest {
         assertEquals("LOW", prediction.getRiskLevel());
         assertTrue(prediction.getFraudScore() < 0.45);
         assertEquals("FALLBACK", prediction.getInferenceSource());
+    }
+
+    @Test
+    void retriesTransientRemoteFailuresBeforeReturningRemotePrediction() {
+        ModelRepository repository = new ModelRepository();
+        ModelRecord model = new ModelRecord();
+        model.setModelId("fraud-detection-v2");
+        model.setMetadata(Map.of("endpoint", "http://fraud-model.internal/predict"));
+        repository.save(model);
+        AtomicInteger attempts = new AtomicInteger();
+
+        DefaultFraudModelInferenceService service = new DefaultFraudModelInferenceService(
+            repository,
+            new RetryingFraudInferenceTransport((endpointConfig, request) -> {
+                if (attempts.incrementAndGet() < 3) {
+                    throw new IllegalStateException("temporary outage");
+                }
+                return new FraudModelPrediction(0.88, "HIGH", true, 0.96, 0.94, "remote-anomaly", "REMOTE", "v3", 16L);
+            }, 3)
+        );
+
+        FraudModelPrediction prediction = service.predict("fraud-detection-v2", Map.of("amount", 1000.0));
+
+        assertEquals(3, attempts.get());
+        assertEquals("REMOTE", prediction.getInferenceSource());
+        assertEquals("v3", prediction.getModelVersion());
     }
 }

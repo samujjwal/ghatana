@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
+import com.ghatana.finance.service.TransactionService;
 import com.ghatana.finance.kernel.FinanceCapabilities;
 import com.ghatana.kernel.ai.AgentOrchestrator;
 import com.ghatana.kernel.ai.AutonomyManager;
@@ -108,6 +109,7 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
         module.initialize(mockContext);
 
         verify(mockContext).registerService(eq(FinanceAiRuntimeService.class), any(FinanceAiRuntimeService.class));
+        verify(mockContext).registerService(eq(FinanceTransactionRuntimeService.class), any(FinanceTransactionRuntimeService.class));
         verify(mockContext).registerService(eq(AgentOrchestrator.class), any(FinanceAiRuntimeService.class));
         verify(mockContext).registerService(eq(ModelGovernanceService.class), any(FinanceAiRuntimeService.class));
         verify(mockContext).registerService(eq(AutonomyManager.class), any(FinanceAiRuntimeService.class));
@@ -122,6 +124,8 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
         Promise<Void> startPromise = module.start();
         assertThat(startPromise).isNotNull();
         runPromise(() -> startPromise);
+
+        verify(mockContext).registerService(eq(TransactionService.class), any(TransactionService.class));
 
         var healthStatus = module.getHealthStatus();
         assertThat(healthStatus.isHealthy()).isTrue();

@@ -22,7 +22,7 @@ public class TransactionResult {
     private final String message;
     private final Map<String, Object> metadata;
     
-    private TransactionResult(String status, String message, Map<String, Object> metadata) {
+    TransactionResult(String status, String message, Map<String, Object> metadata) {
         this.status = status;
         this.message = message;
         this.metadata = metadata;

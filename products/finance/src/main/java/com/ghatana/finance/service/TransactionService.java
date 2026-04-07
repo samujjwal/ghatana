@@ -6,7 +6,6 @@
 package com.ghatana.finance.service;
 
 import com.ghatana.finance.ai.FraudDetectionResult;
-import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.kernel.ai.*;
 import com.ghatana.platform.core.exception.RateLimitExceededException;
 import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
@@ -50,7 +49,7 @@ public class TransactionService {
     private final AutonomyManager autonomyManager;
     private final Clock clock;
     private final RateLimiter transactionRateLimiter;
-    private final TransactionProcessingIdempotencyStore processedTransactions;
+    private final TransactionIdempotencyStore processedTransactions;
 
     public TransactionService(AgentOrchestrator orchestrator, AutonomyManager autonomyManager) {
         this(
@@ -62,12 +61,12 @@ public class TransactionService {
         );
     }
 
-    TransactionService(
+    public TransactionService(
             AgentOrchestrator orchestrator,
             AutonomyManager autonomyManager,
             Clock clock,
             RateLimiter transactionRateLimiter,
-            TransactionProcessingIdempotencyStore processedTransactions) {
+            TransactionIdempotencyStore processedTransactions) {
         this.orchestrator = orchestrator;
         this.autonomyManager = autonomyManager;
         this.clock = Objects.requireNonNull(clock, "clock must not be null");

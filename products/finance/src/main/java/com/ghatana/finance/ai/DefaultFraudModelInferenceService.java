@@ -2,6 +2,8 @@ package com.ghatana.finance.ai;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.resilience.Bulkhead;
+import com.ghatana.platform.resilience.CircuitBreakerProfiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +27,14 @@ import java.util.Objects;
 public class DefaultFraudModelInferenceService implements FraudModelInferenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultFraudModelInferenceService.class);
+    private static final int DEFAULT_REMOTE_INFERENCE_MAX_ATTEMPTS = 3;
+    private static final int DEFAULT_REMOTE_INFERENCE_MAX_CONCURRENCY = 8;
 
     private final ModelRepository modelRepository;
     private final FraudInferenceTransport transport;
 
     public DefaultFraudModelInferenceService(ModelRepository modelRepository) {
-        this(modelRepository, new HttpFraudInferenceTransport());
+        this(modelRepository, defaultTransport());
     }
 
     public DefaultFraudModelInferenceService(ModelRepository modelRepository,
@@ -183,6 +187,17 @@ public class DefaultFraudModelInferenceService implements FraudModelInferenceSer
 
     public interface FraudInferenceTransport {
         FraudModelPrediction predict(FraudModelEndpointConfig endpointConfig, FraudModelInferenceRequest request);
+    }
+
+    private static FraudInferenceTransport defaultTransport() {
+        return new RetryingFraudInferenceTransport(
+            new ResilientFraudInferenceTransport(
+                new HttpFraudInferenceTransport(),
+                CircuitBreakerProfiles.standard("finance-fraud-inference"),
+                Bulkhead.of("finance-fraud-inference", DEFAULT_REMOTE_INFERENCE_MAX_CONCURRENCY)
+            ),
+            DEFAULT_REMOTE_INFERENCE_MAX_ATTEMPTS
+        );
     }
 
     private static final class HttpFraudInferenceTransport implements FraudInferenceTransport {

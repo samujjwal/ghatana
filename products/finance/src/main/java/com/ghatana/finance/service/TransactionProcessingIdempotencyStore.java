@@ -12,18 +12,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer product
  * @doc.pattern Repository
  */
-final class TransactionProcessingIdempotencyStore {
+public final class TransactionProcessingIdempotencyStore implements TransactionIdempotencyStore {
 
     private final ConcurrentHashMap<String, CachedTransactionResult> entries = new ConcurrentHashMap<>();
     private final Duration ttl;
     private final Clock clock;
 
-    TransactionProcessingIdempotencyStore(Duration ttl, Clock clock) {
+    public TransactionProcessingIdempotencyStore(Duration ttl, Clock clock) {
         this.ttl = Objects.requireNonNull(ttl, "ttl must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
-    TransactionResult get(String transactionId, String fingerprint) {
+    @Override
+    public TransactionResult get(String transactionId, String fingerprint) {
         CachedTransactionResult entry = entries.get(transactionId);
         if (entry == null) {
             return null;
@@ -42,7 +43,8 @@ final class TransactionProcessingIdempotencyStore {
         return entry.result();
     }
 
-    TransactionResult putIfAbsent(String transactionId, String fingerprint, TransactionResult result) {
+    @Override
+    public TransactionResult putIfAbsent(String transactionId, String fingerprint, TransactionResult result) {
         CachedTransactionResult candidate = new CachedTransactionResult(
             fingerprint,
             result,

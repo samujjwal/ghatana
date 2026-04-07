@@ -5,36 +5,35 @@
 
 package com.ghatana.finance.service;
 
-import com.ghatana.finance.ai.FinanceFraudDetectionKernelAgent;
-import com.ghatana.finance.ai.FinanceFraudDetectionKernelAgent;
 import com.ghatana.finance.ai.FinanceAIModule;
-import com.ghatana.finance.ai.FraudDetectionResult;
+import com.ghatana.finance.ai.FinanceFraudDetectionKernelAgent;
 import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.finance.ai.ModelApprovalRecord;
 import com.ghatana.finance.ai.ModelApprovalRepository;
 import com.ghatana.finance.ai.ModelRecord;
 import com.ghatana.finance.ai.ModelRepository;
-import com.ghatana.kernel.ai.*;
-import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
-import com.ghatana.platform.security.ratelimit.RateLimiter;
-import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
 import io.activej.inject.Injector;
 import java.time.Clock;
 import java.time.Duration;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.ghatana.kernel.ai.AgentOrchestrator;
+import com.ghatana.kernel.ai.AutonomyManager;
+import com.ghatana.platform.security.ratelimit.DefaultRateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
+import com.ghatana.platform.security.ratelimit.RateLimiterConfig;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Integration tests for TransactionService with AI orchestration
@@ -44,17 +43,11 @@ public class TransactionServiceTest {
     private TransactionService transactionService;
     private AgentOrchestrator orchestrator;
     private FinanceFraudDetectionKernelAgent fraudDetectionAgent;
-    private FinanceFraudDetectionKernelAgent fraudDetectionAgent;
 
     @BeforeEach
     public void setUp() {
-        // Create ActiveJ injector
         Injector injector = Injector.of(FinanceAIModule.create());
-
-        // Get dependencies from injector
         orchestrator = injector.getInstance(AgentOrchestrator.class);
-
-        // Pre-approve the fraud detection model
         ModelApprovalRepository approvalRepository = injector.getInstance(ModelApprovalRepository.class);
         ModelApprovalRecord approval = new ModelApprovalRecord();
         approval.setModelId("fraud-detection-v2");
@@ -70,19 +63,9 @@ public class TransactionServiceTest {
         model.setMetadata(Map.of("endpoint", "http://127.0.0.1:1/unreachable"));
         modelRepository.save(model);
 
-        // Create fraud detection agent with injector-managed inference wiring
-        fraudDetectionAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
-        ModelRepository modelRepository = injector.getInstance(ModelRepository.class);
-        ModelRecord model = new ModelRecord();
-        model.setModelId("fraud-detection-v2");
-        model.setMetadata(Map.of("endpoint", "http://127.0.0.1:1/unreachable"));
-        modelRepository.save(model);
-
-        // Create fraud detection agent with injector-managed inference wiring
         fraudDetectionAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
         orchestrator.registerAgent(fraudDetectionAgent);
 
-        // Create transaction service
         transactionService = new TransactionService(
             orchestrator,
             injector.getInstance(AutonomyManager.class)
@@ -267,11 +250,6 @@ public class TransactionServiceTest {
         transaction.setPaymentMethod("BTC".equals(currency) ? "WIRE_TRANSFER" : "CARD");
         transaction.setVelocity(amount >= 100000.0 ? 15.0 : amount >= 15000.0 ? 4.0 : 1.0);
         transaction.setTimestamp(Instant.parse("2026-04-06T12:00:00Z"));
-        transaction.setMerchantCategory("BTC".equals(currency) ? "CRYPTO_EXCHANGE" : "RETAIL");
-        transaction.setCounterpartyCountry("UNKNOWN".equals(location) ? "RU" : location);
-        transaction.setPaymentMethod("BTC".equals(currency) ? "WIRE_TRANSFER" : "CARD");
-        transaction.setVelocity(amount >= 100000.0 ? 15.0 : amount >= 15000.0 ? 4.0 : 1.0);
-        transaction.setTimestamp(Instant.parse("2026-04-06T12:00:00Z"));
         transaction.setStatus("PENDING");
         return transaction;
     }
@@ -367,10 +345,10 @@ public class TransactionServiceTest {
     }
 
     private static final class RecordingAutonomyManager implements AutonomyManager {
-        private final List<AutonomousDecision> recordedDecisions = new ArrayList<>();
+        private final List<AutonomyManager.AutonomousDecision> recordedDecisions = new ArrayList<>();
 
         @Override
-        public void configureAutonomyLevel(String agentId, AutonomyLevel level) {
+        public void configureAutonomyLevel(String agentId, AutonomyManager.AutonomyLevel level) {
         }
 
         @Override
@@ -379,18 +357,20 @@ public class TransactionServiceTest {
         }
 
         @Override
-        public void recordAutonomousDecision(AutonomousDecision decision) {
+        public void recordAutonomousDecision(AutonomyManager.AutonomousDecision decision) {
             recordedDecisions.add(decision);
         }
 
         @Override
-        public List<AutonomousDecision> getAutonomousDecisions(String agentId, TimeWindow window) {
+        public List<AutonomyManager.AutonomousDecision> getAutonomousDecisions(
+                String agentId,
+                AutonomyManager.TimeWindow window) {
             return List.copyOf(recordedDecisions);
         }
 
         @Override
-        public AutonomyLevel getAutonomyLevel(String agentId) {
-            return AutonomyLevel.HIGH;
+        public AutonomyManager.AutonomyLevel getAutonomyLevel(String agentId) {
+            return AutonomyManager.AutonomyLevel.HIGH;
         }
 
         @Override

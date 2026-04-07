@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
@@ -115,62 +116,123 @@ public final class FinancePlatformSdkService {
     public record FinanceEventClientFacade(FinanceEventBusPort port) {
         public Promise<String> publish(String topic, String eventType, String payloadJson, 
                                      String userId, String tenantId) {
-            FinanceComplianceMetadata compliance = new FinanceComplianceMetadata(userId, tenantId, 
+            FinanceComplianceMetadata compliance = new FinanceComplianceMetadata(
+                requireNonBlank(userId, "userId"),
+                requireNonBlank(tenantId, "tenantId"),
                 Instant.now(), "FINANCE_TRANSACTION");
-            return port.publishFinanceEvent(topic, eventType, payloadJson, compliance);
+            return requirePort(port, FinanceEventBusPort.class).publishFinanceEvent(
+                requireNonBlank(topic, "topic"),
+                requireNonBlank(eventType, "eventType"),
+                requireNonBlank(payloadJson, "payloadJson"),
+                compliance
+            );
         }
         
         public void subscribe(String topic, String consumerGroup, FinanceEventBusPort.FinanceEventHandler handler) {
-            port.subscribeFinanceEvents(topic, consumerGroup, handler);
+            requirePort(port, FinanceEventBusPort.class).subscribeFinanceEvents(
+                requireNonBlank(topic, "topic"),
+                requireNonBlank(consumerGroup, "consumerGroup"),
+                requireNonNullArgument(handler, "handler")
+            );
         }
     }
 
     public record FinanceConfigClientFacade(FinanceConfigBusPort port) {
         public Promise<String> get(String namespace, String key) { 
-            return port.getFinanceConfig(namespace, key); 
+            return requirePort(port, FinanceConfigBusPort.class).getFinanceConfig(
+                requireNonBlank(namespace, "namespace"),
+                requireNonBlank(key, "key")
+            ); 
         }
         
         public Promise<Void> update(String namespace, String key, String value, String changedBy) {
-            return port.updateFinanceConfig(namespace, key, value, changedBy);
+            return requirePort(port, FinanceConfigBusPort.class).updateFinanceConfig(
+                requireNonBlank(namespace, "namespace"),
+                requireNonBlank(key, "key"),
+                requireNonBlank(value, "value"),
+                requireNonBlank(changedBy, "changedBy")
+            );
         }
         
         public Promise<List<String>> listKeys(String namespacePrefix) { 
-            return port.listFinanceConfigKeys(namespacePrefix); 
+            return requirePort(port, FinanceConfigBusPort.class).listFinanceConfigKeys(
+                requireNonBlank(namespacePrefix, "namespacePrefix")
+            ); 
         }
     }
 
     public record FinanceAuditClientFacade(FinanceAuditBusPort port) {
         public Promise<Void> log(FinanceAuditEvent event) {
-            return port.logFinanceEvent(event);
+            return requirePort(port, FinanceAuditBusPort.class).logFinanceEvent(
+                requireNonNullArgument(event, "event")
+            );
         }
         
         public Promise<List<FinanceAuditEvent>> query(FinanceAuditQuery query) {
-            return port.queryFinanceEvents(query);
+            return requirePort(port, FinanceAuditBusPort.class).queryFinanceEvents(
+                requireNonNullArgument(query, "query")
+            );
         }
     }
 
     public record FinanceRulesClientFacade(FinanceRulesBusPort port) {
         public Promise<FinanceRuleResult> evaluate(String ruleSetId, FinanceRuleFacts facts) {
-            return port.evaluateFinanceRule(ruleSetId, facts);
+            return requirePort(port, FinanceRulesBusPort.class).evaluateFinanceRule(
+                requireNonBlank(ruleSetId, "ruleSetId"),
+                requireNonNullArgument(facts, "facts")
+            );
         }
         
         public Promise<FinanceComplianceResult> validate(FinanceTransaction transaction) {
-            return port.validateTransaction(transaction);
+            return requirePort(port, FinanceRulesBusPort.class).validateTransaction(
+                requireNonNullArgument(transaction, "transaction")
+            );
         }
     }
 
     public record FinanceAuthClientFacade(FinanceAuthBusPort port) {
         public Promise<FinanceAuthClaims> validateToken(String jwt) { 
-            return port.validateFinanceToken(jwt); 
+            return requirePort(port, FinanceAuthBusPort.class).validateFinanceToken(
+                requireNonBlank(jwt, "jwt")
+            ); 
         }
         
         public Promise<Boolean> hasPermission(String subject, FinancePermission permission) {
-            return port.hasFinancePermission(subject, permission);
+            return requirePort(port, FinanceAuthBusPort.class).hasFinancePermission(
+                requireNonBlank(subject, "subject"),
+                requireNonNullArgument(permission, "permission")
+            );
         }
         
         public Promise<Boolean> canAccessData(String subject, String dataType, String tenantId) {
-            return port.canAccessFinancialData(subject, dataType, tenantId);
+            return requirePort(port, FinanceAuthBusPort.class).canAccessFinancialData(
+                requireNonBlank(subject, "subject"),
+                requireNonBlank(dataType, "dataType"),
+                requireNonBlank(tenantId, "tenantId")
+            );
         }
+    }
+
+    private static String requireNonBlank(String value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        String sanitized = value.trim();
+        if (sanitized.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return sanitized;
+    }
+
+    private static <T> T requireNonNullArgument(T value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        return value;
+    }
+
+    private static <T> T requirePort(T port, Class<T> type) {
+        return Objects.requireNonNull(port, type.getSimpleName() + " is required");
     }
 
     // -----------------------------------------------------------------------

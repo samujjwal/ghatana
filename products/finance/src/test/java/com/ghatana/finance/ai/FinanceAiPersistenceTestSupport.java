@@ -1,6 +1,7 @@
 package com.ghatana.finance.ai;
 
 import com.ghatana.products.finance.FinanceAiRuntimeConfig;
+import com.ghatana.products.finance.FinanceTransactionRuntimeConfig;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.Assumptions;
@@ -58,6 +59,38 @@ public final class FinanceAiPersistenceTestSupport {
                 "finance.ai.database.connection-timeout-ms", 30_000L,
                 "finance.ai.database.idle-timeout-ms", 60_000L,
                 "finance.ai.database.max-lifetime-ms", 120_000L
+            )
+        ));
+    }
+
+    public static FinanceTransactionRuntimeConfig createTransactionRuntimeConfig(
+            PostgreSQLContainer<?> postgres,
+            String poolName) {
+        return createTransactionRuntimeConfig(postgres, poolName, 24L, 120, true);
+    }
+
+    public static FinanceTransactionRuntimeConfig createTransactionRuntimeConfig(
+            PostgreSQLContainer<?> postgres,
+            String poolName,
+            long ttlHours,
+            int maxRequestsPerMinute,
+            boolean sharedRateLimitEnabled) {
+        return FinanceTransactionRuntimeConfig.fromContext(new RuntimeConfigKernelContext(
+            Map.ofEntries(
+                Map.entry("finance.transaction.idempotency.persistence.enabled", true),
+                Map.entry("finance.transaction.idempotency.database.jdbc-url", postgres.getJdbcUrl()),
+                Map.entry("finance.transaction.idempotency.database.username", postgres.getUsername()),
+                Map.entry("finance.transaction.idempotency.database.password", postgres.getPassword()),
+                Map.entry("finance.transaction.idempotency.database.pool-name", poolName),
+                Map.entry("finance.transaction.idempotency.database.minimum-idle", 1),
+                Map.entry("finance.transaction.idempotency.database.maximum-pool-size", 4),
+                Map.entry("finance.transaction.idempotency.database.connection-timeout-ms", 30_000L),
+                Map.entry("finance.transaction.idempotency.database.idle-timeout-ms", 60_000L),
+                Map.entry("finance.transaction.idempotency.database.max-lifetime-ms", 120_000L),
+                Map.entry("finance.transaction.idempotency.ttl-hours", ttlHours),
+                Map.entry("finance.transaction.rate-limit.shared.enabled", sharedRateLimitEnabled),
+                Map.entry("finance.transaction.rate-limit.max-requests-per-minute", maxRequestsPerMinute),
+                Map.entry("finance.transaction.rate-limit.window-seconds", 60L)
             )
         ));
     }

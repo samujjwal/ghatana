@@ -4,6 +4,7 @@
  */
 package com.ghatana.products.finance;
 
+import com.ghatana.finance.service.TransactionService;
 import com.ghatana.finance.kernel.FinanceCapabilities;
 import com.ghatana.kernel.ai.AgentOrchestrator;
 import com.ghatana.kernel.ai.AutonomyManager;
@@ -92,6 +93,7 @@ public final class FinanceProductModule implements KernelModule {
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private FinanceKernelModule kernelModule;
     private FinanceAiRuntimeService aiRuntimeService;
+    private FinanceTransactionRuntimeService transactionRuntimeService;
     private FinanceProductShell productShell;
     private FinanceBFF bff;
     private KernelContext context;
@@ -171,6 +173,11 @@ public final class FinanceProductModule implements KernelModule {
         }
 
         aiRuntimeService = new FinanceAiRuntimeService(FinanceAiRuntimeConfig.fromContext(context));
+        transactionRuntimeService = new FinanceTransactionRuntimeService(
+            FinanceTransactionRuntimeConfig.fromContext(context),
+            aiRuntimeService,
+            aiRuntimeService
+        );
         productShell = new FinanceProductShell(context);
         bff = new FinanceBFF(context);
 
@@ -192,6 +199,7 @@ public final class FinanceProductModule implements KernelModule {
         initializeDomainModules();
 
         context.registerService(FinanceAiRuntimeService.class, aiRuntimeService);
+        context.registerService(FinanceTransactionRuntimeService.class, transactionRuntimeService);
         context.registerService(AgentOrchestrator.class, aiRuntimeService);
         context.registerService(ModelGovernanceService.class, aiRuntimeService);
         context.registerService(AutonomyManager.class, aiRuntimeService);
@@ -229,7 +237,8 @@ public final class FinanceProductModule implements KernelModule {
         Promise<Void> kernelStart = kernelModule != null
                 ? kernelModule.start() : Promise.complete();
 
-        return kernelStart.then($ -> aiRuntimeService.start()).then($ -> {
+        return kernelStart.then($ -> aiRuntimeService.start()).then($ -> transactionRuntimeService.start()).then($ -> {
+            context.registerService(TransactionService.class, transactionRuntimeService.getTransactionService());
             startDomainModules();
             productShell.start();
             bff.start();
@@ -270,6 +279,7 @@ public final class FinanceProductModule implements KernelModule {
         if (productShell != null) {
             productShell.stop();
         }
+        Promise<Void> transactionStop = transactionRuntimeService != null ? transactionRuntimeService.stop() : Promise.complete();
         Promise<Void> aiStop = aiRuntimeService != null ? aiRuntimeService.stop() : Promise.complete();
 
         stopDomainModules();
@@ -277,7 +287,7 @@ public final class FinanceProductModule implements KernelModule {
         Promise<Void> kernelStop = kernelModule != null
                 ? kernelModule.stop() : Promise.complete();
 
-        return aiStop.then($ -> kernelStop).then($ -> {
+        return transactionStop.then($ -> aiStop).then($ -> kernelStop).then($ -> {
             log.info("Finance product module stopped successfully");
             return Promise.complete();
         });
@@ -312,7 +322,13 @@ public final class FinanceProductModule implements KernelModule {
             boolean domainsHealthy = checkDomainModulesHealth();
             boolean kernelHealthy = kernelModule == null || kernelModule.getHealthStatus().isHealthy();
             boolean aiHealthy = aiRuntimeService != null && aiRuntimeService.isHealthy();
-            boolean overallHealthy = shellHealthy && bffHealthy && domainsHealthy && kernelHealthy && aiHealthy;
+            boolean transactionHealthy = transactionRuntimeService != null && transactionRuntimeService.isHealthy();
+            boolean overallHealthy = shellHealthy
+                && bffHealthy
+                && domainsHealthy
+                && kernelHealthy
+                && aiHealthy
+                && transactionHealthy;
 
             return overallHealthy
                 ? HealthStatus.healthy("All finance services and 14 domains operational")
