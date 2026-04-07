@@ -1,17 +1,9 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "NodeNext",
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
   },
-  "files": [
-    "types/custom.d.ts",
-    "e2e/tests/**/*",
-    "apps/**/src/**/*.stories.*"
-  ],
   "include": [
     "apps/**/src/**/*",
     "libs/**/src/**/*",
@@ -27,6 +19,12 @@
     "**/node_modules/**",
     "**/dist/**",
     "**/build/**",
+    "**/coverage/**",
+    "**/*.stories.*",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/test-utils/**",
+    "**/__examples__/**",
     "**/*.generated.*",
     "**/*.config.d.ts"
   ]

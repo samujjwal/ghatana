@@ -84,7 +84,7 @@ export function useMobileTouch(config: TouchConfig) {
   // Clear long press timer
   const clearLongPressTimer = useCallback(() => {
     if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerTimerRef.current);
+      clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
   }, []);

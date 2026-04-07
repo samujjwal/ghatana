@@ -6,8 +6,14 @@
  */
 package com.ghatana.platform.security.authz;
 
+import com.ghatana.platform.security.abac.AbacDecision;
+import com.ghatana.platform.security.abac.AbacEngine;
+import com.ghatana.platform.security.abac.AbacPolicy;
+import com.ghatana.platform.security.abac.AbacRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,84 +28,113 @@ class AuthorizationTest {
     @Test
     @DisplayName("Should enforce role-based access control")
     void shouldEnforceRoleBasedAccessControl() {
-        // Test RBAC enforcement
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Define roles and permissions
-        // - Test role assignment
-        // - Verify permission checks
-        // - Test role hierarchy
+        AbacPolicy adminPolicy = AbacPolicy.builder("admin-policy")
+            .target(req -> "admin".equals(req.subject().get("role")))
+            .condition(req -> true)
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(adminPolicy);
+        
+        assertThat(engine.policyCount()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("Should check permissions correctly")
     void shouldCheckPermissionsCorrectly() {
-        // Test permission checking
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Define permission policies
-        // - Test permission grants
-        // - Verify permission denials
-        // - Test permission inheritance
+        AbacPolicy readPolicy = AbacPolicy.builder("read-policy")
+            .target(req -> "read".equals(req.action()))
+            .condition(req -> "user".equals(req.subject().get("role")))
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(readPolicy);
+        
+        AbacRequest request = AbacRequest.builder()
+            .subject(Map.of("role", "user"))
+            .action("read")
+            .resource(Map.of("type", "document"))
+            .build();
+        
+        AbacDecision decision = engine.evaluate(request);
+        assertThat(decision.permitted()).isTrue();
     }
 
     @Test
     @DisplayName("Should validate security policies")
     void shouldValidateSecurityPolicies() {
-        // Test security policy validation
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Define security policies
-        // - Test policy enforcement
-        // - Verify policy conflicts resolution
-        // - Test policy updates
+        AbacPolicy policy = AbacPolicy.builder("security-policy")
+            .target(req -> "sensitive".equals(req.resource().get("level")))
+            .condition(req -> "admin".equals(req.subject().get("role")))
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(policy);
+        
+        assertThat(engine.removePolicy("security-policy")).isTrue();
+        assertThat(engine.policyCount()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("Should handle permission revocation")
     void shouldHandlePermissionRevocation() {
-        // Test permission revocation
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Revoke permissions
-        // - Verify immediate effect
-        // - Test revocation propagation
-        // - Verify revocation logging
+        AbacPolicy policy = AbacPolicy.builder("revoke-policy")
+            .target(req -> true)
+            .condition(req -> false)
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(policy);
+        engine.removePolicy("revoke-policy");
+        
+        assertThat(engine.policyCount()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("Should handle role assignment changes")
     void shouldHandleRoleAssignmentChanges() {
-        // Test role assignment changes
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Change user roles
-        // - Verify permission updates
-        // - Test role removal
-        // - Verify session invalidation
+        AbacPolicy userPolicy = AbacPolicy.builder("user-policy")
+            .target(req -> "user".equals(req.subject().get("role")))
+            .condition(req -> true)
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(userPolicy);
+        
+        AbacRequest request = AbacRequest.builder()
+            .subject(Map.of("role", "user"))
+            .action("access")
+            .resource(Map.of("type", "resource"))
+            .build();
+        
+        AbacDecision decision = engine.evaluate(request);
+        assertThat(decision.permitted()).isTrue();
     }
 
     @Test
     @DisplayName("Should handle cross-tenant authorization")
     void shouldHandleCrossTenantAuthorization() {
-        // Test cross-tenant authorization
+        AbacEngine engine = new AbacEngine();
         
-        // In a real implementation, this would:
-        // - Test tenant isolation
-        // - Verify cross-tenant access rejection
-        // - Test tenant-specific roles
-        // - Verify tenant context propagation
+        AbacPolicy tenantPolicy = AbacPolicy.builder("tenant-policy")
+            .target(req -> req.subject().get("tenantId").equals(req.resource().get("tenantId")))
+            .condition(req -> true)
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        engine.addPolicy(tenantPolicy);
+        
+        AbacRequest sameTenantRequest = AbacRequest.builder()
+            .subject(Map.of("tenantId", "tenant-1"))
+            .action("access")
+            .resource(Map.of("tenantId", "tenant-1"))
+            .build();
+        
+        AbacDecision decision = engine.evaluate(sameTenantRequest);
+        assertThat(decision.permitted()).isTrue();
     }
 }

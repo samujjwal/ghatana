@@ -133,23 +133,26 @@ Completed since this plan was corrected:
 - critical journeys now have a dedicated test ownership map and CI publishes a single release evidence bundle
 - release diagnostics now verify liveness, readiness, authenticated metrics, and rollback/runbook guidance
 - compatibility-only frontend alias tests have been removed from the default gate and replaced with active-code boundary enforcement
+- focused retry-sensitive frontend suites are green without retries, including the CrossTabSync and LifecycleWebSocketService regressions exercised in the current cleanup batch
+- broader frontend verification now passes namespace, auth-policy, duplication-boundary, manifest, workspace-dependency, and typecheck stages using ESM-compatible scripts and a stable lint heap budget
 
-#### Remaining 1. Fix flaky suites exposed by retry removal
+#### Remaining 1. Restore broad frontend verify to green
 
-**Goal:** Keep the new no-retry default without trading it for chronic red builds.
+**Goal:** Finish the broad frontend gate so the canonical `verify` path is trustworthy beyond the focused touched-file batch.
 
 **Tasks**
 
-1. Identify any frontend unit or E2E suites that now fail intermittently after retry removal.
-2. Fix the underlying instability or move them to an explicitly quarantined path with an owner.
-3. Keep the default release gate on `retry: 0`.
+1. Establish package-accurate type-aware lint coverage for the legacy `libs/yappc-ui` surface instead of relying on a root-only project shape that does not model that package cleanly.
+2. Resolve the pre-existing `libs/yappc-ui` lint debt now surfaced by the broader gate, especially unresolved-type and unsafe-access findings in utility and accessibility helper modules.
+3. Return `pnpm -C products/yappc/frontend verify` to green with the no-retry default preserved.
 
 **Acceptance criteria**
 
-- default unit and critical-journey E2E runs stay green without retries
-- any quarantined suite has an explicit owner and exit criteria
+- `pnpm -C products/yappc/frontend verify` passes end-to-end from custom checks through lint and test
+- no verify-stage script depends on CommonJS inside the ESM frontend scripts package
+- the broad lint gate runs without heap exhaustion and without unresolved-type failures caused by missing package ownership or project wiring
 
-Completed: compatibility-only frontend alias assertions were removed from the default Vitest gate, CI now enforces duplication-boundary checks directly, and the critical-journey map remains the release-gate source of truth.
+Completed: compatibility-only frontend alias assertions were removed from the default Vitest gate, CI now enforces duplication-boundary checks directly, the critical-journey map remains the release-gate source of truth, and the active `verify` path has already been cleared through all custom checks plus TypeScript typecheck.
 
 ## 5. Remaining Backlog
 
@@ -159,10 +162,8 @@ Completed: compatibility-only frontend alias assertions were removed from the de
 2. Continue tightening release runbooks and observability dashboards where they still reference stale metrics.
 3. Remove historical migration material from the active contributor path.
 
-- retry removal plan
-- critical journey mapping
-- release evidence bundle
-- flake ownership and quarantine policy
+- broad frontend lint/project wiring for legacy `libs/yappc-ui`
+- remaining `libs/yappc-ui` type-aware lint debt surfaced by the canonical verify path
 
 ### Architecture/Documentation
 

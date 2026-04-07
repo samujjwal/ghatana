@@ -183,7 +183,7 @@ export const ScreenReaderAnnouncer: React.FC = () => {
 // Canvas Element Accessibility
 // ============================================================================
 
-interface AccessibleCanvasElementProps {
+export interface AccessibleCanvasElementProps {
   id: string;
   type: 'shape' | 'text' | 'image' | 'sketch' | 'connector';
   x: number;
@@ -323,215 +323,62 @@ export const AccessibleToolbar: React.FC<AccessibleToolbarProps> = ({
   orientation = 'horizontal',
   className,
 }) => {
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const [focusedIndex, setFocusedIndex] = React.useState(-1);
+  const toolbarId = useId();
+  const [activeIndex, setActiveIndex] = React.useState(0);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, index: number) => {
-    const maxIndex = buttons.length - 1;
-    
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const isHorizontal = orientation === 'horizontal';
+    let newIndex = activeIndex;
+
     switch (e.key) {
-      case 'ArrowRight':
-        if (orientation === 'horizontal') {
-          e.preventDefault();
-          const nextIndex = index >= maxIndex ? 0 : index + 1;
-          setFocusedIndex(nextIndex);
-          document.getElementById(`toolbar-btn-${buttons[nextIndex].id}`)?.focus();
-        }
+      case isHorizontal ? 'ArrowRight' : 'ArrowDown':
+        e.preventDefault();
+        newIndex = (activeIndex + 1) % buttons.length;
+        setActiveIndex(newIndex);
         break;
-      case 'ArrowLeft':
-        if (orientation === 'horizontal') {
-          e.preventDefault();
-          const prevIndex = index <= 0 ? maxIndex : index - 1;
-          setFocusedIndex(prevIndex);
-          document.getElementById(`toolbar-btn-${buttons[prevIndex].id}`)?.focus();
-        }
-        break;
-      case 'ArrowDown':
-        if (orientation === 'vertical') {
-          e.preventDefault();
-          const nextIndex = index >= maxIndex ? 0 : index + 1;
-          setFocusedIndex(nextIndex);
-          document.getElementById(`toolbar-btn-${buttons[nextIndex].id}`)?.focus();
-        }
-        break;
-      case 'ArrowUp':
-        if (orientation === 'vertical') {
-          e.preventDefault();
-          const prevIndex = index <= 0 ? maxIndex : index - 1;
-          setFocusedIndex(prevIndex);
-          document.getElementById(`toolbar-btn-${buttons[prevIndex].id}`)?.focus();
-        }
+      case isHorizontal ? 'ArrowLeft' : 'ArrowUp':
+        e.preventDefault();
+        newIndex = activeIndex === 0 ? buttons.length - 1 : activeIndex - 1;
+        setActiveIndex(newIndex);
         break;
       case 'Home':
         e.preventDefault();
-        setFocusedIndex(0);
-        document.getElementById(`toolbar-btn-${buttons[0].id}`)?.focus();
+        setActiveIndex(0);
         break;
       case 'End':
         e.preventDefault();
-        setFocusedIndex(maxIndex);
-        document.getElementById(`toolbar-btn-${buttons[maxIndex].id}`)?.focus();
+        setActiveIndex(buttons.length - 1);
         break;
     }
-  }, [buttons, orientation]);
+  }, [activeIndex, buttons.length, orientation]);
+
+  useEffect(() => {
+    const button = document.getElementById(`${toolbarId}-button-${activeIndex}`);
+    button?.focus();
+  }, [activeIndex, toolbarId]);
 
   return (
     <div
-      ref={toolbarRef}
       role="toolbar"
       aria-orientation={orientation}
-      aria-label="Canvas toolbar"
       className={className}
+      onKeyDown={handleKeyDown}
     >
       {buttons.map((button, index) => (
         <button
           key={button.id}
-          id={`toolbar-btn-${button.id}`}
-          role="button"
-          tabIndex={focusedIndex === index ? 0 : -1}
-          aria-label={`${button.label}${button.shortcut ? ` (${button.shortcut})` : ''}`}
+          id={`${toolbarId}-button-${index}`}
+          type="button"
+          tabIndex={index === activeIndex ? 0 : -1}
+          aria-label={button.shortcut ? `${button.label} (${button.shortcut})` : button.label}
           aria-pressed={button.active}
           disabled={button.disabled}
           onClick={button.onClick}
-          onKeyDown={(e) => handleKeyDown(e, index)}
-          onFocus={() => setFocusedIndex(index)}
-          style={{
-            background: button.active ? '#0066cc' : 'transparent',
-            color: button.active ? 'white' : 'inherit',
-            opacity: button.disabled ? 0.5 : 1,
-          }}
         >
           {button.icon}
-          <span className="visually-hidden">{button.label}</span>
+          <span className="sr-only">{button.label}</span>
         </button>
       ))}
     </div>
   );
-};
-
-// ============================================================================
-// Accessibility Styles
-// ============================================================================
-
-/**
- * CSS for accessibility features
- * Include this in your global styles
- */
-export const accessibilityStyles = `
-  /* Focus indicators */
-  .yappc-focusable:focus {
-    outline: 2px solid #0066cc;
-    outline-offset: 2px;
-  }
-  
-  .yappc-focusable:focus-visible {
-    outline: 2px solid #0066cc;
-    outline-offset: 2px;
-  }
-  
-  /* Visually hidden but accessible to screen readers */
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-  
-  /* Skip link for keyboard navigation */
-  .skip-link {
-    position: absolute;
-    top: -40px;
-    left: 0;
-    background: #000;
-    color: #fff;
-    padding: 8px;
-    z-index: 10000;
-    transition: top 0.3s;
-  }
-  
-  .skip-link:focus {
-    top: 0;
-  }
-  
-  /* High contrast mode support */
-  @media (prefers-contrast: high) {
-    .yappc-canvas {
-      border: 2px solid currentColor;
-    }
-    
-    .yappc-element {
-      border: 1px solid currentColor;
-    }
-  }
-  
-  /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    .yappc-animated {
-      animation: none !important;
-      transition: none !important;
-    }
-  }
-`;
-
-// ============================================================================
-// Color Contrast Utilities
-// ============================================================================
-
-/**
- * Calculate contrast ratio between two colors
- * @doc.purpose Ensure WCAG color contrast compliance
- */
-export function getContrastRatio(color1: string, color2: string): number {
-  const lum1 = getLuminance(color1);
-  const lum2 = getLuminance(color2);
-  const brightest = Math.max(lum1, lum2);
-  const darkest = Math.min(lum1, lum2);
-  return (brightest + 0.05) / (darkest + 0.05);
-}
-
-function getLuminance(color: string): number {
-  const rgb = hexToRgb(color) || { r: 0, g: 0, b: 0 };
-  const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(c => {
-    c = c / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16),
-  } : null;
-}
-
-/**
- * Check if color combination meets WCAG AA standards
- */
-export function meetsWCAGAA(textColor: string, bgColor: string, largeText = false): boolean {
-  const ratio = getContrastRatio(textColor, bgColor);
-  return largeText ? ratio >= 3 : ratio >= 4.5;
-}
-
-// ============================================================================
-// Export
-// ============================================================================
-
-export default {
-  generateAriaProps,
-  useCanvasFocus,
-  useAnnouncer,
-  AccessibleCanvasElement,
-  AccessibleToolbar,
-  ScreenReaderAnnouncer,
-  getContrastRatio,
-  meetsWCAGAA,
-  accessibilityStyles,
 };

@@ -6,10 +6,23 @@
  */
 package com.ghatana.platform.security.auth;
 
+import com.ghatana.platform.security.auth.impl.JwtAuthenticationProvider;
+import com.ghatana.platform.security.auth.impl.TokenCredentials;
+import com.ghatana.platform.security.model.User;
+import com.ghatana.platform.security.port.JwtTokenProvider;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Authentication Flow Tests
@@ -22,84 +35,91 @@ class AuthenticationFlowTest {
     @Test
     @DisplayName("Should validate JWT tokens correctly")
     void shouldValidateJwtTokensCorrectly() {
-        // Test JWT token validation
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Validate token signature
-        // - Verify token expiration
-        // - Test issuer validation
-        // - Verify audience validation
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(true);
+        when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
+        when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        TokenCredentials credentials = new TokenCredentials("valid-token");
+        Promise<Optional<User>> result = provider.authenticate(credentials);
+        
+        assertThat(result.getResult()).isPresent();
+        assertThat(result.getResult().get().getUserId()).isEqualTo("user123");
     }
 
     @Test
     @DisplayName("Should handle token refresh correctly")
     void shouldHandleTokenRefreshCorrectly() {
-        // Test token refresh flow
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Use refresh token to get new access token
-        // - Verify refresh token expiration
-        // - Test refresh token rotation
-        // - Verify refresh token revocation
+        when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
+        when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
+        when(mockTokenProvider.createToken(anyString(), anyList(), any())).thenReturn("new-token");
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        String newToken = provider.refreshToken("old-token");
+        
+        assertThat(newToken).isEqualTo("new-token");
     }
 
     @Test
     @DisplayName("Should propagate security context correctly")
     void shouldPropagateSecurityContextCorrectly() {
-        // Test security context propagation
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Extract user context from token
-        // - Propagate context through request chain
-        // - Verify context availability
-        // - Test context cleanup
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(true);
+        when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
+        when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("ADMIN"));
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        TokenCredentials credentials = new TokenCredentials("valid-token");
+        Promise<Optional<User>> result = provider.authenticate(credentials);
+        
+        assertThat(result.getResult()).isPresent();
+        assertThat(result.getResult().get().getRoles()).contains("ADMIN");
     }
 
     @Test
     @DisplayName("Should reject expired tokens")
     void shouldRejectExpiredTokens() {
-        // Test expired token rejection
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Use expired token
-        // - Verify rejection
-        // - Test error handling
-        // - Verify appropriate error response
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        TokenCredentials credentials = new TokenCredentials("expired-token");
+        Promise<Optional<User>> result = provider.authenticate(credentials);
+        
+        assertThat(result.getResult()).isEmpty();
     }
 
     @Test
     @DisplayName("Should reject invalid signatures")
     void shouldRejectInvalidSignatures() {
-        // Test invalid signature rejection
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Use token with invalid signature
-        // - Verify rejection
-        // - Test error handling
-        // - Verify appropriate error response
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        TokenCredentials credentials = new TokenCredentials("invalid-signature");
+        Promise<Optional<User>> result = provider.authenticate(credentials);
+        
+        assertThat(result.getResult()).isEmpty();
     }
 
     @Test
     @DisplayName("Should handle token revocation")
     void shouldHandleTokenRevocation() {
-        // Test token revocation
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class);
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider);
         
-        // In a real implementation, this would:
-        // - Revoke a token
-        // - Verify token is rejected
-        // - Test revocation list management
-        // - Verify revocation propagation
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false);
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        TokenCredentials credentials = new TokenCredentials("revoked-token");
+        Promise<Optional<User>> result = provider.authenticate(credentials);
+        
+        assertThat(result.getResult()).isEmpty();
     }
 }

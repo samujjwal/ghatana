@@ -63,10 +63,6 @@ export class CRDTCore {
   private operationLog: OperationLogEntry[] = [];
   private conflicts: Map<string, Conflict> = new Map();
   private snapshots: Map<string, Snapshot> = new Map();
-}
-
-// Re-export types for consumers
-export * from './types';
 
 /**
  * Create a new CRDT core service.
@@ -206,7 +202,7 @@ constructor(config: CRDTConfig) {
     }
 
     // Apply operation
-    const crdt Value: CRDTValue = {
+    const crdtValue: CRDTValue = {
       id: operation.targetId,
       value: operation.data,
       vectorClock: operation.vectorClock,
@@ -215,7 +211,7 @@ constructor(config: CRDTConfig) {
       replicaId: operation.replicaId,
     };
 
-    this.state.values.set(operation.targetId, crdt Value);
+    this.state.values.set(operation.targetId, crdtValue);
 
     // Add to operation log
     this.operationLog.push({
@@ -600,6 +596,9 @@ local.timestamp = Date.now();
   }
 }
 }
+
+// Re-export types for consumers
+export * from './types';
 
 export type {
   VectorClock,
