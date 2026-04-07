@@ -357,9 +357,24 @@ export function useStories(
     pageSize?: number;
   }
 ) {
+  type StoriesQueryData = {
+    stories?: {
+      edges?: Array<{ node?: Record<string, unknown> }>;
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type StoriesQueryState = {
+    data?: StoriesQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<unknown>;
+    refetch: () => Promise<unknown>;
+  };
+  const runStoriesQuery = useQuery as unknown as (query: unknown, options: unknown) => StoriesQueryState;
+
   const { filter, pageSize = 50 } = options ?? {};
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(LIST_STORIES, {
+  const { data, loading, error, fetchMore, refetch } = runStoriesQuery(LIST_STORIES, {
     variables: {
       projectId,
       filter,
@@ -447,7 +462,26 @@ export function useSprintBoard(sprintId: string) {
  * Hook for backlog management
  */
 export function useBacklog(projectId: string, pageSize: number = 50) {
-  const { data, loading, error, fetchMore, refetch } = useQuery(GET_BACKLOG, {
+  type BacklogQueryData = {
+    backlog?: {
+      stories?: {
+        edges?: Array<{ node?: Record<string, unknown> }>;
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+      };
+      epics?: Record<string, unknown>[];
+      statistics?: Record<string, unknown>;
+    };
+  };
+  type BacklogQueryState = {
+    data?: BacklogQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<unknown>;
+    refetch: () => Promise<unknown>;
+  };
+  const runBacklogQuery = useQuery as unknown as (query: unknown, options: unknown) => BacklogQueryState;
+
+  const { data, loading, error, fetchMore, refetch } = runBacklogQuery(GET_BACKLOG, {
     variables: { projectId, pagination: { first: pageSize } },
     skip: !projectId,
   });
@@ -482,24 +516,30 @@ export function useBacklog(projectId: string, pageSize: number = 50) {
  * Hook for story mutations
  */
 export function useStoryMutations(projectId: string) {
+  type _StoryMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown }; loading: boolean };
+  const runStoryMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const [storiesMap, setStoriesMap] = useAtom(storiesMapAtom);
   const updateStoryStatus = useSetAtom(updateStoryStatusAction);
   const moveStory = useSetAtom(moveStoryToSprintAction);
 
-  const [createMutation, { loading: creating }] = useMutation(CREATE_STORY);
-  const [updateMutation, { loading: updating }] = useMutation(UPDATE_STORY);
-  const [deleteMutation, { loading: deleting }] = useMutation(DELETE_STORY);
-  const [moveMutation, { loading: moving }] = useMutation(MOVE_STORY);
+  const [createMutation, { loading: creating }] = runStoryMutation(CREATE_STORY);
+  const [updateMutation, { loading: updating }] = runStoryMutation(UPDATE_STORY);
+  const [deleteMutation, { loading: deleting }] = runStoryMutation(DELETE_STORY);
+  const [moveMutation, { loading: moving }] = runStoryMutation(MOVE_STORY);
   const [updateStatusMutation, { loading: updatingStatus }] =
-    useMutation(UPDATE_STORY_STATUS);
-  const [assignMutation, { loading: assigning }] = useMutation(ASSIGN_STORY);
+    runStoryMutation(UPDATE_STORY_STATUS);
+  const [assignMutation, { loading: assigning }] = runStoryMutation(ASSIGN_STORY);
   const [addCommentMutation, { loading: addingComment }] =
-    useMutation(ADD_STORY_COMMENT);
+    runStoryMutation(ADD_STORY_COMMENT);
   const [logTimeMutation, { loading: loggingTime }] =
-    useMutation(LOG_STORY_TIME);
+    runStoryMutation(LOG_STORY_TIME);
   const [createSubtaskMutation, { loading: creatingSubtask }] =
-    useMutation(CREATE_SUBTASK);
-  const [toggleSubtaskMutation] = useMutation(TOGGLE_SUBTASK);
+    runStoryMutation(CREATE_SUBTASK);
+  const [toggleSubtaskMutation] = runStoryMutation(TOGGLE_SUBTASK);
 
   const create = useCallback(
     async (input: CreateStoryInput) => {
@@ -747,16 +787,22 @@ export function usePullRequests(
  * Hook for pull request mutations
  */
 export function usePullRequestMutations(projectId: string) {
+  type _PRMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown }; loading: boolean };
+  const runPRMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const [createMutation, { loading: creating }] =
-    useMutation(CREATE_PULL_REQUEST);
+    runPRMutation(CREATE_PULL_REQUEST);
   const [updateMutation, { loading: updating }] =
-    useMutation(UPDATE_PULL_REQUEST);
-  const [mergeMutation, { loading: merging }] = useMutation(MERGE_PULL_REQUEST);
-  const [closeMutation, { loading: closing }] = useMutation(CLOSE_PULL_REQUEST);
+    runPRMutation(UPDATE_PULL_REQUEST);
+  const [mergeMutation, { loading: merging }] = runPRMutation(MERGE_PULL_REQUEST);
+  const [closeMutation, { loading: closing }] = runPRMutation(CLOSE_PULL_REQUEST);
   const [requestReviewMutation, { loading: requestingReview }] =
-    useMutation(REQUEST_PR_REVIEW);
+    runPRMutation(REQUEST_PR_REVIEW);
   const [submitReviewMutation, { loading: submittingReview }] =
-    useMutation(SUBMIT_PR_REVIEW);
+    runPRMutation(SUBMIT_PR_REVIEW);
 
   const create = useCallback(
     async (input: CreatePullRequestInput) => {
@@ -896,16 +942,22 @@ export function useFeatureFlags(projectId: string, filter?: FeatureFlagFilter) {
  * Hook for feature flag mutations
  */
 export function useFeatureFlagMutations(projectId: string) {
+  type _FFMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown }; loading: boolean };
+  const runFFMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const toggleFlagAction = useSetAtom(toggleFeatureFlagAction);
 
   const [createMutation, { loading: creating }] =
-    useMutation(CREATE_FEATURE_FLAG);
+    runFFMutation(CREATE_FEATURE_FLAG);
   const [updateMutation, { loading: updating }] =
-    useMutation(UPDATE_FEATURE_FLAG);
+    runFFMutation(UPDATE_FEATURE_FLAG);
   const [toggleMutation, { loading: toggling }] =
-    useMutation(TOGGLE_FEATURE_FLAG);
+    runFFMutation(TOGGLE_FEATURE_FLAG);
   const [deleteMutation, { loading: deleting }] =
-    useMutation(DELETE_FEATURE_FLAG);
+    runFFMutation(DELETE_FEATURE_FLAG);
 
   const create = useCallback(
     async (input: CreateFeatureFlagInput) => {
@@ -1027,12 +1079,18 @@ export function useDeployments(
  * Hook for deployment mutations
  */
 export function useDeploymentMutations(projectId: string) {
+  type _DeploymentMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown }; loading: boolean };
+  const runDeploymentMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const [triggerMutation, { loading: triggering }] =
-    useMutation(TRIGGER_DEPLOYMENT);
+    runDeploymentMutation(TRIGGER_DEPLOYMENT);
   const [rollbackMutation, { loading: rollingBack }] =
-    useMutation(ROLLBACK_DEPLOYMENT);
+    runDeploymentMutation(ROLLBACK_DEPLOYMENT);
   const [cancelMutation, { loading: canceling }] =
-    useMutation(CANCEL_DEPLOYMENT);
+    runDeploymentMutation(CANCEL_DEPLOYMENT);
 
   const trigger = useCallback(
     async (input: TriggerDeploymentInput) => {
@@ -1072,7 +1130,10 @@ export function useDeploymentMutations(projectId: string) {
  * Hook for subscribing to deployment status
  */
 export function useDeploymentStatus(deploymentId: string | undefined) {
-  const { data } = useSubscription(SUBSCRIBE_TO_DEPLOYMENT_STATUS, {
+  type DeploymentStatusState = { data?: { deploymentStatusChanged?: Record<string, unknown> } };
+  const runDeploymentStatusSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => DeploymentStatusState;
+
+  const { data } = runDeploymentStatusSubscription(SUBSCRIBE_TO_DEPLOYMENT_STATUS, {
     variables: { deploymentId },
     skip: !deploymentId,
   });
@@ -1088,9 +1149,18 @@ export function useDeploymentStatus(deploymentId: string | undefined) {
  * Hook for velocity data
  */
 export function useVelocity(projectId: string, sprintCount: number = 10) {
+  type VelocityQueryData = { velocityData?: Record<string, unknown> };
+  type VelocityQueryState = {
+    data?: VelocityQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: VelocityQueryData }>;
+  };
+  const runVelocityQuery = useQuery as unknown as (query: unknown, options: unknown) => VelocityQueryState;
+
   const [velocityData, setVelocityData] = useAtom(velocityDataAtom);
 
-  const { loading, error, refetch } = useQuery(GET_VELOCITY_DATA, {
+  const { loading, error, refetch } = runVelocityQuery(GET_VELOCITY_DATA, {
     variables: { projectId, sprintCount },
     skip: !projectId,
     onCompleted: (data) => {
@@ -1116,9 +1186,18 @@ export function useVelocity(projectId: string, sprintCount: number = 10) {
  * Hook for epics
  */
 export function useEpics(projectId: string, filter?: EpicFilter) {
+  type EpicsQueryData = { epics?: Record<string, unknown>[] };
+  type EpicsQueryState = {
+    data?: EpicsQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: EpicsQueryData }>;
+  };
+  const runEpicsQuery = useQuery as unknown as (query: unknown, options: unknown) => EpicsQueryState;
+
   const [epics, setEpics] = useAtom(epicsAtom);
 
-  const { loading, error, refetch } = useQuery(LIST_EPICS, {
+  const { loading, error, refetch } = runEpicsQuery(LIST_EPICS, {
     variables: { projectId, filter },
     skip: !projectId,
     onCompleted: (data) => {
