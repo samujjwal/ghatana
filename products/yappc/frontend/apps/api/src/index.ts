@@ -29,6 +29,10 @@ import canvasRoutes from './routes/canvas';
 import lifecycleRoutes from './routes/lifecycle';
 import telemetryRoutes from './routes/telemetry';
 import { devAuthBypass } from './middleware/devAuth';
+import {
+  assertDevAuthBypassAllowed,
+  isDevAuthBypassEnabled,
+} from './middleware/dev-auth-config';
 import { authMiddleware } from './middleware/auth.middleware';
 import { authRoutes } from './routes/auth';
 
@@ -147,7 +151,8 @@ realTimeService.registerRoutes(app);
 await authMiddleware(app);
 
 // Optional dev auth bypass. Must be explicitly enabled to avoid accidental open access.
-if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEV_AUTH_BYPASS === 'true') {
+assertDevAuthBypassAllowed();
+if (isDevAuthBypassEnabled()) {
   await devAuthBypass(app);
   app.log.warn('Development auth bypass is enabled. Do not use in production.');
 }

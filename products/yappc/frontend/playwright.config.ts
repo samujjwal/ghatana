@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const quarantineRetries = Number.parseInt(
+  process.env.PLAYWRIGHT_QUARANTINE_RETRIES ?? '0',
+  10
+);
+
 /**
  * Playwright Configuration for AI-Native DevSecOps Platform
  * 
@@ -9,7 +14,7 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: Number.isFinite(quarantineRetries) && quarantineRetries > 0 ? quarantineRetries : 0,
   workers: process.env.CI ? 1 : undefined,
   timeout: 60000, // Increased for AI streaming tests
   expect: {
@@ -34,7 +39,7 @@ export default defineConfig({
   ],
   use: {
     // Allow overriding baseURL via env (useful when Vite picks a different port)
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:7002',
     // Load preseeded storage when canvas seeding is enabled
     storageState: process.env.PLAYWRIGHT_ENABLE_CANVAS
       ? './e2e/playwright-storage-state.json'
@@ -73,8 +78,8 @@ export default defineConfig({
     // },
   ],
   webServer: {
-    command: 'pnpm dev:web',
-    url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173',
+    command: 'pnpm --filter @yappc/web-app dev',
+    url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:7002',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

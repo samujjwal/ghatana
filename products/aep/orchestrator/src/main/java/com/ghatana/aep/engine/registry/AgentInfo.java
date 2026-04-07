@@ -112,17 +112,60 @@ public class AgentInfo {
         private Map<String, Object> config = Map.of();
         private String registeredAt = java.time.Instant.now().toString();
 
-        public Builder id(String id) { this.id = id; return this; }
-        public Builder name(String name) { this.name = name; return this; }
-        public Builder type(String type) { this.type = type; return this; }
-        public Builder status(String status) { this.status = status; return this; }
-        public Builder product(String product) { this.product = product; return this; }
-        public Builder version(String version) { this.version = version; return this; }
-        public Builder description(String description) { this.description = description; return this; }
-        public Builder capabilities(List<String> capabilities) { this.capabilities = capabilities; return this; }
-        public Builder capabilities(Set<String> capabilities) { this.capabilities = List.copyOf(capabilities); return this; }
-        public Builder config(Map<String, Object> config) { this.config = config; return this; }
-        public Builder registeredAt(String registeredAt) { this.registeredAt = registeredAt; return this; }
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder type(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder status(String status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder product(String product) {
+            this.product = product;
+            return this;
+        }
+
+        public Builder version(String version) {
+            this.version = version;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder capabilities(List<String> capabilities) {
+            this.capabilities = capabilities;
+            return this;
+        }
+
+        public Builder capabilities(Set<String> capabilities) {
+            this.capabilities = List.copyOf(capabilities);
+            return this;
+        }
+
+        public Builder config(Map<String, Object> config) {
+            this.config = config;
+            return this;
+        }
+
+        public Builder registeredAt(String registeredAt) {
+            this.registeredAt = registeredAt;
+            return this;
+        }
 
         /** Builds and returns the {@link AgentInfo} instance. */
         public AgentInfo build() {

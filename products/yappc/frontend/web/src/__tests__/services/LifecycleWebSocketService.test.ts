@@ -1,13 +1,5 @@
-// @ts-nocheck
-/**
- * Copyright (c) 2025 Ghatana Technologies
- * YAPPC Frontend - Lifecycle WebSocket Service Test
- * 
- * Unit tests for LifecycleWebSocketService to ensure real-time
- * lifecycle state synchronization works correctly.
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import React from 'react';
 import { LifecycleWebSocketService, lifecycleWebSocketService, useLifecycleWebSocket } from '../../services/LifecycleWebSocketService';
 
 // Mock WebSocket
@@ -23,20 +15,13 @@ class MockWebSocket {
   onmessage: ((event: MessageEvent) => void) | null = null;
   onclose: ((event: CloseEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
+  private listeners = new Map<string, Set<(event: Event) => void>>();
 
   constructor(url: string) {
     this.url = url;
-    // Simulate connection opening after a delay
-    setTimeout(() => {
-      this.readyState = MockWebSocket.OPEN;
-      if (this.onopen) {
-        this.onopen(new Event('open'));
-      }
-    }, 10);
   }
 
   send(data: string): void {
-    // Mock send - in real implementation this would send to server
     if (this.readyState !== MockWebSocket.OPEN) {
       throw new Error('WebSocket is not open');
     }
@@ -47,6 +32,21 @@ class MockWebSocket {
     if (this.onclose) {
       this.onclose(new CloseEvent('close'));
     }
+  }
+
+  addEventListener(type: string, listener: (event: Event) => void): void {
+    const typeListeners = this.listeners.get(type) ?? new Set();
+    typeListeners.add(listener);
+    this.listeners.set(type, typeListeners);
+  }
+
+  removeEventListener(type: string, listener: (event: Event) => void): void {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatchEvent(event: Event): boolean {
+    this.listeners.get(event.type)?.forEach((listener) => listener(event));
+    return true;
   }
 
   // Helper method for tests to simulate receiving messages
@@ -68,40 +68,90 @@ class MockWebSocket {
 // Mock global WebSocket
 vi.stubGlobal('WebSocket', MockWebSocket);
 
-// Mock React hooks
-const mockReact = {
-  useState: vi.fn(),
-  useEffect: vi.fn(),
-};
+vi.mock('react', () => ({
+  default: {
+    useState: vi.fn(),
+    useEffect: vi.fn(),
+  },
+}));
 
-vi.mock('react', () => mockReact);
+const mockReact = vi.mocked(React);
+
+function getSocket(instance: LifecycleWebSocketService) {
+  return (instance as unknown as {
+    ws: {
+      readyState: number;
+      onopen: ((event: Event) => void) | null;
+      onmessage: ((event: MessageEvent) => void) | null;
+      onclose: ((event: CloseEvent) => void) | null;
+      send: (data: string) => void;
+    } | null;
+  }).ws;
+}
+
+function openSocket(instance: LifecycleWebSocketService) {
+  const ws = getSocket(instance);
+
+  if (!ws) {
+    throw new Error('Expected WebSocket connection to be initialized');
+  }
+
+  ws.readyState = MockWebSocket.OPEN;
+  ws.onopen?.(new Event('open'));
+  return ws;
+}
+
+function emitMessage(instance: LifecycleWebSocketService, data: unknown) {
+  const ws = getSocket(instance);
+
+  if (!ws) {
+    throw new Error('Expected WebSocket connection to be initialized');
+  }
+
+  ws.onmessage?.(new MessageEvent('message', { data: JSON.stringify(data) }));
+}
+
+function emitClose(
+  instance: LifecycleWebSocketService,
+  code: number = 1000,
+  reason: string = ''
+) {
+  const ws = getSocket(instance);
+
+  if (!ws) {
+    throw new Error('Expected WebSocket connection to be initialized');
+  }
+
+  ws.readyState = MockWebSocket.CLOSED;
+  ws.onclose?.(new CloseEvent('close', { code, reason }));
+}
 
 describe('LifecycleWebSocketService', () => {
   let service: LifecycleWebSocketService;
-  let mockWebSocket: MockWebSocket;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     service = new LifecycleWebSocketService({
       url: 'ws://localhost:8080/lifecycle',
       maxReconnectAttempts: 3,
       reconnectIntervalMs: 100,
       heartbeatIntervalMs: 1000,
     });
-    mockWebSocket = new MockWebSocket('ws://localhost:8080/lifecycle');
   });
 
   afterEach(() => {
     service.disconnect();
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
   describe('Connection Management', () => {
     it('should connect successfully', async () => {
       service.connect('project-123');
-      
-      // Wait for connection to open
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
+
+      openSocket(service);
+
       expect(service.isConnected()).toBe(true);
     });
 
@@ -114,14 +164,17 @@ describe('LifecycleWebSocketService', () => {
 
     it('should not reconnect if already connected to same project', () => {
       service.connect('project-123');
-      
-      // Should not throw or create new connection
+      vi.advanceTimersByTime(10);
+
       expect(() => service.connect('project-123')).not.toThrow();
     });
 
     it('should disconnect and reconnect for different project', () => {
       service.connect('project-123');
+      openSocket(service);
       service.connect('project-456');
+
+      openSocket(service);
       
       expect(service.isConnected()).toBe(true);
     });
@@ -130,6 +183,7 @@ describe('LifecycleWebSocketService', () => {
   describe('Event Handling', () => {
     beforeEach(() => {
       service.connect('project-123');
+      openSocket(service);
     });
 
     it('should handle lifecycle state updates', () => {
@@ -151,8 +205,7 @@ describe('LifecycleWebSocketService', () => {
       };
 
       // Simulate receiving message
-      const ws = (service as unknown).ws;
-      ws.simulateMessage(update);
+      emitMessage(service, update);
 
       expect(mockHandler).toHaveBeenCalledWith(update);
     });
@@ -168,8 +221,7 @@ describe('LifecycleWebSocketService', () => {
         data: { currentStage: 'execute' },
       };
 
-      const ws = (service as unknown).ws;
-      ws.simulateMessage(update);
+      emitMessage(service, update);
 
       expect(mockHandler).not.toHaveBeenCalled();
     });
@@ -178,8 +230,12 @@ describe('LifecycleWebSocketService', () => {
       const mockHandler = vi.fn();
       service.onConnectionChange(mockHandler);
 
-      // Connection should trigger handler
-      expect(mockHandler).toHaveBeenCalledWith(true);
+      service.connect('project-123');
+      openSocket(service);
+      emitClose(service, 1000, 'Normal closure');
+
+      expect(mockHandler).toHaveBeenNthCalledWith(1, true);
+      expect(mockHandler).toHaveBeenNthCalledWith(2, false);
     });
 
     it('should handle invalid message format gracefully', () => {
@@ -192,8 +248,7 @@ describe('LifecycleWebSocketService', () => {
         type: 'lifecycle.state.changed',
       };
 
-      const ws = (service as unknown).ws;
-      ws.simulateMessage(invalidUpdate);
+      emitMessage(service, invalidUpdate);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid lifecycle update format:',
@@ -208,37 +263,36 @@ describe('LifecycleWebSocketService', () => {
   describe('Reconnection Logic', () => {
     it('should attempt reconnection on unexpected close', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       service.connect('project-123');
-      
-      // Wait for initial connection
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
+
+      openSocket(service);
+
       // Simulate unexpected close
-      const ws = (service as unknown).ws;
-      ws.simulateClose(1006, 'Connection lost');
-      
-      // Should schedule reconnection
+      emitClose(service, 1006, 'Connection lost');
+
       expect(consoleSpy).toHaveBeenCalledWith(
         'Scheduling reconnect attempt 1/3'
       );
+
+      await vi.advanceTimersByTimeAsync(100);
+      openSocket(service);
+
+      expect(service.isConnected()).toBe(true);
 
       consoleSpy.mockRestore();
     });
 
     it('should not reconnect on normal close', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
+
       service.connect('project-123');
-      
-      // Wait for initial connection
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
+
+      openSocket(service);
+
       // Simulate normal close
-      const ws = (service as unknown).ws;
-      ws.simulateClose(1000, 'Normal closure');
-      
-      // Should not schedule reconnection
+      emitClose(service, 1000, 'Normal closure');
+
       expect(consoleSpy).not.toHaveBeenCalledWith(
         expect.stringContaining('Scheduling reconnect')
       );
@@ -248,30 +302,27 @@ describe('LifecycleWebSocketService', () => {
 
     it('should stop reconnecting after max attempts', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
-      const service = new LifecycleWebSocketService({
+
+      const retryLimitedService = new LifecycleWebSocketService({
         url: 'ws://localhost:8080/lifecycle',
         maxReconnectAttempts: 1,
         reconnectIntervalMs: 10,
       });
-      
-      service.connect('project-123');
-      
-      // Wait for initial connection
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
+
+      retryLimitedService.connect('project-123');
+
+      openSocket(retryLimitedService);
+
       // Simulate close that will trigger reconnection
-      const ws = (service as unknown).ws;
-      ws.simulateClose(1006, 'Connection lost');
-      
-      // Wait for reconnection attempt and subsequent failure
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // Should have attempted reconnection once
+      emitClose(retryLimitedService, 1006, 'Connection lost');
+
+      await vi.advanceTimersByTimeAsync(10);
+
       expect(consoleSpy).toHaveBeenCalledWith(
         'Scheduling reconnect attempt 1/1'
       );
 
+      retryLimitedService.disconnect();
       consoleSpy.mockRestore();
     });
   });
@@ -279,25 +330,21 @@ describe('LifecycleWebSocketService', () => {
   describe('Heartbeat', () => {
     it('should send heartbeat messages', async () => {
       const sendSpy = vi.fn();
-      
+
       service.connect('project-123');
-      
-      // Wait for connection
-      await new Promise(resolve => setTimeout(resolve, 20));
-      
+
+      const ws = openSocket(service);
+
       // Mock WebSocket send method
-      const ws = (service as unknown).ws;
       ws.send = sendSpy;
-      
-      // Wait for heartbeat interval
-      await new Promise(resolve => setTimeout(resolve, 1100));
-      
-      expect(sendSpy).toHaveBeenCalledWith(
-        JSON.stringify({
-          type: 'ping',
-          timestamp: expect.any(Number),
-        })
-      );
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(sendSpy.mock.calls[0][0] as string)).toEqual({
+        type: 'ping',
+        timestamp: expect.any(Number),
+      });
     });
   });
 
@@ -307,7 +354,10 @@ describe('LifecycleWebSocketService', () => {
       const handler2 = vi.fn();
 
       const unsubscribe1 = service.onUpdate(handler1);
-      const unsubscribe2 = service.onUpdate(handler2);
+      service.onUpdate(handler2);
+
+      service.connect('project-123');
+      openSocket(service);
 
       const update = {
         type: 'lifecycle.state.changed',
@@ -316,8 +366,7 @@ describe('LifecycleWebSocketService', () => {
         data: { currentStage: 'execute' },
       };
 
-      const ws = (service as unknown).ws;
-      ws.simulateMessage(update);
+      emitMessage(service, update);
 
       expect(handler1).toHaveBeenCalledWith(update);
       expect(handler2).toHaveBeenCalledWith(update);
@@ -325,7 +374,7 @@ describe('LifecycleWebSocketService', () => {
       // Unregister first handler
       unsubscribe1();
 
-      ws.simulateMessage(update);
+      emitMessage(service, update);
 
       expect(handler1).toHaveBeenCalledTimes(1); // Called once before unregister
       expect(handler2).toHaveBeenCalledTimes(2); // Called twice
@@ -336,19 +385,22 @@ describe('LifecycleWebSocketService', () => {
       const handler2 = vi.fn();
 
       const unsubscribe1 = service.onConnectionChange(handler1);
-      const unsubscribe2 = service.onConnectionChange(handler2);
+      service.onConnectionChange(handler2);
 
-      // Initial connection should trigger both handlers
+      service.connect('project-123');
+      openSocket(service);
+
       expect(handler1).toHaveBeenCalledWith(true);
       expect(handler2).toHaveBeenCalledWith(true);
 
       // Unregister first handler
       unsubscribe1();
 
-      service.disconnect();
+      emitClose(service, 1000, 'Normal closure');
 
       expect(handler1).toHaveBeenCalledTimes(1); // Called once before unregister
-      expect(handler2).toHaveBeenCalledTimes(2); // Called for connect and disconnect
+      expect(handler2).toHaveBeenNthCalledWith(1, true);
+      expect(handler2).toHaveBeenNthCalledWith(2, false);
     });
   });
 });

@@ -3,7 +3,7 @@
 **Date:** 2026-04-06  
 **Status:** Proposed architecture and migration blueprint  
 **Primary scope:** `platform`, `platform-kernel`, `products/aep`, `products/data-cloud`, `products/audio-video`  
-**Focus:** framework, runtime, registry, specification, governance, observability, extensibility
+**Focus:** framework, runtime, registry, specification, governance, privacy, security, observability, explainability, extensibility
 
 ## 1. Why this document exists
 
@@ -64,6 +64,33 @@ Instead, make the agent system work as a **layered architecture**:
    - `ToolContract`
    - `EvaluationPack`
    - `MemoryContract`
+
+## 2.1 Non-negotiable quality gates
+
+The modernization should treat the following as release-blocking quality gates, not aspirational follow-up work:
+
+1. **Privacy and purpose limitation are enforced before access, not after logging**
+   - memory retrieval, context hydration, and tool inputs must pass tenant, consent, and purpose checks
+   - the existing `DataAccessBroker` seam in `platform/java/data-governance` should become mandatory for governed data access
+   - every durable memory contract must declare retention, redaction, shareability, and deletion behavior
+
+2. **Security controls travel with the agent release**
+   - every deployable release should carry threat-model, policy-pack, signing, and runtime-admission metadata
+   - side-effecting tools must execute through one governed boundary with sandbox, approval, egress, and audit decisions attached
+   - the existing `ToolSandbox`, `ApprovalGateway`, `PolicyAsCodeEngine`, and `AgentTraceLedger` seams should be composed into a single release-aware control path
+
+3. **Observability is privacy-safe and decision-complete**
+   - tracing must cover planning, retrieval, tool use, memory writes, policy denials, approvals, and external commits
+   - telemetry must be redacted by default so prompts, memory fragments, and tool payloads do not become a shadow data leak
+   - every traceable run should carry agent release ID, policy pack version, and explanation bundle reference
+
+4. **Explainability is part of execution, not just documentation**
+   - the system should persist the minimum evidence needed to answer: what the agent saw, what it decided, what policy checks ran, what tools it used, and why the action was allowed or denied
+   - this is especially important for DSLA/NDSLA-style learning and partially observable execution, where later review depends on durable evidence rather than prompt reconstruction
+
+5. **Capability maturity must be explicit**
+   - releases should declare which parts of the merged self-learning spec they actually implement: memory hierarchy, learning level, signal routing, evaluation rigor, delegation depth, and explainability guarantees
+   - do not market an agent as "self-learning" or "autonomous" when the runtime only provides retrieval plus prompts with no governed promotion or evidence path
 
 ## 3. What the repo already has
 
@@ -205,6 +232,18 @@ Audio-Video has strong domain services, but it is mostly treated as product-spec
 - media-specific memory artifacts
 - agent-visible capability descriptors
 - cross-product orchestration
+
+### 4.8 Cross-cutting trust gaps are still optional in practice
+
+The repo already contains several important seams for trust and governance, but they are not yet wired together as mandatory runtime behavior:
+
+- `platform/java/data-governance/.../DataAccessBroker` gives a consent + purpose gate, but the agent blueprint does not yet require all governed retrieval and tool-access paths to use it
+- `platform/java/policy-as-code/.../PolicyAsCodeEngine` exists, but policy decisions are not consistently attached to every runtime action, memory mutation, and rollout transition
+- `products/aep/aep-agent-runtime/.../MemorySecurityManager` and `MemoryRedactionFilter` exist, but the documents do not currently make privacy-preserving memory writes and reads a universal requirement
+- `products/aep/aep-agent-runtime/.../AgentTraceLedger` provides a strong append-only trace primitive, but explainability and evaluation still rely too much on convention rather than a required evidence bundle
+- `platform/java/tool-runtime/.../ApprovalGateway` and `ToolSandbox` exist, but they are not yet presented as the only legitimate path for sensitive side effects
+
+This is the central modernization problem for privacy, security, observability, and explainability: the ingredients exist, but they are not yet mandatory, versioned, and release-scoped.
 
 ## 5. Target architecture
 
@@ -493,6 +532,31 @@ Every deployable agent release should carry:
 
 This is essential for rollback and mixed-runtime environments.
 
+The implementation detail should respect current code reality: the existing spec loader already uses `agentSpecVersion` as the canonical field in `AgentSpec`, so the modernization should preserve compatibility with that field rather than introducing a second, conflicting source of truth for spec format versioning.
+
+## 7.5 Make trust metadata part of `AgentRelease`
+
+`AgentRelease` should not only describe deployability. It should also describe the trust envelope required to admit and operate the agent:
+
+- `dataClassesHandled`
+- `permittedPurposes`
+- `consentRequirementProfile`
+- `redactionProfileId`
+- `threatModelId`
+- `policyPackId`
+- `telemetryContractVersion`
+- `explanationContractVersion`
+- `evaluationPackId`
+- `capabilityMaturityProfile`
+
+That gives the release registry enough information to answer practical operator questions:
+
+- can this release access sensitive tenant memory?
+- which purposes is it allowed to process data for?
+- what explanation contract does it emit?
+- what learning level and promotion path does it actually support?
+- which redaction rules and threat model were reviewed before activation?
+
 ## 8. Runtime model: what must become first-class
 
 ## 8.1 Standard runtime loop
@@ -646,6 +710,28 @@ Required path:
 6. promoted procedural artifact
 7. release registration
 
+## 10.4 Privacy-preserving and poisoning-resistant memory lifecycle
+
+The merged self-learning spec is directionally correct that durable memory is a capability multiplier. It is also a capability multiplier for failure if governance is weak. The practical lifecycle should therefore be:
+
+1. classify the candidate memory write
+2. redact sensitive fields before persistence
+3. attach provenance, confidence, source agent, release ID, and determinism class
+4. evaluate tenant, consent, and purpose eligibility before durable write
+5. store with retention and deletion semantics
+6. gate promotion through evaluation, policy, and human review where required
+7. detect poisoning, low-quality repetition, and cross-tenant leakage patterns
+8. support deletion, expiry, and re-compaction without orphaning explanation traces
+
+The current repo already has good starting points:
+
+- `MemorySecurityManager` for access decisions
+- `TenantIsolatingMemorySecurityManager` for tenant separation
+- `MemoryRedactionFilter` for pre-write sanitization
+- `AgentTraceLedger` for append-only traceability
+
+What is missing is one mandatory lifecycle that all products use, especially when agents start sharing context, emitting cross-agent learning signals, or promoting episodic evidence into procedural behavior.
+
 ## 11. Tool system modernization
 
 ## 11.1 Align the internal tool model with current industry direction
@@ -738,6 +824,40 @@ Track at least:
 - rollback rate
 - release-level regression rate
 
+## 12.4 Explainability contract
+
+Every advanced run should emit or persist an explanation bundle with at least:
+
+- request or goal summary
+- context sources used
+- memory artifacts read and written
+- plan or policy path taken
+- tools invoked and their side-effect summaries
+- approval and denial decisions
+- confidence and uncertainty summary
+- release ID, policy pack version, and evaluation pack reference
+
+This bundle should be durable enough for operator review and sparse enough to avoid becoming a second uncontrolled copy of sensitive data. In practice, that means referencing redacted artifacts and policy decisions rather than indiscriminately copying prompts and raw payloads into logs.
+
+For DSLA/NDSLA-style agents, explainability should also include:
+
+- what learning signals were emitted or consumed
+- whether the run changed any durable memory candidate
+- whether any promotion path was triggered
+- whether the agent was operating in explore tier or authority tier
+
+## 12.5 Privacy-safe telemetry
+
+Do not let observability become an accidental data exfiltration path.
+
+Minimum rules:
+
+- prompts, retrieved memory chunks, and tool payloads should be redacted, sampled, or referenced by ID unless explicitly approved for secure debugging
+- telemetry export policies should be release-aware and tenant-aware
+- denied policy decisions should still be observable without leaking the blocked payload
+- cross-agent correlations should preserve causality without broadening data visibility
+- explanation bundles and traces should use the same retention and deletion controls as the governed data they reference
+
 ## 13. Governance, rollout, and trust
 
 ## 13.1 Policy distribution should use bundle semantics
@@ -776,6 +896,20 @@ Agent releases should be signed and verifiable. Sigstore is a strong fit for:
 - later verification at deploy and runtime admission
 
 Use signing at the `AgentRelease` bundle boundary, not only at container-image boundary.
+
+## 13.4 Security and privacy gates are release gates
+
+An agent release should not move to `CANARY` or `ACTIVE` unless the following are true:
+
+- threat model reviewed for the declared action classes and data classes
+- policy pack attached and distributable
+- required redaction profile configured
+- telemetry contract version pinned
+- explanation contract version pinned
+- evaluation pack passed for the declared capability maturity profile
+- rollback and kill-switch path verified
+
+This is where privacy, security, observability, and explainability become practical engineering constraints rather than architecture prose.
 
 ## 14. Product-specific modernization
 
@@ -1021,6 +1155,18 @@ These are the external standards and platform directions most worth aligning to 
 
 6. **OpenFeature**
    - useful as the conceptual model for rollout-provider abstraction and canary/shadow gating
+7. **NIST AI RMF and the Generative AI Profile**
+   - useful for framing governed AI lifecycle work as mapped risk-management functions rather than ad hoc controls
+   - especially relevant for release gates, evaluation, monitoring, and incident response
+
+8. **NIST Privacy Framework**
+   - useful for translating privacy requirements into identifiable engineering control categories across data access, retention, and deletion
+
+9. **NIST Explainable AI principles**
+   - useful for setting the minimum bar for meaningful explanation artifacts rather than vague "reasoning summaries"
+
+10. **OWASP guidance for GenAI and agentic applications**
+   - useful for practical threat modeling around prompt injection, tool abuse, data leakage, memory poisoning, and over-privileged agent workflows
 
 ## 18. Bottom line
 
@@ -1635,3 +1781,11 @@ Use this table when designing a new agent interaction:
 - OpenFeature:
   - https://openfeature.dev/specification/
   - https://openfeature.dev/docs/reference/concepts/provider
+- NIST AI RMF, Generative AI profile, Privacy Framework, and Explainable AI:
+  - https://www.nist.gov/itl/ai-risk-management-framework
+  - https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence
+  - https://www.nist.gov/privacy-framework
+  - https://www.nist.gov/publications/four-principles-explainable-artificial-intelligence
+- OWASP GenAI and agentic security guidance:
+  - https://genai.owasp.org/
+  - https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/

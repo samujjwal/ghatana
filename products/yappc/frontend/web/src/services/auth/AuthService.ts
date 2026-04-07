@@ -8,6 +8,31 @@
 
 import { logger } from '../../utils/Logger';
 
+type ApiRole = 'VIEWER' | 'EDITOR' | 'ADMIN' | 'OWNER';
+
+type ApiAuthUser = {
+    id: string;
+    email: string;
+    name: string;
+    role: ApiRole;
+    avatar?: string;
+};
+
+type ApiAuthTokens = {
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+};
+
+type ApiAuthResponse = {
+    user: ApiAuthUser;
+    tokens: ApiAuthTokens;
+};
+
+export function isDemoLoginEnabled(): boolean {
+    return import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_LOGIN === 'true';
+}
+
 export interface User {
     id: string;
     username: string;
@@ -31,16 +56,16 @@ export interface AuthSession {
 }
 
 export interface LoginCredentials {
-    username: string;
+    email: string;
     password: string;
     rememberMe?: boolean;
 }
 
 export interface RegisterData {
-    username: string;
-    email: string;
     firstName: string;
     lastName: string;
+    username: string;
+    email: string;
     password: string;
 }
 
@@ -103,11 +128,11 @@ export class AuthService {
      */
     public async login(credentials: LoginCredentials): Promise<AuthResult> {
         try {
-            logger.info('Login attempt', 'auth', { username: credentials.username });
+            logger.info('Login attempt', 'auth', { email: credentials.email });
 
             // Validate input
-            if (!credentials.username || !credentials.password) {
-                return { success: false, error: 'Username and password are required' };
+            if (!credentials.email || !credentials.password) {
+                return { success: false, error: 'Email and password are required' };
             }
 
             // Call authentication API
@@ -117,7 +142,7 @@ export class AuthService {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    username: credentials.username,
+                    email: credentials.email,
                     password: credentials.password,
                     rememberMe: credentials.rememberMe || false,
                 }),
@@ -125,12 +150,12 @@ export class AuthService {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    logger.warn('Invalid credentials', 'auth', { username: credentials.username });
-                    return { success: false, error: 'Invalid username or password' };
+                    logger.warn('Invalid credentials', 'auth', { email: credentials.email });
+                    return { success: false, error: 'Invalid email or password' };
                 }
 
                 if (response.status === 423) {
-                    logger.warn('Account locked', 'auth', { username: credentials.username });
+                    logger.warn('Account locked', 'auth', { email: credentials.email });
                     return { success: false, error: 'Account temporarily locked' };
                 }
 
@@ -138,15 +163,7 @@ export class AuthService {
             }
 
             const authData = await response.json();
-
-            // Create session
-            const session: AuthSession = {
-                user: authData.user,
-                token: authData.token,
-                refreshToken: authData.refreshToken,
-                expiresAt: authData.expiresAt,
-                permissions: authData.permissions || [],
-            };
+            const session = this.createSessionFromApiResponse(authData);
 
             this.currentSession = session;
             this.saveSession(session);
@@ -154,7 +171,7 @@ export class AuthService {
 
             logger.info('Login successful', 'auth', {
                 userId: session.user.id,
-                username: session.user.username,
+                email: session.user.email,
                 role: session.user.role
             });
 
@@ -167,7 +184,7 @@ export class AuthService {
         } catch (error) {
             logger.error('Login error', 'auth', {
                 error: error instanceof Error ? error.message : String(error),
-                username: credentials.username
+                email: credentials.email
             });
 
             return {
@@ -188,9 +205,11 @@ export class AuthService {
             });
 
             // Validate input
-            if (!userData.username || !userData.email || !userData.password) {
+            if (!userData.username || !userData.email || !userData.password || !userData.firstName || !userData.lastName) {
                 return { success: false, error: 'All fields are required' };
             }
+
+            const name = `${userData.firstName} ${userData.lastName}`.trim() || userData.username;
 
             // Call registration API
             const response = await fetch('/api/auth/register', {
@@ -198,7 +217,11 @@ export class AuthService {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userData),
+                body: JSON.stringify({
+                    email: userData.email,
+                    password: userData.password,
+                    name,
+                }),
             });
 
             if (!response.ok) {
@@ -215,11 +238,9 @@ export class AuthService {
                 throw new Error(`Registration failed: ${response.statusText}`);
             }
 
-            const authData = await response.json();
-
             // Auto-login after successful registration
             return this.login({
-                username: userData.username,
+                email: userData.email,
                 password: userData.password,
             });
 
@@ -279,8 +300,11 @@ export class AuthService {
                 await fetch('/api/auth/logout', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${this.currentSession.token}`,
+                        'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({
+                        refreshToken: this.currentSession.refreshToken,
+                    }),
                 });
             }
         } catch (error) {
@@ -351,19 +375,22 @@ export class AuthService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.currentSession.refreshToken}`,
                 },
+                body: JSON.stringify({
+                    refreshToken: this.currentSession.refreshToken,
+                }),
             });
 
             if (!response.ok) {
                 throw new Error('Token refresh failed');
             }
 
-            const authData = await response.json();
+            const authData = await response.json() as ApiAuthTokens;
 
-            // Update session with new token
-            this.currentSession.token = authData.token;
-            this.currentSession.expiresAt = authData.expiresAt;
+            // Update session with new token pair
+            this.currentSession.token = authData.accessToken;
+            this.currentSession.refreshToken = authData.refreshToken;
+            this.currentSession.expiresAt = new Date(Date.now() + authData.expiresIn * 1000).toISOString();
             this.saveSession(this.currentSession);
             this.setupSessionRefresh();
 
@@ -383,6 +410,14 @@ export class AuthService {
      * Demo user login for development/testing
      */
     public async demoLogin(): Promise<AuthResult> {
+        if (!isDemoLoginEnabled()) {
+            logger.warn('Demo login denied outside explicit dev mode', 'auth');
+            return {
+                success: false,
+                error: 'Demo login is unavailable in this environment',
+            };
+        }
+
         const demoUser: User = {
             id: 'demo-user',
             username: 'demo',
@@ -436,6 +471,53 @@ export class AuthService {
         }
     }
 
+    private createSessionFromApiResponse(authData: ApiAuthResponse): AuthSession {
+        return {
+            user: this.mapApiUser(authData.user),
+            token: authData.tokens.accessToken,
+            refreshToken: authData.tokens.refreshToken,
+            expiresAt: new Date(Date.now() + authData.tokens.expiresIn * 1000).toISOString(),
+            permissions: this.mapPermissions(authData.user.role),
+        };
+    }
+
+    private mapApiUser(user: ApiAuthUser): User {
+        const [firstName, ...lastNameParts] = user.name.trim().split(/\s+/).filter(Boolean);
+        const lastName = lastNameParts.join(' ');
+        return {
+            id: user.id,
+            username: user.email,
+            email: user.email,
+            firstName: firstName || user.email,
+            lastName,
+            avatar: user.avatar,
+            role: this.mapRole(user.role),
+            permissions: this.mapPermissions(user.role),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+    }
+
+    private mapRole(role: ApiRole): User['role'] {
+        if (role === 'ADMIN' || role === 'OWNER') {
+            return 'admin';
+        }
+        if (role === 'VIEWER') {
+            return 'viewer';
+        }
+        return 'user';
+    }
+
+    private mapPermissions(role: ApiRole): string[] {
+        if (role === 'ADMIN' || role === 'OWNER') {
+            return ['*'];
+        }
+        if (role === 'EDITOR') {
+            return ['workspace:read', 'workspace:write', 'project:read', 'project:write'];
+        }
+        return ['workspace:read', 'project:read'];
+    }
+
     /**
      * Clear current session
      */
@@ -466,16 +548,22 @@ export class AuthService {
 
         const expiresAt = new Date(this.currentSession.expiresAt).getTime();
         const now = Date.now();
-        const refreshTime = expiresAt - this.TOKEN_REFRESH_THRESHOLD;
+        const remainingLifetime = expiresAt - now;
 
-        if (refreshTime > now) {
-            this.sessionTimeout = setTimeout(() => {
-                this.refreshToken();
-            }, refreshTime - now);
-        } else {
-            // Token is about to expire, refresh now
-            this.refreshToken();
+        if (remainingLifetime <= 0) {
+            void this.refreshToken();
+            return;
         }
+
+        const refreshLeadTime = Math.min(
+            this.TOKEN_REFRESH_THRESHOLD,
+            Math.max(60_000, Math.floor(remainingLifetime / 2))
+        );
+        const refreshDelay = Math.max(1_000, remainingLifetime - refreshLeadTime);
+
+        this.sessionTimeout = setTimeout(() => {
+            void this.refreshToken();
+        }, refreshDelay);
     }
 
     /**

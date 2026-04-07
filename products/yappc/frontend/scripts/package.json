@@ -1,6 +1,7 @@
 {
   "name": "@ghatana/yappc-config-scripts",
   "private": true,
+  "type": "module",
   "dependencies": {
     "chalk": "^5.0.0",
     "fs-extra": "^11.0.0"

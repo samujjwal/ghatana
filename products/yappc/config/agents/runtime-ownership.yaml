@@ -1,0 +1,20 @@
+spec:
+  bindings:
+    - catalogId: requirements-analyzer
+      runtimeAgentId: IntakeSpecialistAgent
+      runtimeStepName: architecture.intake
+    - catalogId: code-generator
+      runtimeAgentId: ImplementSpecialistAgent
+      runtimeStepName: implementation.implement
+    - catalogId: test-generator
+      runtimeAgentId: GenerateTestsSpecialistAgent
+      runtimeStepName: testing.generateTests
+    - catalogId: monitoring-agent
+      runtimeAgentId: MonitorSpecialistAgent
+      runtimeStepName: ops.monitor
+    - catalogId: governance-orchestrator
+      runtimeAgentId: GovernanceOrchestratorAgent
+      runtimeStepName: orchestrator.governance
+    - catalogId: agent-dispatcher
+      runtimeAgentId: AgentDispatcherAgent
+      runtimeStepName: expert.agent-dispatcher

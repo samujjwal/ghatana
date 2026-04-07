@@ -16,7 +16,7 @@ the replacement libraries listed below.
 | `@ghatana/yappc-canvas`     | `@yappc/canvas`          | 2026-06-30  |
 | `@ghatana/yappc-ai`         | `@yappc/ai`              | 2026-06-30  |
 | `@ghatana/yappc-ui`         | `@yappc/ui`              | 2026-06-30  |
-| `@ghatana/yappc-ide`        | `@ghatana/yappc-canvas`  | 2026-06-06  |
+| `@ghatana/yappc-ide`        | `@yappc/canvas`          | 2026-06-06  |
 
 ---
 
@@ -122,7 +122,7 @@ tokens via `@yappc/ui/tokens`, and is covered by visual regression tests.
 
 ---
 
-### `@ghatana/yappc-ide` → `@ghatana/yappc-canvas`
+### `@ghatana/yappc-ide` → `@yappc/canvas`
 
 **Why:** IDE drag editor functionality has been merged into the canvas engine.
 The standalone `ide` library has no active maintainer and is frozen at v0.1.0.
@@ -139,11 +139,8 @@ The standalone `ide` library has no active maintainer and is frozen at v0.1.0.
 2. Use canvas instead:
 
    ```json
-   "@ghatana/yappc-canvas": "workspace:*"
+   "@yappc/canvas": "workspace:*"
    ```
-
-   > **Note:** After completing the canvas → `@yappc/canvas` migration above,
-   > the final target is `@yappc/canvas`.
 
 3. IDE-specific panels (`CommandPalette`, `FileTree`) have been moved to
    `@yappc/canvas/panels`.
@@ -159,44 +156,26 @@ from them will fail CI lint checks.
 
 ---
 
-## Compat Package Location (2026-03-24)
+## Compat Package Status (2026-04-06)
 
-As part of the YAPPC structure simplification, 11 pre-consolidation packages
-that had no active downstream dependents have been **moved from `libs/` to
-`compat/`**. They remain in the pnpm workspace (`compat/*`) and can still be
-resolved by any code that imports them, but they are visually separated from
-the canonical library surface.
+The deleted compat package names below must not appear in active code or config.
+They are no longer part of the supported frontend import surface.
 
 | Moved package | New path |
 | --- | --- |
-| `@yappc/base-ui` | `frontend/compat/base-ui` |
-| `@yappc/development-ui` | `frontend/compat/development-ui` |
-| `@yappc/initialization-ui` | `frontend/compat/initialization-ui` |
-| `@yappc/navigation-ui` | `frontend/compat/navigation-ui` |
-| `@yappc/messaging` | `frontend/compat/messaging` |
-| `@yappc/realtime` | `frontend/compat/realtime` |
-| `@yappc/notifications` | `frontend/compat/notifications` |
-| `@yappc/config-hooks` | `frontend/compat/config-hooks` |
-| `@yappc/crdt` | `frontend/compat/crdt` |
-| `@yappc/types` | `frontend/compat/types` |
-| `@yappc/utils` | `frontend/compat/utils` |
-
-`@yappc/theme` remains in `libs/` because it is still consumed by `@yappc/ui`
-and `@yappc/ai`.
-
-New code must **not** depend on any package in `compat/`. Existing consumers
-should migrate to the canonical replacements:
-
-| Compat package | Canonical replacement |
-| --- | --- |
 | `@yappc/base-ui` | `@yappc/ui` |
-| `@yappc/navigation-ui` | `@yappc/ui/navigation` |
-| `@yappc/development-ui` / `@yappc/initialization-ui` | `@yappc/core` |
-| `@yappc/messaging` / `@yappc/notifications` | `@yappc/ai` (chat features) |
-| `@yappc/realtime` | `@yappc/state` |
-| `@yappc/config-hooks` | `@yappc/core` config utilities |
+| `@yappc/development-ui` | `@yappc/ui` |
+| `@yappc/initialization-ui` | `@yappc/ui` |
+| `@yappc/navigation-ui` | `@yappc/ui` |
+| `@yappc/messaging` | `@yappc/ai` |
+| `@yappc/notifications` | `@yappc/ai` |
+| `@yappc/config-hooks` | `@yappc/config` or `@yappc/state` |
 | `@yappc/crdt` | `@yappc/collab` |
-| `@yappc/types` / `@yappc/utils` | `@yappc/core` |
+| `@yappc/types` | `@yappc/core/types` |
+| `@yappc/utils` | `@yappc/config` or feature-local utilities |
+
+New code must **not** depend on deleted compat names or legacy `reactflow` imports.
+Use `@xyflow/react` directly for flow primitives.
 
 ---
 

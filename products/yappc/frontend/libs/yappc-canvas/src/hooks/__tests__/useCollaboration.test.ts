@@ -69,7 +69,7 @@ process.env.REACT_APP_COLLABORATION_WS_URL = 'ws://localhost:1234';
 // hook picks up the mocked implementations from vitest.
 vi.resetModules();
 
-import { createMockYArray, createMockYMap, withMockYDoc } from '@ghatana/yappc-test-helpers';
+import { createMockYArray, createMockYMap, withMockYDoc } from '@yappc/testing/helpers';
 import { Provider } from 'jotai';
 import React from 'react';
 

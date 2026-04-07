@@ -39,6 +39,10 @@ public class TransactionResult {
     public static TransactionResult rejected(String reason) {
         return new TransactionResult("REJECTED", reason, new HashMap<>());
     }
+
+    public static TransactionResult rejected(String reason, Map<String, Object> metadata) {
+        return new TransactionResult("REJECTED", reason, metadata);
+    }
     
     public static TransactionResult pendingReview(String message, Map<String, Object> metadata) {
         return new TransactionResult("PENDING_REVIEW", message, metadata);
@@ -46,6 +50,10 @@ public class TransactionResult {
     
     public static TransactionResult error(String message) {
         return new TransactionResult("ERROR", message, new HashMap<>());
+    }
+
+    public static TransactionResult error(String message, Map<String, Object> metadata) {
+        return new TransactionResult("ERROR", message, metadata);
     }
     
     public String getStatus() {

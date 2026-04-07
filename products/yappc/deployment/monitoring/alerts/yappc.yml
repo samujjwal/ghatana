@@ -110,9 +110,9 @@ groups:
 
       - alert: YappcLlmProviderLatencyHigh
         expr: |
-          histogram_quantile(0.95,
-            rate(yappc_llm_request_duration_seconds_bucket[5m])
-          ) > 10.0
+          rate(yappc_ai_llm_latency_seconds_sum[5m])
+          /
+          clamp_min(rate(yappc_ai_llm_latency_seconds_count[5m]), 1) > 10.0
         for: 5m
         labels:
           severity: warning
@@ -122,6 +122,33 @@ groups:
           summary: "YAPPC LLM provider p95 latency exceeds 10 s"
           description: "LLM backend p95 = {{ $value | humanizeDuration }}. Users will experience slow completions."
           runbook: "https://docs.ghatana.internal/runbooks/yappc/llm-latency"
+
+      - alert: YappcAiInferenceFailureRateHigh
+        expr: |
+          rate(yappc_ai_inference_failed_total[5m])
+          /
+          clamp_min(rate(yappc_ai_inference_invoked_total[5m]), 1) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC AI inference failure rate exceeds 5%"
+          description: "Workflow-level AI inference failures are elevated in the last 5 minutes."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/llm-provider-down"
+
+      - alert: YappcAiFallbackRateHigh
+        expr: rate(yappc_ai_fallback_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: yappc-platform
+          product: yappc
+        annotations:
+          summary: "YAPPC AI fallback rate is elevated"
+          description: "Fallbacks are being used continuously, indicating provider degradation or circuit-breaker pressure."
+          runbook: "https://docs.ghatana.internal/runbooks/yappc/llm-provider-down"
 
       - alert: YappcLlmProviderDown
         expr: yappc_llm_provider_up == 0

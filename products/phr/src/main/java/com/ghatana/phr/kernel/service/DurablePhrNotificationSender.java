@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public final class DurablePhrNotificationSender extends AbstractDataService implements PhrNotificationSender {
 
-    private static final String OUTBOX_DATASET = "phr.notifications.outbox";
+    static final String OUTBOX_DATASET = "phr.notifications.outbox";
 
     public DurablePhrNotificationSender(KernelContext context) {
         super(context);
@@ -45,7 +45,13 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
                 Map.entry("channel", "string"),
                 Map.entry("status", "string"),
                 Map.entry("scheduledFor", "timestamp"),
-                Map.entry("createdAt", "timestamp")
+                Map.entry("createdAt", "timestamp"),
+                Map.entry("correlationId", "string"),
+                Map.entry("traceOperation", "string"),
+                Map.entry("deliveryAttemptedAt", "timestamp"),
+                Map.entry("deliveredAt", "timestamp"),
+                Map.entry("failureReason", "string"),
+                Map.entry("providerMessageId", "string")
             ),
             Map.of("retention", "2years")
         );
@@ -62,7 +68,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             "appointment",
             "APPOINTMENT_REMINDER_SCHEDULED",
             notification.scheduledTime(),
-            notification.channels()
+            notification.channels(),
+            notification.correlationId(),
+            notification.traceOperation()
         );
     }
 
@@ -77,7 +85,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             "appointment",
             "APPOINTMENT_REMINDER_CANCELLED",
             notification.scheduledTime(),
-            notification.channels()
+            notification.channels(),
+            notification.correlationId(),
+            notification.traceOperation()
         );
     }
 
@@ -92,7 +102,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             "consent-grant",
             notification.changeType().name(),
             Instant.now(),
-            notification.channels()
+            notification.channels(),
+            notification.correlationId(),
+            notification.traceOperation()
         );
     }
 
@@ -107,7 +119,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             "telemedicine-session",
             notification.notificationType().name(),
             notification.scheduledAt(),
-            notification.channels()
+            notification.channels(),
+            notification.correlationId(),
+            notification.traceOperation()
         );
     }
 
@@ -128,6 +142,21 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             .toList());
     }
 
+    public Promise<List<NotificationOutboxEntry>> getPendingNotifications(int limit) {
+        ensureRunning();
+
+        return queryRecords(
+            OUTBOX_DATASET,
+            "status = :status",
+            Map.of("status", NotificationStatus.PENDING.name()),
+            limit,
+            0,
+            NotificationOutboxEntry.class
+        ).map(entries -> entries.stream()
+            .sorted((left, right) -> left.createdAt().compareTo(right.createdAt()))
+            .toList());
+    }
+
     private Promise<Void> persistNotifications(
             String patientId,
             String recipientId,
@@ -136,7 +165,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             String referenceType,
             String notificationType,
             Instant scheduledFor,
-            Set<NotificationChannel> channels) {
+            Set<NotificationChannel> channels,
+            String correlationId,
+            String traceOperation) {
         ensureRunning();
 
         String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
@@ -150,6 +181,8 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             notificationType,
             "notificationType"
         );
+        String sanitizedCorrelationId = PhrInputSanitizationUtils.requireSafeIdentifier(correlationId, "correlationId");
+        String sanitizedTraceOperation = PhrInputSanitizationUtils.requireSafeCode(traceOperation, "traceOperation");
         Instant sanitizedScheduledFor = Objects.requireNonNull(scheduledFor, "scheduledFor must not be null");
         Set<NotificationChannel> sanitizedChannels = Set.copyOf(Objects.requireNonNull(channels, "channels must not be null"));
         Instant createdAt = Instant.now();
@@ -168,7 +201,13 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
                     channel,
                     NotificationStatus.PENDING,
                     sanitizedScheduledFor,
-                    createdAt
+                    createdAt,
+                    sanitizedCorrelationId,
+                    sanitizedTraceOperation,
+                    null,
+                    null,
+                    null,
+                    null
                 );
                 return createRecord(
                     OUTBOX_DATASET,
@@ -182,7 +221,7 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             .toList());
     }
 
-    private static Map<String, String> metadataFor(NotificationOutboxEntry entry) {
+    static Map<String, String> metadataFor(NotificationOutboxEntry entry) {
         HashMap<String, String> metadata = new HashMap<>();
         metadata.put("patientId", entry.patientId());
         metadata.put("recipientId", entry.recipientId());
@@ -193,6 +232,20 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
         metadata.put("status", entry.status().name());
         metadata.put("scheduledFor", entry.scheduledFor().toString());
         metadata.put("createdAt", entry.createdAt().toString());
+        metadata.put("correlationId", entry.correlationId());
+        metadata.put("traceOperation", entry.traceOperation());
+        if (entry.deliveryAttemptedAt() != null) {
+            metadata.put("deliveryAttemptedAt", entry.deliveryAttemptedAt().toString());
+        }
+        if (entry.deliveredAt() != null) {
+            metadata.put("deliveredAt", entry.deliveredAt().toString());
+        }
+        if (entry.failureReason() != null) {
+            metadata.put("failureReason", entry.failureReason());
+        }
+        if (entry.providerMessageId() != null) {
+            metadata.put("providerMessageId", entry.providerMessageId());
+        }
         if (entry.providerId() != null) {
             metadata.put("providerId", entry.providerId());
         }
@@ -200,7 +253,9 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
     }
 
     public enum NotificationStatus {
-        PENDING
+        PENDING,
+        DELIVERED,
+        FAILED
     }
 
     public record NotificationOutboxEntry(
@@ -214,7 +269,13 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
         NotificationChannel channel,
         NotificationStatus status,
         Instant scheduledFor,
-        Instant createdAt
+        Instant createdAt,
+        String correlationId,
+        String traceOperation,
+        Instant deliveryAttemptedAt,
+        Instant deliveredAt,
+        String failureReason,
+        String providerMessageId
     ) {
         public NotificationOutboxEntry {
             Objects.requireNonNull(id, "id must not be null");
@@ -227,6 +288,52 @@ public final class DurablePhrNotificationSender extends AbstractDataService impl
             Objects.requireNonNull(status, "status must not be null");
             Objects.requireNonNull(scheduledFor, "scheduledFor must not be null");
             Objects.requireNonNull(createdAt, "createdAt must not be null");
+            Objects.requireNonNull(correlationId, "correlationId must not be null");
+            Objects.requireNonNull(traceOperation, "traceOperation must not be null");
+        }
+
+        NotificationOutboxEntry markDelivered(String messageId, Instant deliveredAt) {
+            return new NotificationOutboxEntry(
+                id,
+                patientId,
+                recipientId,
+                providerId,
+                referenceId,
+                referenceType,
+                notificationType,
+                channel,
+                NotificationStatus.DELIVERED,
+                scheduledFor,
+                createdAt,
+                correlationId,
+                traceOperation,
+                deliveredAt,
+                deliveredAt,
+                null,
+                messageId
+            );
+        }
+
+        NotificationOutboxEntry markFailed(String failureReason, Instant attemptedAt) {
+            return new NotificationOutboxEntry(
+                id,
+                patientId,
+                recipientId,
+                providerId,
+                referenceId,
+                referenceType,
+                notificationType,
+                channel,
+                NotificationStatus.FAILED,
+                scheduledFor,
+                createdAt,
+                correlationId,
+                traceOperation,
+                attemptedAt,
+                null,
+                failureReason,
+                null
+            );
         }
     }
 }

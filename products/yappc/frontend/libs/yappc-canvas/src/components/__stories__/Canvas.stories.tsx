@@ -1,4 +1,4 @@
-import { seedScenarios } from '@ghatana/yappc-mocks';
+import { seedScenarios } from '@yappc/testing/mocks';
 import { Provider, createStore, useSetAtom } from 'jotai';
 import React, { useEffect } from 'react';
 

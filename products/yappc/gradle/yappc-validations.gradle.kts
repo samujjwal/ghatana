@@ -38,7 +38,13 @@ tasks.register("validateAgentCatalog") {
     val capabilitiesFile = layout.projectDirectory.file("config/agents/capabilities.yaml").asFile
     val mappingsFile = layout.projectDirectory.file("config/agents/mappings.yaml").asFile
     val eventRoutingFile = layout.projectDirectory.file("config/agents/event-routing.yaml").asFile
+    val catalogIndexFile = layout.projectDirectory.file("config/agents/_index.yaml").asFile
+    val runtimeOwnershipFile = layout.projectDirectory.file("config/agents/runtime-ownership.yaml").asFile
     val failOnUnregisteredDefs = System.getenv("YAPPC_FAIL_ON_UNREGISTERED_AGENT_DEFS")
+        ?.trim()
+        ?.equals("true", ignoreCase = true)
+        ?: false
+    val failOnOwnershipGaps = System.getenv("YAPPC_FAIL_ON_CATALOG_OWNERSHIP_GAPS")
         ?.trim()
         ?.equals("true", ignoreCase = true)
         ?: false
@@ -62,6 +68,18 @@ tasks.register("validateAgentCatalog") {
             val delegatesTo: List<String>,
             val escalatesTo: List<String>,
             val level: Int?
+        )
+
+        data class CatalogEntry(
+            val id: String,
+            val file: java.io.File,
+            val agentType: String?
+        )
+
+        data class RuntimeOwnershipBinding(
+            val catalogId: String,
+            val runtimeAgentId: String,
+            val runtimeStepName: String
         )
 
         val agentDefs = mutableListOf<AgentDef>()
@@ -238,8 +256,294 @@ tasks.register("validateAgentCatalog") {
             } catch (e: Exception) { println("ERROR: Failed to parse event-routing.yaml: ${e.message}"); errors++ }
         } else { println("ERROR: event-routing.yaml not found"); errors++ }
 
+        val catalogEntries = mutableMapOf<String, CatalogEntry>()
+        if (catalogIndexFile.exists()) {
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val indexDoc = yaml.load<Map<String, Any>>(catalogIndexFile.readText()) ?: emptyMap()
+                @Suppress("UNCHECKED_CAST")
+                val spec = indexDoc["spec"] as? Map<String, Any> ?: emptyMap()
+                @Suppress("UNCHECKED_CAST")
+                val catalogs = spec["catalogs"] as? List<Map<String, Any>> ?: emptyList()
+
+                catalogs.forEach { catalogMeta ->
+                    val fileName = catalogMeta["file"]?.toString()?.trim()
+                    if (fileName.isNullOrEmpty()) {
+                        println("ERROR: _index.yaml contains a catalog entry without a file")
+                        errors++
+                        return@forEach
+                    }
+
+                    val catalogFile = File(projectDir, "config/agents/$fileName")
+                    if (!catalogFile.exists()) {
+                        println("ERROR: _index.yaml references non-existent catalog file: $fileName")
+                        errors++
+                        return@forEach
+                    }
+
+                    @Suppress("UNCHECKED_CAST")
+                    val catalogDoc = yaml.load<Map<String, Any>>(catalogFile.readText()) ?: emptyMap()
+                    @Suppress("UNCHECKED_CAST")
+                    val catalogSpec = catalogDoc["spec"] as? Map<String, Any> ?: emptyMap()
+                    @Suppress("UNCHECKED_CAST")
+                    val agents = catalogSpec["agents"] as? List<Map<String, Any>> ?: emptyList()
+
+                    agents.forEach { agent ->
+                        val catalogId = agent["id"]?.toString()?.trim()
+                        if (catalogId.isNullOrEmpty()) {
+                            println("ERROR: ${catalogFile.name} contains an agent without an id")
+                            errors++
+                            return@forEach
+                        }
+
+                        if (catalogEntries.containsKey(catalogId)) {
+                            println("ERROR: Duplicate catalog agent ID '$catalogId' in ${catalogFile.name} (first seen in ${catalogEntries[catalogId]?.file?.name})")
+                            errors++
+                        } else {
+                            catalogEntries[catalogId] = CatalogEntry(
+                                catalogId,
+                                catalogFile,
+                                agent["agentType"]?.toString()?.trim()
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse _index.yaml/catalog files: ${e.message}")
+                errors++
+            }
+        } else {
+            println("ERROR: _index.yaml not found")
+            errors++
+        }
+
+        val runtimeBindings = mutableListOf<RuntimeOwnershipBinding>()
+        val bindingCatalogIds = mutableMapOf<String, String>()
+        val bindingRuntimeAgentIds = mutableMapOf<String, String>()
+        val bindingRuntimeStepNames = mutableMapOf<String, String>()
+        if (runtimeOwnershipFile.exists()) {
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val ownershipDoc = yaml.load<Map<String, Any>>(runtimeOwnershipFile.readText()) ?: emptyMap()
+                @Suppress("UNCHECKED_CAST")
+                val ownershipSpec = ownershipDoc["spec"] as? Map<String, Any> ?: emptyMap()
+                @Suppress("UNCHECKED_CAST")
+                val bindings = ownershipSpec["bindings"] as? List<Map<String, Any>> ?: emptyList()
+
+                bindings.forEach { binding ->
+                    val catalogId = binding["catalogId"]?.toString()?.trim()
+                    val runtimeAgentId = binding["runtimeAgentId"]?.toString()?.trim()
+                    val runtimeStepName = binding["runtimeStepName"]?.toString()?.trim()
+                    if (catalogId.isNullOrEmpty() || runtimeAgentId.isNullOrEmpty() || runtimeStepName.isNullOrEmpty()) {
+                        println("ERROR: runtime-ownership.yaml contains a binding missing catalogId, runtimeAgentId, or runtimeStepName")
+                        errors++
+                        return@forEach
+                    }
+
+                    val describedBinding = "$catalogId -> $runtimeAgentId ($runtimeStepName)"
+                    if (bindingCatalogIds.containsKey(catalogId)) {
+                        println("ERROR: runtime-ownership.yaml contains duplicate catalogId binding: $catalogId")
+                        errors++
+                    } else {
+                        bindingCatalogIds[catalogId] = describedBinding
+                    }
+
+                    if (bindingRuntimeAgentIds.containsKey(runtimeAgentId)) {
+                        println("ERROR: runtime-ownership.yaml contains duplicate runtimeAgentId binding: $runtimeAgentId")
+                        errors++
+                    } else {
+                        bindingRuntimeAgentIds[runtimeAgentId] = describedBinding
+                    }
+
+                    if (bindingRuntimeStepNames.containsKey(runtimeStepName)) {
+                        println("ERROR: runtime-ownership.yaml contains duplicate runtimeStepName binding: $runtimeStepName")
+                        errors++
+                    } else {
+                        bindingRuntimeStepNames[runtimeStepName] = describedBinding
+                    }
+
+                    runtimeBindings.add(RuntimeOwnershipBinding(catalogId, runtimeAgentId, runtimeStepName))
+                }
+            } catch (e: Exception) {
+                println("ERROR: Failed to parse runtime-ownership.yaml: ${e.message}")
+                errors++
+            }
+        } else {
+            println("ERROR: runtime-ownership.yaml not found")
+            errors++
+        }
+
+        if (catalogEntries.isNotEmpty()) {
+            val runtimeBackedCatalogIds = mutableSetOf<String>()
+            val planningOnlyCatalogIds = mutableSetOf<String>()
+            val catalogOnlyCatalogIds = mutableSetOf<String>()
+
+            runtimeBindings.forEach { binding ->
+                if (!catalogEntries.containsKey(binding.catalogId)) {
+                    println("ERROR: runtime-ownership.yaml references unknown catalog agent: ${binding.catalogId}")
+                    errors++
+                } else {
+                    runtimeBackedCatalogIds.add(binding.catalogId)
+                }
+            }
+
+            catalogEntries.values.forEach { entry ->
+                when {
+                    entry.id in runtimeBackedCatalogIds -> Unit
+                    entry.agentType.equals("planning", ignoreCase = true) -> planningOnlyCatalogIds.add(entry.id)
+                    else -> catalogOnlyCatalogIds.add(entry.id)
+                }
+            }
+
+            println(
+                "Agent catalog ownership report: runtime-backed=${runtimeBackedCatalogIds.size}, planning-only=${planningOnlyCatalogIds.size}, catalog-only=${catalogOnlyCatalogIds.size}"
+            )
+
+            if (catalogOnlyCatalogIds.isNotEmpty()) {
+                val catalogOnlyMessage =
+                    "Catalog entries without runtime ownership bindings (${catalogOnlyCatalogIds.size}). Sample: ${catalogOnlyCatalogIds.sorted().take(10).joinToString(", ")}"
+                if (failOnOwnershipGaps) {
+                    println("ERROR: $catalogOnlyMessage")
+                    errors++
+                } else {
+                    println("WARNING: $catalogOnlyMessage")
+                    warnings++
+                }
+            }
+        }
+
         if (errors > 0) throw GradleException("Agent catalog validation failed with $errors error(s) and $warnings warning(s)")
         println("Agent catalog validation PASSED: ${agentYamlFiles.size} definitions, ${allKnownIds.size} unique IDs, $warnings warning(s), 0 errors")
+    }
+}
+
+// ============================================================================
+// Release Observability Validation Task
+// Ensures production release surfaces expose current metrics, tracing, and diagnostics
+// ============================================================================
+tasks.register("validateReleaseObservability") {
+    description = "Validates production observability and release diagnostics surfaces for YAPPC"
+    group = "verification"
+
+    val prometheusConfigFile = layout.projectDirectory.file("prometheus.yappc.yml").asFile
+    val alertRulesFile = layout.projectDirectory.file("deployment/monitoring/alerts/yappc.yml").asFile
+    val releaseChecklistFile = layout.projectDirectory.file("docs/RELEASE_READINESS_CHECKLIST.md").asFile
+    val runbookFile = layout.projectDirectory.file("docs/operations/ONCALL_RUNBOOK.md").asFile
+    val llmObservabilityFile = layout.projectDirectory.file("docs/LLM_OBSERVABILITY.md").asFile
+
+    doLast {
+        var errors = 0
+
+        fun validateFileExists(file: File, label: String): String? {
+            if (!file.exists()) {
+                println("ERROR: Missing $label at ${file.path}")
+                errors++
+                return null
+            }
+            return file.readText()
+        }
+
+        fun requireContains(content: String?, needle: String, message: String) {
+            if (content == null) {
+                return
+            }
+            if (!content.contains(needle)) {
+                println("ERROR: $message")
+                errors++
+            }
+        }
+
+        fun requireMatches(content: String?, regex: Regex, message: String) {
+            if (content == null) {
+                return
+            }
+            if (!regex.containsMatchIn(content)) {
+                println("ERROR: $message")
+                errors++
+            }
+        }
+
+        val prometheusConfig = validateFileExists(prometheusConfigFile, "Prometheus config")
+        val alertRules = validateFileExists(alertRulesFile, "alert rules")
+        val releaseChecklist = validateFileExists(releaseChecklistFile, "release checklist")
+        val runbook = validateFileExists(runbookFile, "on-call runbook")
+        val llmObservabilityGuide = validateFileExists(llmObservabilityFile, "LLM observability guide")
+
+        requireMatches(
+            prometheusConfig,
+            Regex("""\s*metrics_path:\s*[\"']?/metrics[\"']?"""),
+            "prometheus.yappc.yml must scrape the canonical /metrics endpoint"
+        )
+
+        requireContains(
+            alertRules,
+            "yappc_ai_llm_latency_seconds",
+            "Alert rules must reference yappc_ai_llm_latency_seconds for provider latency"
+        )
+        requireContains(
+            alertRules,
+            "yappc_ai_fallback_total",
+            "Alert rules must reference yappc_ai_fallback_total for fallback visibility"
+        )
+        requireContains(
+            alertRules,
+            "yappc_ai_inference_failed_total",
+            "Alert rules must reference yappc_ai_inference_failed_total for workflow failure visibility"
+        )
+
+        requireContains(
+            releaseChecklist,
+            "AI observability sign-off",
+            "Release readiness checklist must require AI observability sign-off"
+        )
+        requireContains(
+            releaseChecklist,
+            "release evidence bundle",
+            "Release readiness checklist must require a release evidence bundle"
+        )
+
+        requireContains(
+            runbook,
+            "/health/readiness",
+            "On-call runbook must document the readiness endpoint"
+        )
+        requireContains(
+            runbook,
+            "/metrics",
+            "On-call runbook must document the metrics endpoint"
+        )
+        requireContains(
+            runbook,
+            "rollback",
+            "On-call runbook must document rollback steps"
+        )
+
+        requireContains(
+            llmObservabilityGuide,
+            "X-Correlation-ID",
+            "LLM observability guide must document correlation ID propagation"
+        )
+        requireContains(
+            llmObservabilityGuide,
+            "yappc.ai.llm.latency.seconds",
+            "LLM observability guide must document provider latency metric names"
+        )
+        requireContains(
+            llmObservabilityGuide,
+            "yappc.ai.fallback.total",
+            "LLM observability guide must document fallback metric names"
+        )
+        requireContains(
+            llmObservabilityGuide,
+            "yappc.ai.inference.failed",
+            "LLM observability guide must document workflow inference failure metrics"
+        )
+
+        if (errors > 0) {
+            throw GradleException("Release observability validation failed with $errors error(s)")
+        }
+
+        println("Release observability validation PASSED: production metrics, tracing, and diagnostics surfaces are present")
     }
 }
 
@@ -519,6 +823,7 @@ tasks.register("validatePolicyConfig") {
 // Wire all validation tasks into the standard check lifecycle
 tasks.findByName("check")?.dependsOn(
     "validateAgentCatalog",
+    "validateReleaseObservability",
     "validateEventSchemas",
     "validatePipelines",
     "validateLifecycleConfig",

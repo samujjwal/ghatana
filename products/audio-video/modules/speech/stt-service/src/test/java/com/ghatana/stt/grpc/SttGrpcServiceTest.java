@@ -199,7 +199,7 @@ class SttGrpcServiceTest {
             new Locale[]{Locale.ENGLISH}, 150_000_000L, false);
         doNothing().when(mockEngine).loadModel("whisper-base");
         when(mockEngine.getActiveModel()).thenReturn(activeInfo);
-        when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1.0, 150_000_000L, 0, 0, 0.0));
+        when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1L, 0L, 0.0, 0L, 150_000_000L));
 
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>();
         service.loadModel(
@@ -248,7 +248,7 @@ class SttGrpcServiceTest {
         ModelInfo info = new ModelInfo("whisper-base", "Whisper Base", "1.0",
             new Locale[]{Locale.ENGLISH}, 150_000_000L, false);
         when(mockEngine.getAvailableModels()).thenReturn(List.of(info));
-        when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1.0, 150_000_000L, 0, 0, 0.0));
+        when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1L, 0L, 0.0, 0L, 150_000_000L));
 
         CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>();
         service.unloadModel(UnloadModelRequest.newBuilder().setModelId("whisper-base").build(), observer);

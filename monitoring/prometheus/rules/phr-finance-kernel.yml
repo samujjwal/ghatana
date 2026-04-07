@@ -125,3 +125,69 @@ groups:
           summary: "PHR appointment reminder queue lag is high"
           description: "Reminder queue lag exceeded 10 minutes for 10 minutes, risking missed reminders and patient no-shows."
           runbook_url: "https://docs.ghatana.io/runbooks/phr-monitoring-alerting"
+
+      - alert: FinanceApiHighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{product="finance", status=~"5.."}[5m])
+            /
+            rate(http_server_requests_seconds_count{product="finance"}[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          team: finance
+          product: finance
+        annotations:
+          summary: "Finance API 5xx error rate > 1%"
+          description: "Finance API server-side error rate exceeded 1% for 5 minutes."
+          runbook_url: "https://docs.ghatana.io/runbooks/phr-monitoring-alerting"
+
+      - alert: FinanceApiP99LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            rate(http_server_requests_seconds_bucket{product="finance"}[5m])
+          ) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          team: finance
+          product: finance
+        annotations:
+          summary: "Finance API p99 latency > 1.5s"
+          description: "Finance API p99 request latency is above 1.5 seconds for 5 minutes."
+          runbook_url: "https://docs.ghatana.io/runbooks/phr-monitoring-alerting"
+
+      - alert: PhrClinicalApiHighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{product="phr", uri=~".*(telemedicine|appointment|patient).*", status=~"5.."}[5m])
+            /
+            rate(http_server_requests_seconds_count{product="phr", uri=~".*(telemedicine|appointment|patient).*"}[5m])
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          team: healthcare
+          product: phr
+        annotations:
+          summary: "PHR clinical API 5xx error rate > 1%"
+          description: "PHR patient, appointment, or telemedicine endpoints exceeded 1% 5xx rate for 5 minutes."
+          runbook_url: "https://docs.ghatana.io/runbooks/phr-monitoring-alerting"
+
+      - alert: PhrClinicalApiP99LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            rate(http_server_requests_seconds_bucket{product="phr", uri=~".*(telemedicine|appointment|patient).*"}[5m])
+          ) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+          team: healthcare
+          product: phr
+        annotations:
+          summary: "PHR clinical API p99 latency > 2s"
+          description: "PHR patient, appointment, or telemedicine endpoints exceeded 2 seconds p99 latency for 5 minutes."
+          runbook_url: "https://docs.ghatana.io/runbooks/phr-monitoring-alerting"

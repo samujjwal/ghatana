@@ -8,8 +8,10 @@ packages:
   - "products/data-cloud/ui"
   - "products/aep/ui"
   - "products/aep/gateway"
+  - "products/phr/apps/*"
 
   # YAPPC frontend (existing)
+  - "products/yappc/frontend"
   - "products/yappc/frontend/libs/*"
   - "products/yappc/frontend/apps/*"
   - "products/yappc/frontend/web"

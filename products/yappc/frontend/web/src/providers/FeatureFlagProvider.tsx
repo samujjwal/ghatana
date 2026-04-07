@@ -190,5 +190,4 @@ export function useFeatureFlag() {
  */
 export const LEGACY_ENV_FLAGS = {
   ONBOARDING: import.meta.env.VITE_FEATURE_ONBOARDING !== 'false',
-  MOCK_AUTH: import.meta.env.VITE_MOCK_AUTH === 'true',
 } as const;

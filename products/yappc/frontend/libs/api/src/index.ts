@@ -9,7 +9,9 @@
  * @doc.pattern Barrel
  */
 
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
+import { ApolloProvider } from '@apollo/client/react';
+import { getGraphQLClient } from './graphql/client';
 
 // =============================================================================
 // Authentication Service
@@ -37,7 +39,6 @@ export type {
 
 export {
   createGraphQLClient,
-  getGraphQLClient,
   resetGraphQLClient,
   setTokens,
   getAccessToken,
@@ -45,6 +46,7 @@ export {
   clearTokens,
   gql,
 } from './graphql/client';
+export { getGraphQLClient } from './graphql/client';
 
 export type { ApolloClient, NormalizedCacheObject } from './graphql/client';
 
@@ -52,8 +54,9 @@ export interface GraphQLProviderProps {
   children: ReactNode;
 }
 
-export const GraphQLProvider = ({ children }: GraphQLProviderProps) =>
-  ApolloProvider({ client: getGraphQLClient(), children });
+export function GraphQLProvider({ children }: GraphQLProviderProps) {
+  return createElement(ApolloProvider, { client: getGraphQLClient() }, children);
+}
 
 // =============================================================================
 // Bootstrapping Operations
@@ -123,6 +126,6 @@ export { aiClient } from './ai';
 // ============================================================================
 // eslint-disable-next-line no-console
 console.warn(
-  '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/core/api instead. ' +
+  '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/api instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'
 );

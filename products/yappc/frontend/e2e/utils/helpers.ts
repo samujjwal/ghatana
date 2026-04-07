@@ -7,6 +7,8 @@
 
 import { Page, expect } from '@playwright/test';
 
+import { loginThroughUi } from '../helpers/auth-journey';
+
 /**
  * Wait for WebSocket connection to be established
  */
@@ -105,11 +107,16 @@ export async function login(
     email = 'test@example.com',
     password = 'password'
 ): Promise<void> {
-    await page.goto('/login');
-    await page.fill('[data-testid="email-input"]', email);
-    await page.fill('[data-testid="password-input"]', password);
-    await page.click('[data-testid="login-button"]');
-    await page.waitForURL('/dashboard');
+    await loginThroughUi(page, {
+        expectedEmail: email,
+        expectedPassword: password,
+        user: {
+            id: 'user-1',
+            email,
+            name: 'Test User',
+            role: 'ADMIN',
+        },
+    });
 }
 
 /**

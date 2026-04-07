@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { authMiddleware, type JWTUserPayload } from '../auth.middleware';
+import { isPublicPath } from '../public-paths';
 
 const TEST_ACCESS_SECRET = 'test-access-secret';
 
@@ -93,6 +94,10 @@ describe('authMiddleware', () => {
     expect(reply.status).not.toHaveBeenCalled();
   });
 
+  it('treats versioned auth refresh endpoints as public', () => {
+    expect(isPublicPath('/v1/auth/refresh')).toBe(true);
+  });
+
   it('rejects protected requests without a bearer token', async () => {
     const hook = await registerAuthHook();
     const request = createMockRequest();
@@ -115,6 +120,7 @@ describe('authMiddleware', () => {
           userId: 'user-123',
           email: 'editor@yappc.local',
           role: 'ADMIN',
+          tenantId: 'tenant-9',
           workspaceId: 'workspace-9',
         })}`,
       },
@@ -128,6 +134,7 @@ describe('authMiddleware', () => {
       userId: 'user-123',
       email: 'editor@yappc.local',
       role: 'ADMIN',
+      tenantId: 'tenant-9',
       workspaceId: 'workspace-9',
     });
   });

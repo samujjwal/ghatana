@@ -24,17 +24,25 @@ java -version   # should print openjdk 21.*
 
 ```
 products/yappc/
+├── services/               # Deployable YAPPC application entrypoint
 ├── core/
-│   ├── domain/             # Lifecycle domain: phases, gates, transition events
-│   ├── spi/                # Extension interfaces (implement these to plug in)
-│   ├── yappc-shared/       # Cross-cutting value objects, error types
-│   ├── framework/          # DI helpers, shared utilities
+│   ├── services-platform/  # Shared service/platform plumbing
+│   ├── services-lifecycle/ # Lifecycle HTTP/service library
+│   ├── yappc-domain-impl/  # Canonical internal domain implementation
+│   ├── yappc-services/     # Lifecycle business logic
+│   ├── yappc-infrastructure/ # Persistence and integration adapters
+│   ├── yappc-api/          # Current API-facing Java surface
+│   ├── yappc-shared/       # Shared value objects and contracts
+│   ├── yappc-agents/       # Consolidated agent implementation surface
 │   ├── ai/                 # LLM integration, safety filter, circuit breaker
 │   ├── knowledge-graph/    # Work-item relationship graph
-│   ├── agents/             # Agent execution (runtime, workflow, specialists)
-│   ├── scaffold/           # Scaffold templates + API
-│   ├── refactorer/         # Refactoring suggestion pipeline
-│   └── services-lifecycle/ # HTTP server entry point (start here for new endpoints)
+│   ├── agents/             # Capability family still owning runtime/workflow specialists
+│   ├── scaffold/           # Scaffold API/core/generators/templates
+│   └── refactorer/         # Refactoring suggestion pipeline
+├── infrastructure/
+│   └── datacloud/          # Data Cloud integration
+├── libs/
+│   └── java/yappc-domain/  # Public product contracts
 ├── build.gradle.kts        # Shared subproject config: JaCoCo, Checkstyle, PMD
 └── docs/                   # Architecture docs, ADRs, onboarding guides (here)
 ```
@@ -51,14 +59,14 @@ docker compose -f monitoring/docker-compose.yml up -d   # Prometheus + Grafana +
 docker compose -f products/yappc/docker-compose.dev.yml up -d   # Postgres
 ```
 
-### 2. Build and run the lifecycle service
+### 2. Build and run the YAPPC service app
 
 ```bash
 # Full build (tests + static analysis)
-./gradlew :products:yappc:core:services-lifecycle:build
+./gradlew :products:yappc:services:build
 
 # Run the service
-./gradlew :products:yappc:core:services-lifecycle:run
+./gradlew :products:yappc:services:run
 ```
 
 The service starts on port **8080** by default.
@@ -69,6 +77,8 @@ The service starts on port **8080** by default.
 curl http://localhost:8080/health/readiness
 # → {"status":"UP"}
 ```
+
+For topology questions, use `docs/START_HERE_ARCHITECTURE.md` and `docs/MODULE_CATALOG.md` instead of older greenfield planning documents.
 
 ---
 

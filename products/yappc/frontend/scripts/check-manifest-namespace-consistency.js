@@ -8,9 +8,11 @@
  * - this applies to dependencies, devDependencies, peerDependencies, and optionalDependencies
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const TARGET_DIRS = ['apps', 'libs'];
 const LEGACY_DEP_PREFIX = '@ghatana/yappc-';

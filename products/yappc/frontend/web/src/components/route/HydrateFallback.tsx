@@ -12,12 +12,6 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Stack,
-  Spinner as CircularProgress,
-} from '@ghatana/design-system';
 
 /**
  * HydrateFallback - Displayed while loading route modules
@@ -27,15 +21,15 @@ import {
  */
 export const HydrateFallback: React.FC = () => {
   return (
-    <Box className="relative flex min-h-screen items-center justify-center overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
-      <Box
+      <div
         className="absolute inset-0"
         style={{
           background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
         }}
       />
-      <Box
+      <div
         className="absolute inset-0"
         style={{
           background:
@@ -45,15 +39,11 @@ export const HydrateFallback: React.FC = () => {
       />
 
       {/* Loading content */}
-      <Stack
-        spacing={3}
-        alignItems="center"
-        className="relative z-[1]"
-      >
+      <div className="relative z-[1] flex flex-col items-center gap-6">
         {/* Animated spinner */}
-        <Box className="relative flex h-[80px] w-[80px] items-center justify-center">
+        <div className="relative flex h-[80px] w-[80px] items-center justify-center">
           {/* Outer rotating ring */}
-          <Box
+          <div
             className="absolute inset-0 rounded-full border-[3px] border-solid border-transparent"
             style={{
               borderTopColor: '#3b82f6',
@@ -62,7 +52,7 @@ export const HydrateFallback: React.FC = () => {
           />
 
           {/* Inner rotating ring (opposite direction) */}
-          <Box
+          <div
             className="absolute inset-[8px] rounded-full border-[2px] border-solid border-transparent"
             style={{
               borderBottomColor: '#93c5fd',
@@ -71,36 +61,33 @@ export const HydrateFallback: React.FC = () => {
           />
 
           {/* Center icon */}
-          <CircularProgress
-            size={40}
-            thickness={4}
+          <div
             className="text-blue-600 opacity-[0.4]"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '9999px',
+              border: '4px solid rgba(59,130,246,0.15)',
+              borderTopColor: '#2563eb',
+              animation: 'spin 1s linear infinite',
+            }}
           />
-        </Box>
+        </div>
 
         {/* Loading text */}
-        <Stack spacing={1} alignItems="center">
-          <Typography
-            variant="h6"
-            className="font-semibold text-gray-900 dark:text-gray-100 tracking-wider" >
+        <div className="flex flex-col items-center gap-1">
+          <h1 className="font-semibold text-gray-900 dark:text-gray-100 tracking-wider text-xl">
             Preparing Canvas
-          </Typography>
-          <Typography
-            variant="body2"
-            className="text-center text-sm text-gray-500 dark:text-gray-400 max-w-[300px] opacity-[0.8]"
-          >
+          </h1>
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 max-w-[300px] opacity-[0.8]">
             Loading modules and initializing your workspace...
-          </Typography>
-        </Stack>
+          </p>
+        </div>
 
         {/* Loading dots animation */}
-        <Stack
-          direction="row"
-          spacing={1}
-          className="mt-4"
-        >
+        <div className="mt-4 flex flex-row gap-2">
           {[0, 1, 2].map((i) => (
-            <Box
+            <div
               key={i}
               className="h-[8px] w-[8px] rounded-full bg-blue-600"
               style={{
@@ -109,8 +96,8 @@ export const HydrateFallback: React.FC = () => {
               }}
             />
           ))}
-        </Stack>
-      </Stack>
+        </div>
+      </div>
 
       {/* CSS animations */}
       <style>
@@ -145,7 +132,7 @@ export const HydrateFallback: React.FC = () => {
           }
         `}
       </style>
-    </Box>
+    </div>
   );
 };
 

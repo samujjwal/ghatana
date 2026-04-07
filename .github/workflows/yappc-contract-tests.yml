@@ -214,6 +214,12 @@ jobs:
             -H "X-Api-Key: contract-test-key" http://localhost:8080/metrics)
           [ "$STATUS" = "200" ] || (echo "Expected 200 for authenticated /metrics, got $STATUS" && exit 1)
 
+          mkdir -p products/yappc/build/release-evidence/contract-startup
+          curl -sf http://localhost:8080/health/liveness > products/yappc/build/release-evidence/contract-startup/liveness.txt
+          curl -sf http://localhost:8080/health/readiness > products/yappc/build/release-evidence/contract-startup/readiness.txt
+          curl -sf -H "X-Api-Key: contract-test-key" http://localhost:8080/metrics > products/yappc/build/release-evidence/contract-startup/metrics.txt
+          grep -Eq 'jvm_|http_server_|yappc_' products/yappc/build/release-evidence/contract-startup/metrics.txt
+
           echo "Auth contract tests passed"
 
       - name: Stop lifecycle service
@@ -222,6 +228,14 @@ jobs:
           if [ -f lifecycle.pid ]; then
             kill "$(cat lifecycle.pid)" 2>/dev/null || true
           fi
+
+      - name: Upload startup diagnostics artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-startup-diagnostics
+          path: products/yappc/build/release-evidence/contract-startup/
+          retention-days: 14
 
   # ── Summary gate ──────────────────────────────────────────────────────────
   contract-tests-passed:

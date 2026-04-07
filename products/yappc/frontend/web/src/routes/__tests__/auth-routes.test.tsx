@@ -152,7 +152,7 @@ describe('RegisterPage', () => {
 
     fireEvent.submit(screen.getByRole('button', { name: /create account/i }));
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/app/workspaces');
+      expect(mockNavigate).toHaveBeenCalledWith('/workspaces');
     });
   });
 

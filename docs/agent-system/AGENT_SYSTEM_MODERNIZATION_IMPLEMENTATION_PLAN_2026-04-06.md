@@ -2,7 +2,7 @@
 
 **Blueprint Reference:** `AGENT_SYSTEM_MODERNIZATION_BLUEPRINT_2026-04-06.md`  
 **Date:** 2026-04-06  
-**Status:** Ready for task pickup  
+**Status:** Revised for trust, capability, and runtime-alignment work  
 **Author:** Platform Architecture  
 **Covers:** `platform/java/agent-core`, `platform/java/tool-runtime`, `platform/java/workflow`, `platform/java/observability`, `platform/java/policy-as-code`, `platform-kernel`, `products/aep`, `products/data-cloud`, `products/audio-video`  
 **Blueprint sections covered:** §15 (Concrete Work Plan), §19 (Agent Pluggability), §20 (Inter-Agent Protocol)
@@ -22,6 +22,7 @@
 | [Phase 6](#phase-6-agent-observability-as-first-class-concern)  | Agent Observability First-Class             | 🟡 Medium  | L (1–2 weeks)    |
 | [Phase 7](#phase-7-audio-video-as-domain-capability-provider)   | Audio-Video as Domain Capability Provider   | 🟡 Medium  | XL (2–3 weeks)   |
 | [Phase 8](#phase-8-agent-pluggability-and-inter-agent-protocol) | Agent Pluggability and Inter-Agent Protocol | 🔴 High    | XL (2–3 weeks)   |
+| [Track X](#track-x-trust-privacy-security-explainability-and-capability-gates) | Trust, Privacy, Security, Explainability, Capability Gates | 🔴 Blocker | Continuous       |
 
 ---
 
@@ -38,14 +39,20 @@ Before picking up any task, read and internalize the following:
 7. **Tests are part of the task**, not optional. Async unit tests live in `src/test/java` mirroring the source package. Integration tests are `*IT.java`. See [§Testing Conventions](#testing-conventions).
 8. **Version catalog** (`gradle/libs.versions.toml`) is the single source for dependency versions. No hardcoded versions in `build.gradle.kts`.
 9. **No new libraries** without justification documented in a task note or ADR.
-10. **Fix-forward**: no backward compat shims. Replace references atomically within a PR scope.
-11. **Zero-warning build** after every task. Fix lint and checkstyle before opening a PR.
+10. **Fix-forward at storage and runtime boundaries; bounded compatibility at ingestion boundaries.** Replace stale references and divergent storage values, but continue accepting documented legacy aliases in loaders and catalog validators until migration is complete.
+11. **Privacy, security, observability, and explainability are release concerns, not side work.** Any task that changes execution, memory, tooling, rollout, or telemetry must state its impact on redaction, auditability, and operator explanation.
+12. **Zero-warning build** after every task. Fix lint and checkstyle before opening a PR.
 
 ---
 
 ## Dependency Graph Between Phases
 
 ```
+Track X (trust/privacy/security/explainability/capability gates)
+    ├── establishes mandatory release gates and telemetry/explanation contracts
+    ├── constrains Phases 2, 3, 5, 6, 7, and 8
+    └── starts with Phase 1 inventory and continues through rollout
+
 Phase 0 (docs fix)
     ↓
 Phase 1 (enum + spec canonicalization)    ← must complete before Phases 2, 3, 4, 8
@@ -62,6 +69,7 @@ Phase 7 (audio-video)   ← starts after Phase 3 + Phase 6 + Phase 8 P8-T3 found
 Phases 0 and 6 have no code dependencies. Any engineer can pick up Phase 0 concurrently.  
 Phase 6 can be started in parallel with Phase 4/5 if separate teams are available.  
 Phase 8 can start P8-T1 and P8-T2 in parallel with Phase 2, but P8-T3 onward requires Phase 2 (AgentRelease) and Phase 3 (ToolContract) to be complete.
+Track X starts immediately after Phase 0 and remains active across every implementation phase. No Phase 2, 3, 5, 6, 7, or 8 deliverable is considered complete until the relevant Track X gate is satisfied.
 
 ---
 
@@ -199,31 +207,41 @@ grep -rn "mission-critical\|semi-autonomous\|fully-deterministic\|persistent" \
 
 ---
 
-### P1-T2 — Introduce `AutonomyLevel` Enum (if not present)
+### P1-T2 — Canonicalize the Existing `AutonomyLevel` Model and Compatibility Mappings
 
 **What:**  
-Ensure a single canonical `AutonomyLevel` enum exists in `agent-core` for the autonomy scale described in the spec.
+Align the implementation plan with the autonomy model that already exists in `agent-core`, and make that model the single canonical runtime vocabulary across catalogs, loaders, and product adapters.
 
-**Where:** `platform/java/agent-core/src/main/java/com/ghatana/agent/AutonomyLevel.java`
+**Where:**
+
+- `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/runtime/AutonomyLevel.java`
+- `platform/agent-catalog/catalog-schema.yaml`
+- `products/data-cloud/platform-api/src/main/java/com/ghatana/datacloud/client/autonomy/AutonomyLevel.java`
 
 **How:**
 
-- Check if `AutonomyLevel` already exists. If it does, audit its values against the spec.
-- If it does not exist, create the Java enum:
+- Treat the existing runtime enum as canonical unless there is a deliberate ADR to change it.
+- Preserve the five current canonical values:
   ```
-  FULLY_AUTONOMOUS, SUPERVISED, HUMAN_IN_THE_LOOP, HUMAN_ON_THE_LOOP, MANUAL
+  ADVISORY, DRAFT, SUPERVISED, BOUNDED_AUTONOMOUS, AUTONOMOUS
   ```
-- Add JavaDoc with all four `@doc.*` tags.
-- Add `@Deprecated` aliases as static constants with doc notes pointing to the canonical value, if old spellings were found in P1-T1.
+- Keep legacy ingestion aliases (`manual`, `assisted`, `semi-autonomous`) in loader/catalog compatibility paths, but do not persist them as stored values.
+- Audit the Data Cloud client autonomy enum and either map it explicitly to the same canonical vocabulary or document the reason it must stay product-local.
+- Update any doc text that still describes a different autonomy scale.
 
-**File:** `platform/java/agent-core/src/main/java/com/ghatana/agent/AutonomyLevel.java`
+**Files:**
 
-**Test:** `platform/java/agent-core/src/test/java/com/ghatana/agent/AutonomyLevelTest.java`
+- `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/runtime/AutonomyLevel.java`
+- `platform/java/agent-core/src/test/java/com/ghatana/agent/framework/runtime/AutonomyLevelTest.java`
+- `platform/agent-catalog/catalog-schema.yaml`
 
-- Verify every enum constant is serializable to/from JSON via Jackson.
-- Verify `@JsonAlias` mappings accept old spellings.
+**Test:** `platform/java/agent-core/src/test/java/com/ghatana/agent/framework/runtime/AutonomyLevelTest.java`
 
-**Acceptance:** Enum compiles, has doc tags, test passes, no `@JsonAlias` collisions.
+- Verify current canonical values serialize and deserialize cleanly.
+- Verify legacy aliases continue to map to canonical values.
+- Verify catalog validation rejects non-canonical stored values while still allowing loader-side normalization at ingress.
+
+**Acceptance:** There is one documented canonical autonomy vocabulary across runtime and catalog storage, with explicit compatibility mappings for legacy values.
 
 ---
 
@@ -255,10 +273,10 @@ Add `@JsonAlias` annotations or a custom Jackson deserializer to `AgentType.java
 
 ---
 
-### P1-T4 — Add Spec Version to `AgentSpec` Model
+### P1-T4 — Normalize `agentSpecVersion` Handling in the Existing `AgentSpec` Model
 
 **What:**  
-Introduce a `specVersion` field to the agent spec model. The loader must set this field on load and fail if an unrecognized version is encountered.
+Use the existing `agentSpecVersion` field as the canonical spec-format version field, tighten validation around it, and avoid introducing a second conflicting field such as `specVersion` unless an ADR deliberately replaces it.
 
 **Where:**
 
@@ -267,23 +285,26 @@ Introduce a `specVersion` field to the agent spec model. The loader must set thi
 
 **How:**
 
-- Add `String specVersion` to the spec model (default `"2.0"` for the current canonical format).
-- In the loader, validate that `specVersion` is present and in the supported set `{"1.0", "2.0"}`.
-- If `specVersion` is missing, treat as `"1.0"` with a deprecation warning log.
-- If `specVersion` is unrecognized, throw a descriptive checked exception: `UnsupportedSpecVersionException`.
+- Keep `AgentSpec.agentSpecVersion` as the single canonical field for spec format version.
+- Preserve current loader behavior that defaults missing values to `"1.0.0"` for legacy flat-format YAML.
+- Validate against the supported set of fully qualified version strings actually used by the loader and tests, starting with `{"1.0.0", "2.0.0"}` unless implementation inspection expands the set.
+- If a spec includes `specVersion` but not `agentSpecVersion`, fail validation with a descriptive migration error rather than silently accepting two version-field names.
+- If `agentSpecVersion` is unrecognized, throw a descriptive checked exception: `UnsupportedSpecVersionException`.
+- Update docs and examples so future specs use `agentSpecVersion` consistently.
 
-**New files (if spec model does not exist):**
+**New files (only if missing):**
 
 - `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/spec/AgentSpec.java`
 - `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/loader/UnsupportedSpecVersionException.java`
 
 **Test:** `platform/java/agent-core/src/test/java/com/ghatana/agent/framework/spec/AgentSpecLoaderTest.java`
 
-- Test: spec with `specVersion: "2.0"` loads cleanly.
-- Test: spec missing `specVersion` loads with warning, defaults to `"1.0"`.
-- Test: spec with `specVersion: "99.0"` throws `UnsupportedSpecVersionException`.
+- Test: spec with `agentSpecVersion: "2.0.0"` loads cleanly.
+- Test: spec missing `agentSpecVersion` loads with warning, defaults to `"1.0.0"`.
+- Test: spec with `agentSpecVersion: "99.0.0"` throws `UnsupportedSpecVersionException`.
+- Test: spec with `specVersion` but no `agentSpecVersion` fails with a migration error explaining the canonical field name.
 
-**Acceptance:** Loader correctly versions all loaded specs. Test suite green.
+**Acceptance:** Loader and docs converge on one canonical spec-format field name, while maintaining safe ingestion of legacy specs already supported by the repo.
 
 ---
 
@@ -373,7 +394,7 @@ Create the following as Java records (Java 21):
 public record AgentRelease(
     String agentReleaseId,           // UUID, immutable
     String agentId,                  // links back to AgentSpec.agentId
-    String specVersion,              // e.g., "2.0"
+    String specVersion,              // mirrors AgentSpec.agentSpecVersion, e.g. "2.0.0"
     String releaseVersion,           // e.g., "1.3.2" (semver)
     AgentReleaseState state,         // DRAFT, VALIDATED, SHADOW, CANARY, ACTIVE, DEPRECATED, RETIRED, BLOCKED
     String specDigest,               // SHA-256 of the spec YAML
@@ -385,11 +406,20 @@ public record AgentRelease(
     List<String> compatibleRuntimeVersions,  // e.g., ["aep-runtime:2.x"]
     String signingReference,         // Sigstore bundle or attestation reference (nullable)
     String toolContractVersion,      // version of ToolContract at release time
+    String telemetryContractVersion, // version of AgentTelemetryContract expected by this release
+    String explanationContractVersion,
+    String redactionProfileId,
+    String threatModelId,
+    Set<String> dataClassesHandled,
+    Set<String> permittedPurposes,
+    String capabilityMaturityProfile,
     Instant createdAt,
     Instant updatedAt,
     String createdBy                 // principal that created the release
 ) {}
 ```
+
+These extra fields are not paperwork. They make privacy, security, observability, explainability, and capability claims queryable at release-admission time instead of being buried in wiki prose.
 
 ```java
 // AgentReleaseState.java
@@ -1304,6 +1334,9 @@ public final class AgentTelemetryContract {
     public static final String ATTR_ACTION_CLASS      = "ghatana.agent.action_class";
     public static final String ATTR_TOOL_ID           = "ghatana.agent.tool.id";
     public static final String ATTR_TELEMETRY_VERSION = "ghatana.agent.telemetry.version";
+    public static final String ATTR_EXPLANATION_CONTRACT_VERSION = "ghatana.agent.explanation.version";
+    public static final String ATTR_REDACTION_PROFILE_ID = "ghatana.agent.redaction_profile_id";
+    public static final String ATTR_DATA_ACCESS_DECISION = "ghatana.agent.data_access.decision";
 
     private AgentTelemetryContract() {} // utility class
 }
@@ -1315,6 +1348,7 @@ Also add a `TelemetryContractVersion` annotation for tagging version in spans.
 
 - Verify all constants are non-null and non-empty.
 - Verify no duplicate values exist.
+- Verify sensitive-content attributes are not defined as raw payload fields.
 
 **Acceptance:** Contract class is immutable, testable, documented, version-tagged.
 
@@ -2712,6 +2746,161 @@ public static final String ATTR_CONTEXT_SCOPE    = "ghatana.agent.context.scope"
 
 ---
 
+## Track X: Trust, Privacy, Security, Explainability, and Capability Gates
+
+> **Goal:** Make privacy, security, observability, explainability, and capability maturity mandatory release concerns across the whole agent lifecycle.  
+> **Why:** The repo already has strong seams (`DataAccessBroker`, `PolicyAsCodeEngine`, `MemorySecurityManager`, `MemoryRedactionFilter`, `AgentTraceLedger`, `ApprovalGateway`), but they are not yet enforced as one coherent trust envelope.
+
+### X-T1 — Publish the Trust Control Matrix and Threat/Privacy Model
+
+**What:**  
+Create one control matrix that maps agent lifecycle stages to concrete privacy, security, explainability, and observability controls.
+
+**Where:**
+
+- `docs/agent-system/agent-trust-control-matrix.md`
+- `docs/adr/ADR-021-agent-trust-gates.md`
+
+**How:**
+
+- Map each lifecycle stage (spec load, release admission, context retrieval, planning, tool use, memory write, evaluation, promotion, rollout, incident response) to required controls.
+- Base the matrix on NIST AI RMF, the NIST Generative AI profile, the NIST Privacy Framework, NIST explainability principles, and OWASP GenAI/agentic guidance.
+- For each control, identify the current code seam that can enforce it now, and whether the seam is mandatory, partial, or missing.
+- Explicitly call out known risks: prompt/tool injection, memory poisoning, cross-tenant leakage, secret exfiltration, telemetry data leakage, under-explained autonomous actions.
+
+**Acceptance:** Control matrix exists, is architecture-reviewed, and is referenced by Phase 2, 3, 5, 6, and 8 tasks.
+
+---
+
+### X-T2 — Make Governed Data Access Mandatory for Context, Memory, and Tool Flows
+
+**What:**  
+Require all governed data retrieval and memory hydration paths to pass through consent and purpose checks before use.
+
+**Where:**
+
+- `platform/java/data-governance/src/main/java/com/ghatana/data/governance/DataAccessBroker.java`
+- `products/data-cloud/platform-api/`
+- `products/aep/aep-agent-runtime/`
+
+**How:**
+
+- Integrate `DataAccessBroker.checkAccess(...)` into:
+  - context retrieval
+  - durable memory retrieval
+  - sensitive tool input materialization
+- Add an explicit purpose field to the relevant retrieval and memory request types where missing.
+- Ensure denials are observable and explainable without leaking the blocked payload.
+- Add regression tests for tenant mismatch, missing consent, and purpose mismatch.
+
+**Acceptance:** Governed data access is enforced on all sensitive retrieval paths. No governed data retrieval bypass exists outside approved seams.
+
+---
+
+### X-T3 — Harden Memory Against Leakage, Poisoning, and Unbounded Retention
+
+**What:**  
+Turn memory privacy and integrity from best effort into a required lifecycle.
+
+**Where:**
+
+- `products/aep/aep-agent-runtime/src/main/java/com/ghatana/agent/memory/security/MemorySecurityManager.java`
+- `products/aep/aep-agent-runtime/src/main/java/com/ghatana/agent/memory/security/TenantIsolatingMemorySecurityManager.java`
+- `products/aep/aep-agent-runtime/src/main/java/com/ghatana/agent/memory/security/MemoryRedactionFilter.java`
+- `products/data-cloud/platform-api/src/main/java/com/ghatana/datacloud/memory/`
+
+**How:**
+
+- Require provenance, release ID, determinism class, confidence, retention class, and shareability metadata on all durable memory writes.
+- Redact sensitive fields before write; do not rely on downstream log scrubbing.
+- Add poisoning and duplication heuristics to promotion candidates before procedural promotion.
+- Close the gap between `canRead`/`canWrite` enforcement and broad search access by documenting and testing tenant-filter guarantees for `canSearch`.
+- Add retention-expiry and deletion verification tests.
+
+**Acceptance:** Memory writes and reads are tenant-safe, privacy-scoped, and promotion-safe by contract, with explicit tests for leakage and poisoning regressions.
+
+---
+
+### X-T4 — Define the Explainability Contract and Evidence Bundle
+
+**What:**  
+Create one portable explanation artifact that every advanced run, denial, approval, and promotion path can emit.
+
+**Where:**
+
+- `platform/java/agent-core/src/main/java/com/ghatana/agent/explainability/`
+- `products/aep/aep-agent-runtime/`
+- `products/data-cloud/platform-analytics/`
+
+**How:**
+
+- Define `ExplanationRecord` / `ExplanationBundle` types carrying:
+  - goal summary
+  - context sources used
+  - memory artifacts read/written
+  - plan or policy path
+  - tool usage summary
+  - approval/denial decisions
+  - confidence and uncertainty summary
+  - learning or promotion signals, if any
+- Persist redacted explanation references alongside traces and release evidence.
+- Ensure the explanation model covers DSLA/NDSLA concerns from the merged spec: partial observability, learning loops, memory promotion, and negative evidence.
+
+**Acceptance:** Every advanced run and every blocked consequential action can produce a durable explanation artifact that operators can inspect without reconstructing prompts from raw logs.
+
+---
+
+### X-T5 — Make Telemetry Privacy-Safe and Release-Scoped
+
+**What:**  
+Extend Phase 6 so telemetry is both complete enough to govern the system and restrained enough not to become a data leak.
+
+**Where:**
+
+- `platform/java/observability/`
+- `platform/java/tool-runtime/`
+- `products/aep/aep-agent-runtime/`
+
+**How:**
+
+- Require release ID, policy pack ID, explanation contract version, and redaction profile ID on every governed run span.
+- Emit policy-denial, approval, and memory-mutation spans even when actions are blocked.
+- Add redaction tests to verify prompts, memory payloads, and sensitive tool inputs are not exported raw.
+- Define which telemetry attributes are allowed in cleartext, hashed, redacted, or disallowed.
+
+**Acceptance:** Telemetry is usable for debugging and governance without exposing sensitive content by default.
+
+---
+
+### X-T6 — Build a Capability-Maturity Gate Against the Merged Self-Learning Spec
+
+**What:**  
+Make capability claims measurable against `Unified_Self_Learning_Agents_Spec_Merged.md`.
+
+**Where:**
+
+- `docs/agent-system/capability-maturity-profile.md`
+- `platform/java/agent-core/`
+- `products/aep/aep-agent-runtime/`
+- `products/data-cloud/`
+
+**How:**
+
+- Define a capability maturity profile that scores whether a release actually implements:
+  - DSLA/NDSLA memory hierarchy
+  - learning level (L0-L5)
+  - learning signal routing
+  - procedural promotion path
+  - explainability evidence
+  - partial-observability handling
+  - explore-tier vs authority-tier separation
+- Require every `AgentRelease` to declare its maturity profile.
+- Add eval gates so an agent cannot claim higher autonomy or self-learning capability than the runtime and evidence plane support.
+
+**Acceptance:** Capability labels such as "autonomous", "self-learning", and "bounded autonomous" are backed by measurable release criteria rather than prose.
+
+---
+
 ## Cross-Cutting Tasks (Any Phase)
 
 ### CC-T1 — Add ArchUnit Boundary Enforcement Tests
@@ -2817,13 +3006,15 @@ Update the AEP UI (`products/aep/ui/`) to surface the new release lifecycle stat
 
 ### Backward Compatibility During Migration
 
-Since the repo follows a **fix-forward** approach, there are no compatibility shims. However:
+The repo should stay **fix-forward for canonical stored values and runtime behavior**, while allowing bounded compatibility at ingestion and migration boundaries. In practice:
 
 - Phase 1 (enum aliases) must be merged before Phase 6 (catalog validation in CI) to avoid breaking existing YAML loading.
 - Phase 3 (`ToolExecutor`) must be merged and all AEP tool calls routed before Phase 6 tool metrics instrumentation.
 - Data Cloud Flyway migrations are additive (new tables, new columns). Existing tables are not modified in any breaking way.
 - `AgentReleaseRepository` dispatch checks (Phase 2-T5) must be feature-flagged during rollout to prevent breaking agents that have no releases yet. Use `if (release.isEmpty()) allowLegacyDispatch()` with a deprecation log.
 - Phase 8 `AgentCapabilityManifest` is validated-but-optional initially: agents without a manifest are assigned `defaultSafe()` values and a deprecation warning is logged. Full enforcement (reject agents without a manifest) lands in v2.1.
+
+Compatibility is acceptable only when it helps migrate old definitions into one canonical vocabulary. It is not acceptable as a permanent second storage format or alternate runtime contract.
 
 ### Feature Flag Strategy for Release-Aware Dispatch (Phase 2-T5)
 
@@ -2874,6 +3065,9 @@ A task is **done** when ALL of the following are true:
 - [ ] No hardcoded secrets, endpoints, or version strings.
 - [ ] PR description references the task ID (e.g., `P2-T4` or `P8-T6`) and links to this document.
 - [ ] ArchUnit tests (CC-T1 + P8-T12) still pass after the change.
+- [ ] Privacy, security, observability, and explainability impact is explicitly documented in the task notes or PR description.
+- [ ] Redaction, retention, and tenant-isolation behavior is tested for any task that touches memory, context, telemetry, or tool payloads.
+- [ ] Capability claims remain honest: release metadata, UI labels, and docs do not overstate autonomy or self-learning behavior beyond what the runtime and evidence plane actually enforce.
 - [ ] **Phase 8 tasks additionally:** `AgentCapabilityManifest` is validated before any runtime interaction. Governance violations produce typed exceptions, never silent nulls.
 
 ---
@@ -2973,5 +3167,22 @@ A task is **done** when ALL of the following are true:
 | AEP UI (TypeScript)                      | `products/aep/ui/src/`                                                                                                               |
 
 ---
+
+## Sources
+
+- NIST AI Risk Management Framework:
+  - https://www.nist.gov/itl/ai-risk-management-framework
+- NIST Generative AI Profile:
+  - https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence
+- NIST Privacy Framework:
+  - https://www.nist.gov/privacy-framework
+- NIST Explainable AI principles:
+  - https://www.nist.gov/publications/four-principles-explainable-artificial-intelligence
+- OWASP GenAI and agentic application guidance:
+  - https://genai.owasp.org/
+  - https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
+- OpenTelemetry semantic conventions:
+  - https://opentelemetry.io/docs/specs/semconv/
+  - https://opentelemetry.io/docs/specs/semconv/gen-ai/
 
 _This document is the authoritative implementation guide for the Agent System Modernization initiative. All tasks reference the blueprint at `docs/agent-system/AGENT_SYSTEM_MODERNIZATION_BLUEPRINT_2026-04-06.md` — specifically §15 (Concrete Work Plan), §19 (Agent Pluggability), and §20 (Inter-Agent Protocol). Update this document as tasks are completed, deferred, or discovered to need splitting._

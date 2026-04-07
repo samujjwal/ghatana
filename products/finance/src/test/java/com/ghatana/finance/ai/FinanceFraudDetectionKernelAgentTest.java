@@ -94,6 +94,9 @@ class FinanceFraudDetectionKernelAgentTest {
         assertEquals(18, result.getFeatures().size());
         assertEquals("BTC", result.getFeatures().get("currency"));
         assertEquals("RU", result.getFeatures().get("counterparty_country"));
+        assertNotNull(result.getExplanation());
+        assertTrue(result.getExplanation().getSummary().contains("HIGH fraud risk"));
+        assertFalse(result.getExplanation().getTopFactors().isEmpty());
 
         Map<String, Object> metadata = response.getMetadata();
         assertEquals("fraud-detection-v2", metadata.get("model_id"));
@@ -102,6 +105,12 @@ class FinanceFraudDetectionKernelAgentTest {
         assertEquals("FALLBACK", metadata.get("inference_source"));
         assertEquals(0L, metadata.get("inference_latency_ms"));
         assertEquals(result.getFraudType(), metadata.get("fraud_type"));
+        assertEquals(result.getExplanation().getSummary(), metadata.get("explanation_summary"));
+        assertEquals(result.getExplanation().getPrimaryReason(), metadata.get("explanation_primary_reason"));
+        assertEquals(
+            result.getExplanation().getTopFactors().stream().map(FraudDecisionExplanation.Factor::key).toList(),
+            metadata.get("explanation_top_factors")
+        );
 
         assertEquals(1, performanceRepository.findByModelId("fraud-detection-v2").size());
         assertEquals(result.getConfidence(), performanceRepository.findByModelId("fraud-detection-v2").get(0).getConfidence());
@@ -146,5 +155,6 @@ class FinanceFraudDetectionKernelAgentTest {
         assertFalse(result.isFraudulent());
         assertEquals("LOW", result.getRiskLevel());
         assertEquals("FALLBACK", result.getInferenceSource());
+        assertEquals("balanced transaction signals", result.getExplanation().getPrimaryReason());
     }
 }

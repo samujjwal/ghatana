@@ -1,4 +1,4 @@
-import { createTestDOMPurify } from '@ghatana/yappc-test-helpers';
+import { createTestDOMPurify } from '@yappc/testing/helpers';
 
 import { ContentSanitizer, sanitizeUserContent, sanitizeExportContent, auditExportSecurity } from '../sanitizer';
 

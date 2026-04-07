@@ -27,11 +27,11 @@ class TelemedicineServiceTest extends EventloopTestBase {
 
     private TelemedicineService service;
     private PhrNotificationTestSupport.RecordingNotificationSender notificationSender;
+    private PhrTestInfrastructure.StubDataCloudAdapter dataCloud;
 
     @BeforeEach
     void setUp() {
-        PhrTestInfrastructure.StubDataCloudAdapter dataCloud =
-                new PhrTestInfrastructure.StubDataCloudAdapter();
+        dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
         notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
         service = new TelemedicineService(PhrTestInfrastructure.createTestContext(dataCloud), notificationSender);
         runPromise(service::start);
@@ -68,6 +68,11 @@ class TelemedicineServiceTest extends EventloopTestBase {
             assertThat(notificationSender.telemedicineNotifications()).hasSize(1);
             assertThat(notificationSender.telemedicineNotifications().getFirst().notificationType())
                 .isEqualTo(PhrNotificationSender.TelemedicineNotificationType.SESSION_SCHEDULED);
+            assertThat(notificationSender.telemedicineNotifications().getFirst().correlationId())
+                .startsWith("phr_telemedicine_schedule-");
+            assertThat(dataCloud.metadataFor("phr.telemedicine.sessions", stored.id()))
+                .containsKey("correlationId")
+                .containsEntry("traceOperation", "phr_telemedicine_schedule");
         }
 
         @Test
@@ -148,6 +153,39 @@ class TelemedicineServiceTest extends EventloopTestBase {
         }
 
         @Test
+        @DisplayName("rescheduleSession updates schedule and emits rescheduled notification")
+        void rescheduleSession() {
+            TeleSession created = runPromise(() -> service.scheduleSession(buildSession("p1", "dr1", null)));
+
+            Instant rescheduledTime = Instant.now().plusSeconds(10_800);
+            TeleSession rescheduled = runPromise(() -> service.rescheduleSession(
+                created.id(),
+                rescheduledTime,
+                45,
+                "https://zoom.us/j/67890"
+            ));
+
+            assertThat(rescheduled.status()).isEqualTo(SessionStatus.SCHEDULED);
+            assertThat(rescheduled.scheduledAt()).isEqualTo(rescheduledTime);
+            assertThat(rescheduled.durationMinutes()).isEqualTo(45);
+            assertThat(notificationSender.telemedicineNotifications().getLast().notificationType())
+                .isEqualTo(PhrNotificationSender.TelemedicineNotificationType.SESSION_RESCHEDULED);
+        }
+
+        @Test
+        @DisplayName("markNoShow transitions session to NO_SHOW and emits notification")
+        void markNoShow() {
+            TeleSession created = runPromise(() -> service.scheduleSession(buildSession("p1", "dr1", null)));
+
+            TeleSession noShow = runPromise(() -> service.markNoShow(created.id(), "Patient unreachable"));
+
+            assertThat(noShow.status()).isEqualTo(SessionStatus.NO_SHOW);
+            assertThat(noShow.notes()).isEqualTo("Patient unreachable");
+            assertThat(notificationSender.telemedicineNotifications().getLast().notificationType())
+                .isEqualTo(PhrNotificationSender.TelemedicineNotificationType.SESSION_NO_SHOW);
+        }
+
+        @Test
         @DisplayName("cannot cancel a COMPLETED session")
         void cannotCancelCompleted() {
             TeleSession created = runPromise(() ->
@@ -176,6 +214,17 @@ class TelemedicineServiceTest extends EventloopTestBase {
 
             assertThat(sessions).hasSize(2);
             assertThat(sessions).allMatch(s -> "patient-Q".equals(s.patientId()));
+        }
+
+        @Test
+        @DisplayName("rate limits repeated patient session queries")
+        void queryRateLimit() {
+            for (int index = 0; index < 120; index++) {
+                runPromise(() -> service.getPatientSessions("patient-rate"));
+            }
+
+            assertThrows(Exception.class, () -> runPromise(() -> service.getPatientSessions("patient-rate")));
+            clearFatalError();
         }
     }
 

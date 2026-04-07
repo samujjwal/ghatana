@@ -88,6 +88,12 @@ public class FinanceFraudDetectionKernelAgent implements AgentOrchestrator.Kerne
         metadata.put("feature_count", result.getFeatures().size());
         metadata.put("inference_source", result.getInferenceSource());
         metadata.put("inference_latency_ms", result.getInferenceLatencyMs());
+        metadata.put("explanation_summary", result.getExplanation().getSummary());
+        metadata.put("explanation_primary_reason", result.getExplanation().getPrimaryReason());
+        metadata.put(
+            "explanation_top_factors",
+            result.getExplanation().getTopFactors().stream().map(FraudDecisionExplanation.Factor::key).toList()
+        );
         if (result.getModelVersion() != null) {
             metadata.put("model_version", result.getModelVersion());
         }

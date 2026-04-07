@@ -37,7 +37,7 @@ import {
   lastSavedAtAtom,
 } from '@yappc/canvas';
 
-// GraphQL operations would be imported from @ghatana/yappc-api
+// GraphQL operations would be imported from @yappc/api
 // import {
 //   GET_BOOTSTRAP_SESSION,
 //   CREATE_BOOTSTRAP_SESSION,

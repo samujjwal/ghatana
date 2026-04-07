@@ -1,20 +1,11 @@
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
 
-const require = createRequire(import.meta.url);
-const {
+import {
   shouldScanFile,
   findViolationsInContent,
   hasLocalCnImplementation,
-} = require('../check-duplication-boundaries.js') as {
-  shouldScanFile: (filePath: string) => boolean;
-  findViolationsInContent: (
-    relativePath: string,
-    content: string,
-  ) => Array<{ kind: string; detail: string }>;
-  hasLocalCnImplementation: (content: string) => boolean;
-};
+} from '../check-duplication-boundaries.js';
 
 describe('check-duplication-boundaries', () => {
   it('flags deprecated compat imports in active code', () => {
@@ -27,6 +18,20 @@ describe('check-duplication-boundaries', () => {
       expect.objectContaining({
         kind: 'deprecated-import',
         detail: '@yappc/base-ui',
+      }),
+    ]);
+  });
+
+  it('flags deprecated notifications compat imports in active code', () => {
+    const violations = findViolationsInContent(
+      'apps/web/src/example.ts',
+      "export * from '@yappc/notifications';\n",
+    );
+
+    expect(violations).toEqual([
+      expect.objectContaining({
+        kind: 'deprecated-import',
+        detail: '@yappc/notifications',
       }),
     ]);
   });

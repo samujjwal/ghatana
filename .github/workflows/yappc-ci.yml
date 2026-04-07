@@ -65,13 +65,19 @@ jobs:
         run: |
           ./gradlew \
             :products:yappc:services:build \
-            :products:yappc:backend:api:build \
-            :products:yappc:core:agents:build \
+            :products:yappc:core:services-platform:build \
+            :products:yappc:core:services-lifecycle:build \
+            :products:yappc:core:yappc-domain-impl:build \
+            :products:yappc:core:yappc-services:build \
+            :products:yappc:core:yappc-infrastructure:build \
+            :products:yappc:core:yappc-api:build \
+            :products:yappc:core:yappc-shared:build \
+            :products:yappc:core:yappc-agents:build \
             :products:yappc:core:ai:build \
-            :products:yappc:core:domain:build \
-            :products:yappc:core:lifecycle:build \
-            :products:yappc:platform:build \
-            --no-daemon --stacktrace --warning-mode=all
+            :products:yappc:core:agents:build \
+            :products:yappc:infrastructure:datacloud:build \
+            -x test \
+            --no-daemon --parallel --build-cache --stacktrace
 
       - name: Validate Agent Catalog
         run: |
@@ -79,21 +85,54 @@ jobs:
             --no-daemon --stacktrace
         env:
           YAPPC_FAIL_ON_UNREGISTERED_AGENT_DEFS: "false"
+          YAPPC_FAIL_ON_CATALOG_OWNERSHIP_GAPS: "true"
+
+      - name: Validate Release Observability
+        run: |
+          ./gradlew :products:yappc:validateReleaseObservability \
+            --no-daemon --stacktrace
 
       - name: Run Tests with Coverage
         run: |
-          ./gradlew :products:yappc:backend:api:test \
-            :products:yappc:backend:api:jacocoTestReport \
+          ./gradlew \
+            :products:yappc:core:services-platform:check \
+            :products:yappc:core:services-lifecycle:check \
+            :products:yappc:core:yappc-services:check \
+            :products:yappc:core:yappc-infrastructure:check \
+            :products:yappc:core:yappc-agents:check \
+            :products:yappc:core:ai:check \
             --no-daemon --stacktrace
         env:
           DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
           DATABASE_USERNAME: yappc
           DATABASE_PASSWORD: yappc_test_pass
 
-      - name: Enforce Coverage Threshold
+      - name: Verify Lifecycle Startup Diagnostics
+        env:
+          DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
+          DATABASE_USERNAME: yappc
+          DATABASE_PASSWORD: yappc_test_pass
+          YAPPC_API_KEYS: diagnostics-key
+          YAPPC_AGENT_LLM_MODE: stub
         run: |
-          ./gradlew :products:yappc:backend:api:jacocoTestCoverageVerification \
-            --no-daemon --stacktrace
+          mkdir -p products/yappc/build/release-evidence/startup
+          ./gradlew :products:yappc:core:services-lifecycle:shadowJar --no-daemon --stacktrace
+          java -jar products/yappc/core/services-lifecycle/build/libs/*-all.jar > products/yappc/build/release-evidence/startup/service.log 2>&1 &
+          echo $! > lifecycle.pid
+          trap 'if [ -f lifecycle.pid ]; then kill "$(cat lifecycle.pid)" 2>/dev/null || true; fi' EXIT
+
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/health/readiness > products/yappc/build/release-evidence/startup/readiness.txt 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl -sf http://localhost:8080/health/liveness > products/yappc/build/release-evidence/startup/liveness.txt
+          curl -sf -H 'X-Api-Key: diagnostics-key' http://localhost:8080/metrics > products/yappc/build/release-evidence/startup/metrics.txt
+          grep -Eq 'READY|ready' products/yappc/build/release-evidence/startup/readiness.txt
+          grep -Eq 'ok|OK' products/yappc/build/release-evidence/startup/liveness.txt
+          grep -Eq 'jvm_|http_server_|yappc_' products/yappc/build/release-evidence/startup/metrics.txt
 
       - name: Upload Test Results
         if: always()
@@ -103,6 +142,14 @@ jobs:
           path: |
             products/yappc/**/build/test-results/**/*.xml
             products/yappc/**/build/reports/tests/**/*
+          retention-days: 14
+
+      - name: Upload Startup Diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-startup-diagnostics
+          path: products/yappc/build/release-evidence/startup/
           retention-days: 14
 
       - name: Upload Coverage
@@ -168,6 +215,14 @@ jobs:
         working-directory: products/yappc/frontend
         run: pnpm test
 
+      - name: Verify Vitest Has No Blanket Retries
+        working-directory: products/yappc/frontend
+        run: |
+          if grep -Eq 'retry:\s*[1-9]' vitest.config.ts; then
+            echo 'Blanket Vitest retries are not allowed.'
+            exit 1
+          fi
+
       - name: Build
         working-directory: products/yappc/frontend
         run: pnpm build:web
@@ -179,6 +234,14 @@ jobs:
           name: yappc-frontend-test-results
           path: |
             products/yappc/frontend/test-results/
+          retention-days: 14
+
+      - name: Upload Frontend Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-frontend-coverage
+          path: products/yappc/frontend/coverage/
           retention-days: 14
 
   # ─────────────────────────────────────────────
@@ -263,7 +326,15 @@ jobs:
         run: ./gradlew :products:yappc:pmdMain --no-daemon
 
       - name: Spotless (format check)
-        run: ./gradlew :products:yappc:backend:api:spotlessCheck --no-daemon
+        run: |
+          ./gradlew \
+            :products:yappc:core:yappc-api:spotlessCheck \
+            :products:yappc:core:yappc-services:spotlessCheck \
+            :products:yappc:core:yappc-infrastructure:spotlessCheck \
+            :products:yappc:core:yappc-agents:spotlessCheck \
+            :products:yappc:core:yappc-domain-impl:spotlessCheck \
+            :products:yappc:core:yappc-shared:spotlessCheck \
+            --no-daemon
 
       - name: Doc-tag compliance
         run: ./gradlew checkDocTags --no-daemon
@@ -324,16 +395,15 @@ jobs:
         run: pip install schemathesis==3.27.1
 
       - name: Build YAPPC API (skip tests)
-        run: ./gradlew :products:yappc:backend:api:build -x test --no-daemon
+        run: ./gradlew :products:yappc:services:build -x test --no-daemon
 
       - name: Start YAPPC API Server
         env:
-          SPRING_PROFILES_ACTIVE: test
           DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
           DATABASE_USERNAME: yappc
           DATABASE_PASSWORD: yappc_test_pass
         run: |
-          ./gradlew :products:yappc:backend:api:bootRun --no-daemon &
+          ./gradlew :products:yappc:services:run --no-daemon &
           echo $! > api.pid
           for i in {1..60}; do
             if curl -sf http://localhost:8080/health; then
@@ -345,7 +415,7 @@ jobs:
           done
 
       - name: Run Contract Tests
-        working-directory: products/yappc/backend/api
+        working-directory: products/yappc/docs/api
         run: |
           schemathesis run openapi.yaml \
             --base-url http://localhost:8080 \
@@ -367,5 +437,76 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: yappc-contract-test-report
-          path: products/yappc/backend/api/schemathesis-report.html
+          path: products/yappc/docs/api/schemathesis-report.html
           retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Release Evidence Bundle
+  # ─────────────────────────────────────────────
+  release-evidence:
+    name: Release Evidence Bundle
+    needs:
+      - backend
+      - frontend
+      - e2e
+      - quality
+      - contract-tests
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download backend test results
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-backend-test-results
+          path: artifacts/backend-tests
+
+      - name: Download frontend test results
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-frontend-test-results
+          path: artifacts/frontend-tests
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-frontend-coverage
+          path: artifacts/frontend-coverage
+
+      - name: Download Playwright report
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-playwright-report
+          path: artifacts/playwright-report
+
+      - name: Download E2E results
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-e2e-results
+          path: artifacts/e2e-results
+
+      - name: Download startup diagnostics
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-startup-diagnostics
+          path: artifacts/startup-diagnostics
+
+      - name: Download contract report
+        uses: actions/download-artifact@v4
+        with:
+          name: yappc-contract-test-report
+          path: artifacts/contract-report
+
+      - name: Generate release evidence bundle
+        run: |
+          bash products/yappc/scripts/generate-release-evidence.sh products/yappc/build/release-evidence artifacts
+
+      - name: Upload release evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-release-evidence-bundle
+          path: products/yappc/build/release-evidence/
+          retention-days: 14

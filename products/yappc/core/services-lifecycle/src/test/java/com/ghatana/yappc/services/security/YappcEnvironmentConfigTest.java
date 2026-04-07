@@ -69,6 +69,41 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
+    @DisplayName("validate throws when agent LLM mode is invalid")
+    void validateThrowsWhenAgentLlmModeIsInvalid() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "auto");
+
+        assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env))
+                .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
+                .hasMessageContaining(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV)
+                .hasMessageContaining("required, stub");
+    }
+
+    @Test
+    @DisplayName("validate throws when stub AI mode is requested in production")
+    void validateThrowsWhenStubAiModeIsRequestedInProduction() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub");
+        env.put(YappcEnvironmentConfig.PROFILE_ENV, "production");
+
+        assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env))
+                .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
+                .hasMessageContaining(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV)
+                .hasMessageContaining("production");
+    }
+
+    @Test
+    @DisplayName("validate allows explicit stub AI mode in development")
+    void validateAllowsExplicitStubAiModeInDevelopment() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub");
+        env.put(YappcEnvironmentConfig.PROFILE_ENV, "dev");
+
+        YappcEnvironmentConfig.validate(env);
+    }
+
+    @Test
     @DisplayName("validate throws when DB_URL is set but credentials are missing")
     void validateThrowsWhenDbUrlSetWithoutCredentials() {
         Map<String, String> env = minimalValidEnv();
@@ -79,6 +114,46 @@ class YappcEnvironmentConfigTest {
                 .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
                 .hasMessageContaining(YappcEnvironmentConfig.DB_USER_ENV)
                 .hasMessageContaining(YappcEnvironmentConfig.DB_PASSWORD_ENV);
+    }
+
+    @Test
+    @DisplayName("validate throws in production when required AI mode has no provider configured")
+    void validateThrowsInProductionWhenRequiredAiModeHasNoProviderConfigured() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.PROFILE_ENV, "production");
+
+        assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env))
+                .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
+                .hasMessageContaining("Production AI runtime requires at least one configured provider");
+    }
+
+    @Test
+    @DisplayName("validate throws in production when provider is configured without model")
+    void validateThrowsInProductionWhenProviderModelIsMissing() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.PROFILE_ENV, "production");
+        env.put(YappcEnvironmentConfig.OPENAI_API_KEY_ENV, "openai-key");
+
+        assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env))
+                .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
+                .hasMessageContaining(YappcEnvironmentConfig.OPENAI_MODEL_ENV);
+    }
+
+    @Test
+    @DisplayName("validate throws in production when tracing export endpoint is missing")
+    void validateThrowsInProductionWhenTracingEndpointIsMissing() {
+        Map<String, String> env = productionAiEnv();
+        env.remove(YappcEnvironmentConfig.OTEL_EXPORTER_OTLP_ENDPOINT_ENV);
+
+        assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env))
+                .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class)
+                .hasMessageContaining(YappcEnvironmentConfig.OTEL_EXPORTER_OTLP_ENDPOINT_ENV);
+    }
+
+    @Test
+    @DisplayName("validate passes in production when AI provider and tracing are configured")
+    void validatePassesInProductionWhenAiProviderAndTracingAreConfigured() {
+        YappcEnvironmentConfig.validate(productionAiEnv());
     }
 
     @Test
@@ -151,6 +226,15 @@ class YappcEnvironmentConfigTest {
     private static Map<String, String> minimalValidEnv() {
         Map<String, String> env = new HashMap<>();
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, "apikey-abc123,apikey-def456");
+        return env;
+    }
+
+    private static Map<String, String> productionAiEnv() {
+        Map<String, String> env = minimalValidEnv();
+        env.put(YappcEnvironmentConfig.PROFILE_ENV, "production");
+        env.put(YappcEnvironmentConfig.OPENAI_API_KEY_ENV, "openai-key");
+        env.put(YappcEnvironmentConfig.OPENAI_MODEL_ENV, "gpt-4o");
+        env.put(YappcEnvironmentConfig.OTEL_EXPORTER_OTLP_ENDPOINT_ENV, "http://localhost:4318");
         return env;
     }
 }

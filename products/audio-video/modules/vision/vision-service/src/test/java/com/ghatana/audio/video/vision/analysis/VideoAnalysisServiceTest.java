@@ -1,5 +1,6 @@
 package com.ghatana.audio.video.vision.analysis;
 
+import com.ghatana.audio.video.vision.analysis.VideoAnalysisService.VideoAnalysisResult;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.model.BoundingBox;
 import com.ghatana.audio.video.vision.model.DetectedObject;

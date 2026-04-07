@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { server } from '@ghatana/yappc-mocks/node';
+import { server } from '@yappc/testing/node';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 // Establish API mocking before all tests

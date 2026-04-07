@@ -213,69 +213,15 @@ export default defineConfig({
       '@yappc/ui': path.resolve(__dirname, '../libs/yappc-ui/src'),
       '@yappc/state': path.resolve(__dirname, '../libs/yappc-state/src'),
       '@yappc/shortcuts': path.resolve(__dirname, '../libs/shortcuts/src'),
-      '@ghatana/yappc-storage': path.resolve(__dirname, '../libs/storage/src'),
       '@yappc/ai': path.resolve(__dirname, '../libs/yappc-ai/src'),
-      '@ghatana/yappc-ai-requirements-service': path.resolve(
-        __dirname,
-        '../libs/ai-requirements-service/src'
-      ),
+      '@yappc/api': path.resolve(__dirname, '../libs/api/src'),
+      '@yappc/auth': path.resolve(__dirname, '../libs/auth/src'),
       '@yappc/canvas': path.resolve(__dirname, '../libs/yappc-canvas/src'),
-      '@ghatana/yappc-crdt': path.resolve(__dirname, '../libs/crdt/src'),
-      '@ghatana/yappc-collab': path.resolve(__dirname, '../libs/collab/src'),
-      '@ghatana/yappc-ide': path.resolve(__dirname, '../libs/ide/src'),
-      '@ghatana/yappc-types': path.resolve(__dirname, '../libs/types/src'),
-      '@ghatana/yappc-api': path.resolve(__dirname, '../libs/api/src'),
-      '@ghatana/yappc-testing': path.resolve(__dirname, '../libs/testing/src'),
-      '@ghatana/yappc-mocks': path.resolve(__dirname, '../libs/mocks/src'),
-      '@ghatana/yappc-websocket': path.resolve(
-        __dirname,
-        '../libs/websocket/src'
-      ),
-      '@ghatana/yappc-auth': path.resolve(__dirname, '../libs/auth/src'),
-      '@ghatana/yappc-diagram': path.resolve(__dirname, '../libs/diagram/src'),
-      '@ghatana/yappc-mobile-bridge': path.resolve(
-        __dirname,
-        '../libs/mobile-bridge/src'
-      ),
-      '@ghatana/yappc-test-helpers': path.resolve(
-        __dirname,
-        '../libs/test-helpers/src'
-      ),
-      '@ghatana/yappc-design-tokens': path.resolve(
-        __dirname,
-        '../libs/design-tokens/src'
-      ),
-      '@ghatana/yappc-platform-tools': path.resolve(
-        __dirname,
-        '../libs/platform-tools/src'
-      ),
-      '@ghatana/yappc-infrastructure': path.resolve(
-        __dirname,
-        '../libs/infrastructure/src'
-      ),
-      '@ghatana/yappc-form-generator': path.resolve(
-        __dirname,
-        '../libs/form-generator/src'
-      ),
-      '@ghatana/yappc-ml': path.resolve(__dirname, '../libs/ml/src'),
-      '@ghatana/yappc-ai-ui': path.resolve(__dirname, '../libs/ai-ui/src'),
-      '@ghatana/yappc-code-editor': path.resolve(
-        __dirname,
-        '../libs/code-editor/src'
-      ),
-      '@ghatana/yappc-layout': path.resolve(__dirname, '../libs/layout/src'),
-      '@ghatana/yappc-live-preview-server': path.resolve(
-        __dirname,
-        '../libs/live-preview-server/src'
-      ),
-      '@ghatana/yappc-vite-plugin-live-edit': path.resolve(
-        __dirname,
-        '../libs/vite-plugin-live-edit/src'
-      ),
-      '@ghatana/yappc-realtime': path.resolve(
-        __dirname,
-        '../../../../platform/typescript/realtime/src/index.ts'
-      ),
+      '@yappc/collab': path.resolve(__dirname, '../libs/collab/src'),
+      '@yappc/code-editor': path.resolve(__dirname, '../libs/code-editor/src'),
+      '@yappc/config': path.resolve(__dirname, '../libs/config/src'),
+      '@yappc/ide': path.resolve(__dirname, '../libs/ide/src'),
+      '@yappc/testing': path.resolve(__dirname, '../libs/testing/src'),
 
       // Platform shared packages used by YAPPC and transitive UI deps
       '@ghatana/design-system': path.resolve(
@@ -284,7 +230,7 @@ export default defineConfig({
       ),
       '@ghatana/theme': path.resolve(
         __dirname,
-        '../../../../platform/typescript/theme/src/index.ts'
+        'src/theme/index.ts'
       ),
       '@ghatana/charts': path.resolve(
         __dirname,

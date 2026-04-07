@@ -10,8 +10,9 @@
  * 4. Checks for production build issues
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 const identity = (value) => String(value);
 const chalk = {
   red: Object.assign(identity, { bold: identity }),
@@ -22,13 +23,17 @@ const chalk = {
   underline: identity,
 };
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // Configuration
 const ROOT_DIR = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(ROOT_DIR, '..', '..', '..');
 
 // Derive workspace directories from the local package.json "workspaces" field
 // instead of a non-existent pnpm-workspace.yaml in the frontend root.
-const frontendPkg = require('../package.json');
+const frontendPkg = JSON.parse(
+  fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+);
 const workspaceGlobs = frontendPkg.workspaces || [];
 const WORKSPACES = workspaceGlobs.map((pkg) => pkg.replace('/*', ''));
 

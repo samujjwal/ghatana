@@ -30,10 +30,11 @@ class AppointmentServiceTest extends EventloopTestBase {
 
     private TestableAppointmentService service;
     private PhrNotificationTestSupport.RecordingNotificationSender notificationSender;
+    private PhrTestInfrastructure.StubDataCloudAdapter dataCloud;
 
     @BeforeEach
     void setUp() {
-        PhrTestInfrastructure.StubDataCloudAdapter dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
+        dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
         KernelContext context = PhrTestInfrastructure.createTestContext(dataCloud);
         notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
         service = new TestableAppointmentService(context, dataCloud, notificationSender);
@@ -62,6 +63,11 @@ class AppointmentServiceTest extends EventloopTestBase {
                 PhrNotificationSender.NotificationChannel.SMS,
                 PhrNotificationSender.NotificationChannel.PUSH
             );
+        assertThat(notificationSender.scheduledAppointmentReminders().getFirst().correlationId())
+            .startsWith("phr_appointment_create-");
+        assertThat(dataCloud.metadataFor("phr.appointments", stored.getId()))
+            .containsKey("correlationId")
+            .containsEntry("traceOperation", "phr_appointment_create");
     }
 
     @Test
@@ -97,6 +103,37 @@ class AppointmentServiceTest extends EventloopTestBase {
         assertThat(notificationSender.cancelledAppointmentReminders()).hasSize(1);
         assertThat(notificationSender.cancelledAppointmentReminders().getFirst().appointmentId())
             .isEqualTo(stored.getId());
+    }
+
+    @Test
+    @DisplayName("rate limits repeated appointment creation for the same patient")
+    void rateLimitsAppointmentCreation() {
+        for (int index = 0; index < 20; index++) {
+            int iteration = index;
+            Instant scheduledAt = Instant.now().plusSeconds(7200L + iteration);
+            runPromise(() -> service.seedAvailableSlot("slot-flood-" + iteration, "provider-1", scheduledAt));
+            runPromise(() -> service.createAppointment(new AppointmentRequest(
+                "patient-flood",
+                "provider-1",
+                "slot-flood-" + iteration,
+                scheduledAt,
+                30,
+                "Consultation",
+                "IN_PERSON"
+            )));
+        }
+
+        runPromise(() -> service.seedAvailableSlot("slot-flood-overflow", "provider-1", Instant.now().plusSeconds(9999)));
+        assertThrows(Exception.class, () -> runPromise(() -> service.createAppointment(new AppointmentRequest(
+            "patient-flood",
+            "provider-1",
+            "slot-flood-overflow",
+            Instant.now().plusSeconds(9999),
+            30,
+            "Consultation",
+            "IN_PERSON"
+        ))));
+        clearFatalError();
     }
 
     private static final class TestableAppointmentService extends AppointmentService {

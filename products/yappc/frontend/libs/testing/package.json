@@ -18,6 +18,14 @@
             "import": "./src/mocks/index.ts",
             "types": "./src/mocks/index.ts"
         },
+        "./node": {
+            "import": "./src/mocks/node.ts",
+            "types": "./src/mocks/node.ts"
+        },
+        "./browser": {
+            "import": "./src/mocks/browser.ts",
+            "types": "./src/mocks/browser.ts"
+        },
         "./mocks/faker-shim": {
             "import": "./src/mocks/faker-shim.ts",
             "types": "./src/mocks/faker-shim.ts"
@@ -32,6 +40,9 @@
         "test": "vitest run",
         "lint": "eslint src --ext .ts,.tsx",
         "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "msw": "^2.12.14"
     },
     "devDependencies": {
         "@types/node": "^25.5.2",

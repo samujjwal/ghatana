@@ -9,12 +9,12 @@ import {
   useRouteError,
 } from "react-router";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from '@ghatana/theme';
 import { GraphQLProvider } from '@yappc/api';
 import { WebSocketProvider } from './contexts/WebSocketContext';
-import { ToastProvider } from '@ghatana/design-system';
+import { ToastProvider } from '@yappc/ui/components/components/Toast';
 import { AuthProvider } from './providers/AuthProvider';
 import { FeatureFlagProvider } from './providers/FeatureFlagProvider';
+import { AppThemeProvider } from './theme';
 import './index.css';
 import '@xyflow/react/dist/style.css';
 
@@ -108,7 +108,7 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <ThemeProvider>
+    <AppThemeProvider>
       <QueryClientProvider client={queryClient}>
         <GraphQLProvider>
           <WebSocketProvider
@@ -129,7 +129,7 @@ export default function App() {
           </WebSocketProvider>
         </GraphQLProvider>
       </QueryClientProvider>
-    </ThemeProvider>
+    </AppThemeProvider>
   );
 }
 

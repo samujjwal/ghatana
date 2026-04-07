@@ -12,9 +12,13 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@ghatana/yappc-types': resolve(__dirname, '../../libs/types/src'),
-      '@ghatana/yappc-api': resolve(__dirname, '../../libs/api/src'),
-      '@ghatana/yappc-testing': resolve(__dirname, '../../libs/testing/src'),
+      '@yappc/api': resolve(__dirname, '../../libs/api/src'),
+      '@yappc/auth': resolve(__dirname, '../../libs/auth/src'),
+      '@yappc/canvas': resolve(__dirname, '../../libs/yappc-canvas/src'),
+      '@yappc/collab': resolve(__dirname, '../../libs/collab/src'),
+      '@yappc/code-editor': resolve(__dirname, '../../libs/code-editor/src'),
+      '@yappc/state': resolve(__dirname, '../../libs/yappc-state/src'),
+      '@yappc/testing': resolve(__dirname, '../../libs/testing/src'),
       '@ghatana/platform-utils': resolve(
         __dirname,
         '../../../../platform/typescript/foundation/platform-utils/src'

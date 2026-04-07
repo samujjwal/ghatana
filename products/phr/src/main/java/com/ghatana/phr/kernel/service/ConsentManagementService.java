@@ -528,7 +528,9 @@ public class ConsentManagementService extends AbstractDataService implements Con
             grant.getProviderId(),
             grant.getId(),
             PhrNotificationSender.ConsentChangeType.EMERGENCY_ACCESS_GRANTED,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            PhrTraceContext.newCorrelationId("phr_emergency_access_granted"),
+            "phr_emergency_access_granted"
         ));
     }
 
@@ -540,7 +542,9 @@ public class ConsentManagementService extends AbstractDataService implements Con
             grant.getRecipientId(),
             grant.getId(),
             changeType,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            PhrTraceContext.newCorrelationId("phr_consent_change"),
+            "phr_consent_change"
         ));
     }
 

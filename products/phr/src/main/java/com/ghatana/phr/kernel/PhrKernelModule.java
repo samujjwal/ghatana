@@ -9,6 +9,14 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.AbstractKernelModule;
 import com.ghatana.kernel.service.KernelLifecycleAware;
+import com.ghatana.phr.api.FhirController;
+import com.ghatana.phr.api.NepalHieController;
+import com.ghatana.phr.fhir.server.PhrFhirR4Server;
+import com.ghatana.phr.hie.HttpNepalHieClient;
+import com.ghatana.phr.hie.NepalHieConfig;
+import com.ghatana.phr.hie.NepalHieIntegrationService;
+import com.ghatana.phr.hie.NepalHieMessageBuilder;
+import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
 import com.ghatana.phr.kernel.service.AppointmentService;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.phr.kernel.service.CaregiverService;
@@ -24,6 +32,8 @@ import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.kernel.service.PhrNotificationDeliveryChannelsFactory;
+import com.ghatana.phr.kernel.service.PhrNotificationOutboxDispatcher;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrServiceCatalog;
 import com.ghatana.phr.kernel.service.ReferralService;
@@ -32,6 +42,7 @@ import com.ghatana.phr.kernel.service.TelemedicineService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.net.http.HttpClient;
 
 /**
  * Top-level kernel module for PHR (Personal Health Record) product.
@@ -117,7 +128,12 @@ public class PhrKernelModule extends AbstractKernelModule {
     @Override
     protected void registerServices(List<KernelLifecycleAware> services, KernelContext context) {
         DurablePhrNotificationSender notificationSender = new DurablePhrNotificationSender(context);
+        PhrNotificationOutboxDispatcher notificationDispatcher = new PhrNotificationOutboxDispatcher(
+            context,
+            PhrNotificationDeliveryChannelsFactory.fromContext(context)
+        );
         context.registerService(PhrNotificationSender.class, notificationSender);
+        context.registerService(PhrNotificationOutboxDispatcher.class, notificationDispatcher);
 
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context);
@@ -126,6 +142,16 @@ public class PhrKernelModule extends AbstractKernelModule {
         MedicationService medications = new MedicationService(context);
         LabResultService labResults = new LabResultService(context);
         ImmunizationService immunizations = new ImmunizationService(context);
+        PhrFhirR4Server fhirServer = new PhrFhirR4Server(context);
+        FhirController fhirController = new FhirController(fhirServer);
+        NepalHieIntegrationService nepalHieIntegration = new NepalHieIntegrationService(
+            fhirServer,
+            new HttpNepalHieClient(HttpClient.newHttpClient(), context.getExecutor("phr-nepal-hie"), NepalHieConfig.fromEnvironment()),
+            new NepalHieMessageBuilder(),
+            NepalHieConfig.fromEnvironment()
+        );
+        NepalHieController nepalHieController = new NepalHieController(nepalHieIntegration);
+        Hl7LabResultIntegrationService hl7LabIntegration = new Hl7LabResultIntegrationService(labResults);
         ClinicalNoteService clinicalNotes = new ClinicalNoteService(context);
         ClinicalDecisionSupportService clinicalDecisionSupport = new ClinicalDecisionSupportService();
         ImagingService imaging = new ImagingService(context);
@@ -135,6 +161,11 @@ public class PhrKernelModule extends AbstractKernelModule {
         CaregiverService caregivers = new CaregiverService(context);
         EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
         EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
+        context.registerService(PhrFhirR4Server.class, fhirServer);
+        context.registerService(FhirController.class, fhirController);
+        context.registerService(NepalHieIntegrationService.class, nepalHieIntegration);
+        context.registerService(NepalHieController.class, nepalHieController);
+        context.registerService(Hl7LabResultIntegrationService.class, hl7LabIntegration);
 
         serviceCatalog = new PhrServiceCatalog(
             new PhrServiceCatalog.ClinicalServices(
@@ -151,6 +182,7 @@ public class PhrKernelModule extends AbstractKernelModule {
         );
 
         services.add(notificationSender);
+        services.add(notificationDispatcher);
         services.add(patientRecords);
         services.add(consent);
         services.add(documents);
@@ -158,6 +190,9 @@ public class PhrKernelModule extends AbstractKernelModule {
         services.add(medications);
         services.add(labResults);
         services.add(immunizations);
+        services.add(fhirServer);
+        services.add(nepalHieIntegration);
+        services.add(hl7LabIntegration);
         services.add(clinicalNotes);
         services.add(clinicalDecisionSupport);
         services.add(imaging);

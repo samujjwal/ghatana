@@ -122,6 +122,18 @@ export interface AuthServiceConfig {
   onUnauthorized?: () => void;
 }
 
+function resolveApiBaseUrl(configuredBaseUrl?: string): string {
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  const viteEnv = typeof import.meta !== 'undefined'
+    ? (import.meta.env as Record<string, string | undefined> | undefined)
+    : undefined;
+
+  return viteEnv?.VITE_API_BASE_URL ?? '/api';
+}
+
 // ============================================================================
 // Auth Service Class
 // ============================================================================
@@ -149,7 +161,7 @@ export class AuthService {
   private onUnauthorized?: () => void;
   
   constructor(config: AuthServiceConfig = {}) {
-    this.baseUrl = config.baseUrl || process.env.VITE_API_BASE_URL || '/api';
+    this.baseUrl = resolveApiBaseUrl(config.baseUrl);
     this.timeout = config.timeout || 30000;
     this.retryAttempts = config.retryAttempts || 1;
     this.onTokenExpired = config.onTokenExpired;

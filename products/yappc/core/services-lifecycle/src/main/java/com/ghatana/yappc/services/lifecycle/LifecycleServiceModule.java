@@ -8,6 +8,7 @@ import com.ghatana.ai.llm.CompletionService;
 import com.ghatana.audit.AuditLogger;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.governance.PolicyEngine;
+import com.ghatana.agent.framework.llm.LLMGatewayAdapter;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.yappc.api.GenerationApiController;
@@ -17,6 +18,8 @@ import com.ghatana.yappc.api.ValidationApiController;
 import com.ghatana.yappc.services.security.JwtAuthController;
 import com.ghatana.yappc.services.security.LifecycleLoginController;
 import com.ghatana.yappc.services.security.SecurityHeadersServlet;
+import com.ghatana.yappc.services.security.YappcEnvironmentConfig;
+import com.ghatana.yappc.services.ai.AiServiceModule;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -100,6 +103,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import com.ghatana.yappc.services.lifecycle.config.AgentDefinitionReloadListener;
@@ -953,15 +958,56 @@ public class LifecycleServiceModule extends AbstractModule {
     YappcAgentSystem yappcAgentSystem(
             Eventloop eventloop,
             MemoryStore memoryStore,
-            AepEventPublisher aepEventPublisher) {
-        logger.info("Creating YappcAgentSystem (YAPPC-Ph9.2) — AEP publisher wired: {}",
-                aepEventPublisher.getClass().getSimpleName());
+            AepEventPublisher aepEventPublisher,
+            MetricsCollector metrics) {
+        Map<String, String> env = System.getenv();
+        YappcAgentSystem.AiRuntimeMode aiRuntimeMode = resolveAiRuntimeMode(env);
+        com.ghatana.agent.framework.runtime.generators.LLMGenerator.LLMGateway adaptedGateway =
+            aiRuntimeMode == YappcAgentSystem.AiRuntimeMode.REQUIRED
+                ? LLMGatewayAdapter.adapt(AiServiceModule.createConfiguredLlmGateway(metrics, env))
+                : null;
+
+        logger.info("Creating YappcAgentSystem (YAPPC-Ph9.2) — AEP publisher wired: {}, aiRuntimeMode={}",
+            aepEventPublisher.getClass().getSimpleName(), aiRuntimeMode);
+        if (aiRuntimeMode == YappcAgentSystem.AiRuntimeMode.STUB) {
+            logger.warn("YAPPC agent runtime is starting in explicit stub mode; provider-backed AI is disabled for this process");
+        }
+
         return YappcAgentSystem.builder()
                 .eventloop(eventloop)
                 .memoryStore(memoryStore)
+            .aiRuntimeMode(aiRuntimeMode)
+            .llmGateway(adaptedGateway)
                 .aepEventPublisher(aepEventPublisher)
                 .build();
     }
+
+        static YappcAgentSystem.AiRuntimeMode resolveAiRuntimeMode(Map<String, String> env) {
+        String configuredMode = env.getOrDefault(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "required")
+            .trim()
+            .toLowerCase(Locale.ROOT);
+        String profile = env.getOrDefault(YappcEnvironmentConfig.PROFILE_ENV, "dev")
+            .trim()
+            .toLowerCase(Locale.ROOT);
+        boolean production = "production".equals(profile) || "prod".equals(profile);
+
+        return switch (configuredMode) {
+            case "required" -> YappcAgentSystem.AiRuntimeMode.REQUIRED;
+            case "stub" -> {
+            if (production) {
+                throw new IllegalStateException(
+                    YappcEnvironmentConfig.AGENT_LLM_MODE_ENV
+                        + "=stub is not allowed when "
+                        + YappcEnvironmentConfig.PROFILE_ENV
+                        + "=" + profile);
+            }
+            yield YappcAgentSystem.AiRuntimeMode.STUB;
+            }
+            default -> throw new IllegalStateException(
+                "Unsupported " + YappcEnvironmentConfig.AGENT_LLM_MODE_ENV
+                    + "='" + configuredMode + "'. Supported values: required, stub");
+        };
+        }
 
     /**
      * Provides {@link AgentExecutorOperator} — executes agents referenced by dispatch

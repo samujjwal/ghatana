@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "PHR Nepal",
+    "slug": "phr-nepal-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "phr-nepal",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#f3f8ff"
+    },
+    "assetBundlePatterns": ["**/*"]
+  }
+}

@@ -5,6 +5,11 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
+import com.ghatana.phr.api.FhirController;
+import com.ghatana.phr.api.NepalHieController;
+import com.ghatana.phr.fhir.server.PhrFhirR4Server;
+import com.ghatana.phr.hie.NepalHieIntegrationService;
+import com.ghatana.phr.hl7.Hl7LabResultIntegrationService;
 import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.platform.health.HealthStatus;
@@ -101,6 +106,11 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertNotNull(module.getServiceCatalog().emergency().emergencyAccess());
         assertNotNull(module.getServiceCatalog().emergency().emergencyReview());
         assertTrue(mockContext.getOptionalDependency(PhrNotificationSender.class).isPresent());
+        assertTrue(mockContext.getOptionalDependency(PhrFhirR4Server.class).isPresent());
+        assertTrue(mockContext.getOptionalDependency(FhirController.class).isPresent());
+        assertTrue(mockContext.getOptionalDependency(NepalHieIntegrationService.class).isPresent());
+        assertTrue(mockContext.getOptionalDependency(NepalHieController.class).isPresent());
+        assertTrue(mockContext.getOptionalDependency(Hl7LabResultIntegrationService.class).isPresent());
 
         // Second initialization should throw
         IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -163,7 +173,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(16, status.getChecks().size());
+        assertEquals(20, status.getChecks().size());
     }
 
     @Test
@@ -190,6 +200,10 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertTrue(status.getChecks().containsKey("appointment"));
         assertTrue(status.getChecks().containsKey("clinical-decision-support"));
         assertTrue(status.getChecks().containsKey("phr-notification-outbox"));
+        assertTrue(status.getChecks().containsKey("phr-notification-outbox-dispatcher"));
+        assertTrue(status.getChecks().containsKey("phr-fhir-r4-server"));
+        assertTrue(status.getChecks().containsKey("phr-nepal-hie-integration"));
+        assertTrue(status.getChecks().containsKey("phr-hl7-lab-integration"));
 
         // All should be healthy after start
         status.getChecks().values().forEach(check ->

@@ -628,22 +628,6 @@ spec:
     - level3
     agentType: deterministic
     agentSubtype: rule-engine
-  - id: retention-policy-enforcer
-    name: Retention Policy Enforcer
-    level: 3
-    type: micro-agent
-    description: 'Atomic unit: evaluate whether a memory record should be retained or expired based on retention policy'
-    domain: ai
-    capabilities:
-    - retention-evaluation
-    - expiry-decision
-    tags:
-    - micro
-    - retention
-    - policy
-    - level3
-    agentType: deterministic
-    agentSubtype: rule-engine
   - id: pii-redactor
     name: PII Redactor
     level: 3

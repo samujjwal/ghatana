@@ -4,7 +4,7 @@
 
 > **Version:** 0.1.0-alpha  
 > **Status:** Active Development  
-> **Tech Stack:** React 19, TypeScript, Next.js, Vite, Tailwind CSS
+> **Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS, Jotai
 
 ---
 
@@ -58,7 +58,7 @@ app-creator/
 | **Frontend** | React 19, TypeScript | UI components and state management |
 | **State** | Jotai, TanStack Query | App state and server cache |
 | **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **Canvas** | ReactFlow, Yjs | Collaborative visual editor |
+| **Canvas** | @xyflow/react, Yjs | Collaborative visual editor |
 | **Testing** | Vitest, Playwright | Unit and E2E testing |
 | **Build** | Vite, pnpm workspaces | Fast builds and monorepo |
 | **AI** | LangChain, OpenAI, Ollama | AI-powered features |
@@ -145,24 +145,21 @@ pnpm typecheck
 - `@yappc/ui` - Core UI component library
 - `@yappc/canvas` - Unified canvas system
 - `@yappc/code-editor` - Embedded code editor
-- `@yappc/diagram` - Diagram and flowchart components
 
 ### State & Data
-- `@yappc/store` - Application state management
-- `@yappc/crdt` - CRDT collaboration engine
-- `@yappc/api` - API client and GraphQL
-
-### AI & Intelligence
-- `@yappc/ai-core` - AI infrastructure and models
-- `@yappc/ai-ui` - AI user interface components
-- `@yappc/agents` - Intelligent agent system
-
-### Development Tools
-- `@yappc/design-tokens` - Design system tokens
-- `@yappc/testing` - Testing utilities
+- `@yappc/state` - Application state management
+- `@yappc/collab` - CRDT and WebSocket collaboration
+- `@yappc/api` - API client and GraphQL surface
 - `@yappc/auth` - Authentication and authorization
 
-_See [Library Architecture](docs/architecture/libraries.md) for complete list and dependencies._
+### AI & Intelligence
+- `@yappc/ai` - AI infrastructure, runtime, and UI surface
+
+### Development Tools
+- `@yappc/testing` - Testing utilities, mocks, and helpers
+- `@yappc/config` - Frontend configuration surface
+
+Use `@xyflow/react` directly for flow primitives. Do not introduce new `reactflow` imports or `@ghatana/yappc-*` package names in active code.
 
 ---
 

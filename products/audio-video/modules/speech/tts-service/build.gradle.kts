@@ -51,6 +51,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.mockito.core)
+    testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
     testImplementation(libs.assertj.core)
 }
 

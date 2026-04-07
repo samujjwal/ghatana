@@ -36,11 +36,11 @@ export default function Component() {
 
     const handleSelectWorkspace = useCallback((workspaceId: string) => {
         setWorkspaceBreadcrumb({ id: workspaceId, name: workspaces.find(w => w.id === workspaceId)?.name || 'Workspace' });
-        navigate(`/app/projects`);
+        navigate(`/projects`);
     }, [workspaces, setWorkspaceBreadcrumb, navigate]);
 
     const handleCreateWorkspace = useCallback(() => {
-        navigate("/app/workspaces/new");
+        navigate("/workspaces/new");
     }, [navigate]);
 
     const handleRetry = useCallback(() => {
@@ -88,7 +88,7 @@ export default function Component() {
     }
 
     return (
-        <div className="min-h-screen bg-background-primary p-8">
+        <div className="min-h-screen bg-background-primary p-8" data-testid="workspaces-page">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -96,6 +96,7 @@ export default function Component() {
                         <h1 className="text-3xl font-bold text-text-primary">Workspaces</h1>
                         <button
                             onClick={handleCreateWorkspace}
+                            data-testid="create-workspace-button"
                             className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
                         >
                             <Add className="w-5 h-5" />
@@ -111,6 +112,7 @@ export default function Component() {
                         {workspaces.map((workspace) => (
                             <div
                                 key={workspace.id}
+                                data-testid="workspace-card"
                                 className="bg-surface-primary border border-surface-secondary rounded-lg hover:border-primary-400 transition-colors cursor-pointer group"
                                 onClick={() => handleSelectWorkspace(workspace.id)}
                             >
@@ -146,7 +148,7 @@ export default function Component() {
                                             className="flex-1 px-3 py-2 text-sm font-medium text-primary-500 hover:bg-primary-50 rounded transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                navigate(`/app/workspaces/${workspace.id}/settings`);
+                                                navigate(`/workspaces/${workspace.id}/settings`);
                                             }}
                                         >
                                             <Settings className="w-4 h-4 inline mr-2" />

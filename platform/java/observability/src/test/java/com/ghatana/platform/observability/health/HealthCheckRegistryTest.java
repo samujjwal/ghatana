@@ -36,7 +36,13 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     void setUp() throws Exception {
         // Reset singleton for test isolation
         resetSingleton();
-        MetricsRegistry metricsRegistry = new MetricsRegistry(new SimpleMeterRegistry());
+        MetricsRegistry metricsRegistry = MetricsRegistry.initialize(
+            new SimpleMeterRegistry(),
+            io.opentelemetry.api.OpenTelemetry.noop(),
+            "test-service",
+            "test",
+            "1.0.0"
+        );
         registry = HealthCheckRegistry.initialize(metricsRegistry);
     }
 

@@ -1,4 +1,4 @@
-// Storybook/browser-friendly entry for @ghatana/yappc-mocks
+// Storybook/browser-friendly entry for @yappc/testing/mocks
 // Re-export only browser-safe parts to avoid pulling in Node-only
 // modules (for example `msw/node`) during Storybook/Vite dependency
 // scanning and pre-bundling.

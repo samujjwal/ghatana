@@ -12,16 +12,17 @@ const PROJ = 'proj-1';
 const routesToCheck: { name: string; path: string }[] = [
   { name: 'root', path: '/' },
   { name: 'login', path: '/login' },
-  { name: 'auth-login', path: '/auth/login' },
+  { name: 'register', path: '/register' },
+  { name: 'forgot-password', path: '/forgot-password' },
   { name: 'diagram', path: '/diagram' },
   { name: 'canvas-poc', path: '/canvas-poc' },
   { name: 'demo-build', path: '/app/project/demo/builds' },
 
   // App shell
-  { name: 'workspaces', path: '/app/workspaces' },
+  { name: 'workspaces', path: '/workspaces' },
   { name: 'workspace-projects', path: `/app/w/${WS}/projects` },
-  { name: 'projects-root', path: '/app/projects' },
-  { name: 'projects-new', path: '/app/projects/new' },
+  { name: 'projects-root', path: '/projects' },
+  { name: 'projects-new', path: '/projects/new' },
 
   // Direct project deep links (use sample ids)
   { name: 'project-overview-direct', path: `/app/w/${WS}/p/${PROJ}/overview` },

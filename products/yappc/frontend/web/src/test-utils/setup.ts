@@ -42,17 +42,26 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // Mock global APIs
+const localStorageState = new Map<string, string>();
+
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  clear: vi.fn(),
-  removeItem: vi.fn(),
+  getItem: vi.fn((key: string) => localStorageState.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageState.set(key, value);
+  }),
+  clear: vi.fn(() => {
+    localStorageState.clear();
+  }),
+  removeItem: vi.fn((key: string) => {
+    localStorageState.delete(key);
+  }),
 };
 
 global.localStorage = localStorageMock as unknown as Storage;
 
 afterEach(() => {
   cleanup();
+  localStorageState.clear();
   vi.clearAllMocks();
 });
 

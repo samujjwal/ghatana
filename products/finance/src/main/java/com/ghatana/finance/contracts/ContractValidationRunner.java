@@ -7,6 +7,7 @@ package com.ghatana.finance.contracts;
 
 import com.ghatana.kernel.contracts.validation.ContractValidationGate;
 import com.ghatana.kernel.contracts.KernelContract;
+import java.io.PrintStream;
 import java.util.List;
 
 /**
@@ -19,29 +20,33 @@ import java.util.List;
  */
 public class ContractValidationRunner {
 
-    public static void main(String[] args) {
+    static ContractValidationGate.GateResult validateAllContracts() {
         ContractValidationGate gate = new ContractValidationGate();
-        
+        return gate.validateContractsForDeployment(FinanceContracts.getAllContracts());
+    }
+
+    static int run(PrintStream out, PrintStream err) {
         List<KernelContract> contracts = FinanceContracts.getAllContracts();
-        
-        System.out.println("Validating " + contracts.size() + " Finance contracts...");
-        
-        ContractValidationGate.GateResult result = 
-            gate.validateContractsForDeployment(contracts);
-        
+        out.println("Validating " + contracts.size() + " Finance contracts...");
+
+        ContractValidationGate.GateResult result = validateAllContracts();
+
         if (!result.isValid()) {
-            System.err.println("\n❌ Contract validation FAILED!");
-            System.err.println("Found " + result.getViolations().size() + " violations:\n");
-            
+            err.println("\nContract validation FAILED!");
+            err.println("Found " + result.getViolations().size() + " violations:\n");
+
             for (ContractValidationGate.ComplianceViolation violation : result.getViolations()) {
-                System.err.println("  • " + violation);
+                err.println("  * " + violation);
             }
-            
-            System.exit(1);
+            return 1;
         }
-        
-        System.out.println("\n✅ All contracts validated successfully!");
-        System.out.println("Finance contracts are ready for deployment.");
-        System.exit(0);
+
+        out.println("\nAll contracts validated successfully!");
+        out.println("Finance contracts are ready for deployment.");
+        return 0;
+    }
+
+    public static void main(String[] args) {
+        System.exit(run(System.out, System.err));
     }
 }

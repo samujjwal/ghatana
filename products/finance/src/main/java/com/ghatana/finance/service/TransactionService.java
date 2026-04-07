@@ -101,18 +101,17 @@ public class TransactionService {
     }
 
     private TransactionResult processNewTransaction(Transaction transaction) {
-        String correlationId = UUID.randomUUID().toString();
+        String correlationId = FinanceTraceContext.newCorrelationId();
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             correlationId,
             "detect_fraud",
             transaction.toMap(),
-            Map.of(
+            FinanceTraceContext.metadata(correlationId, "finance_transaction_process", Map.of(
                 "tenant_id", transaction.getTenantId(),
                 "amount", transaction.getAmount(),
                 "transaction_id", transaction.getId(),
-                "correlation_id", correlationId,
                 "submitted_at", Instant.now(clock).toString()
-            )
+            ))
         );
         
         // Get fraud detection agent
@@ -146,27 +145,37 @@ public class TransactionService {
             FraudDetectionResult fraudResult = (FraudDetectionResult) response.getResult();
             
             if (fraudResult.isFraudulent()) {
-                return TransactionResult.rejected("Fraud detected: " + fraudResult.getRiskLevel());
+                return TransactionResult.rejected(
+                    "Fraud detected: " + fraudResult.getRiskLevel(),
+                    FinanceTraceContext.metadata(correlationId, "finance_transaction_reject", Map.of(
+                        "transaction_id", transaction.getId(),
+                        "risk_level", fraudResult.getRiskLevel()
+                    ))
+                );
             }
             
-            return TransactionResult.approved(Map.of(
+            return TransactionResult.approved(FinanceTraceContext.metadata(correlationId, "finance_transaction_approve", Map.of(
                 "fraud_score", fraudResult.getFraudScore(),
                 "risk_level", fraudResult.getRiskLevel(),
                 "confidence", fraudResult.getConfidence()
-            ));
+            )));
         }
         
-        return TransactionResult.error("Fraud detection failed");
+        return TransactionResult.error(
+            "Fraud detection failed",
+            FinanceTraceContext.metadata(correlationId, "finance_transaction_error", Map.of(
+                "transaction_id", transaction.getId()
+            ))
+        );
     }
     
     private TransactionResult queueForReview(Transaction transaction, AgentOrchestrator.AgentRequest request) {
         return TransactionResult.pendingReview(
             "Transaction queued for manual review",
-            Map.of(
+            FinanceTraceContext.metadata(request.getRequestId(), "finance_transaction_manual_review", Map.of(
                 "request_id", request.getRequestId(),
-                "transaction_id", transaction.getId(),
-                "correlation_id", request.getRequestId()
-            )
+                "transaction_id", transaction.getId()
+            ))
         );
     }
 

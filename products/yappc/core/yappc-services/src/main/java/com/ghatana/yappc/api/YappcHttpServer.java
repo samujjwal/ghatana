@@ -25,6 +25,7 @@ public class YappcHttpServer extends HttpServerLauncher {
     @Provides
     AsyncServlet servlet(
             Eventloop eventloop,
+            YappcApiAuthFilter authFilter,
             IntentApiController intentController,
             ShapeApiController shapeController,
             ValidationApiController validationController,
@@ -36,24 +37,24 @@ public class YappcHttpServer extends HttpServerLauncher {
                     Promise.of(HttpResponse.ok200().withPlainText("OK").build()))
                 
                 // Intent endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/intent/capture", intentController::captureIntent)
-                .with(HttpMethod.POST, "/api/v1/yappc/intent/analyze", intentController::analyzeIntent)
-                .with(HttpMethod.GET, "/api/v1/yappc/intent/:id", intentController::getIntent)
+                .with(HttpMethod.POST, "/api/v1/yappc/intent/capture", authFilter.secure(intentController::captureIntent))
+                .with(HttpMethod.POST, "/api/v1/yappc/intent/analyze", authFilter.secure(intentController::analyzeIntent))
+                .with(HttpMethod.GET, "/api/v1/yappc/intent/:id", authFilter.secure(intentController::getIntent))
                 
                 // Shape endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/shape/derive", shapeController::deriveShape)
-                .with(HttpMethod.POST, "/api/v1/yappc/shape/model", shapeController::generateSystemModel)
-                .with(HttpMethod.GET, "/api/v1/yappc/shape/:id", shapeController::getShape)
+                .with(HttpMethod.POST, "/api/v1/yappc/shape/derive", authFilter.secure(shapeController::deriveShape))
+                .with(HttpMethod.POST, "/api/v1/yappc/shape/model", authFilter.secure(shapeController::generateSystemModel))
+                .with(HttpMethod.GET, "/api/v1/yappc/shape/:id", authFilter.secure(shapeController::getShape))
                 
                 // Validation endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/validate", validationController::validate)
-                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-config", validationController::validateWithConfig)
-                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-policy", validationController::validateWithPolicy)
+                .with(HttpMethod.POST, "/api/v1/yappc/validate", authFilter.secure(validationController::validate))
+                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-config", authFilter.secure(validationController::validateWithConfig))
+                .with(HttpMethod.POST, "/api/v1/yappc/validate/with-policy", authFilter.secure(validationController::validateWithPolicy))
                 
                 // Generation endpoints
-                .with(HttpMethod.POST, "/api/v1/yappc/generate", generationController::generateArtifacts)
-                .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", generationController::regenerateWithDiff)
-                .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", generationController::getArtifacts)
+                .with(HttpMethod.POST, "/api/v1/yappc/generate", authFilter.secure(generationController::generateArtifacts))
+                .with(HttpMethod.POST, "/api/v1/yappc/generate/diff", authFilter.secure(generationController::regenerateWithDiff))
+                .with(HttpMethod.GET, "/api/v1/yappc/generate/artifacts/:id", authFilter.secure(generationController::getArtifacts))
                 
                 // API info
                 .with(HttpMethod.GET, "/api/v1/yappc/info", request ->
@@ -65,6 +66,11 @@ public class YappcHttpServer extends HttpServerLauncher {
                         }
                         """).build()))
                 .build();
+    }
+
+    @Provides
+    YappcApiAuthFilter yappcApiAuthFilter() {
+        return YappcApiAuthFilter.fromEnvironment();
     }
     
     public static void main(String[] args) throws Exception {

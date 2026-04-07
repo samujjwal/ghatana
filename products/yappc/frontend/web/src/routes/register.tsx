@@ -79,7 +79,7 @@ export default function Component() {
     try {
       const result = await authService.register(data);
       if (result.success) {
-        navigate('/app/workspaces');
+        navigate('/workspaces');
       } else {
         setServerError(result.error ?? 'Registration failed');
       }

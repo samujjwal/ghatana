@@ -286,6 +286,26 @@ export default tseslint.config(
               message:
                 'libs/design-tokens is deprecated. Use Tailwind CSS classes or @ghatana/yappc-ui tokens instead.',
             },
+            {
+              group: ['@ghatana/yappc-api', '@ghatana/yappc-api/*'],
+              message:
+                '@ghatana/yappc-api is deprecated. Use @yappc/api or @yappc/core/api.',
+            },
+            {
+              group: ['@ghatana/yappc-types', '@ghatana/yappc-types/*'],
+              message:
+                '@ghatana/yappc-types is deprecated. Use @yappc/core/types.',
+            },
+            {
+              group: ['@ghatana/yappc-mocks', '@ghatana/yappc-mocks/*', '@ghatana/yappc-test-helpers', '@ghatana/yappc-test-helpers/*'],
+              message:
+                'Legacy testing packages are deprecated. Use @yappc/testing, @yappc/testing/mocks, @yappc/testing/helpers, or @yappc/testing/node.',
+            },
+            {
+              group: ['reactflow', 'reactflow/*'],
+              message:
+                'Legacy reactflow imports are not allowed. Use @xyflow/react directly.',
+            },
             // Deprecated gRPC canvas AI client — use CanvasAIService (HTTP) instead
             {
               group: ['**/services/canvas/CanvasAIClient', '**/CanvasAIClient.ts'],

@@ -1,4 +1,4 @@
-import { createMockYArray, createMockYMap, withMockYDoc } from '@ghatana/yappc-test-helpers';
+import { createMockYArray, createMockYMap, withMockYDoc } from '@yappc/testing/helpers';
 import { describe, it, expect, vi } from 'vitest';
 
 describe('yjsMocks helpers', () => {

@@ -94,3 +94,20 @@ tasks.register<JavaExec>("benchmarkHealthcareBillingScenario") {
         "-rff", layout.buildDirectory.file("reports/benchmarks/healthcare-billing-ledger-benchmark.json").get().asFile.absolutePath
     )
 }
+
+tasks.register<JavaExec>("benchmarkFraudInferenceScenario") {
+    group = "verification"
+    description = "Runs the finance fraud inference JMH benchmark"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("org.openjdk.jmh.Main")
+    args(
+        "com.ghatana.finance.integration.performance.FraudInferenceScenarioBenchmark",
+        "-wi", "1",
+        "-i", "2",
+        "-f", "1",
+        "-tu", "ms",
+        "-rf", "json",
+        "-rff", layout.buildDirectory.file("reports/benchmarks/fraud-inference-benchmark.json").get().asFile.absolutePath
+    )
+}

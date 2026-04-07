@@ -133,7 +133,9 @@ class ResilientPhrNotificationSenderTest extends EventloopTestBase {
             "patient-1",
             "provider-1",
             Instant.now().plusSeconds(3600),
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-appointment-1",
+            "phr_appointment_reminder_schedule"
         );
     }
 
@@ -143,7 +145,9 @@ class ResilientPhrNotificationSenderTest extends EventloopTestBase {
             "doctor-1",
             "grant-1",
             PhrNotificationSender.ConsentChangeType.GRANT_CREATED,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-consent-1",
+            "phr_consent_change"
         );
     }
 
@@ -154,7 +158,9 @@ class ResilientPhrNotificationSenderTest extends EventloopTestBase {
             "provider-1",
             Instant.now().plusSeconds(7200),
             PhrNotificationSender.TelemedicineNotificationType.SESSION_SCHEDULED,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-tele-1",
+            "phr_telemedicine_schedule"
         );
     }
 }

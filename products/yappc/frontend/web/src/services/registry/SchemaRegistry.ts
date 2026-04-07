@@ -4,7 +4,7 @@
  *
  * <p><b>Architecture Role</b><br>
  * Provides centralized schema validation and versioning for component data,
- * API contracts, and domain models. Uses canonical types from @ghatana/yappc-types.
+ * API contracts, and domain models. Uses canonical types from @yappc/core/types.
  *
  * @doc.type class
  * @doc.purpose Schema registry with migration support

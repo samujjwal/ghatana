@@ -12,13 +12,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +72,45 @@ class PatientControllerTest {
         assertEquals(200, response.getStatusCode());
         assertTrue(response.isSuccess());
         verify(patientService).createRecord("patient-1", Map.of("diagnosis", "Hypertension"));
+    }
+
+    @Test
+    void getPatientRecordsReturnsForbiddenWhenPolicyDenies() {
+        when(securityManager.getCurrentContext()).thenReturn(securityContext);
+        when(policyEnforcementPoint.enforce(any(), org.mockito.ArgumentMatchers.same(securityContext)))
+            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.deny("Consent required"));
+
+        PatientController.Response response = controller.getPatientRecords("patient-1", "token");
+
+        assertEquals(403, response.getStatusCode());
+        assertFalse(response.isSuccess());
+        verify(patientService, never()).getRecords("patient-1");
+    }
+
+    @Test
+    void createPatientRecordSanitizesStructuredPayload() {
+        when(securityManager.getCurrentContext()).thenReturn(securityContext);
+        when(policyEnforcementPoint.enforce(any(), org.mockito.ArgumentMatchers.same(securityContext)))
+            .thenReturn(PolicyEnforcementPoint.EnforcementDecision.allow());
+
+        controller.createPatientRecord(
+            "patient-1",
+            Map.of("diagnosis", "<script>alert('xss')</script>", "nested", Map.of("note", "<b>Urgent</b>")),
+            "token"
+        );
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Map<String, Object>> recordCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(patientService).createRecord(org.mockito.ArgumentMatchers.eq("patient-1"), recordCaptor.capture());
+        assertEquals("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", recordCaptor.getValue().get("diagnosis"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> nested = (Map<String, Object>) recordCaptor.getValue().get("nested");
+        assertEquals("&lt;b&gt;Urgent&lt;/b&gt;", nested.get("note"));
+    }
+
+    @Test
+    void rejectsUnsafePatientIdBeforePolicyEvaluation() {
+        assertThrows(IllegalArgumentException.class, () -> controller.getPatientRecords("patient 1", "token"));
     }
 
     @Test

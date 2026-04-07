@@ -7,6 +7,10 @@
  */
 import { FastifyInstance } from 'fastify';
 import prisma from '../db';
+import {
+    assertDevAuthBypassAllowed,
+    isDevAuthBypassEnabled,
+} from './dev-auth-config';
 
 let devUserId: string | null = null;
 
@@ -52,14 +56,10 @@ async function getDevUser() {
 }
 
 export async function devAuthBypass(fastify: FastifyInstance): Promise<void> {
-    // Hard fail: this function must never be called in a production environment.
-    // The call site in index.ts already guards this with a NODE_ENV + ENABLE_DEV_AUTH_BYPASS
-    // check, but we enforce it here as a defence-in-depth measure.
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error(
-            '[DevAuth] devAuthBypass must not be registered in a production environment. ' +
-            'Remove or guard the call site immediately.'
-        );
+    assertDevAuthBypassAllowed();
+
+    if (!isDevAuthBypassEnabled()) {
+        return;
     }
 
     console.log('[DevAuth] Plugin loaded. NODE_ENV:', process.env.NODE_ENV);

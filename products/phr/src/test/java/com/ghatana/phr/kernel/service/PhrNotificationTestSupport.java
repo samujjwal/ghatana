@@ -1,6 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import io.activej.promise.Promise;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +54,43 @@ final class PhrNotificationTestSupport {
 
         List<TelemedicineSessionNotification> telemedicineNotifications() {
             return telemedicineNotifications;
+        }
+    }
+
+    static final class RecordingDeliveryChannels implements PhrNotificationDeliveryChannels {
+
+        private final List<NotificationEnvelope> emailNotifications = new ArrayList<>();
+        private final List<NotificationEnvelope> smsNotifications = new ArrayList<>();
+        private final List<NotificationEnvelope> pushNotifications = new ArrayList<>();
+
+        @Override
+        public Promise<DeliveryReceipt> sendEmail(NotificationEnvelope notification) {
+            emailNotifications.add(notification);
+            return Promise.of(new DeliveryReceipt("email-" + notification.notificationId(), Instant.now()));
+        }
+
+        @Override
+        public Promise<DeliveryReceipt> sendSms(NotificationEnvelope notification) {
+            smsNotifications.add(notification);
+            return Promise.of(new DeliveryReceipt("sms-" + notification.notificationId(), Instant.now()));
+        }
+
+        @Override
+        public Promise<DeliveryReceipt> sendPush(NotificationEnvelope notification) {
+            pushNotifications.add(notification);
+            return Promise.of(new DeliveryReceipt("push-" + notification.notificationId(), Instant.now()));
+        }
+
+        List<NotificationEnvelope> emailNotifications() {
+            return emailNotifications;
+        }
+
+        List<NotificationEnvelope> smsNotifications() {
+            return smsNotifications;
+        }
+
+        List<NotificationEnvelope> pushNotifications() {
+            return pushNotifications;
         }
     }
 }

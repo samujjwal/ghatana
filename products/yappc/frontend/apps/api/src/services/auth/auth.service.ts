@@ -12,8 +12,9 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '../../generated/prisma';
+import type { PrismaClient } from '@prisma/client';
 import type { Role } from '../../generated/prisma';
+import { getPrismaClient } from '../../database/client';
 import { getJwtRuntimeConfig } from './jwt-config';
 import { SessionService } from './session.service';
 
@@ -95,9 +96,10 @@ export class AuthService {
    */
   private static readonly tokenRevocationRegistry = new Map<string, number>();
 
-  constructor(prisma: PrismaClient) {
-    this.prisma = prisma;
-    this.sessionService = new SessionService(prisma);
+  constructor(prisma?: PrismaClient) {
+    const resolvedPrisma = prisma ?? getPrismaClient();
+    this.prisma = resolvedPrisma;
+    this.sessionService = new SessionService(resolvedPrisma as never);
   }
 
   // -------------------------------------------------------------------------
@@ -263,6 +265,25 @@ export class AuthService {
     } catch (error) {
       throw new Error('Invalid or expired access token');
     }
+  }
+
+  async getCurrentUser(userId: string): Promise<AuthUser> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        workspaces: {
+          include: {
+            workspace: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return this.formatAuthUser(user);
   }
 
   // -------------------------------------------------------------------------

@@ -42,6 +42,7 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
       '**/e2e/**',
       '**/playwright/**',
+      '**/*compat-migration.test.{ts,tsx}',
       '**/*.spec.js', // Exclude .js test files (TypeScript-only project)
       '**/*.test.js', // Exclude .js test files (TypeScript-only project)
     ],
@@ -94,8 +95,8 @@ export default defineConfig({
       },
     },
 
-    // Test retry configuration for flaky tests
-    retry: 2, // Retry failed tests up to 2 times
+    // Unit tests must fail loudly; quarantine handling belongs in explicit reruns, not default CI.
+    retry: 0,
 
     // Test filtering configuration - these override the top-level include/exclude
 
@@ -139,14 +140,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@yappc/canvas': resolve(__dirname, './libs/yappc-canvas/src/index.ts'),
-      '@ghatana/yappc-types': resolve(__dirname, './libs/types/src'),
-      '@ghatana/yappc-api': resolve(__dirname, './libs/graphql/src'),
-      '@ghatana/yappc-mocks': resolve(__dirname, './libs/mocks/src'),
-      '@ghatana/yappc-diagram': resolve(__dirname, './libs/diagram/src'),
-      '@ghatana/yappc-test-helpers': resolve(
+      '@yappc/api': resolve(__dirname, './libs/api/src'),
+      '@yappc/auth': resolve(__dirname, './libs/auth/src'),
+      '@yappc/collab': resolve(__dirname, './libs/collab/src'),
+      '@yappc/code-editor': resolve(__dirname, './libs/code-editor/src'),
+      '@yappc/testing/node': resolve(
         __dirname,
-        './libs/test-helpers/src'
+        './libs/testing/src/mocks/node.ts'
       ),
+      '@yappc/testing': resolve(__dirname, './libs/testing/src'),
       '@ghatana/design-system': resolve(
         __dirname,
         '../../../libs/typescript/ui/src'

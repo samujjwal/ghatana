@@ -81,6 +81,8 @@ public class TransactionServiceTest {
         assertNotNull(result);
         assertEquals("APPROVED", result.getStatus());
         assertTrue(result.getMetadata().containsKey("fraud_score"));
+        assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("finance_transaction_approve", result.getMetadata().get("trace_operation"));
     }
     
     @Test
@@ -92,6 +94,8 @@ public class TransactionServiceTest {
         assertNotNull(result);
         assertEquals("REJECTED", result.getStatus());
         assertTrue(result.getMessage().contains("Fraud detected"));
+        assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("finance_transaction_reject", result.getMetadata().get("trace_operation"));
     }
     
     @Test
@@ -103,6 +107,8 @@ public class TransactionServiceTest {
         assertNotNull(result);
         assertEquals("PENDING_REVIEW", result.getStatus());
         assertTrue(result.getMessage().contains("manual review"));
+        assertTrue(result.getMetadata().containsKey("correlation_id"));
+        assertEquals("finance_transaction_manual_review", result.getMetadata().get("trace_operation"));
     }
     
     @Test
@@ -115,6 +121,30 @@ public class TransactionServiceTest {
         // Should be approved but with metadata showing medium risk
         assertEquals("APPROVED", result.getStatus());
         assertTrue(result.getMetadata().containsKey("risk_level"));
+        assertTrue(result.getMetadata().containsKey("correlation_id"));
+    }
+
+    @Test
+    public void testProcessTransaction_AgentFailure_ShouldIncludeTraceMetadata() {
+        CountingOrchestrator countingOrchestrator = new CountingOrchestrator();
+        RecordingAutonomyManager recordingAutonomyManager = new RecordingAutonomyManager();
+        countingOrchestrator.registerAgent(new FailingFraudAgent());
+
+        TransactionService failingService = createService(
+            countingOrchestrator,
+            recordingAutonomyManager,
+            Clock.systemUTC(),
+            10,
+            Duration.ofHours(24)
+        );
+
+        TransactionResult result = failingService.processTransaction(
+            createTransaction("txn-error-1", 750.0, "USD", "NEW_YORK")
+        );
+
+        assertEquals("ERROR", result.getStatus());
+        assertEquals("finance_transaction_error", result.getMetadata().get("trace_operation"));
+        assertTrue(result.getMetadata().containsKey("correlation_id"));
     }
 
     @Test
@@ -382,7 +412,7 @@ public class TransactionServiceTest {
         }
     }
 
-    private static final class StubFraudAgent implements AgentOrchestrator.KernelAgent {
+    private static class StubFraudAgent implements AgentOrchestrator.KernelAgent {
         @Override
         public String getAgentId() {
             return "finance.fraud-detection";
@@ -427,6 +457,18 @@ public class TransactionServiceTest {
                     return "detect_fraud".equals(operation);
                 }
             };
+        }
+    }
+
+    private static final class FailingFraudAgent extends StubFraudAgent {
+        @Override
+        public AgentOrchestrator.AgentResponse execute(AgentOrchestrator.AgentRequest request) {
+            return AgentOrchestrator.AgentResponse.builder()
+                .requestId(request.getRequestId())
+                .success(false)
+                .error("upstream unavailable")
+                .metadata(Map.of())
+                .build();
         }
     }
 }

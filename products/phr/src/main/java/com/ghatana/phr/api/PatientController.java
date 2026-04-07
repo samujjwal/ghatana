@@ -3,6 +3,7 @@ package com.ghatana.phr.api;
 import com.ghatana.kernel.security.KernelSecurityManager;
 import com.ghatana.kernel.security.PolicyEnforcementPoint;
 import com.ghatana.kernel.security.SecurityContext;
+import com.ghatana.phr.kernel.service.PhrInputSanitizationUtils;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.service.PatientService;
 
@@ -31,6 +32,7 @@ public class PatientController {
     }
 
     public Response getPatientRecords(String patientId, String authToken) {
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
         SecurityContext context = securityManager.getCurrentContext();
         
         if (context == null) {
@@ -44,7 +46,7 @@ public class PatientController {
             .dataType("patient-health-records")
             .purpose("treatment")
             .requiresConsent(true)
-            .metadata(Map.of("patient_id", patientId))
+            .metadata(Map.of("patient_id", sanitizedPatientId))
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision = 
@@ -54,11 +56,13 @@ public class PatientController {
             return Response.error(403, decision.getReason());
         }
 
-        PatientRecords records = patientService.getRecords(patientId);
+        PatientRecords records = patientService.getRecords(sanitizedPatientId);
         return Response.success(records);
     }
 
     public Response createPatientRecord(String patientId, Map<String, Object> recordData, String authToken) {
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        Map<String, Object> sanitizedRecordData = PhrInputSanitizationUtils.sanitizeStructuredData(recordData, "recordData");
         SecurityContext context = securityManager.getCurrentContext();
         
         if (context == null) {
@@ -72,7 +76,7 @@ public class PatientController {
             .dataType("patient-health-records")
             .purpose("treatment")
             .requiresConsent(true)
-            .metadata(Map.of("patient_id", patientId))
+            .metadata(Map.of("patient_id", sanitizedPatientId))
             .build();
 
         PolicyEnforcementPoint.EnforcementDecision decision = 
@@ -82,7 +86,7 @@ public class PatientController {
             return Response.error(403, decision.getReason());
         }
 
-        patientService.createRecord(patientId, recordData);
+        patientService.createRecord(sanitizedPatientId, sanitizedRecordData);
         return Response.success(Map.of("message", "Record created successfully"));
     }
 

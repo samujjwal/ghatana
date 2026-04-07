@@ -27,6 +27,8 @@ import io.activej.inject.module.AbstractModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 /**
  * ActiveJ DI module for YAPPC AI services.
  *
@@ -108,12 +110,25 @@ public class AiServiceModule extends AbstractModule {
      */
     @Provides
     LLMGateway llmGateway(MetricsCollector metrics) {
+        return createConfiguredLlmGateway(metrics, System.getenv());
+    }
+
+    /**
+     * Creates an {@link LLMGateway} from the supplied environment map.
+     *
+     * <p>Shared by DI boot and explicit runtime wiring so AI startup semantics stay aligned.
+     *
+     * @param metrics metrics collector for LLM instrumentation
+     * @param env environment values to inspect
+     * @return configured gateway
+     */
+    public static LLMGateway createConfiguredLlmGateway(MetricsCollector metrics, Map<String, String> env) {
         DefaultLLMGateway.Builder builder = DefaultLLMGateway.builder().metrics(metrics);
         boolean anyConfigured = false;
 
-        String anthropicKey = System.getenv("ANTHROPIC_API_KEY");
+        String anthropicKey = env.get("ANTHROPIC_API_KEY");
         if (anthropicKey != null && !anthropicKey.isBlank()) {
-            String model = System.getenv("ANTHROPIC_MODEL");
+            String model = env.get("ANTHROPIC_MODEL");
             if (model == null || model.isBlank()) {
                 throw new IllegalStateException(
                         "ANTHROPIC_API_KEY is set but ANTHROPIC_MODEL env var is missing. "
@@ -133,9 +148,9 @@ public class AiServiceModule extends AbstractModule {
             logger.info("YAPPC LLMGateway configured with Anthropic provider model={}", model);
         }
 
-        String openAiKey = System.getenv("OPENAI_API_KEY");
+        String openAiKey = env.get("OPENAI_API_KEY");
         if (openAiKey != null && !openAiKey.isBlank()) {
-            String model = System.getenv("OPENAI_MODEL");
+            String model = env.get("OPENAI_MODEL");
             if (model == null || model.isBlank()) {
                 throw new IllegalStateException(
                         "OPENAI_API_KEY is set but OPENAI_MODEL env var is missing. "
@@ -157,9 +172,9 @@ public class AiServiceModule extends AbstractModule {
             logger.info("YAPPC LLMGateway configured with OpenAI provider model={}", model);
         }
 
-        String ollamaHost = System.getenv("OLLAMA_HOST");
+        String ollamaHost = env.get("OLLAMA_HOST");
         if (ollamaHost != null && !ollamaHost.isBlank()) {
-            String model = System.getenv("OLLAMA_MODEL");
+            String model = env.get("OLLAMA_MODEL");
             if (model == null || model.isBlank()) {
                 throw new IllegalStateException(
                         "OLLAMA_HOST is set but OLLAMA_MODEL env var is missing. "

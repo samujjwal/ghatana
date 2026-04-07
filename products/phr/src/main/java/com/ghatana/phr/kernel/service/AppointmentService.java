@@ -8,9 +8,11 @@ import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
 import com.ghatana.kernel.adapter.datacloud.QueryResult;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
+import com.ghatana.platform.security.ratelimit.RateLimiter;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -45,9 +47,16 @@ public class AppointmentService extends AbstractDataService {
     private static final String APPOINTMENT_DATASET = "phr.appointments";
     private static final String SLOT_DATASET = "phr.appointment.slots";
     private static final ZoneId NEPAL_ZONE = ZoneId.of("Asia/Kathmandu");
+    private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
+    private static final int CREATE_APPOINTMENT_MAX_PER_WINDOW = 20;
+    private static final int QUERY_APPOINTMENT_MAX_PER_WINDOW = 120;
+    private static final int CANCEL_APPOINTMENT_MAX_PER_WINDOW = 30;
 
     private final Map<String, SlotCacheEntry> slotCache = new ConcurrentHashMap<>();
     private final PhrNotificationSender notificationSender;
+    private final RateLimiter createAppointmentLimiter;
+    private final RateLimiter queryAppointmentLimiter;
+    private final RateLimiter cancelAppointmentLimiter;
 
     public AppointmentService(KernelContext context) {
         this(context, PhrNotificationSenders.fromContext(context));
@@ -56,6 +65,18 @@ public class AppointmentService extends AbstractDataService {
     AppointmentService(KernelContext context, PhrNotificationSender notificationSender) {
         super(context);
         this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
+        this.createAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            CREATE_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
+        this.queryAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            QUERY_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
+        this.cancelAppointmentLimiter = PhrRateLimitUtils.createLimiter(
+            CANCEL_APPOINTMENT_MAX_PER_WINDOW,
+            RATE_LIMIT_WINDOW
+        );
     }
 
     @Override
@@ -111,6 +132,11 @@ public class AppointmentService extends AbstractDataService {
         String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getPatientId(), "patientId");
         String providerId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getProviderId(), "providerId");
         String slotId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getSlotId(), "slotId");
+        PhrRateLimitUtils.requireAllowed(
+            createAppointmentLimiter,
+            patientId,
+            "Appointment creation rate limit exceeded for patient: " + patientId
+        );
         if (request.getScheduledTime() == null) {
             return Promise.ofException(new IllegalArgumentException("scheduledTime is required"));
         }
@@ -135,6 +161,8 @@ public class AppointmentService extends AbstractDataService {
                 String appointmentId = generateId();
                 Instant now = Instant.now();
 
+                String correlationId = PhrTraceContext.newCorrelationId("phr_appointment_create");
+
                 Appointment appointment = new Appointment(
                     appointmentId,
                     patientId,
@@ -155,19 +183,19 @@ public class AppointmentService extends AbstractDataService {
                     APPOINTMENT_DATASET,
                     appointmentId,
                     serialize(appointment, "Appointment", appointment.getVersion()),
-                    Map.of(
+                    PhrTraceContext.metadata(correlationId, "phr_appointment_create", Map.of(
                         "patientId", appointment.getPatientId(),
                         "providerId", appointment.getProviderId(),
                         "status", appointment.getStatus(),
                         "scheduledTime", appointment.getScheduledTime().toString()
-                    )
+                    ))
                 );
 
                 return dataCloud.writeData(writeRequest)
                     .then($ -> markSlotBooked(slotId))
-                    .then($ -> createReminderPlan(appointment))
+                    .then($ -> createReminderPlan(appointment, correlationId))
                     .then($ -> audit("APPOINTMENT_CREATE", patientId,
-                        "Appointment scheduled with " + providerId))
+                        "Appointment scheduled with " + providerId + " [" + correlationId + "]"))
                     .map($ -> appointment)
                     .whenException(e -> {
                         // Conflict detected - slot was booked by another request
@@ -191,9 +219,16 @@ public class AppointmentService extends AbstractDataService {
             return Promise.of(List.of());
         }
 
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        PhrRateLimitUtils.requireAllowed(
+            queryAppointmentLimiter,
+            sanitizedPatientId,
+            "Appointment query rate limit exceeded for patient: " + sanitizedPatientId
+        );
+
         String query = "patientId = :patientId";
         Map<String, Object> params = new ConcurrentHashMap<>();
-        params.put("patientId", patientId);
+        params.put("patientId", sanitizedPatientId);
 
         if (status != null) {
             query += " AND status = :status";
@@ -231,6 +266,11 @@ public class AppointmentService extends AbstractDataService {
 
         String sanitizedAppointmentId = PhrInputSanitizationUtils.requireSafeIdentifier(appointmentId, "appointmentId");
         String sanitizedReason = PhrInputSanitizationUtils.sanitizeRequiredText(reason, "reason", 500);
+        PhrRateLimitUtils.requireAllowed(
+            cancelAppointmentLimiter,
+            sanitizedAppointmentId,
+            "Appointment cancellation rate limit exceeded for appointment: " + sanitizedAppointmentId
+        );
 
         return getAppointment(sanitizedAppointmentId)
             .then(opt -> {
@@ -379,13 +419,15 @@ public class AppointmentService extends AbstractDataService {
         return deserialize(data, TimeSlot.class);
     }
 
-    private Promise<Void> createReminderPlan(Appointment appointment) {
+    private Promise<Void> createReminderPlan(Appointment appointment, String correlationId) {
         return notificationSender.scheduleAppointmentReminder(new PhrNotificationSender.AppointmentReminderNotification(
             appointment.getId(),
             appointment.getPatientId(),
             appointment.getProviderId(),
             appointment.getScheduledTime(),
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            correlationId,
+            "phr_appointment_reminder_schedule"
         ));
     }
 
@@ -395,7 +437,9 @@ public class AppointmentService extends AbstractDataService {
             appointment.getPatientId(),
             appointment.getProviderId(),
             appointment.getScheduledTime(),
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            PhrTraceContext.newCorrelationId("phr_appointment_reminder_cancel"),
+            "phr_appointment_reminder_cancel"
         ));
     }
 

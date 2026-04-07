@@ -1,5 +1,6 @@
 package com.ghatana.finance.ai;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,12 +30,14 @@ public class FraudDetectionResult {
     private final String inferenceSource;
     private final String modelVersion;
     private final long inferenceLatencyMs;
+    private final FraudDecisionExplanation explanation;
 
     private FraudDetectionResult(String tradeId, String accountId, boolean suspicious,
                                  String fraudType, double confidence, boolean skipped,
                                  double fraudScore, String riskLevel, boolean fraudulent,
                                  double accuracy, Map<String, Object> features, long latencyMs,
-                                 String inferenceSource, String modelVersion, long inferenceLatencyMs) {
+                                 String inferenceSource, String modelVersion, long inferenceLatencyMs,
+                                 FraudDecisionExplanation explanation) {
         this.tradeId = tradeId;
         this.accountId = accountId;
         this.suspicious = suspicious;
@@ -50,6 +53,7 @@ public class FraudDetectionResult {
         this.inferenceSource = inferenceSource;
         this.modelVersion = modelVersion;
         this.inferenceLatencyMs = inferenceLatencyMs;
+        this.explanation = explanation;
     }
 
     public static FraudDetectionResult skip() {
@@ -68,7 +72,12 @@ public class FraudDetectionResult {
             0L,
             "SKIPPED",
             null,
-            0L
+            0L,
+            new FraudDecisionExplanation(
+                "Fraud scoring was skipped for this request.",
+                "fraud scoring skipped",
+                List.of()
+            )
         );
     }
 
@@ -88,7 +97,12 @@ public class FraudDetectionResult {
             0L,
             "LOCAL_RULES",
             null,
-            0L
+            0L,
+            new FraudDecisionExplanation(
+                "Low fraud risk with no material anomaly indicators; scored by LOCAL_RULES.",
+                "balanced transaction signals",
+                List.of()
+            )
         );
     }
 
@@ -109,7 +123,12 @@ public class FraudDetectionResult {
             0L,
             "LOCAL_RULES",
             null,
-            0L
+            0L,
+            new FraudDecisionExplanation(
+                "Suspicious fraud pattern identified by LOCAL_RULES.",
+                fraudType == null ? "local fraud rule match" : fraudType,
+                List.of()
+            )
         );
     }
 
@@ -145,7 +164,8 @@ public class FraudDetectionResult {
             latencyMs,
             inferenceSource,
             modelVersion,
-            inferenceLatencyMs
+            inferenceLatencyMs,
+            FinanceFraudExplanationUtils.explain(features, fraudType, riskLevel, fraudulent, inferenceSource)
         );
     }
 
@@ -164,4 +184,5 @@ public class FraudDetectionResult {
     public String getInferenceSource() { return inferenceSource; }
     public String getModelVersion() { return modelVersion; }
     public long getInferenceLatencyMs() { return inferenceLatencyMs; }
+    public FraudDecisionExplanation getExplanation() { return explanation; }
 }

@@ -188,26 +188,31 @@ jobs:
       - name: Build YAPPC Backend
         run: |
           ./gradlew \
-            :products:yappc:backend:api:build \
+            :products:yappc:services:build \
+            :products:yappc:core:services-platform:build \
+            :products:yappc:core:services-lifecycle:build \
+            :products:yappc:core:yappc-services:build \
+            :products:yappc:core:yappc-infrastructure:build \
+            :products:yappc:core:yappc-agents:build \
             :products:yappc:core:ai:build \
             :products:yappc:core:agents:build \
+            -x test \
             --no-daemon --parallel --build-cache --stacktrace
 
       - name: Run Tests with Coverage
         run: |
           ./gradlew \
-            :products:yappc:backend:api:test \
-            :products:yappc:backend:api:jacocoTestReport \
+            :products:yappc:core:services-platform:check \
+            :products:yappc:core:services-lifecycle:check \
+            :products:yappc:core:yappc-services:check \
+            :products:yappc:core:yappc-infrastructure:check \
+            :products:yappc:core:yappc-agents:check \
+            :products:yappc:core:ai:check \
             --no-daemon --stacktrace
         env:
           DATABASE_URL: jdbc:postgresql://localhost:5432/yappc_test
           DATABASE_USERNAME: yappc
           DATABASE_PASSWORD: yappc_test_pass
-
-      - name: Enforce Coverage Threshold
-        run: |
-          ./gradlew :products:yappc:backend:api:jacocoTestCoverageVerification \
-            --no-daemon --stacktrace
 
       - name: Validate Agent Catalog
         run: ./gradlew :products:yappc:validateAgentCatalog --no-daemon

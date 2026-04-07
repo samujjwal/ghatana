@@ -81,6 +81,21 @@ class ValidateAgentCatalogTest {
                 agent_id: intake-specialist
             """;
 
+                    private static final String CATALOG_INDEX_YAML = String.join("\n",
+                            "spec:",
+                            "  catalogs:",
+                            "    - name: lifecycle",
+                            "      file: lifecycle-catalog.yaml",
+                            "");
+
+                    private static final String RUNTIME_OWNERSHIP_YAML = String.join("\n",
+                            "spec:",
+                            "  bindings:",
+                            "    - catalogId: intake-specialist",
+                            "      runtimeAgentId: IntakeSpecialistAgent",
+                            "      runtimeStepName: architecture.intake",
+                            "");
+
     @BeforeEach
     void setUp() throws IOException {
         validationScriptPath = System.getProperty("validationScriptPath");
@@ -110,13 +125,13 @@ class ValidateAgentCatalogTest {
     private void writeAgentDefinition(String filename, String content) throws IOException {
         Path defsDir = projectDir.resolve("config/agents/definitions");
         Files.createDirectories(defsDir);
-        Files.writeString(defsDir.resolve(filename), content);
+                Files.writeString(defsDir.resolve(filename), content.stripIndent());
     }
 
     private void writeConfigFile(String relativePath, String content) throws IOException {
         Path target = projectDir.resolve(relativePath);
         Files.createDirectories(target.getParent());
-        Files.writeString(target, content);
+                Files.writeString(target, content.stripIndent());
     }
 
     private void writeValidBaselineConfig() throws IOException {
@@ -125,6 +140,22 @@ class ValidateAgentCatalogTest {
         writeConfigFile("config/agents/capabilities.yaml", CAPABILITIES_YAML);
         writeConfigFile("config/agents/mappings.yaml", MAPPINGS_YAML);
         writeConfigFile("config/agents/event-routing.yaml", EVENT_ROUTING_YAML);
+                                writeCatalogFixture("intake-specialist", "hybrid", RUNTIME_OWNERSHIP_YAML);
+                }
+
+                private void writeCatalogFixture(String catalogId, String agentType, String runtimeOwnershipYaml)
+                                                throws IOException {
+                                writeConfigFile("config/agents/_index.yaml", CATALOG_INDEX_YAML);
+                        writeConfigFile(
+                                "config/agents/lifecycle-catalog.yaml",
+                                String.join("\n",
+                                        "spec:",
+                                        "  agents:",
+                                        "    - id: " + catalogId,
+                                        "      name: " + catalogId,
+                                        "      agentType: " + agentType,
+                                        ""));
+                                writeConfigFile("config/agents/runtime-ownership.yaml", runtimeOwnershipYaml);
     }
 
     private GradleRunner gradleRunner() {
@@ -187,6 +218,13 @@ class ValidateAgentCatalogTest {
         writeConfigFile("config/agents/event-routing.yaml", """
                 event_routing: []
                 """);
+        writeCatalogFixture("bad-agent", "hybrid", """
+                spec:
+                  bindings:
+                    - catalogId: bad-agent
+                      runtimeAgentId: BadAgentRuntime
+                      runtimeStepName: bad-agent.runtime
+                """);
 
         BuildResult result = gradleRunner()
                 .withArguments("validateAgentCatalog")
@@ -224,6 +262,13 @@ class ValidateAgentCatalogTest {
                     capabilities: []
                 """);
         writeConfigFile("config/agents/event-routing.yaml", "event_routing: []\n");
+                                writeCatalogFixture("duplicate-agent", "hybrid", """
+                                                                spec:
+                                                                        bindings:
+                                                                                - catalogId: duplicate-agent
+                                                                                        runtimeAgentId: DuplicateAgentRuntime
+                                                                                        runtimeStepName: duplicate-agent.runtime
+                                                                """);
 
         BuildResult result = gradleRunner()
                 .withArguments("validateAgentCatalog")
@@ -257,6 +302,13 @@ class ValidateAgentCatalogTest {
         writeConfigFile("config/agents/capabilities.yaml", CAPABILITIES_YAML);
         writeConfigFile("config/agents/mappings.yaml", "agents:\n  - id: agent-a\n    capabilities: []\n");
         writeConfigFile("config/agents/event-routing.yaml", "event_routing: []\n");
+                                writeCatalogFixture("agent-a", "hybrid", """
+                                                                spec:
+                                                                        bindings:
+                                                                                - catalogId: agent-a
+                                                                                        runtimeAgentId: AgentARuntime
+                                                                                        runtimeStepName: agent-a.runtime
+                                                                """);
 
         BuildResult result = gradleRunner()
                 .withArguments("validateAgentCatalog")
@@ -283,6 +335,7 @@ class ValidateAgentCatalogTest {
                       - undeclared.capability
                 """);
         writeConfigFile("config/agents/event-routing.yaml", EVENT_ROUTING_YAML);
+        writeCatalogFixture("intake-specialist", "hybrid", RUNTIME_OWNERSHIP_YAML);
 
         BuildResult result = gradleRunner()
                 .withArguments("validateAgentCatalog")
@@ -313,6 +366,13 @@ class ValidateAgentCatalogTest {
         writeConfigFile("config/agents/capabilities.yaml", CAPABILITIES_YAML);
         writeConfigFile("config/agents/mappings.yaml", "agents:\n  - id: bad-level-agent\n    capabilities: []\n");
         writeConfigFile("config/agents/event-routing.yaml", "event_routing: []\n");
+                                writeCatalogFixture("bad-level-agent", "hybrid", """
+                                                                spec:
+                                                                        bindings:
+                                                                                - catalogId: bad-level-agent
+                                                                                        runtimeAgentId: BadLevelRuntime
+                                                                                        runtimeStepName: bad-level.runtime
+                                                                """);
 
         BuildResult result = gradleRunner()
                 .withArguments("validateAgentCatalog")
@@ -321,6 +381,59 @@ class ValidateAgentCatalogTest {
         assertTrue(result.getOutput().contains("invalid metadata.level=99"),
                 "Output should report the invalid metadata level");
     }
+
+                @Test
+                @DisplayName("reports runtime-backed, planning-only, and catalog-only ownership counts")
+                void shouldReportCatalogOwnershipBreakdown() throws IOException {
+                                writeBuildFile();
+                                writeValidBaselineConfig();
+                                writeConfigFile(
+                                                                "config/agents/lifecycle-catalog.yaml",
+                                                                String.join("\n",
+                                                                                                "spec:",
+                                                                                                "  agents:",
+                                                                                                "    - id: intake-specialist",
+                                                                                                "      name: Intake Specialist",
+                                                                                                "      agentType: hybrid",
+                                                                                                "    - id: planning-only-agent",
+                                                                                                "      name: Planning Only Agent",
+                                                                                                "      agentType: planning",
+                                                                                                "    - id: catalog-only-agent",
+                                                                                                "      name: Catalog Only Agent",
+                                                                                                "      agentType: hybrid",
+                                                                                                ""));
+
+                                BuildResult result = gradleRunner()
+                                                                .withArguments("validateAgentCatalog", "--stacktrace")
+                                                                .build();
+
+                                assertEquals(TaskOutcome.SUCCESS, result.task(":validateAgentCatalog").getOutcome());
+                                assertTrue(result.getOutput().contains("Agent catalog ownership report: runtime-backed=1, planning-only=1, catalog-only=1"));
+                                assertTrue(result.getOutput().contains("Catalog entries without runtime ownership bindings"));
+                }
+
+                @Test
+                @DisplayName("fails when runtime ownership binding points to an unknown catalog agent")
+                void shouldFailWhenRuntimeOwnershipBindingTargetsUnknownCatalogAgent() throws IOException {
+                                writeBuildFile();
+                                writeValidBaselineConfig();
+                                writeConfigFile(
+                                        "config/agents/runtime-ownership.yaml",
+                                        String.join("\n",
+                                                "spec:",
+                                                "  bindings:",
+                                                "    - catalogId: unknown-catalog-agent",
+                                                "      runtimeAgentId: UnknownRuntimeAgent",
+                                                "      runtimeStepName: unknown.runtime",
+                                                ""));
+
+                                BuildResult result = gradleRunner()
+                                                                .withArguments("validateAgentCatalog")
+                                                                .buildAndFail();
+
+                                assertTrue(result.getOutput().contains("runtime-ownership.yaml references unknown catalog agent: unknown-catalog-agent"));
+                                assertEquals(TaskOutcome.FAILED, result.task(":validateAgentCatalog").getOutcome());
+                }
 
     @Test
     @DisplayName("fails in strict mode when unregistered definitions exist")
@@ -351,4 +464,32 @@ class ValidateAgentCatalogTest {
                 "Output should report unregistered definition files in strict mode");
         assertEquals(TaskOutcome.FAILED, result.task(":validateAgentCatalog").getOutcome());
     }
+
+        @Test
+        @DisplayName("fails in strict mode when catalog entries are missing runtime ownership bindings")
+        void shouldFailOnCatalogOnlyEntriesWhenOwnershipStrictModeEnabled() throws IOException {
+                writeBuildFile();
+                writeValidBaselineConfig();
+                writeConfigFile(
+                                "config/agents/lifecycle-catalog.yaml",
+                                String.join("\n",
+                                                "spec:",
+                                                "  agents:",
+                                                "    - id: intake-specialist",
+                                                "      name: Intake Specialist",
+                                                "      agentType: hybrid",
+                                                "    - id: catalog-only-agent",
+                                                "      name: Catalog Only Agent",
+                                                "      agentType: hybrid",
+                                                ""));
+
+                BuildResult result = gradleRunnerWithEnv(Map.of(
+                                                "YAPPC_FAIL_ON_CATALOG_OWNERSHIP_GAPS", "true"
+                                ))
+                                .withArguments("validateAgentCatalog")
+                                .buildAndFail();
+
+                assertTrue(result.getOutput().contains("Catalog entries without runtime ownership bindings"));
+                assertEquals(TaskOutcome.FAILED, result.task(":validateAgentCatalog").getOutcome());
+        }
 }

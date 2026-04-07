@@ -217,3 +217,21 @@ curl -s http://<pod-ip>:8080/metrics | grep yappc_ai_circuit_breaker
 # Health check
 curl http://<pod-ip>:8080/health/readiness
 ```
+
+## 9. Release Rollout And Rollback Checks
+
+Before promoting a release candidate:
+
+1. Verify `/health/liveness`, `/health/readiness`, and authenticated `/metrics` on the candidate instance.
+2. Confirm AI metrics are present in `/metrics`:
+   - `yappc_ai_llm_latency_seconds`
+   - `yappc_ai_fallback_total`
+   - `yappc_ai_inference_failed_total`
+3. Confirm traces and logs preserve `X-Correlation-ID` across auth, AI, and workflow failures.
+4. Review the `yappc-release-evidence-bundle` artifact for missing journey evidence.
+
+If rollback is required:
+
+1. `kubectl rollout undo deployment/yappc-lifecycle -n yappc`
+2. Re-run liveness, readiness, and metrics checks against the restored replica set.
+3. Verify the fallback alert rate returns to baseline and no `YappcAiInferenceFailureRateHigh` alert remains firing.

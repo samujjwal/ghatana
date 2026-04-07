@@ -109,6 +109,38 @@ public class RealtimeTradeReportService {
             ps.setString(3, submissionId);
             ps.setBoolean(4, withinWindow);
             ps.executeUpdate();
+        } catch (SQLException postgresSpecificFailure) {
+            try (Connection conn = dataSource.getConnection()) {
+                if (tradeReportExists(conn, tradeId)) {
+                    return;
+                }
+
+                try (PreparedStatement ps = conn.prepareStatement("""
+                        INSERT INTO trade_reports
+                            (trade_report_id, trade_id, submission_id, within_window, reported_at)
+                        VALUES (?, ?, ?, ?, NOW())
+                        """)) {
+                    ps.setString(1, tradeReportId);
+                    ps.setString(2, tradeId);
+                    ps.setString(3, submissionId);
+                    ps.setBoolean(4, withinWindow);
+                    ps.executeUpdate();
+                }
+            } catch (SQLException fallbackFailure) {
+                postgresSpecificFailure.addSuppressed(fallbackFailure);
+                throw postgresSpecificFailure;
+            }
+        }
+    }
+
+    private boolean tradeReportExists(Connection conn, String tradeId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+            "SELECT 1 FROM trade_reports WHERE trade_id = ?"
+        )) {
+            ps.setString(1, tradeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 export * from './seed-canvas';
 export { handlers } from './handlers';
 export { worker } from './browser';
-// Note: `server` should be imported from '@ghatana/yappc-mocks/node' in Node.js-only contexts (tests, vitest setup)
+// Note: `server` should be imported from '@yappc/testing/node' in Node.js-only contexts (tests, vitest setup)
 export { resolvers } from './resolvers';
 
 // Export test data factories

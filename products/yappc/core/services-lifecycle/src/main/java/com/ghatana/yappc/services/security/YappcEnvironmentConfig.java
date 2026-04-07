@@ -57,6 +57,30 @@ public final class YappcEnvironmentConfig {
     /** Database URL environment variable. */
     public static final String DB_URL_ENV = "YAPPC_DB_URL";
 
+    /** Agent runtime AI mode: {@code required} or {@code stub}. */
+    public static final String AGENT_LLM_MODE_ENV = "YAPPC_AGENT_LLM_MODE";
+
+    /** OpenTelemetry OTLP endpoint required for production AI observability. */
+    public static final String OTEL_EXPORTER_OTLP_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
+
+    /** Anthropic provider API key. */
+    public static final String ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY";
+
+    /** Anthropic provider model name. */
+    public static final String ANTHROPIC_MODEL_ENV = "ANTHROPIC_MODEL";
+
+    /** OpenAI provider API key. */
+    public static final String OPENAI_API_KEY_ENV = "OPENAI_API_KEY";
+
+    /** OpenAI provider model name. */
+    public static final String OPENAI_MODEL_ENV = "OPENAI_MODEL";
+
+    /** Ollama provider host. */
+    public static final String OLLAMA_HOST_ENV = "OLLAMA_HOST";
+
+    /** Ollama provider model name. */
+    public static final String OLLAMA_MODEL_ENV = "OLLAMA_MODEL";
+
     /** Database user environment variable. */
     public static final String DB_USER_ENV = "YAPPC_DB_USER";
 
@@ -87,6 +111,8 @@ public final class YappcEnvironmentConfig {
         List<String> errors = new ArrayList<>();
 
         validateApiKeys(env, errors);
+        validateAgentLlmMode(env, errors);
+        validateProductionAiObservability(env, errors);
         validateDatabase(env, errors);
         validateTenantId(env, errors);
 
@@ -110,6 +136,8 @@ public final class YappcEnvironmentConfig {
     public static ValidationResult check(Map<String, String> env) {
         List<String> errors = new ArrayList<>();
         validateApiKeys(env, errors);
+        validateAgentLlmMode(env, errors);
+        validateProductionAiObservability(env, errors);
         validateDatabase(env, errors);
         validateTenantId(env, errors);
         return new ValidationResult(errors);
@@ -134,6 +162,76 @@ public final class YappcEnvironmentConfig {
                         INSECURE_DEFAULT_KEY + "' in production mode (YAPPC_PROFILE=" + profile + ")");
             }
         }
+    }
+
+    private static void validateAgentLlmMode(Map<String, String> env, List<String> errors) {
+        String configuredMode = env.getOrDefault(AGENT_LLM_MODE_ENV, "required").trim().toLowerCase();
+        if (!"required".equals(configuredMode) && !"stub".equals(configuredMode)) {
+            errors.add(AGENT_LLM_MODE_ENV + " must be one of: required, stub");
+            return;
+        }
+
+        String profile = env.getOrDefault(PROFILE_ENV, "dev").toLowerCase();
+        if (("production".equals(profile) || "prod".equals(profile)) && "stub".equals(configuredMode)) {
+            errors.add(AGENT_LLM_MODE_ENV + "=stub is not allowed in production mode (" + PROFILE_ENV + "=" + profile + ")");
+        }
+    }
+
+    private static void validateProductionAiObservability(Map<String, String> env, List<String> errors) {
+        if (!isProductionProfile(env) || !isRequiredAiMode(env)) {
+            return;
+        }
+
+        validateConfiguredAiProvider(env, errors);
+
+        if (isBlankOrAbsent(env, OTEL_EXPORTER_OTLP_ENDPOINT_ENV)) {
+            errors.add(OTEL_EXPORTER_OTLP_ENDPOINT_ENV
+                    + " must be set when production AI runtime is enabled so traces and provider metrics are exported");
+        }
+    }
+
+    private static void validateConfiguredAiProvider(Map<String, String> env, List<String> errors) {
+        boolean hasConfiguredProvider = false;
+
+        hasConfiguredProvider |= validateProvider(env, errors,
+                ANTHROPIC_API_KEY_ENV, ANTHROPIC_MODEL_ENV, "Anthropic");
+        hasConfiguredProvider |= validateProvider(env, errors,
+                OPENAI_API_KEY_ENV, OPENAI_MODEL_ENV, "OpenAI");
+        hasConfiguredProvider |= validateProvider(env, errors,
+                OLLAMA_HOST_ENV, OLLAMA_MODEL_ENV, "Ollama");
+
+        if (!hasConfiguredProvider) {
+            errors.add("Production AI runtime requires at least one configured provider: "
+                    + ANTHROPIC_API_KEY_ENV + " (+ " + ANTHROPIC_MODEL_ENV + "), "
+                    + OPENAI_API_KEY_ENV + " (+ " + OPENAI_MODEL_ENV + "), or "
+                    + OLLAMA_HOST_ENV + " (+ " + OLLAMA_MODEL_ENV + ")");
+        }
+    }
+
+    private static boolean validateProvider(
+            Map<String, String> env,
+            List<String> errors,
+            String credentialKey,
+            String modelKey,
+            String providerName) {
+        if (isBlankOrAbsent(env, credentialKey)) {
+            return false;
+        }
+        if (isBlankOrAbsent(env, modelKey)) {
+            errors.add(providerName + " AI provider is configured via " + credentialKey
+                    + " but missing required model variable " + modelKey);
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isProductionProfile(Map<String, String> env) {
+        String profile = env.getOrDefault(PROFILE_ENV, "dev").toLowerCase();
+        return "production".equals(profile) || "prod".equals(profile);
+    }
+
+    private static boolean isRequiredAiMode(Map<String, String> env) {
+        return !"stub".equals(env.getOrDefault(AGENT_LLM_MODE_ENV, "required").trim().toLowerCase());
     }
 
     private static void validateDatabase(Map<String, String> env, List<String> errors) {

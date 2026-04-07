@@ -9,9 +9,12 @@
  *   Use @ghatana/platform-utils instead.
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, '..');
 const TARGET_DIRS = ['apps', 'libs', 'web'];
 
@@ -39,9 +42,9 @@ const EXCLUDED_FILE_PATTERNS = [
 ];
 
 const DEPRECATED_IMPORT_PATTERN =
-  /^\s*(?![/*])(?:import|export)\s+[^'"\n]*['"](@yappc\/(?:base-ui|config-hooks|development-ui|initialization-ui|messaging|navigation-ui|utils)(?:\/[^'"\n]*)?)['"]/gm;
+  /^\s*(?![/*])(?:import|export)\s+[^'"\n]*['"](@yappc\/(?:base-ui|config-hooks|development-ui|initialization-ui|messaging|navigation-ui|notifications|utils)(?:\/[^'"\n]*)?)['"]/gm;
 
-function shouldScanFile(filePath) {
+export function shouldScanFile(filePath) {
   const ext = path.extname(filePath);
   if (!SOURCE_EXTENSIONS.has(ext)) {
     return false;
@@ -91,7 +94,7 @@ function findDeprecatedImportViolations(relativePath, content) {
   return violations;
 }
 
-function hasLocalCnImplementation(content) {
+export function hasLocalCnImplementation(content) {
   return (
     /from\s+['"]clsx['"]/.test(content) &&
     /from\s+['"]tailwind-merge['"]/.test(content) &&
@@ -120,7 +123,7 @@ function findCnImplementationViolations(relativePath, content) {
   ];
 }
 
-function findViolationsInContent(relativePath, content) {
+export function findViolationsInContent(relativePath, content) {
   return [
     ...findDeprecatedImportViolations(relativePath, content),
     ...findCnImplementationViolations(relativePath, content),
@@ -155,12 +158,6 @@ function main() {
   process.exit(1);
 }
 
-module.exports = {
-  shouldScanFile,
-  findViolationsInContent,
-  hasLocalCnImplementation,
-};
-
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   main();
 }

@@ -117,42 +117,6 @@ spec:
     - level1
     agentType: planning
     agentSubtype: workflow
-  - id: governance-orchestrator
-    name: Governance Orchestrator
-    level: 1
-    type: orchestrator
-    description: Enforces governance policies, approval chains, and compliance posture across all portfolio initiatives
-    domain: portfolio
-    capabilities:
-    - governance-enforcement
-    - approval-management
-    - compliance-monitoring
-    - audit-coordination
-    routing:
-      input_types:
-      - governance_request
-      - approval_request
-      - compliance_check
-      output_types:
-      - governance_decision
-      - approval_result
-      - compliance_report
-    delegation:
-      can_delegate_to:
-      - governance-review-capability-agent
-      - governance-checklist-unit
-      escalates_to: null
-    governance:
-      requires_approval: false
-      can_block: true
-      audit_trail: comprehensive
-    tags:
-    - orchestrator
-    - governance
-    - compliance
-    - level1
-    agentType: planning
-    agentSubtype: workflow
   - id: portfolio-analysis-capability-agent
     name: Portfolio Analysis Capability Agent
     level: 2

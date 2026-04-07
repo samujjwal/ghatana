@@ -1,6 +1,6 @@
 # LLM Observability Guide
 
-This guide explains how to track and monitor LLM usage in YAPPC for cost optimization, performance monitoring, and quality assurance.
+This guide explains the current YAPPC AI observability surfaces used for release gating, diagnostics, and operator review.
 
 ## Overview
 
@@ -10,6 +10,29 @@ YAPPC's LLM observability system tracks:
 - **Token Usage** — Prompt and completion token tracking
 - **Error Rate** — Failed request monitoring
 - **Cache Hit Rate** — Semantic cache effectiveness
+- **Fallback Rate** — Primary-provider degradation and circuit-breaker pressure
+- **Workflow Inference Failures** — AI workflow failures across orchestration steps
+- **Correlation IDs** — Request-to-workflow tracing via `X-Correlation-ID`
+
+## Active Metrics
+
+Provider-facing metrics emitted by `AIMetricsCollector`:
+
+- `yappc.ai.llm.requests.total`
+- `yappc.ai.llm.errors.total`
+- `yappc.ai.llm.latency.seconds`
+- `yappc.ai.llm.tokens.input`
+- `yappc.ai.llm.tokens.output`
+- `yappc.ai.llm.cost.usd`
+- `yappc.ai.fallback.total`
+
+Workflow-facing metrics emitted by `LlmInferenceMetrics`:
+
+- `yappc.ai.inference.invoked`
+- `yappc.ai.inference.succeeded`
+- `yappc.ai.inference.failed`
+- `yappc.ai.inference.duration`
+- `yappc.ai.inference.tokens.used`
 
 ## Architecture
 
@@ -20,18 +43,22 @@ YAPPC's LLM observability system tracks:
          │
          ▼
 ┌─────────────────┐
-│ LLMMetrics      │ ← Capture request/response data
+│ AIMetricsCollector │ ← Provider latency, errors, fallback, tokens, cost
 └────────┬────────┘
          │
          ▼
-┌─────────────────────────┐
-│ LLMObservabilityTracker │ ← Aggregate metrics
-└────────┬────────────────┘
+┌──────────────────────┐
+│ LlmInferenceMetrics  │ ← Workflow inference telemetry
+└────────┬─────────────┘
          │
-         ├─► Logs (SLF4J)
-         ├─► Prometheus (TODO)
-         └─► DataDog (TODO)
+         ├─► Logs (SLF4J + correlation ID)
+         ├─► Prometheus `/metrics`
+         └─► Alert rules / Grafana dashboards
 ```
+
+## Correlation IDs
+
+Every release candidate must preserve `X-Correlation-ID` through auth, AI, and workflow failures. The HTTP tracing filter stores the correlation ID in MDC and returns it in response headers so logs, traces, and downstream events can be correlated.
 
 ## Usage
 
@@ -200,6 +227,16 @@ Requests taking longer than 5 seconds trigger a warning log:
 ```
 WARN  LLMObservabilityTracker - Slow LLM request: 6500ms for model 'gpt-4' (feature: ai-suggestions)
 ```
+
+### Fallback Pressure
+
+The release gate expects alert rules for:
+
+- `yappc_ai_llm_latency_seconds`
+- `yappc_ai_fallback_total`
+- `yappc_ai_inference_failed_total`
+
+These signals must be visible in `/metrics` before a production candidate is approved.
 
 ## Cost Optimization Strategies
 

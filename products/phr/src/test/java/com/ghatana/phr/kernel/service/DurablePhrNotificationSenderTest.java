@@ -19,10 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DurablePhrNotificationSenderTest extends EventloopTestBase {
 
     private DurablePhrNotificationSender sender;
+    private PhrTestInfrastructure.StubDataCloudAdapter dataCloud;
 
     @BeforeEach
     void setUp() {
-        PhrTestInfrastructure.StubDataCloudAdapter dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
+        dataCloud = new PhrTestInfrastructure.StubDataCloudAdapter();
         sender = new DurablePhrNotificationSender(PhrTestInfrastructure.createTestContext(dataCloud));
         runPromise(sender::start);
     }
@@ -37,7 +38,9 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
             "patient-1",
             "provider-1",
             scheduledTime,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-appointment-1",
+            "phr_appointment_reminder_schedule"
         )));
 
         List<DurablePhrNotificationSender.NotificationOutboxEntry> entries = runPromise(
@@ -61,6 +64,15 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
         assertThat(entries)
             .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::scheduledFor)
             .containsOnly(scheduledTime);
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::status)
+            .containsOnly(DurablePhrNotificationSender.NotificationStatus.PENDING);
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::correlationId)
+            .containsOnly("corr-appointment-1");
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::traceOperation)
+            .containsOnly("phr_appointment_reminder_schedule");
     }
 
     @Test
@@ -71,7 +83,9 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
             "provider-9",
             "grant-7",
             PhrNotificationSender.ConsentChangeType.EMERGENCY_ACCESS_GRANTED,
-            PhrNotificationSender.DEFAULT_CHANNELS
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-consent-7",
+            "phr_emergency_access_granted"
         )));
 
         List<DurablePhrNotificationSender.NotificationOutboxEntry> entries = runPromise(
@@ -88,5 +102,30 @@ class DurablePhrNotificationSenderTest extends EventloopTestBase {
         assertThat(entries)
             .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::referenceType)
             .containsOnly("consent-grant");
+    }
+
+    @Test
+    @DisplayName("returns global pending notifications in created order")
+    void returnsGlobalPendingNotifications() {
+        runPromise(() -> sender.notifyTelemedicineSession(new PhrNotificationSender.TelemedicineSessionNotification(
+            "tele-1",
+            "patient-3",
+            "provider-3",
+            Instant.parse("2026-04-06T13:00:00Z"),
+            PhrNotificationSender.TelemedicineNotificationType.SESSION_SCHEDULED,
+            PhrNotificationSender.DEFAULT_CHANNELS,
+            "corr-tele-1",
+            "phr_telemedicine_schedule"
+        )));
+
+        List<DurablePhrNotificationSender.NotificationOutboxEntry> entries = runPromise(() -> sender.getPendingNotifications(10));
+
+        assertThat(entries).hasSize(3);
+        assertThat(entries)
+            .extracting(DurablePhrNotificationSender.NotificationOutboxEntry::referenceId)
+            .containsOnly("tele-1");
+        assertThat(dataCloud.metadataFor(DurablePhrNotificationSender.OUTBOX_DATASET, entries.getFirst().id()))
+            .containsEntry("correlationId", "corr-tele-1")
+            .containsEntry("traceOperation", "phr_telemedicine_schedule");
     }
 }

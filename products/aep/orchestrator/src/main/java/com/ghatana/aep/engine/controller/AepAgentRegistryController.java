@@ -421,8 +421,7 @@ public final class AepAgentRegistryController {
         String callerRole = request.getHeader(HttpHeaders.of("X-Agent-Role"));
         if (callerRole == null || !callerRole.equalsIgnoreCase("ADMIN")) {
             log.warn("Unauthorized deregister attempt: caller role='{}'", callerRole);
-            return Promise.of(httpUtils.errorResponse(403,
-                    "Forbidden: admin role required to deregister agents"));
+            return Promise.of(httpUtils.errorResponse(403, "Forbidden: admin role required to deregister agents"));
         }
 
         String agentId = resolveAgentId(request);

@@ -168,6 +168,41 @@ class PHRSecurityIntegrationTest {
     }
 
     @Test
+    void testPatientRecordRead_AdminRole_ShouldAllow() {
+        PHRUser admin = new PHRUser("admin-1", "phr.admin", "admin@ghatana.com");
+        admin.addRole("ADMINISTRATOR");
+        admin.setPasswordHash(passwordHasher.hash("Admin123!"));
+        userRepository.save(admin);
+
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "admin-1");
+        KernelSecurityManager.Action action = new KernelSecurityManager.Action(
+            "patient-records", "read", "phr"
+        );
+
+        boolean authorized = securityManager.authorizeAction(action, context);
+
+        assertTrue(authorized, "Administrators should be able to read patient records");
+    }
+
+    @Test
+    void testPatientRecordExport_ProviderWithoutPhiPermission_ShouldDeny() {
+        PHRUser provider = new PHRUser("provider-2", "dr.rao", "dr.rao@hospital.com");
+        provider.addRole("HEALTHCARE_PROVIDER");
+        provider.addPermission("read:patient-records");
+        provider.setPasswordHash(passwordHasher.hash("Password123!"));
+        userRepository.save(provider);
+
+        SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-2");
+        KernelSecurityManager.Action action = new KernelSecurityManager.Action(
+            "patient-records", "export", "phr"
+        );
+
+        boolean authorized = securityManager.authorizeAction(action, context);
+
+        assertFalse(authorized, "Providers require explicit export:phi permission to export PHI");
+    }
+
+    @Test
     void testSecurityContextCreation() {
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "provider-1");
         

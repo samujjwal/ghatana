@@ -34,8 +34,10 @@ tasks.test {
     useJUnitPlatform()
 
     // Pass the absolute path to the validations script so tests can reference it
+    val validationScriptPath = System.getProperty("validationScriptPathOverride")
+        ?: file("${rootProject.projectDir}/gradle/yappc-validations.gradle.kts").absolutePath
     systemProperty(
         "validationScriptPath",
-        file("${rootProject.projectDir}/gradle/yappc-validations.gradle.kts").absolutePath
+        validationScriptPath
     )
 }

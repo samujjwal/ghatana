@@ -26,7 +26,7 @@ import type { PersonaType } from '../../context/PersonaContext';
 
 export interface AgentActivityBadgeProps {
   /** Size variant */
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | 'sm' | 'md' | 'lg';
   /** Show tooltip with agent details */
   showTooltip?: boolean;
   /** Show expanded view on click */
@@ -59,6 +59,19 @@ const SIZE_CONFIG = {
   },
 };
 
+function normalizeSize(size: AgentActivityBadgeProps['size']): keyof typeof SIZE_CONFIG {
+  if (size === 'sm') {
+    return 'small';
+  }
+  if (size === 'lg') {
+    return 'large';
+  }
+  if (size === 'md' || size === undefined) {
+    return 'medium';
+  }
+  return size;
+}
+
 /**
  * AgentActivityBadge - Shows active AI agent count
  */
@@ -71,7 +84,7 @@ export const AgentActivityBadge: React.FC<AgentActivityBadgeProps> = ({
   const { virtualPersonas, getPersonaDefinition } = usePersona();
   const [isExpanded, setIsExpanded] = useState(false);
   
-  const sizeConfig = SIZE_CONFIG[size];
+  const sizeConfig = SIZE_CONFIG[normalizeSize(size)];
   const activeAgentCount = virtualPersonas.length;
 
   const handleClick = useCallback(() => {

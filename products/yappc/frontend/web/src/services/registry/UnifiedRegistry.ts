@@ -5,7 +5,7 @@
  *
  * <p><b>Architecture Role</b><br>
  * Provides centralized, namespace-aware registry for all canvas components, schemas,
- * and templates. Uses canonical types from @ghatana/yappc-types to ensure consistency.
+ * and templates. Uses canonical types from @yappc/core/types to ensure consistency.
  *
  * @doc.type class
  * @doc.purpose Unified registry implementation

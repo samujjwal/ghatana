@@ -16,42 +16,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { getJwtAccessSecret } from '../services/auth/jwt-config';
-
-// ============================================================================
-// Config
-// ============================================================================
-
-/** Routes that are always publicly accessible */
-const PUBLIC_PATHS = new Set([
-  '/health',
-  '/metrics',
-  '/graphql',
-  '/graphiql',
-]);
-
-const PUBLIC_AUTH_PATH_SUFFIXES = new Set([
-  '/auth/login',
-  '/auth/register',
-  '/auth/refresh',
-  '/auth/forgot-password',
-  '/auth/reset-password',
-  '/auth/verify-email',
-]);
-
-function isPublicPath(rawPath: string): boolean {
-  const path = rawPath.split('?')[0];
-  if (PUBLIC_PATHS.has(path)) {
-    return true;
-  }
-
-  for (const suffix of PUBLIC_AUTH_PATH_SUFFIXES) {
-    if (path.endsWith(suffix)) {
-      return true;
-    }
-  }
-
-  return false;
-}
+import { isPublicPath } from './public-paths';
 
 // ============================================================================
 // Types
@@ -61,6 +26,7 @@ export interface JWTUserPayload {
   userId: string;
   email: string;
   role: string;
+  tenantId?: string;
   workspaceId?: string;
 }
 
@@ -117,6 +83,7 @@ export async function authMiddleware(fastify: FastifyInstance): Promise<void> {
           userId: payload.userId,
           email: payload.email,
           role: payload.role,
+          tenantId: payload.tenantId,
           workspaceId: payload.workspaceId,
         };
       } catch (err) {

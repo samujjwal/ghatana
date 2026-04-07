@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.layer product
  * @doc.pattern TestFixture
  */
-final class PhrTestInfrastructure {
+public final class PhrTestInfrastructure {
 
     private PhrTestInfrastructure() {}
 
@@ -42,14 +42,22 @@ final class PhrTestInfrastructure {
      * @param dataCloud the stub or real DataCloud adapter
      * @return a test-scoped KernelContext
      */
-    static KernelContext createTestContext(DataCloudKernelAdapter dataCloud) {
+    public static KernelContext createTestContext(DataCloudKernelAdapter dataCloud) {
         return createTestContext(dataCloud, Map.of());
     }
 
-    static KernelContext createTestContext(
+    public static KernelContext createTestContext(
             DataCloudKernelAdapter dataCloud,
             Map<Class<?>, Object> dependencies) {
+        return createTestContext(dataCloud, dependencies, Map.of());
+    }
+
+    public static KernelContext createTestContext(
+            DataCloudKernelAdapter dataCloud,
+            Map<Class<?>, Object> dependencies,
+            Map<String, Object> configs) {
         ConcurrentHashMap<Class<?>, Object> registeredDependencies = new ConcurrentHashMap<>(dependencies);
+        ConcurrentHashMap<String, Object> registeredConfigs = new ConcurrentHashMap<>(configs);
         return new KernelContext() {
             @SuppressWarnings("unchecked")
             @Override
@@ -115,12 +123,16 @@ final class PhrTestInfrastructure {
 
             @Override
             public <T> T getConfig(String key, Class<T> type) {
-                return null;
+                Object value = registeredConfigs.get(key);
+                if (value == null) {
+                    return null;
+                }
+                return type.cast(value);
             }
 
             @Override
             public <T> java.util.Optional<T> getOptionalConfig(String key, Class<T> type) {
-                return java.util.Optional.empty();
+                return java.util.Optional.ofNullable(getConfig(key, type));
             }
 
             @Override
@@ -156,7 +168,7 @@ final class PhrTestInfrastructure {
      * Records are stored alongside their metadata so equality filters in queries
      * match the actual stored values (e.g. {@code patientId = :patientId}).</p>
      */
-    static class StubDataCloudAdapter implements DataCloudKernelAdapter {
+    public static class StubDataCloudAdapter implements DataCloudKernelAdapter {
 
         private record StoredEntry(byte[] data, Map<String, String> metadata) {}
 
@@ -246,6 +258,11 @@ final class PhrTestInfrastructure {
 
         private static String storeKey(String dataset, String recordId) {
             return dataset + ":" + recordId;
+        }
+
+        Map<String, String> metadataFor(String dataset, String recordId) {
+            StoredEntry entry = store.get(storeKey(dataset, recordId));
+            return entry == null ? Map.of() : entry.metadata();
         }
     }
 }

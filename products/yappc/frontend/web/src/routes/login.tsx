@@ -5,10 +5,10 @@
  * Uses AuthService for secure authentication.
  */
 
-import { Form, useNavigate, useSearchParams } from 'react-router';
+import { Form, useActionData, useNavigation, useNavigate, useSearchParams } from 'react-router';
 import React from 'react';
 import { Lock, User as Person, ArrowRight as ArrowForward } from 'lucide-react';
-import { authService } from '../services/auth/AuthService';
+import { authService, isDemoLoginEnabled } from '../services/auth/AuthService';
 import { logger } from '../utils/Logger';
 
 import { RouteErrorBoundary } from "../components/route/ErrorBoundary";
@@ -20,22 +20,22 @@ import type { Route } from './+types/login';
  */
 export async function clientAction({ request }: Route.ClientActionArgs) {
     const formData = await request.formData();
-    const username = formData.get("username") as string;
+    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const redirectTo = formData.get("redirectTo") || "/app/workspaces";
+    const redirectTo = formData.get("redirectTo") || "/workspaces";
 
-    if (!username || !password) {
+    if (!email || !password) {
         return {
-            error: "Username and password are required"
+            error: "Email and password are required"
         };
     }
 
     // Use AuthService for authentication
-    const result = await authService.login({ username, password });
+    const result = await authService.login({ email, password });
 
     if (result.success && result.token) {
         logger.info('Login successful, redirecting', 'login', {
-            username,
+            email,
             redirectTo
         });
 
@@ -58,14 +58,23 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 export default function Component() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const redirectTo = searchParams.get("redirectTo") || "/app/workspaces";
+    const actionData = useActionData<typeof clientAction>();
+    const navigation = useNavigation();
+    const redirectTo = searchParams.get("redirectTo") || "/workspaces";
     const sessionExpired = searchParams.get("sessionExpired") === "true";
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isDemoLoading, setIsDemoLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const showDemoLogin = isDemoLoginEnabled();
+
+    React.useEffect(() => {
+        if (actionData && 'error' in actionData && actionData.error) {
+            setError(actionData.error);
+        }
+    }, [actionData]);
 
     // Handle demo login
     const handleDemoLogin = async () => {
-        setIsLoading(true);
+        setIsDemoLoading(true);
         setError(null);
 
         try {
@@ -79,9 +88,12 @@ export default function Component() {
             setError('Demo login failed');
             logger.error('Demo login error', 'login', { error: err instanceof Error ? err.message : String(err) });
         } finally {
-            setIsLoading(false);
+            setIsDemoLoading(false);
         }
     };
+
+    const isSubmitting = navigation.state === 'submitting';
+    const isLoading = isSubmitting || isDemoLoading;
 
     return (
         <div className="min-h-screen bg-bg-default flex items-center justify-center px-4">
@@ -116,23 +128,24 @@ export default function Component() {
                         </div>
                     )}
 
-                    <Form method="post" className="space-y-6">
+                    <Form method="post" className="space-y-6" data-testid="login-form">
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-text-primary mb-2">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium text-text-primary mb-2">
+                                Email
                             </label>
                             <div className="relative">
                                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary">
                                     <Person className="w-5 h-5" />
                                 </div>
                                 <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
+                                    id="email"
+                                    name="email"
+                                    type="email"
                                     required
-                                    autoComplete="username"
+                                    autoComplete="email"
+                                    data-testid="email-input"
                                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-divider bg-bg-surface text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none"
-                                    placeholder="Enter your username"
+                                    placeholder="you@example.com"
                                 />
                             </div>
                         </div>
@@ -151,6 +164,7 @@ export default function Component() {
                                     type="password"
                                     required
                                     autoComplete="current-password"
+                                    data-testid="password-input"
                                     className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-divider bg-bg-surface text-text-primary focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all outline-none"
                                     placeholder="Enter your password"
                                 />
@@ -162,6 +176,7 @@ export default function Component() {
                         <button
                             type="submit"
                             disabled={isLoading}
+                            data-testid="login-submit"
                             className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
@@ -177,15 +192,18 @@ export default function Component() {
                         </button>
                     </Form>
 
-                    <div className="mt-6 pt-6 border-t border-divider text-center">
-                        <button
-                            onClick={handleDemoLogin}
-                            disabled={isLoading}
-                            className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isLoading ? 'Loading...' : 'Continue as Demo User →'}
-                        </button>
-                    </div>
+                    {showDemoLogin && (
+                        <div className="mt-6 pt-6 border-t border-divider text-center">
+                            <button
+                                onClick={handleDemoLogin}
+                                disabled={isLoading}
+                                type="button"
+                                className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isDemoLoading ? 'Loading...' : 'Continue as Demo User →'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

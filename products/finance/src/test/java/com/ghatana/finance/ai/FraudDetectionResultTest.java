@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @doc.type class
@@ -27,6 +28,7 @@ class FraudDetectionResultTest {
         assertEquals(0.0, result.getFraudScore());
         assertEquals(Map.of(), result.getFeatures());
         assertEquals("SKIPPED", result.getInferenceSource());
+        assertEquals("fraud scoring skipped", result.getExplanation().getPrimaryReason());
     }
 
     @Test
@@ -40,6 +42,7 @@ class FraudDetectionResultTest {
         assertEquals("LOW", result.getRiskLevel());
         assertEquals(1.0, result.getAccuracy());
         assertEquals("LOCAL_RULES", result.getInferenceSource());
+        assertEquals("balanced transaction signals", result.getExplanation().getPrimaryReason());
     }
 
     @Test
@@ -57,6 +60,7 @@ class FraudDetectionResultTest {
         assertEquals(0.85, result.getConfidence());
         assertEquals("HIGH", result.getRiskLevel());
         assertEquals("LOCAL_RULES", result.getInferenceSource());
+        assertEquals("spoofing", result.getExplanation().getPrimaryReason());
     }
 
     @Test
@@ -92,6 +96,9 @@ class FraudDetectionResultTest {
         assertEquals("2026.04", result.getModelVersion());
         assertEquals(18L, result.getInferenceLatencyMs());
         assertEquals(features, result.getFeatures());
+        assertNotNull(result.getExplanation());
+        assertTrue(result.getExplanation().getSummary().contains("MEDIUM fraud risk"));
+        assertFalse(result.getExplanation().getTopFactors().isEmpty());
     }
 
     @Test

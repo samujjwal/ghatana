@@ -62,13 +62,44 @@ public class ContractValidationTest {
         assertEquals("true", contract.getMetadata().get("regulatory"));
         assertTrue(contract.getMetadata().containsKey("compliance_requirements"));
     }
+
+    @Test
+    public void testRegulatoryReportingApiContract_ShouldBeValid() {
+        KernelContract contract = FinanceContracts.REGULATORY_REPORTING_API;
+
+        assertNotNull(contract);
+        assertEquals("finance.api.regulatory-reporting", contract.getContractId());
+        assertEquals(KernelContract.ContractFamily.API, contract.getFamily());
+        assertEquals("maker-checker", contract.getMetadata().get("workflow"));
+        assertEquals("ACK,NACK,resubmit<=3", contract.getMetadata().get("acknowledgement"));
+    }
+
+    @Test
+    public void testFraudExplainabilitySchemaContract_ShouldBeValid() {
+        KernelContract contract = FinanceContracts.FRAUD_EXPLAINABILITY_SCHEMA;
+
+        assertNotNull(contract);
+        assertEquals("finance.schema.fraud-explanation", contract.getContractId());
+        assertEquals(KernelContract.ContractFamily.SCHEMA, contract.getFamily());
+        assertEquals("summary,primaryReason,topFactors", contract.getMetadata().get("fields"));
+    }
+
+    @Test
+    public void testFraudPerformanceBaselineContract_ShouldBeValid() {
+        KernelContract contract = FinanceContracts.FRAUD_PERFORMANCE_BASELINE;
+
+        assertNotNull(contract);
+        assertEquals("finance.analytics.fraud-performance-baseline", contract.getContractId());
+        assertEquals(KernelContract.ContractFamily.ANALYTICS, contract.getFamily());
+        assertEquals("150ms", contract.getMetadata().get("latency_sla"));
+    }
     
     @Test
     public void testAllContracts_ShouldValidate() {
         ContractValidationGate gate = new ContractValidationGate();
         List<KernelContract> contracts = FinanceContracts.getAllContracts();
         
-        assertEquals(4, contracts.size());
+        assertEquals(7, contracts.size());
         
         ContractValidationGate.GateResult result = 
             gate.validateContractsForDeployment(contracts);
@@ -98,5 +129,12 @@ public class ContractValidationTest {
         assertTrue(autonomousContract.getMetadata().containsKey("autonomy_level"));
         assertTrue(autonomousContract.getMetadata().containsKey("human_review"));
         assertTrue(autonomousContract.getMetadata().containsKey("decision_logging"));
+
+        KernelContract reportingContract = FinanceContracts.REGULATORY_REPORTING_API;
+        assertTrue(reportingContract.getMetadata().containsKey("workflow"));
+        assertTrue(reportingContract.getMetadata().containsKey("acknowledgement"));
+
+        KernelContract explainabilityContract = FinanceContracts.FRAUD_EXPLAINABILITY_SCHEMA;
+        assertTrue(explainabilityContract.getMetadata().containsKey("top_factor_fields"));
     }
 }

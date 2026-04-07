@@ -4,7 +4,6 @@ import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.AudioData;
 import com.ghatana.media.common.AudioFormat;
 import com.ghatana.media.config.SttConfig;
-import com.ghatana.media.stt.api.ModelInfo;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.stt.api.TranscriptionOptions;
 import com.ghatana.media.stt.api.TranscriptionResult;
@@ -296,7 +295,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             stt.loadModel(modelId);
             long loadTimeMs = System.currentTimeMillis() - start;
 
-            ModelInfo active = stt.getActiveModel();
+            com.ghatana.media.stt.api.ModelInfo active = stt.getActiveModel();
             long memoryBytes = stt.getMetrics().memoryUsageBytes();
 
             LOG.info("STT model loaded: {} in {}ms", modelId, loadTimeMs);
@@ -334,7 +333,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
         }
         try (SttEngine stt = library.getSttEngine()) {
             // Validate model exists before attempting to unload
-            List<ModelInfo> models = stt.getAvailableModels();
+            List<com.ghatana.media.stt.api.ModelInfo> models = stt.getAvailableModels();
             boolean found = models.stream().anyMatch(m -> modelId.equals(m.modelId()));
             if (!found) {
                 responseObserver.onError(io.grpc.Status.NOT_FOUND
@@ -369,13 +368,13 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
     @Override
     public void listModels(ListModelsRequest request, StreamObserver<ListModelsResponse> responseObserver) {
         try (SttEngine stt = library.getSttEngine()) {
-            List<ModelInfo> models = stt.getAvailableModels();
-            ModelInfo activeModel = stt.getActiveModel();
+            List<com.ghatana.media.stt.api.ModelInfo> models = stt.getAvailableModels();
+            com.ghatana.media.stt.api.ModelInfo activeModel = stt.getActiveModel();
 
             ListModelsResponse.Builder builder = ListModelsResponse.newBuilder();
             int loadedCount = 0;
 
-            for (ModelInfo m : models) {
+            for (com.ghatana.media.stt.api.ModelInfo m : models) {
                 // Apply language filter if provided
                 if (!request.getLanguageFilter().isBlank()) {
                     Locale filterLocale = Locale.forLanguageTag(request.getLanguageFilter());

@@ -83,13 +83,13 @@ To add dynamic filtering, create template variables in Grafana:
 
 | Variable | Query |
 |----------|-------|
-| `agent_id` | `label_values(agent_execution_duration_ms, agent_id)` |
-| `phase` | `label_values(phase_advance_count_total, phase)` |
-| `model` | `label_values(llm_call_latency_ms, model)` |
+| `agent_id` | `label_values(yappc_agent_execution_duration_seconds_count, agent_id)` |
+| `phase` | `label_values(yappc_lifecycle_phase_advances_total, target_phase)` |
+| `model` | `label_values(yappc_ai_llm_latency_seconds_count, model)` |
 
 Then use in panel queries:
 ```
-rate(agent_execution_duration_ms_bucket{agent_id=~"$agent_id"}[5m])
+rate(yappc_agent_execution_duration_seconds_count{agent_id=~"$agent_id"}[5m])
 ```
 
 ## Metrics Interpretation
@@ -105,18 +105,18 @@ rate(agent_execution_duration_ms_bucket{agent_id=~"$agent_id"}[5m])
 - Check DLQ (`/api/v1/dlq`) for failed events
 
 ### LLM Call Latency
-- **p95 < 3s:** Normal
-- **p95 5–10s:** Acceptable
-- **p95 > 10s:** LLM provider degradation or rate-limiting
+- **avg < 3s:** Normal
+- **avg 5–10s:** Acceptable
+- **avg > 10s:** LLM provider degradation or rate-limiting
 
 ## Testing
 
 Unit tests for metrics collection: [MetricsCollectionE2eTest.java](../backend/api/src/test/java/com/ghatana/yappc/api/observability/MetricsCollectionE2eTest.java)
 
 Test scenarios:
-- Histogram bucket creation and percentile calculation
-- Counter increments and rates
-- Correlation ID propagation in metric labels
+- Counter increments and rate calculations
+- Timer and summary registration for `/metrics` scraping
+- Correlation ID propagation through tracing and logs
 - Prometheus scrape format compliance
 
 To run tests:

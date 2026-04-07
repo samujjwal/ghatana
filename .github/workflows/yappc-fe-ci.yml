@@ -40,6 +40,9 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Enforce frontend duplication boundaries
+        run: pnpm run check:duplication-boundaries
+
       - name: No describe.skip in canvas integration tests (regression guard)
         working-directory: apps/yappc-web
         run: |
@@ -65,6 +68,13 @@ jobs:
 
       - name: Unit tests
         run: pnpm run test
+
+      - name: Verify Vitest retry policy
+        run: |
+          if grep -Eq 'retry:\s*[1-9]' vitest.config.ts; then
+            echo "vitest.config.ts enables blanket retries"
+            exit 1
+          fi
 
       - name: Build web
         run: pnpm run build:web

@@ -1,5 +1,12 @@
 package com.ghatana.phr.plugin;
 
+import com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter;
+import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
+import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
+import com.ghatana.kernel.adapter.datacloud.DataResult;
+import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
+import com.ghatana.kernel.adapter.datacloud.QueryResult;
+import com.ghatana.kernel.adapter.datacloud.SchemaCreateRequest;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.plugin.KernelPlugin;
@@ -12,7 +19,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +45,7 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     private static final String PLUGIN_ID = "fhir-interop-r4";
     private static final String VERSION = "1.0.0";
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+    private static final String FHIR_RESOURCE_DATASET = "phr.fhir.resources";
 
     private volatile KernelContext context;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -232,7 +242,25 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     private Promise<Void> initializeFhirResources() {
-        return Promise.complete();
+        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+            return Promise.complete();
+        }
+
+        return context.getDependency(DataCloudKernelAdapter.class).createSchema(
+            new SchemaCreateRequest(
+                FHIR_RESOURCE_DATASET,
+                Map.of(
+                    "id", "string",
+                    "resourceType", "string",
+                    "patient", "string",
+                    "subject", "string",
+                    "identifier", "string",
+                    "code", "string",
+                    "lastUpdated", "timestamp"
+                ),
+                Map.of("retention", "25years")
+            )
+        );
     }
 
     private Promise<Void> cleanupFhirResources() {
@@ -306,18 +334,208 @@ public class FhirInteropKernelPlugin implements KernelPlugin, FhirResourceServic
     }
 
     private Promise<Void> persistResource(FhirResource resource) {
-        // Persist to Data-Cloud
-        return Promise.complete();
+        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+            return Promise.complete();
+        }
+
+        return context.getDependency(DataCloudKernelAdapter.class).writeData(
+            new DataWriteRequest(
+                FHIR_RESOURCE_DATASET,
+                resource.getId(),
+                resource.getJson().getBytes(StandardCharsets.UTF_8),
+                extractIndexedMetadata(resource)
+            )
+        );
     }
 
     private Promise<FhirResource> loadResource(String resourceId) {
-        // Load from Data-Cloud
-        return Promise.of(new FhirResource(resourceId, "Unknown", "{}", Instant.now()));
+        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+            return Promise.of(new FhirResource(resourceId, "Unknown", "{}", Instant.now()));
+        }
+
+        return context.getDependency(DataCloudKernelAdapter.class)
+            .readData(new DataReadRequest(FHIR_RESOURCE_DATASET, resourceId, Map.of()))
+            .map(result -> {
+                if (result == null) {
+                    return new FhirResource(resourceId, "Unknown", "{}", Instant.now());
+                }
+
+                FhirResource resource = toFhirResource(result);
+                resourceCache.put(resource.getId(), resource);
+                return resource;
+            });
     }
 
     private Promise<SearchResult> performSearch(String resourceType, Map<String, String> searchParams) {
-        // Perform real search
-        return Promise.of(new SearchResult(Set.of(), 0));
+        if (context == null || !context.hasDependency(DataCloudKernelAdapter.class)) {
+            return Promise.of(searchCache(resourceType, searchParams));
+        }
+
+        return context.getDependency(DataCloudKernelAdapter.class)
+            .queryData(new DataQueryRequest(
+                FHIR_RESOURCE_DATASET,
+                "resourceType = :resourceType",
+                Map.of("resourceType", resourceType),
+                parseSearchCount(searchParams),
+                0
+            ))
+            .map(result -> toSearchResult(resourceType, searchParams, result));
+    }
+
+    private FhirResource toFhirResource(DataResult result) {
+        String json = new String(result.getData(), StandardCharsets.UTF_8);
+        try {
+            JsonNode root = JSON_MAPPER.readTree(json);
+            return new FhirResource(
+                result.getRecordId(),
+                textValue(root.path("resourceType"), "Unknown"),
+                json,
+                Instant.ofEpochMilli(result.getTimestamp())
+            );
+        } catch (Exception exception) {
+            throw new IllegalStateException("Unable to deserialize stored FHIR resource", exception);
+        }
+    }
+
+    private SearchResult toSearchResult(String resourceType, Map<String, String> searchParams, QueryResult queryResult) {
+        Set<FhirResource> matches = new LinkedHashSet<>();
+        for (DataResult result : queryResult.getResults()) {
+            FhirResource resource = toFhirResource(result);
+            if (!resourceType.equals(resource.getResourceType())) {
+                continue;
+            }
+            if (matchesSearchParams(resource.getJson(), searchParams)) {
+                resourceCache.put(resource.getId(), resource);
+                matches.add(resource);
+            }
+        }
+        return new SearchResult(matches, matches.size());
+    }
+
+    private SearchResult searchCache(String resourceType, Map<String, String> searchParams) {
+        Set<FhirResource> matches = new LinkedHashSet<>();
+        for (FhirResource resource : resourceCache.values()) {
+            if (!resourceType.equals(resource.getResourceType())) {
+                continue;
+            }
+            if (matchesSearchParams(resource.getJson(), searchParams)) {
+                matches.add(resource);
+            }
+        }
+        return new SearchResult(matches, matches.size());
+    }
+
+    private Map<String, String> extractIndexedMetadata(FhirResource resource) {
+        try {
+            JsonNode root = JSON_MAPPER.readTree(resource.getJson());
+            java.util.LinkedHashMap<String, String> metadata = new java.util.LinkedHashMap<>();
+            metadata.put("resourceType", resource.getResourceType());
+            metadata.put("lastUpdated", resource.getLastUpdated().toString());
+            putIfPresent(metadata, "patient", extractPatientReference(root));
+            putIfPresent(metadata, "subject", extractSubjectReference(root));
+            putIfPresent(metadata, "identifier", extractIdentifier(root));
+            putIfPresent(metadata, "code", extractCode(root));
+            return metadata;
+        } catch (Exception exception) {
+            return Map.of(
+                "resourceType", resource.getResourceType(),
+                "lastUpdated", resource.getLastUpdated().toString()
+            );
+        }
+    }
+
+    private boolean matchesSearchParams(String resourceJson, Map<String, String> searchParams) {
+        if (searchParams == null || searchParams.isEmpty()) {
+            return true;
+        }
+
+        try {
+            JsonNode root = JSON_MAPPER.readTree(resourceJson);
+            for (Map.Entry<String, String> entry : searchParams.entrySet()) {
+                String key = entry.getKey();
+                String expected = entry.getValue();
+
+                if (expected == null || expected.isBlank() || "_count".equals(key)) {
+                    continue;
+                }
+
+                String actual = switch (key) {
+                    case "id" -> textValue(root.path("id"), null);
+                    case "patient" -> extractPatientReference(root);
+                    case "subject" -> extractSubjectReference(root);
+                    case "identifier" -> extractIdentifier(root);
+                    case "code" -> extractCode(root);
+                    default -> textValue(root.path(key), null);
+                };
+
+                if (actual == null || !expected.equals(actual)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
+    private int parseSearchCount(Map<String, String> searchParams) {
+        if (searchParams == null) {
+            return 100;
+        }
+        try {
+            return Integer.parseInt(searchParams.getOrDefault("_count", "100"));
+        } catch (NumberFormatException exception) {
+            return 100;
+        }
+    }
+
+    private String extractPatientReference(JsonNode root) {
+        if ("Patient".equals(root.path("resourceType").asText()) && root.has("id")) {
+            return root.path("id").asText();
+        }
+        return extractReferenceId(textValue(root.path("patient").path("reference"), null));
+    }
+
+    private String extractSubjectReference(JsonNode root) {
+        return extractReferenceId(textValue(root.path("subject").path("reference"), null));
+    }
+
+    private String extractIdentifier(JsonNode root) {
+        JsonNode identifiers = root.path("identifier");
+        if (identifiers.isArray() && !identifiers.isEmpty()) {
+            return textValue(identifiers.get(0).path("value"), null);
+        }
+        return null;
+    }
+
+    private String extractCode(JsonNode root) {
+        JsonNode coding = root.path("code").path("coding");
+        if (coding.isArray() && !coding.isEmpty()) {
+            return textValue(coding.get(0).path("code"), null);
+        }
+        return null;
+    }
+
+    private String extractReferenceId(String reference) {
+        if (reference == null || reference.isBlank()) {
+            return null;
+        }
+        int slashIndex = reference.lastIndexOf('/');
+        return slashIndex >= 0 ? reference.substring(slashIndex + 1) : reference;
+    }
+
+    private void putIfPresent(Map<String, String> metadata, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            metadata.put(key, value);
+        }
+    }
+
+    private String textValue(JsonNode node, String defaultValue) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return defaultValue;
+        }
+        String value = node.asText();
+        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     private String generateConsentId(String patientId, String purpose) {

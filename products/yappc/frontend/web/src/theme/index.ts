@@ -11,12 +11,9 @@
 // Provider and components
 export {
   AppThemeProvider,
+  ThemeProvider,
   ThemeToggleButton,
   ThemeStatusIndicator,
-} from './AppThemeProvider';
-
-// Re-export @ghatana/theme hooks for convenience
-export {
   useTheme,
   useThemeMode,
   useResolvedTheme,
@@ -24,7 +21,6 @@ export {
   useSystemTheme,
   useIsDarkMode,
   useIsLightMode,
-} from '@ghatana/theme';
+} from './AppThemeProvider';
 
-// Re-export types
-export type { ThemeMode, ResolvedTheme } from '@ghatana/theme';
+export type { ThemeMode, ResolvedTheme } from './AppThemeProvider';

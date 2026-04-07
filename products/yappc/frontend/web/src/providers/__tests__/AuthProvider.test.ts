@@ -6,50 +6,9 @@
  * behaviour — incorrect mapping could over-privilege users.
  */
 import { describe, it, expect } from 'vitest';
-
-// --- inline the pure mapping logic so we can unit-test it without React
+import { mapAuthSessionToUser } from '../auth-session';
 
 type UserRole = 'ADMIN' | 'USER' | 'VIEWER';
-
-type AuthSessionUser = {
-  id: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  avatarUrl?: string;
-  role?: 'ADMIN' | 'USER' | 'VIEWER';
-  tenantId?: string;
-  workspaceIds?: string[];
-};
-
-type User = {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  tenantId: string;
-  workspaceIds: string[];
-};
-
-const VALID_ROLES = new Set<string>(['ADMIN', 'USER', 'VIEWER']);
-
-function mapAuthSessionToUser(user: AuthSessionUser): User {
-  const first = user.firstName?.trim() ?? '';
-  const last = user.lastName?.trim() ?? '';
-  const name = `${first} ${last}`.trim() || user.id;
-  const role: UserRole = user.role && VALID_ROLES.has(user.role) ? user.role : 'USER';
-  return {
-    id: user.id,
-    email: user.email ?? '',
-    name,
-    role,
-    tenantId:
-      user.tenantId && user.tenantId.trim().length > 0 ? user.tenantId : 'default-tenant',
-    workspaceIds: user.workspaceIds ?? [],
-  };
-}
-
-// ---
 
 describe('mapAuthSessionToUser — role mapping', () => {
   it('maps ADMIN role from API response', () => {
@@ -70,7 +29,7 @@ describe('mapAuthSessionToUser — role mapping', () => {
   it('defaults to USER role when API returns an unrecognised role string', () => {
     const result = mapAuthSessionToUser({
       id: 'u1',
-      role: 'SUPERADMIN' as UserRole,
+      role: 'SUPERADMIN' as never,
       tenantId: 'acme',
     });
     expect(result.role).toBe('USER');

@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Unified agent system for YAPPC.
@@ -49,6 +51,7 @@ import java.util.Map;
  * YappcAgentSystem system = YappcAgentSystem.builder()
  *     .eventloop(eventloop)
  *     .memoryStore(memoryStore)
+ *     .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED)
  *     .llmGateway(gateway)
  *     .build();
  *
@@ -80,6 +83,7 @@ public class YappcAgentSystem {
     private final MemoryStore memoryStore;
     private final LLMGenerator.LLMGateway llmGateway;
     private final LLMGenerator.LLMConfig llmConfig;
+    private final AiRuntimeMode aiRuntimeMode;
 
     // --- Observability ---
     private final AgentHeartbeatService heartbeatService;
@@ -89,6 +93,10 @@ public class YappcAgentSystem {
     private final Map<String, Map<String, Object>> agentDefinitions;
     /** Catalog entries keyed by agent id, loaded from all domain catalogs via {@code _index.yaml}. */
     private final Map<String, Map<String, Object>> catalogEntries;
+    /** Runtime ownership bindings keyed by catalog id, loaded from {@code runtime-ownership.yaml}. */
+    private final Map<String, RuntimeOwnershipBinding> runtimeOwnershipBindings;
+    /** Live ownership report comparing catalog declarations to registered runtime agents. */
+    private CatalogOwnershipReport catalogOwnershipReport;
 
     // --- AEP integration (Phase 9.2) ---
     @Nullable
@@ -103,6 +111,7 @@ public class YappcAgentSystem {
             @NotNull MemoryStore memoryStore,
             @Nullable LLMGenerator.LLMGateway llmGateway,
             @NotNull LLMGenerator.LLMConfig llmConfig,
+            @NotNull AiRuntimeMode aiRuntimeMode,
             @Nullable AepEventPublisher aepEventPublisher) {
         this.eventloop = eventloop;
         this.configBasePath = configBasePath;
@@ -111,10 +120,13 @@ public class YappcAgentSystem {
         this.plannerAgentInstances = new HashMap<>();
         this.agentDefinitions = new HashMap<>();
         this.catalogEntries = new HashMap<>();
+        this.runtimeOwnershipBindings = new HashMap<>();
+        this.catalogOwnershipReport = CatalogOwnershipReport.empty();
         this.sdlcRegistry = sdlcRegistry;
         this.memoryStore = memoryStore;
         this.llmGateway = llmGateway;
         this.llmConfig = llmConfig;
+        this.aiRuntimeMode = aiRuntimeMode;
         this.heartbeatService = new AgentHeartbeatService(sdlcRegistry, eventloop);
         this.aepEventPublisher = aepEventPublisher;
     }
@@ -162,6 +174,9 @@ public class YappcAgentSystem {
             loadAgentDefinitions();
             // Step 4: Load full agent catalog from _index.yaml (590+ domain agents)
             loadAgentCatalog();
+            loadRuntimeOwnershipBindings();
+            catalogOwnershipReport = reconcileCatalogOwnership();
+            logCatalogOwnershipReport(catalogOwnershipReport);
             validatePlannerInitialization();
 
             initialized = true;
@@ -174,8 +189,11 @@ public class YappcAgentSystem {
     // ==================== SDLC BOOTSTRAP (inlined) ====================
 
     private void bootstrapSdlcAgents() {
-        log.info("Starting SDLC agent bootstrap... (LLM-powered: {})",
-                llmGateway != null ? "YES" : "NO (using stubs)");
+        if (llmGateway == null) {
+            log.warn("Starting SDLC agent bootstrap in explicit stub mode (aiRuntimeMode={})", aiRuntimeMode);
+        } else {
+            log.info("Starting SDLC agent bootstrap with provider-backed LLM gateway (aiRuntimeMode={})", aiRuntimeMode);
+        }
 
         registerArchitectureSpecialists();
         registerImplementationSpecialists();
@@ -523,6 +541,159 @@ public class YappcAgentSystem {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void loadRuntimeOwnershipBindings() {
+        runtimeOwnershipBindings.clear();
+
+        File ownershipFile = new File(configBasePath + "/runtime-ownership.yaml");
+        if (!ownershipFile.exists()) {
+            log.warn("Runtime ownership manifest not found at {} — ownership drift will be reported but not reconciled",
+                    ownershipFile.getAbsolutePath());
+            return;
+        }
+
+        ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
+        try {
+            Map<String, Object> document = yamlMapper.readValue(ownershipFile, Map.class);
+            Map<String, Object> spec = (Map<String, Object>) document.get("spec");
+            if (spec == null) {
+                log.warn("runtime-ownership.yaml has no 'spec' key — skipping runtime ownership loading");
+                return;
+            }
+
+            List<Map<String, Object>> bindings = (List<Map<String, Object>>) spec.get("bindings");
+            if (bindings == null || bindings.isEmpty()) {
+                log.warn("runtime-ownership.yaml has no bindings — all runtime ownership will be reported as gaps");
+                return;
+            }
+
+            for (Map<String, Object> bindingNode : bindings) {
+                String catalogId = asTrimmedString(bindingNode.get("catalogId"));
+                String runtimeAgentId = asTrimmedString(bindingNode.get("runtimeAgentId"));
+                String runtimeStepName = asTrimmedString(bindingNode.get("runtimeStepName"));
+                if (catalogId == null || runtimeAgentId == null || runtimeStepName == null) {
+                    log.warn("Skipping malformed runtime ownership binding in {}: {}",
+                            ownershipFile.getName(), bindingNode);
+                    continue;
+                }
+                runtimeOwnershipBindings.put(
+                        catalogId,
+                        new RuntimeOwnershipBinding(catalogId, runtimeAgentId, runtimeStepName));
+            }
+
+            log.info("Loaded {} runtime ownership bindings", runtimeOwnershipBindings.size());
+        } catch (Exception e) {
+            log.error("Failed to load runtime ownership bindings from {}", ownershipFile.getAbsolutePath(), e);
+        }
+    }
+
+    private CatalogOwnershipReport reconcileCatalogOwnership() {
+        Set<String> runtimeBackedCatalogIds = new TreeSet<>();
+        Set<String> planningOnlyCatalogIds = new TreeSet<>();
+        Set<String> catalogOnlyCatalogIds = new TreeSet<>();
+        Set<String> obsoleteRuntimeBindings = new TreeSet<>();
+        Set<String> missingRuntimeRegistrations = new TreeSet<>();
+        Set<String> unownedRuntimeAgents = new TreeSet<>();
+
+        Set<String> actualRuntimeKeys = new TreeSet<>();
+        for (RuntimeDescriptor descriptor : collectRegisteredRuntimeDescriptors()) {
+            actualRuntimeKeys.add(descriptor.toKey());
+        }
+
+        for (Map.Entry<String, Map<String, Object>> entry : catalogEntries.entrySet()) {
+            String catalogId = entry.getKey();
+            if (runtimeOwnershipBindings.containsKey(catalogId)) {
+                runtimeBackedCatalogIds.add(catalogId);
+                continue;
+            }
+
+            String agentType = asTrimmedString(entry.getValue().get("agentType"));
+            if ("planning".equalsIgnoreCase(agentType)) {
+                planningOnlyCatalogIds.add(catalogId);
+            } else {
+                catalogOnlyCatalogIds.add(catalogId);
+            }
+        }
+
+        Set<String> boundRuntimeKeys = new TreeSet<>();
+        for (RuntimeOwnershipBinding binding : runtimeOwnershipBindings.values()) {
+            if (!catalogEntries.containsKey(binding.catalogId())) {
+                obsoleteRuntimeBindings.add(binding.describe());
+                continue;
+            }
+
+            String runtimeKey = binding.toRuntimeKey();
+            boundRuntimeKeys.add(runtimeKey);
+            if (!actualRuntimeKeys.contains(runtimeKey)) {
+                missingRuntimeRegistrations.add(binding.describe());
+            }
+        }
+
+        for (RuntimeDescriptor descriptor : collectRegisteredRuntimeDescriptors()) {
+            if (!boundRuntimeKeys.contains(descriptor.toKey())) {
+                unownedRuntimeAgents.add(descriptor.describe());
+            }
+        }
+
+        return new CatalogOwnershipReport(
+                new ArrayList<>(runtimeBackedCatalogIds),
+                new ArrayList<>(planningOnlyCatalogIds),
+                new ArrayList<>(catalogOnlyCatalogIds),
+                new ArrayList<>(obsoleteRuntimeBindings),
+                new ArrayList<>(missingRuntimeRegistrations),
+                new ArrayList<>(unownedRuntimeAgents));
+    }
+
+    private List<RuntimeDescriptor> collectRegisteredRuntimeDescriptors() {
+        List<RuntimeDescriptor> descriptors = new ArrayList<>();
+        for (String phase : sdlcRegistry.getAllPhases()) {
+            for (YAPPCAgentBase<?, ?> agent : sdlcRegistry.getAgentsByPhase(phase)) {
+                descriptors.add(new RuntimeDescriptor(agent.getAgentId(), agent.stepName()));
+            }
+        }
+        return descriptors;
+    }
+
+    private void logCatalogOwnershipReport(CatalogOwnershipReport report) {
+        if (report.hasOwnershipGaps()) {
+            log.warn(
+                    "Catalog ownership gaps detected. runtimeBacked={}, planningOnly={}, catalogOnly={}, obsoleteBindings={}, missingRuntimeRegistrations={}, unownedRuntimeAgents={} samples: catalogOnly={}, obsolete={}, missing={}, unowned={}",
+                    report.runtimeBackedCatalogIds().size(),
+                    report.planningOnlyCatalogIds().size(),
+                    report.catalogOnlyCatalogIds().size(),
+                    report.obsoleteRuntimeBindings().size(),
+                    report.missingRuntimeRegistrations().size(),
+                    report.unownedRuntimeAgents().size(),
+                    sample(report.catalogOnlyCatalogIds()),
+                    sample(report.obsoleteRuntimeBindings()),
+                    sample(report.missingRuntimeRegistrations()),
+                    sample(report.unownedRuntimeAgents()));
+            return;
+        }
+
+        log.info(
+                "Catalog ownership reconciled successfully. runtimeBacked={}, planningOnly={}, catalogOnly={}",
+                report.runtimeBackedCatalogIds().size(),
+                report.planningOnlyCatalogIds().size(),
+                report.catalogOnlyCatalogIds().size());
+    }
+
+    @Nullable
+    private static String asTrimmedString(@Nullable Object value) {
+        if (value == null) {
+            return null;
+        }
+        String stringValue = value.toString().trim();
+        return stringValue.isEmpty() ? null : stringValue;
+    }
+
+    private static String sample(List<String> values) {
+        if (values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream().limit(3).toList().toString();
+    }
+
     // ==================== PUBLIC API ====================
 
     /**
@@ -570,6 +741,17 @@ public class YappcAgentSystem {
     public int getCatalogSize() {
         requireInitialized();
         return catalogEntries.size();
+    }
+
+    /**
+     * Returns the live ownership report for catalog/runtime reconciliation.
+     *
+     * @throws IllegalStateException if not initialized
+     */
+    @NotNull
+    public CatalogOwnershipReport getCatalogOwnershipReport() {
+        requireInitialized();
+        return catalogOwnershipReport;
     }
 
     /**
@@ -656,6 +838,12 @@ public class YappcAgentSystem {
         return initialized;
     }
 
+    /** Returns the configured AI runtime mode for this agent system. */
+    @NotNull
+    public AiRuntimeMode getAiRuntimeMode() {
+        return aiRuntimeMode;
+    }
+
     private AepEventPublisher resolveEventPublisher() {
         return aepEventPublisher != null
                 ? aepEventPublisher
@@ -678,6 +866,67 @@ public class YappcAgentSystem {
         return new Builder();
     }
 
+    /** Explicit AI startup contract for the unified agent system. */
+    public enum AiRuntimeMode {
+        REQUIRED,
+        STUB
+    }
+
+    /** Runtime ownership binding loaded from {@code runtime-ownership.yaml}. */
+    public record RuntimeOwnershipBinding(
+            String catalogId,
+            String runtimeAgentId,
+            String runtimeStepName) {
+
+        public String toRuntimeKey() {
+            return runtimeAgentId + "|" + runtimeStepName;
+        }
+
+        public String describe() {
+            return catalogId + " -> " + runtimeAgentId + " (" + runtimeStepName + ")";
+        }
+    }
+
+    /** Lightweight runtime descriptor collected from the live registry. */
+    public record RuntimeDescriptor(String runtimeAgentId, String runtimeStepName) {
+
+        public String toKey() {
+            return runtimeAgentId + "|" + runtimeStepName;
+        }
+
+        public String describe() {
+            return runtimeAgentId + " (" + runtimeStepName + ")";
+        }
+    }
+
+    /** Report comparing catalog ownership declarations to the registered runtime. */
+    public record CatalogOwnershipReport(
+            List<String> runtimeBackedCatalogIds,
+            List<String> planningOnlyCatalogIds,
+            List<String> catalogOnlyCatalogIds,
+            List<String> obsoleteRuntimeBindings,
+            List<String> missingRuntimeRegistrations,
+            List<String> unownedRuntimeAgents) {
+
+        public static CatalogOwnershipReport empty() {
+            return new CatalogOwnershipReport(
+                    List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+        }
+
+        public boolean hasOwnershipGaps() {
+            return !catalogOnlyCatalogIds.isEmpty()
+                    || !obsoleteRuntimeBindings.isEmpty()
+                    || !missingRuntimeRegistrations.isEmpty()
+                    || !unownedRuntimeAgents.isEmpty();
+        }
+
+        public boolean hasRuntimeDrift() {
+            return !obsoleteRuntimeBindings.isEmpty()
+                    || !missingRuntimeRegistrations.isEmpty()
+                    || !unownedRuntimeAgents.isEmpty();
+        }
+    }
+
     /**
      * Builder for YappcAgentSystem.
      *
@@ -692,6 +941,7 @@ public class YappcAgentSystem {
         private MemoryStore memoryStore;
         private LLMGenerator.LLMGateway llmGateway;
         private LLMGenerator.LLMConfig llmConfig;
+        private AiRuntimeMode aiRuntimeMode = AiRuntimeMode.REQUIRED;
         private String configBasePath = "products/yappc/config/agents";
         private AepEventPublisher aepEventPublisher;
         /**
@@ -728,11 +978,22 @@ public class YappcAgentSystem {
         /**
          * Sets the LLM gateway for AI-powered agents.
          *
-         * @param llmGateway LLM gateway (nullable for stub mode)
+         * @param llmGateway LLM gateway
          * @return this builder
          */
         public Builder llmGateway(@Nullable LLMGenerator.LLMGateway llmGateway) {
             this.llmGateway = llmGateway;
+            return this;
+        }
+
+        /**
+         * Sets the explicit AI runtime mode.
+         *
+         * @param aiRuntimeMode runtime mode controlling whether an LLM gateway is mandatory
+         * @return this builder
+         */
+        public Builder aiRuntimeMode(@NotNull AiRuntimeMode aiRuntimeMode) {
+            this.aiRuntimeMode = aiRuntimeMode;
             return this;
         }
 
@@ -796,6 +1057,11 @@ public class YappcAgentSystem {
             if (memoryStore == null) {
                 throw new IllegalArgumentException("MemoryStore is required");
             }
+            if (aiRuntimeMode == AiRuntimeMode.REQUIRED && llmGateway == null) {
+                throw new IllegalArgumentException(
+                        "LLMGateway is required when aiRuntimeMode=REQUIRED. "
+                                + "Use aiRuntimeMode(STUB) only for explicit development/test stub boot.");
+            }
 
             LLMGenerator.LLMConfig effectiveConfig = llmConfig != null
                     ? llmConfig
@@ -812,7 +1078,7 @@ public class YappcAgentSystem {
             return new YappcAgentSystem(
                     eventloop, configBasePath,
                     new YappcAgentRegistryAdapter(effectivePlatformRegistry), memoryStore,
-                    llmGateway, effectiveConfig, aepEventPublisher);
+                    llmGateway, effectiveConfig, aiRuntimeMode, aepEventPublisher);
         }
     }
 }

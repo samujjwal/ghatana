@@ -17,7 +17,8 @@
     "paths": {
       "@/*": ["./apps/web/src/*"],
       "@/test-utils": ["./test-utils"],
-      "@ghatana/yappc-test-helpers": ["libs/test-helpers/src"]
+      "@yappc/testing": ["libs/testing/src/index.ts"],
+      "@yappc/testing/*": ["libs/testing/src/*"]
     }
   },
   "include": [

@@ -8,7 +8,7 @@ This guide gives a software architect the structural orientation they need to re
 
 YAPPC is a lifecycle management platform. Its core responsibility is tracking work-item state through eight discrete phases, enforcing governance gate rules at each transition, running approval workflows, and augmenting the whole process with AI-generated suggestions.
 
-YAPPC lives in `products/yappc/` and is one of several products built on the Ghatana monorepo's shared platform. It has its own Gradle root at `products/yappc/build.gradle.kts` and contains eighteen Gradle submodules organised into five domain clusters.
+YAPPC lives in `products/yappc/` and is one of several products built on the Ghatana monorepo's shared platform. It has its own Gradle root at `products/yappc/build.gradle.kts`. Start with `products/yappc/settings.gradle.kts`, `MODULE_CATALOG.md`, and `START_HERE_ARCHITECTURE.md` when validating whether a module name is current.
 
 ---
 
@@ -16,33 +16,42 @@ YAPPC lives in `products/yappc/` and is one of several products built on the Gha
 
 ```
 products/yappc/
+├── services/                 # Deployable YAPPC application entrypoint
 ├── core/
-│   ├── domain/            # Pure lifecycle domain model — phases, transitions, gates
-│   ├── spi/               # Extension points (WorkflowEventListener, etc.)
-│   ├── yappc-shared/      # Shared value objects, error types, enums
-│   ├── framework/         # DI wiring helpers, shared ActiveJ utilities
-│   ├── ai/                # LLM integration, prompt versioning, safety filter, fallback
-│   ├── knowledge-graph/   # Work-item relationship graph
-│   ├── agents/
-│   │   ├── runtime/       # Agent execution engine
-│   │   ├── workflow/      # Planning/orchestration agents
-│   │   └── specialists/   # Domain-specific suggestion agents
-│   ├── scaffold/
-│   │   ├── api/           # HTTP contract layer (routing, request/response types)
-│   │   ├── core/          # Scaffold orchestration
-│   │   └── packs/         # Reusable scaffold templates
-│   ├── refactorer/        # Code refactoring suggestion pipeline
-│   └── services-lifecycle/ # Entry point: HTTP server, DI module, GDPR, lifecycle orchestration
+│   ├── services-platform/    # Shared HTTP/platform service plumbing
+│   ├── services-lifecycle/   # Lifecycle HTTP/service library and route composition
+│   ├── yappc-domain-impl/    # Canonical internal domain implementation
+│   ├── yappc-services/       # Lifecycle and product business logic
+│   ├── yappc-infrastructure/ # Product-specific adapters and persistence integration
+│   ├── yappc-api/            # Current API-facing Java types
+│   ├── yappc-shared/         # Shared contracts and cross-module value types
+│   ├── yappc-agents/         # Consolidated agent implementation surface
+│   ├── ai/                   # AI provider integration and safety flows
+│   ├── knowledge-graph/      # Knowledge graph capability
+│   ├── agents/               # Capability family still containing runtime/workflow specialists
+│   ├── scaffold/             # Scaffold API/core/generators/templates family
+│   └── refactorer/           # Refactorer API/engine family
+├── infrastructure/
+│   └── datacloud/            # Data Cloud integration surface
+├── libs/
+│   └── java/yappc-domain/    # Public product domain contracts
 └── build.gradle.kts
 ```
 
-**Enforced dependency rules** (ArchUnit-tested):
+**Retired or compatibility-only names**
+
+- `backend:api` was removed; use `services/` plus `core/services-lifecycle` for runtime and HTTP work.
+- `core:domain` was replaced by `core:yappc-domain-impl`.
+- `core:framework` was absorbed into current infrastructure/service modules.
+- `core:lifecycle` is removed; do not describe it as the active entry surface.
+
+**Enforced dependency rules** (ArchUnit-tested and module-catalog backed):
 
 - `agents/*` **must not** import from `scaffold` or `refactorer`
 - `scaffold` **must not** import from `agents`
-- `domain` has no upstream dependencies within YAPPC
-- `spi` may only depend on `domain` and Ghatana platform contracts
-- All modules may depend on `yappc-shared` and `framework`
+- `yappc-domain-impl` must stay free of product-local framework leakage
+- `yappc-infrastructure` is the adapter boundary, not `yappc-services`
+- `services/` is the deployable composition root; route/business logic belongs in the underlying modules, not in the app wrapper
 
 ---
 
@@ -106,24 +115,23 @@ Feature flags are a first-class lifecycle concept. Rules are evaluated per-tenan
 
 ### Adding a New Lifecycle Phase
 
-1. Add the enum value to `LifecyclePhase` in `core/domain`.
-2. Implement the `PhaseGate` rules for all edges touching the new phase.
-3. Register the rules in `LifecycleServiceModule`.
-4. Update the ArchUnit dependency test if the new gate has cross-cluster dependencies.
-5. Add migration for any phase-indexed persistence tables.
-6. Update the Grafana dashboard to include the new phase in the transition filter.
+1. Add the phase contract in the active domain surface (`libs/java/yappc-domain` for public contracts, `core/yappc-domain-impl` for internal implementation details).
+2. Implement or update gate logic in the owning lifecycle/business module.
+3. Register route, workflow, or policy wiring in `core/services-lifecycle` where the HTTP/runtime composition lives.
+4. Update persistence and observability surfaces in the owning adapter modules.
+5. Add regression coverage in the same module family that owns the new behavior.
 
 ### Adding a New AI Suggestion Type
 
-1. Create a new `SpecialistAgent` in `core/agents/specialists/`.
+1. Decide whether the behavior belongs in the consolidated `core/yappc-agents` surface or a remaining `core/agents/*` capability module.
 2. Implement `TypedAgent<LifecycleContext, SuggestionResult>`.
-3. Register the agent via the platform agent registry in `platform/java/agent-core`.
+3. Register the agent via the current product/registry wiring rather than introducing new legacy agent entrypoints.
 4. Add a prompt template in `core/ai/src/main/resources/prompts/`.
-5. Wire into the suggestion pipeline in `core/agents/workflow/`.
+5. Wire into the active orchestration path in `core/yappc-agents` or `core/agents/workflow`, depending on where the current caller lives.
 
 ### Adding a New Platform API Boundary
 
-All new HTTP routes must be added to `RoutingServlet` in `YappcLifecycleService`, delegate to a dedicated controller, and be secured via the existing `TenantContextFilter` + `JwtAuthFilter` chain.
+All new HTTP routes must be composed through the ActiveJ routing surface in `core/services-lifecycle`, delegate to a dedicated controller/use case, and be secured via the current auth filter chain.
 
 Do **not** add logic directly into `YappcLifecycleService`. It is a composition root, not a handler.
 

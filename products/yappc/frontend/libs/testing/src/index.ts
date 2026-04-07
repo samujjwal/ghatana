@@ -1,5 +1,5 @@
 /**
- * @ghatana/yappc-testing
+ * @yappc/testing
  * 
  * Unified testing utilities, helpers, and mocks for YAPPC.
  * 

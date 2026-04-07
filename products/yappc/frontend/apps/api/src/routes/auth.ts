@@ -15,6 +15,21 @@ import { AuthService } from '../services/auth/auth.service';
 // Initialize auth service
 const authService = new AuthService();
 
+type RegisterRequestBody = {
+  email: string;
+  password: string;
+  name: string;
+};
+
+type LoginRequestBody = {
+  email: string;
+  password: string;
+};
+
+type RefreshRequestBody = {
+  refreshToken: string;
+};
+
 // ============================================================================
 // Authentication Routes
 // ============================================================================
@@ -44,7 +59,7 @@ export async function authRoutes(fastify: unknown) {
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { email, password, name } = request.body as unknown;
+      const { email, password, name } = request.body as RegisterRequestBody;
       
       const result = await authService.register({
         email,
@@ -53,10 +68,10 @@ export async function authRoutes(fastify: unknown) {
       });
 
       reply.code(201).send(result);
-    } catch (error) {
+    } catch (error: unknown) {
       reply.code(400).send({
         error: 'Registration failed',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Registration failed',
       });
     }
   });
@@ -84,7 +99,7 @@ export async function authRoutes(fastify: unknown) {
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { email, password } = request.body as unknown;
+      const { email, password } = request.body as LoginRequestBody;
       
       const result = await authService.login({
         email,
@@ -92,10 +107,10 @@ export async function authRoutes(fastify: unknown) {
       });
 
       reply.send(result);
-    } catch (error) {
+    } catch (error: unknown) {
       reply.code(401).send({
         error: 'Authentication failed',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Authentication failed',
       });
     }
   });
@@ -113,15 +128,15 @@ export async function authRoutes(fastify: unknown) {
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { refreshToken } = request.body as unknown;
+      const { refreshToken } = request.body as RefreshRequestBody;
       
-      const result = await authService.refreshToken(refreshToken);
+      const result = await authService.refreshTokens(refreshToken);
 
       reply.send(result);
-    } catch (error) {
+    } catch (error: unknown) {
       reply.code(401).send({
         error: 'Token refresh failed',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Token refresh failed',
       });
     }
   });
@@ -293,13 +308,13 @@ export async function authenticateToken(request: FastifyRequest, reply: FastifyR
     }
 
     const token = authHeader.substring(7);
-    const user = await authService.verifyToken(token);
+    const user = await authService.validateAccessToken(token);
     
     (request as unknown).user = user;
-  } catch (error) {
+  } catch (error: unknown) {
     return reply.code(401).send({
       error: 'Invalid token',
-      message: error.message,
+      message: error instanceof Error ? error.message : 'Invalid token',
     });
   }
 }

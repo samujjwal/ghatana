@@ -4,11 +4,15 @@
 
 ## Quick Links
 
-- [Architecture Overview](ARCHITECTURE.md) - System design and module structure
-- [Development Guide](DEVELOPMENT.md) - Contributing, coding standards, testing
-- [Deployment Guide](DEPLOYMENT.md) - Running YAPPC locally and in production
-- [API Reference](API.md) - HTTP and gRPC API documentation
-- [Testing Guide](TESTING.md) - Writing and running tests
+- [Start Here Architecture](START_HERE_ARCHITECTURE.md) - Current module topology, deployable surfaces, and contributor entry points
+- [Module Catalog](MODULE_CATALOG.md) - Authoritative active/retired module inventory
+- [Development Guide](DEVELOPMENT.md) - Contributing, coding standards, and review expectations
+- [Developer Onboarding](onboarding/developer.md) - Local build, test, and run workflow
+- [API Checklist](api/API_CHECKLIST.md) - API ownership and contract delivery guidance
+- [OpenAPI Contract](api/openapi.yaml) - Current HTTP contract under test
+- [Testing Guide](TESTING.md) - Unit, integration, and browser test guidance
+- [Deployment Guide](guides/DEPLOYMENT_GUIDE.md) - Runtime and deployment expectations
+- [Docker Local Runtime](deployment/README_DOCKER.md) - Local support services and containers
 
 ## Module Documentation
 
@@ -24,17 +28,17 @@
 - [AI Workflows](guides/ai-workflows.md) - AI-powered development workflows
 - [Canvas Guide](guides/canvas-guide.md) - Visual canvas usage
 
-## Architecture
+## Current Topology
 
-YAPPC is organized into 5 domain clusters:
+Use [START_HERE_ARCHITECTURE.md](START_HERE_ARCHITECTURE.md) as the primary architectural overview. It aligns the docs surface, Gradle settings, and CI workflows around the current module model:
 
-1. **Foundation Layer** - domain, spi, framework
-2. **AI & Knowledge Layer** - ai, knowledge-graph
-3. **Agent Execution Layer** - agents/*
-4. **Scaffolding Layer** - scaffold/*
-5. **Refactoring Layer** - refactorer/*
+1. `services/` is the deployable application entrypoint.
+2. `core/services-platform` and `core/services-lifecycle` are the canonical reusable HTTP/service libraries.
+3. `core/yappc-*` modules own the current domain, API, infrastructure, shared, and agent implementation surfaces.
+4. Capability families such as `core/agents/*`, `core/scaffold/*`, `core/refactorer/*`, `core/ai`, and `core/knowledge-graph` remain active where they still own real code.
+5. Removed or compatibility-only names such as `backend:api`, `core:domain`, `core:framework`, and `core:lifecycle` are historical and must not be treated as primary architecture.
 
-See [CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md) for complete details.
+Historical migration and audit material belongs under [archive/](archive/) or the dated audit/implementation-plan directories.
 
 ## Support
 
@@ -44,4 +48,4 @@ See [CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md) for complete details.
 
 ---
 
-**Last Updated:** 2026-03-23
+**Last Updated:** 2026-04-07

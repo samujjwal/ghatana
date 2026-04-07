@@ -50,7 +50,7 @@ export type { AppProps } from './AppExample';
  * 
  * 1. Install dependencies:
  * ```bash
- * pnpm add @ghatana/yappc-ui @ghatana/yappc-canvas @ghatana/yappc-api jotai react-router-dom zod
+ * pnpm add @yappc/ui @yappc/canvas @yappc/api jotai react-router-dom zod
  * ```
  * 
  * 2. Create main.tsx:

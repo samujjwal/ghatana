@@ -61,6 +61,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.h2)
 }
 
 tasks.withType<Test> {
