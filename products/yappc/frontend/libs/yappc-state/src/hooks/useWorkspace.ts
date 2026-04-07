@@ -192,7 +192,7 @@ export function useWorkspace(): {
     },
     onSuccess: (workspace) => {
       upsertWorkspace(workspace as Parameters<typeof upsertWorkspace>[0]);
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
     },
   });
 
@@ -230,7 +230,7 @@ export function useWorkspace(): {
     },
     onSuccess: (id) => {
       removeWorkspace(id);
-      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      void queryClient.invalidateQueries({ queryKey: ['workspaces'] });
     },
   });
 

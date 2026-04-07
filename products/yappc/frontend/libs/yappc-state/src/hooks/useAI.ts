@@ -13,7 +13,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import type { WritableAtom } from 'jotai';
 import { useCallback } from 'react';
 
 import {
@@ -266,7 +265,7 @@ export function useCopilot(): {
         appendMessage(result.userMessage);
         appendMessage(result.assistantMessage);
       }
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ['copilotSession', session?.id],
       });
     },

@@ -225,7 +225,7 @@ export function useProject(workspaceId: string | null): {
     },
     onSuccess: (project) => {
       upsertProject(project as Parameters<typeof upsertProject>[0]);
-      queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
+      void queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
     },
   });
 
@@ -264,7 +264,7 @@ export function useProject(workspaceId: string | null): {
     },
     onSuccess: (id) => {
       removeProject(id);
-      queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
+      void queryClient.invalidateQueries({ queryKey: ['projects', workspaceId] });
     },
   });
 
