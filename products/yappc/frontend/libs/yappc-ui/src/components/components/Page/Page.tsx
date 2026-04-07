@@ -1,7 +1,8 @@
-import { Box, Typography, Breadcrumb as Breadcrumbs, Link } from '@ghatana/design-system';
 import React from 'react';
 
-import { spacing } from '../../tokens';
+import { Box, Typography, Breadcrumb as Breadcrumbs, Link } from '@ghatana/design-system';
+
+import { type spacing } from '../../tokens';
 import { isMobile } from '../../utils/platform';
 import { Container } from '../Container';
 import { Stack } from '../Stack';

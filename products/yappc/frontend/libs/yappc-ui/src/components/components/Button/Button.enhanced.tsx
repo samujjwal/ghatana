@@ -7,6 +7,8 @@
  * @packageDocumentation
  */
 
+import React from 'react';
+
 import { Button as BaseButton, Tooltip } from '@ghatana/design-system';
 import {
   borderRadiusSm,
@@ -18,7 +20,6 @@ import {
   fontWeightMedium,
   fontWeightSemibold,
 } from '@ghatana/yappc-shared-ui-core/tokens';
-import React from 'react';
 
 import { useAccessibility } from '../../hooks';
 import useKeyboardActivate from '../../hooks/useKeyboardActivate';
@@ -237,17 +238,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, r
   const { a11yProps, rest: otherProps } = getA11yProps(rest);
 
   // Extract and clone icons to mark them as decorative
-  const { startIcon, endIcon } = otherProps as unknown;
+  const { startIcon, endIcon } = otherProps;
   const clonedStartIcon =
     startIcon && React.isValidElement(startIcon)
-      ? React.cloneElement(startIcon as React.ReactElement, {
+      ? React.cloneElement(startIcon, {
           'aria-hidden': true,
         })
       : startIcon;
 
   const clonedEndIcon =
     endIcon && React.isValidElement(endIcon)
-      ? React.cloneElement(endIcon as React.ReactElement, {
+      ? React.cloneElement(endIcon, {
           'aria-hidden': true,
         })
       : endIcon;

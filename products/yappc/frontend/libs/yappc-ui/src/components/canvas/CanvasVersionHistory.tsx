@@ -10,7 +10,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -26,6 +25,8 @@ import {
     Tooltip,
 } from '@mui/material';
 import { History as HistoryIcon, RotateCcw as RestoreIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
 import type { CanvasVersion } from '@yappc/core/types';
 
 export interface CanvasVersionHistoryProps {

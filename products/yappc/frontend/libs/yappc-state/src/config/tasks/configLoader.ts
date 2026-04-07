@@ -293,6 +293,9 @@ export class TaskConfigLoader {
     workflows: Map<string, WorkflowDefinition>;
   };
 
+  /**
+   *
+   */
   constructor(options: ConfigLoaderOptions) {
     this.options = options;
     this.cache = {

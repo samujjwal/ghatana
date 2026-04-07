@@ -22,11 +22,11 @@ import React, {
 } from 'react';
 import {
   ReactFlow,
-  Node,
-  Edge,
-  Connection,
-  NodeChange,
-  EdgeChange,
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeChange,
+  type EdgeChange,
   Controls,
   MiniMap,
   Background,
@@ -38,11 +38,12 @@ import {
   MarkerType,
   useReactFlow,
   ReactFlowProvider,
-  NodeTypes,
+  type NodeTypes,
   EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtom, useSetAtom } from 'jotai';
 import {
   ZoomIn,
   ZoomOut,
@@ -76,12 +77,18 @@ import {
   FileCode,
   Layers,
 } from 'lucide-react';
-import { useAtom, useSetAtom } from 'jotai';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+
+
+import {
+  canvasStateAtom,
+  canvasNodesAtom,
+  canvasEdgesAtom,
+  selectedCanvasNodeAtom,
+} from '@yappc/canvas';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,13 +97,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from '@yappc/ui';
-
-import {
-  canvasStateAtom,
-  canvasNodesAtom,
-  canvasEdgesAtom,
-  selectedCanvasNodeAtom,
-} from '@yappc/canvas';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================
 // Types

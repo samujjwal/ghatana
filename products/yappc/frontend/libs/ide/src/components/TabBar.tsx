@@ -9,12 +9,13 @@
  * @doc.pattern React Component
  */
 
-import React, { useCallback, useState } from 'react';
 import { useAtom } from 'jotai';
-import { ideOpenTabsAtom, ideActiveFileIdAtom, ideFilesAtom } from '../state/atoms';
+import React, { useCallback, useState } from 'react';
+
 import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
-import { setActiveTab, getActiveTab } from '../utils/tabManager';
+import { ideOpenTabsAtom, ideActiveFileIdAtom, ideFilesAtom } from '../state/atoms';
 import type { IDETab } from '../types';
+import { setActiveTab, getActiveTab } from '../utils/tabManager';
 
 /**
  * Tab Bar Props

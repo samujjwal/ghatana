@@ -11,7 +11,7 @@
  * @doc.pattern Command
  */
 
-import { LifecyclePhase } from '../types/lifecycle';
+import { type LifecyclePhase } from '../types/lifecycle';
 
 /**
  * Command category for canvas commands

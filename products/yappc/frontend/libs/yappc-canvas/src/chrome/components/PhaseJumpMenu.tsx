@@ -17,6 +17,9 @@
  * @doc.layer components
  */
 
+import { useAtom } from 'jotai';
+import React, { useMemo } from 'react';
+
 import {
   Box,
   Menu,
@@ -25,8 +28,6 @@ import {
   Chip,
 } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
-import { useAtom } from 'jotai';
-import React, { useMemo } from 'react';
 
 import { chromeCurrentPhaseAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS, LIFECYCLE_PHASES } from '../tokens/canvas-tokens';

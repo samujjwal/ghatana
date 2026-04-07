@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download,
@@ -27,6 +26,7 @@ import {
   Maximize2,
   Copy,
 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
@@ -34,6 +34,7 @@ import { Dialog } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
+
 import {
   DropdownMenu,
   DropdownMenuTrigger,

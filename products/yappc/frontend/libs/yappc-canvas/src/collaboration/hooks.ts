@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+import type { UserRole, PermissionScope } from '../schemas/permission-schemas';
+
 import {
   mockCollaborationServer,
 } from './server';
-
 import type {
   CanvasPermission,
   ExtendedShareToken,
   CreatePermissionRequest,
   CollaborationServer} from './server';
-import type { UserRole, PermissionScope } from '../schemas/permission-schemas';
 
 // Permission management hook
 /**

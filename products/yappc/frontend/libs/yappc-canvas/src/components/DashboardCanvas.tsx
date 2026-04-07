@@ -5,9 +5,10 @@
  * @doc.pattern Specialized Canvas Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, Divider } from '@ghatana/design-system';
 import { BarChart3 as ChartIcon, HardDrive as DataIcon, Filter as FilterIcon, BarChart3 as BarChart, ShowChart, PieChart, RefreshCw as Refresh, Publish } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, Divider } from '@ghatana/design-system';
 
 /**
  * Dashboard node types

@@ -1,5 +1,5 @@
 /**
- * @fileoverview Canvas Virtualization Hook
+ * @file Canvas Virtualization Hook
  * Efficiently renders large canvas scenes by only rendering visible elements
  * 
  * @doc.type hook
@@ -68,18 +68,30 @@ export interface VirtualizationResult {
 // Spatial Index for Fast Queries
 // ============================================================================
 
+/**
+ *
+ */
 class SpatialIndex {
   private grid: Map<string, VirtualElement[]> = new Map();
   private cellSize: number = 200;
 
+  /**
+   *
+   */
   constructor(cellSize: number = 200) {
     this.cellSize = cellSize;
   }
 
+  /**
+   *
+   */
   clear(): void {
     this.grid.clear();
   }
 
+  /**
+   *
+   */
   insert(element: VirtualElement): void {
     const cellKey = this.getCellKey(element.x, element.y);
     if (!this.grid.has(cellKey)) {
@@ -88,6 +100,9 @@ class SpatialIndex {
     this.grid.get(cellKey)!.push(element);
   }
 
+  /**
+   *
+   */
   queryRange(bounds: ViewportBounds): VirtualElement[] {
     const results: VirtualElement[] = [];
     const seen = new Set<string>();
@@ -119,12 +134,18 @@ class SpatialIndex {
     return results;
   }
 
+  /**
+   *
+   */
   private getCellKey(x: number, y: number): string {
     const col = Math.floor(x / this.cellSize);
     const row = Math.floor(y / this.cellSize);
     return `${col},${row}`;
   }
 
+  /**
+   *
+   */
   private intersectsBounds(element: VirtualElement, bounds: ViewportBounds): boolean {
     return (
       element.x < bounds.right &&

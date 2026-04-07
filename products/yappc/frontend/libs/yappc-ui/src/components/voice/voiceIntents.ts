@@ -6,7 +6,7 @@
  * enabling voice control of YAPPC functionality.
  */
 
-import { VoiceCommand, VoiceIntent } from './useVoiceCommands';
+import { type VoiceCommand, type VoiceIntent } from './useVoiceCommands';
 
 export interface VoiceActionResult {
   success: boolean;

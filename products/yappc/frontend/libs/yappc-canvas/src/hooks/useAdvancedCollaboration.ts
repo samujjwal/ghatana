@@ -1,4 +1,5 @@
 import { useReactFlow } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useState, useRef } from 'react';
 // yjs and related providers are optional runtime dependencies and sometimes lack
@@ -10,7 +11,6 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 
-import type { Node, Edge } from '@xyflow/react';
 // @ts-ignore
 // @ts-ignore
 // Note: Import atoms from your actual canvas atoms file

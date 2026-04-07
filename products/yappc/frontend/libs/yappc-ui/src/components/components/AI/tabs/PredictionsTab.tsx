@@ -1,7 +1,9 @@
-import { Card, CardContent, LinearProgress, InteractiveList as List, ListItem, ListItemText, Typography, Chip } from '@ghatana/design-system';
-import { Grid } from '../../Grid';
 import React from 'react';
+
+import { Card, CardContent, LinearProgress, InteractiveList as List, ListItem, ListItemText, Typography, Chip } from '@ghatana/design-system';
 import { Box } from '@ghatana/design-system';
+
+import { Grid } from '../../Grid';
 /** Props for PredictionsTab */
 interface Props {
     insights: {

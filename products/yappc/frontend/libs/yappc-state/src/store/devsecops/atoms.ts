@@ -11,7 +11,6 @@ import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
 import { devsecopsClient } from '@yappc/core/api/devsecops/client';
-
 import type {
   Item,
   ItemFilter,
@@ -103,7 +102,7 @@ export const itemsAtom = atom(async (get) => {
   // Depend on refresh token so mutations can invalidate this atom.
   get(itemsRefreshAtom);
   const filter = get(filterConfigAtom);
-  const response = await devsecopsClient.getItems(filter as ItemFilter);
+  const response = await devsecopsClient.getItems(filter);
   return response.data;
 });
 

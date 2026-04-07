@@ -1,5 +1,6 @@
-import type { AccessibilityAuditResult } from '../../utils/accessibility';
 import type { MutableRefObject } from 'react';
+
+import type { AccessibilityAuditResult } from '../../utils/accessibility';
 
 /**
  * Hook options for useAccessibility.

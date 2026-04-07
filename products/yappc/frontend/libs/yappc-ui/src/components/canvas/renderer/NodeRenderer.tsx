@@ -9,11 +9,11 @@
 
 import React, { useMemo, useCallback } from 'react';
 
+import type { ComponentNodeData } from '../types/CanvasNode';
+
 import { RendererComponentRegistry, useRegisteredComponent } from './ComponentRegistry';
 import { ThemeApplicator, ThemeLayer } from './ThemeApplicator';
-
 import type { ThemeContext} from './ThemeApplicator';
-import type { ComponentNodeData } from '../types/CanvasNode';
 
 // ============================================================================
 // Types

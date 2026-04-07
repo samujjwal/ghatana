@@ -7,7 +7,6 @@ import clsx from 'clsx';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { helpContentManager } from './manager-singleton';
-
 import type { ContextualHelpProps, HelpContent } from './types';
 
 /**

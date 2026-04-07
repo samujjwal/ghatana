@@ -11,6 +11,8 @@
  */
 
 import { nanoid } from 'nanoid';
+
+import type { UniversalNode, UniqueId } from '../../model/contracts';
 import type {
     Command,
     CommandMeta,
@@ -25,7 +27,6 @@ import type {
     ReparentNodePayload,
     ReorderChildrenPayload,
 } from '../CommandTypes';
-import type { UniversalNode, UniqueId } from '../../model/contracts';
 
 // ============================================================================
 // Document Store Interface
@@ -106,6 +107,9 @@ abstract class BaseNodeCommand<TPayload, TResult = void>
     readonly payload: TPayload;
     protected previousState?: unknown;
 
+    /**
+     *
+     */
     constructor(payload: TPayload, meta: CommandMeta) {
         this.payload = payload;
         this.meta = meta;
@@ -114,6 +118,9 @@ abstract class BaseNodeCommand<TPayload, TResult = void>
     abstract execute(): Promise<CommandResult<TResult>>;
     abstract undo(): Promise<CommandResult<TResult>>;
 
+    /**
+     *
+     */
     canMerge(other: Command): boolean {
         // By default, commands of the same type on the same node can merge
         return (
@@ -122,15 +129,24 @@ abstract class BaseNodeCommand<TPayload, TResult = void>
         );
     }
 
+    /**
+     *
+     */
     merge(other: Command): Command<TPayload, TResult> {
         // Default: just keep the latest command
         return this;
     }
 
+    /**
+     *
+     */
     validate(): boolean {
         return true;
     }
 
+    /**
+     *
+     */
     serialize(): SerializedCommand {
         return {
             type: this.type,
@@ -153,6 +169,9 @@ abstract class BaseNodeCommand<TPayload, TResult = void>
 export class InsertNodeCommand extends BaseNodeCommand<InsertNodePayload, UniversalNode> {
     readonly type = 'InsertNode' as const;
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult<UniversalNode>> {
         const store = getStore();
 
@@ -223,6 +242,9 @@ export class InsertNodeCommand extends BaseNodeCommand<InsertNodePayload, Univer
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult<UniversalNode>> {
         const store = getStore();
 
@@ -250,10 +272,16 @@ export class InsertNodeCommand extends BaseNodeCommand<InsertNodePayload, Univer
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
 
+    /**
+     *
+     */
     validate(): boolean {
         return (
             !!this.payload.nodeId &&
@@ -276,6 +304,9 @@ export class DeleteNodeCommand extends BaseNodeCommand<DeleteNodePayload, Univer
     readonly type = 'DeleteNode' as const;
     private deletedNodes: UniversalNode[] = [];
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult<UniversalNode[]>> {
         const store = getStore();
 
@@ -331,6 +362,9 @@ export class DeleteNodeCommand extends BaseNodeCommand<DeleteNodePayload, Univer
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult<UniversalNode[]>> {
         const store = getStore();
 
@@ -356,10 +390,16 @@ export class DeleteNodeCommand extends BaseNodeCommand<DeleteNodePayload, Univer
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
 
+    /**
+     *
+     */
     validate(): boolean {
         return !!this.payload.nodeId;
     }
@@ -376,6 +416,9 @@ export class UpdatePropsCommand extends BaseNodeCommand<UpdatePropsPayload> {
     readonly type = 'UpdateProps' as const;
     private previousProps: Record<string, unknown> = {};
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -416,6 +459,9 @@ export class UpdatePropsCommand extends BaseNodeCommand<UpdatePropsPayload> {
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -431,10 +477,16 @@ export class UpdatePropsCommand extends BaseNodeCommand<UpdatePropsPayload> {
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
 
+    /**
+     *
+     */
     merge(other: Command): Command<UpdatePropsPayload> {
         if (other instanceof UpdatePropsCommand && other.payload.nodeId === this.payload.nodeId) {
             // Merge props from both commands
@@ -462,6 +514,9 @@ export class UpdateStyleCommand extends BaseNodeCommand<UpdateStylePayload> {
     readonly type = 'UpdateStyle' as const;
     private previousStyle: Record<string, unknown> = {};
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -502,6 +557,9 @@ export class UpdateStyleCommand extends BaseNodeCommand<UpdateStylePayload> {
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -517,10 +575,16 @@ export class UpdateStyleCommand extends BaseNodeCommand<UpdateStylePayload> {
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
 
+    /**
+     *
+     */
     merge(other: Command): Command<UpdateStylePayload> {
         if (other instanceof UpdateStyleCommand && other.payload.nodeId === this.payload.nodeId) {
             return new UpdateStyleCommand(
@@ -547,6 +611,9 @@ export class UpdateTransformCommand extends BaseNodeCommand<UpdateTransformPaylo
     readonly type = 'UpdateTransform' as const;
     private previousTransform: UniversalNode['transform'] | null = null;
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -577,6 +644,9 @@ export class UpdateTransformCommand extends BaseNodeCommand<UpdateTransformPaylo
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -594,10 +664,16 @@ export class UpdateTransformCommand extends BaseNodeCommand<UpdateTransformPaylo
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
 
+    /**
+     *
+     */
     merge(other: Command): Command<UpdateTransformPayload> {
         if (
             other instanceof UpdateTransformCommand &&
@@ -626,6 +702,9 @@ export class UpdateContentCommand extends BaseNodeCommand<UpdateContentPayload> 
     readonly type = 'UpdateContent' as const;
     private previousContent: UniversalNode['content'] | undefined;
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -664,6 +743,9 @@ export class UpdateContentCommand extends BaseNodeCommand<UpdateContentPayload> 
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -679,6 +761,9 @@ export class UpdateContentCommand extends BaseNodeCommand<UpdateContentPayload> 
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
@@ -697,6 +782,9 @@ export class ReparentNodeCommand extends BaseNodeCommand<ReparentNodePayload> {
     private previousIndex = 0;
     private previousTransform: UniversalNode['transform'] | null = null;
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -768,6 +856,9 @@ export class ReparentNodeCommand extends BaseNodeCommand<ReparentNodePayload> {
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -793,6 +884,9 @@ export class ReparentNodeCommand extends BaseNodeCommand<ReparentNodePayload> {
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.nodeId;
     }
@@ -809,6 +903,9 @@ export class ReorderChildrenCommand extends BaseNodeCommand<ReorderChildrenPaylo
     readonly type = 'ReorderChildren' as const;
     private previousChildren: readonly UniqueId[] = [];
 
+    /**
+     *
+     */
     async execute(): Promise<CommandResult> {
         const store = getStore();
 
@@ -855,6 +952,9 @@ export class ReorderChildrenCommand extends BaseNodeCommand<ReorderChildrenPaylo
         }
     }
 
+    /**
+     *
+     */
     async undo(): Promise<CommandResult> {
         const store = getStore();
 
@@ -870,6 +970,9 @@ export class ReorderChildrenCommand extends BaseNodeCommand<ReorderChildrenPaylo
         }
     }
 
+    /**
+     *
+     */
     protected getTargetNodeId(): UniqueId {
         return this.payload.parentId;
     }

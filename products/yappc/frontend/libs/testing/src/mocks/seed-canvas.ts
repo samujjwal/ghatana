@@ -365,7 +365,7 @@ if (
     process.exit(1);
   }
   const data = seedScenarios[scenario as keyof typeof seedScenarios]();
-  // eslint-disable-next-line no-console
+   
   console.log(JSON.stringify(data, null, 2));
 }
 

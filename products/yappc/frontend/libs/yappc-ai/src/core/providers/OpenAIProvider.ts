@@ -2,7 +2,6 @@ import OpenAI from 'openai';
 
 import { AIService } from '../AIService';
 import { AIServiceError } from '../types';
-
 import type {
   AIProvider,
   AIServiceConfig,

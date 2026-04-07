@@ -1,4 +1,6 @@
 import { Search as SearchIcon, X as CloseIcon, KeyboardArrowUp as ArrowUpIcon, ChevronDown as ArrowDownIcon, Play as PlayIcon, Settings as SettingsIcon, Accessibility as AccessibilityIcon, Keyboard as KeyboardIcon, Palette as PaletteIcon, Type as TextFieldsIcon, Eye as VisibilityIcon, VolumeUp as VolumeUpIcon, Gauge as SpeedIcon, Pointer as TouchAppIcon } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -32,14 +34,12 @@ import {
   Fade,
   MenuItem,
 } from '@ghatana/design-system';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {
   useCommandPalette,
   useAccessibility,
   useKeyboardShortcuts
 } from './hooks';
-
 import type {
   Command,
   CommandCategory,

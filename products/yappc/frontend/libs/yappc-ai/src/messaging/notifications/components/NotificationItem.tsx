@@ -6,7 +6,6 @@
  * @module notifications/components
  */
 
-import React, { useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Info, 
@@ -20,6 +19,8 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
+import React, { useCallback } from 'react';
+
 import type { Notification, NotificationType } from '../hooks/useNotificationBackend';
 
 export interface NotificationItemProps {

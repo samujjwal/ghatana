@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
@@ -26,6 +25,7 @@ import {
   Code2,
   Wand2,
 } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';

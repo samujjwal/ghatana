@@ -10,8 +10,9 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { simplifyPoints } from '../utils/smoothStroke';
+
 import type { SketchTool, SketchToolConfig, StrokeData, ShapeData, Point } from '../types';
+import { simplifyPoints } from '../utils/smoothStroke';
 
 /**
  * Parameters for useSketchTools hook
@@ -106,7 +107,7 @@ export function useSketchTools({
           points: [point.x, point.y],
           color: config.color,
           strokeWidth: config.strokeWidth,
-          tool: activeTool as 'pen' | 'highlighter' | 'eraser',
+          tool: activeTool,
           opacity: config.opacity,
           smoothed: false,
         });

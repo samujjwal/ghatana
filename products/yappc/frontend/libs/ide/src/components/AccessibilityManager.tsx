@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+
 import { InteractiveButton } from './MicroInteractions';
 
 /**
@@ -62,6 +63,9 @@ export interface AccessibilityManagerProps {
 class AccessibilityAuditor {
   private violations: AccessibilityViolation[] = [];
 
+  /**
+   *
+   */
   async audit(): Promise<AccessibilityViolation[]> {
     this.violations = [];
 
@@ -92,6 +96,9 @@ class AccessibilityAuditor {
     return this.violations;
   }
 
+  /**
+   *
+   */
   private checkKeyboardNavigation(): void {
     const interactiveElements = document.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -114,6 +121,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkAriaLabels(): void {
     const interactiveElements = document.querySelectorAll(
       'button:not([aria-label]):not([aria-labelledby]), input:not([aria-label]):not([aria-labelledby])'
@@ -136,6 +146,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkFocusIndicators(): void {
     const style = document.createElement('style');
     style.textContent = `
@@ -148,6 +161,9 @@ class AccessibilityAuditor {
     }, 100);
   }
 
+  /**
+   *
+   */
   private checkColorContrast(): void {
     // This would require a color contrast calculation library
     // For now, we'll just check for hardcoded colors that might be problematic
@@ -175,6 +191,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkHeadingOrder(): void {
     const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
     let lastLevel = 0;
@@ -200,6 +219,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkAltText(): void {
     const images = document.querySelectorAll('img');
 
@@ -220,6 +242,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkFormLabels(): void {
     const inputs = document.querySelectorAll('input, select, textarea');
 
@@ -244,6 +269,9 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private checkLinkText(): void {
     const links = document.querySelectorAll('a');
 
@@ -266,10 +294,16 @@ class AccessibilityAuditor {
     });
   }
 
+  /**
+   *
+   */
   private addViolation(violation: AccessibilityViolation): void {
     this.violations.push(violation);
   }
 
+  /**
+   *
+   */
   private getSelector(element: Element): string {
     if (element.id) return `#${element.id}`;
     if (element.className) return `.${element.className.split(' ').join('.')}`;

@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+
 import './Spinner.css';
 
 export type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';

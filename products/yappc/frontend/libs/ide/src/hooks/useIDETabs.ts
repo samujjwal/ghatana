@@ -9,8 +9,9 @@
  * @doc.pattern React Hook
  */
 
-import { useCallback } from 'react';
 import { useAtom } from 'jotai';
+import { useCallback } from 'react';
+
 import {
   ideOpenTabsAtom,
   ideActiveFileAtom,

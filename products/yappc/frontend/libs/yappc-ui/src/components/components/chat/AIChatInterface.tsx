@@ -10,16 +10,8 @@
  * @doc.phase bootstrapping
  */
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-  useMemo,
-  forwardRef,
-} from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtomValue, useSetAtom } from 'jotai';
 import {
   Send,
   Paperclip,
@@ -42,6 +34,14 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  forwardRef,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -49,6 +49,13 @@ import remarkGfm from 'remark-gfm';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+
+import {
+  conversationHistoryAtom,
+  inputModeAtom,
+  aiAgentStateAtom,
+} from '@yappc/canvas';
 import { Textarea } from '@yappc/ui';
 import {
   DropdownMenu,
@@ -56,14 +63,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@yappc/ui';
-import { Tooltip } from '@ghatana/design-system';
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-
-import {
-  conversationHistoryAtom,
-  inputModeAtom,
-  aiAgentStateAtom,
-} from '@yappc/canvas';
 
 // =============================================================================
 // Types

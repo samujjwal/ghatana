@@ -7,6 +7,8 @@
  * @packageDocumentation
  */
 
+import React from 'react';
+
 import { Tabs as BaseTabs, Tab as BaseTab, Box, Badge } from '@ghatana/design-system';
 import {
   borderRadiusSm,
@@ -18,7 +20,6 @@ import {
   fontWeightMedium,
   fontWeightBold,
 } from '@ghatana/yappc-shared-ui-core/tokens';
-import React from 'react';
 
 /**
  * Props for the enhanced Tabs component.

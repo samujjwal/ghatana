@@ -1,6 +1,8 @@
-import { Box } from '@ghatana/design-system';
-import { useGlobalStateValue } from '@yappc/state';
 import React from 'react';
+
+import { Box } from '@ghatana/design-system';
+
+import { useGlobalStateValue } from '@yappc/state';
 
 /**
  * Native matchMedia hook replacing MUI's useTheme + useMediaQuery

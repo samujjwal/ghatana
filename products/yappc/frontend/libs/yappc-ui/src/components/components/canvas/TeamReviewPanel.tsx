@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -31,12 +30,17 @@ import {
   MessageSquare,
   Star,
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { Dialog } from '@ghatana/design-system';
+
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,9 +48,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@yappc/ui';
-import { Tooltip } from '@ghatana/design-system';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { Dialog } from '@ghatana/design-system';
 
 // =============================================================================
 // Types

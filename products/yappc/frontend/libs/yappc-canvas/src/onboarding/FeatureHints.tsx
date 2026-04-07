@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { CANVAS_Z_INDEX } from '../config/z-index';
 
 /**
@@ -184,7 +185,7 @@ export const FeatureHintBubble: React.FC<FeatureHintProps> = ({
   // Calculate position
   const getPosition = (): React.CSSProperties => {
     const padding = 12;
-    let style: React.CSSProperties = { position: 'fixed' };
+    const style: React.CSSProperties = { position: 'fixed' };
 
     switch (hint.placement) {
       case 'top':

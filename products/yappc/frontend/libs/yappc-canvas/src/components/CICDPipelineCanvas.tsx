@@ -9,9 +9,11 @@
  * @doc.pattern Canvas
  */
 
-import React, { useState } from 'react';
-import { Box, Surface as Paper, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Chip, IconButton, Select, MenuItem, FormControl, InputLabel, Stack, Alert, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Tooltip, FormControlLabel, Checkbox } from '@ghatana/design-system';
 import { Plus as AddIcon, Play as PlayIcon, Hammer as BuildIcon, CheckCircle as CheckCircleIcon, AlertCircle as ErrorIcon, Clock as ScheduleIcon, HardDrive as StorageIcon, Cloud as CloudIcon, Code as CodeIcon, Shield as SecurityIcon, Bug as BugIcon, Send as PublishIcon, Trash2 as DeleteIcon, Download as ExportIcon, Share2 as ShareIcon, Settings as SettingsIcon, Timer as TimerIcon, Github as GitHubIcon, GitBranch as JenkinsIcon, Cloud as CircleCIIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Box, Surface as Paper, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Chip, IconButton, Select, MenuItem, FormControl, InputLabel, Stack, Alert, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Tooltip, FormControlLabel, Checkbox } from '@ghatana/design-system';
+
 import { useCICDPipeline, type StageType, type PipelineStage, type StageStatus } from '../hooks/useCICDPipeline';
 
 /**

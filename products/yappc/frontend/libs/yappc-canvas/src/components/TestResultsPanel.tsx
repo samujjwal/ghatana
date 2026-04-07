@@ -17,9 +17,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState } from 'react';
-import { Box, Button, Checkbox, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 import { CheckCircle as ApproveIcon, XCircle as RejectIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Info as InfoIcon, X as CloseIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Box, Button, Checkbox, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 
 import type { GeneratedTestCase } from '@yappc/ai';
 

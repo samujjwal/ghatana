@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+
 import { getCanvasTelemetry, CanvasTelemetryEvent } from './canvas-telemetry';
 
 /**
@@ -186,6 +187,9 @@ export class ABTestManager {
   private assignments: Map<string, ABTestAssignment> = new Map();
   private userId: string;
 
+  /**
+   *
+   */
   constructor(userId?: string) {
     this.userId = userId || this.generateUserId();
     this.loadAssignments();

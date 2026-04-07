@@ -18,11 +18,11 @@
  * @doc.pattern Advanced Component
  */
 
-import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 
 import Editor from '@monaco-editor/react';
 import type { OnMount, Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
+import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import * as Y from 'yjs';
 
 import type { CodeEditorConfig } from '@yappc/code-editor';

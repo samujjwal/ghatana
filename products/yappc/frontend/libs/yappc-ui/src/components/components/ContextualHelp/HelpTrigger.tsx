@@ -7,7 +7,6 @@ import clsx from 'clsx';
 import React, { useState } from 'react';
 
 import { HelpPanel } from './HelpPanel';
-
 import type { HelpTriggerProps } from './types';
 
 /**

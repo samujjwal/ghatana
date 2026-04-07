@@ -16,10 +16,11 @@
  * @doc.layer components
  */
 
-import { Box, Menu } from '@ghatana/design-system';
-import { MenuItem } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useState } from 'react';
+
+import { Box, Menu } from '@ghatana/design-system';
+import { MenuItem } from '@ghatana/design-system';
 
 import {
   chromeCurrentPhaseAtom,

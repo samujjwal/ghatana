@@ -10,10 +10,10 @@
  * - Real-time status updates
  */
 
-import { calculateStepPositions, getStepStyle } from './helpers';
-
-import type { Runbook, RunbookConfig } from './types';
 import type { CanvasDocument, CanvasNode, CanvasEdge, CanvasElement } from '../types/canvas-document';
+
+import { calculateStepPositions, getStepStyle } from './helpers';
+import type { Runbook, RunbookConfig } from './types';
 
 const CANVAS_DOCUMENT_VERSION = '1.0.0';
 

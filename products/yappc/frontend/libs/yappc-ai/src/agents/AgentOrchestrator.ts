@@ -12,6 +12,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+
 import type {
     AgentContext,
     AgentName,
@@ -87,6 +88,9 @@ interface ExecutionStage {
 export class AgentOrchestrator {
     private agents: Map<AgentName, IAIAgent<unknown, unknown>>;
 
+    /**
+     *
+     */
     constructor() {
         this.agents = new Map();
     }
@@ -102,7 +106,7 @@ export class AgentOrchestrator {
      * Get a registered agent
      */
     getAgent<TInput, TOutput>(name: AgentName): IAIAgent<TInput, TOutput> | undefined {
-        return this.agents.get(name) as IAIAgent<TInput, TOutput> | undefined;
+        return this.agents.get(name);
     }
 
     /**

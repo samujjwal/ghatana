@@ -16,9 +16,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Box, Surface as Paper, Typography, TextField, Button, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemText as ListItemSecondaryAction, Checkbox, Collapse, LinearProgress, Alert, IconButton, Divider } from '@ghatana/design-system';
 import { Folder as FolderIcon, File as FileIcon, Code as CodeIcon, Search as SearchIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Plus as AddIcon, Trash2 as DeleteIcon, Sparkles as AIIcon, Check as CheckIcon } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+
+import { Box, Surface as Paper, Typography, TextField, Button, Chip, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemText as ListItemSecondaryAction, Checkbox, Collapse, LinearProgress, Alert, IconButton, Divider } from '@ghatana/design-system';
 
 export interface ContextStepProps {
     /** Intent data from previous step */

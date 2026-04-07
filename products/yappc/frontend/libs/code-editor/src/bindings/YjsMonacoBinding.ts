@@ -17,8 +17,9 @@
  * @doc.pattern Binding
  */
 
-import type * as Y from 'yjs';
 import type { editor } from 'monaco-editor';
+import type * as Y from 'yjs';
+
 import type { CollaborativeCursor } from '../components/EnhancedCodeEditor';
 
 /**
@@ -268,7 +269,7 @@ export class YjsMonacoBinding {
       this.isRemoteChange = true;
 
       // Apply changes to Monaco
-      let currentDelta = event.delta;
+      const currentDelta = event.delta;
       
       // Handle retain/delete/insert operations
       let currentPosition = 0;

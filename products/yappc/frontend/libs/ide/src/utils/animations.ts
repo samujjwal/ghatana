@@ -269,7 +269,7 @@ export const hooks = {
 
     return {
       ...baseStyles,
-      ...css.animate(animation.name, duration as keyof typeof TIMING, easing as keyof typeof EASING, fillMode),
+      ...css.animate(animation.name, duration, easing, fillMode),
     };
   },
 

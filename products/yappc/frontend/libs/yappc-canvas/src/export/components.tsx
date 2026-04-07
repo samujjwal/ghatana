@@ -1,4 +1,6 @@
 import { Download as DownloadIcon, Share2 as ShareIcon, Shield as SecurityIcon, Download as GetAppIcon, FileCopy as FileCopyIcon, Trash2 as DeleteIcon, Eye as VisibilityIcon, EyeOff as VisibilityOffIcon, AlertTriangle as WarningIcon, CheckCircle as CheckCircleIcon, XCircle as CancelIcon, MoreVertical as MoreVertIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -29,9 +31,6 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { TextField, ListItemSecondaryAction, MenuItem } from '@ghatana/design-system';
-import React, { useState, useCallback } from 'react';
-
-import { useExport, useShareLinks, useSecurityAudit } from './hooks';
 
 import type { CanvasData } from '../schemas/canvas-schemas';
 import type {
@@ -43,6 +42,9 @@ import type {
   JsonExportOptions,
   ShareLinkConfig,
 } from '../schemas/export-schemas';
+
+import { useExport, useShareLinks, useSecurityAudit } from './hooks';
+
 
 // Export dialog component
 /**

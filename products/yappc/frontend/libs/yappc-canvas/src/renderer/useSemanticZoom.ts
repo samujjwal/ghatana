@@ -11,6 +11,7 @@
  */
 
 import { useMemo, useCallback } from 'react';
+
 import type { ArtifactContract, UniversalNode } from '../model/contracts';
 
 // ============================================================================

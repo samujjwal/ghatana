@@ -15,12 +15,13 @@
  * @doc.pattern Container
  */
 
-import React, { useState, useCallback } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import { LifecyclePhase } from '../types/lifecycle';
+import React, { useState, useCallback } from 'react';
+
 import { getPhaseDefinition } from '../config/phase-colors';
 import { CANVAS_Z_INDEX } from '../config/z-index';
 import { canvasSelectionAtom } from '../state/atoms';
+import { type LifecyclePhase } from '../types/lifecycle';
 
 export interface FrameProps {
   /** Frame ID */

@@ -7,11 +7,13 @@
  * @module DevSecOps/ItemCard
  */
 
-import { Avatar, AvatarGroup, Box, Card, CardContent, Chip, LinearProgress, Typography } from '@ghatana/design-system';
 import { GitBranch as AccountTreeIcon } from 'lucide-react';
+import type React from 'react';
+
+import { Avatar, AvatarGroup, Box, Card, CardContent, Chip, LinearProgress, Typography } from '@ghatana/design-system';
 
 import type { ItemCardProps } from './types';
-import type React from 'react';
+
 
 /**
  * ItemCard - Canvas item card

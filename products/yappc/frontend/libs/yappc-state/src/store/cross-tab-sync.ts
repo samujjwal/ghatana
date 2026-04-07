@@ -171,6 +171,9 @@ class SyncManager {
   private isInitialized = false;
   private storageListener: ((event: Event) => void) | null = null;
 
+  /**
+   *
+   */
   constructor(config: SyncConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }

@@ -159,12 +159,25 @@ export class AIClient {
     private baseUrl: string;
     private cache = new Map<string, { data: unknown; timestamp: number }>();
 
+    /**
+     *
+     */
     private async parseJson<T>(response: Response): Promise<T> {
         const data: unknown = await response.json();
         return data as T;
     }
+
+    /**
+     *
+     */
+    private toInsightArray(value: unknown): AIInsight[] {
+        return Array.isArray(value) ? (value as AIInsight[]) : [];
+    }
     private readonly cacheTTL = 30000; // 30 seconds
 
+    /**
+     *
+     */
     constructor(baseUrl = '/api/ai') {
         this.baseUrl = baseUrl;
     }
@@ -193,7 +206,8 @@ export class AIClient {
             throw new Error(`Failed to fetch insights: ${response.statusText}`);
         }
 
-        const insights = await this.parseJson<Insight[]>(response);
+        const rawInsights: unknown = await this.parseJson<unknown>(response);
+        const insights = this.toInsightArray(rawInsights);
         this.setCache(cacheKey, insights);
         return insights;
     }

@@ -6,9 +6,11 @@
  */
 
 import React from 'react';
+
 import { Box, ToggleButtonGroup, ToggleButton, Tooltip, Surface as Paper } from '@ghatana/design-system';
-import type { PersonaType } from '../types/persona';
+
 import { getAvailablePersonas, getPersonaConfig } from '../config/personaConfigs';
+import type { PersonaType } from '../types/persona';
 
 /**
  * Props for PersonaSwitcher component
@@ -99,7 +101,7 @@ export const PersonaSwitcher: React.FC<PersonaSwitcherProps> = ({
                                     className="flex flex-col gap-1 py-2" style={{ minWidth: vertical ? 'auto' : 100 }}
                                 >
                                     <Box className="text-xl">
-                                        {PERSONA_ICONS[persona as keyof typeof PERSONA_ICONS]}
+                                        {PERSONA_ICONS[persona]}
                                     </Box>
                                     <Box className="font-medium text-[11px]">{persona}</Box>
                                 </ToggleButton>
@@ -158,7 +160,7 @@ export const CompactPersonaSwitcher: React.FC<PersonaSwitcherProps> = ({
                                 aria-label={config.name}
                                 className="px-4"
                             >
-                                {PERSONA_ICONS[persona as keyof typeof PERSONA_ICONS]}
+                                {PERSONA_ICONS[persona]}
                             </ToggleButton>
                         </span>
                     </Tooltip>

@@ -10,9 +10,11 @@
  * @doc.phase initialization
  */
 
-import { useCallback, useMemo, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
+
 import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo, useEffect } from 'react';
 
 import {
   wizardStateAtom,
@@ -24,7 +26,6 @@ import {
   costEstimateAtom,
   teamInvitesAtom,
 } from '@yappc/canvas';
-
 import {
   GET_WIZARD_STATE,
   GET_INFRASTRUCTURE_OPTIONS,

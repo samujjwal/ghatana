@@ -75,13 +75,13 @@ export async function fetchSuggestionsForType(
   if (!['completion', 'edit', 'explain', 'improve'].includes(type)) return [];
 
   // safe access to the prompt function
-  const promptFn = SUGGESTION_PROMPTS[type as SuggestionType];
+  const promptFn = SUGGESTION_PROMPTS[type];
   const prompt =
     typeof promptFn === 'function' ? promptFn(context, selection) : '';
 
   // aiService is intentionally opaque in this helper to avoid cross-package type deps
    
-  const svc = aiService as unknown as {
+  const svc = aiService as {
     complete: (...args: unknown[]) => Promise<unknown>;
   };
   const response = await svc.complete({
@@ -117,7 +117,7 @@ export async function fetchAllSuggestions(
   for (const t of types) {
      
     const res = await fetchSuggestionsForType(
-      aiService as unknown,
+      aiService,
       t,
       context,
       selection,

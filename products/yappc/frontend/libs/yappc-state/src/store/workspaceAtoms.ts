@@ -13,8 +13,10 @@
 
 import { atom } from 'jotai';
 import type { WritableAtom } from 'jotai';
-import { StateManager } from './StateManager';
+
 import type { Workspace, Project } from '@yappc/core/types';
+
+import { StateManager } from './StateManager';
 
 // ============================================================================
 // Primitive atoms
@@ -97,11 +99,7 @@ export const currentWorkspaceAtom =
 export const upsertWorkspaceAtom = atom(
   null,
   (get, set, workspace: Workspace) => {
-    const wAtom = workspacesAtom as WritableAtom<
-      Workspace[],
-      [Workspace[]],
-      void
-    >;
+    const wAtom = workspacesAtom;
     const current = get(wAtom);
     const idx = current.findIndex((w) => w.id === workspace.id);
     if (idx >= 0) {
@@ -120,11 +118,7 @@ export const upsertWorkspaceAtom = atom(
 export const removeWorkspaceAtom = atom(
   null,
   (get, set, workspaceId: string) => {
-    const wAtom = workspacesAtom as WritableAtom<
-      Workspace[],
-      [Workspace[]],
-      void
-    >;
+    const wAtom = workspacesAtom;
     const current = get(wAtom);
     set(
       wAtom,

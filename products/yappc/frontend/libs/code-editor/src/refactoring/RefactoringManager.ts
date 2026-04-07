@@ -87,6 +87,9 @@ export class RefactoringManager {
   private fileContents: Map<string, string> = new Map();
   private listeners: Set<(operation: RefactoringOperation) => void> = new Set();
 
+  /**
+   *
+   */
   constructor() {}
 
   /**

@@ -16,9 +16,10 @@
  * @doc.layer components
  */
 
-import { Box } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React from 'react';
+
+import { Box } from '@ghatana/design-system';
 
 import { chromeShowEmptyStateAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';

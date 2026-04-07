@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { SimpleCache, DataSourceUtils } from './utils';
-
 import type {
   DataSourceConfig,
   DataSourceResult,
   DataSourceType,
 } from './types';
+import { SimpleCache, DataSourceUtils } from './utils';
+
 
 // Global shared cache instance
 const CACHE = new SimpleCache();
@@ -55,7 +55,7 @@ const CACHE = new SimpleCache();
  * });
  * ```
  */
-// eslint-disable-next-line max-lines-per-function
+ 
 export function useDataSource<TData = unknown>(
   config: DataSourceConfig<TData>
 ): DataSourceResult<TData> {

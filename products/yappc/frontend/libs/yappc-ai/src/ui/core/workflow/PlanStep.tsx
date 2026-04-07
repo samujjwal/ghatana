@@ -16,9 +16,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Surface as Paper, Typography, Button, IconButton, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemText as ListItemSecondaryAction, Chip, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Stepper, Step, StepLabel, StepLabel as StepContent, Alert, LinearProgress, Collapse, Tooltip } from '@ghatana/design-system';
 import { GripVertical as DragIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Plus as AddIcon, Check as CheckIcon, X as CloseIcon, Clock as TimeIcon, AlertTriangle as WarningIcon, Sparkles as AIIcon, RefreshCw as RegenerateIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Surface as Paper, Typography, Button, IconButton, InteractiveList as List, ListItem, ListItemIcon, ListItemText, ListItemText as ListItemSecondaryAction, Chip, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Stepper, Step, StepLabel, StepLabel as StepContent, Alert, LinearProgress, Collapse, Tooltip } from '@ghatana/design-system';
 
 export interface PlanStepProps {
     /** Context data from previous step */

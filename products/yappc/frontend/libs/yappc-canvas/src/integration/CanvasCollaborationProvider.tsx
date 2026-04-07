@@ -7,12 +7,15 @@
  * @module canvas/integration
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useReactFlow } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
 import { getWebSocketClient } from '@yappc/ai/realtime';
+
 import { useCanvasCollaborationBackend } from '../hooks/useCanvasCollaborationBackend';
 import { useCollaboration } from '../hooks/useCollaboration';
-import type { Node, Edge } from '@xyflow/react';
+
 
 /**
  * Collaboration context value

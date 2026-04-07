@@ -7,7 +7,6 @@ import clsx from 'clsx';
 import React, { useState, useEffect } from 'react';
 
 import { onboardingTourManager } from './OnboardingTour';
-
 import type { Tour} from './OnboardingTour';
 
 /**

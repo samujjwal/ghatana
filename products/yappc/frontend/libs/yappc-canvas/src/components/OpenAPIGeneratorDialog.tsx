@@ -10,10 +10,12 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, Box, Typography, Tabs, Tab, Switch, FormControlLabel, Alert, IconButton, Chip, Surface as Paper, Divider } from '@ghatana/design-system';
-import { X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, CheckCircle as CheckIcon, AlertCircle as ErrorIcon, Plug as APIIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, CheckCircle as CheckIcon, AlertCircle as ErrorIcon, Plug as APIIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel, Box, Typography, Tabs, Tab, Switch, FormControlLabel, Alert, IconButton, Chip, Surface as Paper, Divider } from '@ghatana/design-system';
+
 import { OpenAPIService, type OpenAPIGenerationOptions, type APINodeData } from '../services/OpenAPIService';
 
 /**
@@ -147,8 +149,8 @@ export function OpenAPIGeneratorDialog({ open, onClose, apiNodes }: OpenAPIGener
         const tagSet = new Set<string>();
         for (const methods of Object.values(spec.paths)) {
             for (const endpoint of Object.values(methods)) {
-                if (Array.isArray((endpoint as unknown).tags)) {
-                    (endpoint as unknown).tags.forEach((tag: string) => tagSet.add(tag));
+                if (Array.isArray((endpoint).tags)) {
+                    (endpoint).tags.forEach((tag: string) => tagSet.add(tag));
                 }
             }
         }

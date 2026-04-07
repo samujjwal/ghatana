@@ -10,10 +10,12 @@
  * @doc.pattern Component
  */
 
-import React, { useCallback, useMemo } from 'react';
-import { Box, Button, ToggleButtonGroup as ButtonGroup, Tooltip, Menu, MenuItem, Divider, Typography } from '@ghatana/design-system';
-import { Group as GroupIcon, GitFork as UngroupIcon, Circle as StatusIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { Group as GroupIcon, GitFork as UngroupIcon, Circle as StatusIcon } from 'lucide-react';
+import React, { useCallback, useMemo } from 'react';
+
+import { Box, Button, ToggleButtonGroup as ButtonGroup, Tooltip, Menu, MenuItem, Divider, Typography } from '@ghatana/design-system';
+
 import type { GroupStatus } from '../components/NodeGroup';
 
 // ============================================================================

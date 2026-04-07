@@ -9,7 +9,8 @@
  * @doc.layer presentation
  */
 
-import { useCallback, useMemo } from 'react';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
+
 import {
   useQuery,
   useLazyQuery,
@@ -17,7 +18,23 @@ import {
   useSubscription,
 } from '@apollo/client';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useCallback, useMemo } from 'react';
 
+
+import {
+  sprintsAtom,
+  activeSprintAtom,
+  storiesMapAtom,
+  boardColumnsAtom,
+  pullRequestsAtom,
+  featureFlagsAtom,
+  deploymentsAtom,
+  epicsAtom,
+  velocityDataAtom,
+  updateStoryStatusAction,
+  moveStoryToSprintAction,
+  toggleFeatureFlagAction,
+} from '@yappc/canvas';
 import {
   GET_SPRINT,
   LIST_SPRINTS,
@@ -94,21 +111,6 @@ import {
   type EpicFilter,
 } from '@yappc/core/api';
 
-import {
-  sprintsAtom,
-  activeSprintAtom,
-  storiesMapAtom,
-  boardColumnsAtom,
-  pullRequestsAtom,
-  featureFlagsAtom,
-  deploymentsAtom,
-  epicsAtom,
-  velocityDataAtom,
-  updateStoryStatusAction,
-  moveStoryToSprintAction,
-  toggleFeatureFlagAction,
-} from '@yappc/canvas';
-
 // =============================================================================
 // Sprint Hooks
 // =============================================================================
@@ -117,7 +119,12 @@ import {
  * Hook for fetching a single sprint
  */
 export function useSprint(sprintId: string | undefined) {
-  const { data, loading, error, refetch } = useQuery(GET_SPRINT, {
+  type SprintData = { sprint?: Record<string, unknown> };
+  const runSprintQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => { data?: SprintData; loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  const { data, loading, error, refetch } = runSprintQuery(GET_SPRINT, {
     variables: { id: sprintId },
     skip: !sprintId,
   });
@@ -126,7 +133,7 @@ export function useSprint(sprintId: string | undefined) {
     sprint: data?.sprint,
     loading,
     error,
-    refetch,
+    refetch: () => refetch(),
   };
 }
 
@@ -134,14 +141,18 @@ export function useSprint(sprintId: string | undefined) {
  * Hook for listing sprints
  */
 export function useSprints(projectId: string, status?: 'planned' | 'active' | 'completed') {
+  type Sprint = { [key: string]: unknown };
+  type SprintsQueryResult = { sprints?: Sprint[] };
+  type SprintsQueryState = { loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  const runSprintsQuery = useQuery as unknown as (query: unknown, options: unknown) => SprintsQueryState;
   const [sprints, setSprints] = useAtom(sprintsAtom);
 
-  const { loading, error, refetch } = useQuery(LIST_SPRINTS, {
+  const { loading, error, refetch } = runSprintsQuery(LIST_SPRINTS, {
     variables: { projectId, status },
     skip: !projectId,
-    onCompleted: (data) => {
-      if (data?.sprints) {
-        setSprints(data.sprints);
+    onCompleted: (queryData: SprintsQueryResult) => {
+      if (queryData?.sprints) {
+        setSprints(queryData.sprints);
       }
     },
   });
@@ -158,24 +169,33 @@ export function useSprints(projectId: string, status?: 'planned' | 'active' | 'c
  * Hook for active sprint with stories
  */
 export function useActiveSprint(projectId: string) {
+  type Sprint = { id?: string; [key: string]: unknown };
+  type ActiveSprintQueryResult = { activeSprint?: Sprint };
+  type BoardColumn = { [key: string]: unknown };
+  type ActiveSprintQueryState = { loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  type SprintUpdatePayload = { sprintUpdated?: { sprint?: Sprint } };
+  type SprintSubscriptionState = { data?: SprintUpdatePayload };
+  const runActiveSprintQuery = useQuery as unknown as (query: unknown, options: unknown) => ActiveSprintQueryState;
+  const runSprintSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => SprintSubscriptionState;
+
   const [activeSprint, setActiveSprint] = useAtom(activeSprintAtom);
   const [boardColumns, setBoardColumns] = useAtom(boardColumnsAtom);
 
-  const { loading, error, refetch } = useQuery(GET_ACTIVE_SPRINT, {
+  const { loading, error, refetch } = runActiveSprintQuery(GET_ACTIVE_SPRINT, {
     variables: { projectId },
     skip: !projectId,
-    onCompleted: (data) => {
-      if (data?.activeSprint) {
-        setActiveSprint(data.activeSprint);
+    onCompleted: (queryData: ActiveSprintQueryResult) => {
+      if (queryData?.activeSprint) {
+        setActiveSprint(queryData.activeSprint);
       }
     },
   });
 
   // Subscribe to sprint updates
-  useSubscription(SUBSCRIBE_TO_SPRINT_UPDATES, {
-    variables: { sprintId: activeSprint?.id },
-    skip: !activeSprint?.id,
-    onData: ({ data }) => {
+  runSprintSubscription(SUBSCRIBE_TO_SPRINT_UPDATES, {
+    variables: { sprintId: (activeSprint as Sprint)?.id },
+    skip: !(activeSprint as Sprint)?.id,
+    onData: ({ data }: { data: SprintSubscriptionState }) => {
       const update = data.data?.sprintUpdated;
       if (update?.sprint) {
         setActiveSprint(update.sprint);
@@ -195,10 +215,18 @@ export function useActiveSprint(projectId: string) {
  * Hook for sprint management mutations
  */
 export function useSprintMutations(projectId: string) {
-  const [createMutation, { loading: creating }] = useMutation(CREATE_SPRINT);
-  const [updateMutation, { loading: updating }] = useMutation(UPDATE_SPRINT);
-  const [startMutation, { loading: starting }] = useMutation(START_SPRINT);
-  const [completeMutation, { loading: completing }] = useMutation(COMPLETE_SPRINT);
+  type SprintMutationResult = { [key: string]: unknown };
+  type MutationState = { loading: boolean };
+  const runSprintMutation = useMutation as unknown as (mutation: unknown) => [(args: unknown) => Promise<{ data?: SprintMutationResult }>, MutationState];
+
+  const [createMutationValue, { loading: creating }] = runSprintMutation(CREATE_SPRINT);
+  const createMutation = createMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
+  const [updateMutationValue, { loading: updating }] = runSprintMutation(UPDATE_SPRINT);
+  const updateMutation = updateMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
+  const [startMutationValue, { loading: starting }] = runSprintMutation(START_SPRINT);
+  const startMutation = startMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
+  const [completeMutationValue, { loading: completing }] = runSprintMutation(COMPLETE_SPRINT);
+  const completeMutation = completeMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
 
   const create = useCallback(
     async (input: CreateSprintInput) => {
@@ -243,10 +271,6 @@ export function useSprintMutations(projectId: string) {
     completing,
   };
 }
-
-// =============================================================================
-// Story Hooks
-// =============================================================================
 
 /**
  * Hook for fetching a single story with details

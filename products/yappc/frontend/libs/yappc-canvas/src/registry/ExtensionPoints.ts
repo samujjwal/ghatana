@@ -11,6 +11,7 @@
  */
 
 import type { ComponentType, ReactNode } from 'react';
+
 import type {
     ArtifactContract,
     ArtifactKind,
@@ -535,8 +536,14 @@ export class ExtensionRegistry implements IExtensionRegistry {
     private importExtensions: Map<string, ImportExtension> = new Map();
     private toolExtensions: Map<string, ToolExtension> = new Map();
 
+    /**
+     *
+     */
     private constructor() { }
 
+    /**
+     *
+     */
     static getInstance(): ExtensionRegistry {
         if (!ExtensionRegistry.instance) {
             ExtensionRegistry.instance = new ExtensionRegistry();
@@ -544,19 +551,31 @@ export class ExtensionRegistry implements IExtensionRegistry {
         return ExtensionRegistry.instance;
     }
 
+    /**
+     *
+     */
     static resetInstance(): void {
         ExtensionRegistry.instance = null;
     }
 
     // Render extensions
+    /**
+     *
+     */
     registerRenderExtension(ext: RenderExtension): void {
         this.renderExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterRenderExtension(id: string): void {
         this.renderExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getRenderExtensions(kind: ArtifactKind): RenderExtension[] {
         return Array.from(this.renderExtensions.values())
             .filter((ext) => ext.targetKind === '*' || ext.targetKind === kind)
@@ -564,14 +583,23 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Validation extensions
+    /**
+     *
+     */
     registerValidationExtension(ext: ValidationExtension): void {
         this.validationExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterValidationExtension(id: string): void {
         this.validationExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getValidationExtensions(kind: ArtifactKind): ValidationExtension[] {
         return Array.from(this.validationExtensions.values())
             .filter((ext) => ext.targetKind === '*' || ext.targetKind === kind)
@@ -579,14 +607,23 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Transform extensions
+    /**
+     *
+     */
     registerTransformExtension(ext: TransformExtension): void {
         this.transformExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterTransformExtension(id: string): void {
         this.transformExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getTransformExtensions(
         source: ArtifactKind,
         target: ArtifactKind
@@ -599,14 +636,23 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Binding extensions
+    /**
+     *
+     */
     registerBindingExtension(ext: BindingExtension): void {
         this.bindingExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterBindingExtension(id: string): void {
         this.bindingExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getBindingExtension(type: BindingRef['type']): BindingExtension | undefined {
         return Array.from(this.bindingExtensions.values())
             .filter((ext) => ext.bindingType === type)
@@ -614,14 +660,23 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Export extensions
+    /**
+     *
+     */
     registerExportExtension(ext: ExportExtension): void {
         this.exportExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterExportExtension(id: string): void {
         this.exportExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getExportExtensions(format: ExportFormat | string): ExportExtension[] {
         return Array.from(this.exportExtensions.values())
             .filter((ext) => ext.format === format)
@@ -629,14 +684,23 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Import extensions
+    /**
+     *
+     */
     registerImportExtension(ext: ImportExtension): void {
         this.importExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterImportExtension(id: string): void {
         this.importExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getImportExtensions(format: string): ImportExtension[] {
         return Array.from(this.importExtensions.values())
             .filter(
@@ -649,20 +713,32 @@ export class ExtensionRegistry implements IExtensionRegistry {
     }
 
     // Tool extensions
+    /**
+     *
+     */
     registerToolExtension(ext: ToolExtension): void {
         this.toolExtensions.set(ext.id, ext);
     }
 
+    /**
+     *
+     */
     unregisterToolExtension(id: string): void {
         this.toolExtensions.delete(id);
     }
 
+    /**
+     *
+     */
     getToolExtensions(): ToolExtension[] {
         return Array.from(this.toolExtensions.values()).sort(
             (a, b) => a.priority - b.priority
         );
     }
 
+    /**
+     *
+     */
     getToolExtension(id: string): ToolExtension | undefined {
         return this.toolExtensions.get(id);
     }

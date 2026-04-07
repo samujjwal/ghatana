@@ -9,13 +9,13 @@
 
 import React, { useMemo } from 'react';
 
-import { TokenPicker } from './TokenPicker';
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
-
 import type { ComponentMetadata, PropDefinition } from '../registry/ComponentRegistry';
 import type { ThemeContext } from '../renderer/ThemeApplicator';
 import type { ComponentNodeData } from '../types/CanvasNode';
+
+import { TokenPicker } from './TokenPicker';
 
 
 // ============================================================================

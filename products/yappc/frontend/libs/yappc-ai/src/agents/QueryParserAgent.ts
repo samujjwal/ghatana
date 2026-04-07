@@ -12,6 +12,7 @@
  */
 
 import type { AIService } from '../core/AIService';
+
 import { BaseAgent, type ProcessResult } from './BaseAgent';
 import type {
     AgentContext,
@@ -72,6 +73,9 @@ export class QueryParserAgent extends BaseAgent<
 > {
     private aiService: AIService;
 
+    /**
+     *
+     */
     constructor(aiService: AIService) {
         super({
             name: 'QueryParserAgent',

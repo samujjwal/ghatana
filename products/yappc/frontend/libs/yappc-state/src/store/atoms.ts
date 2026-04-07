@@ -6,13 +6,14 @@
  * @module state/atoms
  */
 
-import { StateManager } from './StateManager';
 import type {
   User as StoreUser,
   Workspace as StoreWorkspace,
   Project as StoreProject,
   Task as StoreTask,
 } from '@yappc/core/types';
+
+import { StateManager } from './StateManager';
 
 // ============================================================================
 // Theme State

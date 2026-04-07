@@ -175,7 +175,7 @@ export class TranscriptAnalyzer {
             })),
             painPoints: analysis.painPoints.map((pp, index) => ({
                 description: pp,
-                intensity: (analysis.quotes[index]?.intensity || 'medium') as PainPointIntensity,
+                intensity: (analysis.quotes[index]?.intensity || 'medium'),
             })),
             emotions: analysis.emotions,
         };

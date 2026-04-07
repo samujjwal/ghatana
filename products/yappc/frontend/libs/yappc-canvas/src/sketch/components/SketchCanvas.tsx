@@ -10,10 +10,10 @@
  * @doc.pattern Component
  */
 
+import type { KonvaEventObject } from 'konva/lib/Node';
+import type { Stage as StageType } from 'konva/lib/Stage';
 import React, { useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Line, Rect, Ellipse, Arrow } from 'react-konva';
-import type { Stage as StageType } from 'konva/lib/Stage';
-import type { KonvaEventObject } from 'konva/lib/Node';
 
 import { useSketchTools } from '../hooks/useSketchTools';
 import type {

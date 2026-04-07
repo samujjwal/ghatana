@@ -10,7 +10,8 @@
  * @doc.pattern Utility Functions
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import type React from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 /**
  * Virtual scroll configuration
@@ -168,6 +169,9 @@ export class DynamicVirtualScroll {
   private itemPositions: number[] = [];
   private totalHeight = 0;
 
+  /**
+   *
+   */
   constructor(private defaultHeight: number) { }
 
   /**

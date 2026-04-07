@@ -16,10 +16,12 @@
  */
 
 import { useState, useCallback } from 'react';
-import { AICodeGenerationService } from '../integration/aiCodeGeneration';
+
 import type { IAIService } from '@yappc/ai/core';
-import type { CodeGenerationResult, GeneratedFile, ServiceNodeData, APIEndpointNodeData } from '../integration/types';
+
 import type { ScaffoldOptions } from '../components/CodeScaffoldDialog';
+import { AICodeGenerationService } from '../integration/aiCodeGeneration';
+import type { CodeGenerationResult, GeneratedFile, ServiceNodeData, APIEndpointNodeData } from '../integration/types';
 
 /**
  * useCodeScaffold options

@@ -11,9 +11,11 @@
  * @doc.pattern Component
  */
 
-import React from 'react';
-import { Box, Card, CardContent, Typography, Chip, Stack, Button, Divider, Alert, Spinner as CircularProgress, InteractiveList as List, ListItem, ListItemIcon, ListItemText, IconButton, Collapse } from '@ghatana/design-system';
 import { TrendingUp, TrendingDown, AlertTriangle as Warning, CheckCircle, Info, ChevronDown as KeyboardArrowDown, KeyboardArrowUp, RefreshCw as Refresh } from 'lucide-react';
+import React from 'react';
+
+import { Box, Card, CardContent, Typography, Chip, Stack, Button, Divider, Alert, Spinner as CircularProgress, InteractiveList as List, ListItem, ListItemIcon, ListItemText, IconButton, Collapse } from '@ghatana/design-system';
+
 import { useAIInsightsGraphQL, usePredictionsGraphQL, useAnomaliesGraphQL } from '../hooks/useAI.graphql';
 
 /**

@@ -1,9 +1,9 @@
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import React, { forwardRef } from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from './utils/cn';
 
-import type { ReactNode } from 'react';
 
 const TAB_LIST_BASE_CLASSES = 'flex gap-1 border-b border-grey-200';
 

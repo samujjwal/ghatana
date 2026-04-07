@@ -7,7 +7,6 @@
  * @module canvas/renderer/registerComponents
  */
 
-import { RendererComponentRegistry } from './ComponentRegistry';
 
 // Import UI components
 import { Accordion } from '../../components/Accordion/Accordion';
@@ -24,6 +23,8 @@ import { Menu } from '../../components/Menu/Menu';
 import { Stack } from '../../components/Stack/Stack';
 import { Tabs } from '../../components/Tabs/Tabs';
 import { TextField } from '../../components/TextField/TextField';
+
+import { RendererComponentRegistry } from './ComponentRegistry';
 
 // ============================================================================
 // Register All Components

@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2,
@@ -25,14 +24,16 @@ import {
   Send,
   RefreshCw,
 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
-import { Textarea } from '@yappc/ui';
 import { Avatar } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Progress } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
+
+import { Textarea } from '@yappc/ui';
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================

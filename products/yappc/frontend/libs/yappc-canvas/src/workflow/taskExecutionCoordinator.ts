@@ -238,6 +238,9 @@ export class TaskExecutionCoordinator {
     private activeExecutions: Map<string, TaskExecution>;
     private executionEvents: Map<string, ExecutionEvent[]>;
 
+    /**
+     *
+     */
     constructor(
         taskRegistry: TaskRegistry,
         agentOrchestrator: AgentOrchestrator,

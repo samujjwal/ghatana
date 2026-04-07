@@ -73,6 +73,9 @@ export class ComponentLibrary {
   private searchIndex: Map<string, Set<string>> = new Map();
   private listeners: Set<(library: ComponentLibrary) => void> = new Set();
 
+  /**
+   *
+   */
   constructor(initialComponents: ComponentDefinition[] = []) {
     initialComponents.forEach((component) => {
       this.addComponent(component);

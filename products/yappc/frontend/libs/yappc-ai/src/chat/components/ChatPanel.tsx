@@ -7,10 +7,13 @@
  * @module chat/components
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
-import { ChatMessage } from './ChatMessage';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import type { ChatMessage as ChatMessageType, TypingIndicator } from '../hooks/useChatBackend';
+
+import { ChatMessage } from './ChatMessage';
+
 
 export interface ChatPanelProps {
   channelId: string;

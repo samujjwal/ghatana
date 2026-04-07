@@ -10,9 +10,10 @@
  * @doc.pattern Controlled Component
  */
 
-import React, { useRef, useEffect, useCallback } from 'react';
-import Editor, { OnMount, OnChange, Monaco } from '@monaco-editor/react';
+import Editor, { type OnMount, type OnChange, type Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
+import React, { useRef, useEffect, useCallback } from 'react';
+
 import type { CodeEditorProps, CodeEditorConfig } from '../types';
 
 /**

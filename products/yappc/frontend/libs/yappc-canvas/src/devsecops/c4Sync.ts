@@ -1,5 +1,5 @@
 /**
- * @fileoverview C4 Model Synchronization
+ * @file C4 Model Synchronization
  * 
  * Provides integration with Structurizr C4 Model DSL for architecture visualization.
  * Supports context, container, component, and code views with environment overlays

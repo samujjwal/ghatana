@@ -6,9 +6,10 @@
 import clsx from 'clsx';
 import React, { useState } from 'react';
 
+import { useOnboardingTour } from '../hooks/useOnboardingTour';
+
 import { OnboardingTour } from './OnboardingTour';
 import { TourSelection } from './TourSelection';
-import { useOnboardingTour } from '../hooks/useOnboardingTour';
 
 /**
  *

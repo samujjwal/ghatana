@@ -1,11 +1,11 @@
+import type { Node, Edge } from '@xyflow/react';
 import { useAtom } from 'jotai';
 import { useCallback, useState } from 'react';
 
 import { canvasStateAtom } from '../state/canvas-atoms';
+import type { CanvasState } from '../state/canvas-atoms';
 import type { PortalElement, DrillDownContext } from '../types/portal-types';
 
-import type { CanvasState } from '../state/canvas-atoms';
-import type { Node, Edge } from '@xyflow/react';
 
 // Re-export types for backward compatibility
 export type { PortalElement, DrillDownContext };

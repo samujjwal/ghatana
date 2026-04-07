@@ -11,6 +11,10 @@
  * @doc.pattern Service
  */
 
+import type { CRDTOperation } from '../core/index.js';
+
+import { autoResolveOperations } from './auto-resolver.js';
+import type { AutoResolutionResult } from './auto-resolver.js';
 import type {
   Conflict,
   ConflictType,
@@ -29,9 +33,6 @@ import type {
   OperationResult,
   ConflictStatistics,
 } from './types';
-import type { CRDTOperation } from '../core/index.js';
-import { autoResolveOperations } from './auto-resolver.js';
-import type { AutoResolutionResult } from './auto-resolver.js';
 
 /**
  * Conflict resolution engine service.
@@ -169,6 +170,9 @@ export class ConflictResolutionEngine {
     return conflicts;
   }
 
+  /**
+   *
+   */
   private isConcurrent(a: CRDTOperation['vectorClock'], b: CRDTOperation['vectorClock']): boolean {
     let aGreater = false;
     let bGreater = false;
@@ -190,6 +194,9 @@ export class ConflictResolutionEngine {
     return aGreater && bGreater;
   }
 
+  /**
+   *
+   */
   private touchesSameField(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
     const fieldsA = this.extractFieldNames(operationA.data);
     const fieldsB = this.extractFieldNames(operationB.data);
@@ -207,6 +214,9 @@ export class ConflictResolutionEngine {
     return false;
   }
 
+  /**
+   *
+   */
   private extractFieldNames(data: unknown): Set<string> {
     if (!this.isObjectRecord(data)) {
       return new Set();
@@ -226,6 +236,9 @@ export class ConflictResolutionEngine {
     return new Set(keys);
   }
 
+  /**
+   *
+   */
   private targetsSamePosition(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
     const positionA = this.extractPosition(operationA.data);
     const positionB = this.extractPosition(operationB.data);
@@ -233,6 +246,9 @@ export class ConflictResolutionEngine {
     return positionA !== null && positionB !== null && positionA === positionB;
   }
 
+  /**
+   *
+   */
   private extractPosition(data: unknown): number | null {
     if (!this.isObjectRecord(data)) {
       return null;
@@ -251,6 +267,9 @@ export class ConflictResolutionEngine {
     return null;
   }
 
+  /**
+   *
+   */
   private isObjectRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
@@ -405,10 +424,16 @@ export class ConflictResolutionEngine {
     return suggestions;
   }
 
+  /**
+   *
+   */
   public getAutoResolution(conflict: Conflict): AutoResolutionResult {
     return autoResolveOperations(conflict.operationA, conflict.operationB);
   }
 
+  /**
+   *
+   */
   public autoResolveConflict(conflict: Conflict): ConflictResolutionResult {
     const startTime = Date.now();
     const autoResolution = this.getAutoResolution(conflict);

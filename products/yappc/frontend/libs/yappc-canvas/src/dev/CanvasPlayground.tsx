@@ -16,11 +16,6 @@
  * @doc.pattern Tooling
  */
 
-import React, { useCallback } from 'react';
-import { Box } from '@ghatana/design-system';
-import { Button } from '@ghatana/design-system';
-import { Stack } from '@ghatana/design-system';
-import { Typography } from '@ghatana/design-system';
 import { Paintbrush as BrushIcon } from 'lucide-react';
 import { PenTool as GestureIcon } from 'lucide-react';
 import { GitBranch as AccountTreeIcon } from 'lucide-react';
@@ -32,13 +27,19 @@ import { Hammer as BuildIcon } from 'lucide-react';
 import { ZoomIn as ZoomInIcon } from 'lucide-react';
 import { ZoomOut as ZoomOutIcon } from 'lucide-react';
 import { Trash as DeleteOutlineIcon } from 'lucide-react';
+import React, { useCallback } from 'react';
 
-import { getArtifactRegistry } from '../registry/ArtifactRegistry';
-import { ToolManager, BuiltInTools } from '../interaction/ToolManager';
+import { Typography } from '@ghatana/design-system';
+import { Stack } from '@ghatana/design-system';
+import { Button } from '@ghatana/design-system';
+import { Box } from '@ghatana/design-system';
+
 import { getPredictiveLayout } from '../ai/PredictiveLayout';
 import { getShadowCodegen } from '../ai/ShadowCodegen';
-import { useSemanticZoom } from '../renderer/useSemanticZoom';
+import { ToolManager, BuiltInTools } from '../interaction/ToolManager';
 import type { UniversalNode } from '../model/contracts';
+import { getArtifactRegistry } from '../registry/ArtifactRegistry';
+import { useSemanticZoom } from '../renderer/useSemanticZoom';
 
 export interface CanvasPlaygroundProps {
     onInsertNode?: (kind: string) => void;
@@ -71,7 +72,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
             onInsertNode(kind);
             return;
         }
-        // eslint-disable-next-line no-console
+         
         console.log(`[Dev Playground] Would insert node of kind: ${kind}`);
         alert(`Dev mode: Would insert ${kind} node. Attach playground inside a CanvasProvider to enable.`);
     }, [onInsertNode]);
@@ -87,7 +88,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
             onClearCanvas();
             return;
         }
-        // eslint-disable-next-line no-console
+         
         console.log('[Dev Playground] Would clear canvas');
         alert('Dev mode: Would clear canvas. Attach playground inside a CanvasProvider to enable.');
     }, [onClearCanvas]);
@@ -121,7 +122,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
             onRunPredictiveLayout();
             return;
         }
-        // eslint-disable-next-line no-console
+         
         console.log('[Dev Playground] Would apply predictive layout');
         alert('Dev mode: Would apply predictive layout. Attach playground inside a CanvasProvider to enable.');
     }, [onRunPredictiveLayout]);
@@ -131,7 +132,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
             onRunCodegen();
             return;
         }
-        // eslint-disable-next-line no-console
+         
         console.log('[Dev Playground] Would run codegen');
         alert('Dev mode: Would run codegen. Attach playground inside a CanvasProvider to enable.');
     }, [onRunCodegen]);
@@ -143,7 +144,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
         }
         const next = getNextZoomTarget('in');
         if (next) {
-            // eslint-disable-next-line no-console
+             
             console.log(`[Dev Playground] Would zoom in to ${next}`);
         }
     }, [getNextZoomTarget, onZoom]);
@@ -155,7 +156,7 @@ export const CanvasPlayground: React.FC<CanvasPlaygroundProps> = ({
         }
         const next = getNextZoomTarget('out');
         if (next) {
-            // eslint-disable-next-line no-console
+             
             console.log(`[Dev Playground] Would zoom out to ${next}`);
         }
     }, [getNextZoomTarget, onZoom]);

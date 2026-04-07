@@ -14,6 +14,8 @@
  * @doc.pattern Component
  */
 
+import React, { useState } from 'react';
+
 import {
   Box,
   Button,
@@ -23,11 +25,11 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import { ToggleButtonGroup } from '@ghatana/design-system';
-import { Popover } from '@yappc/ui/base-ui';
-import React, { useState } from 'react';
 
-import { CANVAS_TOKENS } from '../tokens';
+import { Popover } from '@yappc/ui/base-ui';
+
 import type { DrawingStyle, DrawingToolType } from '../lib/canvas/DrawingManager';
+import { CANVAS_TOKENS } from '../tokens';
 
 const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS, Z_INDEX, DRAWING_PRESETS } = CANVAS_TOKENS;
 

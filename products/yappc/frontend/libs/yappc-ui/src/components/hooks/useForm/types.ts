@@ -1,5 +1,6 @@
-import type { ValidationErrors, ValidationRules } from '../../utils/validation';
 import type { ChangeEvent } from 'react';
+
+import type { ValidationErrors, ValidationRules } from '../../utils/validation';
 
 /**
  * Options for useForm hook

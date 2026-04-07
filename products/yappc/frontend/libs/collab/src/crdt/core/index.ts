@@ -64,6 +64,9 @@ export class CRDTCore {
   private readonly conflicts: Map<string, Conflict> = new Map();
   private readonly snapshots: Map<string, Snapshot> = new Map();
 
+  /**
+   *
+   */
   public constructor(config: CRDTConfig) {
     this.config = config;
     this.state = {
@@ -76,6 +79,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private createVectorClock(): VectorClock {
     return {
       id: `vc-${Date.now()}`,
@@ -84,6 +90,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private cloneVectorClock(clock: VectorClock): VectorClock {
     return {
       id: clock.id,
@@ -92,6 +101,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private cloneValue(value: CRDTValue): CRDTValue {
     return {
       ...value,
@@ -99,12 +111,18 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private incrementVectorClock(clock: VectorClock): void {
     const current = clock.values.get(this.config.replicaId) ?? 0;
     clock.values.set(this.config.replicaId, current + 1);
     clock.timestamp = Date.now();
   }
 
+  /**
+   *
+   */
   public compareVectorClocks(a: VectorClock, b: VectorClock): number {
     let aGreater = false;
     let bGreater = false;
@@ -135,6 +153,9 @@ export class CRDTCore {
     return 2;
   }
 
+  /**
+   *
+   */
   public createOperation(
     type: 'insert' | 'delete' | 'update' | 'move',
     targetId: string,
@@ -154,6 +175,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   public applyOperation(operation: CRDTOperation): CRDTOperationResult {
     const startTime = Date.now();
 
@@ -223,11 +247,17 @@ export class CRDTCore {
     }
   }
 
+  /**
+   *
+   */
   private canApplyOperation(operation: CRDTOperation, existing: CRDTValue): boolean {
     const comparison = this.compareVectorClocks(operation.vectorClock, existing.vectorClock);
     return comparison !== 2;
   }
 
+  /**
+   *
+   */
   private detectConflict(operation: CRDTOperation, existing: CRDTValue): Conflict {
     return {
       id: `conflict-${Date.now()}`,
@@ -250,6 +280,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   public merge(remoteState: CRDTState): MergeResult {
     const startTime = Date.now();
     const mergedState = new Map<string, CRDTValue>();
@@ -302,6 +335,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private resolveConflict(
     local: CRDTValue,
     remote: CRDTValue,
@@ -373,6 +409,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   private mergeVectorClocks(local: VectorClock, remote: VectorClock): void {
     for (const [key, value] of remote.values.entries()) {
       const localValue = local.values.get(key) ?? 0;
@@ -381,18 +420,30 @@ export class CRDTCore {
     local.timestamp = Date.now();
   }
 
+  /**
+   *
+   */
   public getState(): CRDTState {
     return this.state;
   }
 
+  /**
+   *
+   */
   public getValue(id: string): CRDTValue | undefined {
     return this.state.values.get(id);
   }
 
+  /**
+   *
+   */
   public getAllValues(): Map<string, CRDTValue> {
     return new Map(this.state.values);
   }
 
+  /**
+   *
+   */
   public createSnapshot(description?: string): Snapshot {
     const snapshot: Snapshot = {
       id: `snapshot-${Date.now()}`,
@@ -406,6 +457,9 @@ export class CRDTCore {
     return snapshot;
   }
 
+  /**
+   *
+   */
   public restoreSnapshot(snapshotId: string): CRDTOperationResult {
     const startTime = Date.now();
 
@@ -436,6 +490,9 @@ export class CRDTCore {
     }
   }
 
+  /**
+   *
+   */
   private compact(): void {
     const cutoff = this.operationLog.length - this.config.maxLogSize;
     if (cutoff > 0) {
@@ -444,6 +501,9 @@ export class CRDTCore {
     }
   }
 
+  /**
+   *
+   */
   public getStatistics(): CRDTStatistics {
     const resolvedConflicts = Array.from(this.conflicts.values()).filter((conflict) => conflict.resolved).length;
 
@@ -458,6 +518,9 @@ export class CRDTCore {
     };
   }
 
+  /**
+   *
+   */
   public exportState(): string {
     const exportData = {
       state: {
@@ -477,6 +540,9 @@ export class CRDTCore {
     return JSON.stringify(exportData, null, 2);
   }
 
+  /**
+   *
+   */
   public importState(json: string): CRDTOperationResult {
     const startTime = Date.now();
 

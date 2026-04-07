@@ -2,10 +2,12 @@
  * Project factory for generating test project data
  */
 
+import type { Project, Workspace, User } from '@yappc/core/types';
+
 import { faker } from '../faker-shim';
+
 import { createWorkspace } from './workspace.factory';
 
-import type { Project, Workspace, User } from '@yappc/core/types';
 
 /**
  *

@@ -7,10 +7,11 @@
  */
 
 import { X as CloseIcon } from 'lucide-react';
+import type React from 'react';
+
 import { Box, Divider, Drawer, IconButton, Typography } from '@ghatana/design-system';
 
 import type { SidePanelProps } from './types';
-import type React from 'react';
 
 /**
  * SidePanel - Slide-out panel component

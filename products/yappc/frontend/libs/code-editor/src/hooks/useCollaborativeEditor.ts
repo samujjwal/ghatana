@@ -17,9 +17,9 @@
  * @doc.pattern React Hook
  */
 
+import type { editor } from 'monaco-editor';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Y from 'yjs';
-import type { editor } from 'monaco-editor';
 
 import { 
   createYjsMonacoBinding,

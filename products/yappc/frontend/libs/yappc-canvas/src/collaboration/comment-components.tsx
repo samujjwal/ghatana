@@ -1,4 +1,6 @@
 import { Send as SendIcon, MoreVertical as MoreVertIcon, Reply as ReplyIcon, Pencil as EditIcon, Trash2 as DeleteIcon, EmojiEmotions as EmojiIcon, Paperclip as AttachFileIcon, X as CloseIcon, User as PersonIcon } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import {
   Box,
   Button,
@@ -16,14 +18,12 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField, MenuItem } from '@ghatana/design-system';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {
   CommentReaction,
   CreateCommentRequest,
   UpdateCommentRequest,
 } from '../schemas/comment-schemas';
-
 import type { 
   Comment,
   CommentThread,

@@ -10,9 +10,9 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback, useMemo } from 'react';
 import { useNodes, useEdges, useReactFlow } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
+import { useState, useCallback, useMemo } from 'react';
 
 /**
  * Canvas side type
@@ -311,8 +311,8 @@ export function useFullStackMode(
             const targetNode = nodes.find((n) => n.id === edge.target);
 
             if (sourceNode && targetNode) {
-                const sourceData = (sourceNode.data ?? {}) as Record<string, unknown>;
-                const targetData = (targetNode.data ?? {}) as Record<string, unknown>;
+                const sourceData = (sourceNode.data ?? {});
+                const targetData = (targetNode.data ?? {});
 
                 const sourceType = sourceData.dataType || sourceData.responseType;
                 const targetType = targetData.dataType || targetData.requestType;

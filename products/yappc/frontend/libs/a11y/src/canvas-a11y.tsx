@@ -1,5 +1,5 @@
 /**
- * @fileoverview Accessibility Utilities for YAPPC Canvas
+ * @file Accessibility Utilities for YAPPC Canvas
  * WCAG 2.1 AA compliance helpers for canvas components
  * 
  * @doc.type utility

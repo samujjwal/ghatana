@@ -10,6 +10,8 @@
  */
 
 import { Hand as SelectIcon, Pencil as PenIcon, Wand2 as EraserIcon, Square as RectangleIcon, Circle as EllipseIcon, StickyNote as StickyIcon, Type as TextIcon, Highlighter as HighlighterIcon, MoveRight as LineIcon, MoveRight as ArrowIcon, Image as ImageIcon } from 'lucide-react';
+import React from 'react';
+
 import {
   ToggleButton,
   Tooltip,
@@ -17,7 +19,6 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { ToggleButtonGroup } from '@ghatana/design-system';
-import React from 'react';
 
 import type { SketchTool } from '../types';
 

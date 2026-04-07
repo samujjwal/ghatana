@@ -56,6 +56,9 @@ export class BidirectionalSyncCoordinator {
   private lastSyncTimestamp: number = 0;
   private isSyncing: boolean = false;
 
+  /**
+   *
+   */
   constructor(config: Partial<SyncConfig> = {}) {
     this.config = {
       debounceMs: 300,

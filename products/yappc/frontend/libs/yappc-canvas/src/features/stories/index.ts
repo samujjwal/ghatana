@@ -2,7 +2,6 @@ import {
   canvasFeatureStoryCategories,
   canvasFeatureStoryCount,
 } from './canvas-feature-stories.generated';
-
 import type { CanvasFeatureStory, CanvasFeatureStoryCategory } from './types';
 
 export { canvasFeatureStoryCategories, canvasFeatureStoryCount } from './canvas-feature-stories.generated';
@@ -16,7 +15,7 @@ export type {
 } from './types';
 
 const flattenedStories: CanvasFeatureStory[] = canvasFeatureStoryCategories.flatMap(
-  (category) => category.stories as CanvasFeatureStory[],
+  (category) => category.stories,
 );
 
 const storyMap: ReadonlyMap<string, CanvasFeatureStory> = new Map(
@@ -35,7 +34,7 @@ if (slugMap.size !== flattenedStories.length) {
 
 const categoryMap: ReadonlyMap<string, CanvasFeatureStoryCategory> = new Map(
   canvasFeatureStoryCategories.map(
-    (category) => [category.id, category as CanvasFeatureStoryCategory],
+    (category) => [category.id, category],
   ),
 );
 if (categoryMap.size !== canvasFeatureStoryCategories.length) {

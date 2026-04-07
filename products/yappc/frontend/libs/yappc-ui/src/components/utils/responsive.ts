@@ -1,5 +1,6 @@
-import { useGlobalStateValue } from '@yappc/state';
 import React from 'react';
+
+import { useGlobalStateValue } from '@yappc/state';
 
 import type { Platform } from './platform';
 

@@ -5,9 +5,10 @@
  * @doc.pattern Specialized Canvas Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, InteractiveList as List, ListItem } from '@ghatana/design-system';
 import { Tag as Category, Rule, MessageSquare as Comment, Plus as Add } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, InteractiveList as List, ListItem } from '@ghatana/design-system';
 
 /**
  * Domain model node interface

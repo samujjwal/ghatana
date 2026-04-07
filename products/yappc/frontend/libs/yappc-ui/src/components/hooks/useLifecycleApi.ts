@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+
 import type { LifecycleStageId } from '../components/lifecycle/LifecycleStage';
 
 // Types matching backend entities

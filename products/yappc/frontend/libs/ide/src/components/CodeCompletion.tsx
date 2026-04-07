@@ -71,6 +71,9 @@ export class CodeCompletionProvider {
   private workspaceItems: CompletionItem[] = [];
   private snippetItems: CompletionItem[] = [];
 
+  /**
+   *
+   */
   constructor() {
     this.initializeBuiltinItems();
     this.initializeSnippets();

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import type { Suggestion, SuggestionType } from './SmartSuggestions/types';
 import { fetchAllSuggestions } from './SmartSuggestions/utils';
 
-import type { Suggestion, SuggestionType } from './SmartSuggestions/types';
 
 /**
  * Hook options for fetching AI suggestions.

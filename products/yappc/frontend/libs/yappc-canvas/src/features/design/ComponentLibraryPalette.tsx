@@ -10,9 +10,10 @@
  * @doc.pattern React Component
  */
 
-import React, { useState } from 'react';
-import { Surface as Paper, Box, Typography, InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Collapse, TextField, InputAdornment, Chip, Tooltip, Divider } from '@ghatana/design-system';
 import { ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, Search as SearchIcon, UserCircle as AvatarIcon, Type as TextFieldIcon, CheckBox as CheckBoxIcon, CircleDot as RadioIcon, Image as ImageIcon, SmartButton as ButtonIcon, List as ListIcon, Columns as ColumnIcon, Tab as TabsIcon, ArrowDropDown as DropdownIcon, DateRange as DatePickerIcon, ToggleOn as SwitchIcon, LinearScale as SliderIcon, CardGiftcard as CardIcon, Table as TableIcon, Sparkles as IconButtonIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Surface as Paper, Box, Typography, InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Collapse, TextField, InputAdornment, Chip, Tooltip, Divider } from '@ghatana/design-system';
 
 // ============================================================================
 // TYPE DEFINITIONS

@@ -1,6 +1,6 @@
+import type { Node, Edge } from '@xyflow/react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import type { Node, Edge } from '@xyflow/react';
 
 // API configuration interface
 /**
@@ -683,46 +683,46 @@ export const useCanvasApi = (config?: Partial<ApiConfig>) => {
   // API operations
   const operations: CanvasApiOperations = {
     saveCanvas: (canvasData) =>
-      apiCall(() => apiClient.current!.saveCanvas(canvasData)),
+      apiCall(() => apiClient.current.saveCanvas(canvasData)),
     loadCanvas: (canvasId) =>
-      apiCall(() => apiClient.current!.loadCanvas(canvasId)),
+      apiCall(() => apiClient.current.loadCanvas(canvasId)),
     deleteCanvas: (canvasId) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'DELETE',
           endpoint: `/canvas/${canvasId}`,
         })
       ),
     duplicateCanvas: (canvasId, name) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: `/canvas/${canvasId}/duplicate`,
           data: { name },
         })
       ),
     shareCanvas: (canvasId, permissions) =>
-      apiCall(() => apiClient.current!.shareCanvas(canvasId, permissions)),
+      apiCall(() => apiClient.current.shareCanvas(canvasId, permissions)),
     getSharedCanvas: (shareToken) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'GET',
           endpoint: `/shared/${shareToken}`,
         })
       ),
     updatePermissions: (canvasId, permissions) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'PUT',
           endpoint: `/canvas/${canvasId}/permissions`,
           data: permissions,
         })
       ),
     exportCanvas: (canvasId, format) =>
-      apiCall(() => apiClient.current!.exportCanvas(canvasId, format)),
+      apiCall(() => apiClient.current.exportCanvas(canvasId, format)),
     exportToImage: (canvasId, options) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: `/canvas/${canvasId}/export/image`,
           data: options,
@@ -730,17 +730,17 @@ export const useCanvasApi = (config?: Partial<ApiConfig>) => {
       ),
     exportToPdf: (canvasId, options) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: `/canvas/${canvasId}/export/pdf`,
           data: options,
         })
       ),
     getTemplates: (category) =>
-      apiCall(() => apiClient.current!.getTemplates(category)),
+      apiCall(() => apiClient.current.getTemplates(category)),
     createTemplate: (canvasData, metadata) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: '/templates',
           data: { canvasData, metadata },
@@ -748,16 +748,16 @@ export const useCanvasApi = (config?: Partial<ApiConfig>) => {
       ),
     useTemplate: (templateId) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: `/templates/${templateId}/use`,
         })
       ),
     validateCanvas: (canvasData) =>
-      apiCall(() => apiClient.current!.validateCanvas(canvasData)),
+      apiCall(() => apiClient.current.validateCanvas(canvasData)),
     validateNode: (node) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: '/validation/node',
           data: node,
@@ -765,7 +765,7 @@ export const useCanvasApi = (config?: Partial<ApiConfig>) => {
       ),
     getAnalytics: (canvasId, timeRange) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'GET',
           endpoint: `/canvas/${canvasId}/analytics`,
           params: timeRange
@@ -775,7 +775,7 @@ export const useCanvasApi = (config?: Partial<ApiConfig>) => {
       ),
     trackUsage: (event) =>
       apiCall(() =>
-        apiClient.current!.request({
+        apiClient.current.request({
           method: 'POST',
           endpoint: '/analytics/track',
           data: event,

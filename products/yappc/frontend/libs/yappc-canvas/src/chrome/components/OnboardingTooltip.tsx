@@ -16,15 +16,16 @@
  * @doc.layer components
  */
 
+import { useAtom } from 'jotai';
 import { X as CloseIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
 import {
   Box,
   Button,
   IconButton,
   Typography,
 } from '@ghatana/design-system';
-import { useAtom } from 'jotai';
-import React, { useEffect, useState } from 'react';
 
 import { chromeShownHintsAtom, chromeOnboardingStepAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';

@@ -2,10 +2,12 @@
  * Task factory for generating test task data
  */
 
+import type { Task, Project, User } from '@yappc/core/types';
+
 import { faker } from '../faker-shim';
+
 import { createProject } from './project.factory';
 
-import type { Task, Project, User } from '@yappc/core/types';
 
 /**
  *

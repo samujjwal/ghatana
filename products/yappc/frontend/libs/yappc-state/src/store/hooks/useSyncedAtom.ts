@@ -14,6 +14,7 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { Atom, WritableAtom } from 'jotai';
 import { useCallback, useEffect } from 'react';
+
 import { writeAtomToStorage } from '../cross-tab-sync';
 
 // ============================================================================

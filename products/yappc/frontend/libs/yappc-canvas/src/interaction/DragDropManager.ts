@@ -265,6 +265,9 @@ export class DragDropManager {
     private listeners: Set<DragEventListener> = new Set();
     private autoScrollInterval: ReturnType<typeof setInterval> | null = null;
 
+    /**
+     *
+     */
     private constructor(config: Partial<DragDropConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
     }

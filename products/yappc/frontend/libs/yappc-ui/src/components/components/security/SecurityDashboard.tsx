@@ -10,9 +10,9 @@
  * @doc.phase security
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { format, formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtomValue, useSetAtom } from 'jotai';
 import {
   Shield,
   ShieldAlert,
@@ -55,13 +55,23 @@ import {
   PieChart,
   Layers,
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import React, { useState, useMemo, useCallback } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { Progress } from '@ghatana/design-system';
+import { Tabs } from '@ghatana/design-system';
+
+import {
+  vulnerabilitiesAtom,
+  complianceStatusAtom,
+  securityScoreAtom,
+  securityAlertsAtom,
+} from '@yappc/canvas';
 import { CardDescription, CardTitle } from '@yappc/ui';
 import {
   DropdownMenu,
@@ -71,20 +81,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from '@yappc/ui';
-import { Tooltip } from '@ghatana/design-system';
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 import { ScrollArea } from '@yappc/ui';
-import { Progress } from '@ghatana/design-system';
-import { Tabs } from '@ghatana/design-system';
 import { TabsContent, TabsList, TabsTrigger } from '@yappc/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
-
-import {
-  vulnerabilitiesAtom,
-  complianceStatusAtom,
-  securityScoreAtom,
-  securityAlertsAtom,
-} from '@yappc/canvas';
 
 // =============================================================================
 // Types

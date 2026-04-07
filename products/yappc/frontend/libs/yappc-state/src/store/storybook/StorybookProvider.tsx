@@ -1,6 +1,7 @@
-import { ThemeProvider } from '@yappc/ui';
 import { Provider, useAtom } from 'jotai';
 import React from 'react';
+
+import { ThemeProvider } from '@yappc/ui';
 
 import { storybookThemeAtom } from './storybookStore';
 

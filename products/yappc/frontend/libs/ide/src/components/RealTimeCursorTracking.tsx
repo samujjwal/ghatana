@@ -11,7 +11,9 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+
 import { useCollaborativeEditing, type UserPresence } from '../hooks/useCollaborativeEditing';
+
 import { InteractiveButton } from './MicroInteractions';
 
 /**

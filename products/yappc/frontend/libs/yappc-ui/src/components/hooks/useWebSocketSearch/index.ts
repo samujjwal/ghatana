@@ -1,7 +1,8 @@
-import { useWebSocketData, useWebSocket } from '@yappc/collab/websocket';
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { WebSocketSearchUtils } from './utils';
+import { useWebSocketData, useWebSocket } from '@yappc/collab/websocket';
+
+import type { FilterCriteria, SearchResult } from '../../components/Search';
 
 import type {
   UseWebSocketSearchReturn,
@@ -9,7 +10,8 @@ import type {
   SearchSuggestion,
   AvailableFilters,
 } from './types';
-import type { FilterCriteria, SearchResult } from '../../components/Search';
+import { WebSocketSearchUtils } from './utils';
+
 
 /**
  * WebSocket-integrated search hook for real-time search capabilities.
@@ -39,7 +41,7 @@ import type { FilterCriteria, SearchResult } from '../../components/Search';
  *   />
  * );
  */
-// eslint-disable-next-line max-lines-per-function
+ 
 export function useWebSocketSearch(
   projectId: string,
   options: WebSocketSearchOptions = {}

@@ -5,35 +5,36 @@
  * collaboration features in components.
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+
+import {
+  CanvasCollaboration,
+  type CanvasNode,
+  type CanvasEdge,
+  CanvasViewport,
+  type UserCursor,
+  type CanvasSelection,
+} from './CanvasCollaboration';
 import {
   CollaborationManager,
-  CollaborationConfig,
-  CollaborationState,
+  type CollaborationConfig,
+  type CollaborationState,
   CollaborationUser,
   getCollaboration,
   destroyCollaboration,
 } from './CollaborationManager';
 import {
-  CanvasCollaboration,
-  CanvasNode,
-  CanvasEdge,
-  CanvasViewport,
-  UserCursor,
-  CanvasSelection,
-} from './CanvasCollaboration';
-import {
   DocumentCollaboration,
-  TextCursor,
-  DocumentComment,
-  DocumentVersion,
+  type TextCursor,
+  type DocumentComment,
+  type DocumentVersion,
 } from './DocumentCollaboration';
 import {
   PresenceManager,
-  PresenceUser,
-  PresenceState,
-  PresenceLocation,
+  type PresenceUser,
+  type PresenceState,
+  type PresenceLocation,
   getPresenceStatusColor,
   getPresenceStatusLabel,
   formatPresenceLocation,

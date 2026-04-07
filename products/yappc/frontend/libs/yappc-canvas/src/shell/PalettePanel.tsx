@@ -16,10 +16,11 @@ import React, {
     useCallback,
     type ReactNode,
 } from 'react';
-import type { ArtifactContract, ArtifactCategory, ContentModality } from '../model/contracts';
-import { getArtifactRegistry } from '../registry/ArtifactRegistry';
+
 import { DragDropManager } from '../interaction/DragDropManager';
 import type { DragSourceType } from '../interaction/DragDropManager';
+import type { ArtifactContract, ArtifactCategory, ContentModality } from '../model/contracts';
+import { getArtifactRegistry } from '../registry/ArtifactRegistry';
 
 // ============================================================================
 // Palette Types

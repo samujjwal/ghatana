@@ -10,9 +10,11 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
-import { InteractiveButton } from './MicroInteractions';
 import type { FileSearchQuery, SearchResult } from '../hooks/useAdvancedFileOperations';
+
+import { InteractiveButton } from './MicroInteractions';
 
 /**
  * Advanced Search Panel Props

@@ -1,5 +1,6 @@
-import { Card as BaseCard, CardContent, CardHeader, CardActions, CardMedia } from '@ghatana/design-system';
 import React from 'react';
+
+import { Card as BaseCard, CardContent, CardHeader, CardActions, CardMedia } from '@ghatana/design-system';
 
 import { useAccessibility } from '../../hooks';
 import { borderRadius, elevationLevels } from '../../tokens';

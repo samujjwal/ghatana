@@ -10,9 +10,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Box, Surface as Paper, Typography, Button, LinearProgress, Alert, IconButton, Chip, Tooltip } from '@ghatana/design-system';
 import { Eye as PreviewIcon, DesktopWindows as DesktopIcon, TabletMac as TabletIcon, Smartphone as PhoneIcon, RefreshCw as RefreshIcon, ExternalLink as OpenInNewIcon, Check as CheckIcon, Sparkles as AIIcon } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+
+import { Box, Surface as Paper, Typography, Button, LinearProgress, Alert, IconButton, Chip, Tooltip } from '@ghatana/design-system';
 
 export interface PreviewStepProps {
     codeData: { files: { path: string }[] };

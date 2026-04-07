@@ -6,10 +6,10 @@
  */
 
 import React, { forwardRef } from 'react';
+import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ElementType } from 'react';
 
 /**
  *
@@ -121,7 +121,7 @@ export const Container = forwardRef<HTMLElement, ContainerProps>(
     },
     ref
   ) => {
-    const Component = as as ElementType;
+    const Component = as;
     
     const classes = cn(
       'w-full',

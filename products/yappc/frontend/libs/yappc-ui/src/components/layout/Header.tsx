@@ -10,7 +10,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import {
     AppBar,
     Toolbar,
@@ -21,8 +20,10 @@ import {
     Tooltip,
 } from '@mui/material';
 import { Bell as BellIcon } from 'lucide-react';
+import React from 'react';
 
 import type { Workspace } from '@yappc/core/types';
+
 import { WorkspaceSwitcher } from '../workspace/WorkspaceSwitcher';
 
 export interface HeaderUser {

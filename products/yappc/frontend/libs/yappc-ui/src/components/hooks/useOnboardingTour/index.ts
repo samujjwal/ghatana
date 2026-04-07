@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { OnboardingTourUtils } from './utils';
+import type { OnboardingState } from '../../components/OnboardingTour';
 
 import type {
   UseOnboardingTourResult,
   UseAutoOnboardingOptions,
 } from './types';
-import type { OnboardingState } from '../../components/OnboardingTour';
+import { OnboardingTourUtils } from './utils';
+
 
 /**
  * React hook for managing onboarding tours.

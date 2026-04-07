@@ -11,19 +11,21 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { FileExplorer } from './FileExplorer';
-import { TabBar } from './TabBar';
-import { StatusBar } from './StatusBar';
-import { CollaborationStatusBar } from './CollaborationStatusBar';
-import { RealTimeCursorTracking } from './RealTimeCursorTracking';
-import { EnhancedConflictResolver } from './EnhancedConflictResolver';
-import { KeyboardShortcutsManager } from './KeyboardShortcutsManager';
-import { CommandPalette } from './CommandPalette';
-import { AdvancedSearchPanel } from './AdvancedSearchPanel';
-import { InteractiveButton } from './MicroInteractions';
+
 import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+
+import { AdvancedSearchPanel } from './AdvancedSearchPanel';
+import { CollaborationStatusBar } from './CollaborationStatusBar';
+import { CommandPalette } from './CommandPalette';
+import { EnhancedConflictResolver } from './EnhancedConflictResolver';
 import type { FileConflict } from './EnhancedConflictResolver';
+import { FileExplorer } from './FileExplorer';
+import { KeyboardShortcutsManager } from './KeyboardShortcutsManager';
+import { InteractiveButton } from './MicroInteractions';
+import { RealTimeCursorTracking } from './RealTimeCursorTracking';
+import { StatusBar } from './StatusBar';
+import { TabBar } from './TabBar';
 
 /**
  * Layout panel configuration

@@ -12,6 +12,7 @@
  */
 
 import { useState, useCallback, useMemo, useRef } from 'react';
+
 import type { FilterConfig, FilterValue, SortConfig } from './types';
 
 /**

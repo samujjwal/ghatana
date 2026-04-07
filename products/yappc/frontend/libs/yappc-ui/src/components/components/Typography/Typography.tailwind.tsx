@@ -6,10 +6,10 @@
  */
 
 import React, { forwardRef } from 'react';
+import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ElementType } from 'react';
 
 /**
  *
@@ -140,7 +140,7 @@ export const Typography = forwardRef<HTMLElement, TypographyProps>(
     ref
   ) => {
     // Determine the element to render
-    const Component = (component || variantToElement[variant] || 'p') as ElementType;
+    const Component = (component || variantToElement[variant] || 'p');
     
     return (
       <Component

@@ -227,6 +227,9 @@ export class RemoteErrorReporter implements ErrorReporter {
   private endpoint: string;
   private apiKey?: string;
   
+  /**
+   *
+   */
   constructor(endpoint: string, apiKey?: string) {
     this.endpoint = endpoint;
     this.apiKey = apiKey;
@@ -285,6 +288,9 @@ export class RemoteErrorReporter implements ErrorReporter {
 export class CompositeErrorReporter implements ErrorReporter {
   private reporters: ErrorReporter[];
   
+  /**
+   *
+   */
   constructor(reporters: ErrorReporter[]) {
     this.reporters = reporters;
   }

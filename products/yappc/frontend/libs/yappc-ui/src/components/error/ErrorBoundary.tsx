@@ -87,6 +87,9 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   private resetTimeoutId: NodeJS.Timeout | null = null;
   
+  /**
+   *
+   */
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {

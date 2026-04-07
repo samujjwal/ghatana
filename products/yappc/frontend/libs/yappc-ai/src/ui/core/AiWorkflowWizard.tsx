@@ -10,27 +10,28 @@
  * @doc.pattern Container
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Box, Surface as Paper, Stepper, Step, StepLabel, StepLabel as StepContent, Typography, Alert, LinearProgress, IconButton, Drawer } from '@ghatana/design-system';
 import { X as CloseIcon, Sparkles as AIIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Box, Surface as Paper, Stepper, Step, StepLabel, StepLabel as StepContent, Typography, Alert, LinearProgress, IconButton, Drawer } from '@ghatana/design-system';
 
 import {
     IntentStep,
-    IntentStepData,
+    type IntentStepData,
     ContextStep,
-    ContextStepData,
+    type ContextStepData,
     PlanStep,
-    PlanStepData,
+    type PlanStepData,
     CodeStep,
-    CodeStepData,
+    type CodeStepData,
     TestStep,
-    TestStepData,
+    type TestStepData,
     PreviewStep,
-    PreviewStepData,
+    type PreviewStepData,
     DeployStep,
-    DeployStepData,
+    type DeployStepData,
     CompleteStep,
-    WorkflowSummary,
+    type WorkflowSummary,
     WORKFLOW_STEPS,
     WORKFLOW_STEP_LABELS,
     WorkflowStep,

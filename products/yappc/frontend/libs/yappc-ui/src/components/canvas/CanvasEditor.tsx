@@ -11,8 +11,9 @@
  * @doc.pattern Wrapper Component
  */
 
-import React, { Suspense } from 'react';
 import { Box, CircularProgress, Typography, Alert } from '@mui/material';
+import React, { Suspense } from 'react';
+
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Lazy-load the heavy canvas to avoid blocking the initial bundle

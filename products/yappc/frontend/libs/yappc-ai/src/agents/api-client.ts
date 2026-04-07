@@ -86,6 +86,9 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<TInput, TOutp
     private config: Required<AIAgentClientConfig>;
     private endpoint: string;
 
+    /**
+     *
+     */
     constructor(
         name: AgentName,
         version: string,
@@ -290,6 +293,9 @@ export class AIAgentAPIClient<TInput, TOutput> implements IAIAgent<TInput, TOutp
 export class AIAgentClientFactory {
     private config: AIAgentClientConfig;
 
+    /**
+     *
+     */
     constructor(config: AIAgentClientConfig) {
         this.config = config;
     }

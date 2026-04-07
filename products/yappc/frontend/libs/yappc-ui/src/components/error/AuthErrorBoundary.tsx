@@ -14,8 +14,9 @@
  * @doc.layer ui
  */
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { useAtom } from 'jotai';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+
 import { authUserAtom, authTokenAtom } from '@yappc/canvas';
 
 // ============================================================================
@@ -196,6 +197,9 @@ function getAuthErrorMessage(error: Error, statusCode?: number): string {
 export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErrorBoundaryState> {
   private resetTimeoutId: NodeJS.Timeout | null = null;
   
+  /**
+   *
+   */
   constructor(props: AuthErrorBoundaryProps) {
     super(props);
     this.state = {

@@ -15,11 +15,12 @@
  * @doc.pattern Panel
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { canvasDocumentAtom, canvasSelectionAtom } from '../state/atoms';
+import React, { useState, useMemo, useCallback } from 'react';
+
 import { getPhaseDefinition } from '../config/phase-colors';
-import { LifecyclePhase } from '../types/lifecycle';
+import { canvasDocumentAtom, canvasSelectionAtom } from '../state/atoms';
+import { type LifecyclePhase } from '../types/lifecycle';
 
 interface OutlineTreeNode {
   id: string;

@@ -5,9 +5,10 @@
  * @doc.pattern Specialized Canvas Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel } from '@ghatana/design-system';
 import { Mail as Email, Globe as Public, Web, Plus as Add, TrendingUp } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel } from '@ghatana/design-system';
 
 /**
  * Marketing channel types

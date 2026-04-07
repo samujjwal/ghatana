@@ -16,6 +16,7 @@ import type {
     UniqueId,
     UniversalNode,
 } from '../model/contracts';
+
 import type { DragSource, DropTarget } from './DragDropManager';
 
 // ============================================================================
@@ -141,6 +142,9 @@ export class DropTargetResolver {
     private config: DropResolverConfig;
     private customValidators: Map<string, ConstraintValidator> = new Map();
 
+    /**
+     *
+     */
     constructor(config: Partial<DropResolverConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
     }

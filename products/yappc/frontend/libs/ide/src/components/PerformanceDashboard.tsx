@@ -11,9 +11,10 @@
  */
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useToastNotifications } from './Toast';
+
 import { InteractiveButton } from './MicroInteractions';
 import { ProgressBar } from './MicroInteractions';
+import { useToastNotifications } from './Toast';
 
 /**
  * Performance metric types

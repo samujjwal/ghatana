@@ -113,6 +113,9 @@ export class DebuggerManager {
   private listeners: Set<(session: DebugSession) => void> = new Set();
   private breakpointListeners: Set<(breakpoint: Breakpoint) => void> = new Set();
 
+  /**
+   *
+   */
   constructor() {}
 
   /**

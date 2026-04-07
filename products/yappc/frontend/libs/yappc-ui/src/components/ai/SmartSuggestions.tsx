@@ -24,14 +24,15 @@
  */
 
 import { Sparkles as AutoAwesomeIcon, RefreshCw as RefreshIcon, X as CloseIcon } from 'lucide-react';
-import { Box, Typography, Spinner as CircularProgress, Surface as Paper, IconButton, Tooltip } from '@ghatana/design-system';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
+import { Box, Typography, Spinner as CircularProgress, Surface as Paper, IconButton, Tooltip } from '@ghatana/design-system';
+
 // fetchAllSuggestions moved into useSuggestions
+import type { Suggestion, SuggestionType, SmartSuggestionsProps } from './SmartSuggestions/types';
 import SuggestionList from './SuggestionList';
 import { useSuggestions } from './useSuggestions';
 
-import type { Suggestion, SuggestionType, SmartSuggestionsProps } from './SmartSuggestions/types';
 
 /**
  * Hook: keyboard navigation for suggestions
@@ -164,13 +165,13 @@ export const SmartSuggestions: React.FC<SmartSuggestionsProps> = ({
     const selectedIndexRef = useRef<number>(0);
 
     const { suggestions, isLoading, error, refresh } = useSuggestions({
-        aiService: aiService as unknown,
+        aiService: aiService,
         types: stableSuggestionTypes,
         context,
         selection,
         maxPerType: maxSuggestionsPerType,
         minConfidence,
-        completionOptions: stableCompletionOptions as Record<string, unknown>,
+        completionOptions: stableCompletionOptions,
         autoGenerate,
     });
 

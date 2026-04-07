@@ -8,6 +8,10 @@ import {
   validateComponent, 
   createComponent 
 } from './component-registry';
+import type { 
+  CanvasComponent,
+  ValidationResult 
+} from './component-registry';
 import { 
   validateImportData, 
   validateExportData,
@@ -19,10 +23,6 @@ import {
   type ImportValidationResult
 } from './validation-helpers';
 
-import type { 
-  CanvasComponent,
-  ValidationResult 
-} from './component-registry';
 
 // Hook for component validation
 /**

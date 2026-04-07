@@ -12,10 +12,12 @@
 
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+
 import { useAuth } from '@yappc/canvas';
-import { LoginForm } from '../LoginForm';
-import { useToast } from '../../Toast';
+
 import { Page } from '../../Page/Page';
+import { useToast } from '../../Toast';
+import { LoginForm } from '../LoginForm';
 
 /**
  * Login page props

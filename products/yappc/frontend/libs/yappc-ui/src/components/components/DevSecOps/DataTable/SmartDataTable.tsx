@@ -18,13 +18,15 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Box, TextField, InputAdornment, IconButton, Chip, Tooltip, Typography, Collapse, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
 import { Search as SearchIcon, Brain as AIIcon, XCircle as ClearIcon, Sparkles as SmartIcon, Mic as VoiceIcon, Lightbulb as SuggestionIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Box, TextField, InputAdornment, IconButton, Chip, Tooltip, Typography, Collapse, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
+
+import type { Item } from '@yappc/core/types/devsecops';
 
 import { DataTable } from './DataTable';
 import type { DataTableProps, FilterConfig, FilterValue } from './types';
-import type { Item } from '@yappc/core/types/devsecops';
 
 /**
  * Parsed query intent

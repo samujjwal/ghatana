@@ -7,7 +7,8 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { useVoiceCommands, VoiceCommand, VOICE_COMMAND_HELP } from './useVoiceCommands';
+
+import { useVoiceCommands, type VoiceCommand, VOICE_COMMAND_HELP } from './useVoiceCommands';
 
 export interface VoiceOverlayProps {
   /** Called when a voice command is recognized */

@@ -180,6 +180,9 @@ export class PredictiveLayout {
     /** Enable smart snapping */
     private smartSnapEnabled: boolean = true;
 
+    /**
+     *
+     */
     private constructor() { }
 
     /**

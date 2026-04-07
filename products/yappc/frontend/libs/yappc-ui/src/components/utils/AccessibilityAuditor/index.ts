@@ -6,7 +6,6 @@
  */
 
 import { AccessibilityAuditors } from './auditors';
-
 import type {
   AccessibilityIssue,
   AccessibilityReport,

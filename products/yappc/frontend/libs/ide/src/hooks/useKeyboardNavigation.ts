@@ -138,7 +138,7 @@ export const useKeyboardNavigation = () => {
       
       const focusableElements = container.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      ) as NodeListOf<HTMLElement>;
+      );
 
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
@@ -203,7 +203,7 @@ export const useKeyboardNavigation = () => {
         document.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         )
-      ) as HTMLElement[];
+      );
 
       const currentIndex = focusableElements.indexOf(current);
       

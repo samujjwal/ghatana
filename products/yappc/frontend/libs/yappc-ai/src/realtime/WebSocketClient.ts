@@ -157,6 +157,9 @@ export class WebSocketClient {
   private stateHandlers = new Set<StateChangeHandler>();
   private connectionPromise?: Promise<void>;
 
+  /**
+   *
+   */
   constructor(config: WebSocketClientConfig) {
     this.config = {
       endpoint: config.endpoint,

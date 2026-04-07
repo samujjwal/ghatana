@@ -8,7 +8,6 @@ import React, { useState, useMemo } from 'react';
 
 import { ComponentNodeAdapter } from '../adapters/ComponentNodeAdapter';
 import { ComponentRegistry } from '../registry/ComponentRegistry';
-
 import type { ComponentMetadata } from '../registry/ComponentRegistry';
 import type { TransformContext } from '../types';
 

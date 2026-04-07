@@ -83,11 +83,17 @@ class ItemCache {
   private maxSize: number;
   private ttl: number;
 
+  /**
+   *
+   */
   constructor(maxSize = 1000, ttl = 300000) { // 5 minutes TTL
     this.maxSize = maxSize;
     this.ttl = ttl;
   }
 
+  /**
+   *
+   */
   get(id: string): VirtualItem | null {
     const entry = this.cache.get(id);
     if (!entry) return null;
@@ -100,6 +106,9 @@ class ItemCache {
     return entry.item;
   }
 
+  /**
+   *
+   */
   set(id: string, item: VirtualItem): void {
     if (this.cache.size >= this.maxSize) {
       // Remove oldest entry
@@ -110,10 +119,16 @@ class ItemCache {
     this.cache.set(id, { item, timestamp: Date.now() });
   }
 
+  /**
+   *
+   */
   clear(): void {
     this.cache.clear();
   }
 
+  /**
+   *
+   */
   size(): number {
     return this.cache.size;
   }
@@ -127,6 +142,9 @@ class PerformanceMonitor {
   private lastTime = performance.now();
   private fps = 0;
 
+  /**
+   *
+   */
   update(): number {
     this.frameCount++;
     const now = performance.now();
@@ -140,6 +158,9 @@ class PerformanceMonitor {
     return this.fps;
   }
 
+  /**
+   *
+   */
   getFPS(): number {
     return this.fps;
   }

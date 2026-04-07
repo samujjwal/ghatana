@@ -1,11 +1,15 @@
-import type { SavedSearch } from './types';
 import type { FilterCriteria } from '../../components/Search';
+
+import type { SavedSearch } from './types';
 
 /**
  * Utility class for WebSocket search operations.
  * Provides static helper methods for search state management and transformations.
  */
 export class WebSocketSearchUtils {
+  /**
+   *
+   */
   private static isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
   }

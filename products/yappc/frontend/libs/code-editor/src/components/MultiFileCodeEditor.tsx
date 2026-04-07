@@ -18,14 +18,15 @@
  * @doc.pattern Advanced Component
  */
 
+import type { editor } from 'monaco-editor';
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import type * as Y from 'yjs';
-import type { editor } from 'monaco-editor';
 
 import { useEnhancedCollaborativeEditor } from '../hooks/useCollaborativeEditor';
+import type { CodeLanguage } from '../types';
+
 import { EnhancedCodeEditor } from './EnhancedCodeEditor';
 import type { CollaborativeCursor } from './EnhancedCodeEditor';
-import type { CodeLanguage } from '../types';
 
 /**
  * File tab information

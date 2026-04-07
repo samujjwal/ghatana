@@ -12,7 +12,6 @@ import { predefinedTemplates, searchTemplates, getTemplatesByCategory } from './
 import {
   InstantiatedTemplate,
 } from './TemplateDefinition';
-
 import type {
   TemplateDefinition,
   TemplateCategory,

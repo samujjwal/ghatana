@@ -7,10 +7,11 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { getMarketplaceManager } from '../marketplaceManager';
+import type { MarketplacePlugin, SearchFilters } from '../marketplaceTypes';
+
 import { InstallationProgress } from './InstallationProgress';
 import { PluginCard } from './PluginCard';
 
-import type { MarketplacePlugin, SearchFilters } from '../marketplaceTypes';
 
 /**
  *

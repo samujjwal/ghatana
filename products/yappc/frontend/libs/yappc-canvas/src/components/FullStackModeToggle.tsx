@@ -10,9 +10,11 @@
  * @doc.pattern Component
  */
 
-import React from 'react';
-import { Box, ToggleButtonGroup as ButtonGroup, Button, IconButton, Surface as Paper, Typography, Chip, Tooltip, Badge, Menu, MenuItem, Divider, Alert, Collapse } from '@ghatana/design-system';
 import { PanelsTopLeft as SplitVerticalIcon, ListTodo as SplitHorizontalIcon, LayoutDashboard as SingleIcon, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, CheckCircle as ValidIcon, ArrowLeftRight as DataFlowIcon, Code as FrontendIcon, HardDrive as BackendIcon } from 'lucide-react';
+import React from 'react';
+
+import { Box, ToggleButtonGroup as ButtonGroup, Button, IconButton, Surface as Paper, Typography, Chip, Tooltip, Badge, Menu, MenuItem, Divider, Alert, Collapse } from '@ghatana/design-system';
+
 import {
     useFullStackMode,
     type LayoutMode,

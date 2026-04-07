@@ -8,10 +8,10 @@
 
 import React, { useState, useMemo } from 'react';
 
-import { CodeGenerator, GeneratedCode } from './CodeGenerator';
-
-import type { CodeGenerationOptions } from './CodeGenerator';
 import type { ComponentNodeData } from '../types/CanvasNode';
+
+import { CodeGenerator, GeneratedCode } from './CodeGenerator';
+import type { CodeGenerationOptions } from './CodeGenerator';
 
 // ============================================================================
 // Types

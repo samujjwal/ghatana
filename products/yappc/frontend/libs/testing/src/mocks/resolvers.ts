@@ -76,7 +76,7 @@ export const resolvers = {
       // If running in a browser during e2e and tests seeded workspaces into localStorage,
       // prefer those so Playwright/global-setup can deterministically control mock responses.
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         if (typeof window !== 'undefined' && (window as unknown).localStorage) {
           const raw = (window as unknown).localStorage.getItem('e2e:mockWorkspaces');
           if (raw) {

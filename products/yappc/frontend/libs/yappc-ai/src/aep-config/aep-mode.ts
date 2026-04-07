@@ -157,7 +157,7 @@ export function getAepConfig(): AepConfig {
   const env = process.env.NODE_ENV || 'development';
   const explicitMode = process.env.AEP_MODE as AepMode | undefined;
 
-  let config =
+  const config =
     { ...DEFAULT_AEP_CONFIGS[env] } || DEFAULT_AEP_CONFIGS.development;
 
   // Override mode if explicitly set

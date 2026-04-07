@@ -16,9 +16,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Box, Surface as Paper, Typography, TextField, Button, Chip, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Alert, Spinner as CircularProgress, Fade } from '@ghatana/design-system';
 import { Lightbulb as IdeaIcon, Hammer as BuildIcon, Bug as BugIcon, Gauge as SpeedIcon, FlaskConical as TestIcon, Rocket as DeployIcon, Sparkles as AIIcon, Check as CheckIcon } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+
+import { Box, Surface as Paper, Typography, TextField, Button, Chip, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Alert, Spinner as CircularProgress, Fade } from '@ghatana/design-system';
 
 // Hook would be imported from the hooks directory in production
 // import { useAICopilot } from '../hooks';

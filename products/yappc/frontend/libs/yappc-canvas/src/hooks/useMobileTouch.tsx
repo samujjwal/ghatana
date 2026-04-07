@@ -1,5 +1,5 @@
 /**
- * @fileoverview Mobile Touch Interaction Handler
+ * @file Mobile Touch Interaction Handler
  * Fixes touch interactions for canvas on mobile devices
  * 
  * @doc.type hook

@@ -1,5 +1,5 @@
 /**
- * @fileoverview CSP (Content Security Policy) Middleware
+ * @file CSP (Content Security Policy) Middleware
  * Security headers implementation for YAPPC
  * 
  * @doc.type middleware
@@ -8,7 +8,7 @@
  * @doc.pattern Security
  */
 
-import { FastifyPluginAsync } from 'fastify';
+import { type FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 // ============================================================================
@@ -241,7 +241,7 @@ export default fp(securityHeadersPlugin, {
 // Express/Connect Middleware (for legacy support)
 // ============================================================================
 
-import { Request, Response, NextFunction } from 'express';
+import { type Request, type Response, type NextFunction } from 'express';
 
 /**
  * Express middleware for CSP headers

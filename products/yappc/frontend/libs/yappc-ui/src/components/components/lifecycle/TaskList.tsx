@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { LifecycleStageId } from './LifecycleStage';
+
+import { type LifecycleStageId } from './LifecycleStage';
 
 export interface TaskItem {
   id: string;

@@ -11,7 +11,6 @@
 import { useCallback } from 'react';
 
 import { useModal, ModalManager } from '../ModalManager';
-
 import type { DialogOptions, DialogAction, ConfirmResult } from '../types';
 
 // ============================================================================

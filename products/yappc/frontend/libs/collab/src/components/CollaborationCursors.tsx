@@ -5,9 +5,10 @@
  * as an overlay on the canvas.
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserCursor } from './CanvasCollaboration';
+import React, { useMemo } from 'react';
+
+import { type UserCursor } from './CanvasCollaboration';
 import { useCollaborationCursors } from './hooks';
 
 // =============================================================================

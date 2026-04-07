@@ -10,9 +10,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Surface as Paper, Typography, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Chip, LinearProgress, Alert, Checkbox, Collapse, IconButton } from '@ghatana/design-system';
 import { FlaskConical as TestIcon, CheckCircle as PassIcon, XCircle as FailIcon, Hourglass as PendingIcon, Play as RunIcon, Sparkles as AIIcon, Check as CheckIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Surface as Paper, Typography, Button, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Chip, LinearProgress, Alert, Checkbox, Collapse, IconButton } from '@ghatana/design-system';
 
 export interface TestStepProps {
     codeData: { files: { path: string; status: string }[] };

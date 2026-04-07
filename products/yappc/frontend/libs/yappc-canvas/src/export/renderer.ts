@@ -32,10 +32,10 @@ import type {
   CodeExportOptions,
   JsonExportOptions,
   ExportResult} from '../schemas/export-schemas';
-
 import {
   ExportFormat
 } from '../schemas/export-schemas';
+
 import { sanitizeExportContent, auditExportSecurity } from './sanitizer';
 
 // Canvas-to-SVG renderer
@@ -519,20 +519,20 @@ export class ExportEngine {
       
       switch (options.format) {
         case 'svg':
-          result = await this.exportToSVG(canvas, options as ImageExportOptions);
+          result = await this.exportToSVG(canvas, options);
           break;
         case 'png':
-          result = await this.exportToPNG(canvas, options as ImageExportOptions);
+          result = await this.exportToPNG(canvas, options);
           break;
         case 'pdf':
-          result = await this.exportToPDF(canvas, options as PdfExportOptions);
+          result = await this.exportToPDF(canvas, options);
           break;
         case 'jsx':
         case 'html':
-          result = await this.exportToCode(canvas, options as CodeExportOptions);
+          result = await this.exportToCode(canvas, options);
           break;
         case 'json':
-          result = await this.exportToJSON(canvas, options as JsonExportOptions);
+          result = await this.exportToJSON(canvas, options);
           break;
         default:
           throw new Error(`Unsupported export format: ${(options as unknown).format}`);

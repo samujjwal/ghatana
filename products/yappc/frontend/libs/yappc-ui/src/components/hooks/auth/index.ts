@@ -15,8 +15,10 @@
  * @doc.layer ui
  */
 
-import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 import {
   authUserAtom,
   authTokenAtom,
@@ -24,8 +26,6 @@ import {
   authErrorAtom,
   authStateAtom,
 } from '@yappc/canvas';
-import { useNavigate, useLocation } from 'react-router-dom';
-
 import type { User } from '@yappc/core/types';
 
 type AuthRouteUser = User & {

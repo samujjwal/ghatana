@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
 import type { FileSearchQuery, SearchResult } from '../hooks/useAdvancedFileOperations';
 

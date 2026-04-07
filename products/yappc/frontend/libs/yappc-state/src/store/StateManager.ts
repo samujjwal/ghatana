@@ -36,9 +36,9 @@
  */
 
 import { atom } from 'jotai';
+import type { Atom, WritableAtom, Getter, Setter } from 'jotai';
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 
-import type { Atom, WritableAtom, Getter, Setter } from 'jotai';
 
 // ============================================================================
 // Types

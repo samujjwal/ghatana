@@ -7,12 +7,13 @@
  */
 
 import { Flag as FlagIcon } from 'lucide-react';
-import { Box, LinearProgress, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 import { useMemo, useRef } from 'react';
 
-import { TimelineUtils } from './utils';
+import { Box, LinearProgress, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
 
 import type { TimelineProps } from './types';
+import { TimelineUtils } from './utils';
+
 
 const ROW_HEIGHT = 48;
 const HEADER_HEIGHT = 60;
@@ -36,7 +37,7 @@ const HEADER_HEIGHT = 60;
  * />
  * ```
  */
-// eslint-disable-next-line max-lines-per-function
+ 
 export function Timeline({
   items,
   milestones = [],

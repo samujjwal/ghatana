@@ -10,7 +10,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import {
     Box,
     Drawer,
@@ -29,6 +28,7 @@ import {
     Settings as SettingsIcon,
     FolderOpen as ProjectIcon,
 } from 'lucide-react';
+import React from 'react';
 
 import type { Project } from '@yappc/core/types';
 

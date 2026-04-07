@@ -5,9 +5,9 @@
  * an array of AccessibilityIssue objects.
  */
 
+import type { AccessibilityIssue } from './types';
 import { AccessibilityUtils } from './utils';
 
-import type { AccessibilityIssue } from './types';
 
 /**
  * Core auditor class with specialized audit methods for each category.

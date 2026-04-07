@@ -17,8 +17,8 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback, useMemo } from 'react';
 import type { Node } from '@xyflow/react';
+import { useState, useCallback, useMemo } from 'react';
 
 // ============================================================================
 // TYPE DEFINITIONS

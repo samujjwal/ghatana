@@ -164,6 +164,9 @@ export class LifecycleStateMachine {
     private state: LifecycleState;
     private transitionMap: Map<string, StageTransitionConfig>;
 
+    /**
+     *
+     */
     constructor(config: LifecycleStateMachineConfig, initialStage: LifecycleStage = 'intent') {
         this.config = config;
         this.state = {

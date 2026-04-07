@@ -11,12 +11,14 @@
  */
 
 // Use local lightweight types to avoid hard dependency on the full CRDT core types
+import * as Y from 'yjs';
+
 import type { CRDTOperation, CanvasNodeLite } from '../../../crdt-ide/src';
 import { yMapToRecord } from '../../../crdt-ide/src';
-import * as Y from 'yjs';
 import type { IDEFile, IDEFolder } from '../types';
+
+import { type IDECRDTHandler } from './ide-handler';
 import type { IDECRDTState } from './ide-schema';
-import { IDECRDTHandler } from './ide-handler';
 
 /**
  * IDE-Canvas bridge for bidirectional synchronization
@@ -26,6 +28,9 @@ export class IDECanvasBridge {
   private canvasState: unknown; // Will be populated with canvas CRDT state
   private syncListeners: Map<string, (operation: CRDTOperation) => void> = new Map();
 
+  /**
+   *
+   */
   constructor(ideHandler: IDECRDTHandler, canvasState: unknown) {
     this.ideHandler = ideHandler;
     this.canvasState = canvasState;
@@ -400,7 +405,7 @@ export class IDECanvasBridge {
       ? nodeSource
       : [...(nodeSource.values?.() ?? [])];
 
-    return nodeList.filter((n) => (n as CanvasNodeLite).type === 'ide') as CanvasNodeLite[];
+    return nodeList.filter((n) => (n).type === 'ide');
   }
 
   /**
@@ -554,7 +559,7 @@ export class IDECanvasBridge {
       : [...(nodeSource.values?.() ?? [])];
 
     return nodeList.filter((n) => {
-      const node = n as CanvasNodeLite;
+      const node = n;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = node.data as any;
       return (
@@ -562,7 +567,7 @@ export class IDECanvasBridge {
         data?.filePath?.includes(fileId) ||
         node.id === `file-${fileId}`
       );
-    }) as CanvasNodeLite[];
+    });
   }
 
   /**

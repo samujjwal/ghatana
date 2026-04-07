@@ -16,8 +16,9 @@
  * @doc.pattern Toolbar
  */
 
-import React, { useMemo } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
+import React, { useMemo } from 'react';
+
 import { canvasSelectionAtom } from '../state/atoms';
 import { chromeContextBarVisibleAtom } from '../state/chrome-atoms';
 

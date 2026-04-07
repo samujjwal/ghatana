@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+
 import { BidirectionalSyncCoordinator, type SyncEvent, type SyncConfig } from '../sync/BidirectionalSyncCoordinator';
 
 /**

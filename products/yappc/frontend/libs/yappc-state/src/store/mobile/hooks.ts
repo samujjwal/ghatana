@@ -20,7 +20,6 @@ import {
   mobileSystemThemeAtom,
   resolvedMobileThemeAtom,
 } from './atoms';
-
 import type { MobilePlatform, MobileSettings, MobileThemePreference } from './atoms';
 
 /**

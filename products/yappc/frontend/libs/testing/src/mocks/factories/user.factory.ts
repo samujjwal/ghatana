@@ -2,9 +2,10 @@
  * User factory for generating test user data
  */
 
+import type { User } from '@yappc/core/types';
+
 import { faker } from '../faker-shim';
 
-import type { User } from '@yappc/core/types';
 
 /**
  *

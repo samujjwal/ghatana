@@ -5,9 +5,10 @@
  * @doc.pattern DevSecOps Canvas Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel } from '@ghatana/design-system';
 import { Hammer as Build, Play as PlayArrow, HardDrive as Storage, Gauge as Speed, Plus as Add } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel } from '@ghatana/design-system';
 
 /**
  * Build step interface

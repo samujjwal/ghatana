@@ -1,7 +1,7 @@
+import type { Node, Edge, Viewport } from '@xyflow/react';
 import { atom } from 'jotai';
 
 import type { PortalElement, DrillDownContext } from '../types/portal-types';
-import type { Node, Edge, Viewport } from '@xyflow/react';
 
 /**
  *

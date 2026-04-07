@@ -1,13 +1,13 @@
 import { render, cleanup } from '@testing-library/react';
+import type { RenderOptions} from '@testing-library/react';
 import React from 'react';
+import type { ReactElement } from 'react';
 
 import { lightTheme, darkTheme } from './theme';
 import { ThemeProvider } from './ThemeContext';
+import type { ThemeMode } from './ThemeContext';
 import MuiThemeProvider from './ThemeProvider';
 
-import type { ThemeMode } from './ThemeContext';
-import type { RenderOptions} from '@testing-library/react';
-import type { ReactElement } from 'react';
 
 function hexToRgb(hex: string): [number, number, number] {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;

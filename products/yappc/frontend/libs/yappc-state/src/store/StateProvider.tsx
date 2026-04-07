@@ -9,16 +9,16 @@
 
 import { Provider, createStore } from 'jotai';
 // import { DevTools } from 'jotai-devtools';
+import type { WritableAtom } from 'jotai';
 import React, { useEffect, useMemo } from 'react';
 
-import type { WritableAtom } from 'jotai';
 
-import { StateManager } from './StateManager';
 import {
   syncStateAcrossTabs,
   subscribeToSync,
   type StorageEvent
 } from './cross-tab-sync';
+import { StateManager } from './StateManager';
 // import 'jotai-devtools/styles.css';
 
 // ============================================================================

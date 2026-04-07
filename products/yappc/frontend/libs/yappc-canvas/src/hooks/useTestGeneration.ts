@@ -17,12 +17,13 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback, useMemo } from 'react';
 import { useNodes } from '@xyflow/react';
-import { AIRequirementsService } from '@yappc/ai';
-
 import type { Node } from '@xyflow/react';
+import { useState, useCallback, useMemo } from 'react';
+
+import { AIRequirementsService } from '@yappc/ai';
 import type { GeneratedTestCase } from '@yappc/ai';
+
 import type { TestType, TestStatus } from '../components/TestGenToolbar';
 import type { TestCaseWithApproval } from '../components/TestResultsPanel';
 

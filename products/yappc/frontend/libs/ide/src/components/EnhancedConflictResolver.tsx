@@ -11,8 +11,10 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { InteractiveButton } from './MicroInteractions';
+
 import type { UserPresence } from '../hooks/useCollaborativeEditing';
+
+import { InteractiveButton } from './MicroInteractions';
 
 /**
  * Conflict types

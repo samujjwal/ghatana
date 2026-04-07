@@ -10,7 +10,6 @@
  * @doc.pattern Form Component
  */
 
-import React, { useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -22,6 +21,7 @@ import {
     Typography,
     CircularProgress,
 } from '@mui/material';
+import React, { useState } from 'react';
 
 export interface WorkspaceCreateDialogProps {
     open: boolean;

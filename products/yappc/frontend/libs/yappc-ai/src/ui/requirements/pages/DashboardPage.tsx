@@ -1,6 +1,8 @@
+import { Plus as AddIcon } from 'lucide-react';
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';import { Plus as AddIcon } from 'lucide-react';const DashboardPage = () => {
+
+import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';const DashboardPage = () => {
   const navigate = useNavigate()
 
   useEffect(() => {

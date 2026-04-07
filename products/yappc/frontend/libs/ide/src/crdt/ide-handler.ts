@@ -11,10 +11,12 @@
  */
 
 import { Text } from 'yjs';
+
 // Use local CRDT types to avoid coupling IDE package to top-level CRDT build during type-check
 import type { CRDTOperation } from '../../../crdt-ide/src';
-import type { IDECRDTState } from './ide-schema';
+
 import type { IDECRDTOperationType } from './ide-operations';
+import type { IDECRDTState } from './ide-schema';
 
 /**
  * IDE CRDT handler
@@ -25,6 +27,9 @@ export class IDECRDTHandler {
   private state: IDECRDTState;
   private listeners: Map<string, (state: IDECRDTState) => void> = new Map();
 
+  /**
+   *
+   */
   constructor(initialState: IDECRDTState) {
     this.state = initialState;
   }
@@ -151,7 +156,7 @@ export class IDECRDTHandler {
       }
       file.metadata.modifiedAt = operation.timestamp;
       file.metadata.modifiedBy = operation.replicaId;
-      file.metadata.size = (currentContent as Text).length;
+      file.metadata.size = (currentContent).length;
     }
 
     this.notifyListeners();

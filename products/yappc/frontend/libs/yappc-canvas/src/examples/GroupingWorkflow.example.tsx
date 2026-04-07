@@ -13,14 +13,16 @@
  * @doc.pattern Component
  */
 
-import React, { useCallback, useState } from 'react';
 import { Background, Controls, ReactFlow, ReactFlowProvider, Panel } from '@xyflow/react';
+import type { Node, Edge } from '@xyflow/react';
+import React, { useCallback, useState } from 'react';
+
 import { Box, Typography } from '@ghatana/design-system';
+
 import { GroupingToolbar } from '../components/GroupingToolbar';
 import { NodeGroup } from '../components/NodeGroup';
 import { useNodeGrouping } from '../hooks/useNodeGrouping';
 
-import type { Node, Edge } from '@xyflow/react';
 
 // Example: PM has created these nodes for a Profile feature
 const initialNodes: Node[] = [

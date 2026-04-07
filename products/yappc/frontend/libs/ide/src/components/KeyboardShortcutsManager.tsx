@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
+
 import { useKeyboardShortcuts, type KeyboardShortcut } from '../hooks/useKeyboardShortcuts';
 
 // Local custom shortcuts state is maintained here
@@ -285,7 +286,7 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
   const shortcuts: KeyboardShortcut[] = customShortcuts.map(c => ({
     id: c.id,
     key: c.key.toLowerCase(),
-    modifiers: c.modifiers as ('ctrl' | 'alt' | 'shift' | 'meta')[],
+    modifiers: c.modifiers,
     action: c.action,
     description: c.description,
     category: (c.category as unknown) || 'tools',

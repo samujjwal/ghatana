@@ -17,8 +17,8 @@
  * @doc.pattern Component
  */
 
-import React, { useMemo } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type EdgeProps } from '@xyflow/react';
+import React, { useMemo } from 'react';
 
 /**
  * Test execution status for edges

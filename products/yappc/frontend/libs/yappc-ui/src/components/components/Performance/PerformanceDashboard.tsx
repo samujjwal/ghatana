@@ -6,13 +6,16 @@
  */
 
 import { LayoutDashboard as DashboardIcon, Activity as TimelineIcon, Gauge as SpeedIcon, Hammer as BuildIcon, CloudUpload as DeploymentIcon, FlaskConical as TestIcon, AlertTriangle as WarningIcon, CheckCircle as CheckCircleIcon, AlertCircle as ErrorIcon, RefreshCw as RefreshIcon, Settings as SettingsIcon, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from 'lucide-react';
-import { Box, Grid, Typography, Card, CardContent, FormControl, InputLabel, Select, MenuItem, Chip, Alert, IconButton, Tooltip, Tab, Tabs, Switch, FormControlLabel, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Surface as Paper } from '@ghatana/design-system';
-import { resolveMuiColor } from '../../utils/safePalette';
 import React, { useState, useCallback, useMemo } from 'react';
 
-import { PerformanceTrendingChart } from './PerformanceTrendingChart';
+import { Box, Grid, Typography, Card, CardContent, FormControl, InputLabel, Select, MenuItem, Chip, Alert, IconButton, Tooltip, Tab, Tabs, Switch, FormControlLabel, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Surface as Paper } from '@ghatana/design-system';
+
 import { usePerformanceMonitoring } from '../../hooks/performance/usePerformanceMonitoring';
 import { wrapForTooltip } from '../../utils/accessibility';
+import { resolveMuiColor } from '../../utils/safePalette';
+
+import { PerformanceTrendingChart } from './PerformanceTrendingChart';
+
 
 /**
  *

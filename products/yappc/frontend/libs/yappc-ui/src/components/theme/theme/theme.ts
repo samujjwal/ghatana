@@ -1,5 +1,4 @@
 import { createTheme, alpha } from '@mui/material/styles';
-
 import type { ThemeOptions as MuiThemeOptions } from '@mui/material/styles';
 
 import {

@@ -6,7 +6,8 @@
  */
 
 import * as Y from 'yjs';
-import { CollaborationManager, CollaborationUser } from './CollaborationManager';
+
+import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -71,6 +72,9 @@ export interface DocumentChangeEvent {
 // Document Collaboration Class
 // =============================================================================
 
+/**
+ *
+ */
 export class DocumentCollaboration {
   private collab: CollaborationManager;
   private text: Y.Text;
@@ -81,6 +85,9 @@ export class DocumentCollaboration {
   private listeners: Map<DocumentChangeType, Set<(event: DocumentChangeEvent) => void>>;
   private cursors: Map<string, TextCursor>;
 
+  /**
+   *
+   */
   constructor(
     collab: CollaborationManager,
     userId: string,

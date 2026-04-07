@@ -10,14 +10,9 @@
  * @doc.phase operations
  */
 
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useEffect,
-} from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { formatDistanceToNow, format, differenceInMinutes } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtomValue, useSetAtom } from 'jotai';
 import {
   AlertTriangle,
   AlertCircle,
@@ -48,13 +43,28 @@ import {
   ArrowUpRight,
   Circle,
 } from 'lucide-react';
-import { formatDistanceToNow, format, differenceInMinutes } from 'date-fns';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { Card, CardContent, CardHeader } from '@ghatana/design-system';
+import { Progress } from '@ghatana/design-system';
+import { Tabs } from '@ghatana/design-system';
+
+import {
+  incidentsAtom,
+  alertsAtom,
+  activeIncidentAtom,
+} from '@yappc/canvas';
 import { AvatarFallback, AvatarImage } from '@yappc/ui';
 import {
   DropdownMenu,
@@ -64,20 +74,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from '@yappc/ui';
-import { Tooltip } from '@ghatana/design-system';
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
-import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import { CardTitle } from '@yappc/ui';
 import { ScrollArea } from '@yappc/ui';
-import { Progress } from '@ghatana/design-system';
-import { Tabs } from '@ghatana/design-system';
 import { TabsContent, TabsList, TabsTrigger } from '@yappc/ui';
-
-import {
-  incidentsAtom,
-  alertsAtom,
-  activeIncidentAtom,
-} from '@yappc/canvas';
 
 // =============================================================================
 // Types
@@ -557,7 +557,7 @@ export const IncidentDashboard: React.FC<IncidentDashboardProps> = ({
     const resolvedIncidents = incidents.filter((i) => i.resolvedAt);
     const avgResolutionMinutes = resolvedIncidents.length > 0
       ? resolvedIncidents.reduce((sum, i) => {
-          return sum + differenceInMinutes(new Date(i.resolvedAt!), new Date(i.startedAt));
+          return sum + differenceInMinutes(new Date(i.resolvedAt), new Date(i.startedAt));
         }, 0) / resolvedIncidents.length
       : 0;
 

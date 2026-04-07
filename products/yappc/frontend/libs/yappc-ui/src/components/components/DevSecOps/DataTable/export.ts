@@ -6,9 +6,9 @@
  * @module DevSecOps/DataTable/export
  */
 
+import type { DataTableColumn } from './types';
 import { DataTableUtils } from './utils';
 
-import type { DataTableColumn } from './types';
 
 /**
  * Export utilities for DataTable

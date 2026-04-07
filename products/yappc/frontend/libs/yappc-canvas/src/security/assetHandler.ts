@@ -19,7 +19,7 @@
  * @module security/assetHandler
  */
 
-import { createHmac } from 'crypto';
+import { createHmac } from 'node:crypto';
 
 /**
  * Asset types with different security policies

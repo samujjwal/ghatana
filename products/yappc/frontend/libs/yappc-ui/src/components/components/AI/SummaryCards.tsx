@@ -2,10 +2,12 @@ import { LineChart as RefreshIcon } from 'lucide-react';
 import { Lightbulb as LightbulbIcon } from 'lucide-react';
 import { Shield as SecurityIcon } from 'lucide-react';
 import { Timer as TimerIcon } from 'lucide-react';
-import { Box, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
-import { Grid } from '../Grid';
-import { resolveMuiColor } from '../../utils/safePalette';
 import React from 'react';
+
+import { Box, Card, CardContent, Chip, Typography } from '@ghatana/design-system';
+
+import { resolveMuiColor } from '../../utils/safePalette';
+import { Grid } from '../Grid';
 
 import type { RecommendationCounts } from './types';
 

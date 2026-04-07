@@ -5,10 +5,13 @@
  * in a document or text editor.
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TextCursor } from '../DocumentCollaboration';
+import React, { useMemo } from 'react';
+
 import { cn } from '@ghatana/design-system';
+
+import { type TextCursor } from '../DocumentCollaboration';
+
 
 // =============================================================================
 // Types

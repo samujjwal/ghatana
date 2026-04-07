@@ -17,9 +17,11 @@
  * - UX Designer: UI Screen, Wireframe, Prototype Link
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
+import { Bot as AIIcon, FileText as RequirementIcon, GitBranch as FlowIcon, Users as StakeholderIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Cloud as CloudIcon, Code as CodeIcon, Functions as FunctionIcon, Bug as TestIcon, Smartphone as UIIcon, Paintbrush as DesignIcon, Play as RunIcon, Check as CheckIcon, AlertCircle as ErrorIcon, Clock as PendingIcon } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+
 import {
   Box,
   Typography,
@@ -36,11 +38,15 @@ import {
   Spinner as CircularProgress,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+
 import { useMuiTheme as useTheme } from '@yappc/ui';
+
 import { useAIBrainstorming } from '../hooks/useAIBrainstorming';
-import { Bot as AIIcon, FileText as RequirementIcon, GitBranch as FlowIcon, Users as StakeholderIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Cloud as CloudIcon, Code as CodeIcon, Functions as FunctionIcon, Bug as TestIcon, Smartphone as UIIcon, Paintbrush as DesignIcon, Play as RunIcon, Check as CheckIcon, AlertCircle as ErrorIcon, Clock as PendingIcon } from 'lucide-react';
+
 
 // Import Property Panels
+import type { PersonaNodeData, PersonaNodeType } from '../integration/node-types';
+
 import {
     SchemaDesignerPanel,
     DeploymentConfigPanel,
@@ -59,7 +65,6 @@ export type {
     DatabaseNodeData,
 } from '../integration/node-types';
 
-import type { PersonaNodeData, PersonaNodeType } from '../integration/node-types';
 
 // ============================================================================
 // TYPE DEFINITIONS (Node-specific)

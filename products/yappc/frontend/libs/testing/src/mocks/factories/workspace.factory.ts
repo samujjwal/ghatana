@@ -2,10 +2,12 @@
  * Workspace factory for generating test workspace data
  */
 
+import type { Workspace, User } from '@yappc/core/types';
+
 import { faker } from '../faker-shim';
+
 import { createUser } from './user.factory';
 
-import type { Workspace, User } from '@yappc/core/types';
 
 /**
  *

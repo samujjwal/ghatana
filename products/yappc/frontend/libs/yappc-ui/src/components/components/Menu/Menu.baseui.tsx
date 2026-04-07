@@ -1,9 +1,9 @@
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { forwardRef } from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ReactNode } from 'react';
 
 /**
  * Menu shape variants

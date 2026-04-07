@@ -5,8 +5,9 @@
  * Provides accessible tab navigation with proper keyboard support and ARIA attributes
  */
 
-import { Box } from '@ghatana/design-system';
 import React from 'react';
+
+import { Box } from '@ghatana/design-system';
 
 import { Tabs, Tab } from '../Tabs';
 import type { TabsVariant } from '../Tabs';

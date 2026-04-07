@@ -9,9 +9,9 @@
  * @doc.layer presentation
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAtom } from 'jotai';
 import { atom } from 'jotai';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export interface User {
   id: string;

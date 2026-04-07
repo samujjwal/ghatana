@@ -545,7 +545,7 @@ export class IntegrationTestsManager {
           continue;
         }
 
-        const existingNode = context.utils.findNode(nodeUpdate.id as string);
+        const existingNode = context.utils.findNode(nodeUpdate.id);
         if (!existingNode) {
           errors.push({
             type: 'node',
@@ -585,7 +585,7 @@ export class IntegrationTestsManager {
           continue;
         }
 
-        const existingEdge = context.utils.findEdge(edgeUpdate.id as string);
+        const existingEdge = context.utils.findEdge(edgeUpdate.id);
         if (!existingEdge) {
           errors.push({
             type: 'edge',
@@ -597,7 +597,7 @@ export class IntegrationTestsManager {
 
         // Validate source/target updates
         if (edgeUpdate.source) {
-          const sourceNode = context.utils.findNode(edgeUpdate.source as string);
+          const sourceNode = context.utils.findNode(edgeUpdate.source);
           if (!sourceNode) {
             errors.push({
               type: 'edge',
@@ -608,7 +608,7 @@ export class IntegrationTestsManager {
         }
 
         if (edgeUpdate.target) {
-          const targetNode = context.utils.findNode(edgeUpdate.target as string);
+          const targetNode = context.utils.findNode(edgeUpdate.target);
           if (!targetNode) {
             errors.push({
               type: 'edge',

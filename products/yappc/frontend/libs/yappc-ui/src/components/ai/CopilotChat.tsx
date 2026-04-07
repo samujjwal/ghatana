@@ -10,7 +10,6 @@
  * @doc.pattern Container Component
  */
 
-import React, { useEffect, useRef, useState } from 'react';
 import {
     Box,
     Typography,
@@ -30,6 +29,7 @@ import {
     Trash2 as ClearIcon,
     BrainCircuit as BrainIcon,
 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import type { CopilotMessage, CopilotSession } from '@yappc/state/aiAtoms';
 

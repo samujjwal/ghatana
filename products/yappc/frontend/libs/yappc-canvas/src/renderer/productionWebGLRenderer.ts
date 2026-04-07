@@ -16,6 +16,7 @@ import {
   type WebGLCapabilities as ProductionCapabilities,
   DEFAULT_WEBGL_CONFIG,
 } from '../rendering/webglRenderer';
+import type { CanvasElement } from '../types/canvas-document';
 
 import type {
   IRenderer,
@@ -24,7 +25,6 @@ import type {
   CanvasState,
   RendererPerformance,
 } from './renderer-types';
-import type { CanvasElement } from '../types/canvas-document';
 
 /**
  * Production WebGL Renderer with full Feature 1.10 capabilities

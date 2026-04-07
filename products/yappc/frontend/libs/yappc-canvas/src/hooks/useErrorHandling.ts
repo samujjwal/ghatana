@@ -1,6 +1,6 @@
+import type { Node, Edge } from '@xyflow/react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-import type { Node, Edge } from '@xyflow/react';
 
 // Error types
 /**

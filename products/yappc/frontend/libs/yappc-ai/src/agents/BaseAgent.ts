@@ -12,6 +12,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+
 import type {
     AgentContext,
     AgentHealth,
@@ -51,6 +52,9 @@ export abstract class BaseAgent<TInput, TOutput>
     protected config: BaseAgentConfig;
     protected lastHealthCheck: AgentHealth | null = null;
 
+    /**
+     *
+     */
     constructor(config: BaseAgentConfig) {
         this.config = {
             defaultTimeout: 30000,
@@ -91,7 +95,7 @@ export abstract class BaseAgent<TInput, TOutput>
             const timeout = context.timeout || this.config.defaultTimeout;
             const result = await this.withTimeout(
                 this.processRequest(input, context),
-                timeout!
+                timeout
             );
 
             const latencyMs = Date.now() - startTime;

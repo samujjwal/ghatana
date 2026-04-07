@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+
 import type { OAuthProvider, OAuthToken, OAuthUser, AuthState } from '../types';
 import { OAuthUtils } from '../utils';
 

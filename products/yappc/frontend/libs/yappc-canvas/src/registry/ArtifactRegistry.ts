@@ -103,6 +103,9 @@ export class ArtifactRegistry {
     /** Sealed (no more core registrations) */
     private sealed = false;
 
+    /**
+     *
+     */
     private constructor() { }
 
     /**

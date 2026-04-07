@@ -10,8 +10,9 @@
  * @doc.pattern React Component
  */
 
-import React, { useMemo, useCallback } from 'react';
 import { useAtom } from 'jotai';
+import React, { useMemo, useCallback } from 'react';
+
 import { idePresenceAtom, ideActiveFileAtom } from '../state/atoms';
 import type { IDEPresence } from '../types';
 

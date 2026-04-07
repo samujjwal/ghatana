@@ -1,8 +1,8 @@
 import { forwardRef, useState } from 'react';
+import type { ImgHTMLAttributes } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ImgHTMLAttributes } from 'react';
 
 /**
  * Avatar size variants

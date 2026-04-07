@@ -15,7 +15,6 @@ import {
   canvasUIStateAtom,
   canvasPerformanceAtom,
 } from '../state';
-
 import type { CanvasDocument, CanvasSelection, CanvasViewport, CanvasHistoryEntry, CanvasUIState, CanvasPerformanceMetrics } from '../types/canvas-document';
 
 /**

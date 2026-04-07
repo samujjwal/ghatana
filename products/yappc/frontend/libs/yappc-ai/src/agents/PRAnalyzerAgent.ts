@@ -11,10 +11,11 @@
  * @doc.pattern AIAgent
  */
 
+import { z } from 'zod';
+
 import { BaseAgent, type ProcessResult } from './BaseAgent';
 import type { AgentContext } from './types';
 import { AgentError } from './types';
-import { z } from 'zod';
 
 /**
  * Input schema for PR analysis
@@ -117,6 +118,9 @@ export interface GitHubService {
 export class PRAnalyzerAgent extends BaseAgent<PRAnalysisInput, PRAnalysisOutput> {
     private _githubService?: GitHubService;
 
+    /**
+     *
+     */
     constructor(githubService?: GitHubService) {
         super({
             name: 'PRAnalyzerAgent',

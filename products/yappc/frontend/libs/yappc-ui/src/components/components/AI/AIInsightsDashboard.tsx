@@ -5,8 +5,11 @@
  * and optimization recommendations with actionable insights.
  */
 
-import { Alert, Badge, Box, Tab, Tabs, Typography } from '@ghatana/design-system';
 import React, { useCallback, useMemo, useState } from 'react';
+
+import { Alert, Badge, Box, Tab, Tabs, Typography } from '@ghatana/design-system';
+
+import { useAIInsights } from '../../hooks/ai/useAIInsights';
 
 import { Header } from './Header';
 import { SummaryCards } from './SummaryCards';
@@ -14,8 +17,6 @@ import { PatternAnalysisTab } from './tabs/PatternAnalysisTab';
 import { PredictionsTab } from './tabs/PredictionsTab';
 import { RecommendationsTab } from './tabs/RecommendationsTab';
 import { RiskAssessmentTab } from './tabs/RiskAssessmentTab';
-import { useAIInsights } from '../../hooks/ai/useAIInsights';
-
 import type { AIInsightsDashboardProps, RecommendationsByType } from './types';
 
 /**
@@ -140,7 +141,7 @@ export const AIInsightsDashboard: React.FC<AIInsightsDashboardProps> = ({
             if (!acc[type]) {
                 acc[type] = [];
             }
-            acc[type]!.push(rec);
+            acc[type].push(rec);
             return acc;
         }, {});
     }, [insights?.recommendations]);

@@ -11,17 +11,7 @@
  * @doc.pattern Component
  */
 
-import React, { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    Box,
-    Typography,
-    Chip,
-    Surface as Paper,
-    IconButton,
-    Tooltip,
-    LinearProgress,
-} from '@ghatana/design-system';
 import {
     Lightbulb,
     Check,
@@ -32,6 +22,18 @@ import {
     ArrowRight,
     FileText,
 } from 'lucide-react';
+import React, { useCallback } from 'react';
+
+import {
+    Box,
+    Typography,
+    Chip,
+    Surface as Paper,
+    IconButton,
+    Tooltip,
+    LinearProgress,
+} from '@ghatana/design-system';
+
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

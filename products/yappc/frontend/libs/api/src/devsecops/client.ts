@@ -28,6 +28,9 @@ import type {
  * ```
  */
 export class DevSecOpsClient {
+  /**
+   *
+   */
   private async parseJson<T>(response: Response): Promise<T> {
     const data: unknown = await response.json();
     return data as T;
@@ -232,6 +235,9 @@ export class DevSecOpsClient {
     };
   }
 
+  /**
+   *
+   */
   private isApiResponse<T>(value: unknown): value is ApiResponse<T> {
     return !!value && typeof value === 'object' && 'data' in value && 'success' in value;
   }

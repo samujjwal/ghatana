@@ -12,9 +12,8 @@
  * @doc.reuses ProjectCanvas, React Flow MiniMap
  */
 
-import React, { useCallback, useMemo, useRef } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Layers,
   Sparkles,
@@ -26,18 +25,13 @@ import {
   Download,
   Share2,
 } from 'lucide-react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
-// Reuse existing canvas component
-import { ProjectCanvas, type ProjectCanvasRef } from '../canvas/ProjectCanvas';
-import { PhaseProgressBar } from './PhaseProgressBar';
-
-// Import bootstrapping state
 import type { BootstrapPhase, CanvasNode as BootstrapNode } from '@yappc/canvas';
 import {
   currentPhaseAtom,
@@ -49,6 +43,14 @@ import {
   validationReportAtom,
   commandSuggestionsAtom,
 } from '@yappc/canvas';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+
+// Reuse existing canvas component
+import { ProjectCanvas, type ProjectCanvasRef } from '../canvas/ProjectCanvas';
+
+import { PhaseProgressBar } from './PhaseProgressBar';
+
+// Import bootstrapping state
 
 // =============================================================================
 // Types

@@ -18,13 +18,15 @@
  * @doc.pattern Component
  */
 
-import { useMemo, useState, useCallback } from 'react';
-import { Box, Surface as Paper, Typography, Chip, IconButton, Tooltip, Collapse, Alert, Badge, Fade, Stack } from '@ghatana/design-system';
 import { Sparkles as AIIcon, Lightbulb as SuggestionIcon, AlertTriangle as WarningIcon, Gauge as BottleneckIcon, CheckCircle as AcceptIcon, X as DismissIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, LineChart as InsightsIcon } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+
+import { Box, Surface as Paper, Typography, Chip, IconButton, Tooltip, Collapse, Alert, Badge, Fade, Stack } from '@ghatana/design-system';
+
+import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 import { KanbanBoard } from './KanbanBoard';
 import type { KanbanBoardProps, KanbanColumn } from './types';
-import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 /**
  * AI Suggestion for Kanban operations

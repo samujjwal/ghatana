@@ -9,27 +9,29 @@
  * @doc.pattern React Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
+import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
 import {
   ideFileTreeAtom,
   ideFilesAtom,
   ideActiveFileIdAtom,
 } from '../state/atoms';
-import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
-import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
-import { useVirtualScroll, flattenTree } from '../utils/VirtualScroll';
-import { SearchBar } from './SearchBar';
-import { BulkOperationsToolbar } from './BulkOperationsToolbar';
-import { AdvancedSearchPanel } from './AdvancedSearchPanel';
-import { InteractiveButton } from './MicroInteractions';
+import type { FileTreeNode, IDEFile, IDEFolder } from '../types';
 import {
   isFile,
   isFolder,
   sortFileTreeNodes,
   formatFileSize,
 } from '../utils/fileSystem';
-import type { FileTreeNode, IDEFile, IDEFolder } from '../types';
+import { useVirtualScroll, flattenTree } from '../utils/VirtualScroll';
+
+import { AdvancedSearchPanel } from './AdvancedSearchPanel';
+import { BulkOperationsToolbar } from './BulkOperationsToolbar';
+import { InteractiveButton } from './MicroInteractions';
+import { SearchBar } from './SearchBar';
 
 /**
  * Get file icon based on language/extension
@@ -113,12 +115,12 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 
   const handleClick = useCallback((event: React.MouseEvent) => {
     if (isFile(node)) {
-      onFileClick((node as IDEFile).id, event);
+      onFileClick((node).id, event);
     }
   }, [node, onFileClick]);
 
   if (isFile(node)) {
-    const file = node as IDEFile;
+    const file = node;
     const isActive = file.id === activeFileId;
 
     return (
@@ -165,7 +167,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
   }
 
   if (isFolder(node)) {
-    const folder = node as IDEFolder;
+    const folder = node;
     const sortedChildren = sortFileTreeNodes(folder.children);
 
     return (

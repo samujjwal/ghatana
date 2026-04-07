@@ -53,6 +53,9 @@ interface PredictResponse {
 export class PredictionAgent extends BaseAgent<PredictionInput, PredictionOutput> {
     private mlService?: MLService;
 
+    /**
+     *
+     */
     constructor(mlService?: MLService) {
         super({
             name: 'PredictionAgent',

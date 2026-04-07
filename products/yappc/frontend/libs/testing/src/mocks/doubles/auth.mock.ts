@@ -4,9 +4,10 @@
 
 import { vi } from 'vitest';
 
+import type { User } from '@yappc/core/types';
+
 import { createUser, createAdminUser } from '../factories/user.factory';
 
-import type { User } from '@yappc/core/types';
 
 /**
  * Mock authentication service for testing

@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
 import type { IDEFile, IDEFolder } from '../types';
 

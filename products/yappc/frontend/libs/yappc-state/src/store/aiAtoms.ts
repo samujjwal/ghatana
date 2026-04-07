@@ -13,6 +13,7 @@
 
 import { atom } from 'jotai';
 import type { WritableAtom } from 'jotai';
+
 import { StateManager } from './StateManager';
 
 // ============================================================================
@@ -136,11 +137,7 @@ export const aiPredictionsAtom = StateManager.createAtom<AIPrediction[]>(
 export const appendCopilotMessageAtom = atom(
   null,
   (get, set, message: CopilotMessage) => {
-    const sAtom = copilotSessionAtom as WritableAtom<
-      CopilotSession | null,
-      [CopilotSession | null],
-      void
-    >;
+    const sAtom = copilotSessionAtom;
     const session = get(sAtom);
     if (!session) return;
     const updated: CopilotSession = {
@@ -157,15 +154,11 @@ export const appendCopilotMessageAtom = atom(
  */
 export const clearCopilotSessionAtom = atom(null, (_get, set) => {
   set(
-    copilotSessionAtom as WritableAtom<
-      CopilotSession | null,
-      [CopilotSession | null],
-      void
-    >,
+    copilotSessionAtom,
     null
   );
   set(
-    copilotErrorAtom as WritableAtom<Error | null, [Error | null], void>,
+    copilotErrorAtom,
     null
   );
 });
@@ -174,11 +167,7 @@ export const clearCopilotSessionAtom = atom(null, (_get, set) => {
  * Write-only atom that dismisses (removes) a single AI insight by ID.
  */
 export const dismissInsightAtom = atom(null, (get, set, insightId: string) => {
-  const iAtom = aiInsightsAtom as WritableAtom<
-    AIInsight[],
-    [AIInsight[]],
-    void
-  >;
+  const iAtom = aiInsightsAtom;
   const insights = get(iAtom);
   set(
     iAtom,

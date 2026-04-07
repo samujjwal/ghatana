@@ -1,7 +1,6 @@
-/* eslint-disable max-lines-per-function */
+ 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
-import { MLAnalytics } from './utils';
 import {
   usePerformanceMonitoring,
   type PerformanceMetric,
@@ -16,6 +15,7 @@ import type {
   OptimizationRecommendation,
   AIInsightAnalysis,
 } from './types';
+import { MLAnalytics } from './utils';
 
 // Local context type for AI inputs (narrow at runtime using typeof checks)
 /**

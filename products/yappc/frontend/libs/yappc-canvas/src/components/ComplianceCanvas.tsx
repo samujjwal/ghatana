@@ -17,7 +17,7 @@
  */
 
 import React, { useState } from 'react';
-import { useCompliance, type ComplianceFramework, type ControlStatus } from '../hooks/useCompliance';
+
 import { Button } from '@ghatana/design-system';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
 import {
@@ -28,6 +28,8 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Typography } from '@ghatana/design-system';
+
+import { useCompliance, type ComplianceFramework, type ControlStatus } from '../hooks/useCompliance';
 
 export const ComplianceCanvas: React.FC = () => {
     const compliance = useCompliance();

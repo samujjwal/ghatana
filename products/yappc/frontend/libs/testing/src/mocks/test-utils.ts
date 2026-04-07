@@ -162,7 +162,7 @@ export function deepMerge<T extends Record<string, unknown>>(target: T, source: 
       ) {
         result[key] = deepMerge(targetValue, sourceValue) as unknown;
       } else {
-        result[key] = deepClone(sourceValue) as unknown;
+        result[key] = deepClone(sourceValue);
       }
     }
   }

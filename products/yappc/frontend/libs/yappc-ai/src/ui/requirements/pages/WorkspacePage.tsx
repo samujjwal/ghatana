@@ -1,5 +1,7 @@
+import { Plus as AddIcon } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom'
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';import { Plus as AddIcon } from 'lucide-react';const WorkspacePage = () => {
+
+import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';const WorkspacePage = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>()
   const navigate = useNavigate()
 

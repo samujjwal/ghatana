@@ -1,9 +1,12 @@
 import { Routes, Route } from 'react-router-dom'
-import { Box } from '@ghatana/design-system';import Header from './components/common/Header'
-import LoginPage from './pages/LoginPage'
+
+import { Box } from '@ghatana/design-system';
+
+import Header from './components/common/Header'
 import DashboardPage from './pages/DashboardPage'
-import WorkspacePage from './pages/WorkspacePage'
+import LoginPage from './pages/LoginPage'
 import ProjectPage from './pages/ProjectPage'
+import WorkspacePage from './pages/WorkspacePage'
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('authToken')

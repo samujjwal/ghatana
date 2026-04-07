@@ -10,13 +10,14 @@
 
 
 // Import all DevSecOps features
+import type { CanvasDocument } from '../types/canvas-document';
+
 import { parseTerraform, topologyToCanvas, estimateCosts, createTopologyConfig, type CostEstimate } from './cloudTopology';
 import { parseGitHubActions, pipelineToCanvas, createPipelineParserConfig } from './pipelineParser';
 import { parseCycloneDX, sbomToCanvas, detectVulnerabilities, checkLicenseCompliance, createSBOMConfig } from './sbomParser';
 
 import { parseAnsiblePlaybook, runbookToCanvas, analyzeRunbook, requestApproval, createRunbookConfig } from './index';
 
-import type { CanvasDocument } from '../types/canvas-document';
 
 /**
  * Comprehensive DevSecOps Demo Scenario

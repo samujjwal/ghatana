@@ -7,8 +7,9 @@
  * @packageDocumentation
  */
 
-import { Box } from '@ghatana/design-system';
 import React from 'react';
+
+import { Box } from '@ghatana/design-system';
 
 // Import atoms
 import { Alert } from '../components/Alert';

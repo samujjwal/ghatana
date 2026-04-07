@@ -7,9 +7,9 @@
  * @module canvas/accessibility/ariaRoles
  */
 
+import type { Node, Edge } from '@xyflow/react';
 import { useEffect, useRef, useCallback } from 'react';
 
-import type { Node, Edge } from '@xyflow/react';
 
 /**
  * ARIA role for canvas diagram elements

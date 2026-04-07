@@ -522,39 +522,63 @@ class LSPServerInstance {
   private workspaceRoot: string;
   private initialized = false;
 
+  /**
+   *
+   */
   constructor(config: LSPServerConfig, workspaceRoot: string) {
     this.config = config;
     this.workspaceRoot = workspaceRoot;
   }
 
+  /**
+   *
+   */
   async initialize(): Promise<void> {
     // Simplified initialization - in real implementation would connect to actual LSP server
     this.initialized = true;
   }
 
+  /**
+   *
+   */
   async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position): Promise<LSPCompletionItem[]> {
     // Simplified completion - in real implementation would call LSP server
     return [];
   }
 
+  /**
+   *
+   */
   async provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position): Promise<unknown[]> {
     // Simplified definition - in real implementation would call LSP server
     return [];
   }
 
+  /**
+   *
+   */
   async provideHover(model: monaco.editor.ITextModel, position: monaco.Position): Promise<unknown> {
     // Simplified hover - in real implementation would call LSP server
     return null;
   }
 
+  /**
+   *
+   */
   onDiagnostics(callback: (params: PublishDiagnosticsParams) => void): void {
     // Register diagnostics callback
   }
 
+  /**
+   *
+   */
   onError(callback: (error: Error) => void): void {
     // Register error callback
   }
 
+  /**
+   *
+   */
   dispose(): void {
     // Cleanup resources
   }

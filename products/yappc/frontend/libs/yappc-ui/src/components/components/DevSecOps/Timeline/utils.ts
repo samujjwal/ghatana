@@ -6,6 +6,8 @@
  * @module DevSecOps/Timeline/utils
  */
 
+import type { Item, Milestone } from '@yappc/core/types/devsecops';
+
 import type {
   TimelineScale,
   TimelineViewMode,
@@ -14,7 +16,6 @@ import type {
   TimelineItemPosition,
   TimelineMilestonePosition,
 } from './types';
-import type { Item, Milestone } from '@yappc/core/types/devsecops';
 
 /**
  * Timeline utility functions

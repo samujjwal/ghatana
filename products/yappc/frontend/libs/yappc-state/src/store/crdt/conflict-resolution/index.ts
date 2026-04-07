@@ -11,6 +11,8 @@
  * @doc.pattern Service
  */
 
+import type { CRDTOperation } from '../core/index.js';
+
 import type {
   Conflict,
   ConflictType,
@@ -29,7 +31,6 @@ import type {
   OperationResult,
   ConflictStatistics,
 } from './types';
-import type { CRDTOperation } from '../core/index.js';
 
 /**
  * Conflict resolution engine service.

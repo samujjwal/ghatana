@@ -16,10 +16,12 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Surface as Paper, Typography, IconButton, Chip, Badge, Tooltip, Button, Dialog, DialogTitle, DialogContent, DialogActions, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Divider, Spinner as CircularProgress, Alert, Link, Collapse } from '@ghatana/design-system';
-import { Shield as ShieldIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, Bug as BugIcon, X as CloseIcon, Wand2 as FixIcon, Github as GitHubIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, RefreshCw as RefreshIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { Shield as ShieldIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, Bug as BugIcon, X as CloseIcon, Wand2 as FixIcon, Github as GitHubIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, RefreshCw as RefreshIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Surface as Paper, Typography, IconButton, Chip, Badge, Tooltip, Button, Dialog, DialogTitle, DialogContent, DialogActions, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Divider, Spinner as CircularProgress, Alert, Link, Collapse } from '@ghatana/design-system';
+
 import {
     useSecurityMonitoring,
     type Vulnerability,

@@ -5,8 +5,9 @@
  * synchronizing nodes, edges, and viewport state.
  */
 
-import * as Y from 'yjs';
-import { CollaborationManager, CollaborationUser } from './CollaborationManager';
+import type * as Y from 'yjs';
+
+import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -81,6 +82,9 @@ export interface CanvasChangeEvent {
 // Canvas Collaboration Class
 // =============================================================================
 
+/**
+ *
+ */
 export class CanvasCollaboration {
   private collab: CollaborationManager;
   private nodesMap: Y.Map<unknown>;
@@ -93,6 +97,9 @@ export class CanvasCollaboration {
   private cursorUpdateInterval: number | null = null;
   private localCursorPosition: { x: number; y: number } | null = null;
 
+  /**
+   *
+   */
   constructor(collab: CollaborationManager, userId: string) {
     this.collab = collab;
     this.userId = userId;

@@ -7,8 +7,15 @@
  * @module ui/tasks
  */
 
-import React, { useMemo, useCallback, useState } from 'react';
 import { useAtomValue } from 'jotai';
+import React, { useMemo, useCallback, useState } from 'react';
+
+import {
+    allDomainsAtom,
+    tasksByDomainAtom,
+    filteredTasksAtom,
+    registryStatsAtom,
+} from '@ghatana/state/tasks/taskRegistryStore';
 import type {
     TaskDefinition,
     TaskDomain,
@@ -17,12 +24,6 @@ import type {
     AutomationLevel,
     TaskFilter,
 } from '@ghatana/types/tasks';
-import {
-    allDomainsAtom,
-    tasksByDomainAtom,
-    filteredTasksAtom,
-    registryStatsAtom,
-} from '@ghatana/state/tasks/taskRegistryStore';
 
 // ============================================================================
 // Task Card Component

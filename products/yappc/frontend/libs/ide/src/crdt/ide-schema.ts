@@ -9,8 +9,10 @@
  * @doc.pattern CRDT Schema
  */
 
-import * as Y from 'yjs';
+import type * as Y from 'yjs';
+
 import type { CRDTState } from '@yappc/state/crdt/core';
+
 import type { IDEFile, IDEFolder, IDEPresence } from '../types';
 
 /**

@@ -11,6 +11,7 @@
  */
 
 import type { Node, Edge, XYPosition } from '@xyflow/react';
+
 import type { NodeGroupData, GroupStatus } from '../components/NodeGroup';
 
 // ============================================================================

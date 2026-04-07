@@ -24,9 +24,11 @@
  */
 
 import { Mic as MicIcon, MicOff as MicOffIcon, Stop as StopIcon } from 'lucide-react';
-import { Box, IconButton, Typography, Chip, Surface as Paper, LinearProgress, Select, MenuItem, FormControl, InputLabel, Tooltip, Alert } from '@ghatana/design-system';
-import { resolveMuiColor } from '../utils/safePalette';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import { Box, IconButton, Typography, Chip, Surface as Paper, LinearProgress, Select, MenuItem, FormControl, InputLabel, Tooltip, Alert } from '@ghatana/design-system';
+
+import { resolveMuiColor } from '../utils/safePalette';
 
 /**
  *

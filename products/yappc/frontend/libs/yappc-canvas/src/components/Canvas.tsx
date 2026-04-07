@@ -26,9 +26,10 @@ import {
     panViewportAtom,
     zoomViewportAtom
 } from '../state';
+import type { CanvasDocument, CanvasTheme } from '../types/canvas-document';
+
 import { CanvasSurface } from './surface/CanvasSurface';
 
-import type { CanvasDocument, CanvasTheme } from '../types/canvas-document';
 
 // Props interface following strict typing requirements
 /**

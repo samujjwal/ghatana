@@ -5,10 +5,11 @@
  * @doc.pattern Component
  */
 
-import React, { useMemo } from 'react';
 import type { Node, Edge } from '@xyflow/react';
-import type { PersonaType, PersonaCanvasConfig } from '../types/persona';
+import React, { useMemo } from 'react';
+
 import { getPersonaConfig } from '../config/personaConfigs';
+import type { PersonaType, PersonaCanvasConfig } from '../types/persona';
 
 /**
  * Props for PersonaCanvas component

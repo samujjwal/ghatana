@@ -6,10 +6,13 @@
  * @module notifications/components
  */
 
-import React, { useState, useCallback } from 'react';
 import { CheckCheck, Trash2, Filter } from 'lucide-react';
-import { NotificationItem } from './NotificationItem';
+import React, { useState, useCallback } from 'react';
+
 import type { Notification, NotificationType } from '../hooks/useNotificationBackend';
+
+import { NotificationItem } from './NotificationItem';
+
 
 export interface NotificationPanelProps {
   notifications: Notification[];

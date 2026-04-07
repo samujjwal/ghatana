@@ -11,10 +11,11 @@
  * @doc.pattern AIAgent
  */
 
+import { z } from 'zod';
+
 import { BaseAgent, type ProcessResult } from './BaseAgent';
 import type { AgentContext } from './types';
 import { AgentError } from './types';
-import { z } from 'zod';
 
 /**
  * Input schema for ticket classification
@@ -130,6 +131,9 @@ export class TicketClassifierAgent extends BaseAgent<
 > {
     private _issueService?: IssueService;
 
+    /**
+     *
+     */
     constructor(issueService?: IssueService) {
         super({
             name: 'TicketClassifierAgent',

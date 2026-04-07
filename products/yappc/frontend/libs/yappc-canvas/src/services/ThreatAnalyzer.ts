@@ -207,6 +207,9 @@ export class ThreatAnalyzer {
         };
     }
 
+    /**
+     *
+     */
     private checkSpoofing(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => n.type === 'api' && !n.data.authenticated)
@@ -221,6 +224,9 @@ export class ThreatAnalyzer {
             }));
     }
 
+    /**
+     *
+     */
     private checkTampering(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => (n.type === 'data' || n.type === 'database') && !n.data.integrity)
@@ -235,6 +241,9 @@ export class ThreatAnalyzer {
             }));
     }
 
+    /**
+     *
+     */
     private checkRepudiation(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => (n.type === 'transaction' || n.type === 'payment') && !n.data.auditLogged)
@@ -249,6 +258,9 @@ export class ThreatAnalyzer {
             }));
     }
 
+    /**
+     *
+     */
     private checkInformationDisclosure(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => n.type === 'data' && !n.data.encrypted)
@@ -263,6 +275,9 @@ export class ThreatAnalyzer {
             }));
     }
 
+    /**
+     *
+     */
     private checkDenialOfService(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => n.type === 'api' && !n.data.rateLimited)
@@ -277,6 +292,9 @@ export class ThreatAnalyzer {
             }));
     }
 
+    /**
+     *
+     */
     private checkElevationOfPrivilege(nodes: AnalysisNode[]): SecurityFinding[] {
         return nodes
             .filter((n) => n.type === 'admin' && !n.data.authorized)

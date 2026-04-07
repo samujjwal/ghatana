@@ -354,7 +354,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
       
       // Clear existing timer
       if (this.debounceTimers.has(key)) {
-        clearTimeout(this.debounceTimers.get(key)!);
+        clearTimeout(this.debounceTimers.get(key));
       }
       
       // Set new timer

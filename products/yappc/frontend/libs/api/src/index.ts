@@ -9,8 +9,9 @@
  * @doc.pattern Barrel
  */
 
-import { createElement, type ReactNode } from 'react';
 import { ApolloProvider } from '@apollo/client/react';
+import { createElement, type ReactNode } from 'react';
+
 import { getGraphQLClient } from './graphql/client';
 
 // =============================================================================
@@ -124,7 +125,7 @@ export { aiClient } from './ai';
 // ============================================================================
 // DEPRECATION WARNING
 // ============================================================================
-// eslint-disable-next-line no-console
+ 
 console.warn(
   '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/api instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'

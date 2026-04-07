@@ -1,4 +1,6 @@
 import { LayoutDashboard as DashboardIcon, Gauge as SpeedIcon, Cpu as MemoryIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, Info as InfoIcon, Activity as TimelineIcon, Bug as BugReportIcon, RefreshCw as RefreshIcon, Download as DownloadIcon, XCircle as ClearIcon, Play as PlayIcon, Stop as StopIcon, ChevronDown as ExpandMoreIcon, Eye as VisibilityIcon, Code as CodeIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+
 import {
   Accordion,
   AccordionSummary,
@@ -38,7 +40,8 @@ import {
   Surface as Paper,
 } from '@ghatana/design-system';
 import { TextField, MenuItem } from '@ghatana/design-system';
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+
+import type { CanvasData } from '../schemas/canvas-schemas';
 
 import {
   useAnalytics,
@@ -47,11 +50,9 @@ import {
   UserAction,
   ErrorEvent
 } from './hooks';
-
 import type {
   SystemHealth,
   DebugLog} from './hooks';
-import type { CanvasData } from '../schemas/canvas-schemas';
 
 // Performance dashboard component
 /**

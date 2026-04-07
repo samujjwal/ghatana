@@ -17,9 +17,10 @@
  * @doc.layer components
  */
 
-import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 import { Layers as LayersIcon, ListTodo as FlatIcon } from 'lucide-react';
 import React, { useState, useRef, useCallback } from 'react';
+
+import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 

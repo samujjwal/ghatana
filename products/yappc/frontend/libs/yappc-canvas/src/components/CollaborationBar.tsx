@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+
 import type { RemoteUser } from '../hooks/useCanvasCollaborationBackend';
 
 export interface CollaborationBarProps {

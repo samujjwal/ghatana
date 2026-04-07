@@ -50,10 +50,16 @@ export interface CodegenResult {
     warnings: string[];
 }
 
+/**
+ *
+ */
 export class ShadowCodegen {
     private static instance: ShadowCodegen | null = null;
     private cache: Map<string, CodegenResult> = new Map();
 
+    /**
+     *
+     */
     public static getInstance(): ShadowCodegen {
         if (!ShadowCodegen.instance) {
             ShadowCodegen.instance = new ShadowCodegen();
@@ -61,6 +67,9 @@ export class ShadowCodegen {
         return ShadowCodegen.instance;
     }
 
+    /**
+     *
+     */
     public generate(document: UniversalDocument, options: CodegenOptions): CodegenResult {
         const cacheKey = `${document.id}:${JSON.stringify(options)}`;
         const cached = this.cache.get(cacheKey);
@@ -99,10 +108,16 @@ export class ShadowCodegen {
         return result;
     }
 
+    /**
+     *
+     */
     public clearCache(): void {
         this.cache.clear();
     }
 
+    /**
+     *
+     */
     private generateReactNode(
         node: UniversalNode,
         options: CodegenOptions,
@@ -132,6 +147,9 @@ export class ShadowCodegen {
         }
     }
 
+    /**
+     *
+     */
     private wrapReactComponent(
         code: string,
         name: string,
@@ -145,6 +163,9 @@ export class ShadowCodegen {
         return `${imports.join('\n')}\n\n${propsType}export const ${name}${ts ? ': React.FC<' + name + 'Props>' : ''} = (${propsArg}) => {\n  return (\n${code}\n  );\n};\n\nexport default ${name};\n`;
     }
 
+    /**
+     *
+     */
     private toComponentName(name: string): string {
         return name
             .replace(/[^a-zA-Z0-9]/g, ' ')

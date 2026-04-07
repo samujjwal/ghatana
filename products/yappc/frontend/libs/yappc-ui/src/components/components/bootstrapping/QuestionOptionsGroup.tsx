@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -22,11 +21,13 @@ import {
   Sparkles,
   Lightbulb,
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
-import { Textarea } from '@yappc/ui';
 import { Badge } from '@ghatana/design-system';
+
+import { Textarea } from '@yappc/ui';
 
 // =============================================================================
 // Types

@@ -1,10 +1,10 @@
+import type { Node, Edge } from '@xyflow/react';
 import { useAtom } from 'jotai';
 import { useEffect, useState, useCallback, useRef } from 'react';
 
-import { canvasStateAtom } from '../state/canvas-atoms';
 import { YjsSyncAdapter } from '../integration/yjsSync';
+import { canvasStateAtom } from '../state/canvas-atoms';
 
-import type { Node, Edge } from '@xyflow/react';
 
 /**
  *
@@ -100,7 +100,7 @@ export function useCollaboration(
   userId: string,
   userName: string
 ) {
-  // eslint-disable-next-line no-console
+   
   console.log('[useCollaboration] hook invoked', { roomId, userId });
   // Resolve useReactFlow at runtime so tests can mock/override it and so the
   // hook doesn't throw when React Flow's provider (zustand) is not present.
@@ -153,7 +153,7 @@ export function useCollaboration(
       // Debug: log shape of the required module in test runs to diagnose mocking
       // issues. Tests may hoist vi.mock, so this log will show whether the mock
       // is present at invocation time. Use console.log so vitest prints it.
-      // eslint-disable-next-line no-console
+       
       console.log('[useCollaboration] require(yjs) ->', {
         hasDoc: !!(Y && (Y.Doc ?? Y.default?.Doc ?? Y)),
         docType: typeof (Y && (Y.Doc ?? Y.default?.Doc ?? Y)),
@@ -211,13 +211,13 @@ export function useCollaboration(
 
       // Connect (fire and forget, error logged)
       adapter.connect().catch((e) => {
-        // eslint-disable-next-line no-console
+         
         console.error('[useCollaboration] Failed to connect adapter', e);
       });
 
       return adapter;
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[useCollaboration] Failed to init adapter', err);
       return null;
     }

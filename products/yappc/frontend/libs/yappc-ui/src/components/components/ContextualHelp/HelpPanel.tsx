@@ -7,7 +7,6 @@ import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 
 import { helpContentManager } from './manager-singleton';
-
 import type { HelpContent, HelpPanelProps, HelpCategory } from './types';
 
 /**

@@ -16,8 +16,9 @@
  * @doc.pattern Container
  */
 
-import React, { useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import React, { useCallback } from 'react';
+
 import { CANVAS_Z_INDEX } from '../config/z-index';
 import {
   chromeCalmModeAtom,

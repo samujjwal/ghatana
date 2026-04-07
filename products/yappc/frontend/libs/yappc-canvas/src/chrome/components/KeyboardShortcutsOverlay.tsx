@@ -16,6 +16,8 @@
  */
 
 import { Search as SearchIcon, X as CloseIcon, Printer as PrintIcon } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+
 import {
   Dialog,
   Box,
@@ -24,7 +26,6 @@ import {
   InputAdornment,
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import React, { useState, useMemo } from 'react';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 

@@ -10,19 +10,22 @@
  * @doc.pattern React Hook
  */
 
-import { useCallback, useState, useMemo } from 'react';
 import { useAtom } from 'jotai';
+import { useCallback, useState, useMemo } from 'react';
+
 import {
   ideFilesAtom,
   ideFoldersAtom,
 } from '../state/atoms';
-import { useIDEFileOperations } from './useIDEFileOperations';
+import type { IDEFile, IDEFolder } from '../types';
 import {
   normalizePath,
   isFile,
   isFolder,
 } from '../utils/fileSystem';
-import type { IDEFile, IDEFolder } from '../types';
+
+import { useIDEFileOperations } from './useIDEFileOperations';
+
 
 /**
  * Bulk file operation types
@@ -395,7 +398,7 @@ export function useAdvancedFileOperations() {
    */
   const selectedFiles = useMemo(() => {
     return Array.from(selection.selectedIds)
-      .map(id => (files[id as string] || folders[id as string]) as IDEFile | IDEFolder)
+      .map(id => (files[id] || folders[id]) as IDEFile | IDEFolder)
       .filter(Boolean);
   }, [selection.selectedIds, files, folders]);
 

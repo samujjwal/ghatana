@@ -9,9 +9,11 @@
  * @doc.pattern Canvas
  */
 
-import React, { useState } from 'react';
-import { Box, Surface as Paper, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Chip, IconButton, Select, MenuItem, FormControl, InputLabel, Stack, Alert, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Tooltip } from '@ghatana/design-system';
 import { Plus as AddIcon, Shield as SecurityIcon, AlertTriangle as WarningIcon, Shield as ShieldIcon, Bug as BugIcon, Lock as LockIcon, Key as KeyIcon, UserCircle as AccountIcon, BarChart3 as AssessmentIcon, X as CloseIcon, Trash2 as DeleteIcon, Pencil as EditIcon, Share2 as ShareIcon, Download as ExportIcon, Eye as VisibilityIcon, AlertCircle as ErrorIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Box, Surface as Paper, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, Chip, IconButton, Select, MenuItem, FormControl, InputLabel, Stack, Alert, Divider, InteractiveList as List, ListItem, ListItemText, ListItemIcon, Tooltip } from '@ghatana/design-system';
+
 import { useThreatModeling, type ThreatCategory, type RiskLevel, type Threat, type Asset } from '../hooks/useThreatModeling';
 
 /**

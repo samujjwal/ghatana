@@ -9,11 +9,12 @@
  * @doc.layer ui
  */
 
+import { useAtom } from 'jotai';
 import React from 'react';
 
 import { Box, Card, CardContent, Typography, Stack, Chip, FormControl, InputLabel, Select, MenuItem } from '@ghatana/design-system';
+
 import { selectedWorkflowIdAtom } from '@yappc/state';
-import { useAtom } from 'jotai';
 
 import { useWorkflows } from '../../hooks/useConfig';
 

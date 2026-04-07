@@ -1,5 +1,5 @@
 /**
- * @fileoverview Advanced Diagram Templates
+ * @file Advanced Diagram Templates
  * BPMN 2.0, ER diagrams, and other advanced diagram types
  * 
  * @doc.type utility
@@ -8,7 +8,7 @@
  * @doc.pattern TemplateLibrary
  */
 
-import { LayoutElement, LayoutEdge } from '../layout/AutoLayoutEngine';
+import { type LayoutElement, type LayoutEdge } from '../layout/AutoLayoutEngine';
 
 // ============================================================================
 // Types

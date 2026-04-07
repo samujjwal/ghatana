@@ -1,4 +1,7 @@
 import { Home, ChevronRight, Layers, ExternalLink as Launch, History, AlertTriangle as Warning } from 'lucide-react';
+import React from 'react';
+import type { CSSProperties } from 'react';
+
 import {
   Typography,
   Box,
@@ -8,11 +11,9 @@ import {
   Tooltip,
 } from '@ghatana/design-system';
 import { Breadcrumbs, Link } from '@ghatana/design-system';
-import React from 'react';
 
 import { useCanvasPortal } from '../hooks/useCanvasPortal';
 
-import type { CSSProperties } from 'react';
 
 export interface BreadcrumbNavigationProps {
   /** Show home icon for root canvas */

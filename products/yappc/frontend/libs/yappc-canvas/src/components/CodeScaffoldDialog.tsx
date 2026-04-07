@@ -16,10 +16,12 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, Select, MenuItem, FormControl, InputLabel, Checkbox, FormControlLabel, FormGroup, Spinner as CircularProgress, Alert, Surface as Paper, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Divider, Chip } from '@ghatana/design-system';
-import { Code as CodeIcon, FileText as FileIcon, Folder as FolderIcon, Check as CheckIcon, X as CloseIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { Code as CodeIcon, FileText as FileIcon, Folder as FolderIcon, Check as CheckIcon, X as CloseIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box, Typography, Select, MenuItem, FormControl, InputLabel, Checkbox, FormControlLabel, FormGroup, Spinner as CircularProgress, Alert, Surface as Paper, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Divider, Chip } from '@ghatana/design-system';
+
 import type { GeneratedFile, CodeGenerationResult } from '../integration/types';
 
 /**

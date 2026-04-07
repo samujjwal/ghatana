@@ -19,6 +19,8 @@
  * @module theming/themeManager
  */
 
+import * as React from 'react';
+
 import {
   palette,
   spacing,
@@ -30,7 +32,6 @@ import {
   fontFamilies,
   fontWeights,
 } from '@yappc/ui';
-import * as React from 'react';
 
 import type { CanvasTheme } from '../types/canvas-document';
 

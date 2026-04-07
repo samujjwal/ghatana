@@ -1,5 +1,4 @@
 import { createContext, useContext, useState } from 'react';
-
 import type { ReactNode, FormEvent } from 'react';
 
 // Define the form context type

@@ -9,10 +9,13 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import { ProjectCard } from './ProjectCard';
+import React from 'react';
+
 import type { Project } from '@yappc/core/types';
+
+import { ProjectCard } from './ProjectCard';
+
 
 export interface ProjectListProps {
     projects: Project[];

@@ -1,8 +1,7 @@
-/* eslint-disable max-lines-per-function */
+ 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 import { PerformanceAnalytics } from './analytics';
-
 import type {
   PerformanceMetric,
   PerformanceTrend,

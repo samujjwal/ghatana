@@ -6,7 +6,6 @@
 
 import { getLINDDUNThreatCatalog } from './catalogs/linddun';
 import { getSTRIDEThreatCatalog } from './catalogs/stride';
-
 import type {
   ThreatModelState,
   ThreatAnalysisResult,

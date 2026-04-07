@@ -1,12 +1,12 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-import { ShortcutRegistry } from './utils';
-
 import type {
   KeyboardShortcut,
   UseKeyboardShortcutsOptions,
   UseKeyboardShortcutsReturn,
 } from './types';
+import { ShortcutRegistry } from './utils';
+
 
 const registry = new ShortcutRegistry();
 

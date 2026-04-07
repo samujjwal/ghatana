@@ -20,6 +20,7 @@
  */
 
 import * as ts from 'typescript';
+
 import type {
   ComponentMetadata,
   PropDefinition,

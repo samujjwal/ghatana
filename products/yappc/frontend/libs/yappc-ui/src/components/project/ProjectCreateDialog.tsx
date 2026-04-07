@@ -9,7 +9,6 @@
  * @doc.pattern Form Component
  */
 
-import React, { useState } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -25,6 +24,7 @@ import {
     InputLabel,
     FormControl,
 } from '@mui/material';
+import React, { useState } from 'react';
 
 import type { ProjectType } from '@yappc/core/types';
 

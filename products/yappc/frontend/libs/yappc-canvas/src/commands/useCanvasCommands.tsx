@@ -10,13 +10,10 @@
  * @doc.pattern Provider
  */
 
-import { useEffect, useMemo } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import {
-  ALL_CANVAS_COMMANDS,
-  executeCanvasCommand,
-  type CanvasCommandContext,
-} from './canvas-commands';
+import { useEffect, useMemo } from 'react';
+
+
 import {
   canvasDocumentAtom,
   canvasSelectionAtom,
@@ -29,6 +26,12 @@ import {
   chromeMinimapVisibleAtom,
   chromeCalmModeAtom,
 } from '../state/chrome-atoms';
+
+import {
+  ALL_CANVAS_COMMANDS,
+  executeCanvasCommand,
+  type CanvasCommandContext,
+} from './canvas-commands';
 
 /**
  * Hook to register canvas commands with command palette

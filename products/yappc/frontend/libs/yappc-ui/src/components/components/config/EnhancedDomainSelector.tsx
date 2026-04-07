@@ -8,9 +8,10 @@
  * - Improved navigation and context awareness
  */
 
-import React, { useMemo } from 'react';
-import { selectedDomainIdAtom } from '@yappc/state';
 import { useAtom } from 'jotai';
+import { Code as CodeIcon, Shield as SecurityIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, LayoutDashboard as DashboardIcon, Info as InfoIcon } from 'lucide-react';
+import React, { useMemo } from 'react';
+
 import {
   Box,
   Card,
@@ -25,7 +26,9 @@ import {
   IconButton,
   Divider,
 } from '@ghatana/design-system';
-import { Code as CodeIcon, Shield as SecurityIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, LayoutDashboard as DashboardIcon, Info as InfoIcon } from 'lucide-react';
+
+import { selectedDomainIdAtom } from '@yappc/state';
+
 
 import { useTaskDomains } from '../../hooks/useConfig';
 

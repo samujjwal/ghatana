@@ -10,7 +10,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Play,
@@ -29,12 +28,14 @@ import {
   Database,
   Shield,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
+
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================

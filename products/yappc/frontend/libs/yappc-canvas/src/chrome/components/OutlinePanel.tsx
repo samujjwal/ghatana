@@ -14,6 +14,8 @@
  * @doc.pattern Component
  */
 
+import React, { useState, useMemo } from 'react';
+
 import {
   Box,
   Button,
@@ -26,9 +28,8 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { TextField, ListItemButton, Collapse } from '@ghatana/design-system';
-import React, { useState, useMemo } from 'react';
 
-import { type Frame , FrameManager} from '../lib/canvas/FrameManager';
+import { type Frame , type FrameManager} from '../lib/canvas/FrameManager';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
 const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT } = CANVAS_TOKENS;

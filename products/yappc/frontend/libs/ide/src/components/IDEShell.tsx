@@ -9,8 +9,9 @@
  * @doc.pattern React Component
  */
 
-import React, { useState, useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
+import React, { useState, useRef, useEffect } from 'react';
+
 import {
   ideExplorerVisibleAtom,
   ideTerminalVisibleAtom,
@@ -20,10 +21,11 @@ import {
   ideRunVisibleAtom,
   ideExtensionsVisibleAtom,
 } from '../state/atoms';
-import { FileExplorer } from './FileExplorer';
-import { TabBar } from './TabBar';
+
 import { EditorPanel } from './EditorPanel';
+import { FileExplorer } from './FileExplorer';
 import { StatusBar } from './StatusBar';
+import { TabBar } from './TabBar';
 
 /**
  * IDE Shell Props

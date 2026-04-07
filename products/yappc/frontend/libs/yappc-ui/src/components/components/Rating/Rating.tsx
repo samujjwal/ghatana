@@ -1,8 +1,8 @@
 import * as React from 'react';
+import type { HTMLAttributes } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { HTMLAttributes } from 'react';
 
 /**
  *

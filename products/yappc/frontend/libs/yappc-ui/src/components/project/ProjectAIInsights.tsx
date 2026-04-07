@@ -9,7 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import {
     Box,
     Typography,
@@ -23,6 +22,7 @@ import {
     IconButton,
 } from '@mui/material';
 import { X as CloseIcon, BrainCircuit as BrainIcon, Lightbulb as LightbulbIcon } from 'lucide-react';
+import React from 'react';
 
 import type { AIInsight } from '@yappc/state/aiAtoms';
 

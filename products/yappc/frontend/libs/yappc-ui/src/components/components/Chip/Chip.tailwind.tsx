@@ -1,8 +1,8 @@
 import { forwardRef } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { HTMLAttributes, ReactNode } from 'react';
 
 /**
  * Chip variant types

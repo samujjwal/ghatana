@@ -12,11 +12,12 @@
 
 import {
   ApolloClient,
+  type FetchResult,
   InMemoryCache,
   HttpLink,
   from,
   ApolloLink,
-  NormalizedCacheObject,
+  type NormalizedCacheObject,
   Observable,
 } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
@@ -36,6 +37,90 @@ const GRAPHQL_ENDPOINT = `${API_BASE_URL}/graphql`;
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let tokenRefreshPromise: Promise<string | null> | null = null;
+
+interface TokenRefreshResponse {
+  accessToken: string;
+  refreshToken: string;
+}
+
+interface GraphQLErrorLike {
+  message: string;
+  locations?: unknown;
+  path?: unknown;
+  extensions?: unknown;
+}
+
+interface TelemetryRecorder {
+  recordMetric: (name: string, value: number, tags?: Record<string, string>) => void;
+}
+
+interface GraphQLClientHandle {
+  clearStore: () => Promise<unknown>;
+  stop: () => void;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isTokenRefreshResponse(value: unknown): value is TokenRefreshResponse {
+  return isRecord(value)
+    && typeof value.accessToken === 'string'
+    && typeof value.refreshToken === 'string';
+}
+
+function getTelemetryRecorder(): TelemetryRecorder | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const candidate = (window as Window & { __YAPPC_TELEMETRY__?: unknown }).__YAPPC_TELEMETRY__;
+  if (isRecord(candidate) && typeof candidate.recordMetric === 'function') {
+    return candidate as TelemetryRecorder;
+  }
+
+  return null;
+}
+
+function getExtensionCode(extensions: unknown): string | null {
+  if (!isRecord(extensions) || typeof extensions.code !== 'string') {
+    return null;
+  }
+
+  return extensions.code;
+}
+
+function getRetryAfter(extensions: unknown): number {
+  if (!isRecord(extensions) || typeof extensions.retryAfter !== 'number') {
+    return 60;
+  }
+
+  return extensions.retryAfter;
+}
+
+interface PaginatedConnection<TEdge = unknown> {
+  edges: TEdge[];
+  pageInfo: Record<string, unknown> | null;
+}
+
+interface PaginationArgs {
+  after?: string | null;
+}
+
+function mergePaginatedConnection<TEdge>(
+  existing: PaginatedConnection<TEdge> | undefined,
+  incoming: PaginatedConnection<TEdge>,
+  args: PaginationArgs | null | undefined,
+): PaginatedConnection<TEdge> {
+  if (!args?.after) {
+    return incoming;
+  }
+
+  return {
+    ...incoming,
+    edges: [...(existing?.edges ?? []), ...incoming.edges],
+  };
+}
 
 export const setTokens = (access: string | null, refresh: string | null) => {
   accessToken = access;
@@ -92,8 +177,11 @@ async function refreshAccessToken(): Promise<string | null> {
     }
 
     const data: unknown = await response.json();
-    setTokens(data.accessToken, data.refreshToken);
-    const tokenResponse = data as { accessToken: string; refreshToken: string };
+    if (!isTokenRefreshResponse(data)) {
+      throw new Error('Token refresh returned an invalid payload');
+    }
+
+    const tokenResponse = data;
     setTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
     return tokenResponse.accessToken;
   } catch (error) {
@@ -112,23 +200,38 @@ const timingLink = new ApolloLink((operation, forward) => {
   const startTime = performance.now();
   operation.setContext({ startTime });
 
-  return forward(operation).map((response) => {
-    const duration = performance.now() - startTime;
-    const operationName = operation.operationName;
+  if (!forward) {
+    return null;
+  }
 
-    // Log slow queries in development
-    if (import.meta.env.DEV && duration > 1000) {
-      console.warn(`[GraphQL] Slow query: ${operationName} took ${duration.toFixed(0)}ms`);
-    }
+  const forwarded = forward(operation) as Observable<FetchResult<Record<string, unknown>>>;
 
-    // Report to observability
-    if (typeof window !== 'undefined' && (window as unknown).__YAPPC_TELEMETRY__) {
-      (window as unknown).__YAPPC_TELEMETRY__.recordMetric('graphql.query.duration', duration, {
-        operation: operationName,
-      });
-    }
+  return new Observable<FetchResult<Record<string, unknown>>>((observer) => {
+    const subscription = forwarded.subscribe({
+      next: (response: FetchResult<Record<string, unknown>>) => {
+        const duration = performance.now() - startTime;
+        const operationName = operation.operationName;
 
-    return response;
+        if (import.meta.env.DEV && duration > 1000) {
+          console.warn(`[GraphQL] Slow query: ${operationName} took ${duration.toFixed(0)}ms`);
+        }
+
+        const telemetry = getTelemetryRecorder();
+        if (telemetry) {
+          telemetry.recordMetric('graphql.query.duration', duration, {
+            operation: operationName,
+          });
+        }
+
+        observer.next(response);
+      },
+      error: (subscriptionError: unknown) => observer.error(subscriptionError),
+      complete: () => observer.complete(),
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   });
 });
 
@@ -137,7 +240,7 @@ const authLink = new ApolloLink((operation, forward) => {
   const token = getAccessToken();
 
   if (token) {
-    operation.setContext(({ headers = {} }) => ({
+    operation.setContext(({ headers = {} }: { headers?: Record<string, string> }) => ({
       headers: {
         ...headers,
         Authorization: `Bearer ${token}`,
@@ -145,14 +248,19 @@ const authLink = new ApolloLink((operation, forward) => {
     }));
   }
 
-  return forward(operation);
+  return forward ? forward(operation) : null;
 });
 
 // Error handling link with token refresh
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
   if (graphQLErrors) {
-    for (const error of graphQLErrors) {
-      const { message, locations, path, extensions } = error;
+    for (const graphQLError of graphQLErrors as readonly GraphQLErrorLike[]) {
+      const message = graphQLError.message;
+      const locations = graphQLError.locations;
+      const path = Array.isArray(graphQLError.path)
+        ? graphQLError.path.map((segment) => String(segment))
+        : undefined;
+      const extensions = graphQLError.extensions;
 
       // Log error details
       console.error(
@@ -166,7 +274,9 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       );
 
       // Handle authentication errors
-      if (extensions?.code === 'UNAUTHENTICATED' || extensions?.code === 'TOKEN_EXPIRED') {
+      const extensionCode = getExtensionCode(extensions);
+
+      if (extensionCode === 'UNAUTHENTICATED' || extensionCode === 'TOKEN_EXPIRED') {
         // Attempt token refresh
         if (!tokenRefreshPromise) {
           tokenRefreshPromise = refreshAccessToken().finally(() => {
@@ -175,25 +285,33 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
         }
 
         return new Observable((observer) => {
-          tokenRefreshPromise!.then((newToken) => {
+          void tokenRefreshPromise?.then((newToken) => {
             if (newToken) {
+              if (!forward) {
+                observer.error(new Error('Unable to retry GraphQL operation'));
+                return;
+              }
+
               // Retry the request with new token
-              operation.setContext(({ headers = {} }) => ({
+              operation.setContext(({ headers = {} }: { headers?: Record<string, string> }) => ({
                 headers: {
                   ...headers,
                   Authorization: `Bearer ${newToken}`,
                 },
               }));
-              forward(operation).subscribe(observer);
+              const retried = forward(operation) as Observable<FetchResult<Record<string, unknown>>>;
+              retried.subscribe(observer);
             } else {
-              observer.error(error);
+              observer.error(new Error(message));
             }
+          }).catch((refreshError: unknown) => {
+            observer.error(refreshError);
           });
         });
       }
 
       // Handle authorization errors
-      if (extensions?.code === 'FORBIDDEN') {
+      if (extensionCode === 'FORBIDDEN') {
         window.dispatchEvent(
           new CustomEvent('auth:forbidden', {
             detail: { operation: operation.operationName, path },
@@ -202,8 +320,8 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
       }
 
       // Handle rate limiting
-      if (extensions?.code === 'RATE_LIMITED') {
-        const retryAfter = extensions.retryAfter || 60;
+      if (extensionCode === 'RATE_LIMITED') {
+        const retryAfter = getRetryAfter(extensions);
         window.dispatchEvent(
           new CustomEvent('api:rate-limited', {
             detail: { retryAfter },
@@ -214,12 +332,15 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
   }
 
   if (networkError) {
-    console.error(`[Network Error]: ${networkError.message}`);
+    const networkErrorMessage = networkError instanceof Error
+      ? networkError.message
+      : 'Unknown network error';
+    console.error(`[Network Error]: ${networkErrorMessage}`);
 
     // Dispatch network error event for global handling
     window.dispatchEvent(
       new CustomEvent('api:network-error', {
-        detail: { error: networkError },
+          detail: { message: networkErrorMessage },
       })
     );
   }
@@ -238,10 +359,14 @@ const retryLink = new RetryLink({
       // Retry on network errors or 5xx status codes
       if (!error) return false;
       
-      const statusCode = (error as unknown).statusCode;
-      const isNetworkError = !statusCode;
-      const isServerError = statusCode >= 500 && statusCode < 600;
-      const isTimeout = error.message?.includes('timeout');
+      const statusCode = isRecord(error) && typeof error.statusCode === 'number'
+        ? error.statusCode
+        : null;
+      const isNetworkError = statusCode === null;
+      const isServerError = statusCode !== null && statusCode >= 500 && statusCode < 600;
+      const isTimeout = error instanceof Error
+        ? error.message.includes('timeout')
+        : false;
       
       return isNetworkError || isServerError || isTimeout;
     },
@@ -252,14 +377,14 @@ const retryLink = new RetryLink({
 const requestIdLink = new ApolloLink((operation, forward) => {
   const requestId = crypto.randomUUID();
   
-  operation.setContext(({ headers = {} }) => ({
+    operation.setContext(({ headers = {} }: { headers?: Record<string, string> }) => ({
     headers: {
       ...headers,
       'X-Request-ID': requestId,
     },
   }));
 
-  return forward(operation);
+  return forward ? forward(operation) : null;
 });
 
 // HTTP link
@@ -282,53 +407,45 @@ const cache = new InMemoryCache({
         // Pagination for stories list
         stories: {
           keyArgs: ['projectId', 'filter', 'sort'],
-          merge(existing = { edges: [], pageInfo: null }, incoming, { args }) {
-            if (args?.after === null || args?.after === undefined) {
-              return incoming;
-            }
-            return {
-              ...incoming,
-              edges: [...existing.edges, ...incoming.edges],
-            };
+          merge(
+            existing: PaginatedConnection | undefined,
+            incoming: PaginatedConnection,
+            { args }: { args?: PaginationArgs },
+          ): PaginatedConnection {
+            return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for incidents
         incidents: {
           keyArgs: ['projectId', 'filter'],
-          merge(existing = { edges: [], pageInfo: null }, incoming, { args }) {
-            if (!args?.after) {
-              return incoming;
-            }
-            return {
-              ...incoming,
-              edges: [...existing.edges, ...incoming.edges],
-            };
+          merge(
+            existing: PaginatedConnection | undefined,
+            incoming: PaginatedConnection,
+            { args }: { args?: PaginationArgs },
+          ): PaginatedConnection {
+            return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for vulnerabilities
         vulnerabilities: {
           keyArgs: ['projectId', 'filter'],
-          merge(existing = { edges: [], pageInfo: null }, incoming, { args }) {
-            if (!args?.after) {
-              return incoming;
-            }
-            return {
-              ...incoming,
-              edges: [...existing.edges, ...incoming.edges],
-            };
+          merge(
+            existing: PaginatedConnection | undefined,
+            incoming: PaginatedConnection,
+            { args }: { args?: PaginationArgs },
+          ): PaginatedConnection {
+            return mergePaginatedConnection(existing, incoming, args);
           },
         },
         // Pagination for audit logs
         auditLogs: {
           keyArgs: ['filter'],
-          merge(existing = { edges: [], pageInfo: null }, incoming, { args }) {
-            if (!args?.after) {
-              return incoming;
-            }
-            return {
-              ...incoming,
-              edges: [...existing.edges, ...incoming.edges],
-            };
+          merge(
+            existing: PaginatedConnection | undefined,
+            incoming: PaginatedConnection,
+            { args }: { args?: PaginationArgs },
+          ): PaginatedConnection {
+            return mergePaginatedConnection(existing, incoming, args);
           },
         },
       },
@@ -343,7 +460,7 @@ const cache = new InMemoryCache({
       keyFields: ['id'],
       fields: {
         comments: {
-          merge(_existing, incoming) {
+            merge(_existing: unknown, incoming: Record<string, unknown>) {
             return incoming;
           },
         },
@@ -353,7 +470,7 @@ const cache = new InMemoryCache({
       keyFields: ['id'],
       fields: {
         timeline: {
-          merge(_existing, incoming) {
+            merge(_existing: unknown, incoming: Record<string, unknown>) {
             return incoming;
           },
         },
@@ -411,20 +528,22 @@ export const createGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
 };
 
 // Singleton client instance
-let clientInstance: ApolloClient<NormalizedCacheObject> | null = null;
+let clientInstance: unknown = null;
 
 export const getGraphQLClient = (): ApolloClient<NormalizedCacheObject> => {
   if (!clientInstance) {
     clientInstance = createGraphQLClient();
   }
-  return clientInstance;
+  return clientInstance as ApolloClient<NormalizedCacheObject>;
 };
 
 // Reset client (useful for logout)
 export const resetGraphQLClient = () => {
-  if (clientInstance) {
-    clientInstance.clearStore();
-    clientInstance.stop();
+  const clientHandle = clientInstance as GraphQLClientHandle | null;
+
+  if (clientHandle) {
+    void clientHandle.clearStore();
+    clientHandle.stop();
     clientInstance = null;
   }
 };

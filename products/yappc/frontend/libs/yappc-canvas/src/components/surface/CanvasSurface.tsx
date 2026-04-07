@@ -29,7 +29,6 @@ import {
     isCanvasEdge,
     isCanvasGroup
 } from '../../types/canvas-document';
-
 import type { CanvasElement, CanvasTheme } from '../../types/canvas-document';
 
 /**
@@ -198,7 +197,7 @@ export const CanvasSurface: React.FC<CanvasSurfaceProps> = React.memo(({
                     }
                     : undefined;
 
-                const edgeCustom = element.metadata?.custom as Record<string, unknown> | undefined;
+                const edgeCustom = element.metadata?.custom;
                 const errorRate = typeof edgeCustom?.errorRate === 'number' ? edgeCustom.errorRate : 0;
                 const throughput = typeof edgeCustom?.throughput === 'number' ? edgeCustom.throughput : 0;
 
@@ -259,7 +258,7 @@ export const CanvasSurface: React.FC<CanvasSurfaceProps> = React.memo(({
                 );
 
             case 'group':
-                const customMetadata = element.metadata?.custom as Record<string, unknown> | undefined;
+                const customMetadata = element.metadata?.custom;
                 const metadataLabel = typeof customMetadata?.label === 'string' ? customMetadata.label : undefined;
                 const groupLabel = metadataLabel && metadataLabel.trim().length > 0 ? metadataLabel : 'Group';
                 const childCount = isCanvasGroup(element) ? element.childIds.length : 0;

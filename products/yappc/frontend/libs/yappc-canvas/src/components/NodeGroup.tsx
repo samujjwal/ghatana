@@ -17,11 +17,12 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { Surface as Paper, Box, Typography, IconButton, TextField, Chip, Badge, Tooltip, Menu, MenuItem, Divider } from '@ghatana/design-system';
 import { Users as GroupIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Pencil as EditIcon, MoreVertical as MoreIcon, CheckCircle as ReadyIcon, Hourglass as PendingIcon, HelpCircle as UnknownIcon } from 'lucide-react';
+import React, { useState, useCallback, memo } from 'react';
+
+import { Surface as Paper, Box, Typography, IconButton, TextField, Chip, Badge, Tooltip, Menu, MenuItem, Divider } from '@ghatana/design-system';
 
 // ============================================================================
 // TYPE DEFINITIONS

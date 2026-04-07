@@ -1,5 +1,5 @@
 /**
- * @fileoverview CI/CD Pipeline Visualization
+ * @file CI/CD Pipeline Visualization
  * 
  * Provides parsing and visualization for CI/CD pipeline configurations from
  * GitHub Actions, GitLab CI, Jenkins, and CircleCI. Renders pipelines as

@@ -5,7 +5,7 @@
  * showing who's online and what they're working on.
  */
 
-import { CollaborationManager, CollaborationUser } from './CollaborationManager';
+import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -49,6 +49,9 @@ const PRESENCE_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
 // Presence Manager Class
 // =============================================================================
 
+/**
+ *
+ */
 export class PresenceManager {
   private collab: CollaborationManager;
   private userId: string;
@@ -61,6 +64,9 @@ export class PresenceManager {
   private activityTimeout: number | null = null;
   private lastActivity: number;
 
+  /**
+   *
+   */
   constructor(
     collab: CollaborationManager,
     userId: string,

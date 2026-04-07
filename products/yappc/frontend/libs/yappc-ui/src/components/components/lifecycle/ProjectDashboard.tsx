@@ -3,7 +3,7 @@
  * YAPPC UI - Project Dashboard Component
  */
 
-import { LifecycleStage, LifecycleStageId } from './LifecycleStage';
+import { LifecycleStage, type LifecycleStageId } from './LifecycleStage';
 
 export interface Task {
   id: string;

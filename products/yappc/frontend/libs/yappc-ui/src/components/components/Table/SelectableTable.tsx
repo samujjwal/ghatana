@@ -9,7 +9,6 @@
 import React, { useCallback } from 'react';
 
 import { useSelection } from '../../hooks/useSelection';
-
 import type { SelectionItem } from '../../hooks/useSelection';
 
 /**

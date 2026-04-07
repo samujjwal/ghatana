@@ -16,10 +16,11 @@
  * @doc.pattern HUD
  */
 
-import React from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { canvasViewportAtom } from '../state/atoms';
+import React from 'react';
+
 import { CANVAS_Z_INDEX } from '../config/z-index';
+import { canvasViewportAtom } from '../state/atoms';
 
 export interface ZoomHUDProps {
   /** Callback when zoom changes */

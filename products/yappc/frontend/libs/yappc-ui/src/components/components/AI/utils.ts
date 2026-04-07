@@ -3,8 +3,9 @@
  * @module components/AI/utils
  */
 
-import type { RecommendationCounts, RecommendationsByType } from './types';
 import type { OptimizationRecommendation } from '../../hooks/ai/useAIInsights/types';
+
+import type { RecommendationCounts, RecommendationsByType } from './types';
 
 /**
  * Utility functions for AI Insights Dashboard

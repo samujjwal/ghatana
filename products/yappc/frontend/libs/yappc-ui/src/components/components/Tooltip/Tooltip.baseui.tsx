@@ -1,8 +1,8 @@
 import React, { forwardRef, isValidElement, useState, useRef, useEffect, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ReactNode } from 'react';
 
 /**
  * Tooltip placement options

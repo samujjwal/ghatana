@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { InteractiveButton } from './MicroInteractions';
 
 /**
@@ -63,6 +64,9 @@ class KeyboardNavigationManager {
   private shortcuts: Map<string, string[]> = new Map();
   private observers: MutationObserver[] = [];
 
+  /**
+   *
+   */
   registerItem(item: NavigationItem): void {
     this.navigationItems.set(item.id, item);
 
@@ -73,11 +77,17 @@ class KeyboardNavigationManager {
     }
   }
 
+  /**
+   *
+   */
   unregisterItem(itemId: string): void {
     this.navigationItems.delete(itemId);
     this.shortcuts.delete(itemId);
   }
 
+  /**
+   *
+   */
   updateItem(itemId: string, updates: Partial<NavigationItem>): void {
     const item = this.navigationItems.get(itemId);
     if (item) {
@@ -85,11 +95,17 @@ class KeyboardNavigationManager {
     }
   }
 
+  /**
+   *
+   */
   getVisibleItems(): NavigationItem[] {
     return Array.from(this.navigationItems.values())
       .filter(item => item.visible && item.enabled && item.focusable);
   }
 
+  /**
+   *
+   */
   navigateNext(): NavigationItem | null {
     const visibleItems = this.getVisibleItems();
     if (visibleItems.length === 0) return null;
@@ -98,6 +114,9 @@ class KeyboardNavigationManager {
     return visibleItems[this.currentIndex];
   }
 
+  /**
+   *
+   */
   navigatePrevious(): NavigationItem | null {
     const visibleItems = this.getVisibleItems();
     if (visibleItems.length === 0) return null;
@@ -106,6 +125,9 @@ class KeyboardNavigationManager {
     return visibleItems[this.currentIndex];
   }
 
+  /**
+   *
+   */
   navigateToItem(itemId: string): NavigationItem | null {
     const item = this.navigationItems.get(itemId);
     if (!item || !item.visible || !item.enabled) return null;
@@ -115,6 +137,9 @@ class KeyboardNavigationManager {
     return item;
   }
 
+  /**
+   *
+   */
   focusItem(item: NavigationItem): void {
     if (item.element) {
       this.saveFocusHistory();
@@ -128,6 +153,9 @@ class KeyboardNavigationManager {
     }
   }
 
+  /**
+   *
+   */
   private saveFocusHistory(): void {
     const activeElement = document.activeElement as HTMLElement;
     if (activeElement && activeElement !== document.body) {
@@ -139,6 +167,9 @@ class KeyboardNavigationManager {
     }
   }
 
+  /**
+   *
+   */
   restoreFocus(): void {
     if (this.focusHistory.length > 0) {
       const previousElement = this.focusHistory.pop();
@@ -148,15 +179,24 @@ class KeyboardNavigationManager {
     }
   }
 
+  /**
+   *
+   */
   parseShortcut(shortcut: string): string[] {
     return shortcut.toLowerCase().split('+').map(key => key.trim());
   }
 
+  /**
+   *
+   */
   getItemsByCategory(category: string): NavigationItem[] {
     return Array.from(this.navigationItems.values())
       .filter(item => item.category === category);
   }
 
+  /**
+   *
+   */
   startAutoDiscovery(): void {
     // Automatically discover focusable elements
     const observer = new MutationObserver(() => {
@@ -174,11 +214,17 @@ class KeyboardNavigationManager {
     this.discoverElements();
   }
 
+  /**
+   *
+   */
   stopAutoDiscovery(): void {
     this.observers.forEach(observer => observer.disconnect());
     this.observers = [];
   }
 
+  /**
+   *
+   */
   private discoverElements(): void {
     const focusableSelectors = [
       'button:not([disabled])',
@@ -213,6 +259,9 @@ class KeyboardNavigationManager {
     });
   }
 
+  /**
+   *
+   */
   private getElementLabel(element: HTMLElement): string {
     // Try various methods to get element label
     if (element.getAttribute('aria-label')) {
@@ -243,6 +292,9 @@ class KeyboardNavigationManager {
     return element.tagName.toLowerCase();
   }
 
+  /**
+   *
+   */
   private getElementCategory(element: HTMLElement): string {
     const tagName = element.tagName.toLowerCase();
 

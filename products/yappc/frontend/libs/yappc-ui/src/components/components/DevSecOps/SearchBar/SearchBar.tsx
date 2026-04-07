@@ -9,8 +9,9 @@
 import { XCircle as ClearIcon } from 'lucide-react';
 import { History as HistoryIcon } from 'lucide-react';
 import { Search as SearchIcon } from 'lucide-react';
-import { Box, Spinner as CircularProgress, IconButton, InputAdornment, InteractiveList as List, ListItem, ListItemButton, ListItemText, Surface as Paper, Popper, TextField, Typography } from '@ghatana/design-system';
 import { useEffect, useState } from 'react';
+
+import { Box, Spinner as CircularProgress, IconButton, InputAdornment, InteractiveList as List, ListItem, ListItemButton, ListItemText, Surface as Paper, Popper, TextField, Typography } from '@ghatana/design-system';
 
 import type { SearchBarProps } from './types';
 

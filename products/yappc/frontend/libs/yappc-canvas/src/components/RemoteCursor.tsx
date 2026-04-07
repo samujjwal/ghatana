@@ -8,6 +8,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+
 import type { RemoteUser } from '../hooks/useCanvasCollaborationBackend';
 
 export interface RemoteCursorProps {

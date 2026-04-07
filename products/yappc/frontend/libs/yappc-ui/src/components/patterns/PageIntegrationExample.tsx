@@ -8,8 +8,9 @@
  */
 
 import React, { useEffect } from 'react';
-import { LoadingState } from '../components/LoadingState';
+
 import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 
 /**
  * Page Integration Pattern

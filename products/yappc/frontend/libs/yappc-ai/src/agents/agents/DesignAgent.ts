@@ -10,10 +10,9 @@
  * - Color contrast and typography
  */
 
-import { BaseAgent } from '../base/Agent';
-
-import type { AgentConfig, TaskResult } from '../types';
 import type { IAIService } from '../../core/index.js';
+import { BaseAgent } from '../base/Agent';
+import type { AgentConfig, TaskResult } from '../types';
 
 /**
  * Design review input

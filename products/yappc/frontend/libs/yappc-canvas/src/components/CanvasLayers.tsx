@@ -1,4 +1,7 @@
+import type { Node, Edge } from '@xyflow/react';
 import { Layers as LayersIcon, Eye as VisibilityIcon, EyeOff as VisibilityOffIcon, Lock as LockIcon, LockOpen as LockOpenIcon, Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, GripVertical as DragIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Palette as PaletteIcon, Opacity as OpacityIcon, Users as GroupIcon, Filter as FilterIcon, Sort as SortIcon, MoreVertical as MoreVertIcon } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+
 import {
   Box,
   Typography,
@@ -35,9 +38,7 @@ import {
   MenuItem,
   Collapse,
 } from '@ghatana/design-system';
-import React, { useState, useCallback, useRef } from 'react';
 
-import type { Node, Edge } from '@xyflow/react';
 
 // Layer configuration interface
 /**

@@ -11,6 +11,8 @@
  * @doc.pattern AIAgent
  */
 
+import { v4 as uuidv4 } from 'uuid';
+
 import { BaseAgent, type ProcessResult } from './BaseAgent';
 import type {
     AgentContext,
@@ -23,7 +25,6 @@ import type {
     TimeSeriesPoint,
 } from './types';
 import { AnomalyInputSchema, AgentError } from './types';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Alert service interface
@@ -45,6 +46,9 @@ interface AlertPayload {
 export class AnomalyDetectorAgent extends BaseAgent<AnomalyInput, AnomalyOutput> {
     private alertService?: AlertService;
 
+    /**
+     *
+     */
     constructor(alertService?: AlertService) {
         super({
             name: 'AnomalyDetectorAgent',

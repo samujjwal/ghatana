@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 
-import { WebSocketSearchUtils } from './utils';
+import type { FilterCriteria } from '../../components/Search';
 
 import type { SavedSearch, UseSavedSearchesReturn } from './types';
-import type { FilterCriteria } from '../../components/Search';
+import { WebSocketSearchUtils } from './utils';
+
 
 /**
  * Hook for managing saved searches with localStorage persistence.

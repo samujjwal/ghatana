@@ -3,7 +3,7 @@
  * YAPPC UI - Lifecycle Stage Navigation
  */
 
-import { LifecycleStage, LifecycleStageId, LIFECYCLE_STAGES } from './LifecycleStage';
+import { LifecycleStage, type LifecycleStageId, LIFECYCLE_STAGES } from './LifecycleStage';
 
 export interface StageNavigationProps {
   projectId: string;

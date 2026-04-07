@@ -5,12 +5,13 @@
  * @doc.pattern Visual Feedback
  */
 
-import { Box } from '@ghatana/design-system';
+import type { Node } from '@xyflow/react';
 import React, { useMemo } from 'react';
+
+import { Box } from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-import type { Node } from '@xyflow/react';
 
 
 /**

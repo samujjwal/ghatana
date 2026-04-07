@@ -9,9 +9,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { StatePersistence } from './StatePersistence';
+import type { StorageType } from './StatePersistence';
 import { getStateSync } from './StateSync';
 
-import type { StorageType } from './StatePersistence';
 
 // ============================================================================
 // Types

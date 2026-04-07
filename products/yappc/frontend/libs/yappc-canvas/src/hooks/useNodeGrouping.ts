@@ -10,9 +10,10 @@
  * @doc.pattern React Hook
  */
 
-import { useCallback, useMemo } from 'react';
 import { useReactFlow, useNodes } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
+import { useCallback, useMemo } from 'react';
+
 import type { GroupStatus, NodeGroupData } from '../components/NodeGroup';
 import {
     createGroupFromNodes,

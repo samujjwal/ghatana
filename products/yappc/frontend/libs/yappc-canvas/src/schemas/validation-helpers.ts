@@ -5,7 +5,6 @@ import {
   componentSchemaRegistry,
   validateComponent
 } from './component-registry';
-
 import type {
   ValidationResult,
   CanvasComponent,
@@ -262,7 +261,7 @@ export const validateNodeOperation = (
         ...(defaults as unknown),
       };
 
-      const merged = mergeDeep(skeleton, nodeData as unknown);
+      const merged = mergeDeep(skeleton, nodeData);
       const result = (schema as unknown).safeParse(merged);
       if (result.success) {
         validation = {
@@ -338,7 +337,7 @@ export const migrateCanvas = (
   }
 
   // Migrate nodes
-  (canvas.nodes as unknown[]).forEach((node: unknown, index) => {
+  (canvas.nodes).forEach((node: unknown, index) => {
     if (!node.type) {
       errors.push(`Node at index ${index} is missing type field`);
       return;

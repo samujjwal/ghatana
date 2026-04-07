@@ -17,9 +17,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Box, Chip, Surface as Paper, Typography, IconButton, Tooltip, Avatar, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, ListItemText as ListItemSecondaryAction, Collapse, Divider, Badge, LinearProgress } from '@ghatana/design-system';
 import { Check as AcceptIcon, X as DismissIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, User as AssigneeIcon, Label as TagIcon, Flag as PriorityIcon, ArrowRight as ActionIcon, Copy as SimilarIcon, Lightbulb as SuggestionIcon, ThumbsUp as FeedbackUpIcon, ThumbsDown as FeedbackDownIcon } from 'lucide-react';
+import React, { useState, useMemo, useCallback } from 'react';
+
+import { Box, Chip, Surface as Paper, Typography, IconButton, Tooltip, Avatar, InteractiveList as List, ListItem, ListItemIcon as ListItemAvatar, ListItemText, ListItemText as ListItemSecondaryAction, Collapse, Divider, Badge, LinearProgress } from '@ghatana/design-system';
 
 import type { Recommendation, RecommendationType } from '@yappc/core/types';
 
@@ -129,7 +130,7 @@ const InlineSuggestion: React.FC<{
                 size="sm"
                 icon={getTypeIcon(recommendation.type) as React.ReactElement}
                 label={recommendation.displayValue}
-                color={confidenceColor as 'success' | 'warning' | 'default'}
+                color={confidenceColor}
                 variant="outlined"
                 onClick={onAccept ? () => onAccept(recommendation) : undefined}
                 onDelete={onDismiss ? () => onDismiss(recommendation.id) : undefined}

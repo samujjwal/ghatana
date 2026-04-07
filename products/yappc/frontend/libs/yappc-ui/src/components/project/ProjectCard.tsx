@@ -9,7 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import {
     Card,
     CardContent,
@@ -21,6 +20,7 @@ import {
     IconButton,
 } from '@mui/material';
 import { Settings as SettingsIcon, Brain as BrainIcon } from 'lucide-react';
+import React from 'react';
 
 import type { Project, ProjectStatus } from '@yappc/core/types';
 

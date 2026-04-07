@@ -10,9 +10,8 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { useAtomValue } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtomValue } from 'jotai';
 import {
   AlertCircle,
   AlertTriangle,
@@ -31,11 +30,16 @@ import {
   X,
   Check,
 } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
+import { Tooltip } from '@ghatana/design-system';
+import { Progress } from '@ghatana/design-system';
+
+import { validationStateAtom } from '@yappc/canvas';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,13 +48,11 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from '@yappc/ui';
-import { Tooltip } from '@ghatana/design-system';
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
 import { ScrollArea } from '@yappc/ui';
-import { Progress } from '@ghatana/design-system';
 
-import { validationStateAtom } from '@yappc/canvas';
+
 
 // =============================================================================
 // Types

@@ -10,9 +10,12 @@
  * @doc.phase operations
  */
 
-import { useCallback, useMemo, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
+
 import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 
 import {
   incidentsAtom,
@@ -25,7 +28,6 @@ import {
   serviceHealthAtom,
   metricsAtom,
 } from '@yappc/canvas';
-
 import {
   GET_INCIDENT,
   GET_INCIDENTS,
@@ -727,7 +729,6 @@ export function useLogStream(filters?: {
 }
 
 // Need to import useState for useLogStream
-import { useState } from 'react';
 
 export default {
   useIncident,

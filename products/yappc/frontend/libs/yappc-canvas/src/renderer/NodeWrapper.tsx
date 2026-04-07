@@ -19,7 +19,9 @@ import React, {
     type MouseEvent,
     type CSSProperties,
 } from 'react';
+
 import type { UniversalNode, ArtifactContract } from '../model/contracts';
+
 import type { NodeRenderState } from './types';
 
 // ============================================================================

@@ -20,10 +20,11 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { Box, Surface as Paper, Typography, Button, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, ListItemIcon, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Chip, Alert, Divider, Collapse, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@ghatana/design-system';
-import { HardDrive as SourceIcon, GitBranch as TransformIcon, CloudUpload as SinkIcon, Plus as AddIcon, X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, Clock as ScheduleIcon, ChevronDown as ExpandMoreIcon, Play as DeployIcon, Settings as SettingsIcon } from 'lucide-react';
 import type { Node } from '@xyflow/react';
+import { HardDrive as SourceIcon, GitBranch as TransformIcon, CloudUpload as SinkIcon, Plus as AddIcon, X as CloseIcon, Download as DownloadIcon, Copy as CopyIcon, Clock as ScheduleIcon, ChevronDown as ExpandMoreIcon, Play as DeployIcon, Settings as SettingsIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
+import { Box, Surface as Paper, Typography, Button, IconButton, InteractiveList as List, ListItem, ListItemButton, ListItemText, ListItemIcon, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Chip, Alert, Divider, Collapse, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@ghatana/design-system';
 
 // ============================================================================
 // TYPE DEFINITIONS

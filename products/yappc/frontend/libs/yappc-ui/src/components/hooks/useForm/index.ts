@@ -1,6 +1,5 @@
 import { useState, useCallback, type ChangeEvent } from 'react';
 
-import { runFieldValidationIfNeeded, markAllTouched } from './utils';
 import {
   validateForm as baseValidateForm,
   hasErrors,
@@ -11,6 +10,7 @@ import {
 } from '../../utils/validation';
 
 import type { UseFormOptions, UseFormReturn } from './types';
+import { runFieldValidationIfNeeded, markAllTouched } from './utils';
 
 /**
  * Adapter function to wrap baseValidateField for use with runFieldValidationIfNeeded.
@@ -139,7 +139,7 @@ function runValidateForm(
  * }
  * ```
  */
-// eslint-disable-next-line max-lines-per-function
+ 
 export function useForm<T extends Record<string, unknown>>({
   initialValues,
   validationRules = {},

@@ -5,9 +5,9 @@
  * document synchronization across multiple users.
  */
 
-import * as Y from 'yjs';
-import { WebsocketProvider } from 'y-websocket';
 import { IndexeddbPersistence } from 'y-indexeddb';
+import { WebsocketProvider } from 'y-websocket';
+import * as Y from 'yjs';
 
 // =============================================================================
 // Types
@@ -57,6 +57,9 @@ export interface CollaborationEvent {
 // Collaboration Manager Class
 // =============================================================================
 
+/**
+ *
+ */
 export class CollaborationManager {
   private doc: Y.Doc;
   private provider: WebsocketProvider | null = null;
@@ -65,6 +68,9 @@ export class CollaborationManager {
   private listeners: Map<CollaborationEventType, Set<(event: CollaborationEvent) => void>>;
   private state: CollaborationState;
 
+  /**
+   *
+   */
   constructor(config: CollaborationConfig) {
     this.config = config;
     this.doc = new Y.Doc();

@@ -1,11 +1,11 @@
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { ChevronDown as ExpandMoreIcon } from 'lucide-react';
-import { Accordion, AccordionDetails, AccordionSummary, Surface as Paper, Typography } from '@ghatana/design-system';
-import { Grid } from '../../Grid';
 import React from 'react';
 
-import { RecommendationCard } from '../RecommendationCard';
+import { Accordion, AccordionDetails, AccordionSummary, Surface as Paper, Typography } from '@ghatana/design-system';
 
+import { Grid } from '../../Grid';
+import { RecommendationCard } from '../RecommendationCard';
 import type { RecommendationsByType, RecommendationCounts } from '../types';
 
 /**

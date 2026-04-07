@@ -16,11 +16,12 @@
  * @doc.pattern Component
  */
 
-import React, { useMemo } from 'react';
-import { Box, Button, ToggleButtonGroup as ButtonGroup, Menu, MenuItem, Tooltip, Typography, Chip } from '@ghatana/design-system';
-import { Bug as TestIcon, Play as RunIcon, FlaskConical as GenerateIcon, ChevronDown as ExpandMoreIcon, CheckCircle as PassIcon, AlertCircle as FailIcon } from 'lucide-react';
-
 import type { Node } from '@xyflow/react';
+import { Bug as TestIcon, Play as RunIcon, FlaskConical as GenerateIcon, ChevronDown as ExpandMoreIcon, CheckCircle as PassIcon, AlertCircle as FailIcon } from 'lucide-react';
+import React, { useMemo } from 'react';
+
+import { Box, Button, ToggleButtonGroup as ButtonGroup, Menu, MenuItem, Tooltip, Typography, Chip } from '@ghatana/design-system';
+
 
 /**
  * Test type options

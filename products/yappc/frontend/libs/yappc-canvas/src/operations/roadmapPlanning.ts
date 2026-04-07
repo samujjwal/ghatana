@@ -1130,7 +1130,7 @@ export function calculateCriticalPath(
 
   if (sorted.length > 0) {
     currentMilestone = sorted[0];
-    criticalPath.push(currentMilestone!.id);
+    criticalPath.push(currentMilestone.id);
 
     // Walk back through dependencies
     while (currentMilestone) {

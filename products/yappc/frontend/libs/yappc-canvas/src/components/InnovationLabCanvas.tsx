@@ -5,9 +5,10 @@
  * @doc.pattern Innovation Canvas Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, CardActions } from '@ghatana/design-system';
 import { Lightbulb, FlaskConical as Science, TrendingUp, Plus as Add, ArrowRight as ArrowForward } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, IconButton, Tooltip, Surface as Paper, Chip, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, Card, CardContent, CardActions } from '@ghatana/design-system';
 
 /**
  * Prototype interface

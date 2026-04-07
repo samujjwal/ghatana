@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
 
-import { AccessibilityUtils } from './utils';
 import {
   runAccessibilityAudit,
   type AccessibilityAuditResult,
@@ -13,6 +12,7 @@ import type {
   UseKeyboardNavigationOptions,
   UseKeyboardNavigationReturn,
 } from './types';
+import { AccessibilityUtils } from './utils';
 
 /**
  * Hook for adding accessibility audit features to components.

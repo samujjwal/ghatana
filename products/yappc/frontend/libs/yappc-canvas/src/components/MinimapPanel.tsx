@@ -13,17 +13,20 @@
  */
 
 import { ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon, Maximize2 as FitScreenIcon } from 'lucide-react';
+import { useRef, useEffect, useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import type { JSX } from 'react';
+
 import {
   Box,
   IconButton,
   Tooltip,
   Surface as Paper,
 } from '@ghatana/design-system';
-import { useRef, useEffect, useCallback, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import type { JSX } from 'react';
 
 type DOMMouseEvent = globalThis.MouseEvent;
 
+
+import type { Point, Viewport } from '../viewport/infiniteSpace';
 import {
     calculateCanvasBounds,
     worldToMinimapCoordinates,
@@ -35,8 +38,6 @@ import {
     applyKeyboardZoom,
     createZoomConfig,
 } from '../viewport/minimapState';
-
-import type { Point, Viewport } from '../viewport/infiniteSpace';
 import type { MinimapNode, MinimapConfig } from '../viewport/minimapState';
 
 /**

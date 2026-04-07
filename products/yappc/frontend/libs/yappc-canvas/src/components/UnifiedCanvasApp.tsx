@@ -9,18 +9,22 @@
  * @doc.pattern Application
  */
 
-import React from 'react';
 import { Provider } from 'jotai';
-import { CanvasChromeLayout } from './CanvasChromeLayout';
-import { Canvas } from './Canvas';
-import { Frame } from './Frame';
-import { OutlinePanel } from './OutlinePanel';
-import { ContextBar } from './ContextBar';
-import { ZoomHUD } from './ZoomHUD';
-import { MinimapPanel } from './MinimapPanel';
+import React from 'react';
+
 import { InspectorPanel } from '../shell/InspectorPanel';
 import { PalettePanel } from '../shell/PalettePanel';
+
+import { Canvas } from './Canvas';
+import { CanvasChromeLayout } from './CanvasChromeLayout';
+import { ContextBar } from './ContextBar';
 import { ContrastDebugOverlay } from './ContrastDebugOverlay';
+import { Frame } from './Frame';
+import { MinimapPanel } from './MinimapPanel';
+import { OutlinePanel } from './OutlinePanel';
+import { ZoomHUD } from './ZoomHUD';
+
+
 
 /**
  * Unified Canvas Application

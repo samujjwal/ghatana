@@ -1,33 +1,54 @@
 import type { KeyboardShortcut } from './types';
 
+/**
+ *
+ */
 export class ShortcutRegistry {
   private shortcuts = new Map<string, KeyboardShortcut>();
   private activeContexts: string[] = ['global'];
 
+  /**
+   *
+   */
   private static isMac(): boolean {
     return (
       typeof navigator !== 'undefined' && navigator.platform.includes('Mac')
     );
   }
 
+  /**
+   *
+   */
   private static normalizeKeyName(key: string): string {
     return key.toLowerCase();
   }
 
+  /**
+   *
+   */
   registerShortcut(shortcut: KeyboardShortcut): void {
     this.shortcuts.set(shortcut.id, shortcut);
   }
 
+  /**
+   *
+   */
   unregisterShortcut(id: string): void {
     this.shortcuts.delete(id);
   }
 
+  /**
+   *
+   */
   setActiveContexts(contexts: string[]): void {
     this.activeContexts = ['global', ...contexts].filter(
       (c, i, a) => a.indexOf(c) === i
     );
   }
 
+  /**
+   *
+   */
   getShortcuts(context?: string): KeyboardShortcut[] {
     if (context) {
       return Array.from(this.shortcuts.values()).filter(
@@ -39,6 +60,9 @@ export class ShortcutRegistry {
     );
   }
 
+  /**
+   *
+   */
   execute(event: KeyboardEvent): boolean {
     const key = ShortcutRegistry.normalizeKeyName(event.key);
 

@@ -1,5 +1,4 @@
 import { forwardRef, useId } from 'react';
-
 import type { SelectHTMLAttributes } from 'react';
 
 /**

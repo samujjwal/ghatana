@@ -524,7 +524,7 @@ export * from './config';
 // ============================================================================
 // DEPRECATION WARNING
 // ============================================================================
-// eslint-disable-next-line no-console
+ 
 console.warn(
   '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use @yappc/ui instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'

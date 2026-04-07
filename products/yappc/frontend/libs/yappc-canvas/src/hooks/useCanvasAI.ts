@@ -10,8 +10,8 @@
  * @doc.layer presentation
  */
 
-import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
+import { useCallback, useState } from 'react';
 
 export type AIFeature =
   | 'brainstorming'

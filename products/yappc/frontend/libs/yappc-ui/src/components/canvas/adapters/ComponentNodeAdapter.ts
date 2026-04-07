@@ -4,11 +4,12 @@
  * Bidirectional conversion between Component Schema and Canvas Node
  */
 
+import type { ComponentNode, ComponentNodeData } from '../types';
+import type { TransformContext, TransformOptions, TransformResult } from '../types/ComponentSchema';
+
 import { DesignTokenMapper } from './DesignTokenMapper';
 import { PropertyTransformer } from './PropertyTransformer';
 
-import type { ComponentNode, ComponentNodeData } from '../types';
-import type { TransformContext, TransformOptions, TransformResult } from '../types/ComponentSchema';
 
 /**
  * Component schema (simplified, will integrate with Phase 2)

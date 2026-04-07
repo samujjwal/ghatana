@@ -167,7 +167,7 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
               {showValue && !isIndeterminate && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-xs font-semibold text-grey-700">
-                    {formatValue(value!, max)}
+                    {formatValue(value, max)}
                   </span>
                 </div>
               )}
@@ -195,7 +195,7 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
               )}
               {showValue && !isIndeterminate && (
                 <span className="text-sm font-medium text-grey-700">
-                  {formatValue(value!, max)}
+                  {formatValue(value, max)}
                 </span>
               )}
             </div>

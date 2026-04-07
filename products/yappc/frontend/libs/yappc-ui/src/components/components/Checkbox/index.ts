@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { Checkbox as GlobalCheckbox } from '@ghatana/design-system';
 
 import type { CheckboxProps as GlobalCheckboxProps } from '@yappc/ui';

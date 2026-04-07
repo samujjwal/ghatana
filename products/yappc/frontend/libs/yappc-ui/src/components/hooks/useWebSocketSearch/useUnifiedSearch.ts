@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 
-import { useWebSocketSearch } from './index';
+import type { FilterCriteria } from '../../components/Search';
 
 import type { UseUnifiedSearchReturn, UnifiedSearchOptions } from './types';
-import type { FilterCriteria } from '../../components/Search';
+
+import { useWebSocketSearch } from './index';
+
 
 /**
  * Hook for unified search across multiple data types.

@@ -10,13 +10,14 @@
  * @doc.pattern React Hook
  */
 
-import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAtom } from 'jotai';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
+
 import type { CRDTOperation, VectorClock } from '../../../crdt-ide/src';
+import { type IDECanvasBridge } from '../crdt/ide-canvas-bridge';
 import { IDECRDTHandler } from '../crdt/ide-handler';
-import { IDECanvasBridge } from '../crdt/ide-canvas-bridge';
 import { createInitialIDEState } from '../crdt/ide-schema';
 import {
   ideStateAtom,

@@ -5,7 +5,6 @@
  * in a collaborative session.
  */
 
-import React from 'react';
 import { motion } from 'framer-motion';
 import {
   FileCode,
@@ -15,8 +14,12 @@ import {
   Settings,
   Eye,
 } from 'lucide-react';
-import { PresenceUser, PresenceLocation } from '../PresenceManager';
+import React from 'react';
+
 import { cn } from '@ghatana/design-system';
+
+import { type PresenceUser, type PresenceLocation } from '../PresenceManager';
+
 
 // =============================================================================
 // Types

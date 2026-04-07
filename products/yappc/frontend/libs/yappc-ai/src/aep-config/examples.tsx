@@ -6,7 +6,7 @@
 
 import {
   AepMode,
-  AepConfig,
+  type AepConfig,
   getAepConfig,
   formatAepConfig,
   isLibraryMode,

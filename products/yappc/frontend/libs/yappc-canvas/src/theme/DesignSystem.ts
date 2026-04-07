@@ -271,6 +271,9 @@ export class ThemeManager {
   private listeners: Set<(theme: Theme) => void> = new Set();
   private storageKey = 'app-theme';
 
+  /**
+   *
+   */
   constructor(defaultTheme: Theme = lightTheme) {
     this.currentTheme = defaultTheme;
     this.themes.set(lightTheme.name, lightTheme);

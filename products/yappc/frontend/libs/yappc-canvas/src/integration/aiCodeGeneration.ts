@@ -21,6 +21,7 @@ import {
     PERSONA_SYSTEM_PROMPTS,
     type Persona,
 } from '@yappc/ai/core';
+
 import type {
     ServiceNodeData,
     APIEndpointNodeData,
@@ -84,6 +85,9 @@ export interface AICodeGenerationOptions {
 export class AICodeGenerationService {
     private aiService: IAIService;
 
+    /**
+     *
+     */
     constructor(aiService: IAIService) {
         this.aiService = aiService;
     }

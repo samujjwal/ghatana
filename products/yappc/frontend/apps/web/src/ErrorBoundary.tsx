@@ -1,5 +1,6 @@
-import { Component, ErrorInfo } from 'react';
+import { Component, type ErrorInfo } from 'react';
 import type { ReactNode } from 'react';
+
 import { reportFrontendError } from './observability/errorReporter';
 
 interface Props {
@@ -17,15 +18,24 @@ interface State {
  * and prevents a full application crash.
  */
 export class ErrorBoundary extends Component<Props, State> {
+    /**
+     *
+     */
     constructor(props: Props) {
         super(props);
         this.state = { hasError: false, error: null };
     }
 
+    /**
+     *
+     */
     static getDerivedStateFromError(error: Error): State {
         return { hasError: true, error };
     }
 
+    /**
+     *
+     */
     componentDidCatch(error: Error, info: ErrorInfo): void {
         console.error('[ErrorBoundary] Unhandled render error:', error, info.componentStack);
         reportFrontendError({
@@ -36,6 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
         });
     }
 
+    /**
+     *
+     */
     render() {
         if (this.state.hasError) {
             if (this.props.fallback) {

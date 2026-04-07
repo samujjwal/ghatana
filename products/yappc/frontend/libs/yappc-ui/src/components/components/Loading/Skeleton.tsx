@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+
 import './Skeleton.css';
 
 export type SkeletonVariant = 'text' | 'circular' | 'rectangular' | 'rounded';

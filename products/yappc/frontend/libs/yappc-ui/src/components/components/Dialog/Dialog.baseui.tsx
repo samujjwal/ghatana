@@ -1,9 +1,9 @@
 import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import { forwardRef } from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-import type { ReactNode } from 'react';
 
 /**
  * Dialog size variants

@@ -11,13 +11,16 @@
  */
 
 import { Suspense } from 'react';
-import { createBrowserRouter, Navigate, Outlet, RouteObject } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router-dom';
+
 import { useAuth } from '@yappc/canvas';
-import { ProtectedRoute, withProtectedRoute } from '../ProtectedRoute';
+
 import { Spinner } from '../../Loading/Spinner';
+import { ProtectedRoute, withProtectedRoute } from '../ProtectedRoute';
+
+import { DashboardPage } from './DashboardPage';
 import { LoginPage } from './LoginPage';
 import { RegisterPage } from './RegisterPage';
-import { DashboardPage } from './DashboardPage';
 
 // =============================================================================
 // Lazy Loaded Pages

@@ -13,8 +13,9 @@
 import { useAtom } from 'jotai';
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-import { useWebSocketService } from './useWebSocketService';
 import { ideCollaborationAtom, ideActiveFileIdAtom } from '../state/atoms';
+
+import { useWebSocketService } from './useWebSocketService';
 
 /**
  * User presence information

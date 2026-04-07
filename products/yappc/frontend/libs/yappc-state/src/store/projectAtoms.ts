@@ -13,8 +13,10 @@
 
 import { atom } from 'jotai';
 import type { WritableAtom } from 'jotai';
-import { StateManager } from './StateManager';
+
 import type { Project } from '@yappc/core/types';
+
+import { StateManager } from './StateManager';
 
 // ============================================================================
 // Primitive atoms
@@ -71,7 +73,7 @@ export const currentProjectAtom =
     (get) => {
       const id = get(currentProjectIdAtom);
       const projects = get(
-        projectsAtom as WritableAtom<Project[], [Project[]], void>
+        projectsAtom
       );
       return id ? (projects.find((p) => p.id === id) ?? null) : null;
     },
@@ -85,7 +87,7 @@ export const activeProjectsAtom = StateManager.createDerivedAtom<Project[]>(
   'project:activeList',
   (get) => {
     const projects = get(
-      projectsAtom as WritableAtom<Project[], [Project[]], void>
+      projectsAtom
     );
     return projects.filter((p) => p.status === 'ACTIVE');
   },
@@ -100,7 +102,7 @@ export const activeProjectsAtom = StateManager.createDerivedAtom<Project[]>(
  * Write-only atom that upserts a project in the projects list.
  */
 export const upsertProjectAtom = atom(null, (get, set, project: Project) => {
-  const pAtom = projectsAtom as WritableAtom<Project[], [Project[]], void>;
+  const pAtom = projectsAtom;
   const current = get(pAtom);
   const idx = current.findIndex((p) => p.id === project.id);
   if (idx >= 0) {
@@ -116,7 +118,7 @@ export const upsertProjectAtom = atom(null, (get, set, project: Project) => {
  * Write-only atom that removes a project from the list by ID.
  */
 export const removeProjectAtom = atom(null, (get, set, projectId: string) => {
-  const pAtom = projectsAtom as WritableAtom<Project[], [Project[]], void>;
+  const pAtom = projectsAtom;
   const current = get(pAtom);
   set(
     pAtom,

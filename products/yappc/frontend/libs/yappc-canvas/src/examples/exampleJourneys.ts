@@ -8,6 +8,7 @@
  */
 
 import type { Node, Edge } from '@xyflow/react';
+
 import type {
     AIPromptNodeData,
     PersonaNodeData,

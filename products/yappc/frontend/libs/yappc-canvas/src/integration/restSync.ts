@@ -337,7 +337,7 @@ export class RestSyncAdapter implements SyncAdapter {
       operation: 'update',
       timestamp: Date.now(),
       userId: 'system',
-      data: document as unknown,
+      data: document,
       version,
     }];
   }

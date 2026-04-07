@@ -10,6 +10,9 @@
  * @doc.pattern Component
  */
 
+import { useAtom } from 'jotai';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import {
   Dialog,
   Box,
@@ -21,13 +24,11 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { TextField, ListItemButton } from '@ghatana/design-system';
-import { useAtom } from 'jotai';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+import type { CommandRegistry, Command, CommandContext } from '../lib/commands/CommandRegistry';
 import { chromeCommandPaletteOpenAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-import type { CommandRegistry, Command, CommandContext } from '../lib/commands/CommandRegistry';
 
 const { SPACING, COLORS, TYPOGRAPHY, Z_INDEX, SHADOWS, RADIUS } = CANVAS_TOKENS;
 

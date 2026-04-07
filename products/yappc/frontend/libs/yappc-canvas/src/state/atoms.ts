@@ -18,6 +18,7 @@
 
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
+
 import { StateManager } from '@yappc/state';
 
 // Re-export platform canonical canvas atoms so consumers don't need two imports

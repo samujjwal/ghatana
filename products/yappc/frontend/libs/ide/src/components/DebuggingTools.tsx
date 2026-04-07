@@ -11,8 +11,9 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { useToastNotifications } from './Toast';
+
 import { InteractiveButton } from './MicroInteractions';
+import { useToastNotifications } from './Toast';
 
 /**
  * Breakpoint types

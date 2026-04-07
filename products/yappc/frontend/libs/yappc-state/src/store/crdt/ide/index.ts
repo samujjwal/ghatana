@@ -101,7 +101,7 @@ export function recordToYMap<T>(record: Record<string, T>, ymap?: Y.Map<unknown>
     for (const key of Object.keys(record)) {
         map.set(key, record[key] as unknown);
     }
-    return map as Y.Map<unknown>;
+    return map;
 }
 
 export function yMapToRecord<T>(ymap: Y.Map<unknown>): Record<string, T> {

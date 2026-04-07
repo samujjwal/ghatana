@@ -1,4 +1,6 @@
 import { Settings as SettingsIcon, Palette as PaletteIcon, Gauge as SpeedIcon, Accessibility as AccessibilityIcon, Brain as PsychologyIcon, Bell as NotificationsIcon, HelpCircle as HelpIcon, MessageCircle as FeedbackIcon, GraduationCap as TutorialIcon, Sparkles as AutoAwesomeIcon, Lightbulb as LightbulbIcon, CheckCircle as CheckCircleIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, X as CloseIcon, KeyboardArrowUp as KeyboardArrowUpIcon, ChevronDown as KeyboardArrowDownIcon, Eye as VisibilityIcon, EyeOff as VisibilityOffIcon } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+
 import {
   Box,
   Card,
@@ -35,7 +37,6 @@ import {
   Backdrop,
   MenuItem,
 } from '@ghatana/design-system';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 // UX Configuration interfaces
 /**

@@ -13,9 +13,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography, Select, MenuItem, FormControl, InputLabel, IconButton, Chip, Divider, Stack, Switch, FormControlLabel, Accordion, AccordionSummary, AccordionDetails, FormHelperText } from '@ghatana/design-system';
 import { Plus as AddIcon, Trash2 as DeleteIcon, ChevronDown as ExpandMoreIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Box, Typography, Select, MenuItem, FormControl, InputLabel, IconButton, Chip, Divider, Stack, Switch, FormControlLabel, Accordion, AccordionSummary, AccordionDetails, FormHelperText } from '@ghatana/design-system';
 
 // ============================================================================
 // TYPE DEFINITIONS

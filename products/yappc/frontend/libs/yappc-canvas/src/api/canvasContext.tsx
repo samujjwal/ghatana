@@ -26,6 +26,7 @@ import {
 } from 'react';
 import type { JSX } from 'react';
 
+import { Canvas } from '../components';
 import {
   canvasDocumentAtom,
   canvasSelectionAtom,
@@ -35,9 +36,6 @@ import {
   addElementAtom,
   removeElementAtom,
 } from '../state';
-
-import { Canvas } from '../components';
-
 import type {
   CanvasDocument,
   CanvasElement,

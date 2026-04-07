@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -22,6 +23,7 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemButton } from '@ghatana/design-system';
+
 import { journeyTemplates } from '../templates/journeyTemplates';
 
 /**

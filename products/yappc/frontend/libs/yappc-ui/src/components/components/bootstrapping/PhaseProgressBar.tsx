@@ -10,8 +10,8 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtomValue } from 'jotai';
 import {
   Check,
   MessageSquare,
@@ -22,11 +22,11 @@ import {
   Circle,
   Loader2,
 } from 'lucide-react';
-import { useAtomValue } from 'jotai';
+import React, { useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+
 
 import type { BootstrapPhase } from '@yappc/canvas';
 import {
@@ -35,6 +35,7 @@ import {
   questionsAnsweredAtom,
   totalQuestionsAtom,
 } from '@yappc/canvas';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================
 // Types

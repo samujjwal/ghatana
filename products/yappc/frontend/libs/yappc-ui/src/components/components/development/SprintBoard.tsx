@@ -10,13 +10,6 @@
  * @doc.phase development
  */
 
-import React, {
-  useState,
-  useCallback,
-  useMemo,
-  useRef,
-  useEffect,
-} from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -25,10 +18,10 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragStartEvent,
-  DragEndEvent,
-  DragOverEvent,
-  UniqueIdentifier,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+  type UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -38,8 +31,8 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Plus,
   MoreHorizontal,
@@ -65,25 +58,21 @@ import {
   PauseCircle,
   PlayCircle,
 } from 'lucide-react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Input } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Avatar } from '@ghatana/design-system';
-import { AvatarFallback, AvatarImage } from '@yappc/ui';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@yappc/ui';
 import { Tooltip } from '@ghatana/design-system';
-import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 import { Dialog, DialogContent, DialogTitle } from '@ghatana/design-system';
-import { DialogHeader, DialogTrigger } from '@yappc/ui';
-import { ScrollArea } from '@yappc/ui';
 import { Progress } from '@ghatana/design-system';
 
 import {
@@ -92,6 +81,17 @@ import {
   selectedStoryAtom,
   sprintStoriesAtom,
 } from '@yappc/canvas';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@yappc/ui';
+import { TooltipContent, TooltipTrigger } from '@yappc/ui';
+import { DialogHeader, DialogTrigger } from '@yappc/ui';
+import { ScrollArea } from '@yappc/ui';
+import { AvatarFallback, AvatarImage } from '@yappc/ui';
 
 // =============================================================================
 // Types

@@ -1,5 +1,7 @@
-import { Card, CardContent, CardActions, Typography, Button, Box, Chip } from '@ghatana/design-system';import { useNavigate } from 'react-router-dom'
-import { Users as GroupIcon } from 'lucide-react';interface WorkspaceCardProps {
+import { Users as GroupIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'
+
+import { Card, CardContent, CardActions, Typography, Button, Box, Chip } from '@ghatana/design-system';interface WorkspaceCardProps {
   id: string
   name: string
   description?: string

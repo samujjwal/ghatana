@@ -9,7 +9,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import {
     Card,
     CardContent,
@@ -21,6 +20,7 @@ import {
     Tooltip,
 } from '@mui/material';
 import { Settings as SettingsIcon, Star as StarIcon } from 'lucide-react';
+import React from 'react';
 
 import type { Workspace } from '@yappc/core/types';
 

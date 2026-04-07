@@ -6,9 +6,10 @@
 
 'use client';
 
+import { clsx } from 'clsx';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { clsx } from 'clsx';
+
 import type { Notification as NotificationType } from '@yappc/core/types';
 
 interface NotificationAction {

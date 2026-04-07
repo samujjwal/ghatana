@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
+import type { UseLocalStorageReturn, UseLocalStorageOptions } from './types';
 import { LocalStorageUtils } from './utils';
 
-import type { UseLocalStorageReturn, UseLocalStorageOptions } from './types';
 
 /**
  * React hook for managing state synchronized with localStorage.

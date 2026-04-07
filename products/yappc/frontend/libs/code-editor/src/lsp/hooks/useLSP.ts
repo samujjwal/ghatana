@@ -18,10 +18,11 @@
  * @doc.pattern React Hook
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
 import type * as monaco from 'monaco-editor';
+import { useEffect, useRef, useState, useCallback } from 'react';
+
 import { 
-  LSPClientManager, 
+  type LSPClientManager, 
   createLSPClientManager,
 } from '../index';
 import type {
@@ -328,7 +329,7 @@ export function useLSPDiagnosticsPanel(lspHook: UseLSPReturn) {
 
   // Filter diagnostics based on selected file and filter type
   const filteredDiagnostics = React.useMemo(() => {
-    let diagnostics: Array<{ uri: string; diagnostics: LSPDiagnostic[] }> = [];
+    const diagnostics: Array<{ uri: string; diagnostics: LSPDiagnostic[] }> = [];
 
     lspHook.diagnostics.forEach((diags, uri) => {
       const filteredDiags = diags.filter(diag => {

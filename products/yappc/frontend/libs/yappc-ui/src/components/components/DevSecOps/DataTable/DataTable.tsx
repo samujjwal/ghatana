@@ -6,7 +6,6 @@
  * @module DevSecOps/DataTable
  */
 
-import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 import {
   Checkbox,
   Skeleton,
@@ -21,10 +20,13 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
-import { DataTableUtils } from './utils';
+import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
+
+
+import type { Item } from '@yappc/core/types/devsecops';
 
 import type { DataTableProps, DataTableColumn, SortConfig } from './types';
-import type { Item } from '@yappc/core/types/devsecops';
+import { DataTableUtils } from './utils';
 
 /**
  * DataTable component for displaying tabular data with sorting, filtering, and pagination

@@ -5,9 +5,10 @@
  * @doc.pattern Security View Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Typography, Surface as Paper, Button, Switch, FormControlLabel, Chip, Alert, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/design-system';
 import { Shield as Security, Bug as BugReport, Gauge as Speed, Lock, Shield, AlertTriangle as Warning } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Typography, Surface as Paper, Button, Switch, FormControlLabel, Chip, Alert, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/design-system';
 
 /**
  * Security control types

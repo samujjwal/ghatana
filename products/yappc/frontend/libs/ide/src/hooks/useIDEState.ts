@@ -10,6 +10,7 @@
  */
 
 import { useAtom } from 'jotai';
+
 import {
   ideStateAtom,
   ideFilesAtom,

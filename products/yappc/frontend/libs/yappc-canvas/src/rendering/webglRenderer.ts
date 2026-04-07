@@ -15,8 +15,9 @@
  * @module rendering/webglRenderer
  */
 
-import type { ViewportBounds } from './virtualViewport';
 import type { CanvasElement } from '../types/canvas-document';
+
+import type { ViewportBounds } from './virtualViewport';
 
 /**
  * WebGL capabilities detected at runtime

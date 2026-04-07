@@ -1,5 +1,8 @@
-import { MoreVertical as MoreVertIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Users as GroupIcon, GitFork as UngroupIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Code as CodeIcon, Braces as DataIcon, SquareFunction as FunctionIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Globe as WebIcon, Cloud as CloudIcon, Shield as SecurityIcon, Play as PlayIcon, Pause as PauseIcon, Settings as SettingsIcon, ExternalLink as OpenInNewIcon } from 'lucide-react';
 import { Handle, Position } from '@xyflow/react';
+import type { Node, NodeTypes, NodeProps } from '@xyflow/react';
+import { MoreVertical as MoreVertIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Users as GroupIcon, GitFork as UngroupIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Code as CodeIcon, Braces as DataIcon, SquareFunction as FunctionIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Globe as WebIcon, Cloud as CloudIcon, Shield as SecurityIcon, Play as PlayIcon, Pause as PauseIcon, Settings as SettingsIcon, ExternalLink as OpenInNewIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
 import {
   Box,
   Typography,
@@ -25,12 +28,12 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { TextField, MenuItem, Collapse } from '@ghatana/design-system';
+
 import { useMuiTheme as useTheme, resolveMuiColor } from '@yappc/ui';
-import React, { useState } from 'react';
+
 
 // consolidate useTheme into the primary MUI import list to avoid duplicate imports
 
-import type { Node, NodeTypes, NodeProps } from '@xyflow/react';
 
 // Extended node data interface
 /**

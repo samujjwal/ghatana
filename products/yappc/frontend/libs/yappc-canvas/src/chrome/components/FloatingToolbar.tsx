@@ -17,15 +17,16 @@
  * @doc.pattern Progressive Disclosure
  */
 
-import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, MoreHorizontal as MoreIcon, BringToFront as BringForwardIcon, SendToBack as SendBackwardIcon, AlignStartHorizontal as AlignLeftIcon, AlignStartVertical as AlignTopIcon, PaintBucket as ColorIcon, Link as LinkIcon, Pencil as EditIcon, Users as GroupIcon } from 'lucide-react';
-import { Box, IconButton, Tooltip, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
+import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, MoreHorizontal as MoreIcon, BringToFront as BringForwardIcon, SendToBack as SendBackwardIcon, AlignStartHorizontal as AlignLeftIcon, AlignStartVertical as AlignTopIcon, PaintBucket as ColorIcon, Link as LinkIcon, Pencil as EditIcon, Users as GroupIcon } from 'lucide-react';
 import React, { useMemo, useEffect, useState } from 'react';
 
+import { Box, IconButton, Tooltip, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@ghatana/design-system';
+
+import type { ContextAction } from '../lib/actions/ContextActionsManager';
 import { chromeFloatingToolbarVisibleAtom, chromeFloatingToolbarPositionAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-import type { ContextAction } from '../lib/actions/ContextActionsManager';
 
 const { SPACING, Z_INDEX, COLORS, SHADOWS, CANVAS } = CANVAS_TOKENS;
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
-
 import type { KeyboardShortcut } from '../hooks/useKeyboardShortcuts';
 
 /**

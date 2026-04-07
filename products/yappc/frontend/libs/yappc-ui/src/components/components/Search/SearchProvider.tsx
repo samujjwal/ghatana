@@ -10,9 +10,8 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 
 import { FilterPanel } from './FilterPanel';
-import { SearchInput } from './SearchInput';
-
 import type { FilterCriteria, FilterOption } from './FilterPanel';
+import { SearchInput } from './SearchInput';
 import type { SearchSuggestion } from './SearchInput';
 
 

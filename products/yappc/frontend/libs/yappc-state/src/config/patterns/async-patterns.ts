@@ -15,7 +15,7 @@
  * @doc.pattern Async Programming
  */
 
-import { Result, success, failure, ResultError } from '../results/result.js';
+import { type Result, success, failure, type ResultError } from '../results/result.js';
 
 // ============================================================================
 // Sequential Execution
@@ -235,7 +235,13 @@ export async function withTimeout<T>(
     return Promise.race([promise, timeoutPromise]);
 }
 
+/**
+ *
+ */
 export class TimeoutError extends Error {
+    /**
+     *
+     */
     constructor(message = 'Operation timed out') {
         super(message);
         this.name = 'TimeoutError';
@@ -318,7 +324,13 @@ export async function apiCall<T>(
     });
 }
 
+/**
+ *
+ */
 export class ApiError extends Error {
+    /**
+     *
+     */
     constructor(
         message: string,
         public readonly endpoint: string,

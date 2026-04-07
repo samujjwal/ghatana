@@ -7,13 +7,16 @@
  * @module useTemplateActions
  */
 
-import { useCallback, useState } from 'react';
 import type { Node } from '@xyflow/react';
-import { journeyTemplates, type JourneyTemplate, type JourneyNode } from '../templates/journeyTemplates';
+import { useCallback, useState } from 'react';
+
+import type { IAIService } from '@yappc/ai/core';
+
 import type { PersonaNodeData } from '../components/PersonaNodes';
 import { createAICodeGenerationService } from '../integration/aiCodeGeneration';
 import { createDevSecOpsCanvasIntegration } from '../integration/devSecOpsIntegration';
-import type { IAIService } from '@yappc/ai/core';
+import { journeyTemplates, type JourneyTemplate, type JourneyNode } from '../templates/journeyTemplates';
+
 
 /**
  *

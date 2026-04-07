@@ -10,9 +10,10 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback, useMemo } from 'react';
 import { useNodes } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
+import { useState, useCallback, useMemo } from 'react';
+
 import type { APINodeData } from '../services/OpenAPIService';
 
 /**

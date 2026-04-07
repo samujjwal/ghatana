@@ -1,4 +1,6 @@
 import { Circle, Eye as Visibility, Pencil as Edit, MousePointer as Mouse, Pointer as TouchApp, SignalWifiOff, Users as Group, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import {
   Box,
   Avatar,
@@ -15,12 +17,11 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemAvatar, Fade } from '@ghatana/design-system';
-import { Popover } from '@yappc/ui/base-ui';
+
 import { useTheme, resolveMuiColor } from '@yappc/ui';
-import React, { useState, useEffect } from 'react';
+import { Popover } from '@yappc/ui/base-ui';
 
 import { useCollaboration } from '../hooks/useCollaboration';
-
 import type { CollaborationUser } from '../hooks/useCollaboration';
 
 /**

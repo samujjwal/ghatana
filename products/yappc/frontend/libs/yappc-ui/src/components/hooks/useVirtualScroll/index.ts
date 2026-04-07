@@ -26,9 +26,9 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 
+import type { VirtualScrollOptions, VirtualScrollResult, VirtualScrollState } from './types';
 import { VirtualScrollUtils } from './utils';
 
-import type { VirtualScrollOptions, VirtualScrollResult, VirtualScrollState } from './types';
 
 /**
  * Hook for efficient rendering of large lists using virtual scrolling

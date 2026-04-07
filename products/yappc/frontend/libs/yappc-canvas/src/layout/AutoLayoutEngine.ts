@@ -1,5 +1,5 @@
 /**
- * @fileoverview Auto-Layout Engine for YAPPC Canvas
+ * @file Auto-Layout Engine for YAPPC Canvas
  * Automatically arranges diagram elements using graph layout algorithms
  * 
  * @doc.type utility
@@ -53,9 +53,15 @@ export interface LayoutResult {
 // Auto Layout Engine
 // ============================================================================
 
+/**
+ *
+ */
 export class AutoLayoutEngine {
   private config: LayoutConfig;
 
+  /**
+   *
+   */
   constructor(config: LayoutConfig) {
     this.config = {
       spacing: 50,
@@ -320,6 +326,9 @@ export class AutoLayoutEngine {
   // Helper Methods
   // ============================================================================
 
+  /**
+   *
+   */
   private buildGraph(elements: LayoutElement[], edges: LayoutEdge[]): Map<string, Set<string>> {
     const graph = new Map<string, Set<string>>();
     
@@ -333,6 +342,9 @@ export class AutoLayoutEngine {
     return graph;
   }
 
+  /**
+   *
+   */
   private assignLayers(graph: Map<string, Set<string>>, elements: LayoutElement[]): string[][] {
     const layers: string[][] = [];
     const assigned = new Set<string>();
@@ -373,6 +385,9 @@ export class AutoLayoutEngine {
     return layers;
   }
 
+  /**
+   *
+   */
   private minimizeCrossings(layers: string[][], edges: LayoutEdge[]): void {
     // Simple barycenter heuristic
     for (let i = 0; i < layers.length - 1; i++) {
@@ -400,6 +415,9 @@ export class AutoLayoutEngine {
     }
   }
 
+  /**
+   *
+   */
   private buildTree(elements: LayoutElement[], edges: LayoutEdge[]): Map<string, { children: string[] }> {
     const tree = new Map<string, { children: string[] }>();
     
@@ -414,6 +432,9 @@ export class AutoLayoutEngine {
     return tree;
   }
 
+  /**
+   *
+   */
   private calculateBounds(positions: Map<string, { x: number; y: number }>, elements: LayoutElement[]): { width: number; height: number } {
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     

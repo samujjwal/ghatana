@@ -12,9 +12,9 @@
  * @doc.layer presentation
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { atom, useAtom } from 'jotai';
 import type { Node, Edge, Viewport } from '@xyflow/react';
+import { atom, useAtom } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 // Module-level atoms — one store per application, shared across hook instances
 const _nodesAtom = atom<Node[]>([]);

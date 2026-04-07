@@ -9,12 +9,13 @@
  * @doc.pattern React Component
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
 import { useAtom } from 'jotai';
+import React, { useEffect, useRef, useCallback } from 'react';
+
 import CodeEditor from '../../../code-editor/src/components/CodeEditor';
-import { ideActiveFileAtom, ideSettingsAtom } from '../state/atoms';
-import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
 import type { CodeLanguage } from '../../../code-editor/src/types';
+import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
+import { ideActiveFileAtom, ideSettingsAtom } from '../state/atoms';
 
 /**
  * Editor Panel Props
@@ -47,7 +48,7 @@ function mapLanguage(ideLanguage: string): CodeLanguage {
     xml: 'html',
   };
 
-  return (languageMap[ideLanguage.toLowerCase()] as CodeLanguage) || 'typescript';
+  return (languageMap[ideLanguage.toLowerCase()]) || 'typescript';
 }
 
 /**

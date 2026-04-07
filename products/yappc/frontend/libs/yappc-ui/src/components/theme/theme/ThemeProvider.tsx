@@ -1,6 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider as MuiThemeProvider, useMediaQuery } from '@mui/material';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { lightTheme, darkTheme } from './theme';
 

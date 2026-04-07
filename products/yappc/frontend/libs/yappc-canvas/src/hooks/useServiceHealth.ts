@@ -5,9 +5,9 @@
  * @doc.pattern Custom Hook
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 
 /**
  * Health status levels
@@ -148,10 +148,16 @@ export interface UseServiceHealthResult {
 class MockPrometheusClient {
     private config: PrometheusConfig;
 
+    /**
+     *
+     */
     constructor(config: PrometheusConfig) {
         this.config = config;
     }
 
+    /**
+     *
+     */
     async query(metricType: MetricType, nodeId: string): Promise<number> {
         // Simulate API latency
         await new Promise(resolve => setTimeout(resolve, 100));

@@ -16,11 +16,14 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import type { Node, Edge } from '@xyflow/react';
-import { AICodeGenerationService } from '../integration/aiCodeGeneration';
+import { useState, useCallback } from 'react';
+
 import type { IAIService } from '@yappc/ai/core';
+
+import { AICodeGenerationService } from '../integration/aiCodeGeneration';
+
 
 /**
  * Node type suggestions from AI

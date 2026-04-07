@@ -12,8 +12,9 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { StateManager } from '../StateManager';
+
 import { readAtomFromStorage } from '../cross-tab-sync';
+import { StateManager } from '../StateManager';
 
 // ============================================================================
 // Types

@@ -5,7 +5,6 @@
  */
 
 import { calculateThreatScore } from './state';
-
 import type { ThreatModelState, ThreatExportFormat } from './types';
 
 /**

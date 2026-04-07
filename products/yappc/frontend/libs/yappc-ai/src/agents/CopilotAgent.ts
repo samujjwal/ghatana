@@ -12,6 +12,7 @@
  */
 
 import type { AIService } from '../core/AIService';
+
 import { BaseAgent, type ProcessResult } from './BaseAgent';
 import type {
     AgentContext,
@@ -50,6 +51,9 @@ Be concise, helpful, and always explain your reasoning.`;
 export class CopilotAgent extends BaseAgent<CopilotInput, CopilotOutput> {
     private aiService: AIService;
 
+    /**
+     *
+     */
     constructor(aiService: AIService) {
         super({
             name: 'CopilotAgent',

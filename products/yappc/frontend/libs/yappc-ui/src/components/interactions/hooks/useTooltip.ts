@@ -23,7 +23,6 @@ import {
   useInteractions,
 } from '@floating-ui/react';
 import { useState, useRef, useEffect, useCallback } from 'react';
-
 import type { CSSProperties, ReactNode, RefObject } from 'react';
 
 import type { TooltipOptions, TooltipPlacement } from '../types';

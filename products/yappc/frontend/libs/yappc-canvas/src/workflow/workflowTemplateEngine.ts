@@ -22,8 +22,9 @@ import type {
     TaskExecution,
     LifecycleStage,
 } from '@ghatana/types/tasks';
+
 import {
-    LifecycleStateMachine,
+    type LifecycleStateMachine,
     createLifecycleStateMachine,
     type StageTransitionConfig,
     type LifecycleStageConfig,
@@ -142,6 +143,9 @@ export class WorkflowTemplateEngine {
     private stageConfigs: LifecycleStageConfig[];
     private transitionConfigs: StageTransitionConfig[];
 
+    /**
+     *
+     */
     constructor(
         taskRegistry: TaskRegistry,
         stageConfigs: LifecycleStageConfig[],

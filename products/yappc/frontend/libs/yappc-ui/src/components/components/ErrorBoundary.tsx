@@ -7,8 +7,8 @@
  * @module ui/components
  */
 
-import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 
 export interface ErrorBoundaryProps {
   /** Child components */
@@ -51,6 +51,9 @@ interface ErrorBoundaryState {
  * ```
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  /**
+   *
+   */
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -60,6 +63,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
+  /**
+   *
+   */
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return {
       hasError: true,
@@ -67,6 +73,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     };
   }
 
+  /**
+   *
+   */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({
       error,
@@ -91,6 +100,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     });
   };
 
+  /**
+   *
+   */
   render(): ReactNode {
     if (this.state.hasError && this.state.error) {
       // Use custom fallback if provided

@@ -8,11 +8,6 @@
  */
 
 import type {
-  GitHubAdapter,
-  JiraAdapter,
-  SonarQubeAdapter,
-} from './integration-adapter';
-import type {
   GitHubCommit,
   GitHubIntegration,
   GitHubIssue,
@@ -21,6 +16,12 @@ import type {
   JiraIntegration,
   SonarQubeIntegration,
 } from '@yappc/core/types/devsecops';
+
+import type {
+  GitHubAdapter,
+  JiraAdapter,
+  SonarQubeAdapter,
+} from './integration-adapter';
 
 
 /**

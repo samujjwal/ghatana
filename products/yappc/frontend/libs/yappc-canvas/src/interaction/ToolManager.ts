@@ -109,6 +109,9 @@ export class ToolManager {
     private listeners: Set<ToolManagerListener> = new Set();
     private context: ToolContext | null = null;
 
+    /**
+     *
+     */
     private constructor(config: Partial<ToolManagerConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
         this.state = {

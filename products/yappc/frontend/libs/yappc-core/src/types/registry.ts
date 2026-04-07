@@ -32,8 +32,8 @@
  * @doc.pattern Value Object
  */
 
-import type { z } from 'zod';
 import type React from 'react';
+import type { z } from 'zod';
 
 // ============================================================================
 // CORE REGISTRY TYPES
@@ -49,7 +49,7 @@ import type React from 'react';
  * <p><b>Thread Safety</b><br>
  * Immutable value object - thread-safe for concurrent reads.
  *
- * @typeParam T - The type of the registered value
+ * @template T - The type of the registered value
  *
  * @doc.type interface
  * @doc.purpose Generic registry entry wrapper
@@ -110,7 +110,7 @@ export interface RegistryEntryMetadata {
  * <p><b>Purpose</b><br>
  * Enables type-safe filtering of registry entries with full type information.
  *
- * @typeParam T - The type of the registered value
+ * @template T - The type of the registered value
  *
  * @doc.type type
  * @doc.purpose Registry filter predicate
@@ -125,7 +125,7 @@ export type RegistryFilter<T> = (entry: RegistryEntry<T>) => boolean;
  * <p><b>Purpose</b><br>
  * Enables type-safe sorting of registry entries.
  *
- * @typeParam T - The type of the registered value
+ * @template T - The type of the registered value
  *
  * @doc.type type
  * @doc.purpose Registry comparator

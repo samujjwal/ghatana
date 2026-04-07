@@ -1,4 +1,6 @@
 import { Shield as SecurityIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, CheckCircle as CheckCircleIcon, ChevronDown as ExpandMoreIcon, RefreshCw as RefreshIcon, Eye as VisibilityIcon, Code as CodeIcon, Image as ImageIcon, FileText as DescriptionIcon, Link as LinkIcon } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+
 import {
   Accordion,
   AccordionSummary,
@@ -25,13 +27,14 @@ import {
   InteractiveList as List,
 } from '@ghatana/design-system';
 import { ListItemSecondaryAction, Collapse } from '@ghatana/design-system';
-import { useTheme, resolveMuiColor } from '@yappc/ui';
-import React, { useState, useCallback, useMemo } from 'react';
 
-import { useSecurityAudit } from './hooks';
+import { useTheme, resolveMuiColor } from '@yappc/ui';
 
 import type { CanvasData } from '../schemas/canvas-schemas';
 import type { SecurityViolation } from '../schemas/export-schemas';
+
+import { useSecurityAudit } from './hooks';
+
 
 // Security audit panel component
 /**

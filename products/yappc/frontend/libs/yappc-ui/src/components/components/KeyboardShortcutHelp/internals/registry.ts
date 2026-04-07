@@ -3,13 +3,13 @@
  * @module KeyboardShortcutHelp/registry
  */
 
-import { DEFAULT_SHORTCUTS, ShortcutUtils } from './utils';
-
 import type {
   KeybindingAction,
   KeyboardShortcutRegistry,
   ShortcutCategory,
 } from './types';
+import { DEFAULT_SHORTCUTS, ShortcutUtils } from './utils';
+
 
 /**
  * Keyboard shortcut registry with full management capabilities

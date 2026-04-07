@@ -11,10 +11,11 @@
  * @doc.pattern Hook
  */
 
-import { useCallback } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { WritableAtom } from 'jotai';
+import { useCallback } from 'react';
+
 import {
   copilotSessionAtom,
   copilotLoadingAtom,
@@ -180,17 +181,13 @@ export function useCopilot() {
   const queryClient = useQueryClient();
 
   const [session, setSession] = useAtom(
-    copilotSessionAtom as WritableAtom<
-      CopilotSession | null,
-      [CopilotSession | null],
-      void
-    >
+    copilotSessionAtom
   );
   const setLoading = useSetAtom(
-    copilotLoadingAtom as WritableAtom<boolean, [boolean], void>
+    copilotLoadingAtom
   );
   const [error, setError] = useAtom(
-    copilotErrorAtom as WritableAtom<Error | null, [Error | null], void>
+    copilotErrorAtom
   );
   const appendMessage = useSetAtom(appendCopilotMessageAtom);
   const clearSession = useSetAtom(clearCopilotSessionAtom);
@@ -302,13 +299,13 @@ export function useCopilot() {
  */
 export function useAIInsights(projectId?: string | null) {
   const setInsights = useSetAtom(
-    aiInsightsAtom as WritableAtom<AIInsight[], [AIInsight[]], void>
+    aiInsightsAtom
   );
   const setLoading = useSetAtom(
-    aiInsightsLoadingAtom as WritableAtom<boolean, [boolean], void>
+    aiInsightsLoadingAtom
   );
   const insights = useAtomValue(
-    aiInsightsAtom as WritableAtom<AIInsight[], [AIInsight[]], void>
+    aiInsightsAtom
   );
   const dismiss = useSetAtom(dismissInsightAtom);
 
@@ -357,10 +354,10 @@ export function useAIInsights(projectId?: string | null) {
  */
 export function useAIPredictions(projectId?: string | null) {
   const setPredictions = useSetAtom(
-    aiPredictionsAtom as WritableAtom<AIPrediction[], [AIPrediction[]], void>
+    aiPredictionsAtom
   );
   const predictions = useAtomValue(
-    aiPredictionsAtom as WritableAtom<AIPrediction[], [AIPrediction[]], void>
+    aiPredictionsAtom
   );
 
   const fetchQuery = useQuery({

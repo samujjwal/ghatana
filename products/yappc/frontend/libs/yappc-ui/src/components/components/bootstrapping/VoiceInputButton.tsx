@@ -11,7 +11,6 @@
  * @doc.phase bootstrapping
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -22,11 +21,13 @@ import {
   CheckCircle2,
   Volume2,
 } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
+
 import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 
 // =============================================================================
@@ -206,7 +207,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   useEffect(() => {
     if (!isSpeechSupported) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const SpeechRecognitionConstructor = (window as unknown).SpeechRecognition || (window as unknown).webkitSpeechRecognition;
     const recognition: SpeechRecognitionType = new SpeechRecognitionConstructor();
     

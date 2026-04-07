@@ -10,10 +10,9 @@
  * - Code transformations
  */
 
-import { BaseAgent } from '../base/Agent';
-
-import type { AgentConfig, TaskResult } from '../types';
 import type { IAIService } from '../../core/index.js';
+import { BaseAgent } from '../base/Agent';
+import type { AgentConfig, TaskResult } from '../types';
 
 /**
  * Code generation input

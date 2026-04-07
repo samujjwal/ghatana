@@ -1,8 +1,9 @@
+import type { Node, Edge } from '@xyflow/react';
+
 import type {
   OperationalTransform,
   ConflictResolution,
 } from '../hooks/useAdvancedCollaboration';
-import type { Node, Edge } from '@xyflow/react';
 
 
 /**

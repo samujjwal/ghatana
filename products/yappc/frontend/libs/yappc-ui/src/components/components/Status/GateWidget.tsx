@@ -1,10 +1,11 @@
 import { ExternalLink as OpenInNew, RefreshCw as Refresh, Clock as AccessTime, Info, Hammer as Build, Bug as BugReport, CloudUpload, Shield as Security, Gauge as Speed } from 'lucide-react';
-import { Card, CardContent, Typography, Box, IconButton, Tooltip, Divider, Stack, Skeleton } from '@ghatana/design-system';
 import React from 'react';
 
-import { StatusBadge } from './StatusBadge';
+import { Card, CardContent, Typography, Box, IconButton, Tooltip, Divider, Stack, Skeleton } from '@ghatana/design-system';
+
 import { wrapForTooltip } from '../../utils/accessibility';
 
+import { StatusBadge } from './StatusBadge';
 import type { StatusType, StatusCategory } from './StatusBadge';
 
 /**
@@ -323,7 +324,7 @@ export const GateWidget = React.forwardRef<HTMLDivElement, GateWidgetProps>(
                             ))}
                             {hasMoreGates && (
                                 <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
-                                    +{gates.length - maxGates!} more
+                                    +{gates.length - maxGates} more
                                 </Typography>
                             )}
                         </Stack>
@@ -382,7 +383,7 @@ export const GateWidget = React.forwardRef<HTMLDivElement, GateWidgetProps>(
                                     <Divider />
                                     <Box className="text-center py-2">
                                         <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
-                                            +{gates.length - maxGates!} more gates
+                                            +{gates.length - maxGates} more gates
                                         </Typography>
                                     </Box>
                                 </>

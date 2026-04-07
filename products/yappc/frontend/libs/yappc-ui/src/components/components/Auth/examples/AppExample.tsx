@@ -10,10 +10,12 @@
  * @doc.pattern Application Root
  */
 
+import { Provider as JotaiProvider } from 'jotai';
 import React from 'react';
 import { RouterProvider } from 'react-router-dom';
-import { Provider as JotaiProvider } from 'jotai';
+
 import { ToastProvider } from '../../Toast';
+
 import { router } from './RouterExample';
 
 // Type augmentation for Vite environment variables

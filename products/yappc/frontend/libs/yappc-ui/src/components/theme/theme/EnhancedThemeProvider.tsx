@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
 import { CssBaseline } from '@mui/material';
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import React, { useMemo } from 'react';
 
-import { darkTheme, lightTheme } from './theme';
 import {
   LayerPriority,
   MultiLayerThemeProvider,
@@ -12,12 +11,12 @@ import {
   useThemeMode,
   useWorkspaceTheme,
 } from './MultiLayerThemeContext';
-
 import type {
   MultiLayerThemeContextValue,
   MultiLayerThemeProviderProps,
   ThemeLayer,
 } from './MultiLayerThemeContext';
+import { darkTheme, lightTheme } from './theme';
 
 function MuiThemeConnector({ children }: { children: React.ReactNode }) {
   const { mergedThemeOptions, mode } = useMultiLayerTheme();

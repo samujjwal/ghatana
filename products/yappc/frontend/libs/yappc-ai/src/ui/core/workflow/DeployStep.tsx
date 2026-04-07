@@ -10,9 +10,10 @@
  * @doc.pattern Component
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Surface as Paper, Typography, Button, LinearProgress, Alert, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Chip, Collapse, IconButton, Divider } from '@ghatana/design-system';
 import { CloudUpload as DeployIcon, CheckCircle as SuccessIcon, AlertCircle as ErrorIcon, Clock as PendingIcon, ChevronDown as ExpandIcon, ChevronUp as CollapseIcon, Gauge as SpeedIcon, Shield as SecurityIcon, Settings as ConfigIcon } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
+import { Box, Surface as Paper, Typography, Button, LinearProgress, Alert, InteractiveList as List, ListItem, ListItemIcon, ListItemText, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, Chip, Collapse, IconButton, Divider } from '@ghatana/design-system';
 
 export interface DeployStepProps {
     previewData: { previewUrl: string | null };

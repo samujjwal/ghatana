@@ -8,9 +8,11 @@
  */
 
 import React, { useState, useCallback } from 'react';
+
 import type { RequirementEditorProps, RequirementData, EditorState } from '../types';
-import { RequirementForm } from './RequirementForm';
+
 import { RequirementDetail } from './RequirementDetail';
+import { RequirementForm } from './RequirementForm';
 
 /**
  * Requirement editor component.

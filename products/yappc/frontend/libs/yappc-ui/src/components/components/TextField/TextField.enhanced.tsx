@@ -9,6 +9,8 @@
 
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { AlertCircle as ErrorIcon } from 'lucide-react';
+import React from 'react';
+
 import { TextField as BaseTextField, InputAdornment, IconButton, FormHelperText, type TextFieldProps as BaseTextFieldProps } from '@ghatana/design-system';
 import {
   borderRadiusSm,
@@ -17,7 +19,6 @@ import {
   spacingMd,
   fontSizeSm,
 } from '@ghatana/yappc-shared-ui-core/tokens';
-import React from 'react';
 
 // (types consolidated into main import above)
 

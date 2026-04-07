@@ -1,7 +1,6 @@
 import {
   createDefaultSanitizationConfig,
 } from '../schemas/export-schemas';
-
 import type {
   SanitizationConfig,
   SanitizeRequest,
@@ -9,7 +8,7 @@ import type {
 
 // We'll attempt to load the shared test DOMPurify mock only when running tests.
 // In production or when the test helper isn't available, a local fallback is used.
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /**
  *
  */
@@ -58,7 +57,7 @@ const createFallbackPurify = (): LocalPurify => {
   };
 };
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
+ 
 
 // Content Security Policy utilities
 /**
@@ -192,9 +191,9 @@ export class ContentSanitizer {
 
           const tagName = node?.tagName?.toLowerCase() || '*';
           const allowedForTag =
-            (this.config.allowedAttributes[tagName] as string[]) || [];
+            (this.config.allowedAttributes[tagName]) || [];
           const allowedGlobal =
-            (this.config.allowedAttributes['*'] as string[]) || [];
+            (this.config.allowedAttributes['*']) || [];
           const allowed = [...allowedForTag, ...allowedGlobal];
 
           if (data?.attrName && !allowed.includes(data.attrName)) {
@@ -222,7 +221,7 @@ export class ContentSanitizer {
       });
 
       return {
-        sanitized: sanitized as string,
+        sanitized: sanitized,
         removed,
         safe: removedCount === 0,
       };
@@ -370,7 +369,7 @@ export class ContentSanitizer {
     const allAttributes = new Set<string>();
     Object.values(this.config.allowedAttributes).forEach((attrs) => {
       if (Array.isArray(attrs)) {
-        (attrs as string[]).forEach((attr) => allAttributes.add(attr));
+        (attrs).forEach((attr) => allAttributes.add(attr));
       }
     });
     return Array.from(allAttributes);

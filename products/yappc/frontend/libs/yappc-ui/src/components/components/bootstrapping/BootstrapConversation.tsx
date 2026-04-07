@@ -12,9 +12,8 @@
  * @doc.reuses AIChatInterface
  */
 
-import React, { useCallback, useMemo } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion } from 'framer-motion';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Sparkles,
   FileText,
@@ -24,19 +23,14 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import React, { useCallback, useMemo } from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@yappc/ui';
+
 
 // Reuse existing chat component
-import { AIChatInterface } from '../chat/AIChatInterface';
 
 // Import bootstrapping state
 import type {
@@ -55,6 +49,14 @@ import {
   inputModeAtom,
   confidenceScoreAtom,
 } from '@yappc/canvas';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@yappc/ui';
+
+import { AIChatInterface } from '../chat/AIChatInterface';
 
 // =============================================================================
 // Types

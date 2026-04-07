@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
 import { detectPlatform } from './platform';
-
 import type { Platform } from './platform';
 
 /**

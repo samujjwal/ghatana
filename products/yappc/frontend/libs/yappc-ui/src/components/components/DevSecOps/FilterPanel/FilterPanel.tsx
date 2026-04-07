@@ -7,16 +7,18 @@
  * @module DevSecOps/FilterPanel
  */
 
+import { Accordion, AccordionDetails, AccordionSummary, FormGroup } from '@mui/material';
 import { XCircle as ClearIcon } from 'lucide-react';
 import { X as CloseIcon } from 'lucide-react';
 import { ChevronDown as ExpandMoreIcon } from 'lucide-react';
 import { Filter as FilterListIcon } from 'lucide-react';
-import { Box, Button, Checkbox, Chip, Drawer, FormControlLabel, IconButton, Surface as Paper, Stack, Typography } from '@ghatana/design-system';
-import { Accordion, AccordionDetails, AccordionSummary, FormGroup } from '@mui/material';
 import { useState } from 'react';
 
-import type { FilterPanelProps } from './types';
+import { Box, Button, Checkbox, Chip, Drawer, FormControlLabel, IconButton, Surface as Paper, Stack, Typography } from '@ghatana/design-system';
+
 import type { ItemStatus, Priority } from '@yappc/core/types/devsecops';
+
+import type { FilterPanelProps } from './types';
 
 
 const STATUS_OPTIONS: ItemStatus[] = [

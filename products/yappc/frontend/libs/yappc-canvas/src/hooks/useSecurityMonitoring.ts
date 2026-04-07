@@ -16,9 +16,10 @@
  * @doc.pattern Hook
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNodes } from '@xyflow/react';
 import type { Node } from '@xyflow/react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+
 import type { IAIService } from '@yappc/ai/core';
 
 /**

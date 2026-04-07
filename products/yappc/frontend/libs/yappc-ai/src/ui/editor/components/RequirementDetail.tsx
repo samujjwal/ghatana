@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+
 import type { RequirementDetailProps } from '../types';
 
 /**

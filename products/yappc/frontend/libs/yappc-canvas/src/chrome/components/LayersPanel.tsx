@@ -5,13 +5,14 @@
  * @doc.pattern Panel Component
  */
 
+import type { Node } from '@xyflow/react';
 import { Eye as VisibleIcon, EyeOff as HiddenIcon, Lock as LockIcon, LockOpen as UnlockIcon, GripVertical as DragIcon, ChevronDown as ExpandIcon, ChevronRight as CollapseIcon, StickyNote as StickyIcon, NotebookText as TextIcon, Square as ShapeIcon, ArrowRight as ConnectorIcon } from 'lucide-react';
-import { Box, Typography, InteractiveList as List, ListItem, ListItemButton, ListItemText, IconButton, Collapse, Tooltip } from '@ghatana/design-system';
 import React, { useMemo, useState } from 'react';
+
+import { Box, Typography, InteractiveList as List, ListItem, ListItemButton, ListItemText, IconButton, Collapse, Tooltip } from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-import type { Node } from '@xyflow/react';
 
 /**
  *

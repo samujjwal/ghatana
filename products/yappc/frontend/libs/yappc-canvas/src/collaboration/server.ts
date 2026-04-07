@@ -4,7 +4,6 @@ import {
   ShareToken,
   UserPermission,
 } from '../schemas/permission-schemas';
-
 import type {
   UserRole,
   PermissionScope} from '../schemas/permission-schemas';

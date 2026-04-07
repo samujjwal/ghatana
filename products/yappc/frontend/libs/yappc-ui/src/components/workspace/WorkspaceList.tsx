@@ -9,10 +9,13 @@
  * @doc.pattern Presentational Component
  */
 
-import React from 'react';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
-import { WorkspaceCard } from './WorkspaceCard';
+import React from 'react';
+
 import type { Workspace } from '@yappc/core/types';
+
+import { WorkspaceCard } from './WorkspaceCard';
+
 
 export interface WorkspaceListProps {
     workspaces: Workspace[];

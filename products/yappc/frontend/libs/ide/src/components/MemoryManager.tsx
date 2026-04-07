@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+
 import { InteractiveButton } from './MicroInteractions';
 
 /**
@@ -58,6 +59,9 @@ class MemoryMonitor {
   private history: Array<{ timestamp: number; usage: number }> = [];
   private maxHistorySize = 100;
 
+  /**
+   *
+   */
   record(): number {
     if (!performance.memory) return 0;
 
@@ -74,6 +78,9 @@ class MemoryMonitor {
     return usage;
   }
 
+  /**
+   *
+   */
   getTrend(): 'increasing' | 'decreasing' | 'stable' {
     if (this.history.length < 10) return 'stable';
 
@@ -88,12 +95,18 @@ class MemoryMonitor {
     return 'stable';
   }
 
+  /**
+   *
+   */
   getAverage(): number {
     if (this.history.length === 0) return 0;
     const sum = this.history.reduce((acc, entry) => acc + entry.usage, 0);
     return sum / this.history.length;
   }
 
+  /**
+   *
+   */
   clear(): void {
     this.history = [];
   }

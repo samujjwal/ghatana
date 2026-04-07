@@ -25,14 +25,16 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Box, Surface as Paper, Stack, Typography, Chip, LinearProgress } from '@ghatana/design-system';
 import { useMemo, useState } from 'react';
 
+import { Box, Surface as Paper, Stack, Typography, Chip, LinearProgress } from '@ghatana/design-system';
+
+
+import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 import { ItemCard } from '../ItemCard';
 
 import type { KanbanBoardProps, KanbanColumn } from './types';
-import type { Item, ItemStatus } from '@yappc/core/types/devsecops';
 
 /**
  * Default column configuration

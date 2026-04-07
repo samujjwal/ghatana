@@ -160,6 +160,9 @@ export class AuthService {
   private onTokenExpired?: () => void;
   private onUnauthorized?: () => void;
   
+  /**
+   *
+   */
   constructor(config: AuthServiceConfig = {}) {
     this.baseUrl = resolveApiBaseUrl(config.baseUrl);
     this.timeout = config.timeout || 30000;

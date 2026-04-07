@@ -11,9 +11,10 @@
  * @doc.pattern Hook
  */
 
-import { useCallback } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback } from 'react';
+
 import {
   projectsAtom,
   currentProjectIdAtom,
@@ -181,7 +182,7 @@ export function useProject(workspaceId: string | null) {
         const data = await gqlFetch<{ projects: unknown[] }>(PROJECTS_QUERY, {
           workspaceId,
         });
-        setProjects(data.projects as unknown[]);
+        setProjects(data.projects);
         return data.projects;
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));

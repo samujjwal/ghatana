@@ -8,9 +8,11 @@
  * - Context-aware recommendations
  */
 
+import { useAtom } from 'jotai';
+import { LayoutDashboard as DashboardIcon, GitBranch as WorkflowIcon, Shield as SecurityIcon, Code as CodeIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, User as PersonaIcon, Activity as PhaseIcon, Settings as ConfigIcon, RefreshCw as RefreshIcon } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAtom } from 'jotai';
+
 import {
   Box,
   Card,
@@ -32,9 +34,18 @@ import {
   InputLabel,
 } from '@ghatana/design-system';
 import { MenuItem } from '@ghatana/design-system';
-import { LayoutDashboard as DashboardIcon, GitBranch as WorkflowIcon, Shield as SecurityIcon, Code as CodeIcon, Gauge as PerformanceIcon, ClipboardList as TaskIcon, User as PersonaIcon, Activity as PhaseIcon, Settings as ConfigIcon, RefreshCw as RefreshIcon } from 'lucide-react';
+
 
 // Config hooks and state
+import type { PersonaType } from '@yappc/core/types/devsecops';
+import {
+    configViewModeAtom,
+    selectedDomainIdAtom,
+    selectedPhaseIdAtom,
+    selectedWorkflowIdAtom
+} from '@yappc/state';
+import { usePersonas } from '@yappc/state/config-hooks';
+
 import {
     useTaskDomains,
     useWorkflows,
@@ -43,16 +54,9 @@ import {
     useAllTasks,
     useConfigRefresh
 } from '../../hooks/useConfig';
-import {
-    configViewModeAtom,
-    selectedDomainIdAtom,
-    selectedPhaseIdAtom,
-    selectedWorkflowIdAtom
-} from '@yappc/state';
 
 // DevSecOps persona integration - use canonical types and hook
-import type { PersonaType } from '@yappc/core/types/devsecops';
-import { usePersonas } from '@yappc/state/config-hooks';
+
 import { getPersonaDashboard } from './persona-configs';
 
 // Domain icons mapping

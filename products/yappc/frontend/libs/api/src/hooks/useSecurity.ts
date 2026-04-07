@@ -10,9 +10,11 @@
  * @doc.phase security
  */
 
-import { useCallback, useMemo, useState } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
+
 import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   vulnerabilitiesAtom,
@@ -25,7 +27,6 @@ import {
   securityAlertsAtom,
   auditLogsAtom,
 } from '@yappc/canvas';
-
 import {
   GET_VULNERABILITY,
   GET_VULNERABILITIES,

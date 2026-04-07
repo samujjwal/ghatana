@@ -11,6 +11,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+
 import type { CommandPaletteProps } from '../hooks/useKeyboardShortcuts';
 
 /**

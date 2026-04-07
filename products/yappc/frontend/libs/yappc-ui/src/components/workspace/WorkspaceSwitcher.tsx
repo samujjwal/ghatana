@@ -10,7 +10,6 @@
  * @doc.pattern Presentational Component
  */
 
-import React, { useState } from 'react';
 import {
     Box,
     Button,
@@ -25,6 +24,7 @@ import {
     Plus as PlusIcon,
     Check as CheckIcon,
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 import type { Workspace } from '@yappc/core/types';
 

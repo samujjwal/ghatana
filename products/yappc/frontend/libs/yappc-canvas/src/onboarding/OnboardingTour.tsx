@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+
 import { CANVAS_Z_INDEX } from '../config/z-index';
 
 /**
@@ -251,7 +252,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
     }
 
     const padding = 16;
-    let style: React.CSSProperties = { position: 'fixed' };
+    const style: React.CSSProperties = { position: 'fixed' };
 
     switch (step.placement) {
       case 'top':

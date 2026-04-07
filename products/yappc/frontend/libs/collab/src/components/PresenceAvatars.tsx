@@ -5,10 +5,13 @@
  * collaborative session with their status indicators.
  */
 
-import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PresenceUser, PresenceState } from '../PresenceManager';
+import React, { useMemo } from 'react';
+
 import { cn } from '@ghatana/design-system';
+
+import { type PresenceUser, type PresenceState } from '../PresenceManager';
+
 
 // =============================================================================
 // Types

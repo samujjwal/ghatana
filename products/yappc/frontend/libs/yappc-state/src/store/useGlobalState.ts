@@ -45,13 +45,12 @@
  */
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import type { WritableAtom } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { useCallback } from 'react';
 
 import { StateManager } from './StateManager';
-
 import type { AtomKey } from './StateManager';
-import type { WritableAtom } from 'jotai';
 
 // ============================================================================
 // Main Global State Hook

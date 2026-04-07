@@ -9,8 +9,9 @@
  * @doc.layer canvas/renderer
  */
 
-import type { UniversalNode, UniqueId, ArtifactContract } from '../model/contracts';
 import type { ReactNode, MouseEvent } from 'react';
+
+import type { UniversalNode, UniqueId, ArtifactContract } from '../model/contracts';
 
 /**
  * Selection state for canvas nodes

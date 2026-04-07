@@ -165,6 +165,9 @@ export class CanvasTelemetry {
   }> = [];
   private flushTimer?: NodeJS.Timeout;
 
+  /**
+   *
+   */
   constructor(config: Partial<TelemetryConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
 

@@ -11,6 +11,7 @@
  */
 
 import { nanoid } from 'nanoid';
+
 import type {
     Command,
     CommandMeta,
@@ -71,6 +72,9 @@ export class CommandDispatcher implements ICommandDispatcher {
     private isExecuting = false;
     private sessionId: string;
 
+    /**
+     *
+     */
     private constructor(config: Partial<CommandDispatcherConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
         this.sessionId = nanoid();
@@ -145,7 +149,7 @@ export class CommandDispatcher implements ICommandDispatcher {
                     processedCommand.canMerge(lastCommand)
                 ) {
                     // Merge and replace last command
-                    const merged = processedCommand.merge(lastCommand) as Command<unknown, T>;
+                    const merged = processedCommand.merge(lastCommand);
                     this.undoStack[this.undoStack.length - 1] = merged;
                     processedCommand = merged;
                 }
@@ -180,16 +184,16 @@ export class CommandDispatcher implements ICommandDispatcher {
             }
 
             // Notify listeners
-            this.notifyListeners(processedCommand, result as CommandResult<T>);
+            this.notifyListeners(processedCommand, result);
 
             // Run after interceptors
             for (const interceptor of this.getSortedInterceptors()) {
                 if (interceptor.after) {
-                    interceptor.after(processedCommand, result as CommandResult<T>);
+                    interceptor.after(processedCommand, result);
                 }
             }
 
-            return result as CommandResult<T>;
+            return result;
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error during execution';

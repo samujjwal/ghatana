@@ -6,10 +6,13 @@
  * @module notifications/components
  */
 
-import React, { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-import { NotificationPanel } from './NotificationPanel';
+import React, { useState, useRef, useEffect } from 'react';
+
 import type { Notification } from '../hooks/useNotificationBackend';
+
+import { NotificationPanel } from './NotificationPanel';
+
 
 export interface NotificationBellProps {
   notifications: Notification[];

@@ -7,7 +7,6 @@
 import { useState, useEffect } from 'react';
 
 import { getMarketplaceManager } from '../marketplaceManager';
-
 import type { InstallationProgress as Progress } from '../marketplaceTypes';
 
 /**

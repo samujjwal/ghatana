@@ -16,12 +16,13 @@ import React, {
     useCallback,
     type ReactNode,
 } from 'react';
+
+import type { UpdatePropsPayload, UpdateStylePayload } from '../commands/CommandTypes';
 import type {
     UniversalNode,
     ArtifactContract,
     SchemaDefinition,
 } from '../model/contracts';
-import type { UpdatePropsPayload, UpdateStylePayload } from '../commands/CommandTypes';
 
 // ============================================================================
 // Inspector Types
@@ -149,7 +150,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         });
 
         allKeys.forEach((key) => {
-            const values = selectedNodes.map((n) => (n.style as Record<string, unknown>)[key]);
+            const values = selectedNodes.map((n) => (n.style)[key]);
             const firstValue = values[0];
             const isMixed = values.some(
                 (v) => JSON.stringify(v) !== JSON.stringify(firstValue)

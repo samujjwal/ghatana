@@ -9,7 +9,7 @@
  */
 
 import {
-  AepConfig,
+  type AepConfig,
   AepMode,
   getAepConfig,
   validateAepConfig,
@@ -59,6 +59,9 @@ class AepLibraryClient implements AepClient {
   private ready = false;
   private cache = new Map<string, unknown>();
 
+  /**
+   *
+   */
   constructor(config: AepConfig) {
     this.config = config;
   }
@@ -196,6 +199,9 @@ class AepServiceClient implements AepClient {
   private serviceUrl: string;
   private healthCheckInterval: NodeJS.Timeout | null = null;
 
+  /**
+   *
+   */
   constructor(config: AepConfig) {
     this.config = config;
     const { host, port } = config.service!;
@@ -229,6 +235,9 @@ class AepServiceClient implements AepClient {
     }
   }
 
+  /**
+   *
+   */
   private startHealthChecks(): void {
     const interval = this.config.service?.healthCheckInterval || 30000;
     this.healthCheckInterval = setInterval(async () => {
@@ -353,6 +362,9 @@ class AepServiceClient implements AepClient {
     }
   }
 
+  /**
+   *
+   */
   private async fetch(
     path: string,
     options: RequestInit = {}

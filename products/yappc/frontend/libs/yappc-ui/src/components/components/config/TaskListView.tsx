@@ -9,11 +9,12 @@
  * @doc.layer ui
  */
 
+import { useAtom } from 'jotai';
 import React, { Suspense } from 'react';
 
 import { Box, Card, CardContent, Typography, Stack, Chip, Skeleton } from '@ghatana/design-system';
+
 import { selectedDomainIdAtom } from '@yappc/state';
-import { useAtom } from 'jotai';
 
 import { useDomainById } from '../../hooks/useConfig';
 

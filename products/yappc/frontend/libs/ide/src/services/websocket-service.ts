@@ -12,8 +12,8 @@
 
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { CRDTOperation } from '../../../crdt-ide/src';
 
+import type { CRDTOperation } from '../../../crdt-ide/src';
 import type { IDECRDTState } from '../crdt/ide-schema';
 import { createInitialIDEState } from '../crdt/ide-schema';
 
@@ -76,6 +76,9 @@ export class WebSocketService {
   private operationQueue: CRDTOperation[] = [];
   private isProcessingQueue = false;
 
+  /**
+   *
+   */
   addEventListener<T extends keyof WebSocketServiceEvents>(
     event: T,
     listener: WebSocketServiceEvents[T]
@@ -86,6 +89,9 @@ export class WebSocketService {
     }
   }
 
+  /**
+   *
+   */
   constructor(config: WebSocketServiceConfig) {
     this.config = {
       connectionTimeout: 10000,

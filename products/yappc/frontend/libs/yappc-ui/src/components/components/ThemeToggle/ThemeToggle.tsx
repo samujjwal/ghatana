@@ -1,6 +1,7 @@
+import type { CSSProperties } from 'react';
+
 import { useTheme } from '../../theme/ThemeContext';
 
-import type { CSSProperties } from 'react';
 
 /**
  *

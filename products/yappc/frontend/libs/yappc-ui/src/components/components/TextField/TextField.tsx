@@ -1,5 +1,6 @@
-import { TextField as BaseTextField, IconButton } from '@ghatana/design-system';
 import React from 'react';
+
+import { TextField as BaseTextField, IconButton } from '@ghatana/design-system';
 
 import { borderRadius } from '../../tokens';
 

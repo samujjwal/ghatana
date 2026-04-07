@@ -9,9 +9,10 @@
  * @doc.purpose Real-time canvas collaboration with backend
  */
 
-import { useEffect, useCallback, useRef, useState } from 'react';
-import { WebSocketClient } from '@yappc/ai/realtime';
 import type { Node, Edge } from '@xyflow/react';
+import { useEffect, useCallback, useRef, useState } from 'react';
+
+import { type WebSocketClient } from '@yappc/ai/realtime';
 
 /**
  * Canvas collaboration message payloads matching backend handler

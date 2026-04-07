@@ -25,7 +25,7 @@ import type {
  * Note: This function is intentionally large (394 lines) to keep all selection logic
  * in one place. Type definitions have been extracted to types.ts for better maintainability.
  */
-// eslint-disable-next-line max-lines-per-function
+ 
 export function useSelection<T extends SelectionItem>({
   items,
   selectedIds: controlledSelectedIds,

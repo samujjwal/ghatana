@@ -7,9 +7,10 @@
  * @module chat/components
  */
 
-import React, { useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { MoreVertical, Reply, Smile, Check, CheckCheck } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+
 import type { ChatMessage as ChatMessageType, ChatReaction } from '../hooks/useChatBackend';
 
 export interface ChatMessageProps {

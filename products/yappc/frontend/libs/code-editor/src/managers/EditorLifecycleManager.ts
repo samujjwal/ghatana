@@ -17,8 +17,8 @@
  * @doc.pattern Manager
  */
 
-import type { editor } from 'monaco-editor';
 import type { Monaco } from '@monaco-editor/react';
+import type { editor } from 'monaco-editor';
 import * as Y from 'yjs';
 
 import type { EditorInstance, EditorMetrics } from '../components/EnhancedCodeEditor';

@@ -14,8 +14,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type * as Y from 'yjs';
 
-import { IntegratedUIBuilder } from './IntegratedUIBuilder';
 import { useUIBuilderSync } from '../hooks/useBidirectionalSync';
+
+import { IntegratedUIBuilder } from './IntegratedUIBuilder';
 import type { UIComponent } from './IntegratedUIBuilder';
 
 /**

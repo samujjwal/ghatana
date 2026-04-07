@@ -7,8 +7,15 @@
  * @module ui/workflows
  */
 
-import React, { useMemo, useCallback, useState } from 'react';
 import { useAtomValue } from 'jotai';
+import React, { useMemo, useCallback, useState } from 'react';
+
+import {
+    allWorkflowsAtom,
+    workflowByIdAtom,
+    workflowsByCategoryAtom,
+    taskByIdAtom,
+} from '@ghatana/state/tasks/taskRegistryStore';
 import type {
     WorkflowDefinition,
     WorkflowPhase,
@@ -18,12 +25,7 @@ import type {
     LifecycleStage,
     TaskDefinition,
 } from '@ghatana/types/tasks';
-import {
-    allWorkflowsAtom,
-    workflowByIdAtom,
-    workflowsByCategoryAtom,
-    taskByIdAtom,
-} from '@ghatana/state/tasks/taskRegistryStore';
+
 import { LifecycleStageBadge, LifecycleStageTimeline } from './TaskComponents';
 
 // ============================================================================

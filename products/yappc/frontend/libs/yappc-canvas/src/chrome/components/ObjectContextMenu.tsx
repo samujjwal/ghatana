@@ -17,15 +17,16 @@
  * @doc.pattern Context Menu
  */
 
-import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, BringToFront as BringToFrontIcon, SendToBack as SendToBackIcon, Users as GroupIcon, Ungroup as UngroupIcon, Pencil as EditIcon, Eye as ShowIcon, EyeOff as HideIcon, Search as SearchIcon, History as HistoryIcon } from 'lucide-react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Box, Typography, Input as InputBase } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
+import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, BringToFront as BringToFrontIcon, SendToBack as SendToBackIcon, Users as GroupIcon, Ungroup as UngroupIcon, Pencil as EditIcon, Eye as ShowIcon, EyeOff as HideIcon, Search as SearchIcon, History as HistoryIcon } from 'lucide-react';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
+import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Box, Typography, Input as InputBase } from '@ghatana/design-system';
+
+import type { ContextAction } from '../lib/actions/ContextActionsManager';
 import { chromeRecentActionsAtom, addRecentActionAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-import type { ContextAction } from '../lib/actions/ContextActionsManager';
 
 const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS } = CANVAS_TOKENS;
 

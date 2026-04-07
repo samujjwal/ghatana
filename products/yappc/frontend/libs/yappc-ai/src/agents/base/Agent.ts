@@ -9,6 +9,8 @@
  * - Lifecycle management
  */
 
+import type { IAIService } from '../../core/index.js';
+
 import type {
   IAgent,
   AgentConfig,
@@ -22,7 +24,6 @@ import type {
   AgentCapability,
   TaskPriority,
 } from './types';
-import type { IAIService } from '../../core/index.js';
 
 /**
  * Abstract base agent class

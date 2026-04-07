@@ -16,9 +16,10 @@
  * @doc.pattern Layout
  */
 
-import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 import { useAtom } from 'jotai';
 import React, { useEffect, type ReactNode } from 'react';
+
+import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 
 import {
   chromeCalmModeAtom,

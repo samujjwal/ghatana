@@ -10,9 +10,11 @@
  */
 
 import React, { useState, useCallback } from 'react';
+
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
-import { InteractiveButton } from './MicroInteractions';
 import type { BulkOperation } from '../hooks/useAdvancedFileOperations';
+
+import { InteractiveButton } from './MicroInteractions';
 
 /**
  * Bulk Operations Toolbar Props

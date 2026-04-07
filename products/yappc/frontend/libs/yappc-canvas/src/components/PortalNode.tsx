@@ -1,5 +1,8 @@
-import { ExternalLink as Launch, SubdirectoryArrowRight, SubdirectoryArrowLeft, Eye as Visibility, Settings, Image as ImageIcon } from 'lucide-react';
 import { Handle, Position } from '@xyflow/react';
+import type { NodeProps } from '@xyflow/react';
+import { ExternalLink as Launch, SubdirectoryArrowRight, SubdirectoryArrowLeft, Eye as Visibility, Settings, Image as ImageIcon } from 'lucide-react';
+import React, { memo, useState } from 'react';
+
 import {
   Box,
   Card,
@@ -11,10 +14,9 @@ import {
   Avatar,
   Stack,
 } from '@ghatana/design-system';
-import { alpha, useTheme, resolveMuiColor } from '@yappc/ui';
-import React, { memo, useState } from 'react';
 
-import type { NodeProps } from '@xyflow/react';
+import { alpha, useTheme, resolveMuiColor } from '@yappc/ui';
+
 
 /**
  *

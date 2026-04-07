@@ -7,10 +7,11 @@
  */
 
 import { CheckCircle as CheckCircleIcon } from 'lucide-react';
+import type React from 'react';
+
 import { Chip, Stack } from '@ghatana/design-system';
 
 import type { PhaseNavProps } from './types';
-import type React from 'react';
 
 /**
  * PhaseNav - Phase navigation pills

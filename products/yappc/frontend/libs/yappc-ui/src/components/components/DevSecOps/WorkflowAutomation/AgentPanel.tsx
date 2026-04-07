@@ -10,22 +10,23 @@
  * @doc.pattern React Component
  */
 
-import React, { useState } from 'react';
-import { Box, Card, CardContent, Typography, Chip, IconButton, Button, Tooltip, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Divider, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert } from '@ghatana/design-system';
 import { Bot as AgentIcon, Play as ExecuteIcon, Settings as SettingsIcon, TrendingUp as PerformanceIcon, History as HistoryIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Box, Card, CardContent, Typography, Chip, IconButton, Button, Tooltip, InteractiveList as List, ListItem, ListItemText, ListItemText as ListItemSecondaryAction, Divider, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, FormControl, InputLabel, Alert } from '@ghatana/design-system';
 
 import {
     useAgents,
     useAgentExecution,
     useWorkflowAnalytics,
 } from '@yappc/canvas';
+import type { Item } from '@yappc/core/types/devsecops';
 import type {
     WorkflowAgent,
     WorkflowAgentRole,
     AgentExecutionResult,
     AgentCapability,
 } from '@yappc/core/types/devsecops/workflow-automation';
-import type { Item } from '@yappc/core/types/devsecops';
 
 // ============================================================================
 // TYPES
@@ -384,7 +385,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
                     </Alert>
                 )}
 
-                {(Object.entries(agentsByRole) as [string, WorkflowAgent[]][]).map(([role, roleAgents]) => (
+                {(Object.entries(agentsByRole)).map(([role, roleAgents]) => (
                     <Box key={role} className="mb-6">
                         <Typography as="p" className="text-sm font-medium" color="text.secondary" className="mb-2">
                             {role.replace('-', ' ').toUpperCase()}

@@ -1,9 +1,10 @@
-import { InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, Divider, Box } from '@ghatana/design-system';
 import React from 'react';
 
-import { SUGGESTION_LABELS } from './SmartSuggestions/utils';
+import { InteractiveList as List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, Divider, Box } from '@ghatana/design-system';
 
 import type { Suggestion, SuggestionType } from './SmartSuggestions/types';
+import { SUGGESTION_LABELS } from './SmartSuggestions/utils';
+
 
 
 /**
@@ -24,7 +25,7 @@ export const SuggestionList: React.FC<Props> = ({
     onClick,
     showConfidence = true,
 }) => {
-    const getSuggestionLabel = (t: SuggestionType) => SUGGESTION_LABELS[t as SuggestionType] ?? String(t);
+    const getSuggestionLabel = (t: SuggestionType) => SUGGESTION_LABELS[t] ?? String(t);
 
     // build groups from suggestions to avoid dynamic object indexing
     const groups = suggestions.reduce((acc: { type: SuggestionType; items: Suggestion[] }[], s) => {

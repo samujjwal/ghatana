@@ -16,7 +16,9 @@ import React, {
     type ReactNode,
     type MouseEvent,
 } from 'react';
+
 import type { UniversalNode, UniqueId, ArtifactContract } from '../model/contracts';
+
 import { NodeWrapper } from './NodeWrapper';
 import type { SelectionState, NodeRenderState, CanvasSurfaceProps } from './types';
 

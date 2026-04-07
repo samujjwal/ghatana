@@ -1,6 +1,7 @@
 import { CheckCircle, AlertCircle as ErrorOutline, AlertTriangle as Warning, Hourglass as HourglassEmpty, HelpCircle as Help, XCircle as Cancel, Hammer as BuildIcon, Play as RunIcon, CloudUpload as DeployIcon, Shield as SecurityIcon } from 'lucide-react';
-import { Chip, Tooltip, type ChipProps } from '@ghatana/design-system';
 import React from 'react';
+
+import { Chip, Tooltip, type ChipProps } from '@ghatana/design-system';
 
 import { wrapForTooltip } from '../../utils/accessibility';
 

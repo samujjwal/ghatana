@@ -9,7 +9,6 @@ import React, { useState, useEffect } from 'react';
 import {
   accessibilityAuditor,
 } from '../utils/AccessibilityAuditor';
-
 import type {
   AccessibilityReport} from '../utils/AccessibilityAuditor';
 

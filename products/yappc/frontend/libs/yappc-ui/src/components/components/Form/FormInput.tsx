@@ -1,7 +1,7 @@
-import { FormField } from './FormField';
 import { Input } from '../Input/Input';
-
 import type { InputProps } from '../Input/Input';
+
+import { FormField } from './FormField';
 
 /**
  *

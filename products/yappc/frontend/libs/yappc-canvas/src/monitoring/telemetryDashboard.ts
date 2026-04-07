@@ -796,7 +796,7 @@ function collectWebVitals(): WebVitals {
   // TTFB
   const navigationEntries = performance.getEntriesByType('navigation');
   if (navigationEntries.length > 0) {
-    const nav = navigationEntries[0] as PerformanceNavigationTiming;
+    const nav = navigationEntries[0];
     vitals.ttfb = nav.responseStart - nav.requestStart;
   }
 
