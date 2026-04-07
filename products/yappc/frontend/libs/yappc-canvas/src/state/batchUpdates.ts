@@ -368,7 +368,23 @@ export const DEFAULT_WORKER_CONFIG: Required<
  * });
  * ```
  */
-export function useWorkerOffload(config: WorkerConfig = {}) {
+/**
+ * Return type for useWorkerOffload hook
+ */
+export interface UseWorkerOffloadReturn {
+  offloadComputation: <T, R>(data: T, computeFn: (data: T) => R) => Promise<R>;
+  isSupported: boolean;
+  terminate: () => void;
+  getStats: () => {
+    isActive: boolean;
+    activeTasks: number;
+    queuedTasks: number;
+    runningTasks: number;
+    maxConcurrent: number;
+  };
+}
+
+export function useWorkerOffload(config: WorkerConfig = {}): UseWorkerOffloadReturn {
   /**
    * Check if Web Workers are supported
    */

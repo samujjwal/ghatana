@@ -28,7 +28,14 @@ export type {
  * error('Upload failed');
  * ```
  */
-export function useToastNotifications() {
+export interface UseToastNotificationsReturn {
+  success: (message: string, duration?: number) => void;
+  error: (message: string, duration?: number) => void;
+  warning: (message: string, duration?: number) => void;
+  info: (message: string, duration?: number) => void;
+}
+
+export function useToastNotifications(): UseToastNotificationsReturn {
   const { addToast } = useToast();
 
   return {

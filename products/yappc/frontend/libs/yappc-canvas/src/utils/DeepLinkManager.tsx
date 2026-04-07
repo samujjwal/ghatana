@@ -68,7 +68,18 @@ export function generateDeepLink(
 /**
  * Hook for deep link management
  */
-export function useDeepLink(config: DeepLinkConfig = {}) {
+/**
+ * Return type for useDeepLink hook
+ */
+export interface UseDeepLinkReturn {
+  currentParams: DeepLinkParams;
+  navigateToDeepLink: (params: DeepLinkParams) => void;
+  updateDeepLink: (params: Partial<DeepLinkParams>) => void;
+  generateShareableLink: () => string;
+  copyLinkToClipboard: () => Promise<boolean>;
+}
+
+export function useDeepLink(config: DeepLinkConfig = {}): UseDeepLinkReturn {
   const location = useLocation();
   const navigate = useNavigate();
   const { basePath = '/canvas', onNavigate, onInvalidLink } = config;
