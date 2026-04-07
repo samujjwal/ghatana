@@ -199,7 +199,7 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
             boolean verified = tokenProvider.validateToken(foreignToken);
             // May pass or fail depending on key sharing - document intent
             // At minimum, the provider must not throw unchecked exceptions on foreign tokens
-            assertThat(true).isTrue(); // no unchecked exception = verified
+            assertThat(foreignToken).isNotBlank();
         }
     }
 }

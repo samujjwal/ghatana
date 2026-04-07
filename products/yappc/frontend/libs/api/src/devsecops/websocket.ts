@@ -93,7 +93,7 @@ export class DevSecOpsWebSocket {
         this.startMockUpdates();
         resolve();
       } catch (error) {
-        reject(error);
+        reject(error instanceof Error ? error : new Error('WebSocket connection failed'));
       }
     });
   }
@@ -171,8 +171,19 @@ export class DevSecOpsWebSocket {
    */
   private handleMessage(message: string): void {
     try {
-      const event = JSON.parse(message);
-      this.emit(event.type, event.data);
+      const event: unknown = JSON.parse(message);
+      if (
+        typeof event === 'object' &&
+        event !== null &&
+        'type' in event &&
+        'data' in event
+      ) {
+        const parsedEvent = event as {
+          type: WebSocketEventType;
+          data: Record<string, unknown>;
+        };
+        this.emit(parsedEvent.type, parsedEvent.data);
+      }
     } catch (error) {
       console.warn('[WebSocket] Failed to parse message:', error);
     }

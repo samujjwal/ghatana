@@ -170,6 +170,8 @@ export function useAIInsights(
 
   const predictBuildTime = useCallback(
     async (context: Record<string, unknown>): Promise<BuildTimePrediction> => {
+      await Promise.resolve();
+
       const historicalData = getMetricHistory('buildTime', '7d');
       if (historicalData.length < 3) {
         return {
@@ -228,6 +230,8 @@ export function useAIInsights(
     async (
       context: Record<string, unknown>
     ): Promise<DeploymentRiskAssessment> => {
+      await Promise.resolve();
+
       let riskScore = 0;
       const riskFactors: DeploymentRiskAssessment['riskFactors'] = [];
       const recommendationsArr: string[] = [];
@@ -327,6 +331,8 @@ export function useAIInsights(
   );
 
   const implementRecommendation = useCallback(async (id: string) => {
+    await Promise.resolve();
+
     setRecommendations((prev) =>
       prev.map((rec) => (rec.id === id ? { ...rec, priority: 'low' } : rec))
     );
@@ -442,6 +448,8 @@ export function useAIInsights(
 
   const trainModel = useCallback(
     async (modelId: string, data: PerformanceMetric[]) => {
+      await Promise.resolve();
+
       setIsTraining(true);
       try {
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -457,8 +465,10 @@ export function useAIInsights(
 
   useEffect(() => {
     if (!analysisInterval) return;
-    const interval = setInterval(runAnalysis, analysisInterval);
-    runAnalysis();
+    const interval = setInterval(() => {
+      void runAnalysis();
+    }, analysisInterval);
+    void runAnalysis();
     return () => clearInterval(interval);
   }, [runAnalysis, analysisInterval]);
 

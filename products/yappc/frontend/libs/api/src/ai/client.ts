@@ -158,6 +158,11 @@ export interface RagResponse {
 export class AIClient {
     private baseUrl: string;
     private cache = new Map<string, { data: unknown; timestamp: number }>();
+
+    private async parseJson<T>(response: Response): Promise<T> {
+        const data: unknown = await response.json();
+        return data as T;
+    }
     private readonly cacheTTL = 30000; // 30 seconds
 
     constructor(baseUrl = '/api/ai') {
@@ -188,7 +193,7 @@ export class AIClient {
             throw new Error(`Failed to fetch insights: ${response.statusText}`);
         }
 
-        const insights = await response.json();
+        const insights = await this.parseJson<Insight[]>(response);
         this.setCache(cacheKey, insights);
         return insights;
     }
@@ -217,7 +222,7 @@ export class AIClient {
             throw new Error(`Failed to fetch predictions: ${response.statusText}`);
         }
 
-        const predictions = await response.json();
+        const predictions = await this.parseJson<Prediction[]>(response);
         this.setCache(cacheKey, predictions);
         return predictions;
     }
@@ -246,7 +251,7 @@ export class AIClient {
             throw new Error(`Failed to fetch anomalies: ${response.statusText}`);
         }
 
-        const anomalies = await response.json();
+        const anomalies = await this.parseJson<AnomalyAlert[]>(response);
         this.setCache(cacheKey, anomalies);
         return anomalies;
     }
@@ -286,7 +291,7 @@ export class AIClient {
             throw new Error(`Failed to fetch recommendations: ${response.statusText}`);
         }
 
-        return response.json();
+        return this.parseJson<RecommendationSuggestion[]>(response);
     }
 
     /**
@@ -303,7 +308,7 @@ export class AIClient {
             throw new Error(`Failed to send copilot message: ${response.statusText}`);
         }
 
-        return response.json();
+        return this.parseJson<CopilotChatResponse>(response);
     }
 
     /**
@@ -320,7 +325,7 @@ export class AIClient {
             throw new Error(`Failed to generate plan: ${response.statusText}`);
         }
 
-        return response.json();
+        return this.parseJson<GeneratePlanResponse>(response);
     }
 
     /**
@@ -337,7 +342,7 @@ export class AIClient {
             throw new Error(`Failed to perform semantic search: ${response.statusText}`);
         }
 
-        return response.json();
+        return this.parseJson<SemanticSearchResponse>(response);
     }
 
     /**
@@ -354,7 +359,7 @@ export class AIClient {
             throw new Error(`Failed to perform RAG query: ${response.statusText}`);
         }
 
-        return response.json();
+        return this.parseJson<RagResponse>(response);
     }
 
     /**

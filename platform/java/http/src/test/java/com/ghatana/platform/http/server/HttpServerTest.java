@@ -11,6 +11,7 @@ import com.ghatana.platform.http.server.server.HttpServerBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.HttpMethod;
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpServer;
@@ -64,12 +65,12 @@ class HttpServerTest {
         
         FilterChain.Filter filter1 = (request, next) -> {
             filterCount.incrementAndGet();
-            return next.apply(request);
+            return next.serve(request);
         };
         
         FilterChain.Filter filter2 = (request, next) -> {
             filterCount.incrementAndGet();
-            return next.apply(request);
+            return next.serve(request);
         };
         
         HttpServerBuilder builder = HttpServerBuilder.create()
@@ -87,11 +88,11 @@ class HttpServerTest {
     @DisplayName("Should handle authentication middleware")
     void shouldHandleAuthenticationMiddleware() {
         FilterChain.Filter authFilter = (request, next) -> {
-            String token = request.getHeader("Authorization");
+            String token = request.getHeader(HttpHeaders.AUTHORIZATION);
             if (token == null || !token.startsWith("Bearer ")) {
                 return Promise.of(HttpResponse.ofCode(401).withBody("Unauthorized").build());
             }
-            return next.apply(request);
+            return next.serve(request);
         };
         
         HttpServerBuilder builder = HttpServerBuilder.create()

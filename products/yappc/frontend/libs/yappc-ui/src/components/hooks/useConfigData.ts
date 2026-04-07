@@ -15,9 +15,20 @@ import { useQuery } from '@tanstack/react-query';
 /**
  * API Configuration
  */
+const apiOrigin = import.meta.env.VITE_API_ORIGIN;
 const API_BASE_URL = import.meta.env.DEV
-  ? `${import.meta.env.VITE_API_ORIGIN ?? 'http://localhost:7002'}`
+  ? typeof apiOrigin === 'string' && apiOrigin.length > 0
+    ? apiOrigin
+    : 'http://localhost:7002'
   : '';
+
+function getResponseData<T>(payload: unknown): T {
+  if (typeof payload === 'object' && payload !== null && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+
+  return payload as T;
+}
 
 /**
  * Generic REST API fetch helper
@@ -34,8 +45,8 @@ async function fetchConfig<T = unknown>(endpoint: string): Promise<T> {
     throw new Error(`API request failed: ${response.statusText}`);
   }
 
-  const json = await response.json();
-  return json.data || json;
+  const json: unknown = await response.json();
+  return getResponseData<T>(json);
 }
 
 /**
@@ -154,20 +165,7 @@ export function usePersona(id: string) {
 export function useDomains() {
   return useQuery({
     queryKey: configQueryKeys.domains,
-    queryFn: async () => {
-      const data = await graphql<{ domains: TaskDomain[] }>(`
-        query GetDomains {
-          domains {
-            id
-            name
-            description
-            primary_personas
-            secondary_personas
-          }
-        }
-      `);
-      return data.domains;
-    },
+    queryFn: () => fetchConfig<TaskDomain[]>('domains'),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -178,23 +176,7 @@ export function useDomains() {
 export function useDomain(id: string) {
   return useQuery({
     queryKey: configQueryKeys.domain(id),
-    queryFn: async () => {
-      const data = await graphql<{ domain: TaskDomain }>(
-        `
-          query GetDomain($id: ID!) {
-            domain(id: $id) {
-              id
-              name
-              description
-              primary_personas
-              secondary_personas
-            }
-          }
-        `,
-        { id }
-      );
-      return data.domain;
-    },
+    queryFn: () => fetchConfig<TaskDomain>(`domains/${id}`),
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
   });
@@ -206,25 +188,7 @@ export function useDomain(id: string) {
 export function useTemplates() {
   return useQuery({
     queryKey: configQueryKeys.templates,
-    queryFn: async () => {
-      const data = await graphql<{ templates: TaskTemplate[] }>(`
-        query GetTemplates {
-          templates {
-            id
-            name
-            description
-            domain
-            steps {
-              id
-              title
-              description
-            }
-            estimatedTime
-          }
-        }
-      `);
-      return data.templates;
-    },
+    queryFn: () => fetchConfig<TaskTemplate[]>('templates'),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -235,28 +199,7 @@ export function useTemplates() {
 export function useTemplate(id: string) {
   return useQuery({
     queryKey: configQueryKeys.template(id),
-    queryFn: async () => {
-      const data = await graphql<{ template: TaskTemplate }>(
-        `
-          query GetTemplate($id: ID!) {
-            template(id: $id) {
-              id
-              name
-              description
-              domain
-              steps {
-                id
-                title
-                description
-              }
-              estimatedTime
-            }
-          }
-        `,
-        { id }
-      );
-      return data.template;
-    },
+    queryFn: () => fetchConfig<TaskTemplate>(`templates/${id}`),
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
   });
@@ -268,20 +211,7 @@ export function useTemplate(id: string) {
 export function useWorkflows() {
   return useQuery({
     queryKey: configQueryKeys.workflows,
-    queryFn: async () => {
-      const data = await graphql<{ workflows: WorkflowConfig[] }>(`
-        query GetWorkflows {
-          workflows {
-            id
-            name
-            description
-            stages
-            automations
-          }
-        }
-      `);
-      return data.workflows;
-    },
+    queryFn: () => fetchConfig<WorkflowConfig[]>('workflows'),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -292,23 +222,7 @@ export function useWorkflows() {
 export function useWorkflow(id: string) {
   return useQuery({
     queryKey: configQueryKeys.workflow(id),
-    queryFn: async () => {
-      const data = await graphql<{ workflow: WorkflowConfig }>(
-        `
-          query GetWorkflow($id: ID!) {
-            workflow(id: $id) {
-              id
-              name
-              description
-              stages
-              automations
-            }
-          }
-        `,
-        { id }
-      );
-      return data.workflow;
-    },
+    queryFn: () => fetchConfig<WorkflowConfig>(`workflows/${id}`),
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
   });
@@ -327,25 +241,13 @@ export function useTasks(filters?: {
     queryKey: [...configQueryKeys.tasks, filters],
     queryFn: async () => {
       try {
-        const data = await graphql<{ tasks: TaskData[] }>(
-          `
-            query GetTasks($filters: TaskFiltersInput) {
-              tasks(filters: $filters) {
-                id
-                title
-                status
-                priority
-                assignee
-                phase
-                dueDate
-                description
-                team
-              }
-            }
-          `,
-          { filters }
-        );
-        return data.tasks;
+        const queryParams = new URLSearchParams();
+        if (filters?.status) queryParams.set('status', filters.status);
+        if (filters?.assignee) queryParams.set('assignee', filters.assignee);
+        if (filters?.phase) queryParams.set('phase', filters.phase);
+
+        const endpoint = queryParams.size > 0 ? `tasks?${queryParams.toString()}` : 'tasks';
+        return await fetchConfig<TaskData[]>(endpoint);
       } catch (error) {
         // Backend not ready - return empty array
         // Components should handle with fallback to mock data
@@ -365,25 +267,7 @@ export function useTask(id: string) {
     queryKey: configQueryKeys.task(id),
     queryFn: async () => {
       try {
-        const data = await graphql<{ task: TaskData }>(
-          `
-            query GetTask($id: ID!) {
-              task(id: $id) {
-                id
-                title
-                status
-                priority
-                assignee
-                phase
-                dueDate
-                description
-                team
-              }
-            }
-          `,
-          { id }
-        );
-        return data.task;
+        return await fetchConfig<TaskData>(`tasks/${id}`);
       } catch (error) {
         console.warn(
           `Task ${id} not found in backend, using component mock data`

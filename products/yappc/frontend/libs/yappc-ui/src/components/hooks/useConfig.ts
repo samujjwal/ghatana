@@ -226,7 +226,7 @@ export const useAllTasks = (): unknown[] => {
 export const useConfigRefresh = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const refreshAll = useCallback(async () => {
+    const refreshAll = useCallback(() => {
         setIsRefreshing(true);
         try {
             // TODO: Implement actual API refresh calls

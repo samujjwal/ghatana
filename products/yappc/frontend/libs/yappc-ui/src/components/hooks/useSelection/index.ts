@@ -423,10 +423,18 @@ export function useSelection<T extends SelectionItem>({
   const importSelection = useCallback(
     (data: string) => {
       try {
-        const parsed = JSON.parse(data);
-        if (parsed.selectedIds && Array.isArray(parsed.selectedIds)) {
-          const validIds = parsed.selectedIds.filter((id: string) =>
-            itemsMap.has(id)
+        const parsed: unknown = JSON.parse(data);
+        const parsedSelection =
+          typeof parsed === 'object' && parsed !== null && 'selectedIds' in parsed
+            ? parsed as { selectedIds?: unknown }
+            : null;
+
+        if (
+          parsedSelection?.selectedIds &&
+          Array.isArray(parsedSelection.selectedIds)
+        ) {
+          const validIds = parsedSelection.selectedIds.filter(
+            (id): id is string => typeof id === 'string' && itemsMap.has(id)
           );
           updateSelection(validIds, {
             type: 'select',

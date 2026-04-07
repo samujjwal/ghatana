@@ -1,4 +1,4 @@
-import { useAtom , atom } from 'jotai';
+import { useAtom, atom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
 
 /**
@@ -43,13 +43,53 @@ export interface RegisterData extends LoginCredentials {
 }
 
 // Auth state atom
-const authStateAtom = atom<AuthState>({
+export const authStateAtom = atom<AuthState>({
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
   token: null
 });
+
+export const authUserAtom = atom(
+  (get) => get(authStateAtom).user,
+  (get, set, user: AuthUser | null) => {
+    const current = get(authStateAtom);
+    set(authStateAtom, {
+      ...current,
+      user,
+      isAuthenticated: Boolean(user && current.token),
+    });
+  }
+);
+
+export const authTokenAtom = atom(
+  (get) => get(authStateAtom).token,
+  (get, set, token: string | null) => {
+    const current = get(authStateAtom);
+    set(authStateAtom, {
+      ...current,
+      token,
+      isAuthenticated: Boolean(current.user && token),
+    });
+  }
+);
+
+export const authLoadingAtom = atom(
+  (get) => get(authStateAtom).isLoading,
+  (get, set, isLoading: boolean) => {
+    const current = get(authStateAtom);
+    set(authStateAtom, { ...current, isLoading });
+  }
+);
+
+export const authErrorAtom = atom(
+  (get) => get(authStateAtom).error,
+  (get, set, error: string | null) => {
+    const current = get(authStateAtom);
+    set(authStateAtom, { ...current, error });
+  }
+);
 
 /**
  * Authentication hook for managing user sessions and identity

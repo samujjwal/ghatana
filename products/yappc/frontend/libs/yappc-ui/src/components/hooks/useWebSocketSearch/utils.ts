@@ -6,6 +6,10 @@ import type { FilterCriteria } from '../../components/Search';
  * Provides static helper methods for search state management and transformations.
  */
 export class WebSocketSearchUtils {
+  private static isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+  }
+
   /**
    * Load persisted filters from localStorage.
    *
@@ -23,7 +27,8 @@ export class WebSocketSearchUtils {
     }
 
     try {
-      return JSON.parse(saved);
+      const parsed: unknown = JSON.parse(saved);
+      return this.isRecord(parsed) ? (parsed as FilterCriteria) : {};
     } catch (e) {
       console.warn('Failed to parse saved filters:', e);
       return {};
@@ -201,7 +206,8 @@ export class WebSocketSearchUtils {
     }
 
     try {
-      return JSON.parse(saved);
+      const parsed: unknown = JSON.parse(saved);
+      return Array.isArray(parsed) ? (parsed as SavedSearch[]) : [];
     } catch (e) {
       console.warn('Failed to parse saved searches:', e);
       return [];

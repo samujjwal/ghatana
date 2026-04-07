@@ -5,6 +5,7 @@ export * from './telemetry';
 export * from './state';
 export * from './migration/legacy-atoms';
 export * from './api';
+export * from './hooks/useAuth';
 export { CanvasPlayground, type CanvasPlaygroundProps } from './dev/CanvasPlayground';
 export {
 	allCanvasFeatureStoryCategories as FeatureStories,

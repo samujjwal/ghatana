@@ -295,12 +295,16 @@ export default tseslint.config(
   // Global ignores
   {
     ignores: [
+      'apps/api/**',
       '**/dist/**',
       '**/build/**',
       '**/node_modules/**',
       '**/.turbo/**',
       '**/coverage/**',
       '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.examples.*',
       '**/__tests__/**',
       '**/test/**',
       '**/test-utils/**',

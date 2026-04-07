@@ -168,8 +168,11 @@ export function createAnimationString(
 export function generateKeyframes(name: string, keyframes: Record<string, unknown>): string {
   const frames = Object.entries(keyframes)
     .map(([key, value]) => {
-      const props = Object.entries(value)
-        .map(([prop, val]) => `${prop}: ${val};`)
+      const frameStyles = typeof value === 'object' && value !== null
+        ? Object.entries(value as Record<string, unknown>)
+        : [];
+      const props = frameStyles
+        .map(([prop, val]) => `${prop}: ${String(val)};`)
         .join(' ');
       return `${key} { ${props} }`;
     })

@@ -131,10 +131,12 @@ function isAuthenticationError(error: Error): boolean {
 function extractStatusCode(error: Error): number | undefined {
   // Check for status code in error object
   if ('status' in error) {
-    return (error as unknown).status;
+    const status = (error as { status?: unknown }).status;
+    return typeof status === 'number' ? status : undefined;
   }
   if ('statusCode' in error) {
-    return (error as unknown).statusCode;
+    const statusCode = (error as { statusCode?: unknown }).statusCode;
+    return typeof statusCode === 'number' ? statusCode : undefined;
   }
   
   // Try to extract from message

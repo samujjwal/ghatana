@@ -27,6 +27,8 @@ export class AccessibilityAuditors {
     root: Element,
     minRatio: number
   ): Promise<AccessibilityIssue[]> {
+    await Promise.resolve();
+
     const issues: AccessibilityIssue[] = [];
     const textElements = root.querySelectorAll('*');
 

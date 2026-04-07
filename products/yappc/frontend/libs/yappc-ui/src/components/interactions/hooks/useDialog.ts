@@ -164,7 +164,7 @@ export function useDialog() {
       } = options;
 
       return new Promise<ConfirmResult>((resolve) => {
-        show({
+        void show({
           ...dialogOptions,
           actions: [
             {
@@ -244,7 +244,7 @@ export function useDialog() {
       const inputValue = defaultValue;
 
       return new Promise<string | null>((resolve) => {
-        show({
+        void show({
           ...dialogOptions,
           content: null, // Would be TextField component
           actions: [

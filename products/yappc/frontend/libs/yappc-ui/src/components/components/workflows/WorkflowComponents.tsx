@@ -346,7 +346,13 @@ export interface WorkflowDetailProps {
  * Detailed view of a workflow with phases and tasks
  */
 export function WorkflowDetail({ workflow, onClose, onStart }: WorkflowDetailProps) {
-    const getTask = useAtomValue(taskByIdAtom);
+    const taskLookup: unknown = useAtomValue(taskByIdAtom);
+    const getTask = useMemo(
+        () => typeof taskLookup === 'function'
+            ? (taskLookup as (taskId: string) => TaskDefinition | undefined)
+            : (_taskId: string) => undefined,
+        [taskLookup]
+    );
     const category = categoryConfig[workflow.category];
 
     // Get tasks for each phase

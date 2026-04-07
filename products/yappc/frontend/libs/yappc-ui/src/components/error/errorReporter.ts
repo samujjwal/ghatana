@@ -240,7 +240,7 @@ export class RemoteErrorReporter implements ErrorReporter {
     this.globalContext.userId = userId;
   }
   
-  async report(error: Error, errorInfo?: ErrorInfo, context: ErrorContext = {}): Promise<void> {
+  report(error: Error, errorInfo?: ErrorInfo, context: ErrorContext = {}): void {
     const report = buildErrorReport(
       error,
       errorInfo,
@@ -256,12 +256,15 @@ export class RemoteErrorReporter implements ErrorReporter {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
       
-      await fetch(this.endpoint, {
+      void fetch(this.endpoint, {
         method: 'POST',
         headers,
         body: JSON.stringify(report),
         // Don't await response to avoid blocking
         keepalive: true,
+      }).catch((reportError) => {
+        console.error('Failed to report error:', reportError);
+        console.error('Original error:', report);
       });
     } catch (reportError) {
       // Fallback to console if reporting fails

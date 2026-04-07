@@ -101,11 +101,11 @@ export class DataSourceUtils {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const json = await response.json();
+    const json: unknown = await response.json();
     return (
       config.transformResponse
         ? config.transformResponse(json)
-        : (json as unknown)
+        : json
     ) as TData;
   }
 
@@ -152,7 +152,7 @@ export class DataSourceUtils {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const result = await response.json();
+    const result: unknown = await response.json();
     const parsed = result as {
       errors?: Array<{ message: string }>;
       data?: unknown;
@@ -166,7 +166,7 @@ export class DataSourceUtils {
     return (
       config.transformResponse
         ? config.transformResponse(data)
-        : (data as unknown)
+        : data
     ) as TData;
   }
 }

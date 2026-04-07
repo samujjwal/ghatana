@@ -158,7 +158,7 @@ export function useDataSource<TData = unknown>(
 
   // Load data on mount
   useEffect(() => {
-    load(false);
+    void load(false);
     return () => {
       mounted.current = false;
     };
@@ -181,11 +181,11 @@ export function useDataSource<TData = unknown>(
       } else {
         updated = newData;
       }
-      setData(updated as TData);
+      setData(updated);
 
       // Update cache if enabled
       if (cache) {
-        CACHE.set(cacheKeyValue, updated as TData, cacheTTL);
+        CACHE.set(cacheKeyValue, updated, cacheTTL);
       }
     },
     [data, cache, cacheKeyValue, cacheTTL]

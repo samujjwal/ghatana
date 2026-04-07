@@ -43,8 +43,7 @@ export const WorkspaceCreateDialog: React.FC<WorkspaceCreateDialogProps> = ({
     const [description, setDescription] = useState('');
     const [nameError, setNameError] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const submitForm = async (): Promise<void> => {
         if (!name.trim()) {
             setNameError('Workspace name is required.');
             return;
@@ -59,6 +58,11 @@ export const WorkspaceCreateDialog: React.FC<WorkspaceCreateDialogProps> = ({
         } catch (err) {
             setNameError(err instanceof Error ? err.message : 'Failed to create workspace.');
         }
+    };
+
+    const handleSubmit = (e: React.FormEvent): void => {
+        e.preventDefault();
+        void submitForm();
     };
 
     const handleClose = () => {

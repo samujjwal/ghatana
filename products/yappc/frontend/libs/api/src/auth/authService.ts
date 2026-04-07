@@ -214,18 +214,19 @@ export class AuthService {
       }
       
       if (!response.ok) {
-        const error: ApiError = await response.json().catch(() => ({
+        const error = (await response.json().catch((): ApiError => ({
           message: `HTTP ${response.status}: ${response.statusText}`,
-        }));
+        }))) as ApiError;
         throw new Error(error.message);
       }
       
-      return await response.json();
+      const data: unknown = await response.json();
+      return data as T;
     } catch (error) {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error('Network error');
+      throw new Error('Network error', { cause: error });
     }
   }
   

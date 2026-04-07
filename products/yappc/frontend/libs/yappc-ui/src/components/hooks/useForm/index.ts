@@ -5,6 +5,7 @@ import {
   validateForm as baseValidateForm,
   hasErrors,
   validateField as baseValidateField,
+  type ValidationRule,
   type ValidationRules,
   type ValidationErrors,
 } from '../../utils/validation';
@@ -20,7 +21,7 @@ function validateFieldAdapter(
   rule: unknown
 ): string | undefined {
   if (!Array.isArray(rule)) return undefined;
-  const error = baseValidateField(value, rule);
+  const error = baseValidateField(value, rule as ValidationRule[]);
   return error ?? undefined;
 }
 
@@ -152,11 +153,7 @@ export function useForm<T extends Record<string, unknown>>({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = useCallback(() => {
-    return runValidateForm(
-      values,
-      validationRules as ValidationRules,
-      setErrors
-    );
+    return runValidateForm(values, validationRules, setErrors);
   }, [values, validationRules]);
   /** Handle field change and optionally run field-level validation. */
   function handleFieldChangeImpl(
@@ -168,8 +165,8 @@ export function useForm<T extends Record<string, unknown>>({
     setValues((prev) => ({ ...prev, [name]: newValue }));
     runFieldValidationIfNeeded(
       name,
-      values as Record<string, unknown>,
-      validationRules as Record<string, unknown>,
+      values,
+      validationRules,
       setErrors,
       validateOnChange,
       validateFieldAdapter
@@ -190,8 +187,8 @@ export function useForm<T extends Record<string, unknown>>({
       setTouched((prev) => ({ ...prev, [name]: true }));
       runFieldValidationIfNeeded(
         name,
-        values as Record<string, unknown>,
-        validationRules as Record<string, unknown>,
+        values,
+        validationRules,
         setErrors,
         validateOnBlur,
         validateFieldAdapter

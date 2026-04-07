@@ -8,10 +8,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { useQuery } from '@apollo/client';
 import { LoadingState } from '../components/LoadingState';
 import { EmptyState } from '../components/EmptyState';
-import { ErrorBoundary } from '../components/ErrorBoundary';
 
 /**
  * Page Integration Pattern
@@ -99,6 +97,11 @@ export interface PageIntegrationExampleProps {
   exampleProp?: string;
 }
 
+interface ExampleItem {
+  id: string;
+  name: string;
+}
+
 /**
  * Example Page Component
  * 
@@ -109,8 +112,8 @@ export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
 }) => {
   // Simulated query (replace with actual useQuery)
   const loading = false;
-  const error = null;
-  const data = { items: [] };
+  const error: Error | null = null;
+  const data: { items: ExampleItem[] } = { items: [] };
 
   useEffect(() => {
     // Component mount logic
@@ -124,7 +127,7 @@ export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
 
   // Error state (will be caught by ErrorBoundary)
   if (error) {
-    throw error;
+    throw new Error('Example page request failed');
   }
 
   // Empty state
@@ -146,7 +149,7 @@ export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
     <div className="p-6">
       <h1 className="text-2xl font-bold text-white mb-4">Example Page</h1>
       <div className="space-y-4">
-        {data.items.map((item: unknown) => (
+        {data.items.map((item) => (
           <div key={item.id} className="p-4 bg-zinc-800 rounded-lg">
             {item.name}
           </div>

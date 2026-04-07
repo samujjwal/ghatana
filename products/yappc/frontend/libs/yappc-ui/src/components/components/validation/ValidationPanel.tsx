@@ -96,6 +96,10 @@ export interface ValidationReport {
   }>;
 }
 
+function isValidationState(value: unknown): value is { report?: ValidationReport } {
+  return typeof value === 'object' && value !== null;
+}
+
 interface ValidationPanelProps {
   sessionId: string;
   report?: ValidationReport;
@@ -362,7 +366,10 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
   isValidating = false,
   className,
 }) => {
-  const validationState = useAtomValue(validationStateAtom);
+  const validationStateValue: unknown = useAtomValue(validationStateAtom);
+  const validationState = isValidationState(validationStateValue)
+    ? validationStateValue
+    : {};
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedIssues, setExpandedIssues] = useState<Set<string>>(new Set());
@@ -482,7 +489,9 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleAutoFixAll}
+              onClick={() => {
+                void handleAutoFixAll();
+              }}
               disabled={fixingIssueId === 'all'}
             >
               {fixingIssueId === 'all' ? (
@@ -495,7 +504,9 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
           )}
 
           <Button
-            onClick={onRunValidation}
+            onClick={() => {
+              void onRunValidation?.();
+            }}
             disabled={isValidating}
             className="bg-violet-600 hover:bg-violet-700"
           >
@@ -590,7 +601,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             <DropdownMenuCheckboxItem
               checked={filters.errors}
               onCheckedChange={(checked) =>
-                setFilters((f) => ({ ...f, errors: checked }))
+                setFilters((f) => ({ ...f, errors: checked === true }))
               }
             >
               <AlertCircle className="w-4 h-4 mr-2 text-red-500" />
@@ -599,7 +610,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             <DropdownMenuCheckboxItem
               checked={filters.warnings}
               onCheckedChange={(checked) =>
-                setFilters((f) => ({ ...f, warnings: checked }))
+                setFilters((f) => ({ ...f, warnings: checked === true }))
               }
             >
               <AlertTriangle className="w-4 h-4 mr-2 text-amber-500" />
@@ -608,7 +619,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             <DropdownMenuCheckboxItem
               checked={filters.info}
               onCheckedChange={(checked) =>
-                setFilters((f) => ({ ...f, info: checked }))
+                setFilters((f) => ({ ...f, info: checked === true }))
               }
             >
               <Info className="w-4 h-4 mr-2 text-blue-500" />
@@ -618,7 +629,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
             <DropdownMenuCheckboxItem
               checked={filters.autoFixableOnly}
               onCheckedChange={(checked) =>
-                setFilters((f) => ({ ...f, autoFixableOnly: checked }))
+                setFilters((f) => ({ ...f, autoFixableOnly: checked === true }))
               }
             >
               <Wand2 className="w-4 h-4 mr-2" />
@@ -684,7 +695,9 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
                   isExpanded={expandedIssues.has(issue.id)}
                   onToggle={() => handleToggleExpand(issue.id)}
                   onAutoFix={
-                    issue.autoFixable ? () => handleAutoFix(issue.id) : undefined
+                    issue.autoFixable ? () => {
+                      void handleAutoFix(issue.id);
+                    } : undefined
                   }
                   onClick={() => onIssueClick?.(issue)}
                   onDismiss={

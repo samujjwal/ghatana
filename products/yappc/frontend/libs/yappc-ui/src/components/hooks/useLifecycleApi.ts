@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { LifecycleStageId } from '../components/lifecycle/LifecycleStage';
+import type { LifecycleStageId } from '../components/lifecycle/LifecycleStage';
 
 // Types matching backend entities
 export interface Project {
@@ -78,7 +78,7 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
   
-  return response.json();
+  return (await response.json()) as T;
 }
 
 /**
@@ -110,7 +110,7 @@ export function useProjects(filters?: { status?: string; stage?: string }) {
   }, [filters?.status, filters?.stage]);
 
   useEffect(() => {
-    fetchProjects();
+    void fetchProjects();
   }, [fetchProjects]);
 
   return { projects, loading, error, refetch: fetchProjects };
@@ -143,7 +143,7 @@ export function useProject(projectId: string) {
   }, [projectId]);
 
   useEffect(() => {
-    fetchProject();
+    void fetchProject();
   }, [fetchProject]);
 
   const advanceStage = useCallback(async () => {
@@ -203,7 +203,7 @@ export function useTasks(filters?: {
   ]);
 
   useEffect(() => {
-    fetchTasks();
+    void fetchTasks();
   }, [fetchTasks]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
@@ -262,7 +262,7 @@ export function useTask(taskId: string) {
   }, [taskId]);
 
   useEffect(() => {
-    fetchTask();
+    void fetchTask();
   }, [fetchTask]);
 
   return { task, loading, error, refetch: fetchTask };
@@ -295,7 +295,7 @@ export function usePhaseStates(projectId: string) {
   }, [projectId]);
 
   useEffect(() => {
-    fetchPhaseStates();
+    void fetchPhaseStates();
   }, [fetchPhaseStates]);
 
   const currentPhase = phaseStates.find(p => p.status === 'ACTIVE');
@@ -347,7 +347,7 @@ export function useProjectMetrics(projectId: string) {
   }, [projectId]);
 
   useEffect(() => {
-    fetchMetrics();
+    void fetchMetrics();
   }, [fetchMetrics]);
 
   return { metrics, loading, error, refetch: fetchMetrics };

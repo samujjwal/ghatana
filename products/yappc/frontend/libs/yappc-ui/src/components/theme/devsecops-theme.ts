@@ -1,4 +1,4 @@
-import { type ThemeOptions } from '@ghatana/theme';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
 /**
  * DevSecOps Canvas Theme Configuration

@@ -150,7 +150,7 @@ export const useAutoOnboarding = (
 
     const timer = setTimeout(() => {
       if (shouldShowOnboarding()) {
-        startTour(tourId);
+        void startTour(tourId);
       }
     }, delay);
 

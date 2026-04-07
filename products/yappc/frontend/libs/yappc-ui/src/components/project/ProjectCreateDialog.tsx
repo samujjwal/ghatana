@@ -63,19 +63,19 @@ export const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
     const [type, setType] = useState<ProjectType>('FULL_STACK');
     const [nameError, setNameError] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!name.trim()) {
+    const submitForm = async (): Promise<void> => {
+        const trimmedName = name.trim();
+        if (!trimmedName) {
             setNameError('Project name is required.');
             return;
         }
-        if (name.trim().length < 2) {
+        if (trimmedName.length < 2) {
             setNameError('Name must be at least 2 characters.');
             return;
         }
         try {
             await onCreate({
-                name: name.trim(),
+                name: trimmedName,
                 description: description.trim() || undefined,
                 type,
             });
@@ -83,6 +83,11 @@ export const ProjectCreateDialog: React.FC<ProjectCreateDialogProps> = ({
         } catch (err) {
             setNameError(err instanceof Error ? err.message : 'Failed to create project.');
         }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        void submitForm();
     };
 
     const handleClose = () => {

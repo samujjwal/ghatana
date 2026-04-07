@@ -109,6 +109,8 @@ export class AccessibilityAuditor {
    * ```
    */
   async autoFix(issues: AccessibilityIssue[]): Promise<AutoFixResult> {
+    await Promise.resolve();
+
     const fixed: AccessibilityIssue[] = [];
     const failed: AccessibilityIssue[] = [];
 
@@ -178,9 +180,10 @@ export class AccessibilityAuditor {
     this.listeners.add(callback);
 
     // Monitor DOM changes
-    const observer = new MutationObserver(async () => {
-      const report = await this.auditPage();
-      this.listeners.forEach((listener) => listener(report));
+    const observer = new MutationObserver(() => {
+      void this.auditPage().then((report) => {
+        this.listeners.forEach((listener) => listener(report));
+      });
     });
 
     observer.observe(document.body, {

@@ -49,7 +49,7 @@ export class VirtualScrollUtils {
     const isFixedHeight = typeof itemHeight === 'number';
 
     if (isFixedHeight) {
-      const itemHeightNum = itemHeight as number;
+      const itemHeightNum = itemHeight;
       const startIndex = Math.max(0, Math.floor(scrollTop / itemHeightNum) - overscan);
       const endIndex = Math.min(
         itemCount - 1,
@@ -61,7 +61,7 @@ export class VirtualScrollUtils {
     }
 
     // Variable height calculation
-    const itemHeightFn = itemHeight as (index: number) => number;
+    const itemHeightFn = itemHeight;
     let accumulatedHeight = 0;
     let startIndex = 0;
     let endIndex = itemCount - 1;
@@ -102,7 +102,7 @@ export class VirtualScrollUtils {
     }
 
     let offset = 0;
-    const itemHeightFn = itemHeight as (index: number) => number;
+    const itemHeightFn = itemHeight;
     for (let i = 0; i < index; i++) {
       offset += itemHeightFn(i);
     }

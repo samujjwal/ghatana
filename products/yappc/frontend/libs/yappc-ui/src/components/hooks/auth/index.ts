@@ -15,7 +15,7 @@
  * @doc.layer ui
  */
 
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   authUserAtom,
@@ -27,6 +27,37 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import type { User } from '@yappc/core/types';
+
+type AuthRouteUser = User & {
+  permissions?: string[];
+  roles?: string[];
+};
+
+function readUserRoles(user: User | null): string[] {
+  const authUser = user as AuthRouteUser | null;
+  return Array.isArray(authUser?.roles) ? authUser.roles : [];
+}
+
+function readUserPermissions(user: User | null): string[] {
+  const authUser = user as AuthRouteUser | null;
+  return Array.isArray(authUser?.permissions) ? authUser.permissions : [];
+}
+
+function parseStoredAuth(value: string): { token?: string; user?: User } | null {
+  const parsed: unknown = JSON.parse(value);
+  if (typeof parsed !== 'object' || parsed === null) {
+    return null;
+  }
+
+  const authData = parsed as { token?: unknown; user?: unknown };
+  return {
+    token: typeof authData.token === 'string' ? authData.token : undefined,
+    user:
+      typeof authData.user === 'object' && authData.user !== null
+        ? (authData.user as User)
+        : undefined,
+  };
+}
 
 // ============================================================================
 // Session Timeout Hook
@@ -218,8 +249,13 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
   // Parse JWT token to get expiration
   const getTokenExpiry = useCallback((token: string): number | null => {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp ? payload.exp * 1000 : null;
+      const payload: unknown = JSON.parse(atob(token.split('.')[1]));
+      if (typeof payload !== 'object' || payload === null || !('exp' in payload)) {
+        return null;
+      }
+
+      const exp = (payload as { exp?: unknown }).exp;
+      return typeof exp === 'number' ? exp * 1000 : null;
     } catch {
       return null;
     }
@@ -245,10 +281,12 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
     
     // Set new timeout
     if (delay > 0) {
-      refreshTimeoutRef.current = setTimeout(refreshToken, delay);
+      refreshTimeoutRef.current = setTimeout(() => {
+        void refreshToken();
+      }, delay);
     } else {
       // Token already expired or will expire soon
-      refreshToken();
+      void refreshToken();
     }
     
     return () => {
@@ -287,7 +325,7 @@ export function usePermission(
   const user = useAtomValue(authUserAtom);
   const isLoading = useAtomValue(authLoadingAtom);
   
-  const userPermissions = (user as unknown)?.permissions || [];
+  const userPermissions = readUserPermissions(user);
   const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
   
   const hasPermission = useMemo(() => {
@@ -329,7 +367,7 @@ export function useRole(
   const user = useAtomValue(authUserAtom);
   const isLoading = useAtomValue(authLoadingAtom);
   
-  const userRoles = (user as unknown)?.roles || [];
+  const userRoles = readUserRoles(user);
   const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
   
   const hasRole = useMemo(() => {
@@ -400,13 +438,13 @@ export function useAuthPersistence(options: UseAuthPersistenceOptions = {}) {
     try {
       const stored = storageObj.getItem(storageKey);
       if (stored) {
-        const data = JSON.parse(stored);
+        const data = parseStoredAuth(stored);
         
-        if (persistUser && data.user) {
+        if (persistUser && data?.user) {
           setUser(data.user);
         }
         
-        if (persistToken && data.token) {
+        if (persistToken && data?.token) {
           setToken(data.token);
         }
       }
@@ -488,13 +526,13 @@ export function useProtectedNavigation(options: UseProtectedNavigationOptions = 
       }
       
       // Navigate to login with return URL
-      navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
+      void navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
         state: { from: path },
       });
       return;
     }
     
-    navigate(path);
+    void navigate(path);
   }, [isAuthenticated, preserveReturnPath, navigate, loginPath]);
   
   const navigateToLogin = useCallback((returnPath?: string) => {
@@ -504,7 +542,7 @@ export function useProtectedNavigation(options: UseProtectedNavigationOptions = 
       sessionStorage.setItem('returnPath', path);
     }
     
-    navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
+    void navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
       state: { from: path },
     });
   }, [navigate, loginPath, location, preserveReturnPath]);
@@ -514,9 +552,9 @@ export function useProtectedNavigation(options: UseProtectedNavigationOptions = 
     
     if (returnPath) {
       sessionStorage.removeItem('returnPath');
-      navigate(returnPath);
+      void navigate(returnPath);
     } else {
-      navigate(defaultPath);
+      void navigate(defaultPath);
     }
   }, [navigate]);
   
@@ -553,8 +591,8 @@ export function useAuthStatus() {
   const error = useAtomValue(authErrorAtom);
   
   const isAuthenticated = !!user && !!token;
-  const userRoles = (user as unknown)?.roles || [];
-  const userPermissions = (user as unknown)?.permissions || [];
+  const userRoles = readUserRoles(user);
+  const userPermissions = readUserPermissions(user);
   
   const hasRole = useCallback(
     (role: string | string[]) => {
@@ -602,5 +640,3 @@ export function useAuthStatus() {
   };
 }
 
-// Import useMemo for optimization
-import { useMemo } from 'react';

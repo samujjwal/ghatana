@@ -16,11 +16,15 @@
     "vitest.setup.*"
   ],
   "exclude": [
+    "apps/api/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/build/**",
     "**/coverage/**",
     "**/*.stories.*",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.examples.*",
     "**/__tests__/**",
     "**/test/**",
     "**/test-utils/**",

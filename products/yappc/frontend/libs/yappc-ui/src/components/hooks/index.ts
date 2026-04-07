@@ -13,5 +13,4 @@ export * from './performance';
 export * from './ai';
 export * from './useOnboardingTour';
 export * from './auth';
-export * from './useBootstrapSession';
 export * from '@yappc/state/config-hooks';

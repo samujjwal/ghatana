@@ -439,7 +439,7 @@ export function useEventBus<TPayload = unknown>(
 
   useEffect(() => {
     const wrappedHandler = (payload: TPayload) => {
-      handlerRef.current(payload);
+      void handlerRef.current(payload);
     };
 
     const subscription = eventBus.on(eventName, wrappedHandler);
@@ -480,7 +480,7 @@ export function useEventBusOnce<TPayload = unknown>(
 
   useEffect(() => {
     const wrappedHandler = (payload: TPayload) => {
-      handlerRef.current(payload);
+      void handlerRef.current(payload);
     };
 
     const subscription = eventBus.once(eventName, wrappedHandler);
@@ -505,7 +505,7 @@ export const loggerMiddleware: EventMiddleware = (eventName, payload, next) => {
     payload,
     timestamp: new Date().toISOString(),
   });
-  next();
+  void next();
 };
 
 /**
@@ -520,7 +520,7 @@ export function createThrottleMiddleware(delay: number): EventMiddleware {
 
     if (now - last >= delay) {
       lastEmit.set(eventName, now);
-      next();
+      void next();
     }
   };
 }
@@ -538,7 +538,7 @@ export function createDebounceMiddleware(delay: number): EventMiddleware {
     }
 
     const timeout = setTimeout(() => {
-      next();
+      void next();
       timeouts.delete(eventName);
     }, delay);
 
@@ -554,7 +554,7 @@ export function createFilterMiddleware(
 ): EventMiddleware {
   return (eventName, payload, next) => {
     if (predicate(eventName, payload)) {
-      next();
+      void next();
     }
   };
 }
@@ -571,7 +571,7 @@ export function createTransformMiddleware(
     // transformation is desired, update EventBusImpl.emit to use the
     // transformer result when invoking handlers.
     void transformer(eventName, payload);
-    next();
+    void next();
   };
 }
 

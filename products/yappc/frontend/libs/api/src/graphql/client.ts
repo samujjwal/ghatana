@@ -91,9 +91,11 @@ async function refreshAccessToken(): Promise<string | null> {
       throw new Error('Token refresh failed');
     }
 
-    const data = await response.json();
+    const data: unknown = await response.json();
     setTokens(data.accessToken, data.refreshToken);
-    return data.accessToken;
+    const tokenResponse = data as { accessToken: string; refreshToken: string };
+    setTokens(tokenResponse.accessToken, tokenResponse.refreshToken);
+    return tokenResponse.accessToken;
   } catch (error) {
     clearTokens();
     window.dispatchEvent(new CustomEvent('auth:session-expired'));

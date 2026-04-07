@@ -687,8 +687,10 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
       const { active, over } = event;
       if (!over) return;
 
+      const overId = over.id;
+
       const activeColumn = findColumn(active.id);
-      const overColumn = columns.find((c) => c.id === over.id) || findColumn(over.id);
+      const overColumn = columns.find((c) => c.id === overId) || findColumn(overId);
 
       if (!activeColumn || !overColumn || activeColumn.id === overColumn.id) {
         return;

@@ -180,7 +180,7 @@ export function useTooltip(
     floatingProps: {
       ref: refs.setFloating,
       style: {
-        ...(floatingStyles as CSSProperties),
+        ...floatingStyles,
         maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth,
         pointerEvents: interactive ? 'auto' : 'none',
       },
@@ -193,7 +193,7 @@ export function useTooltip(
     arrowProps: showArrow
       ? {
         ref: arrowRef,
-        'data-placement': placement as TooltipPlacement,
+        'data-placement': placement,
       }
       : null,
 
@@ -210,7 +210,7 @@ export function useTooltip(
     /**
      * Current placement (after flip/shift)
      */
-    placement: placement as TooltipPlacement,
+    placement,
 
     /**
      * Manual control functions

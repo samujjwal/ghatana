@@ -257,7 +257,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 
   return (
     <div className="preset-rating" aria-label={`Rating: ${rating.toFixed(1)} out of 5`}>
-      {[...Array(5)].map((_, i) => (
+      {Array.from({ length: 5 }, (_, i) => (
         <svg
           key={i}
           viewBox="0 0 24 24"

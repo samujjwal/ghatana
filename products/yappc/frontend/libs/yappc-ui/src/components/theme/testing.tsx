@@ -9,6 +9,23 @@ import type { ThemeMode } from './ThemeContext';
 import type { RenderOptions} from '@testing-library/react';
 import type { ReactElement } from 'react';
 
+function hexToRgb(hex: string): [number, number, number] {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const formattedHex = hex.replace(
+    shorthandRegex,
+    (_match, red: string, green: string, blue: string) =>
+      red + red + green + green + blue + blue
+  );
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
+
+  if (!result) {
+    return [0, 0, 0];
+  }
+
+  const [, red, green, blue] = result;
+  return [parseInt(red, 16), parseInt(green, 16), parseInt(blue, 16)];
+}
+
 /**
  * Custom render function that wraps the component with ThemeProvider
  * @param ui - Component to render
@@ -58,20 +75,6 @@ export function checkContrastRatio(
   level: 'AA' | 'AAA' = 'AA',
   largeText: boolean = false
 ): boolean {
-  // Convert hex to RGB
-  const hexToRgb = (hex: string): number[] => {
-    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    const formattedHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
-    return result 
-      ? [
-          parseInt(result[1], 16),
-          parseInt(result[2], 16),
-          parseInt(result[3], 16)
-        ]
-      : [0, 0, 0];
-  };
-
   // Calculate relative luminance
   const calculateLuminance = (rgb: number[]): number => {
     const [r, g, b] = rgb.map(c => {
@@ -169,20 +172,6 @@ export function testThemeAccessibility(
  * @returns Contrast ratio as a number
  */
 export function calculateContrastRatio(color1: string, color2: string): number {
-  // Convert hex to RGB
-  const hexToRgb = (hex: string): number[] => {
-    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    const formattedHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
-    return result 
-      ? [
-          parseInt(result[1], 16),
-          parseInt(result[2], 16),
-          parseInt(result[3], 16)
-        ]
-      : [0, 0, 0];
-  };
-
   // Calculate relative luminance
   const calculateLuminance = (rgb: number[]): number => {
     const [r, g, b] = rgb.map(c => {

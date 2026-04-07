@@ -328,18 +328,14 @@ export const AccessibleToolbar: React.FC<AccessibleToolbarProps> = ({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const isHorizontal = orientation === 'horizontal';
-    let newIndex = activeIndex;
-
     switch (e.key) {
       case isHorizontal ? 'ArrowRight' : 'ArrowDown':
         e.preventDefault();
-        newIndex = (activeIndex + 1) % buttons.length;
-        setActiveIndex(newIndex);
+        setActiveIndex((activeIndex + 1) % buttons.length);
         break;
       case isHorizontal ? 'ArrowLeft' : 'ArrowUp':
         e.preventDefault();
-        newIndex = activeIndex === 0 ? buttons.length - 1 : activeIndex - 1;
-        setActiveIndex(newIndex);
+        setActiveIndex(activeIndex === 0 ? buttons.length - 1 : activeIndex - 1);
         break;
       case 'Home':
         e.preventDefault();

@@ -28,6 +28,11 @@ import type {
  * ```
  */
 export class DevSecOpsClient {
+  private async parseJson<T>(response: Response): Promise<T> {
+    const data: unknown = await response.json();
+    return data as T;
+  }
+
   /**
    * Create a new DevSecOps API client
    * 
@@ -76,7 +81,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = await response.json();
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
   }
 
@@ -200,11 +205,9 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = (await response.json()) as
-      | ApiResponse<DevSecOpsOverview>
-      | DevSecOpsOverview;
+    const payload: unknown = await this.parseJson<unknown>(response);
 
-    if (this.isApiResponse(payload)) {
+    if (this.isApiResponse<DevSecOpsOverview>(payload)) {
       return payload;
     }
 
@@ -257,7 +260,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = (await response.json()) as ApiResponse<Item> | Item;
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse<Item>(payload)
       ? payload
       : this.wrapResponse(payload as Item);
@@ -286,7 +289,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = await response.json();
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
   }
 
@@ -314,7 +317,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = await response.json();
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse(payload) ? payload : this.wrapResponse(payload);
   }
 
@@ -353,7 +356,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payloadJson = (await response.json()) as ApiResponse<Item> | Item;
+    const payloadJson: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse<Item>(payloadJson)
       ? payloadJson
       : this.wrapResponse(payloadJson as Item);
@@ -378,7 +381,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = (await response.json()) as ApiResponse<Item> | Item;
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse<Item>(payload)
       ? payload
       : this.wrapResponse(payload as Item);
@@ -406,7 +409,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = (await response.json()) as ApiResponse<BulkOperationResult> | BulkOperationResult;
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse<BulkOperationResult>(payload)
       ? payload
       : this.wrapResponse(payload as BulkOperationResult);
@@ -433,7 +436,7 @@ export class DevSecOpsClient {
       );
     }
 
-    const payload = (await response.json()) as ApiResponse<boolean> | boolean;
+    const payload: unknown = await this.parseJson<unknown>(response);
     return this.isApiResponse<boolean>(payload)
       ? payload
       : this.wrapResponse(payload as boolean);

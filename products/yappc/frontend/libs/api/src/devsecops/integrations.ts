@@ -45,6 +45,7 @@ export class GitHubAdapter {
    * ```
    */
   async getPullRequests(repo: string) {
+    await Promise.resolve(repo);
     // NOTE: Replace with real GitHub API call
     // return fetch(`https://api.github.com/repos/${repo}/pulls`, {
     //   headers: { Authorization: `Bearer ${this.token}` },
@@ -64,6 +65,7 @@ export class GitHubAdapter {
    * ```
    */
   async getCommits(repo: string) {
+    await Promise.resolve(repo);
     // NOTE: Replace with real GitHub API call
     return this.mockCommits();
   }
@@ -86,6 +88,7 @@ export class GitHubAdapter {
    * ```
    */
   async createPullRequest(repo: string, data: Record<string, unknown>) {
+    await Promise.resolve({ repo, data });
     // NOTE: Replace with real GitHub API call
     return { success: true, prNumber: 123, url: 'https://github.com/...' };
   }
@@ -156,6 +159,7 @@ export class JiraAdapter {
    * ```
    */
   async getIssues(jql: string) {
+    await Promise.resolve(jql);
     // NOTE: Replace with real Jira API call
     // return fetch(`${this.baseURL}/rest/api/3/search?jql=${jql}`, {
     //   headers: { Authorization: `Bearer ${this.token}` },
@@ -175,6 +179,7 @@ export class JiraAdapter {
    * ```
    */
   async getIssue(key: string) {
+    await Promise.resolve(key);
     // NOTE: Replace with real Jira API call
     return this.mockIssueDetail(key);
   }
@@ -197,6 +202,7 @@ export class JiraAdapter {
    * ```
    */
   async createIssue(data: Record<string, unknown>) {
+    await Promise.resolve(data);
     // NOTE: Replace with real Jira API call
     return { success: true, key: 'PROJ-456', url: 'https://jira.example.com/...' };
   }
@@ -214,6 +220,7 @@ export class JiraAdapter {
    * ```
    */
   async updateIssueStatus(key: string, status: string) {
+    await Promise.resolve({ key, status });
     // NOTE: Replace with real Jira API call
     return { success: true, key, status };
   }
@@ -290,6 +297,7 @@ export class SonarQubeAdapter {
    * ```
    */
   async getProjectMetrics(projectKey: string) {
+    await Promise.resolve(projectKey);
     // NOTE: Replace with real SonarQube API call
     // return fetch(`${this.baseURL}/api/measures/component?component=${projectKey}`, {
     //   headers: { Authorization: `Bearer ${this.token}` },
@@ -309,6 +317,7 @@ export class SonarQubeAdapter {
    * ```
    */
   async getIssues(projectKey: string) {
+    await Promise.resolve(projectKey);
     // NOTE: Replace with real SonarQube API call
     return this.mockIssues();
   }
@@ -325,6 +334,7 @@ export class SonarQubeAdapter {
    * ```
    */
   async getQualityGateStatus(projectKey: string) {
+    await Promise.resolve(projectKey);
     // NOTE: Replace with real SonarQube API call
     return this.mockQualityGateStatus();
   }
@@ -416,6 +426,7 @@ export class IntegrationManager {
    * @returns Promise resolving to status object for each integration
    */
   async getIntegrationStatuses() {
+    await Promise.resolve();
     return {
       github: { connected: !!this.github, status: 'connected' },
       jira: { connected: !!this.jira, status: 'connected' },

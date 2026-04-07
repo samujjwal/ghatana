@@ -52,11 +52,12 @@ class AuthorizationTest {
         
         engine.addPolicy(readPolicy);
         
-        AbacRequest request = AbacRequest.builder()
-            .subject(Map.of("role", "user"))
-            .action("read")
-            .resource(Map.of("type", "document"))
-            .build();
+        AbacRequest request = new AbacRequest(
+            Map.of("role", "user"),
+            Map.of("type", "document"),
+            "read",
+            Map.of()
+        );
         
         AbacDecision decision = engine.evaluate(request);
         assertThat(decision.permitted()).isTrue();
@@ -106,11 +107,12 @@ class AuthorizationTest {
         
         engine.addPolicy(userPolicy);
         
-        AbacRequest request = AbacRequest.builder()
-            .subject(Map.of("role", "user"))
-            .action("access")
-            .resource(Map.of("type", "resource"))
-            .build();
+        AbacRequest request = new AbacRequest(
+            Map.of("role", "user"),
+            Map.of("type", "resource"),
+            "access",
+            Map.of()
+        );
         
         AbacDecision decision = engine.evaluate(request);
         assertThat(decision.permitted()).isTrue();
@@ -128,11 +130,12 @@ class AuthorizationTest {
         
         engine.addPolicy(tenantPolicy);
         
-        AbacRequest sameTenantRequest = AbacRequest.builder()
-            .subject(Map.of("tenantId", "tenant-1"))
-            .action("access")
-            .resource(Map.of("tenantId", "tenant-1"))
-            .build();
+        AbacRequest sameTenantRequest = new AbacRequest(
+            Map.of("tenantId", "tenant-1"),
+            Map.of("tenantId", "tenant-1"),
+            "access",
+            Map.of()
+        );
         
         AbacDecision decision = engine.evaluate(sameTenantRequest);
         assertThat(decision.permitted()).isTrue();

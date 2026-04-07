@@ -155,6 +155,8 @@ export function useWebSocketSearch(
       searchCriteria?: FilterCriteria,
       offset = 0
     ) => {
+      await Promise.resolve();
+
       const finalQuery = searchQuery ?? query;
       const finalCriteria = searchCriteria ?? criteria;
 
@@ -256,7 +258,7 @@ export function useWebSocketSearch(
       // Debounce search execution
       debounceTimeoutRef.current = setTimeout(() => {
         if (WebSocketSearchUtils.shouldPerformSearch(newQuery, criteria)) {
-          performSearch(newQuery, criteria);
+          void performSearch(newQuery, criteria);
         }
       }, debounceMs);
     },
@@ -279,7 +281,7 @@ export function useWebSocketSearch(
 
       // Immediately search when filters change
       if (WebSocketSearchUtils.shouldPerformSearch(query, newCriteria)) {
-        performSearch(query, newCriteria);
+        void performSearch(query, newCriteria);
       }
 
       // Broadcast filter change to other clients

@@ -9,6 +9,9 @@ package com.ghatana.datacloud.entity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -22,84 +25,95 @@ class EntitySchemaTest {
     @Test
     @DisplayName("Should validate entity schemas")
     void shouldValidateEntitySchemas() {
-        // Test schema validation
+        MetaCollection collection = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("1.0.0")
+            .build();
         
-        // In a real implementation, this would:
-        // - Validate entity schemas
-        // - Test type checking
-        // - Verify constraint validation
-        // - Test schema enforcement
-        
-        assertThat(true).isTrue(); // Placeholder for actual test
+        assertThat(collection.getSchemaVersion()).isEqualTo("1.0.0");
     }
 
     @Test
     @DisplayName("Should handle schema evolution")
     void shouldHandleSchemaEvolution() {
-        // Test schema evolution
+        MetaCollection collection = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("1.0.0")
+            .build();
         
-        // In a real implementation, this would:
-        // - Evolve entity schemas
-        // - Test backward compatibility
-        // - Verify data migration
-        // - Test version management
+        collection.setSchemaVersion("2.0.0");
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        assertThat(collection.getSchemaVersion()).isEqualTo("2.0.0");
     }
 
     @Test
     @DisplayName("Should handle schema migration")
     void shouldHandleSchemaMigration() {
-        // Test schema migration
+        MetaCollection oldSchema = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("1.0.0")
+            .build();
         
-        // In a real implementation, this would:
-        // - Migrate entity schemas
-        // - Test migration scripts
-        // - Verify data integrity
-        // - Test rollback capability
+        MetaCollection newSchema = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("2.0.0")
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        assertThat(oldSchema.getSchemaVersion()).isNotEqualTo(newSchema.getSchemaVersion());
     }
 
     @Test
     @DisplayName("Should handle schema versioning")
     void shouldHandleSchemaVersioning() {
-        // Test schema versioning
+        String version = "1.0.0";
+        String[] parts = version.split("\\.");
         
-        // In a real implementation, this would:
-        // - Version entity schemas
-        // - Test version tracking
-        // - Verify version compatibility
-        // - Test version transitions
-        
-        assertThat(true).isTrue(); // Placeholder for actual test
+        assertThat(parts).hasSize(3);
+        assertThat(parts[0]).isEqualTo("1");
+        assertThat(parts[1]).isEqualTo("0");
+        assertThat(parts[2]).isEqualTo("0");
     }
 
     @Test
     @DisplayName("Should handle schema conflicts")
     void shouldHandleSchemaConflicts() {
-        // Test conflict resolution
+        MetaCollection collection1 = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("1.0.0")
+            .build();
         
-        // In a real implementation, this would:
-        // - Detect schema conflicts
-        // - Test conflict resolution
-        // - Verify conflict logging
-        // - Test conflict prevention
+        MetaCollection collection2 = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .schemaVersion("2.0.0")
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        boolean sameName = collection1.getName().equals(collection2.getName());
+        boolean differentVersion = !collection1.getSchemaVersion().equals(collection2.getSchemaVersion());
+        
+        assertThat(sameName).isTrue();
+        assertThat(differentVersion).isTrue();
     }
 
     @Test
     @DisplayName("Should validate schema constraints")
     void shouldValidateSchemaConstraints() {
-        // Test constraint validation
+        Map<String, Object> validationSchema = new HashMap<>();
+        validationSchema.put("type", "object");
+        validationSchema.put("required", new String[]{"name", "email"});
         
-        // In a real implementation, this would:
-        // - Validate schema constraints
-        // - Test constraint enforcement
-        // - Verify constraint propagation
-        // - Test constraint evolution
+        MetaCollection collection = MetaCollection.builder()
+            .tenantId("tenant-123")
+            .name("test-collection")
+            .validationSchema(validationSchema)
+            .build();
         
-        assertThat(true).isTrue(); // Placeholder for actual test
+        assertThat(collection.getValidationSchema()).isNotNull();
+        assertThat(collection.getValidationSchema()).containsKey("type");
     }
 }

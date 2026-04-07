@@ -289,13 +289,14 @@ export function usePopoverGroup() {
 
   const register = useCallback(
     (id: string, options: PopoverOptions = {}) => {
-      return usePopover({
+      return {
         ...options,
+        isOpen: activeId === id,
         onOpenChange: (open: boolean) => {
           setActiveId(open ? id : null);
           options.onOpenChange?.(open);
         },
-      });
+      };
     },
     [activeId]
   );

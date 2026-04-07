@@ -174,7 +174,11 @@ export class PersistentCache {
       const stored = localStorage.getItem(this.prefix + key);
       if (!stored) return null;
 
-      const entry = JSON.parse(stored);
+      const entry = JSON.parse(stored) as {
+        data: T;
+        timestamp: number;
+        ttl: number;
+      };
       if (Date.now() - entry.timestamp > entry.ttl) {
         localStorage.removeItem(this.prefix + key);
         return null;
