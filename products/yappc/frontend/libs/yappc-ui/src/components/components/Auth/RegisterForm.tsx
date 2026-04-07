@@ -1,9 +1,9 @@
 /**
  * Register Form Component
- * 
+ *
  * Production-grade registration form with validation,
  * password strength indicator, and error handling.
- * 
+ *
  * @module ui/components/Auth
  * @doc.type component
  * @doc.purpose User registration form
@@ -24,25 +24,25 @@ import { useAuth } from '@yappc/canvas';
 export interface RegisterFormProps {
   /** Callback on successful registration */
   onSuccess?: () => void;
-  
+
   /** Callback on registration error */
   onError?: (error: Error) => void;
-  
+
   /** Whether to show terms and conditions checkbox */
   showTerms?: boolean;
-  
+
   /** Whether to show sign in link */
   showSignIn?: boolean;
-  
+
   /** Redirect URL after registration */
   redirectTo?: string;
-  
+
   /** Custom submit button text */
   submitText?: string;
-  
+
   /** API endpoint override */
   registerEndpoint?: string;
-  
+
   /** Minimum password length */
   minPasswordLength?: number;
 }
@@ -69,7 +69,7 @@ type PasswordStrength = 'weak' | 'fair' | 'good' | 'strong';
 
 /**
  * Register form component
- * 
+ *
  * @example
  * <RegisterForm
  *   onSuccess={() => navigate('/onboarding')}
@@ -88,7 +88,7 @@ export function RegisterForm({
   minPasswordLength = 8,
 }: RegisterFormProps): React.JSX.Element {
   const { login, isLoading, error: authError } = useAuth();
-  
+
   // Form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -96,86 +96,89 @@ export function RegisterForm({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Validation errors
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
-  
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof RegisterFormData, string>>
+  >({});
+
   /**
    * Calculate password strength
    */
   const getPasswordStrength = (pwd: string): PasswordStrength => {
     if (pwd.length < minPasswordLength) return 'weak';
-    
+
     let strength = 0;
     if (pwd.length >= 12) strength++;
     if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++;
     if (/\d/.test(pwd)) strength++;
     if (/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) strength++;
-    
+
     if (strength === 0) return 'weak';
     if (strength === 1) return 'fair';
     if (strength === 2) return 'good';
     return 'strong';
   };
-  
+
   const passwordStrength = password ? getPasswordStrength(password) : null;
-  
+
   /**
    * Validate form data
    */
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof RegisterFormData, string>> = {};
-    
+
     // Name validation
     if (!name) {
       newErrors.name = 'Name is required';
     } else if (name.length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
     }
-    
+
     // Email validation
     if (!email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
-    
+
     // Password validation
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < minPasswordLength) {
       newErrors.password = `Password must be at least ${minPasswordLength} characters`;
     } else if (getPasswordStrength(password) === 'weak') {
-      newErrors.password = 'Password is too weak. Add numbers, symbols, or make it longer.';
+      newErrors.password =
+        'Password is too weak. Add numbers, symbols, or make it longer.';
     }
-    
+
     // Confirm password validation
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     // Terms validation
     if (showTerms && !acceptTerms) {
       newErrors.acceptTerms = 'You must accept the terms and conditions';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   /**
    * Handle form submission
    */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!validate()) {
       return;
     }
-    
+
     try {
       // Call backend API
       const response = await fetch(registerEndpoint, {
@@ -185,14 +188,14 @@ export function RegisterForm({
         },
         body: JSON.stringify({ name, email, password }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Registration failed');
       }
-      
+
       const data = await response.json();
-      
+
       // Auto-login after registration
       login({
         user: data.user,
@@ -200,7 +203,7 @@ export function RegisterForm({
         refreshToken: data.refreshToken,
         expiresIn: data.expiresIn,
       });
-      
+
       // Call success callback
       if (onSuccess) {
         onSuccess();
@@ -208,15 +211,16 @@ export function RegisterForm({
         window.location.href = redirectTo;
       }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Registration failed');
-      
+      const err =
+        error instanceof Error ? error : new Error('Registration failed');
+
       // Call error callback
       if (onError) {
         onError(err);
       }
     }
   };
-  
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -248,7 +252,7 @@ export function RegisterForm({
           </p>
         )}
       </div>
-      
+
       {/* Email Field */}
       <div className="form-group">
         <label htmlFor="email" className="form-label">
@@ -273,7 +277,7 @@ export function RegisterForm({
           </p>
         )}
       </div>
-      
+
       {/* Password Field */}
       <div className="form-group">
         <label htmlFor="password" className="form-label">
@@ -289,7 +293,11 @@ export function RegisterForm({
             required
             autoComplete="new-password"
             aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? 'password-error password-strength' : 'password-strength'}
+            aria-describedby={
+              errors.password
+                ? 'password-error password-strength'
+                : 'password-strength'
+            }
             className={`form-input ${errors.password ? 'form-input-error' : ''}`}
             placeholder="Create a strong password"
           />
@@ -303,10 +311,14 @@ export function RegisterForm({
             {showPassword ? '👁️' : '👁️‍🗨️'}
           </button>
         </div>
-        
+
         {/* Password Strength Indicator */}
         {passwordStrength && (
-          <div id="password-strength" className="password-strength" aria-live="polite">
+          <div
+            id="password-strength"
+            className="password-strength"
+            aria-live="polite"
+          >
             <div className={`strength-bar strength-${passwordStrength}`}>
               <div className="strength-fill" />
             </div>
@@ -315,14 +327,14 @@ export function RegisterForm({
             </span>
           </div>
         )}
-        
+
         {errors.password && (
           <p id="password-error" className="form-error" role="alert">
             {errors.password}
           </p>
         )}
       </div>
-      
+
       {/* Confirm Password Field */}
       <div className="form-group">
         <label htmlFor="confirmPassword" className="form-label">
@@ -337,7 +349,9 @@ export function RegisterForm({
           required
           autoComplete="new-password"
           aria-invalid={!!errors.confirmPassword}
-          aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
+          aria-describedby={
+            errors.confirmPassword ? 'confirm-password-error' : undefined
+          }
           className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
           placeholder="Re-enter your password"
         />
@@ -347,7 +361,7 @@ export function RegisterForm({
           </p>
         )}
       </div>
-      
+
       {/* Terms and Conditions */}
       {showTerms && (
         <div className="form-group">
@@ -380,14 +394,14 @@ export function RegisterForm({
           )}
         </div>
       )}
-      
+
       {/* Error Message */}
       {authError && (
         <div className="alert alert-error" role="alert">
           {authError.message}
         </div>
       )}
-      
+
       {/* Submit Button */}
       <button
         type="submit"
@@ -397,7 +411,7 @@ export function RegisterForm({
       >
         {isLoading ? 'Creating account...' : submitText}
       </button>
-      
+
       {/* Sign In Link */}
       {showSignIn && (
         <p className="form-footer">

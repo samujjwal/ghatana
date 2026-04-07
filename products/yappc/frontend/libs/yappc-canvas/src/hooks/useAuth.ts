@@ -48,7 +48,7 @@ export const authStateAtom = atom<AuthState>({
   isAuthenticated: false,
   isLoading: false,
   error: null,
-  token: null
+  token: null,
 });
 
 export const authUserAtom = atom(
@@ -93,7 +93,7 @@ export const authErrorAtom = atom(
 
 /**
  * Authentication hook for managing user sessions and identity
- * 
+ *
  * Provides comprehensive authentication functionality including:
  * - User login/logout with credential validation
  * - User registration with profile creation
@@ -101,9 +101,9 @@ export const authErrorAtom = atom(
  * - Session validation with periodic checks (every 5 minutes)
  * - Token management and refresh
  * - Error handling with detailed error states
- * 
+ *
  * Implements Sprint 3 collaboration requirements for multi-user support.
- * 
+ *
  * @returns Object containing:
  *   - user: Current authenticated user or null
  *   - isAuthenticated: Boolean indicating authentication status
@@ -112,12 +112,12 @@ export const authErrorAtom = atom(
  *   - login: Function to authenticate user with credentials
  *   - logout: Function to end session and clear user data
  *   - register: Function to create new user account
- * 
+ *
  * @example
  * ```tsx
  * function LoginForm() {
  *   const { login, isLoading, error, isAuthenticated } = useAuth();
- *   
+ *
  *   const handleSubmit = async (e) => {
  *     e.preventDefault();
  *     const formData = new FormData(e.target);
@@ -126,9 +126,9 @@ export const authErrorAtom = atom(
  *       password: formData.get('password')
  *     });
  *   };
- *   
+ *
  *   if (isAuthenticated) return <Navigate to="/dashboard" />;
- *   
+ *
  *   return (
  *     <form onSubmit={handleSubmit}>
  *       <input name="email" type="email" required />
@@ -140,10 +140,10 @@ export const authErrorAtom = atom(
  *     </form>
  *   );
  * }
- * 
+ *
  * function UserProfile() {
  *   const { user, logout } = useAuth();
- *   
+ *
  *   return (
  *     <div>
  *       <h2>Welcome, {user?.name}</h2>
@@ -155,14 +155,15 @@ export const authErrorAtom = atom(
  */
 export function useAuth() {
   const [authState, setAuthState] = useAtom(authStateAtom);
-  const [sessionCheckInterval, setSessionCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [sessionCheckInterval, setSessionCheckInterval] =
+    useState<NodeJS.Timeout | null>(null);
 
   /**
    * Initialize authentication on mount
    */
   useEffect(() => {
     checkExistingSession();
-    
+
     // Set up session validation interval
     const interval = setInterval(validateSession, 5 * 60 * 1000); // Every 5 minutes
     setSessionCheckInterval(interval);
@@ -176,7 +177,7 @@ export function useAuth() {
    * Check for existing authentication session
    */
   const checkExistingSession = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const token = localStorage.getItem('auth_token');
@@ -184,31 +185,31 @@ export function useAuth() {
 
       if (token && userData) {
         const user = JSON.parse(userData);
-        
+
         // Validate token with server
         const isValid = await validateTokenWithServer(token);
-        
+
         if (isValid) {
           setAuthState({
             user,
             isAuthenticated: true,
             isLoading: false,
             error: null,
-            token
+            token,
           });
         } else {
           // Clear invalid session
           await logout();
         }
       } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
+        setAuthState((prev) => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error('Session check failed:', error);
-      setAuthState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: 'Session validation failed' 
+      setAuthState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: 'Session validation failed',
       }));
     }
   }, []);
@@ -217,7 +218,7 @@ export function useAuth() {
    * Login with email and password
    */
   const login = useCallback(async (credentials: LoginCredentials) => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -244,16 +245,16 @@ export function useAuth() {
         isAuthenticated: true,
         isLoading: false,
         error: null,
-        token
+        token,
       });
 
       return { success: true, user, token };
     } catch (error: unknown) {
       const errorMessage = error.message || 'Login failed';
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
       }));
 
       return { success: false, error: errorMessage };
@@ -264,7 +265,7 @@ export function useAuth() {
    * Register new user account
    */
   const register = useCallback(async (userData: RegisterData) => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -291,16 +292,16 @@ export function useAuth() {
         isAuthenticated: true,
         isLoading: false,
         error: null,
-        token
+        token,
       });
 
       return { success: true, user, token };
     } catch (error: unknown) {
       const errorMessage = error.message || 'Registration failed';
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
       }));
 
       return { success: false, error: errorMessage };
@@ -311,7 +312,7 @@ export function useAuth() {
    * Logout and clear session
    */
   const logout = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
 
     try {
       // Notify server of logout
@@ -319,7 +320,7 @@ export function useAuth() {
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${authState.token}`,
+            Authorization: `Bearer ${authState.token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -337,7 +338,7 @@ export function useAuth() {
         isAuthenticated: false,
         isLoading: false,
         error: null,
-        token: null
+        token: null,
       });
 
       // Clear session interval
@@ -356,7 +357,7 @@ export function useAuth() {
 
     try {
       const isValid = await validateTokenWithServer(authState.token);
-      
+
       if (!isValid) {
         await logout();
         return false;
@@ -372,84 +373,93 @@ export function useAuth() {
   /**
    * Update user profile
    */
-  const updateProfile = useCallback(async (updates: Partial<AuthUser>) => {
-    if (!authState.user || !authState.token) {
-      throw new Error('User not authenticated');
-    }
-
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const response = await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
+  const updateProfile = useCallback(
+    async (updates: Partial<AuthUser>) => {
+      if (!authState.user || !authState.token) {
+        throw new Error('User not authenticated');
       }
 
-      const updatedUser = await response.json();
+      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      // Update local storage
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      try {
+        const response = await fetch('/api/auth/profile', {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${authState.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        });
 
-      setAuthState(prev => ({
-        ...prev,
-        user: updatedUser,
-        isLoading: false
-      }));
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Profile update failed');
+        }
 
-      return { success: true, user: updatedUser };
-    } catch (error: unknown) {
-      const errorMessage = error.message || 'Profile update failed';
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
+        const updatedUser = await response.json();
 
-      return { success: false, error: errorMessage };
-    }
-  }, [authState.user, authState.token]);
+        // Update local storage
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+
+        setAuthState((prev) => ({
+          ...prev,
+          user: updatedUser,
+          isLoading: false,
+        }));
+
+        return { success: true, user: updatedUser };
+      } catch (error: unknown) {
+        const errorMessage = error.message || 'Profile update failed';
+        setAuthState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: errorMessage,
+        }));
+
+        return { success: false, error: errorMessage };
+      }
+    },
+    [authState.user, authState.token]
+  );
 
   /**
    * Check if user has specific permission
    */
-  const hasPermission = useCallback((permission: string): boolean => {
-    if (!authState.user) return false;
-    
-    // Admin role has all permissions
-    if (authState.user.role === 'admin') return true;
-    
-    return authState.user.permissions.includes(permission);
-  }, [authState.user]);
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!authState.user) return false;
+
+      // Admin role has all permissions
+      if (authState.user.role === 'admin') return true;
+
+      return authState.user.permissions.includes(permission);
+    },
+    [authState.user]
+  );
 
   /**
    * Check if user can access workspace
    */
-  const canAccessWorkspace = useCallback((workspaceId: string): boolean => {
-    if (!authState.user) return false;
-    
-    // Admin role has access to all workspaces
-    if (authState.user.role === 'admin') return true;
-    
-    return authState.user.workspaces.includes(workspaceId);
-  }, [authState.user]);
+  const canAccessWorkspace = useCallback(
+    (workspaceId: string): boolean => {
+      if (!authState.user) return false;
+
+      // Admin role has access to all workspaces
+      if (authState.user.role === 'admin') return true;
+
+      return authState.user.workspaces.includes(workspaceId);
+    },
+    [authState.user]
+  );
 
   /**
    * Get authentication headers for API requests
    */
   const getAuthHeaders = useCallback(() => {
     if (!authState.token) return {};
-    
+
     return {
-      'Authorization': `Bearer ${authState.token}`,
+      Authorization: `Bearer ${authState.token}`,
       'Content-Type': 'application/json',
     };
   }, [authState.token]);
@@ -458,27 +468,27 @@ export function useAuth() {
    * Clear authentication error
    */
   const clearError = useCallback(() => {
-    setAuthState(prev => ({ ...prev, error: null }));
+    setAuthState((prev) => ({ ...prev, error: null }));
   }, []);
 
   return {
     // State
     ...authState,
-    
+
     // Actions
     login,
     register,
     logout,
     updateProfile,
-    
+
     // Validation
     validateSession,
     hasPermission,
     canAccessWorkspace,
-    
+
     // Utilities
     getAuthHeaders,
-    clearError
+    clearError,
   };
 }
 
@@ -491,7 +501,7 @@ async function validateTokenWithServer(token: string): Promise<boolean> {
     const meResponse = await fetch('/api/auth/me', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -504,7 +514,7 @@ async function validateTokenWithServer(token: string): Promise<boolean> {
     const validateResponse = await fetch('/api/auth/validate', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
@@ -521,7 +531,7 @@ async function validateTokenWithServer(token: string): Promise<boolean> {
  */
 export function createDemoUser(userId?: string): AuthUser {
   const id = userId || `demo-${Date.now()}`;
-  
+
   return {
     id,
     email: `demo-${id}@example.com`,
@@ -531,7 +541,7 @@ export function createDemoUser(userId?: string): AuthUser {
     permissions: ['canvas.read', 'canvas.write', 'canvas.share'],
     workspaces: ['demo-workspace'],
     lastLogin: Date.now(),
-    createdAt: Date.now() - (Math.random() * 30 * 24 * 60 * 60 * 1000) // Random date within last 30 days
+    createdAt: Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000, // Random date within last 30 days
   };
 }
 

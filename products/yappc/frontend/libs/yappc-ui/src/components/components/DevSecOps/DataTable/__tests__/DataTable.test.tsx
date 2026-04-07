@@ -67,7 +67,9 @@ describe('DataTable', () => {
   });
 
   it('renders loading state', () => {
-    const { container } = render(<DataTable data={[]} columns={mockColumns} loading />);
+    const { container } = render(
+      <DataTable data={[]} columns={mockColumns} loading />
+    );
 
     const skeletons = container.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -114,13 +116,17 @@ describe('DataTable', () => {
   });
 
   it('hides pagination when showPagination is false', () => {
-    render(<DataTable data={mockData} columns={mockColumns} showPagination={false} />);
+    render(
+      <DataTable data={mockData} columns={mockColumns} showPagination={false} />
+    );
 
     expect(screen.queryByText(/rows per page/i)).not.toBeInTheDocument();
   });
 
   it('renders sortable columns', () => {
-    const { container } = render(<DataTable data={mockData} columns={mockColumns} />);
+    const { container } = render(
+      <DataTable data={mockData} columns={mockColumns} />
+    );
 
     const sortLabels = container.querySelectorAll('.MuiTableSortLabel-root');
     expect(sortLabels.length).toBe(3);

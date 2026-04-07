@@ -5,7 +5,6 @@ import type { FilterCriteria } from '../../components/Search';
 import type { SavedSearch, UseSavedSearchesReturn } from './types';
 import { WebSocketSearchUtils } from './utils';
 
-
 /**
  * Hook for managing saved searches with localStorage persistence.
  *

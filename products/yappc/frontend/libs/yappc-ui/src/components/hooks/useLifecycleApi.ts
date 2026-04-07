@@ -26,7 +26,13 @@ export interface Task {
   projectId: string;
   title: string;
   description: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   stage: LifecycleStageId;
   assignedAgentId?: string;
@@ -67,24 +73,27 @@ export interface PhaseState {
 // API Client
 const API_BASE = '/api/v1';
 
-async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function fetchApi<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
     },
     ...options,
   });
-  
+
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
-  
+
   return (await response.json()) as T;
 }
 
 /**
  * useProjects Hook
- * 
+ *
  * Fetches and manages project list with filtering.
  */
 export function useProjects(filters?: { status?: string; stage?: string }) {
@@ -95,12 +104,12 @@ export function useProjects(filters?: { status?: string; stage?: string }) {
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const queryParams = new URLSearchParams();
       if (filters?.status) queryParams.append('status', filters.status);
       if (filters?.stage) queryParams.append('stage', filters.stage);
-      
+
       const data = await fetchApi<Project[]>(`/projects?${queryParams}`);
       setProjects(data);
     } catch (err) {
@@ -119,7 +128,7 @@ export function useProjects(filters?: { status?: string; stage?: string }) {
 
 /**
  * useProject Hook
- * 
+ *
  * Fetches single project with details.
  */
 export function useProject(projectId: string) {
@@ -129,10 +138,10 @@ export function useProject(projectId: string) {
 
   const fetchProject = useCallback(async () => {
     if (!projectId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await fetchApi<Project>(`/projects/${projectId}`);
       setProject(data);
@@ -149,7 +158,7 @@ export function useProject(projectId: string) {
 
   const advanceStage = useCallback(async () => {
     if (!projectId) return;
-    
+
     const data = await fetchApi<Project>(`/projects/${projectId}/advance`, {
       method: 'POST',
     });
@@ -162,7 +171,7 @@ export function useProject(projectId: string) {
 
 /**
  * useTasks Hook
- * 
+ *
  * Fetches tasks with filtering and search.
  */
 export function useTasks(filters?: {
@@ -179,15 +188,17 @@ export function useTasks(filters?: {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const queryParams = new URLSearchParams();
-      if (filters?.projectId) queryParams.append('projectId', filters.projectId);
+      if (filters?.projectId)
+        queryParams.append('projectId', filters.projectId);
       if (filters?.status) queryParams.append('status', filters.status);
       if (filters?.stage) queryParams.append('stage', filters.stage);
-      if (filters?.assignedAgentId) queryParams.append('assignedAgentId', filters.assignedAgentId);
+      if (filters?.assignedAgentId)
+        queryParams.append('assignedAgentId', filters.assignedAgentId);
       if (filters?.priority) queryParams.append('priority', filters.priority);
-      
+
       const data = await fetchApi<Task[]>(`/tasks?${queryParams}`);
       setTasks(data);
     } catch (err) {
@@ -207,29 +218,32 @@ export function useTasks(filters?: {
     void fetchTasks();
   }, [fetchTasks]);
 
-  const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
-    const data = await fetchApi<Task>(`/tasks/${taskId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
-    
-    setTasks(prev => prev.map(t => t.id === taskId ? data : t));
-    return data;
-  }, []);
+  const updateTaskStatus = useCallback(
+    async (taskId: string, status: Task['status']) => {
+      const data = await fetchApi<Task>(`/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? data : t)));
+      return data;
+    },
+    []
+  );
 
   const retryTask = useCallback(async (taskId: string) => {
     const data = await fetchApi<Task>(`/tasks/${taskId}/retry`, {
       method: 'POST',
     });
-    
-    setTasks(prev => prev.map(t => t.id === taskId ? data : t));
+
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? data : t)));
     return data;
   }, []);
 
-  return { 
-    tasks, 
-    loading, 
-    error, 
+  return {
+    tasks,
+    loading,
+    error,
     refetch: fetchTasks,
     updateTaskStatus,
     retryTask,
@@ -238,7 +252,7 @@ export function useTasks(filters?: {
 
 /**
  * useTask Hook
- * 
+ *
  * Fetches single task details.
  */
 export function useTask(taskId: string) {
@@ -248,10 +262,10 @@ export function useTask(taskId: string) {
 
   const fetchTask = useCallback(async () => {
     if (!taskId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const data = await fetchApi<Task>(`/tasks/${taskId}`);
       setTask(data);
@@ -271,7 +285,7 @@ export function useTask(taskId: string) {
 
 /**
  * usePhaseStates Hook
- * 
+ *
  * Fetches phase state history for a project.
  */
 export function usePhaseStates(projectId: string) {
@@ -281,12 +295,14 @@ export function usePhaseStates(projectId: string) {
 
   const fetchPhaseStates = useCallback(async () => {
     if (!projectId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const data = await fetchApi<PhaseState[]>(`/projects/${projectId}/phases`);
+      const data = await fetchApi<PhaseState[]>(
+        `/projects/${projectId}/phases`
+      );
       setPhaseStates(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -299,24 +315,24 @@ export function usePhaseStates(projectId: string) {
     void fetchPhaseStates();
   }, [fetchPhaseStates]);
 
-  const currentPhase = phaseStates.find(p => p.status === 'ACTIVE');
-  const completedPhases = phaseStates.filter(p => p.status === 'COMPLETED');
-  const blockedPhases = phaseStates.filter(p => p.status === 'BLOCKED');
+  const currentPhase = phaseStates.find((p) => p.status === 'ACTIVE');
+  const completedPhases = phaseStates.filter((p) => p.status === 'COMPLETED');
+  const blockedPhases = phaseStates.filter((p) => p.status === 'BLOCKED');
 
-  return { 
-    phaseStates, 
+  return {
+    phaseStates,
     currentPhase,
     completedPhases,
     blockedPhases,
-    loading, 
-    error, 
+    loading,
+    error,
     refetch: fetchPhaseStates,
   };
 }
 
 /**
  * useProjectMetrics Hook
- * 
+ *
  * Fetches aggregated metrics for a project.
  */
 export function useProjectMetrics(projectId: string) {
@@ -333,12 +349,14 @@ export function useProjectMetrics(projectId: string) {
 
   const fetchMetrics = useCallback(async () => {
     if (!projectId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const data = await fetchApi<typeof metrics>(`/projects/${projectId}/metrics`);
+      const data = await fetchApi<typeof metrics>(
+        `/projects/${projectId}/metrics`
+      );
       setMetrics(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));

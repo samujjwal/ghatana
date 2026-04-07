@@ -1,9 +1,9 @@
 /**
  * IDE File Tree Component
- * 
+ *
  * Hierarchical file tree with collaboration indicators,
  * real-time sync status, and integrated LSP features.
- * 
+ *
  * Features:
  * - 📁 Hierarchical file/folder structure
  * - 👥 Collaboration indicators (editing, presence)
@@ -11,7 +11,7 @@
  * - 🎯 Quick file navigation
  * - 💾 File status indicators (modified, saved, conflict)
  * - 🔍 Search and filter
- * 
+ *
  * @doc.type component
  * @doc.purpose IDE file tree with collaboration
  * @doc.layer product
@@ -112,8 +112,12 @@ const FileTreeNodeComponent: React.FC<{
           </button>
         )}
         {!isFolder && <span className="mr-1 text-gray-400">📄</span>}
-        {isFolder && !node.isOpen && <span className="mr-1 text-gray-400">📁</span>}
-        {isFolder && node.isOpen && <span className="mr-1 text-gray-400">📂</span>}
+        {isFolder && !node.isOpen && (
+          <span className="mr-1 text-gray-400">📁</span>
+        )}
+        {isFolder && node.isOpen && (
+          <span className="mr-1 text-gray-400">📂</span>
+        )}
 
         {isRenaming ? (
           <input
@@ -217,7 +221,9 @@ export const IDEFileTree: React.FC<FileTreeConfig> = ({
   collaborativeUsers,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set()
+  );
 
   /**
    * Filter tree based on search query
@@ -226,7 +232,9 @@ export const IDEFileTree: React.FC<FileTreeConfig> = ({
     if (!searchQuery) return root;
 
     const filterNode = (node: FileTreeNode): FileTreeNode | null => {
-      const matches = node.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matches = node.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       const children = node.children
         ?.map(filterNode)
         .filter((child): child is FileTreeNode => child !== null);

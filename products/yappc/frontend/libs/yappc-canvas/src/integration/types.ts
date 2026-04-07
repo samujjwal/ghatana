@@ -1,13 +1,17 @@
 /**
  * Data Integration Types
- * 
+ *
  * Type definitions for REST/GraphQL/WebSocket synchronization,
  * offline queue, and conflict resolution.
  */
 
 // Re-export code generation types
 export type { GeneratedFile, CodeGenerationResult } from './codeGeneration';
-export type { ServiceNodeData, APIEndpointNodeData, DatabaseNodeData } from './node-types';
+export type {
+  ServiceNodeData,
+  APIEndpointNodeData,
+  DatabaseNodeData,
+} from './node-types';
 
 // Canvas document type (simplified for integration)
 /**
@@ -32,17 +36,22 @@ export type SyncOperation = 'create' | 'update' | 'delete' | 'batch';
 /**
  * Sync status
  */
-export type SyncStatus = 'pending' | 'syncing' | 'synced' | 'error' | 'conflict';
+export type SyncStatus =
+  | 'pending'
+  | 'syncing'
+  | 'synced'
+  | 'error'
+  | 'conflict';
 
 /**
  * Conflict resolution strategy
  */
 export type ConflictStrategy =
-  | 'server-wins'    // Server data takes precedence
-  | 'client-wins'    // Client data takes precedence
+  | 'server-wins' // Server data takes precedence
+  | 'client-wins' // Client data takes precedence
   | 'last-write-wins' // Most recent timestamp wins
-  | 'manual'         // Requires manual resolution
-  | 'merge';         // Attempt automatic merge
+  | 'manual' // Requires manual resolution
+  | 'merge'; // Attempt automatic merge
 
 /**
  * Sync adapter interface for REST/GraphQL/WebSocket
@@ -66,7 +75,10 @@ export interface SyncAdapter {
   push(documentId: string, changes: CanvasChange[]): Promise<SyncResult>;
 
   /** Subscribe to real-time updates (WebSocket/GraphQL subscriptions) */
-  subscribe?(documentId: string, callback: (change: CanvasChange) => void): () => void;
+  subscribe?(
+    documentId: string,
+    callback: (change: CanvasChange) => void
+  ): () => void;
 }
 
 /**

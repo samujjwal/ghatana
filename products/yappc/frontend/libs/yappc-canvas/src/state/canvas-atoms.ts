@@ -80,7 +80,7 @@ export const nodesAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       nodes: newNodes,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -91,7 +91,7 @@ export const edgesAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       edges: newEdges,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -102,7 +102,7 @@ export const cameraAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       viewport: newViewport,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -113,7 +113,7 @@ export const portalsAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       portals: newPortals,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -124,7 +124,7 @@ export const canvasHistoryAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       canvasHistory: newHistory,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -136,7 +136,7 @@ export const snapshotsAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       snapshots: newSnapshots,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -147,7 +147,7 @@ export const currentSnapshotIndexAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       currentSnapshotIndex: newIndex,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -159,7 +159,7 @@ export const historyAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       history: newHistory,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -170,7 +170,7 @@ export const historyIndexAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       historyIndex: newIndex,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -182,7 +182,7 @@ export const canvasIdAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       canvasId: newId,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -193,7 +193,7 @@ export const canvasNameAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       name: newName,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );
@@ -204,7 +204,7 @@ export const canvasDescriptionAtom = atom(
     set(canvasStateAtom, {
       ...get(canvasStateAtom),
       description: newDescription,
-      lastModified: Date.now()
+      lastModified: Date.now(),
     });
   }
 );

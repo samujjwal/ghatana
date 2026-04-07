@@ -5,12 +5,22 @@ import { cn } from '../../utils/cn';
 /**
  * Position variant for AppBar component
  */
-export type AppBarPosition = 'static' | 'fixed' | 'sticky' | 'absolute' | 'relative';
+export type AppBarPosition =
+  | 'static'
+  | 'fixed'
+  | 'sticky'
+  | 'absolute'
+  | 'relative';
 
 /**
  * Color variant for AppBar component
  */
-export type AppBarColor = 'default' | 'primary' | 'secondary' | 'transparent' | 'inherit';
+export type AppBarColor =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'transparent'
+  | 'inherit';
 
 /**
  * Elevation level for AppBar shadow
@@ -116,10 +126,10 @@ const heightClasses = {
 
 /**
  * AppBar - Header bar component for navigation and branding
- * 
+ *
  * Simple Tailwind component for top-level application bars. Commonly used with
  * Toolbar component for layout and spacing.
- * 
+ *
  * @example
  * ```tsx
  * <AppBar position="sticky" color="primary" elevation={4}>
@@ -128,7 +138,7 @@ const heightClasses = {
  *   </Toolbar>
  * </AppBar>
  * ```
- * 
+ *
  * @example
  * ```tsx
  * <AppBar position="fixed" color="transparent" blur>
@@ -139,10 +149,7 @@ const heightClasses = {
  * </AppBar>
  * ```
  */
-export const AppBar = React.forwardRef<
-  HTMLDivElement,
-  AppBarProps
->(
+export const AppBar = React.forwardRef<HTMLDivElement, AppBarProps>(
   (
     {
       children,
@@ -165,25 +172,25 @@ export const AppBar = React.forwardRef<
         className={cn(
           // Base styles
           'w-full flex items-center',
-          
+
           // Position
           positionClasses[position],
-          
+
           // Color
           colorClasses[color],
-          
+
           // Elevation (shadow)
           elevationClasses[elevation],
-          
+
           // Height
           heightClasses[height],
-          
+
           // Blur backdrop
           blur && 'backdrop-blur-md',
-          
+
           // Transitions
           'transition-shadow duration-200',
-          
+
           // Custom className
           className
         )}

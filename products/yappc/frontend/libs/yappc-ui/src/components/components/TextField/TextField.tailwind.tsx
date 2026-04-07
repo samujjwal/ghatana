@@ -1,36 +1,36 @@
 /**
  * Tailwind CSS TextField Component
- * 
+ *
  * Text input field built with Base UI Field primitives and Tailwind CSS.
  * Follows Base UI composable API pattern: Field.Root → Field.Label → Field.Control → Field.Description/Error
- * 
+ *
  * @example
  * ```tsx
  * // Basic text field
  * <TextField label="Email" placeholder="Enter your email" />
- * 
+ *
  * // With helper text
- * <TextField 
- *   label="Username" 
+ * <TextField
+ *   label="Username"
  *   helperText="Must be 3-20 characters"
  * />
- * 
+ *
  * // Error state
- * <TextField 
- *   label="Password" 
+ * <TextField
+ *   label="Password"
  *   error="Password is required"
  * />
- * 
+ *
  * // Different sizes
  * <TextField size="sm" label="Small" />
  * <TextField size="md" label="Medium" />
  * <TextField size="lg" label="Large" />
- * 
+ *
  * // Variants
  * <TextField variant="outline" label="Outline" />
  * <TextField variant="filled" label="Filled" />
  * ```
- * 
+ *
  * @see {@link https://base-ui.com/react/field Base UI Field Documentation}
  */
 import { Field } from '@base-ui/react/field';
@@ -41,7 +41,10 @@ import { cn } from '../../utils/cn';
 /**
  * TextField component props
  */
-export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface TextFieldProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
   /**
    * Label text displayed above the input
    */
@@ -59,21 +62,21 @@ export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInput
 
   /**
    * Visual variant of the text field
-   * 
+   *
    * - `outline`: Border with transparent background (default)
    * - `filled`: Filled background with subtle border
-   * 
+   *
    * @default 'outline'
    */
   variant?: 'outline' | 'filled';
 
   /**
    * Size of the text field
-   * 
+   *
    * - `sm`: Small (py-1.5, text-sm)
    * - `md`: Medium (py-2, text-base) - default
    * - `lg`: Large (py-3, text-lg)
-   * 
+   *
    * @default 'md'
    */
   size?: 'sm' | 'md' | 'lg';
@@ -96,7 +99,7 @@ export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInput
 
 /**
  * TextField Component
- * 
+ *
  * @param props - TextField component props
  * @param ref - Forwarded ref to input element
  * @returns Rendered text field component
@@ -188,10 +191,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
 
         {helperText && !hasError && (
           <Field.Description
-            className={cn(
-              'text-sm text-grey-600',
-              disabled && 'opacity-50'
-            )}
+            className={cn('text-sm text-grey-600', disabled && 'opacity-50')}
           >
             {helperText}
           </Field.Description>

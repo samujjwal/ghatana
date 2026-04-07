@@ -129,9 +129,18 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               }}
             >
               {/* Simplified visual representation */}
-              <div style={{ fontSize: 14, color: '#666', textAlign: 'center', padding: 40 }}>
+              <div
+                style={{
+                  fontSize: 14,
+                  color: '#666',
+                  textAlign: 'center',
+                  padding: 40,
+                }}
+              >
                 <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-                <div>Template structure with {template.nodes.length} components</div>
+                <div>
+                  Template structure with {template.nodes.length} components
+                </div>
               </div>
 
               {/* Component hierarchy preview */}
@@ -156,7 +165,14 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                   </div>
                 ))}
                 {template.nodes.length > 5 && (
-                  <div style={{ fontSize: 12, color: '#999', textAlign: 'center', padding: 8 }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: '#999',
+                      textAlign: 'center',
+                      padding: 8,
+                    }}
+                  >
                     +{template.nodes.length - 5} more components
                   </div>
                 )}
@@ -177,13 +193,21 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
               <div style={{ padding: 16 }}>
                 {/* Metadata */}
                 <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
+                  <h3
+                    style={{
+                      margin: '0 0 12px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
                     Template Info
                   </h3>
                   <div style={{ fontSize: 12, color: '#666' }}>
                     <div style={{ marginBottom: 8 }}>
                       <strong>Category:</strong>{' '}
-                      <span style={{ textTransform: 'capitalize' }}>{template.category}</span>
+                      <span style={{ textTransform: 'capitalize' }}>
+                        {template.category}
+                      </span>
                     </div>
                     <div style={{ marginBottom: 8 }}>
                       <strong>Version:</strong> {template.metadata.version}
@@ -195,7 +219,8 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                     )}
                     {template.metadata.usageCount !== undefined && (
                       <div style={{ marginBottom: 8 }}>
-                        <strong>Used:</strong> {template.metadata.usageCount} times
+                        <strong>Used:</strong> {template.metadata.usageCount}{' '}
+                        times
                       </div>
                     )}
                   </div>
@@ -203,7 +228,15 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
                 {/* Tags */}
                 <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Tags</h3>
+                  <h3
+                    style={{
+                      margin: '0 0 12px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Tags
+                  </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {template.tags.map((tag) => (
                       <span
@@ -224,33 +257,45 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
 
                 {/* Components */}
                 <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
+                  <h3
+                    style={{
+                      margin: '0 0 12px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                    }}
+                  >
                     Components ({template.nodes.length})
                   </h3>
                   <div style={{ fontSize: 12 }}>
-                    {Array.from(new Set(template.nodes.map((n) => n.componentType))).map(
-                      (type) => (
-                        <div
-                          key={type}
-                          style={{
-                            padding: '6px 8px',
-                            marginBottom: 4,
-                            backgroundColor: '#fff',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: 4,
-                          }}
-                        >
-                          {type}
-                        </div>
-                      )
-                    )}
+                    {Array.from(
+                      new Set(template.nodes.map((n) => n.componentType))
+                    ).map((type) => (
+                      <div
+                        key={type}
+                        style={{
+                          padding: '6px 8px',
+                          marginBottom: 4,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 4,
+                        }}
+                      >
+                        {type}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* Data Bindings */}
                 {template.bindings && template.bindings.length > 0 && (
                   <div style={{ marginBottom: 24 }}>
-                    <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
+                    <h3
+                      style={{
+                        margin: '0 0 12px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
                       Data Bindings ({template.bindings.length})
                     </h3>
                     <div style={{ fontSize: 11, color: '#666' }}>
@@ -280,7 +325,13 @@ export const TemplatePreview: React.FC<TemplatePreviewProps> = ({
                 {/* Events */}
                 {template.events && template.events.length > 0 && (
                   <div>
-                    <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>
+                    <h3
+                      style={{
+                        margin: '0 0 12px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
                       Events ({template.events.length})
                     </h3>
                     <div style={{ fontSize: 11, color: '#666' }}>

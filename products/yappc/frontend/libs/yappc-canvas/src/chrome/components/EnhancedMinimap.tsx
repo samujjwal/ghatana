@@ -1,8 +1,8 @@
 /**
  * EnhancedMinimap Component
- * 
+ *
  * Enhanced minimap with hierarchy visualization
- * 
+ *
  * Features:
  * - Hierarchy visualization with heat map
  * - Current viewport indicator (blue rectangle)
@@ -11,7 +11,7 @@
  * - Zoom levels color-coded by depth
  * - Toggle hierarchy view (flat vs nested)
  * - 200×150px size, bottom-right placement
- * 
+ *
  * @doc.type component
  * @doc.purpose Enhanced minimap with hierarchy
  * @doc.layer components
@@ -81,12 +81,12 @@ export interface EnhancedMinimapProps {
  */
 function getDepthColor(depth: number): string {
   const colors = [
-    COLORS.PRIMARY,           // Level 0
-    COLORS.PHASE_INTENT,      // Level 1
-    COLORS.PHASE_SHAPE,       // Level 2
-    COLORS.PHASE_BUILD,       // Level 3
-    COLORS.PHASE_RUN,         // Level 4
-    COLORS.PHASE_OBSERVE,     // Level 5+
+    COLORS.PRIMARY, // Level 0
+    COLORS.PHASE_INTENT, // Level 1
+    COLORS.PHASE_SHAPE, // Level 2
+    COLORS.PHASE_BUILD, // Level 3
+    COLORS.PHASE_RUN, // Level 4
+    COLORS.PHASE_OBSERVE, // Level 5+
   ];
 
   return colors[Math.min(depth, colors.length - 1)];
@@ -190,18 +190,23 @@ export function EnhancedMinimap({
 
   return (
     <Box
-      className="fixed" style={{ bottom: SPACING.MD + 50, top: SPACING.XS, right: SPACING.XS }}
+      className="fixed"
+      style={{ bottom: SPACING.MD + 50, top: SPACING.XS, right: SPACING.XS }}
     >
       {/* Toggle Button */}
-      <Box
-        className="absolute z-[1]" >
+      <Box className="absolute z-[1]">
         <Tooltip title={showHierarchy ? 'Flat view' : 'Hierarchy view'}>
           <IconButton
             size="sm"
             onClick={() => setShowHierarchy(!showHierarchy)}
-            className="w-[24px] h-[24px]" style={{ backgroundColor: COLORS.NEUTRAL_100 }}
+            className="w-[24px] h-[24px]"
+            style={{ backgroundColor: COLORS.NEUTRAL_100 }}
           >
-            {showHierarchy ? <FlatIcon className="text-sm" /> : <LayersIcon className="text-sm" />}
+            {showHierarchy ? (
+              <FlatIcon className="text-sm" />
+            ) : (
+              <LayersIcon className="text-sm" />
+            )}
           </IconButton>
         </Tooltip>
       </Box>
@@ -213,7 +218,11 @@ export function EnhancedMinimap({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className="w-full h-full relative" style={{ cursor: isDragging ? 'grabbing' : 'grab', backgroundColor: getDepthColor(depth) }}
+        className="w-full h-full relative"
+        style={{
+          cursor: isDragging ? 'grabbing' : 'grab',
+          backgroundColor: getDepthColor(depth),
+        }}
       >
         {/* Nodes */}
         {nodes.map((node) => {
@@ -225,7 +234,9 @@ export function EnhancedMinimap({
           if (nodeWidth < 1 || nodeHeight < 1) return null;
 
           const isFrame = node.type === 'frame';
-          const color = showHierarchy ? getDepthColor(node.depth) : COLORS.NEUTRAL_400;
+          const color = showHierarchy
+            ? getDepthColor(node.depth)
+            : COLORS.NEUTRAL_400;
           const opacity = showHierarchy ? 0.6 - node.depth * 0.1 : 0.4;
 
           return (
@@ -235,26 +246,47 @@ export function EnhancedMinimap({
                 e.stopPropagation();
                 onNodeClick?.(node.id);
               }}
-              className="absolute" style={{ left: pos.x, top: pos.y, width: nodeWidth, height: nodeHeight, backgroundColor: isFrame ? 'transparent' : color, border: isFrame ? `1px solid ${color}` : 'none' }}
+              className="absolute"
+              style={{
+                left: pos.x,
+                top: pos.y,
+                width: nodeWidth,
+                height: nodeHeight,
+                backgroundColor: isFrame ? 'transparent' : color,
+                border: isFrame ? `1px solid ${color}` : 'none',
+              }}
             />
           );
         })}
 
         {/* Viewport Rectangle */}
         <Box
-          className="absolute" style={{ left: viewportRect.x, top: viewportRect.y, width: viewportRect.width, height: viewportRect.height, border: `2px solid ${COLORS.PRIMARY}`}}
+          className="absolute"
+          style={{
+            left: viewportRect.x,
+            top: viewportRect.y,
+            width: viewportRect.width,
+            height: viewportRect.height,
+            border: `2px solid ${COLORS.PRIMARY}`,
+          }}
         />
       </Box>
 
       {/* Legend (if hierarchy view) */}
       {showHierarchy && (
         <Box
-          className="absolute flex text-[9px]" style={{ bottom: SPACING.XS, left: SPACING.XS, gap: SPACING.XS, color: COLORS.TEXT_SECONDARY, backgroundColor: COLORS.PANEL_BG_LIGHT }}
+          className="absolute flex text-[9px]"
+          style={{
+            bottom: SPACING.XS,
+            left: SPACING.XS,
+            gap: SPACING.XS,
+            color: COLORS.TEXT_SECONDARY,
+            backgroundColor: COLORS.PANEL_BG_LIGHT,
+          }}
         >
           {[0, 1, 2, 3].map((depth) => (
             <Box key={depth} className="flex items-center gap-4">
-              <Box
-                className="rounded-full w-[8px] h-[8px]" />
+              <Box className="rounded-full w-[8px] h-[8px]" />
               <span>L{depth}</span>
             </Box>
           ))}

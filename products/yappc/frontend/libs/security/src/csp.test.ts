@@ -242,7 +242,7 @@ describe('CSP Security', () => {
     it('should escape special characters in sources', () => {
       const config: CSPConfig = {
         directives: {
-          'script-src': ["https://example.com:8080/path?query=value"],
+          'script-src': ['https://example.com:8080/path?query=value'],
         },
       };
 
@@ -266,7 +266,9 @@ describe('CSP Nonce — cryptographic security properties', () => {
     const nonce = generateNonce();
     // Base64 encodes 3 bytes as 4 chars; ≥16 bytes → base64 length ≥ ceil(16/3)*4 = 24 chars
     // (without padding stripping). Allow for URL-safe variants.
-    const decodedByteEstimate = Math.floor((nonce.replace(/=+$/, '').length * 3) / 4);
+    const decodedByteEstimate = Math.floor(
+      (nonce.replace(/=+$/, '').length * 3) / 4
+    );
     expect(decodedByteEstimate).toBeGreaterThanOrEqual(16);
   });
 

@@ -16,7 +16,9 @@ import type {
   Bounds,
 } from './canvas-document';
 
-function metadataToRecord(metadata: CanvasElementMetadata): Record<string, unknown> {
+function metadataToRecord(
+  metadata: CanvasElementMetadata
+): Record<string, unknown> {
   return {
     ...(metadata.custom ?? {}),
     layer: metadata.layer,

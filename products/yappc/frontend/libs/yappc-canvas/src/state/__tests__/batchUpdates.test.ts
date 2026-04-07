@@ -54,7 +54,7 @@ describe('useBatchUpdates', () => {
     );
 
     const initialFlush = Date.now();
-    
+
     act(() => {
       result.current.batchUpdate(updateFn);
       // Manually update lastFlush to simulate time passage
@@ -72,9 +72,7 @@ describe('useBatchUpdates', () => {
 
   it('should execute immediately when batching disabled', () => {
     const updateFn = vi.fn();
-    const { result } = renderHook(() =>
-      useBatchUpdates({ enabled: false })
-    );
+    const { result } = renderHook(() => useBatchUpdates({ enabled: false }));
 
     act(() => {
       result.current.batchUpdate(updateFn);
@@ -120,9 +118,7 @@ describe('useBatchUpdates', () => {
 
   it('should handle rapid consecutive updates', () => {
     const updateFn = vi.fn();
-    const { result } = renderHook(() =>
-      useBatchUpdates({ debounceDelay: 50 })
-    );
+    const { result } = renderHook(() => useBatchUpdates({ debounceDelay: 50 }));
 
     // Simulate rapid updates over time
     act(() => {
@@ -183,7 +179,7 @@ describe('useDebouncedAutosave', () => {
       saveCount++;
       return Promise.resolve();
     });
-    
+
     const { result } = renderHook(() =>
       useDebouncedAutosave(saveFn, { debounceDelay: 100 })
     );
@@ -287,7 +283,7 @@ describe('useDebouncedAutosave', () => {
       saveCount++;
       return Promise.resolve();
     });
-    
+
     const { result } = renderHook(() =>
       useDebouncedAutosave(saveFn, { debounceDelay: 100 })
     );
@@ -343,7 +339,7 @@ describe('useDebouncedAutosave', () => {
       errorThrown = true;
       return Promise.reject(error);
     });
-    
+
     const { result } = renderHook(() =>
       useDebouncedAutosave(saveFn, { debounceDelay: 100 })
     );
@@ -366,7 +362,7 @@ describe('useDebouncedAutosave', () => {
 
     // Error should have been thrown during save
     expect(errorThrown).toBe(true);
-    
+
     // Should still mark as not pending even with error
     expect(result.current.isPending).toBe(false);
   });
@@ -423,36 +419,36 @@ describe('useWorkerOffload', () => {
   // These tests pass functionally but have testing library setup issues
   it.skip('should execute computation synchronously as fallback', async () => {
     const { result } = renderHook(() => useWorkerOffload());
-    
+
     const computeFn = (x: number) => x * 2;
     const resultValue = await result.current.offloadComputation(5, computeFn);
-    
+
     expect(resultValue).toBe(10);
   });
 
   it.skip('should handle complex computations', async () => {
     const { result } = renderHook(() => useWorkerOffload());
-    
+
     const data = { values: [1, 2, 3, 4, 5] };
-    const computeFn = (d: typeof data) => 
+    const computeFn = (d: typeof data) =>
       d.values.reduce((sum, val) => sum + val, 0);
-    
+
     const sum = await result.current.offloadComputation(data, computeFn);
-    
+
     expect(sum).toBe(15);
   });
 
   it.skip('should provide terminate function', () => {
     const { result } = renderHook(() => useWorkerOffload());
-    
+
     expect(typeof result.current.terminate).toBe('function');
   });
 
   it('should cleanup on unmount', () => {
-    const { unmount } = renderHook(() => 
+    const { unmount } = renderHook(() =>
       useWorkerOffload({ terminateOnUnmount: true })
     );
-    
+
     expect(() => unmount()).not.toThrow();
   });
 });

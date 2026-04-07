@@ -63,7 +63,15 @@ interface SpeechRecognitionEventType extends Event {
 }
 
 interface SpeechRecognitionErrorEventType extends Event {
-  readonly error: 'no-speech' | 'audio-capture' | 'not-allowed' | 'network' | 'aborted' | 'bad-grammar' | 'language-not-supported' | 'service-not-allowed';
+  readonly error:
+    | 'no-speech'
+    | 'audio-capture'
+    | 'not-allowed'
+    | 'network'
+    | 'aborted'
+    | 'bad-grammar'
+    | 'language-not-supported'
+    | 'service-not-allowed';
   readonly message: string;
 }
 
@@ -73,8 +81,15 @@ interface SpeechRecognitionType extends EventTarget {
   lang: string;
   onstart: ((this: SpeechRecognitionType, ev: Event) => void) | null;
   onend: ((this: SpeechRecognitionType, ev: Event) => void) | null;
-  onerror: ((this: SpeechRecognitionType, ev: SpeechRecognitionErrorEventType) => void) | null;
-  onresult: ((this: SpeechRecognitionType, ev: SpeechRecognitionEventType) => void) | null;
+  onerror:
+    | ((
+        this: SpeechRecognitionType,
+        ev: SpeechRecognitionErrorEventType
+      ) => void)
+    | null;
+  onresult:
+    | ((this: SpeechRecognitionType, ev: SpeechRecognitionEventType) => void)
+    | null;
   start(): void;
   stop(): void;
   abort(): void;
@@ -84,7 +99,12 @@ interface SpeechRecognitionType extends EventTarget {
 // Types
 // =============================================================================
 
-export type VoiceInputStatus = 'idle' | 'listening' | 'processing' | 'success' | 'error';
+export type VoiceInputStatus =
+  | 'idle'
+  | 'listening'
+  | 'processing'
+  | 'success'
+  | 'error';
 
 export interface VoiceInputButtonProps {
   /** Called when transcription is complete */
@@ -169,7 +189,8 @@ const RecordingTimer: React.FC<{ startTime: number }> = ({ startTime }) => {
 
   return (
     <span className="tabular-nums">
-      {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+      {minutes.toString().padStart(2, '0')}:
+      {seconds.toString().padStart(2, '0')}
     </span>
   );
 };
@@ -195,22 +216,25 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
   const [interimText, setInterimText] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
-  
+
   const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const isListening = status === 'listening';
 
   // Check browser support
-  const isSpeechSupported = typeof window !== 'undefined' && 
+  const isSpeechSupported =
+    typeof window !== 'undefined' &&
     ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   // Initialize speech recognition
   useEffect(() => {
     if (!isSpeechSupported) return;
 
-     
-    const SpeechRecognitionConstructor = (window as unknown).SpeechRecognition || (window as unknown).webkitSpeechRecognition;
-    const recognition: SpeechRecognitionType = new SpeechRecognitionConstructor();
-    
+    const SpeechRecognitionConstructor =
+      (window as unknown).SpeechRecognition ||
+      (window as unknown).webkitSpeechRecognition;
+    const recognition: SpeechRecognitionType =
+      new SpeechRecognitionConstructor();
+
     recognition.continuous = true;
     recognition.interimResults = showInterim;
     recognition.lang = language;
@@ -290,7 +314,16 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     return () => {
       recognition.stop();
     };
-  }, [isSpeechSupported, language, showInterim, onStart, onStop, onError, onTranscription, status]);
+  }, [
+    isSpeechSupported,
+    language,
+    showInterim,
+    onStart,
+    onStop,
+    onError,
+    onTranscription,
+    status,
+  ]);
 
   // Toggle recording
   const toggleRecording = useCallback(() => {
@@ -334,12 +367,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size={size}
-            disabled
-            className={className}
-          >
+          <Button variant="outline" size={size} disabled className={className}>
             <MicOff className={sizeStyles[size].icon} />
             {variant !== 'icon' && <span className="ml-2">Voice Input</span>}
           </Button>
@@ -368,7 +396,9 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
               sizeStyles[size].button,
               statusColors[status],
               disabled && 'opacity-50 cursor-not-allowed',
-              !isListening && !statusColors[status] && 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700',
+              !isListening &&
+                !statusColors[status] &&
+                'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700',
               className
             )}
           >
@@ -382,7 +412,7 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
             ) : (
               <StatusIcon className={sizeStyles[size].icon} />
             )}
-            
+
             {/* Pulse animation when listening */}
             <AnimatePresence>
               {isListening && (
@@ -425,7 +455,9 @@ export const VoiceInputButton: React.FC<VoiceInputButtonProps> = ({
           whileTap={{ scale: 0.95 }}
           className={cn(
             'flex h-8 w-8 items-center justify-center rounded-full',
-            isListening ? 'bg-error-500 text-white' : 'bg-primary-500 text-white',
+            isListening
+              ? 'bg-error-500 text-white'
+              : 'bg-primary-500 text-white',
             disabled && 'opacity-50 cursor-not-allowed'
           )}
         >

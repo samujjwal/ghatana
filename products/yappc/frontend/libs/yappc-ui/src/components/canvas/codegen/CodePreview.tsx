@@ -72,7 +72,9 @@ export const CodePreview: React.FC<CodePreviewProps> = ({
   );
 
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'full' | 'component' | 'imports'>('full');
+  const [activeTab, setActiveTab] = useState<'full' | 'component' | 'imports'>(
+    'full'
+  );
 
   // Generate code
   const generatedCode = useMemo(() => {
@@ -143,7 +145,9 @@ export const CodePreview: React.FC<CodePreviewProps> = ({
         }}
       >
         <div>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Generated Code</h3>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+            Generated Code
+          </h3>
           <p style={{ margin: '4px 0 0', fontSize: 12, color: '#666' }}>
             {componentType} Component
           </p>
@@ -198,7 +202,10 @@ export const CodePreview: React.FC<CodePreviewProps> = ({
               padding: '8px 16px',
               backgroundColor: activeTab === tab ? '#fff' : 'transparent',
               border: 'none',
-              borderBottom: activeTab === tab ? '2px solid #1976d2' : '2px solid transparent',
+              borderBottom:
+                activeTab === tab
+                  ? '2px solid #1976d2'
+                  : '2px solid transparent',
               cursor: 'pointer',
               fontSize: 13,
               fontWeight: activeTab === tab ? 600 : 400,
@@ -241,57 +248,89 @@ export const CodePreview: React.FC<CodePreviewProps> = ({
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12 }}>
             Generation Options
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}
+          >
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.typescript}
-                onChange={(e) => setOptions({ ...options, typescript: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({ ...options, typescript: e.target.checked })
+                }
                 style={{ marginRight: 6 }}
               />
               TypeScript
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.includeComments}
-                onChange={(e) => setOptions({ ...options, includeComments: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({ ...options, includeComments: e.target.checked })
+                }
                 style={{ marginRight: 6 }}
               />
               Comments
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.includeImports}
-                onChange={(e) => setOptions({ ...options, includeImports: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({ ...options, includeImports: e.target.checked })
+                }
                 style={{ marginRight: 6 }}
               />
               Imports
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.includeDataBinding}
-                onChange={(e) => setOptions({ ...options, includeDataBinding: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({
+                    ...options,
+                    includeDataBinding: e.target.checked,
+                  })
+                }
                 style={{ marginRight: 6 }}
               />
               Data Binding
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.includeEvents}
-                onChange={(e) => setOptions({ ...options, includeEvents: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({ ...options, includeEvents: e.target.checked })
+                }
                 style={{ marginRight: 6 }}
               />
               Events
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}>
+            <label
+              style={{ display: 'flex', alignItems: 'center', fontSize: 12 }}
+            >
               <input
                 type="checkbox"
                 checked={options.includeValidation}
-                onChange={(e) => setOptions({ ...options, includeValidation: e.target.checked })}
+                onChange={(e) =>
+                  setOptions({
+                    ...options,
+                    includeValidation: e.target.checked,
+                  })
+                }
                 style={{ marginRight: 6 }}
               />
               Validation

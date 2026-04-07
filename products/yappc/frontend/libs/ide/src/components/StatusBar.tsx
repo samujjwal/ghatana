@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Status Bar Component
- * 
+ *
  * IDE status bar showing file info, errors, and collaboration status.
- * 
+ *
  * @doc.type component
  * @doc.purpose Status bar for IDE
  * @doc.layer product
@@ -30,7 +30,7 @@ export interface StatusBarProps {
 
 /**
  * Status Bar Component
- * 
+ *
  * @doc.param props - Component props
  * @doc.returns Status bar component
  */
@@ -48,7 +48,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const unsavedCount = dirtyFiles.length;
 
   return (
-    <div className={`flex items-center justify-between px-4 py-1 bg-blue-600 text-white text-xs ${className}`}>
+    <div
+      className={`flex items-center justify-between px-4 py-1 bg-blue-600 text-white text-xs ${className}`}
+    >
       {/* Left Section */}
       <div className="flex items-center gap-4">
         {/* Branch/Git Info */}
@@ -103,14 +105,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </div>
 
         {/* Notifications */}
-        <button className="hover:bg-blue-700 px-2 py-0.5 rounded">
-          🔔
-        </button>
+        <button className="hover:bg-blue-700 px-2 py-0.5 rounded">🔔</button>
 
         {/* Settings */}
-        <button className="hover:bg-blue-700 px-2 py-0.5 rounded">
-          ⚙️
-        </button>
+        <button className="hover:bg-blue-700 px-2 py-0.5 rounded">⚙️</button>
       </div>
     </div>
   );

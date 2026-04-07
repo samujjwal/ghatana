@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Presence Indicators Component
- * 
+ *
  * React component for displaying real-time presence information
  * including active users, cursor positions, and collaboration status.
- * 
+ *
  * @doc.type component
  * @doc.purpose Real-time presence visualization
  * @doc.layer product
@@ -52,7 +52,7 @@ const UserAvatar: React.FC<{
 
   const initials = user.userName
     .split(' ')
-    .map(word => word[0])
+    .map((word) => word[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
@@ -168,7 +168,7 @@ export const PresenceIndicators: React.FC<PresenceIndicatorsProps> = ({
 
   // Filter active users and sort by activity
   const activeUsers = useMemo(() => {
-    const users = Object.values(presence).filter(user => user.isOnline);
+    const users = Object.values(presence).filter((user) => user.isOnline);
     return users
       .sort((a, b) => b.lastActivity - a.lastActivity)
       .slice(0, maxUsers);
@@ -227,22 +227,24 @@ export const PresenceIndicators: React.FC<PresenceIndicatorsProps> = ({
       )}
 
       {/* Cursor indicators */}
-      {showCursors && activeUsers.map((user) => (
-        <CursorIndicator
-          key={`cursor-${user.userId}`}
-          user={user}
-          activeFileId={activeFile?.id || null}
-        />
-      ))}
+      {showCursors &&
+        activeUsers.map((user) => (
+          <CursorIndicator
+            key={`cursor-${user.userId}`}
+            user={user}
+            activeFileId={activeFile?.id || null}
+          />
+        ))}
 
       {/* Selection indicators */}
-      {showCursors && activeUsers.map((user) => (
-        <SelectionIndicator
-          key={`selection-${user.userId}`}
-          user={user}
-          activeFileId={activeFile?.id || null}
-        />
-      ))}
+      {showCursors &&
+        activeUsers.map((user) => (
+          <SelectionIndicator
+            key={`selection-${user.userId}`}
+            user={user}
+            activeFileId={activeFile?.id || null}
+          />
+        ))}
     </>
   );
 };
@@ -257,9 +259,9 @@ export const CollaborationStatus: React.FC<{
   const [presence] = useAtom(idePresenceAtom);
   const [activeFile] = useAtom(ideActiveFileAtom);
 
-  const activeUsers = Object.values(presence).filter(user => user.isOnline);
+  const activeUsers = Object.values(presence).filter((user) => user.isOnline);
   const usersInCurrentFile = activeUsers.filter(
-    user => user.activeFileId === activeFile?.id
+    (user) => user.activeFileId === activeFile?.id
   );
 
   const getStatusColor = () => {
@@ -282,14 +284,14 @@ export const CollaborationStatus: React.FC<{
     <div className={`flex items-center space-x-2 ${className}`}>
       <div className={`flex items-center space-x-1 ${getStatusColor()}`}>
         {/* Connection indicator */}
-        <div className={`w-2 h-2 rounded-full ${
-          activeUsers.length > 0 ? 'bg-green-400' : 'bg-gray-400'
-        }`} />
-        
+        <div
+          className={`w-2 h-2 rounded-full ${
+            activeUsers.length > 0 ? 'bg-green-400' : 'bg-gray-400'
+          }`}
+        />
+
         {/* Status text */}
-        <span className="text-sm font-medium">
-          {getStatusText()}
-        </span>
+        <span className="text-sm font-medium">{getStatusText()}</span>
       </div>
 
       {/* Detailed user list */}
@@ -329,7 +331,7 @@ export const UserList: React.FC<{
       return allUsers.sort((a, b) => b.lastActivity - a.lastActivity);
     }
     return allUsers
-      .filter(user => user.isOnline)
+      .filter((user) => user.isOnline)
       .sort((a, b) => b.lastActivity - a.lastActivity);
   }, [presence, showInactive]);
 
@@ -355,18 +357,18 @@ export const UserList: React.FC<{
                 {user.userName}
               </div>
               {user.activeFileId && (
-                <div className="text-xs text-gray-500">
-                  Editing file
-                </div>
+                <div className="text-xs text-gray-500">Editing file</div>
               )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {/* Status indicator */}
-            <div className={`w-2 h-2 rounded-full ${
-              user.isOnline ? 'bg-green-400' : 'bg-gray-400'
-            }`} />
-            
+            <div
+              className={`w-2 h-2 rounded-full ${
+                user.isOnline ? 'bg-green-400' : 'bg-gray-400'
+              }`}
+            />
+
             {/* Last activity */}
             <span className="text-xs text-gray-500">
               {formatLastActivity(user.lastActivity)}

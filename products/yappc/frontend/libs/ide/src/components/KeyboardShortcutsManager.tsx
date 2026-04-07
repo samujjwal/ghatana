@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Keyboard Shortcuts Manager Component
- * 
+ *
  * Comprehensive keyboard shortcuts management with customizable
  * bindings, conflict detection, and learning features.
- * 
+ *
  * @doc.type component
  * @doc.purpose Keyboard shortcuts management for IDE
  * @doc.layer product
@@ -12,10 +12,12 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 
-import { useKeyboardShortcuts, type KeyboardShortcut } from '../hooks/useKeyboardShortcuts';
+import {
+  useKeyboardShortcuts,
+  type KeyboardShortcut,
+} from '../hooks/useKeyboardShortcuts';
 
 // Local custom shortcuts state is maintained here
-
 
 import { InteractiveButton } from './MicroInteractions';
 
@@ -128,42 +130,45 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordedKeys, setRecordedKeys] = useState<string[]>([]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isRecording) return;
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!isRecording) return;
 
-    e.preventDefault();
-    e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-    const keys: string[] = [];
+      const keys: string[] = [];
 
-    if (e.ctrlKey || e.metaKey) keys.push('Ctrl');
-    if (e.altKey) keys.push('Alt');
-    if (e.shiftKey) keys.push('Shift');
+      if (e.ctrlKey || e.metaKey) keys.push('Ctrl');
+      if (e.altKey) keys.push('Alt');
+      if (e.shiftKey) keys.push('Shift');
 
-    if (e.key && !['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
-      keys.push(e.key.toUpperCase());
-    }
+      if (e.key && !['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
+        keys.push(e.key.toUpperCase());
+      }
 
-    if (keys.length > 0) {
-      setRecordedKeys(keys);
-      // Normalize modifiers to expected union type
-      const mappedModifiers = keys.slice(0, -1).map(k => {
-        const lk = k.toLowerCase();
-        if (lk === 'ctrl') return 'ctrl';
-        if (lk === 'alt') return 'alt';
-        if (lk === 'shift') return 'shift';
-        if (lk === 'meta') return 'meta';
-        return 'ctrl';
-      }) as ('shift' | 'meta' | 'ctrl' | 'alt')[];
+      if (keys.length > 0) {
+        setRecordedKeys(keys);
+        // Normalize modifiers to expected union type
+        const mappedModifiers = keys.slice(0, -1).map((k) => {
+          const lk = k.toLowerCase();
+          if (lk === 'ctrl') return 'ctrl';
+          if (lk === 'alt') return 'alt';
+          if (lk === 'shift') return 'shift';
+          if (lk === 'meta') return 'meta';
+          return 'ctrl';
+        }) as ('shift' | 'meta' | 'ctrl' | 'alt')[];
 
-      setEditingShortcut({
-        ...editingShortcut,
-        modifiers: mappedModifiers,
-        key: keys[keys.length - 1],
-      });
-      setIsRecording(false);
-    }
-  }, [isRecording, editingShortcut]);
+        setEditingShortcut({
+          ...editingShortcut,
+          modifiers: mappedModifiers,
+          key: keys[keys.length - 1],
+        });
+        setIsRecording(false);
+      }
+    },
+    [isRecording, editingShortcut]
+  );
 
   useEffect(() => {
     if (isRecording) {
@@ -187,7 +192,9 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
             <input
               type="text"
               value={editingShortcut.name}
-              onChange={(e) => setEditingShortcut({ ...editingShortcut, name: e.target.value })}
+              onChange={(e) =>
+                setEditingShortcut({ ...editingShortcut, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
@@ -198,7 +205,12 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
             </label>
             <textarea
               value={editingShortcut.description}
-              onChange={(e) => setEditingShortcut({ ...editingShortcut, description: e.target.value })}
+              onChange={(e) =>
+                setEditingShortcut({
+                  ...editingShortcut,
+                  description: e.target.value,
+                })
+              }
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
             />
@@ -213,21 +225,28 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
                 onClick={() => setIsRecording(!isRecording)}
                 className={`
                   flex-1 px-3 py-2 border rounded-md font-mono text-sm
-                  ${isRecording
-                    ? 'bg-red-50 border-red-300 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'
-                    : 'bg-gray-50 border-gray-300 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300'
+                  ${
+                    isRecording
+                      ? 'bg-red-50 border-red-300 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400'
+                      : 'bg-gray-50 border-gray-300 text-gray-700 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300'
                   }
                 `}
               >
-                {isRecording ? 'Press keys...' : (
-                  [...editingShortcut.modifiers, editingShortcut.key].join(' + ') || 'Click to record'
-                )}
+                {isRecording
+                  ? 'Press keys...'
+                  : [...editingShortcut.modifiers, editingShortcut.key].join(
+                      ' + '
+                    ) || 'Click to record'}
               </button>
               {recordedKeys.length > 0 && (
                 <button
                   onClick={() => {
                     setRecordedKeys([]);
-                    setEditingShortcut({ ...editingShortcut, modifiers: [], key: '' });
+                    setEditingShortcut({
+                      ...editingShortcut,
+                      modifiers: [],
+                      key: '',
+                    });
                   }}
                   className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
@@ -247,10 +266,7 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
-          <InteractiveButton
-            variant="ghost"
-            onClick={onCancel}
-          >
+          <InteractiveButton variant="ghost" onClick={onCancel}>
             Cancel
           </InteractiveButton>
           <InteractiveButton
@@ -269,7 +285,9 @@ const ShortcutEditor: React.FC<ShortcutEditorProps> = ({
 /**
  * Keyboard Shortcuts Manager Component
  */
-export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> = ({
+export const KeyboardShortcutsManager: React.FC<
+  KeyboardShortcutsManagerProps
+> = ({
   isOpen,
   onClose,
   onShortcutUpdate,
@@ -283,7 +301,7 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
 
   const [customShortcuts, setCustomShortcuts] = useState<CustomShortcut[]>([]);
   // TODO: wire real shortcuts into the hook; for now use customShortcuts as the source
-  const shortcuts: KeyboardShortcut[] = customShortcuts.map(c => ({
+  const shortcuts: KeyboardShortcut[] = customShortcuts.map((c) => ({
     id: c.id,
     key: c.key.toLowerCase(),
     modifiers: c.modifiers,
@@ -294,21 +312,24 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingShortcut, setEditingShortcut] = useState<CustomShortcut | null>(null);
+  const [editingShortcut, setEditingShortcut] = useState<CustomShortcut | null>(
+    null
+  );
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const filteredShortcuts = React.useMemo(() => {
     let filtered = shortcuts;
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(s => s.category === selectedCategory);
+      filtered = filtered.filter((s) => s.category === selectedCategory);
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s =>
-        s.description.toLowerCase().includes(query) ||
-        s.category.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (s) =>
+          s.description.toLowerCase().includes(query) ||
+          s.category.toLowerCase().includes(query)
       );
     }
 
@@ -323,7 +344,7 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
       category: 'tools',
       key: '',
       modifiers: [],
-      action: () => { },
+      action: () => {},
       enabled: true,
       isCustom: true,
     };
@@ -332,37 +353,48 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
     setShowCreateDialog(true);
   }, []);
 
-  const handleSaveShortcut = useCallback((shortcut: CustomShortcut) => {
-    if (shortcut.isCustom) {
-      if (showCreateDialog) {
-        setCustomShortcuts(prev => [...prev, shortcut]);
-        onShortcutCreate?.(shortcut);
+  const handleSaveShortcut = useCallback(
+    (shortcut: CustomShortcut) => {
+      if (shortcut.isCustom) {
+        if (showCreateDialog) {
+          setCustomShortcuts((prev) => [...prev, shortcut]);
+          onShortcutCreate?.(shortcut);
+        } else {
+          setCustomShortcuts((prev) =>
+            prev.map((s) => (s.id === shortcut.id ? shortcut : s))
+          );
+          onShortcutUpdate?.(shortcut.id, shortcut);
+        }
       } else {
-        setCustomShortcuts(prev =>
-          prev.map(s => s.id === shortcut.id ? shortcut : s)
-        );
         onShortcutUpdate?.(shortcut.id, shortcut);
       }
-    } else {
-      onShortcutUpdate?.(shortcut.id, shortcut);
-    }
 
-    setEditingShortcut(null);
-    setShowCreateDialog(false);
-  }, [showCreateDialog, onShortcutCreate, onShortcutUpdate]);
+      setEditingShortcut(null);
+      setShowCreateDialog(false);
+    },
+    [showCreateDialog, onShortcutCreate, onShortcutUpdate]
+  );
 
-  const handleDeleteShortcut = useCallback((shortcutId: string) => {
-    setCustomShortcuts(prev => prev.filter(s => s.id !== shortcutId));
-    unregisterShortcut(shortcutId);
-  }, [unregisterShortcut]);
+  const handleDeleteShortcut = useCallback(
+    (shortcutId: string) => {
+      setCustomShortcuts((prev) => prev.filter((s) => s.id !== shortcutId));
+      unregisterShortcut(shortcutId);
+    },
+    [unregisterShortcut]
+  );
 
-  const usageStats = React.useMemo(() => ({} as Record<string, { count: number; lastUsed?: number }>), []);
+  const usageStats = React.useMemo(
+    () => ({}) as Record<string, { count: number; lastUsed?: number }>,
+    []
+  );
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${className}`}>
+      <div
+        className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${className}`}
+      >
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -379,11 +411,7 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
                   + New Shortcut
                 </InteractiveButton>
               )}
-              <InteractiveButton
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-              >
+              <InteractiveButton variant="ghost" size="sm" onClick={onClose}>
                 ✕
               </InteractiveButton>
             </div>
@@ -405,7 +433,7 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
               >
                 <option value="all">All Categories</option>
-                {DEFAULT_CATEGORIES.map(category => (
+                {DEFAULT_CATEGORIES.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.icon} {category.name}
                   </option>
@@ -417,8 +445,10 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
           {/* Shortcuts list */}
           <div className="flex-1 overflow-y-auto">
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredShortcuts.map(shortcut => {
-                const category = DEFAULT_CATEGORIES.find(c => c.id === shortcut.category);
+              {filteredShortcuts.map((shortcut) => {
+                const category = DEFAULT_CATEGORIES.find(
+                  (c) => c.id === shortcut.category
+                );
                 const usage = usageStats[shortcut.id];
 
                 return (
@@ -444,19 +474,27 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
                         </div>
                         {showUsageStats && usage && (
                           <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                            Used {usage.count} times • Last used {usage.lastUsed ? new Date(usage.lastUsed).toLocaleDateString() : 'never'}
+                            Used {usage.count} times • Last used{' '}
+                            {usage.lastUsed
+                              ? new Date(usage.lastUsed).toLocaleDateString()
+                              : 'never'}
                           </div>
                         )}
                       </div>
 
                       <div className="flex items-center gap-3">
                         <div className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono text-gray-700 dark:text-gray-300">
-                          {[...shortcut.modifiers, shortcut.key.toUpperCase()].join(' + ')}
+                          {[
+                            ...shortcut.modifiers,
+                            shortcut.key.toUpperCase(),
+                          ].join(' + ')}
                         </div>
 
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => setEditingShortcut(shortcut as CustomShortcut)}
+                            onClick={() =>
+                              setEditingShortcut(shortcut as CustomShortcut)
+                            }
                             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                             title="Edit"
                           >
@@ -485,11 +523,10 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
             <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
               <div>
                 {filteredShortcuts.length} shortcuts
-                {selectedCategory !== 'all' && ` in ${DEFAULT_CATEGORIES.find(c => c.id === selectedCategory)?.name}`}
+                {selectedCategory !== 'all' &&
+                  ` in ${DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name}`}
               </div>
-              <div>
-                Press any shortcut to test • Click edit to modify
-              </div>
+              <div>Press any shortcut to test • Click edit to modify</div>
             </div>
           </div>
         </div>

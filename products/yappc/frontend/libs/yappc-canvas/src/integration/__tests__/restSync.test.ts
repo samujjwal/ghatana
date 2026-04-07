@@ -21,7 +21,8 @@ describe('RestSyncAdapter', () => {
     endpoints: {
       pull: (id: string) => `https://api.example.com/documents/${id}`,
       push: (id: string) => `https://api.example.com/documents/${id}`,
-      diff: (id: string, version: number) => `https://api.example.com/documents/${id}/diff?since=${version}`,
+      diff: (id: string, version: number) =>
+        `https://api.example.com/documents/${id}/diff?since=${version}`,
     },
   };
 
@@ -49,13 +50,15 @@ describe('RestSyncAdapter', () => {
         status: 500,
       });
 
-      await expect(adapter.connect()).rejects.toThrow('REST API unreachable: 500');
+      await expect(adapter.connect()).rejects.toThrow(
+        'REST API unreachable: 500'
+      );
     });
 
     it('should disconnect successfully', async () => {
       (global.fetch as unknown).mockResolvedValueOnce({ ok: true });
       await adapter.connect();
-      
+
       await adapter.disconnect();
       expect(adapter.isConnected()).toBe(false);
     });
@@ -81,7 +84,7 @@ describe('RestSyncAdapter', () => {
       });
 
       const result = await adapter.pull('doc-123');
-      
+
       expect(result.success).toBe(true);
       expect(result.version).toBe(1);
       expect(result.changes).toHaveLength(1);
@@ -111,17 +114,19 @@ describe('RestSyncAdapter', () => {
       });
 
       const result = await adapter.pull('doc-123', 1);
-      
+
       expect(result.success).toBe(true);
       expect(result.version).toBe(2);
       expect(result.changes).toEqual(mockChanges);
     });
 
     it('should handle pull errors', async () => {
-      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValueOnce(
+        new Error('Network error')
+      );
 
       const result = await adapter.pull('doc-123');
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
       expect(result.error?.code).toBe('PULL_ERROR');
@@ -155,7 +160,7 @@ describe('RestSyncAdapter', () => {
       });
 
       const result = await adapter.push('doc-123', changes);
-      
+
       expect(result.success).toBe(true);
       expect(result.version).toBe(2);
     });
@@ -189,16 +194,18 @@ describe('RestSyncAdapter', () => {
       });
 
       const result = await adapter.push('doc-123', changes);
-      
+
       expect(result.success).toBe(true);
       expect(result.conflicts).toHaveLength(1);
     });
 
     it('should handle push errors', async () => {
-      (global.fetch as unknown).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as unknown).mockRejectedValueOnce(
+        new Error('Network error')
+      );
 
       const result = await adapter.push('doc-123', []);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
     });
@@ -212,7 +219,7 @@ describe('RestSyncAdapter', () => {
 
     it('should retry on 5xx errors', async () => {
       let attempts = 0;
-      
+
       (global.fetch as unknown).mockImplementation(async () => {
         attempts++;
         if (attempts < 3) {
@@ -225,7 +232,7 @@ describe('RestSyncAdapter', () => {
       });
 
       const result = await adapter.pull('doc-123');
-      
+
       expect(attempts).toBe(3);
       expect(result.success).toBe(true);
     });

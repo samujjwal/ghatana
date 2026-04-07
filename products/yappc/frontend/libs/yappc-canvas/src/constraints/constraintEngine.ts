@@ -1,6 +1,6 @@
 /**
  * Feature 2.8: Grouping & Constraints
- * 
+ *
  * Implements a flexible constraint system for canvas elements including:
  * - Container constraints (children must stay within parent bounds)
  * - Sticky notes (elements attached to anchors)
@@ -8,7 +8,7 @@
  * - Size constraints (min/max width/height)
  * - Position constraints (grid snapping, alignment)
  * - Custom constraint rules
- * 
+ *
  * @module constraints/constraintEngine
  */
 
@@ -133,8 +133,14 @@ export interface PositionConstraint extends Constraint {
  */
 export interface CustomConstraint extends Constraint {
   type: ConstraintType.CUSTOM;
-  validate: (element: CanvasElement, elements: Map<string, CanvasElement>) => boolean;
-  fix?: (element: CanvasElement, elements: Map<string, CanvasElement>) => CanvasElement;
+  validate: (
+    element: CanvasElement,
+    elements: Map<string, CanvasElement>
+  ) => boolean;
+  fix?: (
+    element: CanvasElement,
+    elements: Map<string, CanvasElement>
+  ) => CanvasElement;
   message?: string;
 }
 
@@ -219,7 +225,9 @@ export function removeConstraint(
 ): ConstraintEngineState {
   state.constraints.delete(constraintId);
   // Remove violations for this constraint
-  state.violations = state.violations.filter((v) => v.constraintId !== constraintId);
+  state.violations = state.violations.filter(
+    (v) => v.constraintId !== constraintId
+  );
   return state;
 }
 
@@ -233,7 +241,10 @@ export function updateConstraint(
 ): ConstraintEngineState {
   const constraint = state.constraints.get(constraintId);
   if (constraint) {
-    state.constraints.set(constraintId, { ...constraint, ...updates } as AnyConstraint);
+    state.constraints.set(constraintId, {
+      ...constraint,
+      ...updates,
+    } as AnyConstraint);
   }
   return state;
 }
@@ -295,7 +306,11 @@ export function isPointInRect(point: Point, rect: Rect): boolean {
 /**
  * Check if a rectangle is fully contained within another
  */
-export function isRectContained(inner: Rect, outer: Rect, padding: number = 0): boolean {
+export function isRectContained(
+  inner: Rect,
+  outer: Rect,
+  padding: number = 0
+): boolean {
   return (
     inner.x >= outer.x + padding &&
     inner.y >= outer.y + padding &&
@@ -319,7 +334,11 @@ export function rectsOverlap(rect1: Rect, rect2: Rect): boolean {
 /**
  * Clamp a rectangle within bounds
  */
-export function clampRectToBounds(rect: Rect, bounds: Rect, padding: number = 0): Rect {
+export function clampRectToBounds(
+  rect: Rect,
+  bounds: Rect,
+  padding: number = 0
+): Rect {
   const minX = bounds.x + padding;
   const minY = bounds.y + padding;
   const maxX = bounds.x + bounds.width - rect.width - padding;
@@ -384,7 +403,11 @@ export function validateContainerConstraint(
   if (!isContained && constraint.allowPartialOverlap) {
     // Check if at least partially overlapping
     if (!rectsOverlap(elementRect, containerRect)) {
-      const clampedRect = clampRectToBounds(elementRect, containerRect, padding);
+      const clampedRect = clampRectToBounds(
+        elementRect,
+        containerRect,
+        padding
+      );
       return {
         constraintId: constraint.id,
         elementId: element.id,
@@ -450,22 +473,34 @@ export function validateSizeConstraint(
   const violations: string[] = [];
   const fix: Partial<CanvasElement> = {};
 
-  if (constraint.minWidth !== undefined && element.width < constraint.minWidth) {
+  if (
+    constraint.minWidth !== undefined &&
+    element.width < constraint.minWidth
+  ) {
     violations.push(`width < ${constraint.minWidth}`);
     fix.width = constraint.minWidth;
   }
 
-  if (constraint.maxWidth !== undefined && element.width > constraint.maxWidth) {
+  if (
+    constraint.maxWidth !== undefined &&
+    element.width > constraint.maxWidth
+  ) {
     violations.push(`width > ${constraint.maxWidth}`);
     fix.width = constraint.maxWidth;
   }
 
-  if (constraint.minHeight !== undefined && element.height < constraint.minHeight) {
+  if (
+    constraint.minHeight !== undefined &&
+    element.height < constraint.minHeight
+  ) {
     violations.push(`height < ${constraint.minHeight}`);
     fix.height = constraint.minHeight;
   }
 
-  if (constraint.maxHeight !== undefined && element.height > constraint.maxHeight) {
+  if (
+    constraint.maxHeight !== undefined &&
+    element.height > constraint.maxHeight
+  ) {
     violations.push(`height > ${constraint.maxHeight}`);
     fix.height = constraint.maxHeight;
   }
@@ -507,8 +542,10 @@ export function validatePositionConstraint(
 
   // Grid snapping
   if (constraint.gridSize !== undefined && constraint.gridSize > 0) {
-    const snappedX = Math.round(element.x / constraint.gridSize) * constraint.gridSize;
-    const snappedY = Math.round(element.y / constraint.gridSize) * constraint.gridSize;
+    const snappedX =
+      Math.round(element.x / constraint.gridSize) * constraint.gridSize;
+    const snappedY =
+      Math.round(element.y / constraint.gridSize) * constraint.gridSize;
 
     if (element.x !== snappedX || element.y !== snappedY) {
       violations.push('not snapped to grid');
@@ -658,7 +695,11 @@ export function applyConstraints(
   let fixed = false;
 
   for (const constraint of constraints) {
-    const violation = validateConstraint(constraint, currentElement, state.elements);
+    const violation = validateConstraint(
+      constraint,
+      currentElement,
+      state.elements
+    );
 
     if (violation) {
       violations.push(violation);
@@ -680,7 +721,9 @@ export function applyConstraints(
 /**
  * Validate all elements in the engine
  */
-export function validateAll(state: ConstraintEngineState): ConstraintEngineState {
+export function validateAll(
+  state: ConstraintEngineState
+): ConstraintEngineState {
   state.violations = [];
 
   state.elements.forEach((element) => {
@@ -714,7 +757,9 @@ export function getViolationsBySeverity(
 /**
  * Clear all violations
  */
-export function clearViolations(state: ConstraintEngineState): ConstraintEngineState {
+export function clearViolations(
+  state: ConstraintEngineState
+): ConstraintEngineState {
   state.violations = [];
   return state;
 }

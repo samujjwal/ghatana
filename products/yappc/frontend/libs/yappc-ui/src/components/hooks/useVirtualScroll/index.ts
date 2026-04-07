@@ -26,16 +26,21 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 
-import type { VirtualScrollOptions, VirtualScrollResult, VirtualScrollState } from './types';
+import type {
+  VirtualScrollOptions,
+  VirtualScrollResult,
+  VirtualScrollState,
+} from './types';
 import { VirtualScrollUtils } from './utils';
-
 
 /**
  * Hook for efficient rendering of large lists using virtual scrolling
  * @param options - Virtual scroll configuration options
  * @returns Virtual scroll result with state and utility functions
  */
-export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollResult {
+export function useVirtualScroll(
+  options: VirtualScrollOptions
+): VirtualScrollResult {
   const {
     containerHeight,
     itemHeight,
@@ -50,7 +55,10 @@ export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollRe
   const [itemCount, setItemCount] = useState(0);
 
   // Calculate total height
-  const totalHeight = VirtualScrollUtils.calculateTotalHeight(itemCount, itemHeight);
+  const totalHeight = VirtualScrollUtils.calculateTotalHeight(
+    itemCount,
+    itemHeight
+  );
 
   // Calculate visible range
   const range = VirtualScrollUtils.calculateRange(
@@ -62,7 +70,10 @@ export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollRe
   );
 
   // Calculate visible count
-  const visibleCount = VirtualScrollUtils.calculateVisibleCount(containerHeight, itemHeight);
+  const visibleCount = VirtualScrollUtils.calculateVisibleCount(
+    containerHeight,
+    itemHeight
+  );
 
   // Current state
   const state: VirtualScrollState = {
@@ -82,7 +93,10 @@ export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollRe
       setScrollTop(newScrollTop);
 
       if (debug) {
-        console.warn('[VirtualScroll] Scroll:', { scrollTop: newScrollTop, range });
+        console.warn('[VirtualScroll] Scroll:', {
+          scrollTop: newScrollTop,
+          range,
+        });
       }
 
       if (onScroll) {
@@ -95,20 +109,32 @@ export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollRe
   /**
    * Scroll to specific offset
    */
-  const scrollToOffset = useCallback((offset: number) => {
-    if (containerRef.current) {
-      const maxScroll = VirtualScrollUtils.calculateMaxScroll(totalHeight, containerHeight);
-      const clampedOffset = VirtualScrollUtils.clampScrollPosition(offset, maxScroll);
-      containerRef.current.scrollTop = clampedOffset;
-    }
-  }, [totalHeight, containerHeight]);
+  const scrollToOffset = useCallback(
+    (offset: number) => {
+      if (containerRef.current) {
+        const maxScroll = VirtualScrollUtils.calculateMaxScroll(
+          totalHeight,
+          containerHeight
+        );
+        const clampedOffset = VirtualScrollUtils.clampScrollPosition(
+          offset,
+          maxScroll
+        );
+        containerRef.current.scrollTop = clampedOffset;
+      }
+    },
+    [totalHeight, containerHeight]
+  );
 
   /**
    * Scroll to specific index
    */
   const scrollToIndex = useCallback(
     (index: number) => {
-      const offset = VirtualScrollUtils.calculateOffsetForIndex(index, itemHeight);
+      const offset = VirtualScrollUtils.calculateOffsetForIndex(
+        index,
+        itemHeight
+      );
       scrollToOffset(offset);
     },
     [itemHeight, scrollToOffset]

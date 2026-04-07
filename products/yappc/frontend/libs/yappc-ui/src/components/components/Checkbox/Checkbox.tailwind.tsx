@@ -72,7 +72,10 @@ const IndeterminateIcon: React.FC<{ className?: string }> = ({ className }) => (
 /**
  * Checkbox component props
  */
-export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface CheckboxProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
   /**
    * Label text displayed next to checkbox
    */
@@ -89,7 +92,13 @@ export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputE
    *
    * @default 'primary'
    */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
 
   /**
    * Size of the checkbox
@@ -179,11 +188,16 @@ export const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
 
     // Color scheme classes
     const colorClasses = {
-      primary: 'data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500 data-[state=indeterminate]:bg-primary-500 data-[state=indeterminate]:border-primary-500',
-      secondary: 'data-[state=checked]:bg-secondary-500 data-[state=checked]:border-secondary-500 data-[state=indeterminate]:bg-secondary-500 data-[state=indeterminate]:border-secondary-500',
-      success: 'data-[state=checked]:bg-success-500 data-[state=checked]:border-success-500 data-[state=indeterminate]:bg-success-500 data-[state=indeterminate]:border-success-500',
-      error: 'data-[state=checked]:bg-error-500 data-[state=checked]:border-error-500 data-[state=indeterminate]:bg-error-500 data-[state=indeterminate]:border-error-500',
-      warning: 'data-[state=checked]:bg-warning-500 data-[state=checked]:border-warning-500 data-[state=indeterminate]:bg-warning-500 data-[state=indeterminate]:border-warning-500',
+      primary:
+        'data-[state=checked]:bg-primary-500 data-[state=checked]:border-primary-500 data-[state=indeterminate]:bg-primary-500 data-[state=indeterminate]:border-primary-500',
+      secondary:
+        'data-[state=checked]:bg-secondary-500 data-[state=checked]:border-secondary-500 data-[state=indeterminate]:bg-secondary-500 data-[state=indeterminate]:border-secondary-500',
+      success:
+        'data-[state=checked]:bg-success-500 data-[state=checked]:border-success-500 data-[state=indeterminate]:bg-success-500 data-[state=indeterminate]:border-success-500',
+      error:
+        'data-[state=checked]:bg-error-500 data-[state=checked]:border-error-500 data-[state=indeterminate]:bg-error-500 data-[state=indeterminate]:border-error-500',
+      warning:
+        'data-[state=checked]:bg-warning-500 data-[state=checked]:border-warning-500 data-[state=indeterminate]:bg-warning-500 data-[state=indeterminate]:border-warning-500',
       grey: 'data-[state=checked]:bg-grey-700 data-[state=checked]:border-grey-700 data-[state=indeterminate]:bg-grey-700 data-[state=indeterminate]:border-grey-700',
     };
 

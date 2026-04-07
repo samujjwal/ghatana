@@ -1,9 +1,9 @@
 /**
  * Renderer Types
- * 
+ *
  * Core type definitions for canvas renderer abstraction.
  * Extracted to prevent circular dependencies.
- * 
+ *
  * @doc.type types
  * @doc.purpose Renderer type definitions
  * @doc.layer canvas/renderer
@@ -58,11 +58,11 @@ export interface RendererPerformance {
 export interface IRenderer {
   type: RendererType;
   capabilities: RendererCapabilities;
-  
+
   initialize(container: HTMLElement): Promise<void>;
   render(state: CanvasState): Promise<void>;
   destroy(): void;
-  
+
   getPerformance(): RendererPerformance;
   supportsFeature(feature: string): boolean;
 }

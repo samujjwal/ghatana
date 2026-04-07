@@ -1,15 +1,22 @@
 /**
  * Helper Functions for Runbook Execution
- * 
+ *
  * Utility functions for configuration, risk analysis, and styling.
  */
 
-import type { RunbookConfig, RunbookStep, Runbook, ResourceAction } from './types';
+import type {
+  RunbookConfig,
+  RunbookStep,
+  Runbook,
+  ResourceAction,
+} from './types';
 
 /**
  * Create default runbook configuration with optional overrides
  */
-export function createRunbookConfig(overrides?: Partial<RunbookConfig>): RunbookConfig {
+export function createRunbookConfig(
+  overrides?: Partial<RunbookConfig>
+): RunbookConfig {
   return {
     layout: 'sequential',
     showTiming: true,
@@ -42,7 +49,10 @@ export function mapTerraformAction(action: string): ResourceAction {
 /**
  * Calculate risk level for a resource change
  */
-export function calculateResourceRisk(action: string, resourceType: string): 'low' | 'medium' | 'high' {
+export function calculateResourceRisk(
+  action: string,
+  resourceType: string
+): 'low' | 'medium' | 'high' {
   const highRiskTypes = [
     'aws_db_instance',
     'aws_rds_cluster',
@@ -50,44 +60,46 @@ export function calculateResourceRisk(action: string, resourceType: string): 'lo
     'aws_iam_role',
     'aws_security_group',
   ];
-  
+
   if (action === 'delete') {
     return 'high';
   }
-  
-  if (highRiskTypes.some(type => resourceType.includes(type))) {
+
+  if (highRiskTypes.some((type) => resourceType.includes(type))) {
     return action === 'create' ? 'medium' : 'high';
   }
-  
+
   return action === 'create' ? 'low' : 'medium';
 }
 
 /**
  * Calculate risk level for a runbook step
  */
-export function calculateStepRisk(step: RunbookStep): 'low' | 'medium' | 'high' | 'critical' {
+export function calculateStepRisk(
+  step: RunbookStep
+): 'low' | 'medium' | 'high' | 'critical' {
   const changes = step.metadata.changes || [];
-  
+
   if (changes.length === 0) {
     return 'low';
   }
-  
-  const hasHighRisk = changes.some(c => c.risk === 'high');
-  const hasDelete = changes.some(c => c.action === 'delete');
-  
+
+  const hasHighRisk = changes.some((c) => c.risk === 'high');
+  const hasDelete = changes.some((c) => c.action === 'delete');
+
   if (hasHighRisk && hasDelete) {
     return 'critical';
   }
-  
+
   if (hasHighRisk) {
     return 'high';
   }
-  
+
   if (hasDelete) {
     return 'high';
   }
-  
-  const hasMediumRisk = changes.some(c => c.risk === 'medium');
+
+  const hasMediumRisk = changes.some((c) => c.risk === 'medium');
   return hasMediumRisk ? 'medium' : 'low';
 }
 
@@ -114,34 +126,39 @@ export function calculateStepPositions(
   } else if (config.layout === 'dag') {
     // Simple DAG layout: level-based positioning
     const levels = new Map<string, number>();
-    const calculateLevel = (stepId: string, visited = new Set<string>()): number => {
+    const calculateLevel = (
+      stepId: string,
+      visited = new Set<string>()
+    ): number => {
       if (levels.has(stepId)) {
         return levels.get(stepId)!;
       }
-      
+
       if (visited.has(stepId)) {
         return 0; // Cycle detected
       }
-      
-      const step = steps.find(s => s.id === stepId);
+
+      const step = steps.find((s) => s.id === stepId);
       if (!step || step.dependsOn.length === 0) {
         levels.set(stepId, 0);
         return 0;
       }
-      
+
       visited.add(stepId);
       const maxParentLevel = Math.max(
-        ...step.dependsOn.map(depId => calculateLevel(depId, new Set(visited)))
+        ...step.dependsOn.map((depId) =>
+          calculateLevel(depId, new Set(visited))
+        )
       );
       const level = maxParentLevel + 1;
       levels.set(stepId, level);
       return level;
     };
 
-    steps.forEach(step => calculateLevel(step.id));
-    
+    steps.forEach((step) => calculateLevel(step.id));
+
     const levelCounts = new Map<number, number>();
-    steps.forEach(step => {
+    steps.forEach((step) => {
       const level = levels.get(step.id) || 0;
       const count = levelCounts.get(level) || 0;
       positions.set(step.id, {
@@ -158,7 +175,10 @@ export function calculateStepPositions(
 /**
  * Get styling for a step based on its status and configuration
  */
-export function getStepStyle(step: RunbookStep, config: RunbookConfig): {
+export function getStepStyle(
+  step: RunbookStep,
+  config: RunbookConfig
+): {
   backgroundColor: string;
   borderColor: string;
   borderWidth: number;
@@ -167,10 +187,10 @@ export function getStepStyle(step: RunbookStep, config: RunbookConfig): {
 } {
   const status = step.metadata.status || 'pending';
   const risk = calculateStepRisk(step);
-  
+
   let backgroundColor = '#f3f4f6'; // gray-100
   let borderColor = '#d1d5db'; // gray-300
-  
+
   // Status-based colors
   if (status === 'running') {
     backgroundColor = '#dbeafe'; // blue-100
@@ -185,13 +205,13 @@ export function getStepStyle(step: RunbookStep, config: RunbookConfig): {
     backgroundColor = '#f3f4f6'; // gray-100
     borderColor = '#9ca3af'; // gray-400
   }
-  
+
   // Risk-based border width
   let borderWidth = 2;
   if (risk === 'high' || risk === 'critical') {
     borderWidth = 3;
   }
-  
+
   return {
     backgroundColor,
     borderColor,
@@ -215,10 +235,10 @@ export function analyzeRunbook(runbook: Runbook): {
   const approvalCount = runbook.approvalGates.length;
   const criticalSteps: string[] = [];
   const recommendations: string[] = [];
-  
+
   // Analyze steps
   let maxRisk: 'low' | 'medium' | 'high' | 'critical' = 'low';
-  runbook.steps.forEach(step => {
+  runbook.steps.forEach((step) => {
     const stepRisk = calculateStepRisk(step);
     if (stepRisk === 'critical' || stepRisk === 'high') {
       criticalSteps.push(step.id);
@@ -231,7 +251,7 @@ export function analyzeRunbook(runbook: Runbook): {
       maxRisk = 'medium';
     }
   });
-  
+
   // Complexity assessment
   let complexity: 'low' | 'medium' | 'high' = 'low';
   if (stepCount > 50 || approvalCount > 5) {
@@ -239,21 +259,25 @@ export function analyzeRunbook(runbook: Runbook): {
   } else if (stepCount > 20 || approvalCount > 2) {
     complexity = 'medium';
   }
-  
+
   // Estimated duration (rough estimate)
   const estimatedDuration = Math.ceil(stepCount * 0.5 + approvalCount * 5);
-  
+
   // Recommendations
   if (criticalSteps.length > 0) {
-    recommendations.push(`${criticalSteps.length} critical step(s) require careful review`);
+    recommendations.push(
+      `${criticalSteps.length} critical step(s) require careful review`
+    );
   }
   if (approvalCount === 0 && maxRisk !== 'low') {
-    recommendations.push('Consider adding approval gates for high-risk changes');
+    recommendations.push(
+      'Consider adding approval gates for high-risk changes'
+    );
   }
   if (stepCount > 30) {
     recommendations.push('Consider breaking down into smaller runbooks');
   }
-  
+
   return {
     complexity,
     risk: maxRisk,

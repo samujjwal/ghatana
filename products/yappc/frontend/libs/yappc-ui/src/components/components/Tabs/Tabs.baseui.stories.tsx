@@ -64,8 +64,14 @@ export const Variants: Story = {
       <div className="space-y-8">
         {/* Standard */}
         <div>
-          <h3 className="text-sm font-semibold mb-4 text-grey-600">Standard (bottom border on selected)</h3>
-          <Tabs value={standardValue} onValueChange={(v) => setStandardValue(v as number)} variant="standard">
+          <h3 className="text-sm font-semibold mb-4 text-grey-600">
+            Standard (bottom border on selected)
+          </h3>
+          <Tabs
+            value={standardValue}
+            onValueChange={(v) => setStandardValue(v as number)}
+            variant="standard"
+          >
             <TabsList>
               <Tab value={0}>Dashboard</Tab>
               <Tab value={1}>Analytics</Tab>
@@ -79,8 +85,14 @@ export const Variants: Story = {
 
         {/* Pills */}
         <div>
-          <h3 className="text-sm font-semibold mb-4 text-grey-600">Pills (solid background on selected)</h3>
-          <Tabs value={pillsValue} onValueChange={(v) => setPillsValue(v as number)} variant="pills">
+          <h3 className="text-sm font-semibold mb-4 text-grey-600">
+            Pills (solid background on selected)
+          </h3>
+          <Tabs
+            value={pillsValue}
+            onValueChange={(v) => setPillsValue(v as number)}
+            variant="pills"
+          >
             <TabsList>
               <Tab value={0}>Dashboard</Tab>
               <Tab value={1}>Analytics</Tab>
@@ -94,8 +106,14 @@ export const Variants: Story = {
 
         {/* Underline */}
         <div>
-          <h3 className="text-sm font-semibold mb-4 text-grey-600">Underline (thin underline on selected)</h3>
-          <Tabs value={underlineValue} onValueChange={(v) => setUnderlineValue(v as number)} variant="underline">
+          <h3 className="text-sm font-semibold mb-4 text-grey-600">
+            Underline (thin underline on selected)
+          </h3>
+          <Tabs
+            value={underlineValue}
+            onValueChange={(v) => setUnderlineValue(v as number)}
+            variant="underline"
+          >
             <TabsList>
               <Tab value={0}>Dashboard</Tab>
               <Tab value={1}>Analytics</Tab>
@@ -125,7 +143,11 @@ export const Sizes: Story = {
         {/* Small */}
         <div>
           <h3 className="text-sm font-semibold mb-4 text-grey-600">Small</h3>
-          <Tabs value={smallValue} onValueChange={(v) => setSmallValue(v as number)} size="small">
+          <Tabs
+            value={smallValue}
+            onValueChange={(v) => setSmallValue(v as number)}
+            size="small"
+          >
             <TabsList>
               <Tab value={0}>Tab 1</Tab>
               <Tab value={1}>Tab 2</Tab>
@@ -139,8 +161,14 @@ export const Sizes: Story = {
 
         {/* Medium */}
         <div>
-          <h3 className="text-sm font-semibold mb-4 text-grey-600">Medium (default)</h3>
-          <Tabs value={mediumValue} onValueChange={(v) => setMediumValue(v as number)} size="medium">
+          <h3 className="text-sm font-semibold mb-4 text-grey-600">
+            Medium (default)
+          </h3>
+          <Tabs
+            value={mediumValue}
+            onValueChange={(v) => setMediumValue(v as number)}
+            size="medium"
+          >
             <TabsList>
               <Tab value={0}>Tab 1</Tab>
               <Tab value={1}>Tab 2</Tab>
@@ -155,7 +183,11 @@ export const Sizes: Story = {
         {/* Large */}
         <div>
           <h3 className="text-sm font-semibold mb-4 text-grey-600">Large</h3>
-          <Tabs value={largeValue} onValueChange={(v) => setLargeValue(v as number)} size="large">
+          <Tabs
+            value={largeValue}
+            onValueChange={(v) => setLargeValue(v as number)}
+            size="large"
+          >
             <TabsList>
               <Tab value={0}>Tab 1</Tab>
               <Tab value={1}>Tab 2</Tab>
@@ -179,30 +211,71 @@ export const WithIcons: Story = {
     const [value, setValue] = useState(0);
 
     const HomeIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+        />
       </svg>
     );
 
     const ChartIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+        />
       </svg>
     );
 
     const SettingsIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
       </svg>
     );
 
     return (
       <Tabs value={value} onValueChange={(v) => setValue(v as number)}>
         <TabsList>
-          <Tab value={0} startIcon={HomeIcon}>Dashboard</Tab>
-          <Tab value={1} startIcon={ChartIcon}>Analytics</Tab>
-          <Tab value={2} startIcon={SettingsIcon}>Settings</Tab>
+          <Tab value={0} startIcon={HomeIcon}>
+            Dashboard
+          </Tab>
+          <Tab value={1} startIcon={ChartIcon}>
+            Analytics
+          </Tab>
+          <Tab value={2} startIcon={SettingsIcon}>
+            Settings
+          </Tab>
         </TabsList>
         <TabPanel value={0}>Dashboard content with charts and metrics</TabPanel>
         <TabPanel value={1}>Analytics data and reports</TabPanel>
@@ -261,9 +334,13 @@ export const DisabledTabs: Story = {
       <Tabs value={value} onValueChange={(v) => setValue(v as number)}>
         <TabsList>
           <Tab value={0}>Active Tab</Tab>
-          <Tab value={1} disabled>Disabled Tab</Tab>
+          <Tab value={1} disabled>
+            Disabled Tab
+          </Tab>
           <Tab value={2}>Another Active Tab</Tab>
-          <Tab value={3} disabled>Also Disabled</Tab>
+          <Tab value={3} disabled>
+            Also Disabled
+          </Tab>
         </TabsList>
         <TabPanel value={0}>First tab content</TabPanel>
         <TabPanel value={1}>This content won't be accessible</TabPanel>
@@ -303,7 +380,7 @@ export const ControlledTabs: Story = {
             Go to Tab 3
           </button>
         </div>
-        
+
         <Tabs value={value} onValueChange={(v) => setValue(v as number)}>
           <TabsList>
             <Tab value={0}>Tab 1</Tab>
@@ -311,13 +388,19 @@ export const ControlledTabs: Story = {
             <Tab value={2}>Tab 3</Tab>
           </TabsList>
           <TabPanel value={0}>
-            <p>Current tab: <strong>Tab 1</strong></p>
+            <p>
+              Current tab: <strong>Tab 1</strong>
+            </p>
           </TabPanel>
           <TabPanel value={1}>
-            <p>Current tab: <strong>Tab 2</strong></p>
+            <p>
+              Current tab: <strong>Tab 2</strong>
+            </p>
           </TabPanel>
           <TabPanel value={2}>
-            <p>Current tab: <strong>Tab 3</strong></p>
+            <p>
+              Current tab: <strong>Tab 3</strong>
+            </p>
           </TabPanel>
         </Tabs>
       </div>
@@ -333,43 +416,66 @@ export const ComplexContent: Story = {
     const [value, setValue] = useState(0);
 
     return (
-      <Tabs value={value} onValueChange={(v) => setValue(v as number)} variant="pills">
+      <Tabs
+        value={value}
+        onValueChange={(v) => setValue(v as number)}
+        variant="pills"
+      >
         <TabsList>
           <Tab value={0}>Profile</Tab>
           <Tab value={1}>Account</Tab>
           <Tab value={2}>Preferences</Tab>
         </TabsList>
-        
+
         <TabPanel value={0}>
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Profile Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">First Name</label>
-                <input type="text" className="w-full px-3 py-2 border rounded" defaultValue="John" />
+                <label className="block text-sm font-medium mb-1">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border rounded"
+                  defaultValue="John"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Last Name</label>
-                <input type="text" className="w-full px-3 py-2 border rounded" defaultValue="Doe" />
+                <label className="block text-sm font-medium mb-1">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border rounded"
+                  defaultValue="Doe"
+                />
               </div>
             </div>
           </div>
         </TabPanel>
-        
+
         <TabPanel value={1}>
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Account Settings</h3>
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
-              <input type="email" className="w-full px-3 py-2 border rounded" defaultValue="john@example.com" />
+              <input
+                type="email"
+                className="w-full px-3 py-2 border rounded"
+                defaultValue="john@example.com"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Password</label>
-              <input type="password" className="w-full px-3 py-2 border rounded" />
+              <input
+                type="password"
+                className="w-full px-3 py-2 border rounded"
+              />
             </div>
           </div>
         </TabPanel>
-        
+
         <TabPanel value={2}>
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Preferences</h3>
@@ -463,7 +569,11 @@ export const ManyTabs: Story = {
     const [value, setValue] = useState(0);
 
     return (
-      <Tabs value={value} onValueChange={(v) => setValue(v as number)} variant="underline">
+      <Tabs
+        value={value}
+        onValueChange={(v) => setValue(v as number)}
+        variant="underline"
+      >
         <TabsList className="overflow-x-auto">
           {Array.from({ length: 15 }, (_, i) => (
             <Tab key={i} value={i}>

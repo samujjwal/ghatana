@@ -1,8 +1,8 @@
 /**
  * Loading Spinner Component
- * 
+ *
  * Production-grade loading spinner with multiple sizes and variants
- * 
+ *
  * @module ui/components/Loading/Spinner
  * @doc.type component
  * @doc.purpose Loading state indicator
@@ -33,17 +33,17 @@ export interface SpinnerProps {
 
 /**
  * Loading spinner component
- * 
+ *
  * @example Basic usage
  * ```tsx
  * <Spinner />
  * ```
- * 
+ *
  * @example Large centered spinner
  * ```tsx
  * <Spinner size="lg" centered />
  * ```
- * 
+ *
  * @example Fullscreen loading overlay
  * ```tsx
  * <Spinner fullscreen label="Loading data..." />
@@ -144,8 +144,7 @@ export function InlineSpinner({
 /**
  * Loading button component - button with integrated spinner
  */
-export interface LoadingButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Whether the button is in loading state */
   loading?: boolean;
   /** Size of the spinner */

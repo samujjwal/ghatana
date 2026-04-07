@@ -8,7 +8,6 @@ import type {
 } from './types';
 import { OnboardingTourUtils } from './utils';
 
-
 /**
  * React hook for managing onboarding tours.
  *

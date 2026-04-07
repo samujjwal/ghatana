@@ -1,16 +1,16 @@
 /**
  * Bidirectional Sync Coordinator
- * 
+ *
  * Manages synchronization between visual UI builder and Monaco code editor,
  * ensuring changes in one view are reflected in the other in real-time.
- * 
+ *
  * Features:
  * - 🔄 Bidirectional synchronization
  * - 🎯 Conflict resolution
  * - 📊 Change tracking and history
  * - ⚡ Debounced updates for performance
  * - 👥 Collaborative sync support
- * 
+ *
  * @doc.type class
  * @doc.purpose Bidirectional sync between visual and code editing
  * @doc.layer product
@@ -20,7 +20,11 @@
 /**
  * Sync event types
  */
-export type SyncEventType = 'visual-to-code' | 'code-to-visual' | 'conflict' | 'resolved';
+export type SyncEventType =
+  | 'visual-to-code'
+  | 'code-to-visual'
+  | 'conflict'
+  | 'resolved';
 
 /**
  * Sync event
@@ -52,7 +56,8 @@ export class BidirectionalSyncCoordinator {
   private syncHistory: SyncEvent[] = [];
   private pendingUpdates: Map<string, unknown> = new Map();
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
-  private listeners: Map<SyncEventType, Set<(event: SyncEvent) => void>> = new Map();
+  private listeners: Map<SyncEventType, Set<(event: SyncEvent) => void>> =
+    new Map();
   private lastSyncTimestamp: number = 0;
   private isSyncing: boolean = false;
 
@@ -79,7 +84,10 @@ export class BidirectionalSyncCoordinator {
   /**
    * Register event listener
    */
-  on(eventType: SyncEventType, callback: (event: SyncEvent) => void): () => void {
+  on(
+    eventType: SyncEventType,
+    callback: (event: SyncEvent) => void
+  ): () => void {
     const listeners = this.listeners.get(eventType);
     if (listeners) {
       listeners.add(callback);
@@ -94,7 +102,7 @@ export class BidirectionalSyncCoordinator {
   private emitEvent(event: SyncEvent): void {
     const listeners = this.listeners.get(event.type);
     if (listeners) {
-      listeners.forEach(callback => callback(event));
+      listeners.forEach((callback) => callback(event));
     }
 
     // Add to history
@@ -131,7 +139,10 @@ export class BidirectionalSyncCoordinator {
   /**
    * Debounced sync
    */
-  private debouncedSync(source: 'visual-to-code' | 'code-to-visual', data: unknown): void {
+  private debouncedSync(
+    source: 'visual-to-code' | 'code-to-visual',
+    data: unknown
+  ): void {
     // Clear existing timer
     const existingTimer = this.debounceTimers.get(source);
     if (existingTimer) {
@@ -150,7 +161,10 @@ export class BidirectionalSyncCoordinator {
   /**
    * Perform sync
    */
-  private performSync(source: 'visual-to-code' | 'code-to-visual', data: unknown): void {
+  private performSync(
+    source: 'visual-to-code' | 'code-to-visual',
+    data: unknown
+  ): void {
     if (this.isSyncing) {
       this.pendingUpdates.set(source, data);
       return;
@@ -159,7 +173,8 @@ export class BidirectionalSyncCoordinator {
     this.isSyncing = true;
 
     try {
-      const eventType: SyncEventType = source === 'visual-to-code' ? 'visual-to-code' : 'code-to-visual';
+      const eventType: SyncEventType =
+        source === 'visual-to-code' ? 'visual-to-code' : 'code-to-visual';
       const sourceType = source === 'visual-to-code' ? 'visual' : 'code';
 
       // Check for conflicts
@@ -199,9 +214,13 @@ export class BidirectionalSyncCoordinator {
   /**
    * Detect conflicts
    */
-  private detectConflict(source: string, data: unknown): { id: string; source: string; data: unknown } | null {
+  private detectConflict(
+    source: string,
+    data: unknown
+  ): { id: string; source: string; data: unknown } | null {
     // Check if there are pending updates from the other source
-    const otherSource = source === 'visual-to-code' ? 'code-to-visual' : 'visual-to-code';
+    const otherSource =
+      source === 'visual-to-code' ? 'code-to-visual' : 'visual-to-code';
     const otherData = this.pendingUpdates.get(otherSource);
 
     if (otherData) {
@@ -218,7 +237,11 @@ export class BidirectionalSyncCoordinator {
   /**
    * Handle conflict
    */
-  private handleConflict(conflict: { id: string; source: string; data: unknown }): void {
+  private handleConflict(conflict: {
+    id: string;
+    source: string;
+    data: unknown;
+  }): void {
     const event: SyncEvent = {
       type: 'conflict',
       timestamp: Date.now(),
@@ -231,14 +254,20 @@ export class BidirectionalSyncCoordinator {
 
     // Auto-resolve if enabled
     if (this.config.autoResolveConflicts) {
-      this.resolveConflict(conflict.id, conflict.source === 'visual-to-code' ? 'visual' : 'code');
+      this.resolveConflict(
+        conflict.id,
+        conflict.source === 'visual-to-code' ? 'visual' : 'code'
+      );
     }
   }
 
   /**
    * Resolve conflict
    */
-  resolveConflict(conflictId: string, preferredSource: 'visual' | 'code'): void {
+  resolveConflict(
+    conflictId: string,
+    preferredSource: 'visual' | 'code'
+  ): void {
     const event: SyncEvent = {
       type: 'resolved',
       timestamp: Date.now(),
@@ -283,11 +312,11 @@ export class BidirectionalSyncCoordinator {
    */
   dispose(): void {
     // Clear all timers
-    this.debounceTimers.forEach(timer => clearTimeout(timer));
+    this.debounceTimers.forEach((timer) => clearTimeout(timer));
     this.debounceTimers.clear();
 
     // Clear listeners
-    this.listeners.forEach(set => set.clear());
+    this.listeners.forEach((set) => set.clear());
     this.listeners.clear();
 
     // Clear history

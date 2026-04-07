@@ -1,9 +1,9 @@
 /**
  * Metric Chart Component
- * 
+ *
  * Time-series chart for metrics visualization.
  * Supports line, area, and bar chart types.
- * 
+ *
  * @module ui/components
  */
 
@@ -38,9 +38,9 @@ export interface MetricChartProps {
 
 /**
  * Metric Chart Component
- * 
+ *
  * Simple SVG-based chart for metrics visualization.
- * 
+ *
  * @example
  * ```tsx
  * <MetricChart
@@ -67,7 +67,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({
   const chartData = useMemo(() => {
     if (data.length === 0) return { points: [], min: 0, max: 100, path: '' };
 
-    const values = data.map(d => d.value);
+    const values = data.map((d) => d.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min || 1;
@@ -77,13 +77,17 @@ export const MetricChart: React.FC<MetricChartProps> = ({
     const chartHeight = height - padding * 2;
 
     const points = data.map((d, i) => ({
-      x: padding + (i / (data.length - 1 || 1)) * (chartWidth - padding * 2) * 10,
+      x:
+        padding +
+        (i / (data.length - 1 || 1)) * (chartWidth - padding * 2) * 10,
       y: padding + chartHeight - ((d.value - min) / range) * chartHeight,
       value: d.value,
       timestamp: d.timestamp,
     }));
 
-    const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const path = points
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+      .join(' ');
 
     const areaPath = `${path} L ${points[points.length - 1]?.x || 0} ${height - padding} L ${padding} ${height - padding} Z`;
 
@@ -93,8 +97,13 @@ export const MetricChart: React.FC<MetricChartProps> = ({
   if (data.length === 0) {
     return (
       <div className={`rounded-lg border border-zinc-700 p-4 ${className}`}>
-        {title && <h3 className="text-sm font-medium text-white mb-2">{title}</h3>}
-        <div className="flex items-center justify-center text-zinc-500" style={{ height }}>
+        {title && (
+          <h3 className="text-sm font-medium text-white mb-2">{title}</h3>
+        )}
+        <div
+          className="flex items-center justify-center text-zinc-500"
+          style={{ height }}
+        >
           No data available
         </div>
       </div>
@@ -102,7 +111,9 @@ export const MetricChart: React.FC<MetricChartProps> = ({
   }
 
   return (
-    <div className={`rounded-lg border border-zinc-700 bg-zinc-900 p-4 ${className}`}>
+    <div
+      className={`rounded-lg border border-zinc-700 bg-zinc-900 p-4 ${className}`}
+    >
       {/* Header */}
       {title && (
         <div className="flex items-center justify-between mb-4">
@@ -139,11 +150,7 @@ export const MetricChart: React.FC<MetricChartProps> = ({
 
         {/* Area fill */}
         {type === 'area' && (
-          <path
-            d={chartData.areaPath}
-            fill={color}
-            fillOpacity={0.2}
-          />
+          <path d={chartData.areaPath} fill={color} fillOpacity={0.2} />
         )}
 
         {/* Line */}
@@ -159,29 +166,31 @@ export const MetricChart: React.FC<MetricChartProps> = ({
         )}
 
         {/* Bars */}
-        {type === 'bar' && chartData.points.map((point, i) => (
-          <rect
-            key={i}
-            x={point.x - 4}
-            y={point.y}
-            width={8}
-            height={height - 40 - point.y}
-            fill={color}
-            rx={2}
-          />
-        ))}
+        {type === 'bar' &&
+          chartData.points.map((point, i) => (
+            <rect
+              key={i}
+              x={point.x - 4}
+              y={point.y}
+              width={8}
+              height={height - 40 - point.y}
+              fill={color}
+              rx={2}
+            />
+          ))}
 
         {/* Data points */}
-        {(type === 'line' || type === 'area') && chartData.points.map((point, i) => (
-          <circle
-            key={i}
-            cx={point.x}
-            cy={point.y}
-            r={3}
-            fill={color}
-            className="hover:r-5 transition-all cursor-pointer"
-          />
-        ))}
+        {(type === 'line' || type === 'area') &&
+          chartData.points.map((point, i) => (
+            <circle
+              key={i}
+              cx={point.x}
+              cy={point.y}
+              r={3}
+              fill={color}
+              className="hover:r-5 transition-all cursor-pointer"
+            />
+          ))}
 
         {/* Y-axis label */}
         {yAxisLabel && (

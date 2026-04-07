@@ -72,7 +72,10 @@ export class SchemaRegistry {
   /**
    *
    */
-  public safeParse<T>(name: string, data: unknown): z.SafeParseReturnType<unknown, T> {
+  public safeParse<T>(
+    name: string,
+    data: unknown
+  ): z.SafeParseReturnType<unknown, T> {
     const schema = this.get<T>(name);
     if (!schema) {
       return {
@@ -102,7 +105,10 @@ export const validateData = <T>(schemaName: string, data: unknown): T => {
   return SchemaRegistry.getInstance().validate<T>(schemaName, data);
 };
 
-export const safeValidateData = <T>(schemaName: string, data: unknown): z.SafeParseReturnType<unknown, T> => {
+export const safeValidateData = <T>(
+  schemaName: string,
+  data: unknown
+): z.SafeParseReturnType<unknown, T> => {
   return SchemaRegistry.getInstance().safeParse<T>(schemaName, data);
 };
 

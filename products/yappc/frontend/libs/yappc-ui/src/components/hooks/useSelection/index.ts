@@ -25,7 +25,7 @@ import type {
  * Note: This function is intentionally large (394 lines) to keep all selection logic
  * in one place. Type definitions have been extracted to types.ts for better maintainability.
  */
- 
+
 export function useSelection<T extends SelectionItem>({
   items,
   selectedIds: controlledSelectedIds,
@@ -425,8 +425,10 @@ export function useSelection<T extends SelectionItem>({
       try {
         const parsed: unknown = JSON.parse(data);
         const parsedSelection =
-          typeof parsed === 'object' && parsed !== null && 'selectedIds' in parsed
-            ? parsed as { selectedIds?: unknown }
+          typeof parsed === 'object' &&
+          parsed !== null &&
+          'selectedIds' in parsed
+            ? (parsed as { selectedIds?: unknown })
             : null;
 
         if (

@@ -14,7 +14,12 @@
  * @module api/canvasContext
  */
 
-import { useAtom, useAtomValue, useSetAtom, Provider as JotaiProvider } from 'jotai';
+import {
+  useAtom,
+  useAtomValue,
+  useSetAtom,
+  Provider as JotaiProvider,
+} from 'jotai';
 import {
   createContext,
   useContext,
@@ -62,7 +67,12 @@ export interface CanvasChangeEvent<T = CanvasDocument> {
  *
  */
 export interface CanvasChange {
-  readonly type: 'element-added' | 'element-removed' | 'element-updated' | 'viewport-changed' | 'selection-changed';
+  readonly type:
+    | 'element-added'
+    | 'element-removed'
+    | 'element-updated'
+    | 'viewport-changed'
+    | 'selection-changed';
   readonly elementId?: string;
   readonly oldValue?: unknown;
   readonly newValue?: unknown;
@@ -112,7 +122,10 @@ export interface CanvasAPI {
   // Element manipulation
   readonly addElement: (element: Partial<CanvasElement>) => string;
   readonly removeElement: (elementId: string) => void;
-  readonly updateElement: (elementId: string, updates: Partial<CanvasElement>) => void;
+  readonly updateElement: (
+    elementId: string,
+    updates: Partial<CanvasElement>
+  ) => void;
   readonly getElement: (elementId: string) => CanvasElement | undefined;
   readonly getAllElements: () => readonly CanvasElement[];
 
@@ -138,8 +151,14 @@ export interface CanvasAPI {
   readonly canvasToScreen: (canvasPoint: Point) => Point;
 
   // Events & persistence
-  readonly on?: (eventName: string, handler: (payload: unknown) => void) => () => void;
-  readonly off?: (eventName: string, handler: (payload: unknown) => void) => void;
+  readonly on?: (
+    eventName: string,
+    handler: (payload: unknown) => void
+  ) => () => void;
+  readonly off?: (
+    eventName: string,
+    handler: (payload: unknown) => void
+  ) => void;
   readonly emit?: (eventName: string, payload: unknown) => void;
   readonly saveDocument?: (document: CanvasDocument) => Promise<void>;
 }
@@ -159,7 +178,9 @@ export interface CanvasContextValue {
 /**
  * Canvas provider props with controlled/uncontrolled modes
  */
-export interface CanvasProviderProps<TDocument extends CanvasDocument = CanvasDocument> {
+export interface CanvasProviderProps<
+  TDocument extends CanvasDocument = CanvasDocument,
+> {
   /** Child components */
   readonly children: ReactNode;
 
@@ -228,7 +249,9 @@ const CanvasContext = createContext<CanvasContextValue | undefined>(undefined);
  *   <CanvasFlow />
  * </CanvasProvider>
  */
-export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument>({
+export function CanvasProvider<
+  TDocument extends CanvasDocument = CanvasDocument,
+>({
   children,
   document: controlledDocument,
   onDocumentChange,
@@ -253,7 +276,8 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
 
   // Jotai atoms for state management
   const [internalDocument, setInternalDocument] = useAtom(canvasDocumentAtom);
-  const [internalSelection, setInternalSelection] = useAtom(canvasSelectionAtom);
+  const [internalSelection, setInternalSelection] =
+    useAtom(canvasSelectionAtom);
   const [internalViewport, setInternalViewport] = useAtom(canvasViewportAtom);
   const internalUIState = useAtomValue(canvasUIStateAtom);
   const updateElement = useSetAtom(updateElementAtom);
@@ -265,7 +289,9 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
   const prevSelectionRef = useRef<readonly string[]>([]);
   const prevViewportRef = useRef<CanvasViewport | undefined>(undefined);
   const changeBufferRef = useRef<CanvasChange[]>([]);
-  const eventListenersRef = useRef<Map<string, Set<(payload: unknown) => void>>>(new Map());
+  const eventListenersRef = useRef<
+    Map<string, Set<(payload: unknown) => void>>
+  >(new Map());
 
   const emitEvent = useCallback((eventName: string, payload: unknown) => {
     const listeners = eventListenersRef.current.get(eventName);
@@ -277,7 +303,10 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
       try {
         listener(payload);
       } catch (error) {
-        console.error(`[CanvasProvider] Error in listener for ${eventName}:`, error);
+        console.error(
+          `[CanvasProvider] Error in listener for ${eventName}:`,
+          error
+        );
       }
     });
   }, []);
@@ -312,7 +341,9 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
   );
 
   // Use controlled or internal state
-  const document = (isControlled ? controlledDocument : internalDocument) as TDocument;
+  const document = (
+    isControlled ? controlledDocument : internalDocument
+  ) as TDocument;
   const selectedIds = controlledSelectedIds ?? internalSelection.selectedIds;
   const viewport = controlledViewport ?? internalViewport;
 
@@ -321,7 +352,10 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
     if (initialDocument && !isControlled) {
       setInternalDocument(initialDocument);
       if (debug) {
-        console.log('[CanvasProvider] Initialized with document:', initialDocument.id);
+        console.log(
+          '[CanvasProvider] Initialized with document:',
+          initialDocument.id
+        );
       }
     }
   }, [initialDocument, isControlled, setInternalDocument, debug]);
@@ -346,7 +380,11 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
       emitEvent('document:changed', event);
 
       if (debug) {
-        console.log('[CanvasProvider] Document changed:', changes.length, 'changes');
+        console.log(
+          '[CanvasProvider] Document changed:',
+          changes.length,
+          'changes'
+        );
       }
     },
     [onDocumentChange, disableChangeTracking, debug, emitEvent]
@@ -438,7 +476,9 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
     () => ({
       // Element manipulation
       addElement: (elementData: Partial<CanvasElement>) => {
-        const id = elementData.id || `element-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        const id =
+          elementData.id ||
+          `element-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
         if (!disableChangeTracking) {
           changeBufferRef.current.push({
@@ -484,7 +524,9 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
           emitDocumentChange({
             ...document,
             elements: newElements,
-            elementOrder: document.elementOrder.filter((id) => id !== elementId),
+            elementOrder: document.elementOrder.filter(
+              (id) => id !== elementId
+            ),
           });
         } else {
           removeElement(elementId);
@@ -634,7 +676,12 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
         const width = bounds.maxX - bounds.minX;
         const height = bounds.maxY - bounds.minY;
 
-        const viewportBounds = viewport.bounds || { width: 1200, height: 800, x: 0, y: 0 };
+        const viewportBounds = viewport.bounds || {
+          width: 1200,
+          height: 800,
+          x: 0,
+          y: 0,
+        };
         const scaleX = viewportBounds.width / width;
         const scaleY = viewportBounds.height / height;
         const newZoom = Math.min(scaleX, scaleY, 1.0) * 0.9; // 90% to add padding
@@ -660,18 +707,36 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
 
       // Coordinate transforms
       screenToCanvas: (screenPoint: Point): Point => {
-        const viewportBounds = viewport.bounds || { x: 0, y: 0, width: 1200, height: 800 };
+        const viewportBounds = viewport.bounds || {
+          x: 0,
+          y: 0,
+          width: 1200,
+          height: 800,
+        };
         return {
-          x: (screenPoint.x - viewportBounds.width / 2) / viewport.zoom + viewport.center.x,
-          y: (screenPoint.y - viewportBounds.height / 2) / viewport.zoom + viewport.center.y,
+          x:
+            (screenPoint.x - viewportBounds.width / 2) / viewport.zoom +
+            viewport.center.x,
+          y:
+            (screenPoint.y - viewportBounds.height / 2) / viewport.zoom +
+            viewport.center.y,
         };
       },
 
       canvasToScreen: (canvasPoint: Point): Point => {
-        const viewportBounds = viewport.bounds || { x: 0, y: 0, width: 1200, height: 800 };
+        const viewportBounds = viewport.bounds || {
+          x: 0,
+          y: 0,
+          width: 1200,
+          height: 800,
+        };
         return {
-          x: (canvasPoint.x - viewport.center.x) * viewport.zoom + viewportBounds.width / 2,
-          y: (canvasPoint.y - viewport.center.y) * viewport.zoom + viewportBounds.height / 2,
+          x:
+            (canvasPoint.x - viewport.center.x) * viewport.zoom +
+            viewportBounds.width / 2,
+          y:
+            (canvasPoint.y - viewport.center.y) * viewport.zoom +
+            viewportBounds.height / 2,
         };
       },
 
@@ -721,7 +786,9 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
 
   return (
     <JotaiProvider>
-      <CanvasContext.Provider value={contextValue}>{children}</CanvasContext.Provider>
+      <CanvasContext.Provider value={contextValue}>
+        {children}
+      </CanvasContext.Provider>
     </JotaiProvider>
   );
 }
@@ -734,14 +801,14 @@ export function CanvasProvider<TDocument extends CanvasDocument = CanvasDocument
  * @example
  * function MyComponent() {
  *   const { api, document } = useCanvas();
- *   
+ *
  *   const handleAddNode = () => {
  *     api.addElement({
  *       type: 'node',
  *       // ...
  *     });
  *   };
- *   
+ *
  *   return <button onClick={handleAddNode}>Add Node</button>;
  * }
  */
@@ -758,19 +825,17 @@ export function useCanvas(): CanvasContextValue {
 /**
  * CanvasFlow props - omits children from provider props
  */
-export type CanvasFlowProps<TDocument extends CanvasDocument = CanvasDocument> = Omit<
-  CanvasProviderProps<TDocument>,
-  'children'
-> & {
-  /** Canvas width */
-  readonly width?: number;
-  /** Canvas height */
-  readonly height?: number;
-  /** Custom CSS class */
-  readonly className?: string;
-  /** ARIA label */
-  readonly ariaLabel?: string;
-};
+export type CanvasFlowProps<TDocument extends CanvasDocument = CanvasDocument> =
+  Omit<CanvasProviderProps<TDocument>, 'children'> & {
+    /** Canvas width */
+    readonly width?: number;
+    /** Canvas height */
+    readonly height?: number;
+    /** Custom CSS class */
+    readonly className?: string;
+    /** ARIA label */
+    readonly ariaLabel?: string;
+  };
 
 /**
  * CanvasFlow - Main composable canvas component
@@ -797,11 +862,22 @@ export type CanvasFlowProps<TDocument extends CanvasDocument = CanvasDocument> =
 export function CanvasFlow<TDocument extends CanvasDocument = CanvasDocument>(
   props: CanvasFlowProps<TDocument>
 ): JSX.Element {
-  const { width = 1200, height = 800, className, ariaLabel, ...providerProps } = props;
+  const {
+    width = 1200,
+    height = 800,
+    className,
+    ariaLabel,
+    ...providerProps
+  } = props;
 
   return (
     <CanvasProvider {...providerProps}>
-      <CanvasFlowInner width={width} height={height} className={className} ariaLabel={ariaLabel} />
+      <CanvasFlowInner
+        width={width}
+        height={height}
+        className={className}
+        ariaLabel={ariaLabel}
+      />
     </CanvasProvider>
   );
 }
@@ -822,5 +898,13 @@ function CanvasFlowInner({
 }): JSX.Element {
   const { document } = useCanvas();
 
-  return <Canvas document={document} width={width} height={height} className={className} ariaLabel={ariaLabel} />;
+  return (
+    <Canvas
+      document={document}
+      width={width}
+      height={height}
+      className={className}
+      ariaLabel={ariaLabel}
+    />
+  );
 }

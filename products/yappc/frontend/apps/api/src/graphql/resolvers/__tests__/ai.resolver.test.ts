@@ -225,7 +225,11 @@ describe('aiResolvers.Query.predictions', () => {
     mockCreateAIService.mockReturnValue(serviceMock as any);
 
     const filter = { minConfidence: 0.8 };
-    await aiResolvers.Query.predictions(undefined, { filter }, contextWithAuth());
+    await aiResolvers.Query.predictions(
+      undefined,
+      { filter },
+      contextWithAuth()
+    );
 
     expect(serviceMock.getPredictions).toHaveBeenCalledWith(filter);
   });
@@ -702,9 +706,7 @@ describe('aiResolvers.Mutation.rateCopilotSession', () => {
     prismaMock.copilotSession?.findUnique.mockResolvedValue(
       copilotSessionRow({ userId: 'user-1' })
     );
-    prismaMock.copilotSession?.update.mockResolvedValue(
-      copilotSessionRow()
-    );
+    prismaMock.copilotSession?.update.mockResolvedValue(copilotSessionRow());
     mockGetPrismaClient.mockReturnValue(prismaMock as any);
 
     for (let rating = 1; rating <= 5; rating++) {
@@ -712,9 +714,7 @@ describe('aiResolvers.Mutation.rateCopilotSession', () => {
       prismaMock.copilotSession?.findUnique.mockResolvedValue(
         copilotSessionRow({ userId: 'user-1' })
       );
-      prismaMock.copilotSession?.update.mockResolvedValue(
-        copilotSessionRow()
-      );
+      prismaMock.copilotSession?.update.mockResolvedValue(copilotSessionRow());
 
       await aiResolvers.Mutation.rateCopilotSession(
         undefined,

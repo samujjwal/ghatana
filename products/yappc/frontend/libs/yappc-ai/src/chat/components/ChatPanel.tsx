@@ -1,19 +1,21 @@
 /**
  * Chat Panel Component
- * 
+ *
  * Complete chat interface with message list, input, and typing indicators.
  * Integrates with useChatBackend hook for real-time messaging.
- * 
+ *
  * @module chat/components
  */
 
 import { Send, Loader2 } from 'lucide-react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
-import type { ChatMessage as ChatMessageType, TypingIndicator } from '../hooks/useChatBackend';
+import type {
+  ChatMessage as ChatMessageType,
+  TypingIndicator,
+} from '../hooks/useChatBackend';
 
 import { ChatMessage } from './ChatMessage';
-
 
 export interface ChatPanelProps {
   channelId: string;
@@ -30,9 +32,9 @@ export interface ChatPanelProps {
 
 /**
  * Chat Panel Component
- * 
+ *
  * Full-featured chat interface with real-time messaging.
- * 
+ *
  * @example
  * ```tsx
  * <ChatPanel
@@ -82,27 +84,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   }, [messages, currentUserId, onMarkAsRead]);
 
   // Handle input change with typing indicator
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setInputValue(value);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setInputValue(value);
 
-    // Send typing indicator
-    if (value.length > 0 && !isTyping) {
-      setIsTyping(true);
-      onTyping(true);
-    }
+      // Send typing indicator
+      if (value.length > 0 && !isTyping) {
+        setIsTyping(true);
+        onTyping(true);
+      }
 
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
 
-    // Stop typing after 3 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      onTyping(false);
-    }, 3000);
-  }, [isTyping, onTyping]);
+      // Stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false);
+        onTyping(false);
+      }, 3000);
+    },
+    [isTyping, onTyping]
+  );
 
   // Handle send message
   const handleSend = useCallback(() => {
@@ -120,12 +125,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   }, [inputValue, isConnected, onSendMessage, onTyping]);
 
   // Handle Enter key
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
 
   return (
     <div className="flex flex-col h-full bg-zinc-950">
@@ -159,7 +167,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <div className="py-4">
             {messages.map((message, index) => {
               const isOwn = message.userId === currentUserId;
-              const showAvatar = index === 0 || messages[index - 1].userId !== message.userId;
+              const showAvatar =
+                index === 0 || messages[index - 1].userId !== message.userId;
 
               return (
                 <ChatMessage
@@ -182,7 +191,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             {typingUsers.length === 1 ? (
               <span>{typingUsers[0].userName} is typing...</span>
             ) : typingUsers.length === 2 ? (
-              <span>{typingUsers[0].userName} and {typingUsers[1].userName} are typing...</span>
+              <span>
+                {typingUsers[0].userName} and {typingUsers[1].userName} are
+                typing...
+              </span>
             ) : (
               <span>{typingUsers.length} people are typing...</span>
             )}
@@ -197,7 +209,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={isConnected ? `Message ${channelName}` : 'Connecting...'}
+            placeholder={
+              isConnected ? `Message ${channelName}` : 'Connecting...'
+            }
             disabled={!isConnected}
             className="flex-1 bg-zinc-900 text-white rounded-lg px-4 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
             rows={1}

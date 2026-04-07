@@ -59,7 +59,11 @@ export interface FeatureFlag {
 export interface FeatureFlagRowProps {
   flag: FeatureFlag;
   onToggle?: (flag: FeatureFlag, env: Environment, enabled: boolean) => void;
-  onRolloutChange?: (flag: FeatureFlag, env: Environment, percentage: number) => void;
+  onRolloutChange?: (
+    flag: FeatureFlag,
+    env: Environment,
+    percentage: number
+  ) => void;
   onEdit?: (flag: FeatureFlag) => void;
   onDelete?: (flag: FeatureFlag) => void;
   onViewHistory?: (flag: FeatureFlag) => void;
@@ -111,11 +115,13 @@ export const FeatureFlagRow: React.FC<FeatureFlagRowProps> = ({
   expanded = false,
   onExpandToggle,
 }) => {
-  const [localRollout, setLocalRollout] = useState<Record<Environment, number>>({
-    development: 0,
-    staging: 0,
-    production: 0,
-  });
+  const [localRollout, setLocalRollout] = useState<Record<Environment, number>>(
+    {
+      development: 0,
+      staging: 0,
+      production: 0,
+    }
+  );
 
   // Initialize local rollout state
   useMemo(() => {
@@ -181,7 +187,9 @@ export const FeatureFlagRow: React.FC<FeatureFlagRowProps> = ({
   }, [onViewHistory, flag]);
 
   return (
-    <div className={`feature-flag-row ${expanded ? 'feature-flag-row--expanded' : ''}`}>
+    <div
+      className={`feature-flag-row ${expanded ? 'feature-flag-row--expanded' : ''}`}
+    >
       {/* Main Row */}
       <div className="row-main">
         {/* Expand Toggle */}
@@ -208,7 +216,10 @@ export const FeatureFlagRow: React.FC<FeatureFlagRowProps> = ({
               </span>
             )}
             {flag.permanent && (
-              <span className="flag-badge flag-badge--permanent" title="Permanent flag">
+              <span
+                className="flag-badge flag-badge--permanent"
+                title="Permanent flag"
+              >
                 🔒 Permanent
               </span>
             )}
@@ -227,55 +238,57 @@ export const FeatureFlagRow: React.FC<FeatureFlagRowProps> = ({
 
         {/* Environment Status */}
         <div className="env-status">
-          {(['development', 'staging', 'production'] as Environment[]).map((env) => {
-            const status = getEnvStatus(env);
-            const config = ENV_CONFIG[env];
-            const isEnabled = status?.enabled || false;
-            const rollout = localRollout[env];
+          {(['development', 'staging', 'production'] as Environment[]).map(
+            (env) => {
+              const status = getEnvStatus(env);
+              const config = ENV_CONFIG[env];
+              const isEnabled = status?.enabled || false;
+              const rollout = localRollout[env];
 
-            return (
-              <div key={env} className="env-cell">
-                <span
-                  className="env-label"
-                  style={{ color: config.color, background: config.bg }}
-                >
-                  {config.label}
-                </span>
-                <div className="env-controls">
-                  {/* Toggle Switch */}
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={(e) => handleToggle(env, e.target.checked)}
-                      aria-label={`Enable ${flag.name} in ${env}`}
-                    />
-                    <span className="toggle-slider" />
-                  </label>
-
-                  {/* Rollout Percentage (for percentage type) */}
-                  {flag.type === 'percentage' && isEnabled && (
-                    <div className="rollout-control">
+              return (
+                <div key={env} className="env-cell">
+                  <span
+                    className="env-label"
+                    style={{ color: config.color, background: config.bg }}
+                  >
+                    {config.label}
+                  </span>
+                  <div className="env-controls">
+                    {/* Toggle Switch */}
+                    <label className="toggle-switch">
                       <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={rollout}
-                        onChange={(e) =>
-                          handleRolloutDrag(env, parseInt(e.target.value, 10))
-                        }
-                        onMouseUp={() => handleRolloutCommit(env)}
-                        onTouchEnd={() => handleRolloutCommit(env)}
-                        className="rollout-slider"
-                        aria-label={`Rollout percentage for ${env}`}
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={(e) => handleToggle(env, e.target.checked)}
+                        aria-label={`Enable ${flag.name} in ${env}`}
                       />
-                      <span className="rollout-value">{rollout}%</span>
-                    </div>
-                  )}
+                      <span className="toggle-slider" />
+                    </label>
+
+                    {/* Rollout Percentage (for percentage type) */}
+                    {flag.type === 'percentage' && isEnabled && (
+                      <div className="rollout-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={rollout}
+                          onChange={(e) =>
+                            handleRolloutDrag(env, parseInt(e.target.value, 10))
+                          }
+                          onMouseUp={() => handleRolloutCommit(env)}
+                          onTouchEnd={() => handleRolloutCommit(env)}
+                          className="rollout-slider"
+                          aria-label={`Rollout percentage for ${env}`}
+                        />
+                        <span className="rollout-value">{rollout}%</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
 
         {/* Actions */}

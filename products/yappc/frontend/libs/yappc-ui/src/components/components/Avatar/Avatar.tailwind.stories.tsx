@@ -100,8 +100,16 @@ export const ImageFallback: Story = {
   args: { alt: 'User' },
   render: () => (
     <div className="flex gap-4 items-center">
-      <Avatar src="https://invalid-url.com/image.jpg" alt="John Doe" color="primary" />
-      <Avatar src="https://invalid-url.com/image.jpg" alt="Jane Smith" color="secondary" />
+      <Avatar
+        src="https://invalid-url.com/image.jpg"
+        alt="John Doe"
+        color="primary"
+      />
+      <Avatar
+        src="https://invalid-url.com/image.jpg"
+        alt="Jane Smith"
+        color="secondary"
+      />
     </div>
   ),
 };
@@ -172,10 +180,10 @@ export const UserProfile: Story = {
   args: { alt: 'User' },
   render: () => (
     <div className="flex items-center gap-3 p-4 border rounded-lg">
-      <Avatar 
-        src="https://i.pravatar.cc/150?img=5" 
-        alt="Sarah Johnson" 
-        size="large" 
+      <Avatar
+        src="https://i.pravatar.cc/150?img=5"
+        alt="Sarah Johnson"
+        size="large"
       />
       <div>
         <p className="font-semibold">Sarah Johnson</p>

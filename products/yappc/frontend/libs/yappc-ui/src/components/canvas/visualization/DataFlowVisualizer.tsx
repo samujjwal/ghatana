@@ -152,7 +152,8 @@ export const DataFlowVisualizer: React.FC<DataFlowVisualizerProps> = ({
   // Filter valid bindings (both source and target exist)
   const validBindings = useMemo(() => {
     return bindings.filter(
-      (binding) => nodePositions[binding.sourceId] && nodePositions[binding.targetId]
+      (binding) =>
+        nodePositions[binding.sourceId] && nodePositions[binding.targetId]
     );
   }, [bindings, nodePositions]);
 
@@ -171,33 +172,35 @@ export const DataFlowVisualizer: React.FC<DataFlowVisualizerProps> = ({
     >
       <defs>
         {/* Arrow markers for different modes */}
-        {['one-way', 'two-way', 'one-time', 'expression', 'error'].map((mode) => (
-          <marker
-            key={mode}
-            id={`arrow-${mode}`}
-            markerWidth="10"
-            markerHeight="10"
-            refX="9"
-            refY="3"
-            orient="auto"
-            markerUnits="strokeWidth"
-          >
-            <path
-              d="M0,0 L0,6 L9,3 z"
-              fill={
-                mode === 'error'
-                  ? '#f44336'
-                  : mode === 'one-way'
-                  ? '#1976d2'
-                  : mode === 'two-way'
-                  ? '#9c27b0'
-                  : mode === 'one-time'
-                  ? '#4caf50'
-                  : '#ff9800'
-              }
-            />
-          </marker>
-        ))}
+        {['one-way', 'two-way', 'one-time', 'expression', 'error'].map(
+          (mode) => (
+            <marker
+              key={mode}
+              id={`arrow-${mode}`}
+              markerWidth="10"
+              markerHeight="10"
+              refX="9"
+              refY="3"
+              orient="auto"
+              markerUnits="strokeWidth"
+            >
+              <path
+                d="M0,0 L0,6 L9,3 z"
+                fill={
+                  mode === 'error'
+                    ? '#f44336'
+                    : mode === 'one-way'
+                      ? '#1976d2'
+                      : mode === 'two-way'
+                        ? '#9c27b0'
+                        : mode === 'one-time'
+                          ? '#4caf50'
+                          : '#ff9800'
+                }
+              />
+            </marker>
+          )
+        )}
 
         {/* Glow filter for selected binding */}
         <filter id="glow">
@@ -305,9 +308,7 @@ export const DataFlowVisualizer: React.FC<DataFlowVisualizerProps> = ({
                 >
                   !
                 </text>
-                {binding.errorMessage && (
-                  <title>{binding.errorMessage}</title>
-                )}
+                {binding.errorMessage && <title>{binding.errorMessage}</title>}
               </g>
             )}
           </g>
@@ -344,7 +345,9 @@ export interface DataFlowLegendProps {
   visible?: boolean;
 }
 
-export const DataFlowLegend: React.FC<DataFlowLegendProps> = ({ visible = true }) => {
+export const DataFlowLegend: React.FC<DataFlowLegendProps> = ({
+  visible = true,
+}) => {
   if (!visible) return null;
 
   const items = [
@@ -374,7 +377,10 @@ export const DataFlowLegend: React.FC<DataFlowLegendProps> = ({ visible = true }
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {items.map((item) => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            key={item.label}
+            style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+          >
             <svg width="24" height="2">
               <line
                 x1="0"

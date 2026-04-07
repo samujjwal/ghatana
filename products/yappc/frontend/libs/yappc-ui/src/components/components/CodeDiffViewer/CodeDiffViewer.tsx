@@ -1,9 +1,9 @@
 /**
  * Code Diff Viewer Component
- * 
+ *
  * Side-by-side diff viewer with syntax highlighting.
  * Supports unified and split view modes.
- * 
+ *
  * @module ui/components
  */
 
@@ -86,7 +86,7 @@ function computeDiff(oldLines: string[], newLines: string[]): DiffLine[] {
 
 /**
  * Code Diff Viewer Component
- * 
+ *
  * @example
  * ```tsx
  * <CodeDiffViewer
@@ -114,8 +114,8 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
   }, [oldCode, newCode]);
 
   const stats = useMemo(() => {
-    const added = diff.filter(d => d.type === 'added').length;
-    const removed = diff.filter(d => d.type === 'removed').length;
+    const added = diff.filter((d) => d.type === 'added').length;
+    const removed = diff.filter((d) => d.type === 'removed').length;
     return { added, removed };
   }, [diff]);
 
@@ -155,7 +155,9 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
   };
 
   return (
-    <div className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}>
+    <div
+      className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-800 border-b border-zinc-700">
         <div className="flex items-center gap-2">
@@ -183,15 +185,21 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
                 <tr key={index} className={getLineClass(line.type)}>
                   {showLineNumbers && (
                     <>
-                      <td className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}>
+                      <td
+                        className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}
+                      >
                         {line.oldLineNumber || ''}
                       </td>
-                      <td className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}>
+                      <td
+                        className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}
+                      >
                         {line.newLineNumber || ''}
                       </td>
                     </>
                   )}
-                  <td className={`w-6 px-1 text-center select-none ${getGutterClass(line.type)}`}>
+                  <td
+                    className={`w-6 px-1 text-center select-none ${getGutterClass(line.type)}`}
+                  >
                     {getPrefix(line.type)}
                   </td>
                   <td className="px-4 py-0.5 whitespace-pre">
@@ -207,18 +215,22 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
             <div className="flex-1 border-r border-zinc-700">
               <table className="w-full text-sm font-mono">
                 <tbody>
-                  {diff.filter(d => d.type !== 'added').map((line, index) => (
-                    <tr key={index} className={getLineClass(line.type)}>
-                      {showLineNumbers && (
-                        <td className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}>
-                          {line.oldLineNumber || ''}
+                  {diff
+                    .filter((d) => d.type !== 'added')
+                    .map((line, index) => (
+                      <tr key={index} className={getLineClass(line.type)}>
+                        {showLineNumbers && (
+                          <td
+                            className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}
+                          >
+                            {line.oldLineNumber || ''}
+                          </td>
+                        )}
+                        <td className="px-4 py-0.5 whitespace-pre">
+                          {line.content || ' '}
                         </td>
-                      )}
-                      <td className="px-4 py-0.5 whitespace-pre">
-                        {line.content || ' '}
-                      </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -226,18 +238,22 @@ export const CodeDiffViewer: React.FC<CodeDiffViewerProps> = ({
             <div className="flex-1">
               <table className="w-full text-sm font-mono">
                 <tbody>
-                  {diff.filter(d => d.type !== 'removed').map((line, index) => (
-                    <tr key={index} className={getLineClass(line.type)}>
-                      {showLineNumbers && (
-                        <td className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}>
-                          {line.newLineNumber || ''}
+                  {diff
+                    .filter((d) => d.type !== 'removed')
+                    .map((line, index) => (
+                      <tr key={index} className={getLineClass(line.type)}>
+                        {showLineNumbers && (
+                          <td
+                            className={`w-12 px-2 text-right select-none ${getGutterClass(line.type)}`}
+                          >
+                            {line.newLineNumber || ''}
+                          </td>
+                        )}
+                        <td className="px-4 py-0.5 whitespace-pre">
+                          {line.content || ' '}
                         </td>
-                      )}
-                      <td className="px-4 py-0.5 whitespace-pre">
-                        {line.content || ' '}
-                      </td>
-                    </tr>
-                  ))}
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

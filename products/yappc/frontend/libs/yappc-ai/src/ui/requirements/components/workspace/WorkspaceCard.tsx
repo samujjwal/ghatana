@@ -1,13 +1,22 @@
 import { Users as GroupIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
-import { Card, CardContent, CardActions, Typography, Button, Box, Chip } from '@ghatana/design-system';interface WorkspaceCardProps {
-  id: string
-  name: string
-  description?: string
-  memberCount: number
-  projectCount: number
-  createdAt: string
+import {
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Button,
+  Box,
+  Chip,
+} from '@ghatana/design-system';
+interface WorkspaceCardProps {
+  id: string;
+  name: string;
+  description?: string;
+  memberCount: number;
+  projectCount: number;
+  createdAt: string;
 }
 
 const WorkspaceCard = ({
@@ -16,13 +25,13 @@ const WorkspaceCard = ({
   description,
   memberCount,
   projectCount,
-  createdAt
+  createdAt,
 }: WorkspaceCardProps) => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleOpenWorkspace = () => {
-    navigate(`/workspace/${id}`)
-  }
+    navigate(`/workspace/${id}`);
+  };
 
   return (
     <Card className="h-full flex flex-col">
@@ -31,7 +40,12 @@ const WorkspaceCard = ({
           {name}
         </Typography>
         {description && (
-          <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            className="mb-4"
+          >
             {description}
           </Typography>
         )}
@@ -48,7 +62,11 @@ const WorkspaceCard = ({
             variant="outlined"
           />
         </Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+        >
           Created {new Date(createdAt).toLocaleDateString()}
         </Typography>
       </CardContent>
@@ -58,7 +76,7 @@ const WorkspaceCard = ({
         </Button>
       </CardActions>
     </Card>
-  )
-}
+  );
+};
 
-export default WorkspaceCard
+export default WorkspaceCard;

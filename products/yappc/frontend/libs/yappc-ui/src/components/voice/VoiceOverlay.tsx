@@ -1,14 +1,18 @@
 /**
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC UI - Voice Command Overlay
- * 
+ *
  * Visual feedback component for voice command system.
  * Shows listening state, processing state, feedback messages, and help.
  */
 
 import React, { useState, useCallback } from 'react';
 
-import { useVoiceCommands, type VoiceCommand, VOICE_COMMAND_HELP } from './useVoiceCommands';
+import {
+  useVoiceCommands,
+  type VoiceCommand,
+  VOICE_COMMAND_HELP,
+} from './useVoiceCommands';
 
 export interface VoiceOverlayProps {
   /** Called when a voice command is recognized */
@@ -25,10 +29,10 @@ export interface VoiceOverlayProps {
 
 /**
  * VoiceOverlay Component
- * 
+ *
  * Floating voice control with microphone button, visual feedback,
  * and help dialog. Integrates with useVoiceCommands hook.
- * 
+ *
  * @example
  * ```tsx
  * <VoiceOverlay
@@ -47,21 +51,19 @@ export function VoiceOverlay({
   const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [recentCommands, setRecentCommands] = useState<VoiceCommand[]>([]);
 
-  const handleCommand = useCallback((command: VoiceCommand) => {
-    setRecentCommands(prev => [command, ...prev].slice(0, 5));
-    onCommand(command);
-  }, [onCommand]);
+  const handleCommand = useCallback(
+    (command: VoiceCommand) => {
+      setRecentCommands((prev) => [command, ...prev].slice(0, 5));
+      onCommand(command);
+    },
+    [onCommand]
+  );
 
-  const {
-    isListening,
-    isProcessing,
-    feedback,
-    startListening,
-    stopListening,
-  } = useVoiceCommands({
-    onCommand: handleCommand,
-    onError,
-  });
+  const { isListening, isProcessing, feedback, startListening, stopListening } =
+    useVoiceCommands({
+      onCommand: handleCommand,
+      onError,
+    });
 
   const positionClass = `voice-overlay--${position}`;
 
@@ -87,9 +89,11 @@ export function VoiceOverlay({
 
       {/* Status indicator */}
       {(isListening || isProcessing || feedback) && (
-        <div className={`voice-overlay__status ${
-          isListening ? 'voice-overlay__status--listening' : ''
-        } ${isProcessing ? 'voice-overlay__status--processing' : ''}`}>
+        <div
+          className={`voice-overlay__status ${
+            isListening ? 'voice-overlay__status--listening' : ''
+          } ${isProcessing ? 'voice-overlay__status--processing' : ''}`}
+        >
           {isListening && (
             <>
               <span className="voice-overlay__pulse" />
@@ -124,17 +128,17 @@ export function VoiceOverlay({
 
       {/* Help dialog */}
       {showHelpDialog && (
-        <div 
+        <div
           className="voice-overlay__dialog-overlay"
           onClick={() => setShowHelpDialog(false)}
         >
-          <div 
+          <div
             className="voice-overlay__dialog"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="voice-overlay__dialog-header">
               <h3>Voice Commands</h3>
-              <button 
+              <button
                 className="voice-overlay__dialog-close"
                 onClick={() => setShowHelpDialog(false)}
               >
@@ -155,14 +159,14 @@ export function VoiceOverlay({
 function MicIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="voice-overlay__icon">
-      <path 
-        d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" 
+      <path
+        d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"
         fill="currentColor"
       />
-      <path 
-        d="M19 10v2a7 7 0 0 1-14 0v-2M12 18v4M8 22h8" 
-        stroke="currentColor" 
-        strokeWidth="2" 
+      <path
+        d="M19 10v2a7 7 0 0 1-14 0v-2M12 18v4M8 22h8"
+        stroke="currentColor"
+        strokeWidth="2"
         strokeLinecap="round"
       />
     </svg>
@@ -171,18 +175,52 @@ function MicIcon() {
 
 function ListeningIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="voice-overlay__icon voice-overlay__icon--listening">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="voice-overlay__icon voice-overlay__icon--listening"
+    >
       <rect x="6" y="4" width="3" height="10" rx="1.5" fill="currentColor">
-        <animate attributeName="height" values="10;6;10" dur="0.6s" repeatCount="indefinite" />
-        <animate attributeName="y" values="4;6;4" dur="0.6s" repeatCount="indefinite" />
+        <animate
+          attributeName="height"
+          values="10;6;10"
+          dur="0.6s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="y"
+          values="4;6;4"
+          dur="0.6s"
+          repeatCount="indefinite"
+        />
       </rect>
       <rect x="10.5" y="4" width="3" height="10" rx="1.5" fill="currentColor">
-        <animate attributeName="height" values="10;8;10" dur="0.5s" repeatCount="indefinite" />
-        <animate attributeName="y" values="4;5;4" dur="0.5s" repeatCount="indefinite" />
+        <animate
+          attributeName="height"
+          values="10;8;10"
+          dur="0.5s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="y"
+          values="4;5;4"
+          dur="0.5s"
+          repeatCount="indefinite"
+        />
       </rect>
       <rect x="15" y="4" width="3" height="10" rx="1.5" fill="currentColor">
-        <animate attributeName="height" values="10;5;10" dur="0.7s" repeatCount="indefinite" />
-        <animate attributeName="y" values="4;6.5;4" dur="0.7s" repeatCount="indefinite" />
+        <animate
+          attributeName="height"
+          values="10;5;10"
+          dur="0.7s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="y"
+          values="4;6.5;4"
+          dur="0.7s"
+          repeatCount="indefinite"
+        />
       </rect>
     </svg>
   );
@@ -190,22 +228,26 @@ function ListeningIcon() {
 
 function ProcessingIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="voice-overlay__icon voice-overlay__icon--processing">
-      <circle 
-        cx="12" 
-        cy="12" 
-        r="10" 
-        stroke="currentColor" 
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="voice-overlay__icon voice-overlay__icon--processing"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeDasharray="40"
         strokeDashoffset="40"
       >
-        <animate 
-          attributeName="stroke-dashoffset" 
-          values="40;0;40" 
-          dur="1.5s" 
-          repeatCount="indefinite" 
+        <animate
+          attributeName="stroke-dashoffset"
+          values="40;0;40"
+          dur="1.5s"
+          repeatCount="indefinite"
         />
         <animateTransform
           attributeName="transform"
@@ -222,17 +264,35 @@ function ProcessingIcon() {
 
 function HelpIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="voice-overlay__icon voice-overlay__icon--small">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="voice-overlay__icon voice-overlay__icon--small"
+    >
       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-      <path d="M12 16v-4M12 8h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path
+        d="M12 16v-4M12 8h.01"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="voice-overlay__icon voice-overlay__icon--small">
-      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="voice-overlay__icon voice-overlay__icon--small"
+    >
+      <path
+        d="M18 6L6 18M6 6l12 12"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

@@ -386,7 +386,7 @@ export const SECURITY_ALERT_FRAGMENT = gql`
 
 export const GET_VULNERABILITY = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   query GetVulnerability($id: ID!) {
     vulnerability(id: $id) {
       ...VulnerabilityFields
@@ -415,7 +415,7 @@ export const GET_VULNERABILITY = gql`
 
 export const LIST_VULNERABILITIES = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   query ListVulnerabilities(
     $projectId: ID!
     $filter: VulnerabilityFilter
@@ -464,7 +464,11 @@ export const GET_VULNERABILITY_TRENDS = gql`
     $timeRange: TimeRangeInput!
     $groupBy: TrendGroupBy
   ) {
-    vulnerabilityTrends(projectId: $projectId, timeRange: $timeRange, groupBy: $groupBy) {
+    vulnerabilityTrends(
+      projectId: $projectId
+      timeRange: $timeRange
+      groupBy: $groupBy
+    ) {
       dataPoints {
         timestamp
         total
@@ -487,7 +491,7 @@ export const GET_VULNERABILITY_TRENDS = gql`
 
 export const GET_SECURITY_SCAN = gql`
   ${SECURITY_SCAN_FRAGMENT}
-  
+
   query GetSecurityScan($id: ID!) {
     securityScan(id: $id) {
       ...SecurityScanFields
@@ -512,13 +516,17 @@ export const GET_SECURITY_SCAN = gql`
 
 export const LIST_SECURITY_SCANS = gql`
   ${SECURITY_SCAN_FRAGMENT}
-  
+
   query ListSecurityScans(
     $projectId: ID!
     $filter: ScanFilter
     $pagination: PaginationInput
   ) {
-    securityScans(projectId: $projectId, filter: $filter, pagination: $pagination) {
+    securityScans(
+      projectId: $projectId
+      filter: $filter
+      pagination: $pagination
+    ) {
       edges {
         cursor
         node {
@@ -560,7 +568,7 @@ export const GET_SCAN_HISTORY = gql`
 
 export const GET_COMPLIANCE_FRAMEWORK = gql`
   ${COMPLIANCE_FRAMEWORK_FRAGMENT}
-  
+
   query GetComplianceFramework($id: ID!) {
     complianceFramework(id: $id) {
       ...ComplianceFrameworkFields
@@ -570,7 +578,7 @@ export const GET_COMPLIANCE_FRAMEWORK = gql`
 
 export const LIST_COMPLIANCE_FRAMEWORKS = gql`
   ${COMPLIANCE_FRAMEWORK_FRAGMENT}
-  
+
   query ListComplianceFrameworks($projectId: ID!, $filter: ComplianceFilter) {
     complianceFrameworks(projectId: $projectId, filter: $filter) {
       ...ComplianceFrameworkFields
@@ -618,7 +626,7 @@ export const GET_COMPLIANCE_REPORT = gql`
 
 export const GET_SECRET = gql`
   ${SECRET_FRAGMENT}
-  
+
   query GetSecret($id: ID!) {
     secret(id: $id) {
       ...SecretFields
@@ -628,7 +636,7 @@ export const GET_SECRET = gql`
 
 export const LIST_SECRETS = gql`
   ${SECRET_FRAGMENT}
-  
+
   query ListSecrets($projectId: ID!, $filter: SecretFilter) {
     secrets(projectId: $projectId, filter: $filter) {
       ...SecretFields
@@ -651,7 +659,7 @@ export const GET_SECRET_VALUE = gql`
 
 export const GET_EXPIRING_SECRETS = gql`
   ${SECRET_FRAGMENT}
-  
+
   query GetExpiringSecrets($projectId: ID!, $withinDays: Int!) {
     expiringSecrets(projectId: $projectId, withinDays: $withinDays) {
       ...SecretFields
@@ -661,7 +669,7 @@ export const GET_EXPIRING_SECRETS = gql`
 
 export const GET_SECURITY_POLICY = gql`
   ${SECURITY_POLICY_FRAGMENT}
-  
+
   query GetSecurityPolicy($id: ID!) {
     securityPolicy(id: $id) {
       ...SecurityPolicyFields
@@ -679,7 +687,7 @@ export const GET_SECURITY_POLICY = gql`
 
 export const LIST_SECURITY_POLICIES = gql`
   ${SECURITY_POLICY_FRAGMENT}
-  
+
   query ListSecurityPolicies($projectId: ID!, $filter: PolicyFilter) {
     securityPolicies(projectId: $projectId, filter: $filter) {
       ...SecurityPolicyFields
@@ -708,7 +716,7 @@ export const VALIDATE_POLICY = gql`
 
 export const GET_AUDIT_LOGS = gql`
   ${AUDIT_LOG_FRAGMENT}
-  
+
   query GetAuditLogs(
     $projectId: ID!
     $filter: AuditLogFilter
@@ -732,8 +740,12 @@ export const GET_AUDIT_LOGS = gql`
 
 export const SEARCH_AUDIT_LOGS = gql`
   ${AUDIT_LOG_FRAGMENT}
-  
-  query SearchAuditLogs($projectId: ID!, $query: String!, $filter: AuditLogFilter) {
+
+  query SearchAuditLogs(
+    $projectId: ID!
+    $query: String!
+    $filter: AuditLogFilter
+  ) {
     searchAuditLogs(projectId: $projectId, query: $query, filter: $filter) {
       results {
         ...AuditLogFields
@@ -752,7 +764,7 @@ export const SEARCH_AUDIT_LOGS = gql`
 
 export const GET_SECURITY_ALERT = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   query GetSecurityAlert($id: ID!) {
     securityAlert(id: $id) {
       ...SecurityAlertFields
@@ -762,13 +774,17 @@ export const GET_SECURITY_ALERT = gql`
 
 export const LIST_SECURITY_ALERTS = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   query ListSecurityAlerts(
     $projectId: ID!
     $filter: SecurityAlertFilter
     $pagination: PaginationInput
   ) {
-    securityAlerts(projectId: $projectId, filter: $filter, pagination: $pagination) {
+    securityAlerts(
+      projectId: $projectId
+      filter: $filter
+      pagination: $pagination
+    ) {
       edges {
         cursor
         node {
@@ -889,7 +905,7 @@ export const GET_SECURITY_POSTURE = gql`
 
 export const UPDATE_VULNERABILITY = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   mutation UpdateVulnerability($id: ID!, $input: UpdateVulnerabilityInput!) {
     updateVulnerability(id: $id, input: $input) {
       ...VulnerabilityFields
@@ -899,7 +915,7 @@ export const UPDATE_VULNERABILITY = gql`
 
 export const UPDATE_VULNERABILITY_STATUS = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   mutation UpdateVulnerabilityStatus(
     $id: ID!
     $status: VulnerabilityStatus!
@@ -913,7 +929,7 @@ export const UPDATE_VULNERABILITY_STATUS = gql`
 
 export const ASSIGN_VULNERABILITY = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   mutation AssignVulnerability($id: ID!, $assigneeId: ID!) {
     assignVulnerability(id: $id, assigneeId: $assigneeId) {
       ...VulnerabilityFields
@@ -923,7 +939,10 @@ export const ASSIGN_VULNERABILITY = gql`
 
 export const ADD_VULNERABILITY_COMMENT = gql`
   mutation AddVulnerabilityComment($vulnerabilityId: ID!, $content: String!) {
-    addVulnerabilityComment(vulnerabilityId: $vulnerabilityId, content: $content) {
+    addVulnerabilityComment(
+      vulnerabilityId: $vulnerabilityId
+      content: $content
+    ) {
       id
       author {
         id
@@ -941,7 +960,10 @@ export const BULK_UPDATE_VULNERABILITIES = gql`
     $vulnerabilityIds: [ID!]!
     $input: BulkVulnerabilityUpdateInput!
   ) {
-    bulkUpdateVulnerabilities(vulnerabilityIds: $vulnerabilityIds, input: $input) {
+    bulkUpdateVulnerabilities(
+      vulnerabilityIds: $vulnerabilityIds
+      input: $input
+    ) {
       successCount
       failedCount
       errors {
@@ -954,7 +976,7 @@ export const BULK_UPDATE_VULNERABILITIES = gql`
 
 export const MARK_VULNERABILITY_FALSE_POSITIVE = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   mutation MarkVulnerabilityFalsePositive($id: ID!, $reason: String!) {
     markVulnerabilityFalsePositive(id: $id, reason: $reason) {
       ...VulnerabilityFields
@@ -964,7 +986,7 @@ export const MARK_VULNERABILITY_FALSE_POSITIVE = gql`
 
 export const CREATE_SECURITY_SCAN = gql`
   ${SECURITY_SCAN_FRAGMENT}
-  
+
   mutation CreateSecurityScan($projectId: ID!, $input: CreateScanInput!) {
     createSecurityScan(projectId: $projectId, input: $input) {
       ...SecurityScanFields
@@ -974,7 +996,7 @@ export const CREATE_SECURITY_SCAN = gql`
 
 export const START_SECURITY_SCAN = gql`
   ${SECURITY_SCAN_FRAGMENT}
-  
+
   mutation StartSecurityScan($id: ID!) {
     startSecurityScan(id: $id) {
       ...SecurityScanFields
@@ -992,16 +1014,32 @@ export const CANCEL_SECURITY_SCAN = gql`
 `;
 
 export const SUPPRESS_SCAN_FINDING = gql`
-  mutation SuppressScanFinding($scanId: ID!, $findingId: ID!, $reason: String!) {
-    suppressScanFinding(scanId: $scanId, findingId: $findingId, reason: $reason) {
+  mutation SuppressScanFinding(
+    $scanId: ID!
+    $findingId: ID!
+    $reason: String!
+  ) {
+    suppressScanFinding(
+      scanId: $scanId
+      findingId: $findingId
+      reason: $reason
+    ) {
       success
     }
   }
 `;
 
 export const MARK_FINDING_FALSE_POSITIVE = gql`
-  mutation MarkFindingFalsePositive($scanId: ID!, $findingId: ID!, $reason: String!) {
-    markFindingFalsePositive(scanId: $scanId, findingId: $findingId, reason: $reason) {
+  mutation MarkFindingFalsePositive(
+    $scanId: ID!
+    $findingId: ID!
+    $reason: String!
+  ) {
+    markFindingFalsePositive(
+      scanId: $scanId
+      findingId: $findingId
+      reason: $reason
+    ) {
       success
     }
   }
@@ -1009,8 +1047,11 @@ export const MARK_FINDING_FALSE_POSITIVE = gql`
 
 export const CREATE_COMPLIANCE_FRAMEWORK = gql`
   ${COMPLIANCE_FRAMEWORK_FRAGMENT}
-  
-  mutation CreateComplianceFramework($projectId: ID!, $input: CreateComplianceInput!) {
+
+  mutation CreateComplianceFramework(
+    $projectId: ID!
+    $input: CreateComplianceInput!
+  ) {
     createComplianceFramework(projectId: $projectId, input: $input) {
       ...ComplianceFrameworkFields
     }
@@ -1023,7 +1064,11 @@ export const UPDATE_COMPLIANCE_CONTROL = gql`
     $controlId: ID!
     $input: UpdateControlInput!
   ) {
-    updateComplianceControl(frameworkId: $frameworkId, controlId: $controlId, input: $input) {
+    updateComplianceControl(
+      frameworkId: $frameworkId
+      controlId: $controlId
+      input: $input
+    ) {
       id
       status
       evidence {
@@ -1072,7 +1117,7 @@ export const RUN_COMPLIANCE_ASSESSMENT = gql`
 
 export const CREATE_SECRET = gql`
   ${SECRET_FRAGMENT}
-  
+
   mutation CreateSecret($projectId: ID!, $input: CreateSecretInput!) {
     createSecret(projectId: $projectId, input: $input) {
       ...SecretFields
@@ -1082,7 +1127,7 @@ export const CREATE_SECRET = gql`
 
 export const UPDATE_SECRET = gql`
   ${SECRET_FRAGMENT}
-  
+
   mutation UpdateSecret($id: ID!, $input: UpdateSecretInput!) {
     updateSecret(id: $id, input: $input) {
       ...SecretFields
@@ -1101,7 +1146,7 @@ export const SET_SECRET_VALUE = gql`
 
 export const ROTATE_SECRET = gql`
   ${SECRET_FRAGMENT}
-  
+
   mutation RotateSecret($id: ID!, $newValue: String) {
     rotateSecret(id: $id, newValue: $newValue) {
       ...SecretFields
@@ -1147,7 +1192,7 @@ export const UPDATE_SECRET_ACCESS = gql`
 
 export const CREATE_SECURITY_POLICY = gql`
   ${SECURITY_POLICY_FRAGMENT}
-  
+
   mutation CreateSecurityPolicy($projectId: ID!, $input: CreatePolicyInput!) {
     createSecurityPolicy(projectId: $projectId, input: $input) {
       ...SecurityPolicyFields
@@ -1157,7 +1202,7 @@ export const CREATE_SECURITY_POLICY = gql`
 
 export const UPDATE_SECURITY_POLICY = gql`
   ${SECURITY_POLICY_FRAGMENT}
-  
+
   mutation UpdateSecurityPolicy($id: ID!, $input: UpdatePolicyInput!) {
     updateSecurityPolicy(id: $id, input: $input) {
       ...SecurityPolicyFields
@@ -1175,7 +1220,7 @@ export const DELETE_SECURITY_POLICY = gql`
 
 export const TOGGLE_SECURITY_POLICY = gql`
   ${SECURITY_POLICY_FRAGMENT}
-  
+
   mutation ToggleSecurityPolicy($id: ID!, $enabled: Boolean!) {
     toggleSecurityPolicy(id: $id, enabled: $enabled) {
       ...SecurityPolicyFields
@@ -1184,7 +1229,11 @@ export const TOGGLE_SECURITY_POLICY = gql`
 `;
 
 export const ADD_POLICY_EXCEPTION = gql`
-  mutation AddPolicyException($policyId: ID!, $ruleId: ID!, $input: ExceptionInput!) {
+  mutation AddPolicyException(
+    $policyId: ID!
+    $ruleId: ID!
+    $input: ExceptionInput!
+  ) {
     addPolicyException(policyId: $policyId, ruleId: $ruleId, input: $input) {
       id
       type
@@ -1200,8 +1249,16 @@ export const ADD_POLICY_EXCEPTION = gql`
 `;
 
 export const REMOVE_POLICY_EXCEPTION = gql`
-  mutation RemovePolicyException($policyId: ID!, $ruleId: ID!, $exceptionId: ID!) {
-    removePolicyException(policyId: $policyId, ruleId: $ruleId, exceptionId: $exceptionId) {
+  mutation RemovePolicyException(
+    $policyId: ID!
+    $ruleId: ID!
+    $exceptionId: ID!
+  ) {
+    removePolicyException(
+      policyId: $policyId
+      ruleId: $ruleId
+      exceptionId: $exceptionId
+    ) {
       success
     }
   }
@@ -1209,7 +1266,7 @@ export const REMOVE_POLICY_EXCEPTION = gql`
 
 export const ACKNOWLEDGE_SECURITY_ALERT = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   mutation AcknowledgeSecurityAlert($id: ID!, $note: String) {
     acknowledgeSecurityAlert(id: $id, note: $note) {
       ...SecurityAlertFields
@@ -1219,7 +1276,7 @@ export const ACKNOWLEDGE_SECURITY_ALERT = gql`
 
 export const RESOLVE_SECURITY_ALERT = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   mutation ResolveSecurityAlert($id: ID!, $resolution: String!) {
     resolveSecurityAlert(id: $id, resolution: $resolution) {
       ...SecurityAlertFields
@@ -1229,7 +1286,7 @@ export const RESOLVE_SECURITY_ALERT = gql`
 
 export const MARK_ALERT_FALSE_POSITIVE = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   mutation MarkAlertFalsePositive($id: ID!, $reason: String!) {
     markAlertFalsePositive(id: $id, reason: $reason) {
       ...SecurityAlertFields
@@ -1258,7 +1315,7 @@ export const EXPORT_AUDIT_LOGS = gql`
 
 export const SUBSCRIBE_TO_VULNERABILITY_UPDATES = gql`
   ${VULNERABILITY_FRAGMENT}
-  
+
   subscription OnVulnerabilityUpdate($projectId: ID!) {
     vulnerabilityUpdated(projectId: $projectId) {
       type
@@ -1289,7 +1346,7 @@ export const SUBSCRIBE_TO_SCAN_PROGRESS = gql`
 
 export const SUBSCRIBE_TO_SECURITY_ALERTS = gql`
   ${SECURITY_ALERT_FRAGMENT}
-  
+
   subscription OnSecurityAlert($projectId: ID!) {
     securityAlertTriggered(projectId: $projectId) {
       ...SecurityAlertFields
@@ -1345,7 +1402,7 @@ export const SUBSCRIBE_TO_POLICY_VIOLATIONS = gql`
 
 export const SUBSCRIBE_TO_AUDIT_STREAM = gql`
   ${AUDIT_LOG_FRAGMENT}
-  
+
   subscription OnAuditEvent($projectId: ID!, $filter: AuditStreamFilter) {
     auditEvent(projectId: $projectId, filter: $filter) {
       ...AuditLogFields
@@ -1403,7 +1460,13 @@ export interface UpdateControlInput {
 }
 
 export interface AddEvidenceInput {
-  type: 'document' | 'screenshot' | 'log' | 'configuration' | 'report' | 'other';
+  type:
+    | 'document'
+    | 'screenshot'
+    | 'log'
+    | 'configuration'
+    | 'report'
+    | 'other';
   description: string;
   url?: string;
   file?: File;
@@ -1574,8 +1637,20 @@ export interface TimeRangeInput {
   end: string;
 }
 
-export type VulnerabilityStatus = 'open' | 'in_progress' | 'resolved' | 'false_positive' | 'accepted_risk' | 'wont_fix';
-export type ScanType = 'sast' | 'dast' | 'sca' | 'container' | 'iac' | 'secrets';
+export type VulnerabilityStatus =
+  | 'open'
+  | 'in_progress'
+  | 'resolved'
+  | 'false_positive'
+  | 'accepted_risk'
+  | 'wont_fix';
+export type ScanType =
+  | 'sast'
+  | 'dast'
+  | 'sca'
+  | 'container'
+  | 'iac'
+  | 'secrets';
 export type TrendGroupBy = 'day' | 'week' | 'month';
 export type ReportFormat = 'pdf' | 'html' | 'csv' | 'json';
 export type ExportFormat = 'csv' | 'json' | 'pdf';

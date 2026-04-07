@@ -1,4 +1,3 @@
- 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import {
@@ -27,7 +26,7 @@ type AIContext = Record<string, unknown>;
 
 /**
  * Hook for AI-driven insights with predictions, risk assessment, and recommendations
- * 
+ *
  * Provides comprehensive AI analytics including:
  * - Build time predictions based on code changes and historical data
  * - Deployment risk assessment with confidence scoring
@@ -38,10 +37,10 @@ type AIContext = Record<string, unknown>;
  * - Historical data trending (configurable days)
  * - Confidence thresholds for actionable insights
  * - Machine learning model management
- * 
+ *
  * Integrates with performance monitoring to provide predictive analytics for CI/CD pipelines,
  * development workflows, and system optimization.
- * 
+ *
  * @param options - Configuration options for AI insights
  * @param options.enablePredictions - Enable build time predictions (default: true)
  * @param options.enableRiskAssessment - Enable deployment risk analysis (default: true)
@@ -51,7 +50,7 @@ type AIContext = Record<string, unknown>;
  * @param options.confidenceThreshold - Minimum confidence for insights (default: 0.7)
  * @param options.maxRecommendations - Maximum recommendations to return (default: 10)
  * @returns AI insights with predictions, risks, and recommendations
- * 
+ *
  * @example
  * ```tsx
  * function AIInsightsDashboard() {
@@ -71,14 +70,14 @@ type AIContext = Record<string, unknown>;
  *     historicalDays: 90,
  *     confidenceThreshold: 0.75
  *   });
- *   
+ *
  *   if (!insights) return <Loading />;
- *   
+ *
  *   const highRisks = insights.risks?.filter(r => r.severity === 'high') || [];
  *   const topRecommendations = insights.recommendations
  *     ?.filter(r => r.priority === 'high')
  *     .slice(0, 5) || [];
- *   
+ *
  *   return (
  *     <div className="ai-insights">
  *       {insights.prediction && (
@@ -88,25 +87,25 @@ type AIContext = Record<string, unknown>;
  *           factors={insights.prediction.factors}
  *         />
  *       )}
- *       
+ *
  *       {highRisks.length > 0 && (
  *         <RiskAlerts
  *           risks={highRisks}
  *           onMitigate={(risk) => applyMitigation(risk)}
  *         />
  *       )}
- *       
+ *
  *       <OptimizationRecommendations
  *         recommendations={topRecommendations}
  *         onApply={(rec) => applyOptimization(rec)}
  *       />
- *       
+ *
  *       <ModelMetrics
  *         models={models}
  *         accuracy={getPredictionAccuracy()}
  *         onRetrain={(modelId) => updateModel(modelId)}
  *       />
- *       
+ *
  *       <button onClick={refreshAnalysis} disabled={isAnalyzing}>
  *         {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
  *       </button>

@@ -21,10 +21,7 @@ export type {
 } from './StoryCard';
 
 export { SprintColumn } from './SprintColumn';
-export type {
-  SprintColumnProps,
-  ColumnStatus,
-} from './SprintColumn';
+export type { SprintColumnProps, ColumnStatus } from './SprintColumn';
 
 export { StoryDetailPanel } from './StoryDetailPanel';
 export type {
@@ -37,16 +34,10 @@ export type {
 
 // Chart Components
 export { VelocityChart } from './VelocityChart';
-export type {
-  SprintVelocityData,
-  VelocityChartProps,
-} from './VelocityChart';
+export type { SprintVelocityData, VelocityChartProps } from './VelocityChart';
 
 export { BurndownChart } from './BurndownChart';
-export type {
-  BurndownDataPoint,
-  BurndownChartProps,
-} from './BurndownChart';
+export type { BurndownDataPoint, BurndownChartProps } from './BurndownChart';
 
 // Retrospective Components
 export { RetroItem } from './RetroItem';
@@ -58,10 +49,7 @@ export type {
 } from './RetroItem';
 
 export { TeamMoodPicker } from './TeamMoodPicker';
-export type {
-  TeamMember,
-  TeamMoodPickerProps,
-} from './TeamMoodPicker';
+export type { TeamMember, TeamMoodPickerProps } from './TeamMoodPicker';
 
 // Code Review Components
 export { CodeReviewCard } from './CodeReviewCard';

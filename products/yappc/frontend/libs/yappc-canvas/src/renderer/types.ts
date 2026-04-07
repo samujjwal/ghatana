@@ -1,9 +1,9 @@
 /**
  * Canvas Renderer Types
- * 
+ *
  * Shared type definitions for canvas rendering components.
  * Extracted to prevent circular dependencies between renderer modules.
- * 
+ *
  * @doc.type types
  * @doc.purpose Renderer type definitions
  * @doc.layer canvas/renderer
@@ -11,7 +11,11 @@
 
 import type { ReactNode, MouseEvent } from 'react';
 
-import type { UniversalNode, UniqueId, ArtifactContract } from '../model/contracts';
+import type {
+  UniversalNode,
+  UniqueId,
+  ArtifactContract,
+} from '../model/contracts';
 
 /**
  * Selection state for canvas nodes

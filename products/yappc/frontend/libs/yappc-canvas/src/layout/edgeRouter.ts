@@ -16,7 +16,11 @@ import type { Point, Bounds } from '../types/canvas-document';
 /**
  *
  */
-export type RoutingAlgorithm = 'straight' | 'orthogonal' | 'bezier' | 'waypoint';
+export type RoutingAlgorithm =
+  | 'straight'
+  | 'orthogonal'
+  | 'bezier'
+  | 'waypoint';
 
 // Edge routing configuration
 /**
@@ -317,7 +321,9 @@ function findOrthogonalPath(
   const openSet = new Set<string>([pointKey(start)]);
   const cameFrom = new Map<string, Point>();
   const gScore = new Map<string, number>([[pointKey(start), 0]]);
-  const fScore = new Map<string, number>([[pointKey(start), heuristic(start, end)]]);
+  const fScore = new Map<string, number>([
+    [pointKey(start), heuristic(start, end)],
+  ]);
 
   let iterations = 0;
 
@@ -341,7 +347,10 @@ function findOrthogonalPath(
     if (!current) break;
 
     // Check if we reached the target
-    if (Math.abs(current.x - end.x) < gridSize && Math.abs(current.y - end.y) < gridSize) {
+    if (
+      Math.abs(current.x - end.x) < gridSize &&
+      Math.abs(current.y - end.y) < gridSize
+    ) {
       return reconstructPath(cameFrom, current, source, target);
     }
 
@@ -358,7 +367,8 @@ function findOrthogonalPath(
         continue;
       }
 
-      const tentativeG = (gScore.get(currentKey) ?? Infinity) + distance(current, neighbor);
+      const tentativeG =
+        (gScore.get(currentKey) ?? Infinity) + distance(current, neighbor);
 
       if (tentativeG < (gScore.get(neighborKey) ?? Infinity)) {
         cameFrom.set(neighborKey, current);
@@ -393,12 +403,12 @@ function routeBezier(
 
   // Control points at 1/3 and 2/3 of the distance
   const cp1 = {
-    x: source.x + (dx * tension),
+    x: source.x + dx * tension,
     y: source.y,
   };
 
   const cp2 = {
-    x: target.x - (dx * tension),
+    x: target.x - dx * tension,
     y: target.y,
   };
 
@@ -549,9 +559,11 @@ function buildObstacleGrid(
 
   for (const obstacle of obstacles) {
     const minX = Math.floor((obstacle.x - padding) / gridSize) * gridSize;
-    const maxX = Math.ceil((obstacle.x + obstacle.width + padding) / gridSize) * gridSize;
+    const maxX =
+      Math.ceil((obstacle.x + obstacle.width + padding) / gridSize) * gridSize;
     const minY = Math.floor((obstacle.y - padding) / gridSize) * gridSize;
-    const maxY = Math.ceil((obstacle.y + obstacle.height + padding) / gridSize) * gridSize;
+    const maxY =
+      Math.ceil((obstacle.y + obstacle.height + padding) / gridSize) * gridSize;
 
     for (let x = minX; x <= maxX; x += gridSize) {
       for (let y = minY; y <= maxY; y += gridSize) {
@@ -621,7 +633,13 @@ function calculatePathLength(points: readonly Point[]): number {
 /**
  *
  */
-function cubicBezierPoint(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
+function cubicBezierPoint(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  t: number
+): Point {
   const mt = 1 - t;
   const mt2 = mt * mt;
   const mt3 = mt2 * mt;

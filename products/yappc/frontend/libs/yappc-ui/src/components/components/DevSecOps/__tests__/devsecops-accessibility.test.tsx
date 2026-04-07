@@ -76,10 +76,7 @@ describe('DevSecOps Accessibility', () => {
     it('Breadcrumbs has navigation landmark', () => {
       render(
         <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Current' },
-          ]}
+          items={[{ label: 'Home', href: '/' }, { label: 'Current' }]}
         />
       );
 
@@ -146,7 +143,7 @@ describe('DevSecOps Accessibility', () => {
 
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThanOrEqual(3);
-      
+
       // Verify buttons are keyboard accessible
       await user.tab();
       expect(document.activeElement).toBeDefined();
@@ -339,7 +336,9 @@ describe('DevSecOps Accessibility', () => {
     });
 
     it('ViewModeSwitcher announces current view', () => {
-      render(<ViewModeSwitcher currentView="timeline" onViewChange={() => {}} />);
+      render(
+        <ViewModeSwitcher currentView="timeline" onViewChange={() => {}} />
+      );
 
       // Check that view switcher renders
       const buttons = screen.getAllByRole('button');
@@ -348,16 +347,12 @@ describe('DevSecOps Accessibility', () => {
 
     it('DataTable announces sort direction', async () => {
       const user = userEvent.setup();
-      const mockData = [
-        { id: '1', title: 'Task A', status: 'completed' },
-      ];
+      const mockData = [{ id: '1', title: 'Task A', status: 'completed' }];
 
       render(
         <DataTable
           data={mockData}
-          columns={[
-            { id: 'title', label: 'Title', sortable: true },
-          ]}
+          columns={[{ id: 'title', label: 'Title', sortable: true }]}
         />
       );
 
@@ -476,9 +471,7 @@ describe('DevSecOps Accessibility', () => {
     });
 
     it('DataTable checkboxes are touch-friendly', () => {
-      const mockData = [
-        { id: '1', title: 'Task 1', status: 'completed' },
-      ];
+      const mockData = [{ id: '1', title: 'Task 1', status: 'completed' }];
 
       render(
         <DataTable
@@ -498,12 +491,7 @@ describe('DevSecOps Accessibility', () => {
 
   describe('Error States', () => {
     it('SearchBar error state is accessible', () => {
-      render(
-        <SearchBar
-          value=""
-          onChange={() => {}}
-        />
-      );
+      render(<SearchBar value="" onChange={() => {}} />);
 
       // SearchBar renders and is accessible
       expect(screen.getByPlaceholderText(/search/i)).toBeDefined();
@@ -545,10 +533,7 @@ describe('DevSecOps Accessibility', () => {
 
     it('DataTable uses table element', () => {
       const { container } = render(
-        <DataTable
-          data={[]}
-          columns={[{ id: 'title', label: 'Title' }]}
-        />
+        <DataTable data={[]} columns={[{ id: 'title', label: 'Title' }]} />
       );
 
       const table = container.querySelector('table');

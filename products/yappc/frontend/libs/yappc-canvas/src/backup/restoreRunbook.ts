@@ -1,6 +1,6 @@
 /**
  * Restore Runbook - Staging restore validation and dry-run migration
- * 
+ *
  * Implements staging environment validation, dry-run migrations,
  * smoke test framework, and restore verification workflows.
  */
@@ -8,14 +8,24 @@
 /**
  * Restore stage
  */
-export type RestoreStage = 
-  | 'validation' | 'dry-run' | 'smoke-test' 
-  | 'pre-restore' | 'restore' | 'post-restore' | 'complete';
+export type RestoreStage =
+  | 'validation'
+  | 'dry-run'
+  | 'smoke-test'
+  | 'pre-restore'
+  | 'restore'
+  | 'post-restore'
+  | 'complete';
 
 /**
  * Test result status
  */
-export type TestStatus = 'pending' | 'running' | 'passed' | 'failed' | 'skipped';
+export type TestStatus =
+  | 'pending'
+  | 'running'
+  | 'passed'
+  | 'failed'
+  | 'skipped';
 
 /**
  * Restore operation
@@ -200,7 +210,9 @@ export class RestoreRunbookManager {
     ) {
       const stagingValidation = this.getStagingValidation(snapshotId);
       if (!stagingValidation || !stagingValidation.success) {
-        throw new Error('Production restore requires successful staging validation');
+        throw new Error(
+          'Production restore requires successful staging validation'
+        );
       }
     }
 
@@ -316,7 +328,8 @@ export class RestoreRunbookManager {
         const success = await Promise.race([testPromise, timeoutPromise]);
 
         result.completedAt = Date.now();
-        result.executionTime = result.completedAt - (result.startedAt || Date.now());
+        result.executionTime =
+          result.completedAt - (result.startedAt || Date.now());
         result.status = success ? 'passed' : 'failed';
 
         if (success) {
@@ -329,7 +342,8 @@ export class RestoreRunbookManager {
         }
       } catch (error) {
         result.completedAt = Date.now();
-        result.executionTime = result.completedAt - (result.startedAt || Date.now());
+        result.executionTime =
+          result.completedAt - (result.startedAt || Date.now());
         result.status = 'failed';
         result.error = error instanceof Error ? error.message : 'Test failed';
         failedTests++;
@@ -413,7 +427,9 @@ export class RestoreRunbookManager {
   /**
    * Get operations by environment
    */
-  getOperationsByEnvironment(environment: 'staging' | 'production'): RestoreOperation[] {
+  getOperationsByEnvironment(
+    environment: 'staging' | 'production'
+  ): RestoreOperation[] {
     return Array.from(this.operations.values()).filter(
       (op) => op.environment === environment
     );

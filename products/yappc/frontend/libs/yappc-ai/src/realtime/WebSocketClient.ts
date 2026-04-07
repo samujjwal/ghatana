@@ -1,9 +1,9 @@
 /**
  * Unified WebSocket Client
- * 
+ *
  * Production-grade WebSocket client that integrates with backend MessageRouter.
  * Handles authentication, message routing, reconnection, and error recovery.
- * 
+ *
  * @module realtime
  * @doc.type infrastructure
  * @doc.purpose Real-time communication
@@ -100,16 +100,22 @@ export interface WebSocketClientConfig {
 /**
  * Message handler function
  */
-export type MessageHandler<T = unknown> = (payload: T, message: WebSocketMessage<T>) => void;
+export type MessageHandler<T = unknown> = (
+  payload: T,
+  message: WebSocketMessage<T>
+) => void;
 
 /**
  * Connection state change handler
  */
-export type StateChangeHandler = (state: ConnectionState, error?: Error) => void;
+export type StateChangeHandler = (
+  state: ConnectionState,
+  error?: Error
+) => void;
 
 /**
  * Unified WebSocket Client
- * 
+ *
  * Features:
  * - JWT authentication with backend
  * - Message type routing to handlers
@@ -118,7 +124,7 @@ export type StateChangeHandler = (state: ConnectionState, error?: Error) => void
  * - Heartbeat/ping-pong for connection health
  * - TypeScript type safety
  * - Error handling and recovery
- * 
+ *
  * @example
  * ```ts
  * const client = new WebSocketClient({
@@ -127,21 +133,21 @@ export type StateChangeHandler = (state: ConnectionState, error?: Error) => void
  *   tenantId: 'tenant-123',
  *   userId: 'user-456',
  * });
- * 
+ *
  * // Connect
  * await client.connect();
- * 
+ *
  * // Subscribe to canvas updates
  * client.on('canvas.update', (payload) => {
  *   console.log('Canvas updated:', payload);
  * });
- * 
+ *
  * // Send canvas update
  * client.send('canvas.update', {
  *   canvasId: 'canvas-123',
  *   changes: [...]
  * });
- * 
+ *
  * // Disconnect
  * await client.disconnect();
  * ```
@@ -254,9 +260,9 @@ export class WebSocketClient {
             reject(err);
           }
         }, this.config.connectionTimeout);
-
       } catch (error) {
-        const err = error instanceof Error ? error : new Error('Connection failed');
+        const err =
+          error instanceof Error ? error : new Error('Connection failed');
         this.setState('error', err);
         reject(err);
       }
@@ -440,10 +446,13 @@ export class WebSocketClient {
     this.setState('reconnecting');
     this.reconnectAttempts++;
 
-    const delay = this.config.reconnectDelay *
+    const delay =
+      this.config.reconnectDelay *
       Math.pow(this.config.reconnectBackoff, this.reconnectAttempts - 1);
 
-    this.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})...`);
+    this.log(
+      `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})...`
+    );
 
     await new Promise((resolve) => setTimeout(resolve, delay));
 

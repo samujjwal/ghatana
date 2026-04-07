@@ -1,16 +1,16 @@
 /**
  * Test Observability
- * 
+ *
  * Provides test debugging infrastructure including debug logging,
  * artifact retention, failure investigation guides, and CI integration.
- * 
+ *
  * Features:
  * - Structured debug logging
  * - Test artifact management
  * - Failure investigation guides
  * - Performance tracking
  * - CI integration and reporting
- * 
+ *
  * @module testing/testObservability
  */
 
@@ -270,7 +270,7 @@ export interface InvestigationGuide {
 
 /**
  * Test Observability Manager
- * 
+ *
  * Manages test debugging infrastructure including logging, artifacts,
  * failure investigation, and CI integration.
  */
@@ -328,11 +328,15 @@ export class TestObservabilityManager {
   /**
    * Log message
    */
-  log(level: LogLevel, message: string, options?: {
-    context?: Record<string, unknown>;
-    testName?: string;
-    stack?: string;
-  }): void {
+  log(
+    level: LogLevel,
+    message: string,
+    options?: {
+      context?: Record<string, unknown>;
+      testName?: string;
+      stack?: string;
+    }
+  ): void {
     // Check if logging should be captured
     const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
     const configLevelIndex = levels.indexOf(this.config.logLevel);
@@ -375,28 +379,40 @@ export class TestObservabilityManager {
   /**
    * Debug log
    */
-  debug(message: string, options?: Parameters<TestObservabilityManager['log']>[2]): void {
+  debug(
+    message: string,
+    options?: Parameters<TestObservabilityManager['log']>[2]
+  ): void {
     this.log('debug', message, options);
   }
 
   /**
    * Info log
    */
-  info(message: string, options?: Parameters<TestObservabilityManager['log']>[2]): void {
+  info(
+    message: string,
+    options?: Parameters<TestObservabilityManager['log']>[2]
+  ): void {
     this.log('info', message, options);
   }
 
   /**
    * Warn log
    */
-  warn(message: string, options?: Parameters<TestObservabilityManager['log']>[2]): void {
+  warn(
+    message: string,
+    options?: Parameters<TestObservabilityManager['log']>[2]
+  ): void {
     this.log('warn', message, options);
   }
 
   /**
    * Error log
    */
-  error(message: string, options?: Parameters<TestObservabilityManager['log']>[2]): void {
+  error(
+    message: string,
+    options?: Parameters<TestObservabilityManager['log']>[2]
+  ): void {
     this.log('error', message, options);
   }
 
@@ -433,10 +449,14 @@ export class TestObservabilityManager {
     artifacts.push(artifact);
     this.artifacts.set(artifact.testName, artifacts);
 
-    this.log('debug', `Artifact registered: ${artifact.type} at ${artifact.path}`, {
-      testName: artifact.testName,
-      context: { artifactType: artifact.type, path: artifact.path },
-    });
+    this.log(
+      'debug',
+      `Artifact registered: ${artifact.type} at ${artifact.path}`,
+      {
+        testName: artifact.testName,
+        context: { artifactType: artifact.type, path: artifact.path },
+      }
+    );
   }
 
   /**
@@ -532,9 +552,13 @@ export class TestObservabilityManager {
 
     // Check for slow tests
     if (metrics.duration > 10000) {
-      this.log('warn', `Slow test detected: ${metrics.testName} (${metrics.duration}ms)`, {
-        testName: metrics.testName,
-      });
+      this.log(
+        'warn',
+        `Slow test detected: ${metrics.testName} (${metrics.duration}ms)`,
+        {
+          testName: metrics.testName,
+        }
+      );
     }
   }
 
@@ -562,7 +586,10 @@ export class TestObservabilityManager {
    */
   generateInvestigationGuide(failure: TestFailure): string[] | undefined {
     for (const guide of this.investigationGuides) {
-      if (guide.pattern.test(failure.message) || (failure.stack && guide.pattern.test(failure.stack))) {
+      if (
+        guide.pattern.test(failure.message) ||
+        (failure.stack && guide.pattern.test(failure.stack))
+      ) {
         const steps: string[] = [
           `# Investigation Guide: ${guide.title}`,
           '',
@@ -622,7 +649,9 @@ export class TestObservabilityManager {
     // Summary
     lines.push('## Summary\n');
     lines.push(`- Total Logs: ${this.logs.length}`);
-    lines.push(`- Total Artifacts: ${Array.from(this.artifacts.values()).flat().length}`);
+    lines.push(
+      `- Total Artifacts: ${Array.from(this.artifacts.values()).flat().length}`
+    );
     lines.push(`- Total Failures: ${this.failures.size}`);
     lines.push(`- Total Tests: ${this.performance.size}\n`);
 
@@ -695,9 +724,10 @@ export class TestObservabilityManager {
     const testCount = this.performance.size;
     const passCount = testCount - failureCount;
 
-    const summary = failureCount === 0
-      ? `✅ All ${testCount} tests passed`
-      : `❌ ${failureCount}/${testCount} tests failed`;
+    const summary =
+      failureCount === 0
+        ? `✅ All ${testCount} tests passed`
+        : `❌ ${failureCount}/${testCount} tests failed`;
 
     const details = [
       'Test Results:',

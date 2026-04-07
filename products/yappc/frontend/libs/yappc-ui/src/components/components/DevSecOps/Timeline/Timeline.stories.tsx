@@ -12,7 +12,6 @@ import { Timeline } from './Timeline';
 
 import type { Meta, StoryObj } from '@storybook/react';
 import type { Item, Milestone, Phase } from '@yappc/core/types/devsecops';
- 
 
 const meta: Meta<typeof Timeline> = {
   title: 'DevSecOps/Timeline',
@@ -203,11 +202,7 @@ export const DayView: Story = {
 export const WeekView: Story = {
   render: () => (
     <Box className="p-6">
-      <Timeline
-        items={mockItems}
-        milestones={mockMilestones}
-        viewMode="week"
-      />
+      <Timeline items={mockItems} milestones={mockMilestones} viewMode="week" />
     </Box>
   ),
 };
@@ -274,7 +269,8 @@ export const WithPhases: Story = {
 export const Interactive: Story = {
   render: () => {
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-    const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+    const [selectedMilestone, setSelectedMilestone] =
+      useState<Milestone | null>(null);
 
     return (
       <Box className="p-6">
@@ -288,7 +284,7 @@ export const Interactive: Story = {
         />
 
         {selectedItem && (
-          <Paper className="mt-4 p-4 bg-blue-50" >
+          <Paper className="mt-4 p-4 bg-blue-50">
             <Typography as="h6">Selected Item</Typography>
             <Typography as="p" className="text-sm">
               <strong>Title:</strong> {selectedItem.title}
@@ -308,13 +304,14 @@ export const Interactive: Story = {
         )}
 
         {selectedMilestone && (
-          <Paper className="mt-4 p-4" style={{ backgroundColor: 'warning.50' }} >
+          <Paper className="mt-4 p-4" style={{ backgroundColor: 'warning.50' }}>
             <Typography as="h6">Selected Milestone</Typography>
             <Typography as="p" className="text-sm">
               <strong>Title:</strong> {selectedMilestone.title}
             </Typography>
             <Typography as="p" className="text-sm">
-              <strong>Date:</strong> {new Date(selectedMilestone.dueDate).toLocaleDateString()}
+              <strong>Date:</strong>{' '}
+              {new Date(selectedMilestone.dueDate).toLocaleDateString()}
             </Typography>
             <Typography as="p" className="text-sm">
               <strong>Description:</strong> {selectedMilestone.description}
@@ -344,7 +341,12 @@ export const Empty: Story = {
   render: () => (
     <Box className="p-6">
       <Timeline items={[]} />
-      <Typography as="p" className="text-sm" color="text.secondary" className="mt-4 text-center">
+      <Typography
+        as="p"
+        className="text-sm"
+        color="text.secondary"
+        className="mt-4 text-center"
+      >
         No items to display on timeline
       </Typography>
     </Box>
@@ -357,11 +359,7 @@ export const Empty: Story = {
 export const CustomHeight: Story = {
   render: () => (
     <Box className="p-6">
-      <Timeline
-        items={mockItems}
-        milestones={mockMilestones}
-        height={400}
-      />
+      <Timeline items={mockItems} milestones={mockMilestones} height={400} />
     </Box>
   ),
 };

@@ -5,7 +5,7 @@ import { SidePanel } from '../SidePanel';
 
 /**
  * SidePanel Component Unit Tests
- * 
+ *
  * Tests side panel functionality:
  * - Opening and closing
  * - Title rendering
@@ -84,7 +84,9 @@ describe('SidePanel Component', () => {
       const user = userEvent.setup();
       const onClose = vi.fn();
 
-      const { container } = render(<SidePanel {...defaultProps} onClose={onClose} />);
+      const { container } = render(
+        <SidePanel {...defaultProps} onClose={onClose} />
+      );
 
       // MUI Drawer backdrop
       const backdrop = container.querySelector('.MuiBackdrop-root');
@@ -125,7 +127,7 @@ describe('SidePanel Component', () => {
     it('should accept different width values', () => {
       const widths = [300, 500, 700, 900];
 
-      widths.forEach(width => {
+      widths.forEach((width) => {
         const { unmount } = render(
           <SidePanel {...defaultProps} width={width} />
         );
@@ -167,7 +169,9 @@ describe('SidePanel Component', () => {
       expect(screen.getByText('Paragraph with text')).toBeInTheDocument();
       expect(screen.getByText('Item 1')).toBeInTheDocument();
       expect(screen.getByText('Item 2')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Action Button' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Action Button' })
+      ).toBeInTheDocument();
     });
 
     it('should render empty content gracefully', () => {
@@ -259,7 +263,7 @@ describe('SidePanel Component', () => {
 
       // Tab to close button
       await user.tab();
-      
+
       const closeButton = screen.getByLabelText('Close panel');
       expect(closeButton).toHaveFocus();
     });
@@ -334,7 +338,9 @@ describe('SidePanel Component', () => {
     });
 
     it('should handle changing title while open', () => {
-      const { rerender } = render(<SidePanel {...defaultProps} title="Title 1" />);
+      const { rerender } = render(
+        <SidePanel {...defaultProps} title="Title 1" />
+      );
 
       expect(screen.getByText('Title 1')).toBeInTheDocument();
 
@@ -346,13 +352,17 @@ describe('SidePanel Component', () => {
 
     it('should handle changing content while open', () => {
       const { rerender } = render(
-        <SidePanel {...defaultProps}><div>Content 1</div></SidePanel>
+        <SidePanel {...defaultProps}>
+          <div>Content 1</div>
+        </SidePanel>
       );
 
       expect(screen.getByText('Content 1')).toBeInTheDocument();
 
       rerender(
-        <SidePanel {...defaultProps}><div>Content 2</div></SidePanel>
+        <SidePanel {...defaultProps}>
+          <div>Content 2</div>
+        </SidePanel>
       );
 
       expect(screen.queryByText('Content 1')).not.toBeInTheDocument();
@@ -366,7 +376,7 @@ describe('SidePanel Component', () => {
       render(<SidePanel {...defaultProps} onClose={onClose} />);
 
       const closeButton = screen.getByLabelText('Close panel');
-      
+
       await user.click(closeButton);
       await user.click(closeButton);
       await user.click(closeButton);
@@ -378,9 +388,9 @@ describe('SidePanel Component', () => {
   describe('Performance', () => {
     it('should render efficiently', () => {
       const startTime = performance.now();
-      
+
       render(<SidePanel {...defaultProps} />);
-      
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 
@@ -401,9 +411,9 @@ describe('SidePanel Component', () => {
       );
 
       const startTime = performance.now();
-      
+
       render(<SidePanel {...defaultProps}>{complexContent}</SidePanel>);
-      
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
 

@@ -62,12 +62,16 @@ resource "aws_s3_bucket" "data" {
     expect(topology.provider).toBe('aws');
     expect(topology.resources).toHaveLength(2);
 
-    const instance = topology.resources.find(r => r.id === 'aws_instance.web');
+    const instance = topology.resources.find(
+      (r) => r.id === 'aws_instance.web'
+    );
     expect(instance).toBeDefined();
     expect(instance?.type).toBe('compute');
     expect(instance?.resourceType).toBe('aws_instance');
 
-    const bucket = topology.resources.find(r => r.id === 'aws_s3_bucket.data');
+    const bucket = topology.resources.find(
+      (r) => r.id === 'aws_s3_bucket.data'
+    );
     expect(bucket).toBeDefined();
     expect(bucket?.type).toBe('storage');
   });
@@ -87,7 +91,7 @@ resource "aws_subnet" "public" {
 
     const topology = parseTerraform(hcl);
 
-    const subnet = topology.resources.find(r => r.id === 'aws_subnet.public');
+    const subnet = topology.resources.find((r) => r.id === 'aws_subnet.public');
     expect(subnet?.dependsOn).toContain('aws_vpc.main');
   });
 
@@ -216,7 +220,7 @@ describe.skip('CloudTopology - CloudFormation Parsing', () => {
     expect(topology.provider).toBe('aws');
     expect(topology.resources).toHaveLength(2);
 
-    const instance = topology.resources.find(r => r.id === 'WebServer');
+    const instance = topology.resources.find((r) => r.id === 'WebServer');
     expect(instance?.resourceType).toBe('AWS::EC2::Instance');
     expect(instance?.type).toBe('compute');
   });
@@ -238,7 +242,7 @@ describe.skip('CloudTopology - CloudFormation Parsing', () => {
 
     const topology = parseCloudFormation(template);
 
-    const subnet = topology.resources.find(r => r.id === 'Subnet');
+    const subnet = topology.resources.find((r) => r.id === 'Subnet');
     expect(subnet?.dependsOn).toContain('VPC');
   });
 
@@ -320,7 +324,7 @@ Resources:
     const topology = parseCloudFormation(yaml);
 
     expect(topology.resources).toHaveLength(2);
-    const instance = topology.resources.find(r => r.id === 'WebServer');
+    const instance = topology.resources.find((r) => r.id === 'WebServer');
     expect(instance?.resourceType).toBe('AWS::EC2::Instance');
   });
 
@@ -432,7 +436,7 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
 
     // Should have 6 resource nodes
     const resourceNodes = Object.values(doc.elements).filter(
-      el => el.type === 'node'
+      (el) => el.type === 'node'
     );
     expect(resourceNodes).toHaveLength(6);
 
@@ -496,7 +500,8 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
     expect(edge.type).toBe('edge');
 
     if (edge.type === 'edge') {
-      const canvasEdge = edge as import('../../types/canvas-document').CanvasEdge;
+      const canvasEdge =
+        edge as import('../../types/canvas-document').CanvasEdge;
       expect(canvasEdge.sourceId).toBe('a');
       expect(canvasEdge.targetId).toBe('b');
     }
@@ -594,7 +599,10 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
       metadata: {},
     };
 
-    const config = createTopologyConfig({ groupBy: 'module', groupSpacing: 300 });
+    const config = createTopologyConfig({
+      groupBy: 'module',
+      groupSpacing: 300,
+    });
     const doc = topologyToCanvas(topology, config);
 
     const nodeA = doc.elements['a'];
@@ -602,7 +610,9 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
 
     if (nodeA.type === 'node' && nodeB.type === 'node') {
       // Different modules should have different Y positions (vertical spacing)
-      expect(Math.abs(nodeA.transform.position.y - nodeB.transform.position.y)).toBeGreaterThan(200);
+      expect(
+        Math.abs(nodeA.transform.position.y - nodeB.transform.position.y)
+      ).toBeGreaterThan(200);
     }
   });
 
@@ -649,7 +659,8 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
     expect((node.metadata.cost as CostEstimate).monthly).toBe(29.99);
 
     if (node.type === 'node') {
-      const canvasNode = node as import('../../types/canvas-document').CanvasNode;
+      const canvasNode =
+        node as import('../../types/canvas-document').CanvasNode;
       expect(canvasNode.data.cost).toBe('$29.99/mo');
     }
   });
@@ -702,7 +713,8 @@ describe.skip('CloudTopology - Canvas Conversion', () => {
     expect(node.metadata.drift).toBeDefined();
 
     if (node.type === 'node') {
-      const canvasNode = node as import('../../types/canvas-document').CanvasNode;
+      const canvasNode =
+        node as import('../../types/canvas-document').CanvasNode;
       expect(canvasNode.data.drift).toBe('drifted');
     }
   });

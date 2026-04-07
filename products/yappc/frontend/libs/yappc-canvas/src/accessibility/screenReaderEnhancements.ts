@@ -334,7 +334,9 @@ export function announceNodeRelationships(
   const outgoingCount = relationships.outgoing.length;
   const bidirectionalCount = relationships.bidirectional.length;
 
-  parts.push(`Node ${label} has ${incomingCount + outgoingCount + bidirectionalCount} relationships.`);
+  parts.push(
+    `Node ${label} has ${incomingCount + outgoingCount + bidirectionalCount} relationships.`
+  );
 
   // Incoming connections
   if (incomingCount > 0) {
@@ -392,7 +394,9 @@ export function announceCollaborativeEdit(
   }
 
   const elementLabel = event.elementLabel || event.elementId;
-  const article = ['a', 'e', 'i', 'o', 'u'].includes(event.action[0]) ? 'an' : 'a';
+  const article = ['a', 'e', 'i', 'o', 'u'].includes(event.action[0])
+    ? 'an'
+    : 'a';
 
   let message = `${event.user} ${event.action} ${article} ${event.elementType}: ${elementLabel}`;
 
@@ -424,9 +428,7 @@ export function getKeyboardShortcutHelp(
   }
 
   if (category) {
-    return state.shortcuts.filter(
-      (s) => s.category === category && s.enabled
-    );
+    return state.shortcuts.filter((s) => s.category === category && s.enabled);
   }
 
   return state.shortcuts.filter((s) => s.enabled);
@@ -500,7 +502,8 @@ function enqueueAnnouncement(
   if (
     state.lastAnnouncement &&
     state.lastAnnouncement.message === item.message &&
-    item.timestamp - state.lastAnnouncement.timestamp < state.config.announceDelay
+    item.timestamp - state.lastAnnouncement.timestamp <
+      state.config.announceDelay
   ) {
     return state; // Skip duplicate announcement
   }
@@ -521,9 +524,7 @@ function enqueueAnnouncement(
 /**
  * Get next announcement to speak
  */
-export function getNextAnnouncement(
-  state: ScreenReaderEnhancementState
-): {
+export function getNextAnnouncement(state: ScreenReaderEnhancementState): {
   state: ScreenReaderEnhancementState;
   announcement: AnnouncementQueueItem | null;
 } {
@@ -628,7 +629,9 @@ export function unregisterKeyboardShortcut(
 /**
  * Get announcement queue statistics
  */
-export function getAnnouncementStatistics(state: ScreenReaderEnhancementState): {
+export function getAnnouncementStatistics(
+  state: ScreenReaderEnhancementState
+): {
   queueSize: number;
   categoryCounts: Record<string, number>;
   oldestAnnouncement: number | null;

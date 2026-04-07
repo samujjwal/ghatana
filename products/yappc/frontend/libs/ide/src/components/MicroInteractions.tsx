@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Micro-interactions Components
- * 
+ *
  * Subtle animations and interactions that enhance user experience
  * with hover effects, button states, loading indicators, and feedback.
- * 
+ *
  * @doc.type component
  * @doc.purpose Micro-interaction components for enhanced UX
  * @doc.layer product
@@ -23,7 +23,13 @@ interface RippleProps {
   duration?: number;
 }
 
-const Ripple: React.FC<RippleProps> = ({ x, y, size, color = 'rgba(255, 255, 255, 0.5)', duration = 600 }) => {
+const Ripple: React.FC<RippleProps> = ({
+  x,
+  y,
+  size,
+  color = 'rgba(255, 255, 255, 0.5)',
+  duration = 600,
+}) => {
   const [isAnimating, setIsAnimating] = useState(true);
 
   useEffect(() => {
@@ -71,7 +77,9 @@ export const InteractiveButton: React.FC<InteractiveButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number; size: number }>>([]);
+  const [ripples, setRipples] = useState<
+    Array<{ id: number; x: number; y: number; size: number }>
+  >([]);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const rippleIdRef = useRef(0);
 
@@ -93,11 +101,11 @@ export const InteractiveButton: React.FC<InteractiveButtonProps> = ({
       size,
     };
 
-    setRipples(prev => [...prev, newRipple]);
+    setRipples((prev) => [...prev, newRipple]);
 
     // Remove ripple after animation
     setTimeout(() => {
-      setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+      setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
     }, 600);
 
     onClick?.(e);
@@ -144,13 +152,8 @@ export const InteractiveButton: React.FC<InteractiveButtonProps> = ({
       {...props}
     >
       {children}
-      {ripples.map(ripple => (
-        <Ripple
-          key={ripple.id}
-          x={ripple.x}
-          y={ripple.y}
-          size={ripple.size}
-        />
+      {ripples.map((ripple) => (
+        <Ripple key={ripple.id} x={ripple.x} y={ripple.y} size={ripple.size} />
       ))}
     </button>
   );
@@ -184,7 +187,9 @@ export const AnimatedCheckbox: React.FC<AnimatedCheckboxProps> = ({
   };
 
   return (
-    <label className={`flex items-center gap-2 cursor-pointer ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}>
+    <label
+      className={`flex items-center gap-2 cursor-pointer ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}
+    >
       <div className="relative">
         <input
           type="checkbox"
@@ -196,9 +201,10 @@ export const AnimatedCheckbox: React.FC<AnimatedCheckboxProps> = ({
         <div
           className={`
             w-5 h-5 rounded border-2 transition-all duration-200 ease-out
-            ${checked
-              ? 'bg-blue-500 border-blue-500'
-              : 'bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600'
+            ${
+              checked
+                ? 'bg-blue-500 border-blue-500'
+                : 'bg-white border-gray-300 dark:bg-gray-800 dark:border-gray-600'
             }
             ${isAnimating ? 'scale-110' : 'scale-100'}
           `}
@@ -220,7 +226,9 @@ export const AnimatedCheckbox: React.FC<AnimatedCheckboxProps> = ({
         </div>
       </div>
       {label && (
-        <span className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
+        <span
+          className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}
+        >
           {label}
         </span>
       )}
@@ -267,7 +275,9 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   };
 
   return (
-    <label className={`flex items-center gap-2 cursor-pointer ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}>
+    <label
+      className={`flex items-center gap-2 cursor-pointer ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}
+    >
       <div className="relative">
         <input
           type="checkbox"
@@ -279,10 +289,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         <div
           className={`
             ${sizeClasses[size]} rounded-full transition-all duration-300 ease-out
-            ${checked
-              ? 'bg-blue-500'
-              : 'bg-gray-300 dark:bg-gray-600'
-            }
+            ${checked ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'}
           `}
         />
         <div
@@ -296,7 +303,9 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         />
       </div>
       {label && (
-        <span className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}>
+        <span
+          className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-700 dark:text-gray-300'}`}
+        >
           {label}
         </span>
       )}
@@ -342,9 +351,10 @@ export const AnimatedInput: React.FC<AnimatedInputProps> = ({
   const baseClasses = `
     w-full px-3 py-2 rounded-lg border transition-all duration-200 ease-out
     focus:outline-none focus:ring-2 focus:ring-offset-0
-    ${error
-      ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+    ${
+      error
+        ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+        : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
     }
     dark:bg-gray-800 dark:border-gray-600
     ${className}
@@ -353,19 +363,16 @@ export const AnimatedInput: React.FC<AnimatedInputProps> = ({
   const labelClasses = `
     absolute left-3 transition-all duration-200 ease-out pointer-events-none
     text-sm ${error ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}
-    ${isFocused || hasValue
-      ? '-top-2.5 left-2 bg-white dark:bg-gray-900 px-1 text-xs'
-      : 'top-2.5'
+    ${
+      isFocused || hasValue
+        ? '-top-2.5 left-2 bg-white dark:bg-gray-900 px-1 text-xs'
+        : 'top-2.5'
     }
   `;
 
   return (
     <div className="relative">
-      {label && (
-        <label className={labelClasses}>
-          {label}
-        </label>
-      )}
+      {label && <label className={labelClasses}>{label}</label>}
       <input
         className={baseClasses}
         onFocus={handleFocus}
@@ -375,11 +382,11 @@ export const AnimatedInput: React.FC<AnimatedInputProps> = ({
       />
       {(error || helperText) && (
         <div className="mt-1 text-xs">
-          {error && (
-            <span className="text-red-500">{error}</span>
-          )}
+          {error && <span className="text-red-500">{error}</span>}
           {!error && helperText && (
-            <span className="text-gray-500 dark:text-gray-400">{helperText}</span>
+            <span className="text-gray-500 dark:text-gray-400">
+              {helperText}
+            </span>
           )}
         </div>
       )}
@@ -428,9 +435,10 @@ export const HoverCard: React.FC<HoverCardProps> = ({
           absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
           bg-gray-900 text-white text-sm rounded-lg shadow-lg p-3
           transition-all duration-200 ease-out
-          ${isVisible
-            ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 translate-y-1 pointer-events-none'
+          ${
+            isVisible
+              ? 'opacity-100 translate-y-0 pointer-events-auto'
+              : 'opacity-0 translate-y-1 pointer-events-none'
           }
           z-50 min-w-max
         `}
@@ -535,7 +543,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           <span>{Math.round(percentage)}%</span>
         </div>
       )}
-      <div className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full ${sizeClasses[size]}`}>
+      <div
+        className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full ${sizeClasses[size]}`}
+      >
         <div
           className={`
             ${colorClasses[color]} ${sizeClasses[size]} rounded-full

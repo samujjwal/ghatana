@@ -1,9 +1,9 @@
 /**
  * NumberField Component (Tailwind CSS + Base UI)
- * 
+ *
  * A number input component using Base UI NumberField primitives styled with Tailwind CSS.
  * Supports increment/decrement buttons, min/max validation, and step controls.
- * 
+ *
  * @example
  * ```tsx
  * <NumberFieldTailwind
@@ -54,7 +54,13 @@ export interface NumberFieldProps {
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
   /** Color scheme */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
   /** Show increment/decrement buttons */
   showSteppers?: boolean;
   /** Additional CSS classes for container */
@@ -67,7 +73,7 @@ export interface NumberFieldProps {
 
 /**
  * NumberField component for number input with steppers
- * 
+ *
  * Built with Base UI NumberField primitives and styled with Tailwind CSS.
  * Supports keyboard navigation, min/max validation, and increment/decrement controls.
  */
@@ -156,9 +162,7 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
           <BaseNumberField.Group
             className={cn(
               'relative flex items-center rounded-md border shadow-sm transition-colors',
-              hasError
-                ? 'border-error-500'
-                : 'border-grey-300',
+              hasError ? 'border-error-500' : 'border-grey-300',
               disabled && 'bg-grey-50 opacity-50',
               !disabled && 'hover:border-grey-400'
             )}
@@ -169,9 +173,7 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
               className={cn(
                 'flex-1 border-0 bg-transparent focus:outline-none focus:ring-0',
                 sizeClasses[size].input,
-                hasError
-                  ? 'text-error-900'
-                  : 'text-grey-900',
+                hasError ? 'text-error-900' : 'text-grey-900',
                 disabled && 'cursor-not-allowed',
                 readOnly && 'cursor-default',
                 !showSteppers && 'rounded-md',
@@ -189,7 +191,8 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
                     hasError
                       ? 'focus:ring-error-500'
                       : colorClasses[colorScheme],
-                    disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
+                    disabled &&
+                      'cursor-not-allowed opacity-50 hover:bg-transparent',
                     sizeClasses[size].button
                   )}
                   aria-label="Increment"
@@ -200,7 +203,12 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 15l7-7 7 7"
+                    />
                   </svg>
                 </BaseNumberField.Increment>
 
@@ -212,7 +220,8 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
                     hasError
                       ? 'focus:ring-error-500'
                       : colorClasses[colorScheme],
-                    disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
+                    disabled &&
+                      'cursor-not-allowed opacity-50 hover:bg-transparent',
                     sizeClasses[size].button
                   )}
                   aria-label="Decrement"
@@ -223,7 +232,12 @@ export const NumberField = React.forwardRef<HTMLInputElement, NumberFieldProps>(
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </BaseNumberField.Decrement>
               </div>

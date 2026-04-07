@@ -7,7 +7,10 @@ import { TimePicker } from '../TimePicker/TimePicker';
 /**
  * DateTimePicker component props
  */
-export interface DateTimePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface DateTimePickerProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onChange'
+> {
   /**
    * Current selected date-time
    */
@@ -75,7 +78,10 @@ export interface DateTimePickerProps extends Omit<React.HTMLAttributes<HTMLDivEl
 /**
  * DateTimePicker component - Combined date and time selection
  */
-export const DateTimePicker = React.forwardRef<HTMLDivElement, DateTimePickerProps>((props, _ref) => {
+export const DateTimePicker = React.forwardRef<
+  HTMLDivElement,
+  DateTimePickerProps
+>((props, _ref) => {
   const {
     value,
     onChange,

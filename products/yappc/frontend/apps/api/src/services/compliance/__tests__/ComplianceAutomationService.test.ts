@@ -459,14 +459,20 @@ describe('ComplianceAutomationService', () => {
       // GIVEN: Null inputs
       // WHEN: Call methods with null
       // THEN: Should throw validation errors
-      await expect(service.generateRemediationPlan(null as unknown)).rejects.toThrow();
-      await expect(service.generateReport(undefined as unknown)).rejects.toThrow();
+      await expect(
+        service.generateRemediationPlan(null as unknown)
+      ).rejects.toThrow();
+      await expect(
+        service.generateReport(undefined as unknown)
+      ).rejects.toThrow();
     });
 
     it('should handle database connection errors', async () => {
       // GIVEN: Database error
       (mockPrisma.complianceFinding as unknown) = {
-        findMany: jest.fn().mockRejectedValue(new Error('Database connection failed')),
+        findMany: jest
+          .fn()
+          .mockRejectedValue(new Error('Database connection failed')),
       };
 
       // WHEN: Attempt operation
@@ -477,4 +483,3 @@ describe('ComplianceAutomationService', () => {
     });
   });
 });
-

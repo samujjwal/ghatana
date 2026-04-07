@@ -104,7 +104,13 @@ export const EventNode: React.FC<EventNodeProps> = ({
 
   const isEmitter = nodeType === 'emitter';
   const bgColor = isEmitter ? '#e3f2fd' : '#f3e5f5';
-  const borderColor = hasError ? '#f44336' : isSelected ? '#1976d2' : isEmitter ? '#1976d2' : '#9c27b0';
+  const borderColor = hasError
+    ? '#f44336'
+    : isSelected
+      ? '#1976d2'
+      : isEmitter
+        ? '#1976d2'
+        : '#9c27b0';
   const icon = isEmitter ? '📡' : '🎯';
 
   return (
@@ -176,7 +182,13 @@ export const EventNode: React.FC<EventNodeProps> = ({
           {eventName}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 11,
+          }}
+        >
           <span style={{ color: '#666' }}>
             {connectionCount} connection{connectionCount !== 1 ? 's' : ''}
           </span>
@@ -202,7 +214,14 @@ export const EventNode: React.FC<EventNodeProps> = ({
       {isExpanded && (
         <div style={{ padding: 8 }}>
           {handlers.length === 0 ? (
-            <div style={{ padding: 12, textAlign: 'center', color: '#999', fontSize: 11 }}>
+            <div
+              style={{
+                padding: 12,
+                textAlign: 'center',
+                color: '#999',
+                fontSize: 11,
+              }}
+            >
               No handlers configured
             </div>
           ) : (
@@ -230,18 +249,23 @@ export const EventNode: React.FC<EventNodeProps> = ({
                     e.currentTarget.style.backgroundColor = '#fafafa';
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 2 }}>
+                  <div
+                    style={{ fontSize: 12, fontWeight: 500, marginBottom: 2 }}
+                  >
                     {handler.name}
                   </div>
                   {handler.description && (
-                    <div style={{ fontSize: 10, color: '#666' }}>{handler.description}</div>
-                  )}
-                  {handler.payload && Object.keys(handler.payload).length > 0 && (
-                    <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>
-                      Payload: {Object.keys(handler.payload).length} field
-                      {Object.keys(handler.payload).length !== 1 ? 's' : ''}
+                    <div style={{ fontSize: 10, color: '#666' }}>
+                      {handler.description}
                     </div>
                   )}
+                  {handler.payload &&
+                    Object.keys(handler.payload).length > 0 && (
+                      <div style={{ fontSize: 9, color: '#999', marginTop: 4 }}>
+                        Payload: {Object.keys(handler.payload).length} field
+                        {Object.keys(handler.payload).length !== 1 ? 's' : ''}
+                      </div>
+                    )}
                 </button>
               ))}
             </div>
@@ -259,7 +283,11 @@ export const EventNode: React.FC<EventNodeProps> = ({
           width: 16,
           height: 16,
           borderRadius: '50%',
-          backgroundColor: hasError ? '#f44336' : isEmitter ? '#1976d2' : '#9c27b0',
+          backgroundColor: hasError
+            ? '#f44336'
+            : isEmitter
+              ? '#1976d2'
+              : '#9c27b0',
           border: '2px solid #fff',
           boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
         }}

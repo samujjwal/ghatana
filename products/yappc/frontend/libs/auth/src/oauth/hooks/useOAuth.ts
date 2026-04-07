@@ -1,9 +1,9 @@
 /**
  * OAuth React Hook
- * 
+ *
  * React hook for OAuth 2.0 authentication flow.
  * Handles authorization, token exchange, and user info fetching.
- * 
+ *
  * @module auth/oauth/hooks
  */
 
@@ -15,25 +15,25 @@ import { OAuthUtils } from '../utils';
 export interface UseOAuthConfig {
   /** OAuth provider configuration */
   provider: OAuthProvider;
-  
+
   /** Callback when authentication succeeds */
   onSuccess?: (user: OAuthUser, token: OAuthToken) => void;
-  
+
   /** Callback when authentication fails */
   onError?: (error: Error) => void;
-  
+
   /** Auto-refresh token when expiring */
   autoRefresh?: boolean;
-  
+
   /** Storage key for token persistence */
   storageKey?: string;
 }
 
 /**
  * OAuth Authentication Hook
- * 
+ *
  * Provides OAuth 2.0 authentication functionality.
- * 
+ *
  * Features:
  * - Authorization URL generation
  * - Token exchange
@@ -41,7 +41,7 @@ export interface UseOAuthConfig {
  * - Token refresh
  * - Token persistence
  * - Auto-refresh on expiration
- * 
+ *
  * @example
  * ```tsx
  * const oauth = useOAuth({
@@ -54,15 +54,15 @@ export interface UseOAuthConfig {
  *   },
  *   autoRefresh: true,
  * });
- * 
+ *
  * // Initiate login
  * <button onClick={oauth.login}>Login with Google</button>
- * 
+ *
  * // Handle callback
  * useEffect(() => {
  *   oauth.handleCallback(window.location.href);
  * }, []);
- * 
+ *
  * // Logout
  * <button onClick={oauth.logout}>Logout</button>
  * ```
@@ -91,9 +91,9 @@ export function useOAuth(config: UseOAuthConfig) {
     const initAuth = async () => {
       try {
         const storedToken = OAuthUtils.retrieveToken(storageKey);
-        
+
         if (!storedToken) {
-          setAuthState(prev => ({ ...prev, isLoading: false }));
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
           return;
         }
 
@@ -105,14 +105,14 @@ export function useOAuth(config: UseOAuthConfig) {
           } else {
             // Clear expired token
             OAuthUtils.clearToken(storageKey);
-            setAuthState(prev => ({ ...prev, isLoading: false }));
+            setAuthState((prev) => ({ ...prev, isLoading: false }));
           }
           return;
         }
 
         // Fetch user info with valid token
         const user = await OAuthUtils.fetchUserInfo(provider, storedToken);
-        
+
         setAuthState({
           isAuthenticated: true,
           user,
@@ -123,7 +123,8 @@ export function useOAuth(config: UseOAuthConfig) {
 
         onSuccess?.(user, storedToken);
       } catch (error) {
-        const err = error instanceof Error ? error : new Error('Authentication failed');
+        const err =
+          error instanceof Error ? error : new Error('Authentication failed');
         setAuthState({
           isAuthenticated: false,
           user: null,
@@ -164,18 +165,18 @@ export function useOAuth(config: UseOAuthConfig) {
     try {
       // Generate CSRF state
       const state = OAuthUtils.generateState();
-      
+
       // Store state for verification
       sessionStorage.setItem(`oauth_state_${provider.name}`, state);
-      
+
       // Generate authorization URL
       const authUrl = OAuthUtils.generateAuthorizationUrl(provider, state);
-      
+
       // Redirect to authorization URL
       window.location.href = authUrl;
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Login failed');
-      setAuthState(prev => ({ ...prev, error: err.message }));
+      setAuthState((prev) => ({ ...prev, error: err.message }));
       onError?.(err);
     }
   }, [provider, onError]);
@@ -183,58 +184,69 @@ export function useOAuth(config: UseOAuthConfig) {
   /**
    * Handle OAuth callback
    */
-  const handleCallback = useCallback(async (callbackUrl: string) => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+  const handleCallback = useCallback(
+    async (callbackUrl: string) => {
+      try {
+        setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      // Parse authorization response
-      const response = OAuthUtils.parseAuthorizationResponse(callbackUrl);
+        // Parse authorization response
+        const response = OAuthUtils.parseAuthorizationResponse(callbackUrl);
 
-      // Check for errors
-      if (response.error) {
-        throw new Error(response.errorDescription || response.error);
+        // Check for errors
+        if (response.error) {
+          throw new Error(response.errorDescription || response.error);
+        }
+
+        // Verify state (CSRF protection)
+        const storedState = sessionStorage.getItem(
+          `oauth_state_${provider.name}`
+        );
+        if (response.state !== storedState) {
+          throw new Error('Invalid state parameter - possible CSRF attack');
+        }
+
+        // Clear stored state
+        sessionStorage.removeItem(`oauth_state_${provider.name}`);
+
+        // Exchange code for token
+        const token = await OAuthUtils.exchangeCodeForToken(
+          provider,
+          response.code
+        );
+
+        // Fetch user info
+        const user = await OAuthUtils.fetchUserInfo(provider, token);
+
+        // Store token
+        OAuthUtils.storeToken(token, storageKey);
+
+        // Update state
+        setAuthState({
+          isAuthenticated: true,
+          user,
+          token,
+          isLoading: false,
+          error: null,
+        });
+
+        onSuccess?.(user, token);
+      } catch (error) {
+        const err =
+          error instanceof Error
+            ? error
+            : new Error('Callback handling failed');
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+          token: null,
+          isLoading: false,
+          error: err.message,
+        });
+        onError?.(err);
       }
-
-      // Verify state (CSRF protection)
-      const storedState = sessionStorage.getItem(`oauth_state_${provider.name}`);
-      if (response.state !== storedState) {
-        throw new Error('Invalid state parameter - possible CSRF attack');
-      }
-
-      // Clear stored state
-      sessionStorage.removeItem(`oauth_state_${provider.name}`);
-
-      // Exchange code for token
-      const token = await OAuthUtils.exchangeCodeForToken(provider, response.code);
-
-      // Fetch user info
-      const user = await OAuthUtils.fetchUserInfo(provider, token);
-
-      // Store token
-      OAuthUtils.storeToken(token, storageKey);
-
-      // Update state
-      setAuthState({
-        isAuthenticated: true,
-        user,
-        token,
-        isLoading: false,
-        error: null,
-      });
-
-      onSuccess?.(user, token);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('Callback handling failed');
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        token: null,
-        isLoading: false,
-        error: err.message,
-      });
-      onError?.(err);
-    }
-  }, [provider, storageKey, onSuccess, onError]);
+    },
+    [provider, storageKey, onSuccess, onError]
+  );
 
   /**
    * Refresh access token
@@ -254,18 +266,19 @@ export function useOAuth(config: UseOAuthConfig) {
       OAuthUtils.storeToken(newToken, storageKey);
 
       // Update state
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         token: newToken,
       }));
 
       return newToken;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Token refresh failed');
-      
+      const err =
+        error instanceof Error ? error : new Error('Token refresh failed');
+
       // Clear auth state on refresh failure
       logout();
-      
+
       onError?.(err);
       throw err;
     }
@@ -291,7 +304,7 @@ export function useOAuth(config: UseOAuthConfig) {
   return {
     // State
     ...authState,
-    
+
     // Actions
     login,
     logout,

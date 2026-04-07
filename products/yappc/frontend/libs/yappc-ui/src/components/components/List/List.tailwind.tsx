@@ -15,7 +15,9 @@ export type ListPadding = 'none' | 'sm' | 'md' | 'lg';
 /**
  * Props for the List component
  */
-export interface ListProps extends React.HTMLAttributes<HTMLUListElement | HTMLOListElement> {
+export interface ListProps extends React.HTMLAttributes<
+  HTMLUListElement | HTMLOListElement
+> {
   /**
    * The content to display inside the List (ListItem children)
    */
@@ -69,10 +71,10 @@ const paddingClasses: Record<ListPadding, string> = {
 
 /**
  * List - Semantic list component (ul/ol) with styling options
- * 
+ *
  * Simple Tailwind component for rendering ordered and unordered lists.
  * Works with ListItem component for consistent item styling.
- * 
+ *
  * @example
  * ```tsx
  * <List variant="bullet">
@@ -81,7 +83,7 @@ const paddingClasses: Record<ListPadding, string> = {
  *   <ListItem>Item 3</ListItem>
  * </List>
  * ```
- * 
+ *
  * @example
  * ```tsx
  * <List variant="none" dividers>
@@ -91,7 +93,10 @@ const paddingClasses: Record<ListPadding, string> = {
  * </List>
  * ```
  */
-export const List = React.forwardRef<HTMLUListElement | HTMLOListElement, ListProps>(
+export const List = React.forwardRef<
+  HTMLUListElement | HTMLOListElement,
+  ListProps
+>(
   (
     {
       children,
@@ -133,7 +138,8 @@ export const List = React.forwardRef<HTMLUListElement | HTMLOListElement, ListPr
           !disablePadding && paddingClasses[padding],
 
           // Dividers (add border to children via CSS)
-          dividers && '[&>*]:border-b [&>*]:border-grey-200 [&>*:last-child]:border-b-0',
+          dividers &&
+            '[&>*]:border-b [&>*]:border-grey-200 [&>*:last-child]:border-b-0',
 
           // Custom className
           className

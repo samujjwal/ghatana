@@ -1,9 +1,9 @@
 /**
  * Remote Cursor Component
- * 
+ *
  * Displays cursor position and name for remote collaborators.
  * Follows cursor with smooth animation and shows user color.
- * 
+ *
  * @module canvas/components
  */
 
@@ -21,13 +21,13 @@ export interface RemoteCursorProps {
 
 /**
  * Remote Cursor Component
- * 
+ *
  * Renders a cursor for a remote user with smooth position transitions.
- * 
+ *
  * @example
  * ```tsx
- * <RemoteCursor 
- *   user={remoteUser} 
+ * <RemoteCursor
+ *   user={remoteUser}
  *   viewportOffset={{ x: 0, y: 0 }}
  *   showLabel={true}
  * />

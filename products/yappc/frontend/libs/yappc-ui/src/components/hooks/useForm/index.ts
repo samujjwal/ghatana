@@ -41,10 +41,10 @@ function runValidateForm(
 
 /**
  * Hook for form state management with validation
- * 
+ *
  * Comprehensive form handling with field-level and form-level validation.
  * Tracks values, errors, touched state, and submission status.
- * 
+ *
  * Features:
  * - Field-level validation on change/blur
  * - Form-level validation on submit
@@ -52,7 +52,7 @@ function runValidateForm(
  * - Built-in submission handling with async support
  * - Updater functions for dynamic field changes
  * - Reset functionality
- * 
+ *
  * @template T - Type of form values object
  * @param options - Form configuration options
  * @param options.initialValues - Initial form values
@@ -61,7 +61,7 @@ function runValidateForm(
  * @param options.validateOnChange - Enable real-time validation (default: false)
  * @param options.validateOnBlur - Enable validation on blur (default: true)
  * @returns Form state and handlers
- * 
+ *
  * @example
  * ```tsx
  * function LoginForm() {
@@ -76,7 +76,7 @@ function runValidateForm(
  *     },
  *     validateOnBlur: true
  *   });
- * 
+ *
  *   return (
  *     <form onSubmit={form.handleSubmit}>
  *       <input
@@ -88,7 +88,7 @@ function runValidateForm(
  *       {form.touched.email && form.errors.email && (
  *         <span className="error">{form.errors.email}</span>
  *       )}
- *       
+ *
  *       <input
  *         type="password"
  *         name="password"
@@ -99,27 +99,27 @@ function runValidateForm(
  *       {form.touched.password && form.errors.password && (
  *         <span className="error">{form.errors.password}</span>
  *       )}
- *       
+ *
  *       <button type="submit" disabled={form.isSubmitting}>
  *         {form.isSubmitting ? 'Logging in...' : 'Login'}
  *       </button>
  *     </form>
  *   );
  * }
- * 
+ *
  * function DynamicForm() {
  *   const form = useForm({
  *     initialValues: { items: [{ name: '', quantity: 0 }] },
  *     onSubmit: async (values) => console.log(values)
  *   });
- * 
+ *
  *   const addItem = () => {
  *     form.setFieldValue('items', (prev) => [
  *       ...prev,
  *       { name: '', quantity: 0 }
  *     ]);
  *   };
- * 
+ *
  *   return (
  *     <form onSubmit={form.handleSubmit}>
  *       {form.values.items.map((item, idx) => (
@@ -139,7 +139,7 @@ function runValidateForm(
  * }
  * ```
  */
- 
+
 export function useForm<T extends Record<string, unknown>>({
   initialValues,
   validationRules = {},

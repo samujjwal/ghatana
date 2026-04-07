@@ -1,6 +1,6 @@
 /**
  * Typography tokens for the design system
- * 
+ *
  * These tokens define the typography styles for the application,
  * with semantic naming for consistent usage across components.
  */
@@ -22,16 +22,16 @@ export const fontWeights = {
 
 // Font sizes (in rem)
 export const fontSizes = {
-  xs: 0.75,    // 12px
-  sm: 0.875,   // 14px
-  md: 1,       // 16px
-  lg: 1.125,   // 18px
-  xl: 1.25,    // 20px
-  '2xl': 1.5,  // 24px
+  xs: 0.75, // 12px
+  sm: 0.875, // 14px
+  md: 1, // 16px
+  lg: 1.125, // 18px
+  xl: 1.25, // 20px
+  '2xl': 1.5, // 24px
   '3xl': 1.875, // 30px
-  '4xl': 2.25,  // 36px
-  '5xl': 3,     // 48px
-  '6xl': 3.75,  // 60px
+  '4xl': 2.25, // 36px
+  '5xl': 3, // 48px
+  '6xl': 3.75, // 60px
 };
 
 // Line heights

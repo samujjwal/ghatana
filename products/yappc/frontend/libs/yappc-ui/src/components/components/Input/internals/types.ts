@@ -103,8 +103,10 @@ export type ArrowDirection = 'up' | 'down' | 'left' | 'right';
  * />
  * ```
  */
-export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
   /**
    * Input label
    */

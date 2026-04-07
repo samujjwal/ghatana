@@ -145,7 +145,7 @@ export function createLayer(
 ): Layer {
   const now = Date.now();
   const id = `layer-${now}-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // Calculate z-index (max + 1, or 0 for first layer)
   const maxZIndex = Array.from(store.layers.values()).reduce(
     (max, layer) => Math.max(max, layer.zIndex),
@@ -181,7 +181,10 @@ export function createLayer(
 /**
  * Get layer by ID
  */
-export function getLayer(store: LayerStore, layerId: string): Layer | undefined {
+export function getLayer(
+  store: LayerStore,
+  layerId: string
+): Layer | undefined {
   return store.layers.get(layerId);
 }
 
@@ -233,11 +236,13 @@ export function deleteLayer(store: LayerStore, layerId: string): boolean {
 
   // Update active layer if needed
   if (store.activeLayerId === layerId) {
-    store.activeLayerId = store.layerOrder.length > 0 ? store.layerOrder[0] : null;
+    store.activeLayerId =
+      store.layerOrder.length > 0 ? store.layerOrder[0] : null;
   }
 
   // Move orphaned elements to default layer or remove from layers
-  const defaultLayer = store.layerOrder.length > 0 ? store.layers.get(store.layerOrder[0]) : null;
+  const defaultLayer =
+    store.layerOrder.length > 0 ? store.layers.get(store.layerOrder[0]) : null;
   if (defaultLayer) {
     defaultLayer.elementIds.push(...layer.elementIds);
   }
@@ -413,10 +418,7 @@ export function toggleLayerVisibility(
 /**
  * Toggle layer lock
  */
-export function toggleLayerLock(
-  store: LayerStore,
-  layerId: string
-): boolean {
+export function toggleLayerLock(store: LayerStore, layerId: string): boolean {
   const layer = store.layers.get(layerId);
   if (!layer) return false;
 
@@ -445,7 +447,9 @@ export function setActiveLayer(
  * Get active layer
  */
 export function getActiveLayer(store: LayerStore): Layer | null {
-  return store.activeLayerId ? store.layers.get(store.activeLayerId) || null : null;
+  return store.activeLayerId
+    ? store.layers.get(store.activeLayerId) || null
+    : null;
 }
 
 // ==================== Tag Management ====================
@@ -642,7 +646,10 @@ export function updateViewpoint(
 /**
  * Delete viewpoint
  */
-export function deleteViewpoint(store: LayerStore, viewpointId: string): boolean {
+export function deleteViewpoint(
+  store: LayerStore,
+  viewpointId: string
+): boolean {
   return store.viewpoints.delete(viewpointId);
 }
 
@@ -766,7 +773,10 @@ export function getVisibleLayersForUser(
 /**
  * Remove all permissions for layer
  */
-export function removeLayerPermissions(store: LayerStore, layerId: string): void {
+export function removeLayerPermissions(
+  store: LayerStore,
+  layerId: string
+): void {
   const keysToDelete: string[] = [];
   store.permissions.forEach((perm, key) => {
     if (perm.layerId === layerId) {

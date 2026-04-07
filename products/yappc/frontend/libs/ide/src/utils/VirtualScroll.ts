@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Virtual Scrolling Utility
- * 
+ *
  * High-performance virtual scrolling for large lists and trees.
  * Optimized for file trees with 10K+ items.
- * 
+ *
  * @doc.type module
  * @doc.purpose Virtual scrolling utility for large datasets
  * @doc.layer product
@@ -172,7 +172,7 @@ export class DynamicVirtualScroll {
   /**
    *
    */
-  constructor(private defaultHeight: number) { }
+  constructor(private defaultHeight: number) {}
 
   /**
    * Set item height
@@ -316,9 +316,12 @@ export function useDynamicVirtualScroll(
     setScrollTop(event.currentTarget.scrollTop);
   }, []);
 
-  const setItemHeight = useCallback((index: number, height: number) => {
-    virtualScroll.setItemHeight(index, height);
-  }, [virtualScroll]);
+  const setItemHeight = useCallback(
+    (index: number, height: number) => {
+      virtualScroll.setItemHeight(index, height);
+    },
+    [virtualScroll]
+  );
 
   return {
     items,

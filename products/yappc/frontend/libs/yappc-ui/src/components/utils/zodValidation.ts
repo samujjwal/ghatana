@@ -1,8 +1,8 @@
 /**
  * Zod-based Form Validation Schemas
- * 
+ *
  * Production-grade validation schemas using Zod for type-safe form validation
- * 
+ *
  * @module ui/utils/zodValidation
  * @doc.type utility
  * @doc.purpose Type-safe form validation with Zod
@@ -42,14 +42,8 @@ export const passwordSchema = (minLength = 8) =>
     .string()
     .min(minLength, `Password must be at least ${minLength} characters`)
     .max(128, 'Password must not exceed 128 characters')
-    .regex(
-      /[a-z]/,
-      'Password must contain at least one lowercase letter'
-    )
-    .regex(
-      /[A-Z]/,
-      'Password must contain at least one uppercase letter'
-    )
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number')
     .regex(
       /[^a-zA-Z0-9]/,
@@ -140,7 +134,9 @@ export const dateSchema = (options?: {
   max?: Date;
   message?: string;
 }) => {
-  let schema = z.string().datetime(options?.message ?? 'Please enter a valid date');
+  let schema = z
+    .string()
+    .datetime(options?.message ?? 'Please enter a valid date');
 
   if (options?.min) {
     schema = schema.refine(
@@ -400,7 +396,9 @@ export function calculatePasswordStrength(password: string): {
     score: Math.min(score, 4),
     level,
     feedback:
-      feedback.length > 0 ? feedback.join('. ') : `Password is ${strengthLabel}`,
+      feedback.length > 0
+        ? feedback.join('. ')
+        : `Password is ${strengthLabel}`,
   };
 }
 

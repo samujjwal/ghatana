@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - IDE Tabs Hook
- * 
+ *
  * React hook for managing IDE tabs with Jotai atoms.
- * 
+ *
  * @doc.type hook
  * @doc.purpose IDE tab management
  * @doc.layer product
@@ -50,7 +50,7 @@ function generateTabId(): string {
 
 /**
  * IDE Tabs Hook
- * 
+ *
  * @doc.returns Tab management utilities
  */
 export function useIDETabs(): UseIDETabsReturn {
@@ -58,83 +58,102 @@ export function useIDETabs(): UseIDETabsReturn {
   const [activeFile] = useAtom(ideActiveFileAtom);
   const [activeFileId, setActiveFileId] = useAtom(ideActiveFileIdAtom);
 
+  const addTab = useCallback(
+    (file: IDEFile) => {
+      const existingTab = tabs.find((tab: IDETab) => tab.fileId === file.id);
 
-  const addTab = useCallback((file: IDEFile) => {
-    const existingTab = tabs.find((tab: IDETab) => tab.fileId === file.id);
-
-    if (existingTab) {
-      // Tab already exists, just set it as active
-      setActiveFileId(file.id);
-      return;
-    }
-
-    const newTab: IDETab = {
-      id: generateTabId(),
-      fileId: file.id,
-      title: file.name,
-      isDirty: false,
-      isPinned: false,
-      isActive: true,
-    };
-
-    setTabs([...tabs, newTab]);
-    setActiveFileId(file.id);
-  }, [tabs, setActiveFileId, setTabs]);
-
-  const closeTab = useCallback((tabId: string) => {
-    const tabToRemove = tabs.find((tab: IDETab) => tab.id === tabId);
-    if (!tabToRemove) return;
-
-    const newTabs = tabs.filter((tab: IDETab) => tab.id !== tabId);
-
-    // If closing the active tab, set a new active tab
-    if (tabToRemove.fileId === activeFileId) {
-      const remainingTabs = newTabs.filter((tab: IDETab) => tab.fileId !== activeFileId);
-      if (remainingTabs.length > 0) {
-        const nextTab = remainingTabs[remainingTabs.length - 1];
-        setActiveFileId(nextTab.fileId);
-      } else {
-        setActiveFileId(null);
+      if (existingTab) {
+        // Tab already exists, just set it as active
+        setActiveFileId(file.id);
+        return;
       }
-    }
 
-    setTabs(newTabs);
-  }, [tabs, activeFileId, setActiveFileId, setTabs]);
+      const newTab: IDETab = {
+        id: generateTabId(),
+        fileId: file.id,
+        title: file.name,
+        isDirty: false,
+        isPinned: false,
+        isActive: true,
+      };
 
-  const moveTab = useCallback((tabId: string, newIndex: number) => {
-    const tabToMove = tabs.find((tab: IDETab) => tab.id === tabId);
-    if (!tabToMove) return;
+      setTabs([...tabs, newTab]);
+      setActiveFileId(file.id);
+    },
+    [tabs, setActiveFileId, setTabs]
+  );
 
-    const newTabs = [...tabs];
-    const oldIndex = newTabs.findIndex((tab: IDETab) => tab.id === tabId);
+  const closeTab = useCallback(
+    (tabId: string) => {
+      const tabToRemove = tabs.find((tab: IDETab) => tab.id === tabId);
+      if (!tabToRemove) return;
 
-    if (oldIndex !== -1) {
-      newTabs.splice(oldIndex, 1);
-      newTabs.splice(newIndex, 0, tabToMove);
-    }
+      const newTabs = tabs.filter((tab: IDETab) => tab.id !== tabId);
 
-    setTabs(newTabs);
-  }, [tabs, setTabs]);
+      // If closing the active tab, set a new active tab
+      if (tabToRemove.fileId === activeFileId) {
+        const remainingTabs = newTabs.filter(
+          (tab: IDETab) => tab.fileId !== activeFileId
+        );
+        if (remainingTabs.length > 0) {
+          const nextTab = remainingTabs[remainingTabs.length - 1];
+          setActiveFileId(nextTab.fileId);
+        } else {
+          setActiveFileId(null);
+        }
+      }
 
-  const updateTab = useCallback((tabId: string, updates: Partial<IDETab>) => {
-    setTabs(tabs.map((tab: IDETab) =>
-      tab.id === tabId ? { ...tab, ...updates } : tab
-    ));
-  }, [tabs, setTabs]);
+      setTabs(newTabs);
+    },
+    [tabs, activeFileId, setActiveFileId, setTabs]
+  );
 
-  const setActiveTab = useCallback((tabId: string) => {
-    const tab = tabs.find((t: IDETab) => t.id === tabId);
-    if (tab) {
-      setActiveFileId(tab.fileId);
-      setTabs(tabs.map((t: IDETab) =>
-        ({ ...t, isActive: t.id === tabId })
-      ));
-    }
-  }, [tabs, setActiveFileId, setTabs]);
+  const moveTab = useCallback(
+    (tabId: string, newIndex: number) => {
+      const tabToMove = tabs.find((tab: IDETab) => tab.id === tabId);
+      if (!tabToMove) return;
 
-  const getTabByFileId = useCallback((fileId: string) => {
-    return tabs.find((tab: IDETab) => tab.fileId === fileId);
-  }, [tabs]);
+      const newTabs = [...tabs];
+      const oldIndex = newTabs.findIndex((tab: IDETab) => tab.id === tabId);
+
+      if (oldIndex !== -1) {
+        newTabs.splice(oldIndex, 1);
+        newTabs.splice(newIndex, 0, tabToMove);
+      }
+
+      setTabs(newTabs);
+    },
+    [tabs, setTabs]
+  );
+
+  const updateTab = useCallback(
+    (tabId: string, updates: Partial<IDETab>) => {
+      setTabs(
+        tabs.map((tab: IDETab) =>
+          tab.id === tabId ? { ...tab, ...updates } : tab
+        )
+      );
+    },
+    [tabs, setTabs]
+  );
+
+  const setActiveTab = useCallback(
+    (tabId: string) => {
+      const tab = tabs.find((t: IDETab) => t.id === tabId);
+      if (tab) {
+        setActiveFileId(tab.fileId);
+        setTabs(tabs.map((t: IDETab) => ({ ...t, isActive: t.id === tabId })));
+      }
+    },
+    [tabs, setActiveFileId, setTabs]
+  );
+
+  const getTabByFileId = useCallback(
+    (fileId: string) => {
+      return tabs.find((tab: IDETab) => tab.fileId === fileId);
+    },
+    [tabs]
+  );
 
   return {
     tabs,

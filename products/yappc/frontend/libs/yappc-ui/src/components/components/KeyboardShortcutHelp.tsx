@@ -13,7 +13,15 @@ export interface KeybindingAction {
   id: string;
   name: string;
   description: string;
-  category: 'navigation' | 'editing' | 'selection' | 'view' | 'file' | 'help' | 'canvas' | 'collaboration';
+  category:
+    | 'navigation'
+    | 'editing'
+    | 'selection'
+    | 'view'
+    | 'file'
+    | 'help'
+    | 'canvas'
+    | 'collaboration';
   keys: string[];
   context?: string;
   action: () => void;
@@ -80,7 +88,7 @@ export class KeyboardShortcutRegistry {
    */
   getShortcutsByCategory(): ShortcutCategory[] {
     const categories = new Map<string, ShortcutCategory>();
-    
+
     for (const shortcut of this.shortcuts.values()) {
       if (!categories.has(shortcut.category)) {
         categories.set(shortcut.category, {
@@ -99,7 +107,9 @@ export class KeyboardShortcutRegistry {
       category.shortcuts.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(categories.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
   }
 
   /**
@@ -107,10 +117,11 @@ export class KeyboardShortcutRegistry {
    */
   searchShortcuts(query: string): KeybindingAction[] {
     const queryLower = query.toLowerCase();
-    return Array.from(this.shortcuts.values()).filter(shortcut =>
-      shortcut.name.toLowerCase().includes(queryLower) ||
-      shortcut.description.toLowerCase().includes(queryLower) ||
-      shortcut.keys.some(key => key.toLowerCase().includes(queryLower))
+    return Array.from(this.shortcuts.values()).filter(
+      (shortcut) =>
+        shortcut.name.toLowerCase().includes(queryLower) ||
+        shortcut.description.toLowerCase().includes(queryLower) ||
+        shortcut.keys.some((key) => key.toLowerCase().includes(queryLower))
     );
   }
 
@@ -126,7 +137,7 @@ export class KeyboardShortcutRegistry {
    */
   formatKeys(keys: string[]): string {
     return keys
-      .map(key => {
+      .map((key) => {
         const formatted = key
           .replace('Mod', navigator.platform.includes('Mac') ? '⌘' : 'Ctrl')
           .replace('Alt', navigator.platform.includes('Mac') ? '⌥' : 'Alt')
@@ -137,7 +148,7 @@ export class KeyboardShortcutRegistry {
           .replace('Delete', '⌦')
           .replace('Tab', '⇥')
           .replace('Space', '␣');
-        
+
         return formatted.charAt(0).toUpperCase() + formatted.slice(1);
       })
       .join(' + ');
@@ -348,7 +359,7 @@ export class KeyboardShortcutRegistry {
       },
     ];
 
-    shortcuts.forEach(shortcut => this.register(shortcut));
+    shortcuts.forEach((shortcut) => this.register(shortcut));
   }
 
   /**
@@ -368,7 +379,7 @@ export class KeyboardShortcutRegistry {
     if (this.isInputFocused(event.target as Element)) return;
 
     const keyCombo = this.getKeyCombo(event);
-    
+
     for (const shortcut of this.shortcuts.values()) {
       if (this.matchesShortcut(keyCombo, shortcut)) {
         // Check condition if provided
@@ -377,7 +388,7 @@ export class KeyboardShortcutRegistry {
         if (shortcut.preventDefault !== false) {
           event.preventDefault();
         }
-        
+
         try {
           shortcut.action();
         } catch (error) {
@@ -393,27 +404,35 @@ export class KeyboardShortcutRegistry {
    */
   private getKeyCombo(event: KeyboardEvent): string[] {
     const keys: string[] = [];
-    
+
     if (event.ctrlKey || event.metaKey) keys.push('Mod');
     if (event.altKey) keys.push('Alt');
     if (event.shiftKey) keys.push('Shift');
-    
+
     // Add the main key
     const key = event.key;
-    if (key !== 'Control' && key !== 'Meta' && key !== 'Alt' && key !== 'Shift') {
+    if (
+      key !== 'Control' &&
+      key !== 'Meta' &&
+      key !== 'Alt' &&
+      key !== 'Shift'
+    ) {
       keys.push(key);
     }
-    
+
     return keys;
   }
 
   /**
    *
    */
-  private matchesShortcut(keyCombo: string[], shortcut: KeybindingAction): boolean {
+  private matchesShortcut(
+    keyCombo: string[],
+    shortcut: KeybindingAction
+  ): boolean {
     if (keyCombo.length !== shortcut.keys.length) return false;
-    
-    return shortcut.keys.every(key => keyCombo.includes(key));
+
+    return shortcut.keys.every((key) => keyCombo.includes(key));
   }
 
   /**
@@ -421,13 +440,15 @@ export class KeyboardShortcutRegistry {
    */
   private isInputFocused(target: Element): boolean {
     if (!target) return false;
-    
+
     const tagName = target.tagName.toLowerCase();
     const inputTags = ['input', 'textarea', 'select'];
-    
-    return inputTags.includes(tagName) || 
-           target.getAttribute('contenteditable') === 'true' ||
-           target.closest('[contenteditable="true"]') !== null;
+
+    return (
+      inputTags.includes(tagName) ||
+      target.getAttribute('contenteditable') === 'true' ||
+      target.closest('[contenteditable="true"]') !== null
+    );
   }
 
   /**
@@ -551,12 +572,14 @@ export const KeyboardShortcutHelp: React.FC<KeyboardShortcutProps> = ({
     if (searchQuery) {
       return registry.searchShortcuts(searchQuery);
     }
-    
+
     if (selectedCategory === 'all') {
-      return categories.flatMap(cat => cat.shortcuts);
+      return categories.flatMap((cat) => cat.shortcuts);
     }
-    
-    return categories.find(cat => cat.id === selectedCategory)?.shortcuts || [];
+
+    return (
+      categories.find((cat) => cat.id === selectedCategory)?.shortcuts || []
+    );
   }, [categories, selectedCategory, searchQuery, registry]);
 
   useEffect(() => {
@@ -587,8 +610,12 @@ export const KeyboardShortcutHelp: React.FC<KeyboardShortcutProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Keyboard Shortcuts</h2>
-            <p className="text-sm text-gray-600 mt-1">Master the canvas with these shortcuts</p>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Keyboard Shortcuts
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Master the canvas with these shortcuts
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -622,9 +649,11 @@ export const KeyboardShortcutHelp: React.FC<KeyboardShortcutProps> = ({
                     : 'hover:bg-gray-100'
                 )}
               >
-                📋 All Shortcuts ({categories.reduce((sum, cat) => sum + cat.shortcuts.length, 0)})
+                📋 All Shortcuts (
+                {categories.reduce((sum, cat) => sum + cat.shortcuts.length, 0)}
+                )
               </button>
-              
+
               {categories.map((category) => (
                 <button
                   key={category.id}
@@ -649,28 +678,43 @@ export const KeyboardShortcutHelp: React.FC<KeyboardShortcutProps> = ({
                 <h3 className="text-lg font-medium text-gray-900">
                   Search Results ({filteredShortcuts.length})
                 </h3>
-                <p className="text-sm text-gray-600">Showing shortcuts matching "{searchQuery}"</p>
+                <p className="text-sm text-gray-600">
+                  Showing shortcuts matching "{searchQuery}"
+                </p>
               </div>
             )}
 
             <div className="space-y-6">
               {searchQuery ? (
-                <ShortcutsList shortcuts={filteredShortcuts} registry={registry} />
+                <ShortcutsList
+                  shortcuts={filteredShortcuts}
+                  registry={registry}
+                />
               ) : selectedCategory === 'all' ? (
                 categories.map((category) => (
                   <div key={category.id}>
                     <div className="flex items-center mb-3">
                       <span className="text-2xl mr-2">{category.icon}</span>
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
-                        <p className="text-sm text-gray-600">{category.description}</p>
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {category.description}
+                        </p>
                       </div>
                     </div>
-                    <ShortcutsList shortcuts={category.shortcuts} registry={registry} />
+                    <ShortcutsList
+                      shortcuts={category.shortcuts}
+                      registry={registry}
+                    />
                   </div>
                 ))
               ) : (
-                <ShortcutsList shortcuts={filteredShortcuts} registry={registry} />
+                <ShortcutsList
+                  shortcuts={filteredShortcuts}
+                  registry={registry}
+                />
               )}
             </div>
           </div>
@@ -679,7 +723,10 @@ export const KeyboardShortcutHelp: React.FC<KeyboardShortcutProps> = ({
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <div className="flex justify-between items-center text-sm text-gray-600">
-            <span>Press <kbd className="px-2 py-1 bg-gray-200 rounded">Esc</kbd> to close</span>
+            <span>
+              Press <kbd className="px-2 py-1 bg-gray-200 rounded">Esc</kbd> to
+              close
+            </span>
             <span>{filteredShortcuts.length} shortcuts shown</span>
           </div>
         </div>
@@ -696,7 +743,10 @@ interface ShortcutsListProps {
   registry: KeyboardShortcutRegistry;
 }
 
-const ShortcutsList: React.FC<ShortcutsListProps> = ({ shortcuts, registry }) => (
+const ShortcutsList: React.FC<ShortcutsListProps> = ({
+  shortcuts,
+  registry,
+}) => (
   <div className="space-y-2">
     {shortcuts.map((shortcut) => (
       <div

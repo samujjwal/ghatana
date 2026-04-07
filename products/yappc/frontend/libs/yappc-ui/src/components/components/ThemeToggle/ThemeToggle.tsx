@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react';
 
 import { useTheme } from '../../theme/ThemeContext';
 
-
 /**
  *
  */
@@ -15,20 +14,20 @@ interface ThemeToggleProps {
 /**
  * Theme toggle button component
  * Switches between light and dark themes
- * 
+ *
  * @param className - Additional CSS classes
  * @param style - Inline styles
  * @param size - Button size variant
- * 
+ *
  * @example
  * ```tsx
  * <ThemeToggle size="medium" />
  * ```
  */
-export function ThemeToggle({ 
-  className = '', 
+export function ThemeToggle({
+  className = '',
   style,
-  size = 'medium' 
+  size = 'medium',
 }: ThemeToggleProps) {
   const { mode, toggleTheme } = useTheme();
 

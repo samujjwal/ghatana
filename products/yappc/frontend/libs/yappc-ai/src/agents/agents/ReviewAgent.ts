@@ -564,9 +564,9 @@ export class ReviewAgent extends BaseAgent<CodeReviewInput, CodeReviewOutput> {
       Math.min(
         100,
         171 -
-        5.2 * Math.log(volume) -
-        0.23 * cyclomaticComplexity -
-        16.2 * Math.log(linesOfCode)
+          5.2 * Math.log(volume) -
+          0.23 * cyclomaticComplexity -
+          16.2 * Math.log(linesOfCode)
       )
     );
 

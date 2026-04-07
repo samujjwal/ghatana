@@ -25,13 +25,22 @@ export const Default: Story = {
   render: () => (
     <FormGroup title="Personal Information">
       <FormField label="First Name" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Last Name" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Date of Birth">
-        <input type="date" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="date"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
     </FormGroup>
   ),
@@ -47,10 +56,16 @@ export const WithDescription: Story = {
       description="Please provide at least one method to contact you"
     >
       <FormField label="Email" required helperText="Primary contact method">
-        <input type="email" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="email"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Phone" helperText="Include country code">
-        <input type="tel" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="tel"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Preferred Contact Method">
         <select className="px-3 py-2 border border-grey-300 rounded w-full">
@@ -70,26 +85,48 @@ export const MultipleGroups: Story = {
   render: () => (
     <form className="space-y-6 max-w-2xl">
       <FormGroup title="Account Information">
-        <FormField label="Username" required helperText="3-20 characters, letters and numbers only">
-          <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <FormField
+          label="Username"
+          required
+          helperText="3-20 characters, letters and numbers only"
+        >
+          <input
+            type="text"
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
         <FormField label="Email" required>
-          <input type="email" className="px-3 py-2 border border-grey-300 rounded w-full" />
+          <input
+            type="email"
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
         <FormField label="Password" required helperText="Minimum 8 characters">
-          <input type="password" className="px-3 py-2 border border-grey-300 rounded w-full" />
+          <input
+            type="password"
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
       </FormGroup>
 
       <FormGroup title="Profile Details" description="Tell us about yourself">
         <FormField label="Display Name">
-          <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+          <input
+            type="text"
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
         <FormField label="Bio">
-          <textarea rows={4} className="px-3 py-2 border border-grey-300 rounded w-full" />
+          <textarea
+            rows={4}
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
         <FormField label="Website">
-          <input type="url" className="px-3 py-2 border border-grey-300 rounded w-full" />
+          <input
+            type="url"
+            className="px-3 py-2 border border-grey-300 rounded w-full"
+          />
         </FormField>
       </FormGroup>
 
@@ -97,22 +134,32 @@ export const MultipleGroups: Story = {
         <FormField label="Email Notifications">
           <div className="flex items-center gap-2">
             <input type="checkbox" id="email-notif" className="w-4 h-4" />
-            <label htmlFor="email-notif" className="text-sm">Receive email notifications</label>
+            <label htmlFor="email-notif" className="text-sm">
+              Receive email notifications
+            </label>
           </div>
         </FormField>
         <FormField label="Newsletter">
           <div className="flex items-center gap-2">
             <input type="checkbox" id="newsletter" className="w-4 h-4" />
-            <label htmlFor="newsletter" className="text-sm">Subscribe to newsletter</label>
+            <label htmlFor="newsletter" className="text-sm">
+              Subscribe to newsletter
+            </label>
           </div>
         </FormField>
       </FormGroup>
 
       <div className="flex gap-2">
-        <button type="button" className="px-4 py-2 border border-grey-300 rounded hover:bg-grey-50">
+        <button
+          type="button"
+          className="px-4 py-2 border border-grey-300 rounded hover:bg-grey-50"
+        >
           Cancel
         </button>
-        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
           Create Account
         </button>
       </div>
@@ -127,13 +174,23 @@ export const Disabled: Story = {
   render: () => (
     <FormGroup title="Billing Information" disabled>
       <FormField label="Card Number">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Expiry Date">
-        <input type="text" placeholder="MM/YY" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          placeholder="MM/YY"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="CVV">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
     </FormGroup>
   ),
@@ -168,21 +225,54 @@ export const AsDiv: Story = {
  */
 export const HorizontalLayout: Story = {
   render: () => (
-    <FormGroup title="Shipping Address" description="Where should we send your order?">
-      <FormField label="Street Address" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+    <FormGroup
+      title="Shipping Address"
+      description="Where should we send your order?"
+    >
+      <FormField
+        label="Street Address"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="Apartment/Suite" layout="horizontal" labelWidth="150px">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
       <FormField label="City" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
-      <FormField label="State/Province" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="State/Province"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
-      <FormField label="Postal Code" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="Postal Code"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
     </FormGroup>
   ),
@@ -226,13 +316,22 @@ export const DarkMode: Story = {
         description="Manage your account preferences"
       >
         <FormField label="Email" required>
-          <input type="email" className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white" />
+          <input
+            type="email"
+            className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
         <FormField label="Current Password">
-          <input type="password" className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white" />
+          <input
+            type="password"
+            className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
         <FormField label="New Password">
-          <input type="password" className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white" />
+          <input
+            type="password"
+            className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
       </FormGroup>
     </div>

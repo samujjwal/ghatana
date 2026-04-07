@@ -27,7 +27,6 @@ import React, { useMemo } from 'react';
 import { cn } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-
 import type { BootstrapPhase } from '@yappc/canvas';
 import {
   currentPhaseAtom,
@@ -81,7 +80,8 @@ const PHASES: PhaseConfig[] = [
   {
     id: 'enter',
     label: 'Enter',
-    description: 'Provide your initial project idea or upload existing documents',
+    description:
+      'Provide your initial project idea or upload existing documents',
     icon: MessageSquare,
   },
   {
@@ -242,7 +242,9 @@ const PhaseStep: React.FC<PhaseStepProps> = ({
             )}
           </motion.button>
         </TooltipTrigger>
-        <TooltipContent side={orientation === 'horizontal' ? 'bottom' : 'right'}>
+        <TooltipContent
+          side={orientation === 'horizontal' ? 'bottom' : 'right'}
+        >
           <p className="font-medium">{phase.label}</p>
           <p className="text-xs text-zinc-400">{phase.description}</p>
         </TooltipContent>
@@ -267,12 +269,25 @@ const PhaseStep: React.FC<PhaseStepProps> = ({
       {/* Connector */}
       {!isLast && orientation === 'horizontal' && (
         <div className="flex-1 px-2">
-          <div className={cn('w-full rounded-full bg-zinc-700', sizeConfig.connectorThickness)}>
+          <div
+            className={cn(
+              'w-full rounded-full bg-zinc-700',
+              sizeConfig.connectorThickness
+            )}
+          >
             <motion.div
-              className={cn('rounded-full bg-success-500', sizeConfig.connectorThickness)}
+              className={cn(
+                'rounded-full bg-success-500',
+                sizeConfig.connectorThickness
+              )}
               initial={{ width: '0%' }}
               animate={{
-                width: status === 'completed' ? '100%' : status === 'current' ? '50%' : '0%',
+                width:
+                  status === 'completed'
+                    ? '100%'
+                    : status === 'current'
+                      ? '50%'
+                      : '0%',
               }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             />
@@ -300,8 +315,10 @@ const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({ score, size }) => {
   }[size];
 
   const colorClass = useMemo(() => {
-    if (score >= 80) return 'bg-success-500/20 text-success-400 border-success-500/30';
-    if (score >= 60) return 'bg-warning-500/20 text-warning-400 border-warning-500/30';
+    if (score >= 80)
+      return 'bg-success-500/20 text-success-400 border-success-500/30';
+    if (score >= 60)
+      return 'bg-warning-500/20 text-warning-400 border-warning-500/30';
     return 'bg-zinc-700/50 text-zinc-400 border-zinc-600';
   }, [score]);
 
@@ -347,7 +364,9 @@ export const PhaseProgressBar: React.FC<PhaseProgressBarProps> = ({
 
   const currentPhaseIndex = PHASE_ORDER[currentPhase];
 
-  const getPhaseStatus = (phaseIndex: number): 'completed' | 'current' | 'upcoming' => {
+  const getPhaseStatus = (
+    phaseIndex: number
+  ): 'completed' | 'current' | 'upcoming' => {
     if (phaseIndex < currentPhaseIndex) return 'completed';
     if (phaseIndex === currentPhaseIndex) return 'current';
     return 'upcoming';
@@ -365,7 +384,9 @@ export const PhaseProgressBar: React.FC<PhaseProgressBarProps> = ({
       <div
         className={cn(
           'flex flex-1',
-          orientation === 'horizontal' ? 'w-full items-center' : 'flex-col gap-4'
+          orientation === 'horizontal'
+            ? 'w-full items-center'
+            : 'flex-col gap-4'
         )}
       >
         {PHASES.map((phase, index) => (

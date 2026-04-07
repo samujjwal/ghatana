@@ -12,28 +12,26 @@ import { Box } from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-
-
 /**
  *
  */
 export interface SmartGuidesProps {
   /** Currently dragged node */
   draggedNode: Node | null;
-  
+
   /** All nodes on canvas */
   allNodes: Node[];
-  
+
   /** Current viewport */
   viewport: {
     x: number;
     y: number;
     zoom: number;
   };
-  
+
   /** Snap threshold in pixels (default: 8) */
   snapThreshold?: number;
-  
+
   /** Whether snapping is enabled */
   snapEnabled?: boolean;
 }
@@ -49,10 +47,10 @@ interface Guide {
 
 /**
  * SmartGuides - Miro-style alignment guides during drag
- * 
+ *
  * Shows visual guides when dragging objects align with other objects
  * or canvas grid. Helps users create precise, aligned layouts.
- * 
+ *
  * @example
  * ```tsx
  * <SmartGuides
@@ -73,17 +71,17 @@ export function SmartGuides({
   // Calculate guides based on alignment with other nodes
   const guides = useMemo(() => {
     if (!draggedNode || !snapEnabled) return [];
-    
+
     const guides: Guide[] = [];
     const draggedWidth = (draggedNode.width as number) || 100;
     const draggedHeight = (draggedNode.height as number) || 100;
-    
+
     allNodes.forEach((node) => {
       if (node.id === draggedNode.id) return;
-      
+
       const nodeWidth = (node.width as number) || 100;
       const nodeHeight = (node.height as number) || 100;
-      
+
       // Check horizontal alignment (vertical guides)
       // Left edge alignment
       const leftDiff = Math.abs(node.position.x - draggedNode.position.x);
@@ -94,7 +92,7 @@ export function SmartGuides({
           snapPosition: node.position.x,
         });
       }
-      
+
       // Center alignment
       const draggedCenterX = draggedNode.position.x + draggedWidth / 2;
       const nodeCenterX = node.position.x + nodeWidth / 2;
@@ -106,7 +104,7 @@ export function SmartGuides({
           snapPosition: nodeCenterX,
         });
       }
-      
+
       // Right edge alignment
       const draggedRight = draggedNode.position.x + draggedWidth;
       const nodeRight = node.position.x + nodeWidth;
@@ -118,7 +116,7 @@ export function SmartGuides({
           snapPosition: nodeRight,
         });
       }
-      
+
       // Check vertical alignment (horizontal guides)
       // Top edge alignment
       const topDiff = Math.abs(node.position.y - draggedNode.position.y);
@@ -129,7 +127,7 @@ export function SmartGuides({
           snapPosition: node.position.y,
         });
       }
-      
+
       // Middle alignment
       const draggedCenterY = draggedNode.position.y + draggedHeight / 2;
       const nodeCenterY = node.position.y + nodeHeight / 2;
@@ -141,7 +139,7 @@ export function SmartGuides({
           snapPosition: nodeCenterY,
         });
       }
-      
+
       // Bottom edge alignment
       const draggedBottom = draggedNode.position.y + draggedHeight;
       const nodeBottom = node.position.y + nodeHeight;
@@ -154,26 +152,26 @@ export function SmartGuides({
         });
       }
     });
-    
+
     // Remove duplicates
     return guides.filter(
       (guide, index, self) =>
         index ===
         self.findIndex(
           (g) =>
-            g.type === guide.type &&
-            Math.abs(g.position - guide.position) < 1
+            g.type === guide.type && Math.abs(g.position - guide.position) < 1
         )
     );
   }, [draggedNode, allNodes, snapThreshold, snapEnabled]);
-  
+
   if (!draggedNode || guides.length === 0) {
     return null;
   }
-  
+
   return (
     <Box
-      className="absolute top-[0px] left-[0px] w-full h-full pointer-events-none" style={{ zIndex: CANVAS_TOKENS.Z_INDEX.SMART_GUIDES || 250 }}
+      className="absolute top-[0px] left-[0px] w-full h-full pointer-events-none"
+      style={{ zIndex: CANVAS_TOKENS.Z_INDEX.SMART_GUIDES || 250 }}
     >
       <svg
         style={{
@@ -231,44 +229,44 @@ export function calculateSnappedPosition(
 ): { x: number; y: number } {
   let snappedX = position.x;
   let snappedY = position.y;
-  
+
   allNodes.forEach((node) => {
     const nodeWidth = (node.width as number) || 100;
     const nodeHeight = (node.height as number) || 100;
-    
+
     // Snap X
     const leftDiff = Math.abs(node.position.x - position.x);
     if (leftDiff < snapThreshold) {
       snappedX = node.position.x;
     }
-    
+
     const centerXDiff = Math.abs(
       node.position.x + nodeWidth / 2 - (position.x + nodeSize.width / 2)
     );
     if (centerXDiff < snapThreshold) {
       snappedX = node.position.x + nodeWidth / 2 - nodeSize.width / 2;
     }
-    
+
     const rightDiff = Math.abs(
       node.position.x + nodeWidth - (position.x + nodeSize.width)
     );
     if (rightDiff < snapThreshold) {
       snappedX = node.position.x + nodeWidth - nodeSize.width;
     }
-    
+
     // Snap Y
     const topDiff = Math.abs(node.position.y - position.y);
     if (topDiff < snapThreshold) {
       snappedY = node.position.y;
     }
-    
+
     const centerYDiff = Math.abs(
       node.position.y + nodeHeight / 2 - (position.y + nodeSize.height / 2)
     );
     if (centerYDiff < snapThreshold) {
       snappedY = node.position.y + nodeHeight / 2 - nodeSize.height / 2;
     }
-    
+
     const bottomDiff = Math.abs(
       node.position.y + nodeHeight - (position.y + nodeSize.height)
     );
@@ -276,7 +274,7 @@ export function calculateSnappedPosition(
       snappedY = node.position.y + nodeHeight - nodeSize.height;
     }
   });
-  
+
   return { x: snappedX, y: snappedY };
 }
 

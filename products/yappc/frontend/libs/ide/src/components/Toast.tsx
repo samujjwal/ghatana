@@ -11,7 +11,12 @@
 import { useToast, type ToastData } from '@ghatana/design-system';
 
 export { Toast, ToastProvider, useToast } from '@ghatana/design-system';
-export type { ToastProps, ToastSeverity, ToastPosition, ToastData } from '@ghatana/design-system';
+export type {
+  ToastProps,
+  ToastSeverity,
+  ToastPosition,
+  ToastData,
+} from '@ghatana/design-system';
 
 /**
  * Convenience hook providing severity-specific toast methods.
@@ -28,13 +33,29 @@ export function useToastNotifications() {
 
   return {
     success: (message: string, duration?: number) =>
-      addToast({ severity: 'success' as ToastData['severity'], message, duration }),
+      addToast({
+        severity: 'success' as ToastData['severity'],
+        message,
+        duration,
+      }),
     error: (message: string, duration?: number) =>
-      addToast({ severity: 'error' as ToastData['severity'], message, duration }),
+      addToast({
+        severity: 'error' as ToastData['severity'],
+        message,
+        duration,
+      }),
     warning: (message: string, duration?: number) =>
-      addToast({ severity: 'warning' as ToastData['severity'], message, duration }),
+      addToast({
+        severity: 'warning' as ToastData['severity'],
+        message,
+        duration,
+      }),
     info: (message: string, duration?: number) =>
-      addToast({ severity: 'info' as ToastData['severity'], message, duration }),
+      addToast({
+        severity: 'info' as ToastData['severity'],
+        message,
+        duration,
+      }),
   };
 }
 

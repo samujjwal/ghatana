@@ -29,7 +29,6 @@ import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 
-
 // Reuse existing chat component
 
 // Import bootstrapping state
@@ -251,7 +250,10 @@ interface AgentStatusProps {
   message: string;
 }
 
-const AgentStatusDisplay: React.FC<AgentStatusProps> = ({ status, message }) => {
+const AgentStatusDisplay: React.FC<AgentStatusProps> = ({
+  status,
+  message,
+}) => {
   if (status === 'idle') return null;
 
   const statusConfig: Record<

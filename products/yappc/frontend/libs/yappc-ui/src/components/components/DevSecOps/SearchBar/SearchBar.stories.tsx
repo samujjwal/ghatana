@@ -4,13 +4,19 @@
  * @module DevSecOps/SearchBar/stories
  */
 
-import { Box, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/design-system';
+import {
+  Box,
+  Surface as Paper,
+  Typography,
+  InteractiveList as List,
+  ListItem,
+  ListItemText,
+} from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { SearchBar } from './SearchBar';
 
 import type { Meta, StoryObj } from '@storybook/react';
-
 
 const meta: Meta<typeof SearchBar> = {
   title: 'DevSecOps/SearchBar',
@@ -60,7 +66,10 @@ const mockItems = [
  * Interactive wrapper for stories
  */
 function InteractiveWrapper(
-  props: Omit<React.ComponentProps<typeof SearchBar>, 'onChange' | 'resultsCount'>
+  props: Omit<
+    React.ComponentProps<typeof SearchBar>,
+    'onChange' | 'resultsCount'
+  >
 ) {
   const [value, setValue] = useState('');
   const [results, setResults] = useState(mockItems);
@@ -146,7 +155,12 @@ export const Loading: Story = {
           loading
           resultsCount={5}
         />
-        <Typography as="p" className="text-sm" color="text.secondary" className="mt-4">
+        <Typography
+          as="p"
+          className="text-sm"
+          color="text.secondary"
+          className="mt-4"
+        >
           Searching for "{value}"...
         </Typography>
       </Box>
@@ -212,9 +226,14 @@ export const CustomDebounce: Story = {
           <Typography as="p" className="text-sm">
             onChange called: <strong>{callCount}</strong> times
           </Typography>
-          <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-2 block">
-            Try typing quickly. The onChange callback is only triggered 1 second after you stop
-            typing.
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            color="text.secondary"
+            className="mt-2 block"
+          >
+            Try typing quickly. The onChange callback is only triggered 1 second
+            after you stop typing.
           </Typography>
         </Paper>
       </Box>
@@ -241,7 +260,12 @@ export const RecentSearchesInteraction: Story = {
         <Typography as="h6" gutterBottom>
           Recent Searches Demo
         </Typography>
-        <Typography as="p" className="text-sm" color="text.secondary" className="mb-4">
+        <Typography
+          as="p"
+          className="text-sm"
+          color="text.secondary"
+          className="mb-4"
+        >
           Click the search input to see recent searches
         </Typography>
 
@@ -255,7 +279,7 @@ export const RecentSearchesInteraction: Story = {
         />
 
         {selectedRecent && (
-          <Paper className="p-4 mt-4 bg-sky-50" >
+          <Paper className="p-4 mt-4 bg-sky-50">
             <Typography as="p" className="text-sm">
               Selected from recent: <strong>{selectedRecent}</strong>
             </Typography>
@@ -348,7 +372,10 @@ export const FullFeatured: Story = {
             <List dense>
               {recentSearches.map((search, idx) => (
                 <ListItem key={idx}>
-                  <ListItemText primary={search} secondary={`Search ${idx + 1}`} />
+                  <ListItemText
+                    primary={search}
+                    secondary={`Search ${idx + 1}`}
+                  />
                 </ListItem>
               ))}
             </List>
@@ -365,7 +392,12 @@ export const FullFeatured: Story = {
 export const Empty: Story = {
   render: () => (
     <Box className="p-6 max-w-[600px]">
-      <SearchBar value="" onChange={() => {}} placeholder="No results..." resultsCount={0} />
+      <SearchBar
+        value=""
+        onChange={() => {}}
+        placeholder="No results..."
+        resultsCount={0}
+      />
     </Box>
   ),
 };
@@ -402,7 +434,11 @@ export const DebounceComparison: Story = {
               debounceMs={0}
               placeholder="Immediate response..."
             />
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+            >
               Calls: {callCount1}
             </Typography>
           </Box>
@@ -420,7 +456,11 @@ export const DebounceComparison: Story = {
               debounceMs={300}
               placeholder="300ms delay..."
             />
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+            >
               Calls: {callCount2}
             </Typography>
           </Box>
@@ -438,7 +478,11 @@ export const DebounceComparison: Story = {
               debounceMs={1000}
               placeholder="1000ms delay..."
             />
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+            >
               Calls: {callCount3}
             </Typography>
           </Box>

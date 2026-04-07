@@ -1,7 +1,7 @@
 /**
  * Consolidated Canvas Infrastructure Hook
- * 
- * Replaces: useCICDPipeline, useCloudInfrastructure, useDataPipeline, 
+ *
+ * Replaces: useCICDPipeline, useCloudInfrastructure, useDataPipeline,
  *           useReleaseTrain, useServiceHealth, usePerformanceAnalysis
  * Provides: Infrastructure & DevOps features
  */
@@ -106,20 +106,20 @@ export interface UseCanvasInfrastructureReturn {
   pipelines: Pipeline[];
   createPipeline: (config: PipelineConfig) => Promise<Pipeline>;
   triggerPipeline: (pipelineId: string) => Promise<void>;
-  
+
   resources: CloudResource[];
   deployResource: (resource: ResourceSpec) => Promise<Deployment>;
   deleteResource: (resourceId: string) => Promise<void>;
-  
+
   dataPipelines: DataPipeline[];
   createDataPipeline: (config: DataPipelineConfig) => Promise<DataPipeline>;
-  
+
   releases: Release[];
   scheduleRelease: (release: ReleaseSpec) => Promise<Release>;
-  
+
   healthStatus: HealthStatus;
   performanceMetrics: Metrics;
-  
+
   isLoading: boolean;
   error: Error | null;
 }
@@ -146,73 +146,93 @@ export function useCanvasInfrastructure(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const createPipeline = useCallback(async (config: PipelineConfig): Promise<Pipeline> => {
-    setIsLoading(true);
-    try {
-      const pipeline: Pipeline = {
-        id: `pipeline-${Date.now()}`,
+  const createPipeline = useCallback(
+    async (config: PipelineConfig): Promise<Pipeline> => {
+      setIsLoading(true);
+      try {
+        const pipeline: Pipeline = {
+          id: `pipeline-${Date.now()}`,
+          name: config.name,
+          stages: config.stages.map((name) => ({ name, status: 'pending' })),
+          status: 'pending',
+        };
+        setPipelines((prev) => [...prev, pipeline]);
+        return pipeline;
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const triggerPipeline = useCallback(
+    async (pipelineId: string): Promise<void> => {
+      setPipelines((prev) =>
+        prev.map((p) =>
+          p.id === pipelineId ? { ...p, status: 'running' as const } : p
+        )
+      );
+    },
+    []
+  );
+
+  const deployResource = useCallback(
+    async (resource: ResourceSpec): Promise<Deployment> => {
+      setIsLoading(true);
+      try {
+        const deployment: Deployment = {
+          id: `deploy-${Date.now()}`,
+          status: 'deploying',
+          resources: [],
+        };
+        return deployment;
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const deleteResource = useCallback(
+    async (resourceId: string): Promise<void> => {
+      setResources((prev) => prev.filter((r) => r.id !== resourceId));
+    },
+    []
+  );
+
+  const createDataPipeline = useCallback(
+    async (config: DataPipelineConfig): Promise<DataPipeline> => {
+      const pipeline: DataPipeline = {
+        id: `data-pipeline-${Date.now()}`,
         name: config.name,
-        stages: config.stages.map(name => ({ name, status: 'pending' })),
-        status: 'pending',
+        source: config.source.type,
+        transformations: config.transformations.map((t) => t.type),
+        destination: config.destination.type,
       };
-      setPipelines(prev => [...prev, pipeline]);
+      setDataPipelines((prev) => [...prev, pipeline]);
       return pipeline;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
-  const triggerPipeline = useCallback(async (pipelineId: string): Promise<void> => {
-    setPipelines(prev =>
-      prev.map(p => (p.id === pipelineId ? { ...p, status: 'running' as const } : p))
-    );
-  }, []);
-
-  const deployResource = useCallback(async (resource: ResourceSpec): Promise<Deployment> => {
-    setIsLoading(true);
-    try {
-      const deployment: Deployment = {
-        id: `deploy-${Date.now()}`,
-        status: 'deploying',
-        resources: [],
+  const scheduleRelease = useCallback(
+    async (release: ReleaseSpec): Promise<Release> => {
+      const newRelease: Release = {
+        id: `release-${Date.now()}`,
+        ...release,
+        status: 'planned',
       };
-      return deployment;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const deleteResource = useCallback(async (resourceId: string): Promise<void> => {
-    setResources(prev => prev.filter(r => r.id !== resourceId));
-  }, []);
-
-  const createDataPipeline = useCallback(async (config: DataPipelineConfig): Promise<DataPipeline> => {
-    const pipeline: DataPipeline = {
-      id: `data-pipeline-${Date.now()}`,
-      name: config.name,
-      source: config.source.type,
-      transformations: config.transformations.map(t => t.type),
-      destination: config.destination.type,
-    };
-    setDataPipelines(prev => [...prev, pipeline]);
-    return pipeline;
-  }, []);
-
-  const scheduleRelease = useCallback(async (release: ReleaseSpec): Promise<Release> => {
-    const newRelease: Release = {
-      id: `release-${Date.now()}`,
-      ...release,
-      status: 'planned',
-    };
-    setReleases(prev => [...prev, newRelease]);
-    return newRelease;
-  }, []);
+      setReleases((prev) => [...prev, newRelease]);
+      return newRelease;
+    },
+    []
+  );
 
   return {
     pipelines,

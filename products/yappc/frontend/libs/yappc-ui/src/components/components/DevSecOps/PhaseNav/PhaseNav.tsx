@@ -59,10 +59,12 @@ export const PhaseNav: React.FC<PhaseNavProps> = ({
             style={{
               borderColor: `var(--ds-phase-${phase.key})`,
               transition: 'all var(--ds-duration-base) var(--ds-ease-in-out)',
-              ...(isCompleted ? {
-                backgroundColor: `var(--ds-phase-${phase.key})`,
-                color: 'white',
-              } : {}),
+              ...(isCompleted
+                ? {
+                    backgroundColor: `var(--ds-phase-${phase.key})`,
+                    color: 'white',
+                  }
+                : {}),
             }}
           />
         );

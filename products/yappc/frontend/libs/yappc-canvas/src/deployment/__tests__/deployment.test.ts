@@ -157,7 +157,7 @@ describe('Deployment Utilities', () => {
 
     it('should measure check duration', async () => {
       registerHealthCheck(manager, async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         return {
           name: 'Slow Check',
           passed: true,
@@ -186,7 +186,7 @@ describe('Deployment Utilities', () => {
       manager = createDeploymentManager({ healthCheckTimeout: 100 });
 
       registerHealthCheck(manager, async () => {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
         return {
           name: 'Slow Check',
           passed: true,
@@ -522,9 +522,9 @@ describe('Deployment Utilities', () => {
       await deploy(manager, metadata);
 
       expect(events.length).toBeGreaterThan(0);
-      expect(events.some(e => e.type === 'deployment_started')).toBe(true);
-      expect(events.some(e => e.type === 'health_check_passed')).toBe(true);
-      expect(events.some(e => e.type === 'deployment_complete')).toBe(true);
+      expect(events.some((e) => e.type === 'deployment_started')).toBe(true);
+      expect(events.some((e) => e.type === 'health_check_passed')).toBe(true);
+      expect(events.some((e) => e.type === 'deployment_complete')).toBe(true);
     });
 
     it('should emit rollback events', async () => {
@@ -538,12 +538,14 @@ describe('Deployment Utilities', () => {
 
       await rollback(manager, 'green');
 
-      expect(events.some(e => e.type === 'rollback_started')).toBe(true);
-      expect(events.some(e => e.type === 'rollback_complete')).toBe(true);
+      expect(events.some((e) => e.type === 'rollback_started')).toBe(true);
+      expect(events.some((e) => e.type === 'rollback_complete')).toBe(true);
     });
 
     it('should handle listener errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       const errorListener = vi.fn(() => {
         throw new Error('Listener error');
@@ -656,7 +658,7 @@ describe('Deployment Utilities', () => {
       ]);
 
       // At least one should succeed
-      expect(results.some(r => r.success)).toBe(true);
+      expect(results.some((r) => r.success)).toBe(true);
     });
 
     it('should preserve metadata after deployment', async () => {
@@ -683,7 +685,7 @@ describe('Deployment Utilities', () => {
       manager = createDeploymentManager({ healthCheckTimeout: 10 });
 
       registerHealthCheck(manager, async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return {
           name: 'Slow Check 1',
           passed: true,
@@ -692,7 +694,7 @@ describe('Deployment Utilities', () => {
       });
 
       registerHealthCheck(manager, async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return {
           name: 'Slow Check 2',
           passed: true,
@@ -703,7 +705,7 @@ describe('Deployment Utilities', () => {
       const result = await runHealthChecks(manager, 'blue');
 
       expect(result.healthy).toBe(false);
-      expect(result.checks.every(c => !c.passed)).toBe(true);
+      expect(result.checks.every((c) => !c.passed)).toBe(true);
     });
 
     it('should handle multiple subscribers to same event', () => {
@@ -801,7 +803,7 @@ describe('Deployment Utilities', () => {
       await deploy(manager, metadata);
 
       // Verify event order
-      const eventTypes = events.map(e => e.type);
+      const eventTypes = events.map((e) => e.type);
       expect(eventTypes[0]).toBe('deployment_started');
       expect(eventTypes).toContain('health_check_passed');
       expect(eventTypes).toContain('traffic_routed');
@@ -844,9 +846,9 @@ describe('Deployment Utilities', () => {
       expect(manager.activeSlot).toBe('blue'); // Rolled back
 
       // Verify rollback events
-      expect(events.some(e => e.type === 'health_check_failed')).toBe(true);
-      expect(events.some(e => e.type === 'rollback_started')).toBe(true);
-      expect(events.some(e => e.type === 'rollback_complete')).toBe(true);
+      expect(events.some((e) => e.type === 'health_check_failed')).toBe(true);
+      expect(events.some((e) => e.type === 'rollback_started')).toBe(true);
+      expect(events.some((e) => e.type === 'rollback_complete')).toBe(true);
     });
 
     it('should maintain metadata consistency across deployments', async () => {
@@ -906,10 +908,10 @@ describe('Deployment Utilities', () => {
       // NOTE: Implementation bug: rollback routes to currentActiveSlot, not to the other slot
       // So after deploying to green (activeSlot='green'), rollback(green) routes to green (no change)
       // To test actual rollback behavior, we need to keep activeSlot pointing to the previous slot
-      
+
       // Simulate a failure scenario where activeSlot hasn't switched yet
       manager.activeSlot = 'blue';
-      
+
       // Now rollback will route to blue
       await rollback(manager, 'green');
       expect(manager.routing.blue).toBe(100);
@@ -923,7 +925,7 @@ describe('Deployment Utilities', () => {
 
       // Simulate pre-switch state for rollback
       manager.activeSlot = 'blue';
-      
+
       // Rollback again
       await rollback(manager, 'green');
       expect(manager.routing.blue).toBe(100);

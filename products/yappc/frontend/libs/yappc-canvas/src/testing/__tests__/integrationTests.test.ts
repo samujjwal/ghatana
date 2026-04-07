@@ -1,6 +1,6 @@
 /**
  * Integration Tests - Test Suite
- * 
+ *
  * Comprehensive tests for integration testing utilities.
  */
 
@@ -14,12 +14,9 @@ import {
   type IntegrationTestConfig,
   type IntegrationScenario,
   type PaletteDragMetadata,
-  type CanvasSceneContext
+  type CanvasSceneContext,
 } from '../integrationTests';
-import type {
-
-  IntegrationTestsManager
-} from '../integrationTests';
+import type { IntegrationTestsManager } from '../integrationTests';
 
 import type { Node, Edge } from '@xyflow/react';
 
@@ -299,7 +296,9 @@ describe('IntegrationTestsManager', () => {
       const result = manager.validatePaletteDrag(metadata);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Node ID is required when drop is successful');
+      expect(result.errors).toContain(
+        'Node ID is required when drop is successful'
+      );
     });
 
     it('should detect missing error on failed drop', () => {
@@ -314,7 +313,9 @@ describe('IntegrationTestsManager', () => {
       const result = manager.validatePaletteDrag(metadata);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Error message is required when drop fails');
+      expect(result.errors).toContain(
+        'Error message is required when drop fails'
+      );
     });
 
     it('should detect negative duration', () => {
@@ -372,9 +373,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should validate node updates', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        nodes: [
-          { id: '1', position: { x: 50, y: 50 } },
-        ],
+        nodes: [{ id: '1', position: { x: 50, y: 50 } }],
       });
 
       expect(result.isValid).toBe(true);
@@ -384,9 +383,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect missing node ID', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        nodes: [
-          { position: { x: 50, y: 50 } } as unknown,
-        ],
+        nodes: [{ position: { x: 50, y: 50 } } as unknown],
       });
 
       expect(result.isValid).toBe(false);
@@ -397,9 +394,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect non-existent node', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        nodes: [
-          { id: '999', position: { x: 50, y: 50 } },
-        ],
+        nodes: [{ id: '999', position: { x: 50, y: 50 } }],
       });
 
       expect(result.isValid).toBe(false);
@@ -410,9 +405,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect invalid node position', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        nodes: [
-          { id: '1', position: { x: 'invalid' as unknown, y: 50 } },
-        ],
+        nodes: [{ id: '1', position: { x: 'invalid' as unknown, y: 50 } }],
       });
 
       expect(result.isValid).toBe(false);
@@ -423,9 +416,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should validate edge updates', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        edges: [
-          { id: 'e1-2', animated: true },
-        ],
+        edges: [{ id: 'e1-2', animated: true }],
       });
 
       expect(result.isValid).toBe(true);
@@ -435,9 +426,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect missing edge ID', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        edges: [
-          { animated: true } as unknown,
-        ],
+        edges: [{ animated: true } as unknown],
       });
 
       expect(result.isValid).toBe(false);
@@ -448,9 +437,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect non-existent edge', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        edges: [
-          { id: 'e999', animated: true },
-        ],
+        edges: [{ id: 'e999', animated: true }],
       });
 
       expect(result.isValid).toBe(false);
@@ -461,9 +448,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect invalid edge source', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        edges: [
-          { id: 'e1-2', source: '999' },
-        ],
+        edges: [{ id: 'e1-2', source: '999' }],
       });
 
       expect(result.isValid).toBe(false);
@@ -474,9 +459,7 @@ describe('IntegrationTestsManager', () => {
 
     it('should detect invalid edge target', async () => {
       const result = await manager.validateUpdateFlow(context, {
-        edges: [
-          { id: 'e1-2', target: '999' },
-        ],
+        edges: [{ id: 'e1-2', target: '999' }],
       });
 
       expect(result.isValid).toBe(false);
@@ -557,7 +540,7 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Test Scenario',
         description: 'A test scenario',
-        setup: () => { },
+        setup: () => {},
         steps: [],
       };
 
@@ -572,13 +555,13 @@ describe('IntegrationTestsManager', () => {
         {
           name: 'Scenario 1',
           description: 'First scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
         {
           name: 'Scenario 2',
           description: 'Second scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
       ];
@@ -594,14 +577,14 @@ describe('IntegrationTestsManager', () => {
         {
           name: 'Scenario 1',
           description: 'First scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
           tags: ['smoke', 'critical'],
         },
         {
           name: 'Scenario 2',
           description: 'Second scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
           tags: ['integration'],
         },
@@ -658,14 +641,14 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Failure Scenario',
         description: 'A scenario that fails',
-        setup: () => { },
+        setup: () => {},
         steps: [
           {
             name: 'Failing Step',
             action: async () => {
               throw new Error('Step failed');
             },
-            assertions: async () => { },
+            assertions: async () => {},
           },
         ],
       };
@@ -685,24 +668,24 @@ describe('IntegrationTestsManager', () => {
         {
           name: 'Scenario 1',
           description: 'First scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [
             {
               name: 'Step 1',
-              action: async () => { },
-              assertions: async () => { },
+              action: async () => {},
+              assertions: async () => {},
             },
           ],
         },
         {
           name: 'Scenario 2',
           description: 'Second scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [
             {
               name: 'Step 1',
-              action: async () => { },
-              assertions: async () => { },
+              action: async () => {},
+              assertions: async () => {},
             },
           ],
         },
@@ -723,7 +706,7 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Test Scenario',
         description: 'A test scenario',
-        setup: () => { },
+        setup: () => {},
         steps: [],
       };
 
@@ -743,13 +726,13 @@ describe('IntegrationTestsManager', () => {
         {
           name: 'Scenario 1',
           description: 'First scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
         {
           name: 'Scenario 2',
           description: 'Second scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
       ];
@@ -770,12 +753,12 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Test Scenario',
         description: 'A test scenario',
-        setup: () => { },
+        setup: () => {},
         steps: [
           {
             name: 'Step 1',
-            action: async () => { },
-            assertions: async () => { },
+            action: async () => {},
+            assertions: async () => {},
           },
         ],
       };
@@ -795,7 +778,7 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Test Scenario',
         description: 'A test scenario',
-        setup: () => { },
+        setup: () => {},
         steps: [],
       };
 
@@ -813,13 +796,13 @@ describe('IntegrationTestsManager', () => {
         {
           name: 'Scenario 1',
           description: 'First scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
         {
           name: 'Scenario 2',
           description: 'Second scenario',
-          setup: () => { },
+          setup: () => {},
           steps: [],
         },
       ];
@@ -872,9 +855,7 @@ describe('IntegrationTestsManager', () => {
       context.flowInstance.setNodes(nodes);
 
       const result = await validateUpdateFlow(context, {
-        nodes: [
-          { id: '1', position: { x: 50, y: 50 } },
-        ],
+        nodes: [{ id: '1', position: { x: 50, y: 50 } }],
       });
 
       expect(result.isValid).toBe(true);
@@ -888,7 +869,7 @@ describe('IntegrationTestsManager', () => {
       const scenario: IntegrationScenario = {
         name: 'Test Scenario',
         description: 'A test scenario',
-        setup: () => { },
+        setup: () => {},
         steps: [],
       };
 
@@ -904,7 +885,10 @@ describe('IntegrationTestsManager', () => {
     });
 
     it('should preserve config on reset', () => {
-      const manager = createIntegrationTestsManager({ debug: true, timeout: 8000 });
+      const manager = createIntegrationTestsManager({
+        debug: true,
+        timeout: 8000,
+      });
 
       manager.reset();
 

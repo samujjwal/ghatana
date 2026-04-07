@@ -125,7 +125,9 @@ export const DataSourceNode: React.FC<DataSourceNodeProps> = ({
         backgroundColor: '#fff',
         border: `2px solid ${isSelected ? '#1976d2' : '#e0e0e0'}`,
         borderRadius: 8,
-        boxShadow: isSelected ? '0 4px 12px rgba(25, 118, 210, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: isSelected
+          ? '0 4px 12px rgba(25, 118, 210, 0.3)'
+          : '0 2px 8px rgba(0,0,0,0.1)',
         cursor: 'pointer',
         transition: 'all 0.2s',
       }}
@@ -143,7 +145,13 @@ export const DataSourceNode: React.FC<DataSourceNodeProps> = ({
           <span style={{ fontSize: 20, marginRight: 8 }}>{getTypeIcon()}</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 600 }}>{name}</div>
-            <div style={{ fontSize: 11, color: '#666', textTransform: 'capitalize' }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: '#666',
+                textTransform: 'capitalize',
+              }}
+            >
               {type}
             </div>
           </div>
@@ -157,7 +165,13 @@ export const DataSourceNode: React.FC<DataSourceNodeProps> = ({
             title={status}
           />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 11,
+          }}
+        >
           <span style={{ color: '#666' }}>
             {consumerCount} consumer{consumerCount !== 1 ? 's' : ''}
           </span>
@@ -183,7 +197,14 @@ export const DataSourceNode: React.FC<DataSourceNodeProps> = ({
       {isExpanded && (
         <div style={{ padding: 8 }}>
           {fields.length === 0 ? (
-            <div style={{ padding: 16, textAlign: 'center', color: '#999', fontSize: 12 }}>
+            <div
+              style={{
+                padding: 16,
+                textAlign: 'center',
+                color: '#999',
+                fontSize: 12,
+              }}
+            >
               No fields available
             </div>
           ) : (
@@ -211,8 +232,12 @@ export const DataSourceNode: React.FC<DataSourceNodeProps> = ({
                     e.currentTarget.style.backgroundColor = '#fafafa';
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{field.name}</div>
-                  <div style={{ fontSize: 11, color: '#666' }}>{field.type}</div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>
+                    {field.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#666' }}>
+                    {field.type}
+                  </div>
                 </button>
               ))}
             </div>

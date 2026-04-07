@@ -10,13 +10,18 @@ import { Folder as FolderIcon } from 'lucide-react';
 import { Home as HomeIcon } from 'lucide-react';
 import { User as PersonIcon } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { Stack, Box, Typography, Card, CardContent } from '@ghatana/design-system';
+import {
+  Stack,
+  Box,
+  Typography,
+  Card,
+  CardContent,
+} from '@ghatana/design-system';
 
 import { Breadcrumb } from './Breadcrumb.enhanced';
 
 import type { BreadcrumbItem } from './Breadcrumb.enhanced';
 import type { Meta, StoryObj } from '@storybook/react';
-
 
 const meta: Meta<typeof Breadcrumb> = {
   title: 'Molecules/Breadcrumb',
@@ -122,8 +127,20 @@ export const WithIcons: Story = {
 export const WithClickHandler: Story = {
   args: {
     items: [
-      { label: 'Home', onClick: (e) => { e.preventDefault(); alert('Home clicked'); } },
-      { label: 'Products', onClick: (e) => { e.preventDefault(); alert('Products clicked'); } },
+      {
+        label: 'Home',
+        onClick: (e) => {
+          e.preventDefault();
+          alert('Home clicked');
+        },
+      },
+      {
+        label: 'Products',
+        onClick: (e) => {
+          e.preventDefault();
+          alert('Products clicked');
+        },
+      },
       { label: 'Details' },
     ],
   },
@@ -220,9 +237,21 @@ export const FileSystemNavigation: Story = {
   render: () => {
     const items: BreadcrumbItem[] = [
       { label: 'Root', href: '/', icon: <HomeIcon size={16} /> },
-      { label: 'Documents', href: '/documents', icon: <FolderIcon size={16} /> },
-      { label: 'Work', href: '/documents/work', icon: <FolderIcon size={16} /> },
-      { label: 'Projects', href: '/documents/work/projects', icon: <FolderIcon size={16} /> },
+      {
+        label: 'Documents',
+        href: '/documents',
+        icon: <FolderIcon size={16} />,
+      },
+      {
+        label: 'Work',
+        href: '/documents/work',
+        icon: <FolderIcon size={16} />,
+      },
+      {
+        label: 'Projects',
+        href: '/documents/work/projects',
+        icon: <FolderIcon size={16} />,
+      },
       { label: 'Report.docx', icon: <DescriptionIcon size={16} /> },
     ];
 
@@ -271,8 +300,16 @@ export const EcommerceCatalog: Story = {
 export const DashboardNavigation: Story = {
   render: () => {
     const items: BreadcrumbItem[] = [
-      { label: 'Dashboard', href: '/dashboard', icon: <DashboardIcon size={16} /> },
-      { label: 'Users', href: '/dashboard/users', icon: <PersonIcon size={16} /> },
+      {
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: <DashboardIcon size={16} />,
+      },
+      {
+        label: 'Users',
+        href: '/dashboard/users',
+        icon: <PersonIcon size={16} />,
+      },
       { label: 'Profile', icon: <PersonIcon size={16} /> },
     ];
 
@@ -295,7 +332,11 @@ export const DashboardNavigation: Story = {
 export const SettingsPages: Story = {
   render: () => {
     const items: BreadcrumbItem[] = [
-      { label: 'Settings', href: '/settings', icon: <SettingsIcon size={16} /> },
+      {
+        label: 'Settings',
+        href: '/settings',
+        icon: <SettingsIcon size={16} />,
+      },
       { label: 'Account', href: '/settings/account' },
       { label: 'Security' },
     ];

@@ -11,9 +11,9 @@
  */
 
 import type {
-    ServiceNodeData,
-    APIEndpointNodeData,
-    DatabaseNodeData,
+  ServiceNodeData,
+  APIEndpointNodeData,
+  DatabaseNodeData,
 } from './node-types';
 
 // ============================================================================
@@ -21,31 +21,31 @@ import type {
 // ============================================================================
 
 export interface CodeGenerationRequest {
-    nodeType: 'service' | 'apiEndpoint' | 'database';
-    nodeData: ServiceNodeData | APIEndpointNodeData | DatabaseNodeData;
-    options: CodeGenerationOptions;
+  nodeType: 'service' | 'apiEndpoint' | 'database';
+  nodeData: ServiceNodeData | APIEndpointNodeData | DatabaseNodeData;
+  options: CodeGenerationOptions;
 }
 
 export interface CodeGenerationOptions {
-    language: 'typescript' | 'java' | 'python' | 'go';
-    framework?: string;
-    includeTests?: boolean;
-    includeDocumentation?: boolean;
-    outputFormat?: 'files' | 'zip' | 'inline';
+  language: 'typescript' | 'java' | 'python' | 'go';
+  framework?: string;
+  includeTests?: boolean;
+  includeDocumentation?: boolean;
+  outputFormat?: 'files' | 'zip' | 'inline';
 }
 
 export interface GeneratedFile {
-    path: string;
-    content: string;
-    language: string;
-    type: 'source' | 'test' | 'config' | 'documentation';
+  path: string;
+  content: string;
+  language: string;
+  type: 'source' | 'test' | 'config' | 'documentation';
 }
 
 export interface CodeGenerationResult {
-    success: boolean;
-    files: GeneratedFile[];
-    summary: string;
-    errors?: string[];
+  success: boolean;
+  files: GeneratedFile[];
+  summary: string;
+  errors?: string[];
 }
 
 // ============================================================================
@@ -56,17 +56,18 @@ export interface CodeGenerationResult {
  * Generate TypeScript service scaffolding
  */
 function generateTypeScriptService(data: ServiceNodeData): GeneratedFile[] {
-    const serviceName = data.label.replace(/\s+/g, '');
-    const serviceNameLower = serviceName.charAt(0).toLowerCase() + serviceName.slice(1);
+  const serviceName = data.label.replace(/\s+/g, '');
+  const serviceNameLower =
+    serviceName.charAt(0).toLowerCase() + serviceName.slice(1);
 
-    const files: GeneratedFile[] = [];
+  const files: GeneratedFile[] = [];
 
-    // Service class
-    files.push({
-        path: `src/services/${serviceNameLower}.service.ts`,
-        language: 'typescript',
-        type: 'source',
-        content: `/**
+  // Service class
+  files.push({
+    path: `src/services/${serviceNameLower}.service.ts`,
+    language: 'typescript',
+    type: 'source',
+    content: `/**
  * ${data.label} Service
  *
  * @doc.type class
@@ -121,14 +122,14 @@ export class ${serviceName}Service {
 
 export const ${serviceNameLower}Service = new ${serviceName}Service();
 `,
-    });
+  });
 
-    // Route file
-    files.push({
-        path: `src/routes/${serviceNameLower}.ts`,
-        language: 'typescript',
-        type: 'source',
-        content: `/**
+  // Route file
+  files.push({
+    path: `src/routes/${serviceNameLower}.ts`,
+    language: 'typescript',
+    type: 'source',
+    content: `/**
  * ${data.label} API Routes
  *
  * @doc.type module
@@ -192,14 +193,14 @@ export default async function ${serviceNameLower}Routes(fastify: FastifyInstance
     });
 }
 `,
-    });
+  });
 
-    // Test file
-    files.push({
-        path: `src/services/__tests__/${serviceNameLower}.service.test.ts`,
-        language: 'typescript',
-        type: 'test',
-        content: `/**
+  // Test file
+  files.push({
+    path: `src/services/__tests__/${serviceNameLower}.service.test.ts`,
+    language: 'typescript',
+    type: 'test',
+    content: `/**
  * ${data.label} Service Tests
  */
 
@@ -230,25 +231,30 @@ describe('${serviceName}Service', () => {
     // TODO: Add more tests
 });
 `,
-    });
+  });
 
-    return files;
+  return files;
 }
 
 /**
  * Generate API endpoint scaffolding
  */
 function generateAPIEndpoint(data: APIEndpointNodeData): GeneratedFile[] {
-    const endpointName = data.path.split('/').filter(Boolean).pop()?.replace(/[^a-zA-Z]/g, '') || 'resource';
+  const endpointName =
+    data.path
+      .split('/')
+      .filter(Boolean)
+      .pop()
+      ?.replace(/[^a-zA-Z]/g, '') || 'resource';
 
-    const files: GeneratedFile[] = [];
+  const files: GeneratedFile[] = [];
 
-    // OpenAPI spec
-    files.push({
-        path: `openapi/${endpointName}.yaml`,
-        language: 'yaml',
-        type: 'documentation',
-        content: `# ${data.label} API Specification
+  // OpenAPI spec
+  files.push({
+    path: `openapi/${endpointName}.yaml`,
+    language: 'yaml',
+    type: 'documentation',
+    content: `# ${data.label} API Specification
 openapi: 3.0.3
 info:
   title: ${data.label} API
@@ -273,14 +279,14 @@ paths:
         '500':
           description: Internal server error
 `,
-    });
+  });
 
-    // DTO file
-    files.push({
-        path: `src/dto/${endpointName}.dto.ts`,
-        language: 'typescript',
-        type: 'source',
-        content: `/**
+  // DTO file
+  files.push({
+    path: `src/dto/${endpointName}.dto.ts`,
+    language: 'typescript',
+    type: 'source',
+    content: `/**
  * ${data.label} DTOs
  */
 
@@ -292,35 +298,35 @@ export interface ${endpointName.charAt(0).toUpperCase() + endpointName.slice(1)}
     // TODO: Define response schema
 }
 `,
-    });
+  });
 
-    return files;
+  return files;
 }
 
 /**
  * Generate Prisma schema from database node
  */
 function generateDatabaseSchema(data: DatabaseNodeData): GeneratedFile[] {
-    const files: GeneratedFile[] = [];
+  const files: GeneratedFile[] = [];
 
-    if (!data.schema?.tables) {
-        return files;
-    }
+  if (!data.schema?.tables) {
+    return files;
+  }
 
-    let prismaModels = '';
-    for (const table of data.schema.tables) {
-        prismaModels += `
+  let prismaModels = '';
+  for (const table of data.schema.tables) {
+    prismaModels += `
 model ${table.name.charAt(0).toUpperCase() + table.name.slice(1)} {
 ${table.columns.map((col) => `    ${col.name} ${mapToPrismaType(col.type)}${col.nullable === false ? '' : '?'}`).join('\n')}
 }
 `;
-    }
+  }
 
-    files.push({
-        path: `prisma/schema.prisma`,
-        language: 'prisma',
-        type: 'config',
-        content: `// Generated Prisma Schema for ${data.label}
+  files.push({
+    path: `prisma/schema.prisma`,
+    language: 'prisma',
+    type: 'config',
+    content: `// Generated Prisma Schema for ${data.label}
 // Database: ${data.engine}
 
 generator client {
@@ -332,43 +338,43 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 ${prismaModels}`,
-    });
+  });
 
-    return files;
+  return files;
 }
 
 /**
  * Map column type to Prisma type
  */
 function mapToPrismaType(type: string): string {
-    const typeMap: Record<string, string> = {
-        uuid: 'String @id @default(uuid())',
-        varchar: 'String',
-        text: 'String',
-        int: 'Int',
-        integer: 'Int',
-        boolean: 'Boolean',
-        timestamp: 'DateTime',
-        date: 'DateTime',
-        json: 'Json',
-        float: 'Float',
-        decimal: 'Decimal',
-    };
-    return typeMap[type.toLowerCase()] || 'String';
+  const typeMap: Record<string, string> = {
+    uuid: 'String @id @default(uuid())',
+    varchar: 'String',
+    text: 'String',
+    int: 'Int',
+    integer: 'Int',
+    boolean: 'Boolean',
+    timestamp: 'DateTime',
+    date: 'DateTime',
+    json: 'Json',
+    float: 'Float',
+    decimal: 'Decimal',
+  };
+  return typeMap[type.toLowerCase()] || 'String';
 }
 
 /**
  * Map database engine to Prisma provider
  */
 function mapEngineToPrismaProvider(engine: DatabaseNodeData['engine']): string {
-    const providerMap: Record<string, string> = {
-        postgres: 'postgresql',
-        mysql: 'mysql',
-        mongodb: 'mongodb',
-        redis: 'postgresql', // Redis not directly supported, fallback
-        dynamodb: 'postgresql', // DynamoDB not directly supported, fallback
-    };
-    return providerMap[engine] || 'postgresql';
+  const providerMap: Record<string, string> = {
+    postgres: 'postgresql',
+    mysql: 'mysql',
+    mongodb: 'mongodb',
+    redis: 'postgresql', // Redis not directly supported, fallback
+    dynamodb: 'postgresql', // DynamoDB not directly supported, fallback
+  };
+  return providerMap[engine] || 'postgresql';
 }
 
 // ============================================================================
@@ -379,75 +385,78 @@ function mapEngineToPrismaProvider(engine: DatabaseNodeData['engine']): string {
  * Generate code from a canvas node
  */
 export async function generateCodeFromNode(
-    request: CodeGenerationRequest
+  request: CodeGenerationRequest
 ): Promise<CodeGenerationResult> {
-    const { nodeType, nodeData, options } = request;
+  const { nodeType, nodeData, options } = request;
 
-    try {
-        let files: GeneratedFile[] = [];
+  try {
+    let files: GeneratedFile[] = [];
 
-        switch (nodeType) {
-            case 'service':
-                files = generateTypeScriptService(nodeData as ServiceNodeData);
-                break;
-            case 'apiEndpoint':
-                files = generateAPIEndpoint(nodeData as APIEndpointNodeData);
-                break;
-            case 'database':
-                files = generateDatabaseSchema(nodeData as DatabaseNodeData);
-                break;
-            default:
-                return {
-                    success: false,
-                    files: [],
-                    summary: `Unknown node type: ${nodeType}`,
-                    errors: [`Unsupported node type: ${nodeType}`],
-                };
-        }
-
+    switch (nodeType) {
+      case 'service':
+        files = generateTypeScriptService(nodeData as ServiceNodeData);
+        break;
+      case 'apiEndpoint':
+        files = generateAPIEndpoint(nodeData as APIEndpointNodeData);
+        break;
+      case 'database':
+        files = generateDatabaseSchema(nodeData as DatabaseNodeData);
+        break;
+      default:
         return {
-            success: true,
-            files,
-            summary: `Generated ${files.length} files for ${nodeData.label}`,
-        };
-    } catch (error) {
-        return {
-            success: false,
-            files: [],
-            summary: 'Code generation failed',
-            errors: [error instanceof Error ? error.message : 'Unknown error'],
+          success: false,
+          files: [],
+          summary: `Unknown node type: ${nodeType}`,
+          errors: [`Unsupported node type: ${nodeType}`],
         };
     }
+
+    return {
+      success: true,
+      files,
+      summary: `Generated ${files.length} files for ${nodeData.label}`,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      files: [],
+      summary: 'Code generation failed',
+      errors: [error instanceof Error ? error.message : 'Unknown error'],
+    };
+  }
 }
 
 /**
  * Generate code for multiple connected nodes
  */
 export async function generateCodeFromFlow(
-    nodes: Array<{ type: string; data: ServiceNodeData | APIEndpointNodeData | DatabaseNodeData }>,
-    options: CodeGenerationOptions
+  nodes: Array<{
+    type: string;
+    data: ServiceNodeData | APIEndpointNodeData | DatabaseNodeData;
+  }>,
+  options: CodeGenerationOptions
 ): Promise<CodeGenerationResult> {
-    const allFiles: GeneratedFile[] = [];
-    const errors: string[] = [];
+  const allFiles: GeneratedFile[] = [];
+  const errors: string[] = [];
 
-    for (const node of nodes) {
-        const result = await generateCodeFromNode({
-            nodeType: node.type as 'service' | 'apiEndpoint' | 'database',
-            nodeData: node.data,
-            options,
-        });
+  for (const node of nodes) {
+    const result = await generateCodeFromNode({
+      nodeType: node.type as 'service' | 'apiEndpoint' | 'database',
+      nodeData: node.data,
+      options,
+    });
 
-        if (result.success) {
-            allFiles.push(...result.files);
-        } else if (result.errors) {
-            errors.push(...result.errors);
-        }
+    if (result.success) {
+      allFiles.push(...result.files);
+    } else if (result.errors) {
+      errors.push(...result.errors);
     }
+  }
 
-    return {
-        success: errors.length === 0,
-        files: allFiles,
-        summary: `Generated ${allFiles.length} files from ${nodes.length} nodes`,
-        errors: errors.length > 0 ? errors : undefined,
-    };
+  return {
+    success: errors.length === 0,
+    files: allFiles,
+    summary: `Generated ${allFiles.length} files from ${nodes.length} nodes`,
+    errors: errors.length > 0 ? errors : undefined,
+  };
 }

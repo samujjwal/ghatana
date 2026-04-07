@@ -1,6 +1,6 @@
 /**
  * Offline Handling & Conflicts - Offline edit queueing and conflict resolution
- * 
+ *
  * Implements offline edit persistence, sync retry with exponential backoff,
  * conflict detection, and resolution workflows.
  */
@@ -8,15 +8,18 @@
 /**
  * Edit operation types
  */
-export type EditOperationType = 
-  | 'insert' | 'delete' | 'update' 
-  | 'move' | 'style' | 'property';
+export type EditOperationType =
+  | 'insert'
+  | 'delete'
+  | 'update'
+  | 'move'
+  | 'style'
+  | 'property';
 
 /**
  * Edit conflict resolution strategy
  */
-export type ConflictResolution =
-  | 'local' | 'remote' | 'manual' | 'merge';
+export type ConflictResolution = 'local' | 'remote' | 'manual' | 'merge';
 
 /**
  * Edit operation

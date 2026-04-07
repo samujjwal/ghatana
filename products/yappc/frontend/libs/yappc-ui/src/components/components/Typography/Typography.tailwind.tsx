@@ -1,6 +1,6 @@
 /**
  * Typography Component (Tailwind CSS)
- * 
+ *
  * A component for rendering text with consistent styling using semantic HTML
  * and Tailwind CSS classes. Replaces MUI Typography with native HTML elements.
  */
@@ -10,7 +10,6 @@ import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  *
  */
@@ -19,42 +18,50 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
    * Typography variant determines the HTML element and default styling
    * @default 'body1'
    */
-  variant?: 
-    | 'h1' 
-    | 'h2' 
-    | 'h3' 
-    | 'h4' 
-    | 'h5' 
-    | 'h6' 
-    | 'subtitle1' 
-    | 'subtitle2' 
-    | 'body1' 
-    | 'body2' 
-    | 'caption' 
+  variant?:
+    | 'h1'
+    | 'h2'
+    | 'h3'
+    | 'h4'
+    | 'h5'
+    | 'h6'
+    | 'subtitle1'
+    | 'subtitle2'
+    | 'body1'
+    | 'body2'
+    | 'caption'
     | 'overline'
     | 'button';
-  
+
   /**
    * Override the default HTML element
    */
   component?: ElementType;
-  
+
   /**
    * Text alignment
    */
   align?: 'left' | 'center' | 'right' | 'justify';
-  
+
   /**
    * Text color (from theme palette)
    */
-  color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' | 'text' | 'inherit';
-  
+  color?:
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'success'
+    | 'text'
+    | 'inherit';
+
   /**
    * Prevent text wrapping
    * @default false
    */
   noWrap?: boolean;
-  
+
   /**
    * Show ellipsis for overflowing text
    * @default false
@@ -140,8 +147,8 @@ export const Typography = forwardRef<HTMLElement, TypographyProps>(
     ref
   ) => {
     // Determine the element to render
-    const Component = (component || variantToElement[variant] || 'p');
-    
+    const Component = component || variantToElement[variant] || 'p';
+
     return (
       <Component
         ref={ref as unknown}

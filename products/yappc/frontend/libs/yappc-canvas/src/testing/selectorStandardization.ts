@@ -2,23 +2,23 @@
  * @module selectorStandardization
  * @description Test selector standardization utilities for stable, maintainable test automation.
  * Provides consistent data-testid conventions, selector generation, and validation utilities.
- * 
+ *
  * Key Features:
  * - Standardized selector naming conventions
  * - Type-safe selector generation
  * - Selector validation utilities
  * - Component-specific selector builders
  * - Documentation helpers
- * 
+ *
  * @example
  * ```typescript
  * // Generate selector for canvas node
  * const nodeSelector = generateNodeSelector('node-123');
  * // => 'canvas-node-node-123'
- * 
+ *
  * // Validate selector format
  * const isValid = validateSelector('canvas-node-123'); // true
- * 
+ *
  * // Get selector for palette item
  * const paletteSelector = generatePaletteSelector('shape', 'rectangle');
  * // => 'canvas-palette-shape-rectangle'
@@ -172,7 +172,10 @@ export function generateSelector(pattern: SelectorPattern): string {
 /**
  * Generate canvas node selector
  */
-export function generateNodeSelector(nodeId: string, state?: SelectorState): string {
+export function generateNodeSelector(
+  nodeId: string,
+  state?: SelectorState
+): string {
   return generateSelector({
     prefix: 'canvas',
     component: 'node',
@@ -184,7 +187,10 @@ export function generateNodeSelector(nodeId: string, state?: SelectorState): str
 /**
  * Generate canvas edge selector
  */
-export function generateEdgeSelector(edgeId: string, state?: SelectorState): string {
+export function generateEdgeSelector(
+  edgeId: string,
+  state?: SelectorState
+): string {
   return generateSelector({
     prefix: 'canvas',
     component: 'edge',
@@ -196,7 +202,10 @@ export function generateEdgeSelector(edgeId: string, state?: SelectorState): str
 /**
  * Generate palette item selector
  */
-export function generatePaletteSelector(category: string, itemType: string): string {
+export function generatePaletteSelector(
+  category: string,
+  itemType: string
+): string {
   return generateSelector({
     prefix: 'canvas',
     component: 'palette',
@@ -207,7 +216,10 @@ export function generatePaletteSelector(category: string, itemType: string): str
 /**
  * Generate toolbar button selector
  */
-export function generateToolbarSelector(action: SelectorAction, state?: SelectorState): string {
+export function generateToolbarSelector(
+  action: SelectorAction,
+  state?: SelectorState
+): string {
   return generateSelector({
     prefix: 'canvas',
     component: 'toolbar',
@@ -219,7 +231,10 @@ export function generateToolbarSelector(action: SelectorAction, state?: Selector
 /**
  * Generate panel selector
  */
-export function generatePanelSelector(panelName: string, section?: string): string {
+export function generatePanelSelector(
+  panelName: string,
+  section?: string
+): string {
   return generateSelector({
     prefix: 'canvas',
     component: 'panel',
@@ -280,7 +295,9 @@ export function validateSelector(
 
   // Check length
   if (selector.length > rules.maxLength) {
-    errors.push(`Selector exceeds maximum length of ${rules.maxLength} characters`);
+    errors.push(
+      `Selector exceeds maximum length of ${rules.maxLength} characters`
+    );
   }
 
   // Check required prefix
@@ -290,7 +307,9 @@ export function validateSelector(
 
   // Check disallowed characters
   if (rules.disallowedChars.test(selector)) {
-    errors.push('Selector contains disallowed characters (only a-z, 0-9, -, _ allowed)');
+    errors.push(
+      'Selector contains disallowed characters (only a-z, 0-9, -, _ allowed)'
+    );
   }
 
   // Check lowercase enforcement
@@ -299,14 +318,20 @@ export function validateSelector(
   }
 
   // Check separator usage
-  const separatorCount = (selector.match(new RegExp(`\\${rules.separator}`, 'g')) || []).length;
+  const separatorCount = (
+    selector.match(new RegExp(`\\${rules.separator}`, 'g')) || []
+  ).length;
   if (separatorCount < 1) {
-    warnings.push(`Selector should use "${rules.separator}" separator for component parts`);
+    warnings.push(
+      `Selector should use "${rules.separator}" separator for component parts`
+    );
   }
 
   // Check double separators
   if (selector.includes(`${rules.separator}${rules.separator}`)) {
-    errors.push(`Selector contains consecutive "${rules.separator}" characters`);
+    errors.push(
+      `Selector contains consecutive "${rules.separator}" characters`
+    );
   }
 
   // Check trailing/leading separators
@@ -342,7 +367,10 @@ export function registerSelector(
 
   return {
     ...state,
-    registeredSelectors: new Map(state.registeredSelectors).set(selector, pattern),
+    registeredSelectors: new Map(state.registeredSelectors).set(
+      selector,
+      pattern
+    ),
     validationCache: new Map(state.validationCache).set(selector, validation),
   };
 }
@@ -418,21 +446,26 @@ export function getSelectorStatistics(state: SelectorManagerState): {
   }
 
   const totalSelectors = state.registeredSelectors.size;
-  const validSelectors = Array.from(validationResults.values()).filter((r) => r.valid).length;
+  const validSelectors = Array.from(validationResults.values()).filter(
+    (r) => r.valid
+  ).length;
 
   return {
     totalSelectors,
     validSelectors,
     invalidSelectors: totalSelectors - validSelectors,
     selectorsByComponent,
-    averageLength: totalSelectors > 0 ? Math.round(totalLength / totalSelectors) : 0,
+    averageLength:
+      totalSelectors > 0 ? Math.round(totalLength / totalSelectors) : 0,
   };
 }
 
 /**
  * Export selector documentation in markdown format
  */
-export function exportSelectorDocumentation(state: SelectorManagerState): string {
+export function exportSelectorDocumentation(
+  state: SelectorManagerState
+): string {
   const lines: string[] = [];
 
   lines.push('# Canvas Test Selector Reference');
@@ -442,12 +475,16 @@ export function exportSelectorDocumentation(state: SelectorManagerState): string
   lines.push(`- **Prefix**: \`${state.rules.requiredPrefix}\``);
   lines.push(`- **Separator**: \`${state.rules.separator}\``);
   lines.push(`- **Max Length**: ${state.rules.maxLength} characters`);
-  lines.push(`- **Case**: ${state.rules.enforceLowercase ? 'lowercase' : 'any'}`);
+  lines.push(
+    `- **Case**: ${state.rules.enforceLowercase ? 'lowercase' : 'any'}`
+  );
   lines.push('');
   lines.push('## Format');
   lines.push('');
   lines.push('```');
-  lines.push(`${state.rules.requiredPrefix}${state.rules.separator}<component>${state.rules.separator}<id>${state.rules.separator}[action]${state.rules.separator}[state]`);
+  lines.push(
+    `${state.rules.requiredPrefix}${state.rules.separator}<component>${state.rules.separator}<id>${state.rules.separator}[action]${state.rules.separator}[state]`
+  );
   lines.push('```');
   lines.push('');
 
@@ -460,7 +497,9 @@ export function exportSelectorDocumentation(state: SelectorManagerState): string
   }
 
   for (const [component, selectors] of componentGroups) {
-    lines.push(`## ${component.charAt(0).toUpperCase() + component.slice(1)} Selectors`);
+    lines.push(
+      `## ${component.charAt(0).toUpperCase() + component.slice(1)} Selectors`
+    );
     lines.push('');
 
     for (const selector of selectors.sort()) {
@@ -538,7 +577,10 @@ export function suggestSelectorFix(
   let fixed = selector.trim();
 
   // Remove leading/trailing separators first
-  fixed = fixed.replace(new RegExp(`^\\${rules.separator}+|\\${rules.separator}+$`, 'g'), '');
+  fixed = fixed.replace(
+    new RegExp(`^\\${rules.separator}+|\\${rules.separator}+$`, 'g'),
+    ''
+  );
 
   // Convert to lowercase if enforced
   if (rules.enforceLowercase) {
@@ -549,7 +591,10 @@ export function suggestSelectorFix(
   fixed = fixed.replace(rules.disallowedChars, '');
 
   // Remove consecutive separators
-  fixed = fixed.replace(new RegExp(`\\${rules.separator}{2,}`, 'g'), rules.separator);
+  fixed = fixed.replace(
+    new RegExp(`\\${rules.separator}{2,}`, 'g'),
+    rules.separator
+  );
 
   // Add prefix if missing
   if (!fixed.startsWith(rules.requiredPrefix)) {
@@ -557,7 +602,10 @@ export function suggestSelectorFix(
   }
 
   // Remove leading/trailing separators again (after prefix addition)
-  fixed = fixed.replace(new RegExp(`^\\${rules.separator}+|\\${rules.separator}+$`, 'g'), '');
+  fixed = fixed.replace(
+    new RegExp(`^\\${rules.separator}+|\\${rules.separator}+$`, 'g'),
+    ''
+  );
 
   // Truncate if too long
   if (fixed.length > rules.maxLength) {

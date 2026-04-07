@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  * Dialog size variants
  */
@@ -86,7 +85,7 @@ export interface DialogProps {
 
 /**
  * Dialog component for modal interactions using Base UI primitives.
- * 
+ *
  * Features:
  * - 6 size variants: xs (320px) to full (100% viewport)
  * - 3 shape variants: rounded, soft, square
@@ -97,10 +96,10 @@ export interface DialogProps {
  * - Focus trap and escape key handling
  * - Accessible with proper ARIA attributes
  * - Smooth animations for open/close
- * 
+ *
  * @example
  * ```tsx
- * <Dialog 
+ * <Dialog
  *   open={isOpen}
  *   onOpenChange={setIsOpen}
  *   header="Confirm Action"
@@ -134,26 +133,26 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(
   ) => {
     // Size classes for max-width
     const sizeClasses: Record<DialogSize, string> = {
-      xs: 'max-w-xs',      // 320px
-      sm: 'max-w-sm',      // 384px
-      md: 'max-w-md',      // 448px
-      lg: 'max-w-lg',      // 512px
-      xl: 'max-w-xl',      // 576px
-      full: 'max-w-full',  // 100%
+      xs: 'max-w-xs', // 320px
+      sm: 'max-w-sm', // 384px
+      md: 'max-w-md', // 448px
+      lg: 'max-w-lg', // 512px
+      xl: 'max-w-xl', // 576px
+      full: 'max-w-full', // 100%
     };
 
     // Shape classes for border radius
     const shapeClasses: Record<DialogShape, string> = {
-      rounded: 'rounded-lg',  // 8px
-      soft: 'rounded-2xl',    // 16px
-      square: 'rounded',      // 4px
+      rounded: 'rounded-lg', // 8px
+      soft: 'rounded-2xl', // 16px
+      square: 'rounded', // 4px
     };
 
     // Content padding classes
     const paddingClasses: Record<DialogContentPadding, string> = {
       none: 'p-0',
-      normal: 'p-6',    // 24px
-      dense: 'p-3',     // 12px
+      normal: 'p-6', // 24px
+      dense: 'p-3', // 12px
     };
 
     return (

@@ -1,4 +1,10 @@
-import { Card, CardHeader, CardContent, CardActions, CardMedia } from './Card.tailwind';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  CardMedia,
+} from './Card.tailwind';
 import { Button } from '../Button';
 import { Typography } from '../Typography';
 
@@ -37,10 +43,7 @@ export const Default: Story = {
 export const WithHeader: Story = {
   render: () => (
     <Card className="max-w-sm">
-      <CardHeader
-        title="Card Title"
-        subheader="Card Subtitle"
-      />
+      <CardHeader title="Card Title" subheader="Card Subtitle" />
       <CardContent>
         <Typography variant="body2">
           This card includes a header with title and subtitle.
@@ -62,7 +65,9 @@ export const WithActions: Story = {
         </Typography>
       </CardContent>
       <CardActions>
-        <Button variant="outline" size="sm">Cancel</Button>
+        <Button variant="outline" size="sm">
+          Cancel
+        </Button>
         <Button size="sm">Confirm</Button>
       </CardActions>
     </Card>
@@ -101,9 +106,7 @@ export const CompleteCard: Story = {
         title="Alice Brown"
         subheader="October 25, 2025"
         action={
-          <button className="text-grey-600 hover:text-grey-900">
-            •••
-          </button>
+          <button className="text-grey-600 hover:text-grey-900">•••</button>
         }
       />
       <CardMedia
@@ -116,14 +119,20 @@ export const CompleteCard: Story = {
           Beautiful Landscape
         </Typography>
         <Typography variant="body2" color="text">
-          A stunning view captured during the golden hour. The mountains in the 
+          A stunning view captured during the golden hour. The mountains in the
           background create a perfect silhouette against the setting sun.
         </Typography>
       </CardContent>
       <CardActions>
-        <Button variant="ghost" size="sm">Like</Button>
-        <Button variant="ghost" size="sm">Share</Button>
-        <Button variant="ghost" size="sm">Comment</Button>
+        <Button variant="ghost" size="sm">
+          Like
+        </Button>
+        <Button variant="ghost" size="sm">
+          Share
+        </Button>
+        <Button variant="ghost" size="sm">
+          Comment
+        </Button>
       </CardActions>
     </Card>
   ),
@@ -132,10 +141,14 @@ export const CompleteCard: Story = {
 export const Outlined: Story = {
   render: () => (
     <Card variant="outlined" className="max-w-sm">
-      <CardHeader title="Outlined Card" subheader="With border instead of shadow" />
+      <CardHeader
+        title="Outlined Card"
+        subheader="With border instead of shadow"
+      />
       <CardContent>
         <Typography variant="body2">
-          This card uses the outlined variant, which shows a border instead of a shadow.
+          This card uses the outlined variant, which shows a border instead of a
+          shadow.
         </Typography>
       </CardContent>
     </Card>
@@ -147,19 +160,25 @@ export const Elevations: Story = {
     <div className="grid grid-cols-3 gap-4">
       <Card elevation={0} className="max-w-xs">
         <CardContent>
-          <Typography variant="caption" className="block mb-1">Elevation 0</Typography>
+          <Typography variant="caption" className="block mb-1">
+            Elevation 0
+          </Typography>
           <Typography variant="body2">No shadow</Typography>
         </CardContent>
       </Card>
       <Card elevation={2} className="max-w-xs">
         <CardContent>
-          <Typography variant="caption" className="block mb-1">Elevation 2</Typography>
+          <Typography variant="caption" className="block mb-1">
+            Elevation 2
+          </Typography>
           <Typography variant="body2">Light shadow</Typography>
         </CardContent>
       </Card>
       <Card elevation={8} className="max-w-xs">
         <CardContent>
-          <Typography variant="caption" className="block mb-1">Elevation 8</Typography>
+          <Typography variant="caption" className="block mb-1">
+            Elevation 8
+          </Typography>
           <Typography variant="body2">Strong shadow</Typography>
         </CardContent>
       </Card>
@@ -238,7 +257,9 @@ export const UserProfileCard: Story = {
         </Typography>
       </CardContent>
       <CardActions className="justify-center pb-6">
-        <Button variant="outline" size="sm">Message</Button>
+        <Button variant="outline" size="sm">
+          Message
+        </Button>
         <Button size="sm">Follow</Button>
       </CardActions>
     </Card>
@@ -252,7 +273,10 @@ export const Playground: Story = {
     className: 'max-w-sm',
     children: (
       <>
-        <CardHeader title="Playground Card" subheader="Customize using controls" />
+        <CardHeader
+          title="Playground Card"
+          subheader="Customize using controls"
+        />
         <CardContent>
           <Typography variant="body2">
             Use the controls below to customize this card

@@ -38,9 +38,9 @@ export interface BreadcrumbProps {
 
 /**
  * Breadcrumb component for navigation hierarchy
- * 
+ *
  * Pure Tailwind CSS implementation with collapse functionality.
- * 
+ *
  * @example
  * ```tsx
  * <Breadcrumb
@@ -155,22 +155,38 @@ export const Breadcrumb = React.forwardRef<HTMLElement, BreadcrumbProps>(
     );
 
     return (
-      <nav ref={ref} aria-label="Breadcrumb" className={cn('w-full', className)}>
-        <ol className={cn('flex items-center flex-wrap', currentSize.gap, currentSize.text)}>
+      <nav
+        ref={ref}
+        aria-label="Breadcrumb"
+        className={cn('w-full', className)}
+      >
+        <ol
+          className={cn(
+            'flex items-center flex-wrap',
+            currentSize.gap,
+            currentSize.text
+          )}
+        >
           {displayItems.map((item, index) => {
             const isLast = index === displayItems.length - 1;
-            const isLink = (item.href || item.onClick) && !item.disabled && !isLast;
+            const isLink =
+              (item.href || item.onClick) && !item.disabled && !isLast;
             const isFirst = index === 0;
 
             return (
-              <li key={`${item.label}-${index}`} className="flex items-center gap-2">
+              <li
+                key={`${item.label}-${index}`}
+                className="flex items-center gap-2"
+              >
                 {/* Item content */}
                 <div className="flex items-center gap-1.5">
                   {/* Icon */}
                   {isFirst && showHomeIcon ? (
                     homeIcon
                   ) : item.icon ? (
-                    <span className={cn(currentSize.icon, 'flex-shrink-0')}>{item.icon}</span>
+                    <span className={cn(currentSize.icon, 'flex-shrink-0')}>
+                      {item.icon}
+                    </span>
                   ) : null}
 
                   {/* Link or text */}

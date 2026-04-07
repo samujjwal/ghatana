@@ -1,16 +1,20 @@
 /**
  * @file C4 Model Synchronization
- * 
+ *
  * Provides integration with Structurizr C4 Model DSL for architecture visualization.
  * Supports context, container, component, and code views with environment overlays
  * and hierarchical navigation.
- * 
+ *
  * @module libs/canvas/src/devsecops/c4Sync
  * @see https://structurizr.com/dsl
  * @see https://c4model.com/
  */
 
-import type { CanvasDocument, CanvasNode, CanvasEdge } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasNode,
+  CanvasEdge,
+} from '../types/canvas-document';
 
 /**
  * C4 model view types following the C4 architecture model
@@ -20,12 +24,12 @@ export type C4ViewType = 'system-context' | 'container' | 'component' | 'code';
 /**
  * C4 element types
  */
-export type C4ElementType = 
-  | 'person'           // External user/actor
-  | 'software-system'  // Software system
-  | 'container'        // Application/service
-  | 'component'        // Code component
-  | 'deployment-node'  // Infrastructure node
+export type C4ElementType =
+  | 'person' // External user/actor
+  | 'software-system' // Software system
+  | 'container' // Application/service
+  | 'component' // Code component
+  | 'deployment-node' // Infrastructure node
   | 'infrastructure-node'; // Infrastructure element
 
 /**
@@ -142,10 +146,10 @@ export interface C4EnvironmentOverlay {
 
 /**
  * Create default C4 sync configuration
- * 
+ *
  * @param overrides - Optional configuration overrides
  * @returns C4 sync configuration
- * 
+ *
  * @example
  * ```typescript
  * const config = createC4SyncConfig({
@@ -169,18 +173,16 @@ export function createC4SyncConfig(
 
 /**
  * Create initial C4 sync state
- * 
+ *
  * @param config - C4 sync configuration
  * @returns C4 sync state
- * 
+ *
  * @example
  * ```typescript
  * const state = createC4SyncState(config);
  * ```
  */
-export function createC4SyncState(
-  config: C4SyncConfig
-): C4SyncState {
+export function createC4SyncState(config: C4SyncConfig): C4SyncState {
   return {
     config,
     workspace: null,
@@ -193,10 +195,10 @@ export function createC4SyncState(
 
 /**
  * Parse C4 DSL to workspace
- * 
+ *
  * @param dsl - C4 DSL string
  * @returns Parsed C4 workspace
- * 
+ *
  * @example
  * ```typescript
  * const dsl = `
@@ -217,8 +219,11 @@ export function createC4SyncState(
  * ```
  */
 export function parseC4DSL(dsl: string): C4Workspace {
-  const lines = dsl.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('//'));
-  
+  const lines = dsl
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('//'));
+
   const workspace: C4Workspace = {
     name: 'Untitled',
     model: {
@@ -253,10 +258,16 @@ export function parseC4DSL(dsl: string): C4Workspace {
     }
     // Parse model elements
     else if (currentSection === 'model' && line.includes('=')) {
-      const personMatch = line.match(/(\w+)\s*=\s*person\s+"([^"]+)"(?:\s+"([^"]+)")?/);
-      const systemMatch = line.match(/(\w+)\s*=\s*softwareSystem\s+"([^"]+)"(?:\s+"([^"]+)")?/);
-      const containerMatch = line.match(/(\w+)\s*=\s*container\s+"([^"]+)"(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/);
-      
+      const personMatch = line.match(
+        /(\w+)\s*=\s*person\s+"([^"]+)"(?:\s+"([^"]+)")?/
+      );
+      const systemMatch = line.match(
+        /(\w+)\s*=\s*softwareSystem\s+"([^"]+)"(?:\s+"([^"]+)")?/
+      );
+      const containerMatch = line.match(
+        /(\w+)\s*=\s*container\s+"([^"]+)"(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/
+      );
+
       if (personMatch) {
         workspace.model.elements.push({
           id: personMatch[1],
@@ -283,7 +294,9 @@ export function parseC4DSL(dsl: string): C4Workspace {
     }
     // Parse relationships
     else if (currentSection === 'model' && line.includes('->')) {
-      const relMatch = line.match(/(\w+)\s*->\s*(\w+)(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/);
+      const relMatch = line.match(
+        /(\w+)\s*->\s*(\w+)(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/
+      );
       if (relMatch) {
         workspace.model.relationships.push({
           id: `rel-${workspace.model.relationships.length}`,
@@ -349,11 +362,11 @@ export function parseC4DSL(dsl: string): C4Workspace {
 
 /**
  * Convert C4 workspace to canvas document
- * 
+ *
  * @param workspace - C4 workspace
  * @param viewKey - Specific view to render
  * @returns Canvas document
- * 
+ *
  * @example
  * ```typescript
  * const canvas = c4WorkspaceToCanvas(workspace, 'system-context-mySystem');
@@ -363,7 +376,7 @@ export function c4WorkspaceToCanvas(
   workspace: C4Workspace,
   viewKey: string
 ): CanvasDocument {
-  const view = workspace.views.find(v => v.key === viewKey);
+  const view = workspace.views.find((v) => v.key === viewKey);
   if (!view) {
     throw new Error(`View not found: ${viewKey}`);
   }
@@ -373,12 +386,14 @@ export function c4WorkspaceToCanvas(
 
   // Determine which elements to include
   const includeAll = view.include?.includes('*');
-  const includedIds = new Set(includeAll ? workspace.model.elements.map(e => e.id) : view.include || []);
+  const includedIds = new Set(
+    includeAll ? workspace.model.elements.map((e) => e.id) : view.include || []
+  );
   const excludedIds = new Set(view.exclude || []);
 
   // Filter elements for this view
   const viewElements = workspace.model.elements.filter(
-    e => includedIds.has(e.id) && !excludedIds.has(e.id)
+    (e) => includedIds.has(e.id) && !excludedIds.has(e.id)
   );
 
   // Convert elements to nodes
@@ -388,7 +403,7 @@ export function c4WorkspaceToCanvas(
     const y = 100;
     const width = 150;
     const height = 100;
-    
+
     elements[nodeId] = {
       id: nodeId,
       type: 'node' as const,
@@ -423,10 +438,10 @@ export function c4WorkspaceToCanvas(
   });
 
   // Convert relationships to edges
-  const elementIds = new Set(viewElements.map(e => e.id));
+  const elementIds = new Set(viewElements.map((e) => e.id));
   workspace.model.relationships
-    .filter(r => elementIds.has(r.source) && elementIds.has(r.target))
-    .forEach(rel => {
+    .filter((r) => elementIds.has(r.source) && elementIds.has(r.target))
+    .forEach((rel) => {
       const edgeId = rel.id;
       elements[edgeId] = {
         id: edgeId,
@@ -498,10 +513,10 @@ export function c4WorkspaceToCanvas(
  */
 function elementTypeToNodeType(c4Type: C4ElementType): string {
   const mapping: Record<C4ElementType, string> = {
-    'person': 'actor',
+    person: 'actor',
     'software-system': 'system',
-    'container': 'service',
-    'component': 'component',
+    container: 'service',
+    component: 'component',
     'deployment-node': 'server',
     'infrastructure-node': 'infrastructure',
   };
@@ -519,10 +534,10 @@ function getC4ElementStyle(c4Type: C4ElementType): Record<string, unknown> {
   };
 
   const typeStyles: Record<C4ElementType, Record<string, unknown>> = {
-    'person': { backgroundColor: '#08427B', color: '#fff' },
+    person: { backgroundColor: '#08427B', color: '#fff' },
     'software-system': { backgroundColor: '#1168BD', color: '#fff' },
-    'container': { backgroundColor: '#438DD5', color: '#fff' },
-    'component': { backgroundColor: '#85BBF0', color: '#000' },
+    container: { backgroundColor: '#438DD5', color: '#fff' },
+    component: { backgroundColor: '#85BBF0', color: '#000' },
     'deployment-node': { backgroundColor: '#C4C4C4', color: '#000' },
     'infrastructure-node': { backgroundColor: '#999', color: '#fff' },
   };
@@ -532,23 +547,20 @@ function getC4ElementStyle(c4Type: C4ElementType): Record<string, unknown> {
 
 /**
  * Import C4 DSL and sync to canvas state
- * 
+ *
  * @param state - Current C4 sync state
  * @param dsl - C4 DSL string
  * @returns Updated state with workspace
- * 
+ *
  * @example
  * ```typescript
  * const updated = importC4DSL(state, dslContent);
  * console.log(`Imported ${updated.workspace?.model.elements.length} elements`);
  * ```
  */
-export function importC4DSL(
-  state: C4SyncState,
-  dsl: string
-): C4SyncState {
+export function importC4DSL(state: C4SyncState, dsl: string): C4SyncState {
   const workspace = parseC4DSL(dsl);
-  
+
   return {
     ...state,
     workspace,
@@ -559,11 +571,11 @@ export function importC4DSL(
 
 /**
  * Set active view
- * 
+ *
  * @param state - Current C4 sync state
  * @param viewKey - View key to activate
  * @returns Updated state
- * 
+ *
  * @example
  * ```typescript
  * const updated = setActiveView(state, 'system-context-mySystem');
@@ -577,7 +589,7 @@ export function setActiveView(
     throw new Error('No workspace loaded');
   }
 
-  const view = state.workspace.views.find(v => v.key === viewKey);
+  const view = state.workspace.views.find((v) => v.key === viewKey);
   if (!view) {
     throw new Error(`View not found: ${viewKey}`);
   }
@@ -590,10 +602,10 @@ export function setActiveView(
 
 /**
  * Build view hierarchy for navigation
- * 
+ *
  * @param workspace - C4 workspace
  * @returns View hierarchy
- * 
+ *
  * @example
  * ```typescript
  * const hierarchy = buildViewHierarchy(workspace);
@@ -607,7 +619,7 @@ export function buildViewHierarchy(workspace: C4Workspace): C4ViewHierarchy {
     components: new Map(),
   };
 
-  workspace.views.forEach(view => {
+  workspace.views.forEach((view) => {
     if (view.type === 'system-context') {
       hierarchy.systemContext.push(view);
     } else if (view.type === 'container' && view.softwareSystemId) {
@@ -626,26 +638,25 @@ export function buildViewHierarchy(workspace: C4Workspace): C4ViewHierarchy {
 
 /**
  * Navigate to child view (drill down)
- * 
+ *
  * @param state - Current C4 sync state
  * @param elementId - Element to drill into
  * @returns Updated state with new view and breadcrumbs
- * 
+ *
  * @example
  * ```typescript
  * // From system context, drill into container view
  * const updated = drillDown(state, 'mySystem');
  * ```
  */
-export function drillDown(
-  state: C4SyncState,
-  elementId: string
-): C4SyncState {
+export function drillDown(state: C4SyncState, elementId: string): C4SyncState {
   if (!state.workspace || !state.activeView) {
     throw new Error('No workspace or active view');
   }
 
-  const currentView = state.workspace.views.find(v => v.key === state.activeView);
+  const currentView = state.workspace.views.find(
+    (v) => v.key === state.activeView
+  );
   if (!currentView) {
     throw new Error('Current view not found');
   }
@@ -692,11 +703,11 @@ export function drillDown(
 
 /**
  * Navigate up using breadcrumbs
- * 
+ *
  * @param state - Current C4 sync state
  * @param breadcrumbIndex - Index of breadcrumb to navigate to
  * @returns Updated state
- * 
+ *
  * @example
  * ```typescript
  * // Go back to previous view
@@ -722,11 +733,11 @@ export function navigateUp(
 
 /**
  * Set active environment
- * 
+ *
  * @param state - Current C4 sync state
  * @param environment - Environment to activate
  * @returns Updated state
- * 
+ *
  * @example
  * ```typescript
  * const updated = setActiveEnvironment(state, 'production');
@@ -744,10 +755,10 @@ export function setActiveEnvironment(
 
 /**
  * Get environment overlay for current state
- * 
+ *
  * @param state - Current C4 sync state
  * @returns Environment overlay data
- * 
+ *
  * @example
  * ```typescript
  * const overlay = getEnvironmentOverlay(state);
@@ -771,8 +782,11 @@ export function getEnvironmentOverlay(
   const styleOverrides = new Map<string, Record<string, string>>();
 
   // Filter elements based on environment
-  state.workspace.model.elements.forEach(element => {
-    if (!element.environment || element.environment === state.activeEnvironment) {
+  state.workspace.model.elements.forEach((element) => {
+    if (
+      !element.environment ||
+      element.environment === state.activeEnvironment
+    ) {
       elementsToShow.push(element.id);
     } else {
       elementsToHide.push(element.id);
@@ -801,10 +815,10 @@ export function getEnvironmentOverlay(
  */
 function getEnvironmentColor(env: C4Environment): string {
   const colors: Record<C4Environment, string> = {
-    'dev': '#4CAF50',
-    'staging': '#FF9800',
-    'production': '#F44336',
-    'test': '#2196F3',
+    dev: '#4CAF50',
+    staging: '#FF9800',
+    production: '#F44336',
+    test: '#2196F3',
   };
   return colors[env];
 }

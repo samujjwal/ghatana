@@ -1,18 +1,20 @@
 /**
  * Notification Panel Component
- * 
+ *
  * Dropdown panel displaying notification list with filtering and actions.
- * 
+ *
  * @module notifications/components
  */
 
 import { CheckCheck, Trash2, Filter } from 'lucide-react';
 import React, { useState, useCallback } from 'react';
 
-import type { Notification, NotificationType } from '../hooks/useNotificationBackend';
+import type {
+  Notification,
+  NotificationType,
+} from '../hooks/useNotificationBackend';
 
 import { NotificationItem } from './NotificationItem';
-
 
 export interface NotificationPanelProps {
   notifications: Notification[];
@@ -28,9 +30,9 @@ type FilterType = 'all' | NotificationType;
 
 /**
  * Notification Panel Component
- * 
+ *
  * Complete notification interface with filtering and bulk actions.
- * 
+ *
  * @example
  * ```tsx
  * <NotificationPanel
@@ -98,15 +100,28 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         {/* Filter options */}
         {showFilters && (
           <div className="flex flex-wrap gap-1 mb-3">
-            {(['all', 'info', 'success', 'warning', 'error', 'mention', 'assignment', 'approval', 'system'] as FilterType[]).map((f) => (
+            {(
+              [
+                'all',
+                'info',
+                'success',
+                'warning',
+                'error',
+                'mention',
+                'assignment',
+                'approval',
+                'system',
+              ] as FilterType[]
+            ).map((f) => (
               <button
                 key={f}
                 onClick={() => handleFilterChange(f)}
                 className={`
                   px-2 py-1 rounded text-xs font-medium transition-colors
-                  ${filter === f 
-                    ? 'bg-violet-500 text-white' 
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
+                  ${
+                    filter === f
+                      ? 'bg-violet-500 text-white'
+                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
                   }
                 `}
               >
@@ -143,7 +158,9 @@ export const NotificationPanel: React.FC<NotificationPanelProps> = ({
         {filteredNotifications.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-zinc-500">
             <p className="text-sm">
-              {filter === 'all' ? 'No notifications' : `No ${filter} notifications`}
+              {filter === 'all'
+                ? 'No notifications'
+                : `No ${filter} notifications`}
             </p>
           </div>
         ) : (

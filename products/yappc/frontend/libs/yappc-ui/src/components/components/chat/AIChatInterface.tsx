@@ -115,7 +115,7 @@ const MessageContent = React.memo(({ content }: { content: string }) => (
       code({ node, inline, className, children, ...props }) {
         const match = /language-(\w+)/.exec(className || '');
         const language = match ? match[1] : '';
-        
+
         if (!inline && language) {
           return (
             <CodeBlock
@@ -124,7 +124,7 @@ const MessageContent = React.memo(({ content }: { content: string }) => (
             />
           );
         }
-        
+
         return (
           <code
             className={cn(
@@ -199,259 +199,267 @@ const MessageContent = React.memo(({ content }: { content: string }) => (
 
 MessageContent.displayName = 'MessageContent';
 
-const CodeBlock = React.memo(({
-  code,
-  language,
-  filename,
-}: {
-  code: string;
-  language: string;
-  filename?: string;
-}) => {
-  const [copied, setCopied] = useState(false);
+const CodeBlock = React.memo(
+  ({
+    code,
+    language,
+    filename,
+  }: {
+    code: string;
+    language: string;
+    filename?: string;
+  }) => {
+    const [copied, setCopied] = useState(false);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [code]);
+    const handleCopy = useCallback(() => {
+      navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }, [code]);
 
-  return (
-    <div className="relative group my-3 rounded-lg overflow-hidden border border-zinc-700">
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-800 border-b border-zinc-700">
-        <div className="flex items-center gap-2">
-          <Code2 className="w-4 h-4 text-zinc-400" />
-          <span className="text-sm text-zinc-400">{filename || language}</span>
+    return (
+      <div className="relative group my-3 rounded-lg overflow-hidden border border-zinc-700">
+        <div className="flex items-center justify-between px-4 py-2 bg-zinc-800 border-b border-zinc-700">
+          <div className="flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-zinc-400" />
+            <span className="text-sm text-zinc-400">
+              {filename || language}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-green-400" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="opacity-0 group-hover:opacity-100 transition-opacity"
+        <SyntaxHighlighter
+          language={language}
+          style={oneDark}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            background: '#18181b',
+            fontSize: '0.875rem',
+          }}
+          showLineNumbers
         >
-          {copied ? (
-            <Check className="w-4 h-4 text-green-400" />
-          ) : (
-            <Copy className="w-4 h-4" />
-          )}
-        </Button>
+          {code}
+        </SyntaxHighlighter>
       </div>
-      <SyntaxHighlighter
-        language={language}
-        style={oneDark}
-        customStyle={{
-          margin: 0,
-          padding: '1rem',
-          background: '#18181b',
-          fontSize: '0.875rem',
-        }}
-        showLineNumbers
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
-  );
-});
+    );
+  }
+);
 
 CodeBlock.displayName = 'CodeBlock';
 
-const MessageBubble = React.memo(({
-  message,
-  onRegenerateResponse,
-  onReaction,
-  isStreaming,
-}: {
-  message: ConversationTurn;
-  onRegenerateResponse?: (messageId: string) => void;
-  onReaction?: (messageId: string, type: 'thumbs_up' | 'thumbs_down') => void;
-  isStreaming?: boolean;
-}) => {
-  const isUser = message.role === 'user';
-  const isSystem = message.role === 'system';
+const MessageBubble = React.memo(
+  ({
+    message,
+    onRegenerateResponse,
+    onReaction,
+    isStreaming,
+  }: {
+    message: ConversationTurn;
+    onRegenerateResponse?: (messageId: string) => void;
+    onReaction?: (messageId: string, type: 'thumbs_up' | 'thumbs_down') => void;
+    isStreaming?: boolean;
+  }) => {
+    const isUser = message.role === 'user';
+    const isSystem = message.role === 'system';
 
-  return (
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className={cn('flex gap-3 px-4 py-3', isUser && 'flex-row-reverse')}
+      >
+        {/* Avatar */}
+        <div
+          className={cn(
+            'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
+            isUser
+              ? 'bg-blue-600'
+              : 'bg-gradient-to-br from-violet-600 to-purple-600'
+          )}
+        >
+          {isUser ? (
+            <User className="w-4 h-4 text-white" />
+          ) : (
+            <Bot className="w-4 h-4 text-white" />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className={cn('flex-1 max-w-[80%]', isUser && 'text-right')}>
+          <div
+            className={cn(
+              'inline-block rounded-2xl px-4 py-3 text-sm',
+              isUser
+                ? 'bg-blue-600 text-white rounded-br-md'
+                : isSystem
+                  ? 'bg-amber-500/10 text-amber-200 border border-amber-500/20'
+                  : 'bg-zinc-800 text-zinc-100 rounded-bl-md'
+            )}
+          >
+            <MessageContent content={message.content} />
+
+            {/* Streaming indicator */}
+            {isStreaming && !isUser && (
+              <span className="inline-block w-2 h-4 ml-1 bg-zinc-400 animate-pulse" />
+            )}
+          </div>
+
+          {/* Message metadata and actions */}
+          {!isUser && !isSystem && (
+            <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
+              <span>
+                {new Date(message.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+              {message.processingTime && (
+                <span>• {(message.processingTime / 1000).toFixed(1)}s</span>
+              )}
+              {message.tokens && <span>• {message.tokens} tokens</span>}
+
+              <div className="flex-1" />
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onReaction?.(message.id, 'thumbs_up')}
+                    >
+                      <ThumbsUp className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Helpful</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onReaction?.(message.id, 'thumbs_down')}
+                    >
+                      <ThumbsDown className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Not helpful</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => onRegenerateResponse?.(message.id)}
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Regenerate</TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
+
+          {/* Suggested actions */}
+          {message.metadata?.suggestedActions &&
+            message.metadata.suggestedActions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {message.metadata.suggestedActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    {action}
+                  </Button>
+                ))}
+              </div>
+            )}
+        </div>
+      </motion.div>
+    );
+  }
+);
+
+MessageBubble.displayName = 'MessageBubble';
+
+const ThinkingIndicator = React.memo(
+  ({
+    stage,
+    progress,
+    currentTask,
+  }: {
+    stage?: string;
+    progress?: number;
+    currentTask?: string;
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className={cn(
-        'flex gap-3 px-4 py-3',
-        isUser && 'flex-row-reverse'
-      )}
+      className="flex gap-3 px-4 py-3"
     >
-      {/* Avatar */}
-      <div
-        className={cn(
-          'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
-          isUser ? 'bg-blue-600' : 'bg-gradient-to-br from-violet-600 to-purple-600'
-        )}
-      >
-        {isUser ? (
-          <User className="w-4 h-4 text-white" />
-        ) : (
-          <Bot className="w-4 h-4 text-white" />
-        )}
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
+        <Loader2 className="w-4 h-4 text-white animate-spin" />
       </div>
-
-      {/* Content */}
-      <div className={cn('flex-1 max-w-[80%]', isUser && 'text-right')}>
-        <div
-          className={cn(
-            'inline-block rounded-2xl px-4 py-3 text-sm',
-            isUser
-              ? 'bg-blue-600 text-white rounded-br-md'
-              : isSystem
-              ? 'bg-amber-500/10 text-amber-200 border border-amber-500/20'
-              : 'bg-zinc-800 text-zinc-100 rounded-bl-md'
-          )}
-        >
-          <MessageContent content={message.content} />
-          
-          {/* Streaming indicator */}
-          {isStreaming && !isUser && (
-            <span className="inline-block w-2 h-4 ml-1 bg-zinc-400 animate-pulse" />
+      <div className="flex-1">
+        <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md bg-zinc-800 px-4 py-3">
+          <div className="flex gap-1">
+            <motion.span
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+              className="w-2 h-2 rounded-full bg-violet-400"
+            />
+            <motion.span
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+              className="w-2 h-2 rounded-full bg-violet-400"
+            />
+            <motion.span
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
+              className="w-2 h-2 rounded-full bg-violet-400"
+            />
+          </div>
+          {currentTask && (
+            <span className="text-sm text-zinc-400">{currentTask}</span>
           )}
         </div>
-
-        {/* Message metadata and actions */}
-        {!isUser && !isSystem && (
-          <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
-            <span>
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-            {message.processingTime && (
-              <span>• {(message.processingTime / 1000).toFixed(1)}s</span>
-            )}
-            {message.tokens && <span>• {message.tokens} tokens</span>}
-            
-            <div className="flex-1" />
-            
-            {/* Action buttons */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => onReaction?.(message.id, 'thumbs_up')}
-                  >
-                    <ThumbsUp className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Helpful</TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => onReaction?.(message.id, 'thumbs_down')}
-                  >
-                    <ThumbsDown className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Not helpful</TooltipContent>
-              </Tooltip>
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => onRegenerateResponse?.(message.id)}
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Regenerate</TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        )}
-
-        {/* Suggested actions */}
-        {message.metadata?.suggestedActions && message.metadata.suggestedActions.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {message.metadata.suggestedActions.map((action, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                {action}
-              </Button>
-            ))}
+        {progress !== undefined && (
+          <div className="mt-2 w-48 h-1 rounded-full bg-zinc-700 overflow-hidden">
+            <motion.div
+              className="h-full bg-violet-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+            />
           </div>
         )}
       </div>
     </motion.div>
-  );
-});
-
-MessageBubble.displayName = 'MessageBubble';
-
-const ThinkingIndicator = React.memo(({
-  stage,
-  progress,
-  currentTask,
-}: {
-  stage?: string;
-  progress?: number;
-  currentTask?: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    className="flex gap-3 px-4 py-3"
-  >
-    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-      <Loader2 className="w-4 h-4 text-white animate-spin" />
-    </div>
-    <div className="flex-1">
-      <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md bg-zinc-800 px-4 py-3">
-        <div className="flex gap-1">
-          <motion.span
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
-            className="w-2 h-2 rounded-full bg-violet-400"
-          />
-          <motion.span
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-            className="w-2 h-2 rounded-full bg-violet-400"
-          />
-          <motion.span
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
-            className="w-2 h-2 rounded-full bg-violet-400"
-          />
-        </div>
-        {currentTask && (
-          <span className="text-sm text-zinc-400">{currentTask}</span>
-        )}
-      </div>
-      {progress !== undefined && (
-        <div className="mt-2 w-48 h-1 rounded-full bg-zinc-700 overflow-hidden">
-          <motion.div
-            className="h-full bg-violet-500"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
-    </div>
-  </motion.div>
-));
+  )
+);
 
 ThinkingIndicator.displayName = 'ThinkingIndicator';
 
@@ -532,10 +540,13 @@ export const AIChatInterface = forwardRef<HTMLDivElement, AIChatInterfaceProps>(
       [handleSubmit]
     );
 
-    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || []);
-      setAttachments((prev) => [...prev, ...files]);
-    }, []);
+    const handleFileSelect = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        setAttachments((prev) => [...prev, ...files]);
+      },
+      []
+    );
 
     const handleRemoveAttachment = useCallback((index: number) => {
       setAttachments((prev) => prev.filter((_, i) => i !== index));

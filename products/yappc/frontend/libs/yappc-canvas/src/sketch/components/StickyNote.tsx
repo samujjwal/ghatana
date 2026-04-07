@@ -144,14 +144,23 @@ export const StickyNote: React.FC<StickyNoteProps> = ({
       elevation={isSelected ? 8 : 4}
       data-testid="sticky-note"
       data-sticky-id={data.id}
-      className="absolute rounded overflow-hidden hover:shadow-xl" style={{ left: data.x, top: data.y, width: data.width, height: data.height, backgroundColor: data.color, cursor: isEditing ? 'text' : draggable ? 'move' : 'default', border: isSelected ? '2px solid #1976d2' : '1px solid rgba(0,0,0,0.1)', transition: 'box-shadow 0.2s ease' }} onClick={onClick}
+      className="absolute rounded overflow-hidden hover:shadow-xl"
+      style={{
+        left: data.x,
+        top: data.y,
+        width: data.width,
+        height: data.height,
+        backgroundColor: data.color,
+        cursor: isEditing ? 'text' : draggable ? 'move' : 'default',
+        border: isSelected ? '2px solid #1976d2' : '1px solid rgba(0,0,0,0.1)',
+        transition: 'box-shadow 0.2s ease',
+      }}
+      onClick={onClick}
       onDoubleClick={handleDoubleClick}
     >
       {/* Toolbar - shown when selected */}
       {isSelected && (
-        <Box
-          className="absolute flex gap-1 top-[-36px] right-[0px] z-10"
-        >
+        <Box className="absolute flex gap-1 top-[-36px] right-[0px] z-10">
           <IconButton
             size="small"
             onClick={(e) => {
@@ -180,9 +189,7 @@ export const StickyNote: React.FC<StickyNoteProps> = ({
 
       {/* Color palette - shown when selected */}
       {isSelected && (
-        <Box
-          className="absolute flex gap-1 top-[-36px] left-[0px] z-10"
-        >
+        <Box className="absolute flex gap-1 top-[-36px] left-[0px] z-10">
           {STICKY_COLORS.map((color) => (
             <Box
               key={color}
@@ -190,7 +197,12 @@ export const StickyNote: React.FC<StickyNoteProps> = ({
                 e.stopPropagation();
                 handleColorChange(color);
               }}
-              className="w-[20px] h-[20px] border border-solid border-[rgba(0,0,0,0.2)] rounded-full cursor-pointer transition-all duration-300 hover:scale-[1.2]" style={{ backgroundColor: color, boxShadow: data.color === color ? '0 0 0 2px #1976d2' : 'none', fontFamily: "'Segoe UI', 'Comic Sans MS', cursive" }}
+              className="w-[20px] h-[20px] border border-solid border-[rgba(0,0,0,0.2)] rounded-full cursor-pointer transition-all duration-300 hover:scale-[1.2]"
+              style={{
+                backgroundColor: color,
+                boxShadow: data.color === color ? '0 0 0 2px #1976d2' : 'none',
+                fontFamily: "'Segoe UI', 'Comic Sans MS', cursive",
+              }}
               role="button"
               aria-label={`Change color to ${color}`}
             />
@@ -223,7 +235,9 @@ export const StickyNote: React.FC<StickyNoteProps> = ({
           />
         ) : (
           <Box
-            className="whitespace-pre-wrap break-words h-full overflow-hidden text-[rgba(0,0,0,0.87)]" style={{ fontSize: data.fontSize || 14 }} >
+            className="whitespace-pre-wrap break-words h-full overflow-hidden text-[rgba(0,0,0,0.87)]"
+            style={{ fontSize: data.fontSize || 14 }}
+          >
             {data.content || 'Double-click to edit...'}
           </Box>
         )}

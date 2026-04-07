@@ -50,10 +50,10 @@ export interface AutocompleteProps {
 
 /**
  * Autocomplete component with search and filtering
- * 
+ *
  * Pure Tailwind CSS implementation with keyboard navigation.
  * Supports single/multiple selection, async loading, custom filtering.
- * 
+ *
  * @example
  * ```tsx
  * <Autocomplete
@@ -104,7 +104,9 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
     const defaultFilter = React.useCallback(
       (option: AutocompleteOption, query: string) => {
         if (!query) return true;
-        return option.label?.toLowerCase().includes(query.toLowerCase()) ?? false;
+        return (
+          option.label?.toLowerCase().includes(query.toLowerCase()) ?? false
+        );
       },
       []
     );
@@ -118,7 +120,11 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 
     // Get selected options
     const selectedOptions = React.useMemo(() => {
-      const values = Array.isArray(value) ? value : value !== undefined ? [value] : [];
+      const values = Array.isArray(value)
+        ? value
+        : value !== undefined
+          ? [value]
+          : [];
       return options.filter((opt) => values.includes(opt.value));
     }, [options, value]);
 
@@ -169,7 +175,11 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 
           case 'Enter':
             e.preventDefault();
-            if (open && highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
+            if (
+              open &&
+              highlightedIndex >= 0 &&
+              filteredOptions[highlightedIndex]
+            ) {
               handleSelect(filteredOptions[highlightedIndex]);
             }
             break;
@@ -195,7 +205,10 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
     // Close on click outside
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target as Node)
+        ) {
           setOpen(false);
           setHighlightedIndex(-1);
         }
@@ -203,7 +216,8 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 
       if (open) {
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+          document.removeEventListener('mousedown', handleClickOutside);
       }
 
       return undefined;
@@ -219,9 +233,14 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
     // Scroll highlighted item into view
     React.useEffect(() => {
       if (open && highlightedIndex >= 0 && listRef.current) {
-        const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
+        const highlightedElement = listRef.current.children[
+          highlightedIndex
+        ] as HTMLElement;
         if (highlightedElement) {
-          highlightedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          highlightedElement.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth',
+          });
         }
       }
     }, [highlightedIndex, open]);
@@ -280,7 +299,8 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
                 : open
                   ? 'border-primary-500 ring-2 ring-primary-500/20'
                   : 'border-grey-300 dark:border-grey-700 hover:border-grey-400',
-              disabled && 'opacity-50 cursor-not-allowed bg-grey-100 dark:bg-grey-800',
+              disabled &&
+                'opacity-50 cursor-not-allowed bg-grey-100 dark:bg-grey-800',
               currentSize.input
             )}
           >
@@ -355,7 +375,9 @@ export const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
               aria-controls={open ? 'autocomplete-listbox' : undefined}
               aria-expanded={open}
               aria-activedescendant={
-                highlightedIndex >= 0 ? `autocomplete-option-${highlightedIndex}` : undefined
+                highlightedIndex >= 0
+                  ? `autocomplete-option-${highlightedIndex}`
+                  : undefined
               }
               role="combobox"
             />

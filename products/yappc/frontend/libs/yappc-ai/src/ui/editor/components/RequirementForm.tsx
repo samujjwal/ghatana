@@ -233,7 +233,10 @@ export function RequirementForm({
       {/* Actions */}
       {!readOnly && (
         <div className="requirement-form__actions">
-          <button type="submit" className="requirement-form__button requirement-form__button--primary">
+          <button
+            type="submit"
+            className="requirement-form__button requirement-form__button--primary"
+          >
             Save
           </button>
           <button

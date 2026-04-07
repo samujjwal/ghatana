@@ -1,12 +1,12 @@
 /**
  * Tests for Virtual Viewport and LOD System
- * 
+ *
  * Comprehensive test suite covering:
  * - Virtual viewport visibility culling
  * - Spatial indexing and quad-tree performance
  * - LOD level switching and rendering instructions
  * - Performance benchmarks for large scenes
- * 
+ *
  * @module rendering/__tests__/virtualization.test
  */
 
@@ -85,9 +85,9 @@ describe('Virtual Viewport System', () => {
       const visible = viewport.getVisibleElements(elements);
 
       expect(visible).toHaveLength(2);
-      expect(visible.map(el => el.id)).toContain('visible1');
-      expect(visible.map(el => el.id)).toContain('visible2');
-      expect(visible.map(el => el.id)).not.toContain('offscreen');
+      expect(visible.map((el) => el.id)).toContain('visible1');
+      expect(visible.map((el) => el.id)).toContain('visible2');
+      expect(visible.map((el) => el.id)).not.toContain('offscreen');
     });
 
     it('should handle margin for prefetching', () => {
@@ -206,13 +206,13 @@ describe('Virtual Viewport System', () => {
       const viewport = createVirtualViewport({ updateThrottle: 50 });
 
       viewport.updateViewport(createTestViewport(0, 0, 1000, 1000));
-      
+
       // Create elements to update stats
       const elements = [createTestElement('el1', 500, 500)];
       viewport.getVisibleElements(elements);
-      
+
       // Wait for throttle
-      await new Promise(resolve => setTimeout(resolve, 60));
+      await new Promise((resolve) => setTimeout(resolve, 60));
 
       viewport.updateViewport(createTestViewport(200, 200, 1000, 1000));
       viewport.getVisibleElements(elements);
@@ -557,7 +557,7 @@ describe('Integration Tests', () => {
 
     // First: cull by viewport
     const visible = viewport.getVisibleElements(elements);
-    
+
     // Then: apply LOD
     const instructions = lod.getLODInstructions(visible, 0.5);
 
@@ -580,10 +580,10 @@ describe('Integration Tests', () => {
 
     // Simulate render pipeline
     const startTime = performance.now();
-    
+
     const visible = viewport.getVisibleElements(elements);
     const instructions = lod.getLODInstructions(visible, 0.7);
-    
+
     const renderTime = performance.now() - startTime;
     monitor.recordFrame(renderTime, instructions);
 

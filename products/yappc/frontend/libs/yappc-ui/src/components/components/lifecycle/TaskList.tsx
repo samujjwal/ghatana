@@ -11,7 +11,13 @@ export interface TaskItem {
   id: string;
   title: string;
   description: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   stage: LifecycleStageId;
   assignedAgentId?: string;
@@ -39,10 +45,10 @@ type SortOrder = 'asc' | 'desc';
 
 /**
  * TaskList Component
- * 
+ *
  * Comprehensive task list with filtering, sorting, and action capabilities.
  * Shows task status, priority, assigned agent, and lifecycle stage.
- * 
+ *
  * @example
  * ```tsx
  * <TaskList
@@ -61,9 +67,11 @@ export function TaskList({
   // Filter states
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('ALL');
-  const [stageFilter, setStageFilter] = useState<LifecycleStageId | 'ALL'>('ALL');
+  const [stageFilter, setStageFilter] = useState<LifecycleStageId | 'ALL'>(
+    'ALL'
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Sort states
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -74,59 +82,89 @@ export function TaskList({
 
     // Apply filters
     if (statusFilter !== 'ALL') {
-      result = result.filter(t => t.status === statusFilter);
+      result = result.filter((t) => t.status === statusFilter);
     }
     if (priorityFilter !== 'ALL') {
-      result = result.filter(t => t.priority === priorityFilter);
+      result = result.filter((t) => t.priority === priorityFilter);
     }
     if (stageFilter !== 'ALL') {
-      result = result.filter(t => t.stage === stageFilter);
+      result = result.filter((t) => t.stage === stageFilter);
     }
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(t => 
-        t.title.toLowerCase().includes(query) ||
-        t.description.toLowerCase().includes(query) ||
-        t.assignedAgentId?.toLowerCase().includes(query)
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(query) ||
+          t.description.toLowerCase().includes(query) ||
+          t.assignedAgentId?.toLowerCase().includes(query)
       );
     }
 
     // Apply sorting
     result = [...result].sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortField) {
         case 'createdAt':
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          comparison =
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           break;
         case 'priority':
           const priorityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
           comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
           break;
         case 'status':
-          const statusOrder = { IN_PROGRESS: 0, ASSIGNED: 1, PENDING: 2, COMPLETED: 3, FAILED: 4, CANCELLED: 5 };
+          const statusOrder = {
+            IN_PROGRESS: 0,
+            ASSIGNED: 1,
+            PENDING: 2,
+            COMPLETED: 3,
+            FAILED: 4,
+            CANCELLED: 5,
+          };
           comparison = statusOrder[a.status] - statusOrder[b.status];
           break;
         case 'stage':
-          const stageOrder = ['intent', 'context', 'plan', 'execute', 'verify', 'observe', 'learn', 'institutionalize'];
-          comparison = stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage);
+          const stageOrder = [
+            'intent',
+            'context',
+            'plan',
+            'execute',
+            'verify',
+            'observe',
+            'learn',
+            'institutionalize',
+          ];
+          comparison =
+            stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage);
           break;
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
     return result;
-  }, [tasks, statusFilter, priorityFilter, stageFilter, searchQuery, sortField, sortOrder]);
+  }, [
+    tasks,
+    statusFilter,
+    priorityFilter,
+    stageFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+  ]);
 
   // Stats
-  const stats = useMemo(() => ({
-    total: tasks.length,
-    pending: tasks.filter(t => t.status === 'PENDING').length,
-    inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
-    completed: tasks.filter(t => t.status === 'COMPLETED').length,
-    failed: tasks.filter(t => t.status === 'FAILED').length,
-  }), [tasks]);
+  const stats = useMemo(
+    () => ({
+      total: tasks.length,
+      pending: tasks.filter((t) => t.status === 'PENDING').length,
+      inProgress: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
+      completed: tasks.filter((t) => t.status === 'COMPLETED').length,
+      failed: tasks.filter((t) => t.status === 'FAILED').length,
+    }),
+    [tasks]
+  );
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -143,9 +181,17 @@ export function TaskList({
       <div className="task-list__stats">
         <StatBadge count={stats.total} label="Total" />
         <StatBadge count={stats.pending} label="Pending" color="#f59e0b" />
-        <StatBadge count={stats.inProgress} label="In Progress" color="#3b82f6" />
+        <StatBadge
+          count={stats.inProgress}
+          label="In Progress"
+          color="#3b82f6"
+        />
         <StatBadge count={stats.completed} label="Completed" color="#22c55e" />
-        <StatBadge count={stats.failed} label="Failed" color={stats.failed > 0 ? '#ef4444' : '#6b7280'} />
+        <StatBadge
+          count={stats.failed}
+          label="Failed"
+          color={stats.failed > 0 ? '#ef4444' : '#6b7280'}
+        />
       </div>
 
       {/* Filters */}
@@ -157,7 +203,7 @@ export function TaskList({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="task-list__search"
         />
-        
+
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
@@ -195,26 +241,42 @@ export function TaskList({
         <table className="task-list__table">
           <thead>
             <tr>
-              <th onClick={() => toggleSort('status')} className="task-list__th--sortable">
-                Status {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+              <th
+                onClick={() => toggleSort('status')}
+                className="task-list__th--sortable"
+              >
+                Status{' '}
+                {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
-              <th onClick={() => toggleSort('priority')} className="task-list__th--sortable">
-                Priority {sortField === 'priority' && (sortOrder === 'asc' ? '↑' : '↓')}
+              <th
+                onClick={() => toggleSort('priority')}
+                className="task-list__th--sortable"
+              >
+                Priority{' '}
+                {sortField === 'priority' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th>Task</th>
-              <th onClick={() => toggleSort('stage')} className="task-list__th--sortable">
-                Stage {sortField === 'stage' && (sortOrder === 'asc' ? '↑' : '↓')}
+              <th
+                onClick={() => toggleSort('stage')}
+                className="task-list__th--sortable"
+              >
+                Stage{' '}
+                {sortField === 'stage' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th>Assigned To</th>
               <th>Capabilities</th>
-              <th onClick={() => toggleSort('createdAt')} className="task-list__th--sortable">
-                Created {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+              <th
+                onClick={() => toggleSort('createdAt')}
+                className="task-list__th--sortable"
+              >
+                Created{' '}
+                {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
               </th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTasks.map(task => (
+            {filteredTasks.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
@@ -236,10 +298,20 @@ export function TaskList({
 }
 
 // Stat Badge Component
-function StatBadge({ count, label, color = '#6b7280' }: { count: number; label: string; color?: string }) {
+function StatBadge({
+  count,
+  label,
+  color = '#6b7280',
+}: {
+  count: number;
+  label: string;
+  color?: string;
+}) {
   return (
     <div className="stat-badge">
-      <span className="stat-badge__count" style={{ color }}>{count}</span>
+      <span className="stat-badge__count" style={{ color }}>
+        {count}
+      </span>
       <span className="stat-badge__label">{label}</span>
     </div>
   );
@@ -271,7 +343,8 @@ function TaskRow({ task, onClick, onAction }: TaskRowProps) {
 
   const status = statusConfig[task.status];
   const priority = priorityConfig[task.priority];
-  const canRetry = task.status === 'FAILED' && task.retryCount < task.maxRetries;
+  const canRetry =
+    task.status === 'FAILED' && task.retryCount < task.maxRetries;
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -283,7 +356,7 @@ function TaskRow({ task, onClick, onAction }: TaskRowProps) {
   return (
     <tr className="task-row" onClick={onClick}>
       <td>
-        <span 
+        <span
           className="task-row__status"
           style={{ color: status.color, background: status.bg }}
         >
@@ -308,14 +381,14 @@ function TaskRow({ task, onClick, onAction }: TaskRowProps) {
         <span className="task-row__stage">{task.stage}</span>
       </td>
       <td className="task-row__agent">
-        {task.assignedAgentId 
-          ? task.assignedAgentId.split('.').pop() 
-          : '—'}
+        {task.assignedAgentId ? task.assignedAgentId.split('.').pop() : '—'}
       </td>
       <td>
         <div className="task-row__capabilities">
-          {task.requiredCapabilities.slice(0, 2).map(cap => (
-            <span key={cap} className="task-row__capability">{cap}</span>
+          {task.requiredCapabilities.slice(0, 2).map((cap) => (
+            <span key={cap} className="task-row__capability">
+              {cap}
+            </span>
           ))}
           {task.requiredCapabilities.length > 2 && (
             <span className="task-row__capability--more">
@@ -327,7 +400,7 @@ function TaskRow({ task, onClick, onAction }: TaskRowProps) {
       <td className="task-row__date">{formatDate(task.createdAt)}</td>
       <td className="task-row__actions" onClick={(e) => e.stopPropagation()}>
         {task.status === 'PENDING' && onAction && (
-          <button 
+          <button
             className="task-row__action-btn task-row__action-btn--start"
             onClick={() => onAction(task.id, 'start')}
           >
@@ -335,21 +408,22 @@ function TaskRow({ task, onClick, onAction }: TaskRowProps) {
           </button>
         )}
         {canRetry && onAction && (
-          <button 
+          <button
             className="task-row__action-btn task-row__action-btn--retry"
             onClick={() => onAction(task.id, 'retry')}
           >
             Retry
           </button>
         )}
-        {(task.status === 'PENDING' || task.status === 'ASSIGNED') && onAction && (
-          <button 
-            className="task-row__action-btn task-row__action-btn--cancel"
-            onClick={() => onAction(task.id, 'cancel')}
-          >
-            Cancel
-          </button>
-        )}
+        {(task.status === 'PENDING' || task.status === 'ASSIGNED') &&
+          onAction && (
+            <button
+              className="task-row__action-btn task-row__action-btn--cancel"
+              onClick={() => onAction(task.id, 'cancel')}
+            >
+              Cancel
+            </button>
+          )}
       </td>
     </tr>
   );

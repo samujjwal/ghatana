@@ -1,6 +1,6 @@
 /**
  * Paper Component (Tailwind CSS)
- * 
+ *
  * A surface component that mimics MUI Paper using Box with predefined elevation shadows.
  * Provides elevation-based shadow styling for creating layered surfaces.
  */
@@ -19,13 +19,13 @@ export interface PaperProps extends Omit<BoxProps, 'shadow'> {
    * @default 1
    */
   elevation?: 0 | 1 | 2 | 3 | 4 | 6 | 8 | 12 | 16 | 24;
-  
+
   /**
    * Add border
    * @default false
    */
   variant?: 'elevation' | 'outlined';
-  
+
   /**
    * Make the paper square (no border radius)
    * @default false
@@ -67,9 +67,13 @@ export const Paper = forwardRef<HTMLDivElement, PaperProps>(
       <Box
         ref={ref}
         bg={bg}
-        rounded={square ? undefined : (rounded || 'rounded-lg')}
-        shadow={variant === 'elevation' ? elevationToShadow[elevation] : undefined}
-        border={variant === 'outlined' ? (border || 'border border-grey-300') : border}
+        rounded={square ? undefined : rounded || 'rounded-lg'}
+        shadow={
+          variant === 'elevation' ? elevationToShadow[elevation] : undefined
+        }
+        border={
+          variant === 'outlined' ? border || 'border border-grey-300' : border
+        }
         className={className}
         {...props}
       />

@@ -14,7 +14,6 @@ import { useDataSource } from '../../hooks/useDataSource';
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
 
-
 // ============================================================================
 // Mock Server Setup
 // ============================================================================
@@ -129,7 +128,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
       });
 
       // Wait for data to load
-      await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.dataSource.isLoading).toBe(false)
+      );
 
       // Form should be populated with user data
       expect(result.current.form.values.name).toBe('John Doe');
@@ -221,7 +222,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
       });
 
       // Wait for initial load
-      await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.dataSource.isLoading).toBe(false)
+      );
       expect(result.current.form.values.name).toBe('John Doe');
 
       // Update form
@@ -243,7 +246,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
         return result.current.dataSource.data?.name === 'John Updated';
       });
 
-      expect(result.current.dataSource.data?.email).toBe('john.updated@example.com');
+      expect(result.current.dataSource.data?.email).toBe(
+        'john.updated@example.com'
+      );
     });
 
     it('should handle server-side validation errors', async () => {
@@ -390,7 +395,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
         return { dataSource, form };
       });
 
-      await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.dataSource.isLoading).toBe(false)
+      );
       const originalName = result.current.dataSource.data?.name;
 
       // Update form
@@ -410,7 +417,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
         return result.current.dataSource.data?.name === 'Optimistic Name';
       });
 
-      expect(result.current.dataSource.data?.email).toBe('optimistic@example.com');
+      expect(result.current.dataSource.data?.email).toBe(
+        'optimistic@example.com'
+      );
     });
 
     it('should rollback optimistic update on server error', async () => {
@@ -470,7 +479,9 @@ describe.skip('DataSource + Form Workflow Integration', () => {
         return { dataSource, form };
       });
 
-      await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.dataSource.isLoading).toBe(false)
+      );
       const originalName = result.current.dataSource.data?.name;
       const originalEmail = result.current.dataSource.data?.email;
 

@@ -7,7 +7,6 @@ import type {
 } from './types';
 import { ShortcutRegistry } from './utils';
 
-
 const registry = new ShortcutRegistry();
 
 export function useKeyboardShortcuts(

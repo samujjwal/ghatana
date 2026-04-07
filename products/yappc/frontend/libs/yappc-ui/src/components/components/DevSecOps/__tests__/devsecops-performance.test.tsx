@@ -72,7 +72,9 @@ describe('DevSecOps Performance', () => {
         id: `item-${i}`,
         title: `Task ${i + 1}`,
         description: `Description for task ${i + 1}`,
-        status: ['not-started', 'in-progress', 'in-review', 'completed'][i % 4] as unknown,
+        status: ['not-started', 'in-progress', 'in-review', 'completed'][
+          i % 4
+        ] as unknown,
         priority: ['low', 'medium', 'high'][i % 3] as unknown,
         tags: [`tag-${i % 5}`],
         createdAt: new Date(),
@@ -190,9 +192,7 @@ describe('DevSecOps Performance', () => {
     });
 
     it('SearchBar handles rapid input changes', () => {
-      const { rerender } = render(
-        <SearchBar value="" onChange={() => {}} />
-      );
+      const { rerender } = render(<SearchBar value="" onChange={() => {}} />);
 
       const queries = ['t', 'te', 'tes', 'test', 'test ', 'test q', 'test qu'];
 
@@ -396,11 +396,7 @@ describe('DevSecOps Performance', () => {
       const start = performance.now();
 
       // Update only status
-      rerender(
-        <ItemCard
-          item={{ ...mockItem, status: 'in-progress' }}
-        />
-      );
+      rerender(<ItemCard item={{ ...mockItem, status: 'in-progress' }} />);
 
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(20);

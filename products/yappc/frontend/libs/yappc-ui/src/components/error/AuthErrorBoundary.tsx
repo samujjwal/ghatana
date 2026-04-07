@@ -1,13 +1,13 @@
 /**
  * Authentication-Aware Error Boundary Component
- * 
+ *
  * Enhanced error boundary with authentication context awareness
  * - Detects authentication errors (401, 403)
  * - Redirects to login on auth failures
  * - Preserves return path for post-login redirect
  * - Clears sensitive data on certain errors
  * - Provides auth-specific error messages
- * 
+ *
  * @module ui/error
  * @doc.type component
  * @doc.purpose Auth-aware error boundary with smart error handling
@@ -29,40 +29,42 @@ import { authUserAtom, authTokenAtom } from '@yappc/canvas';
 export interface AuthErrorBoundaryProps {
   /** Child components to protect */
   children: ReactNode;
-  
+
   /** Custom fallback UI component */
-  fallback?: ReactNode | ((error: Error, errorInfo: ErrorInfo, retry: () => void) => ReactNode);
-  
+  fallback?:
+    | ReactNode
+    | ((error: Error, errorInfo: ErrorInfo, retry: () => void) => ReactNode);
+
   /** Error callback for logging/reporting */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
-  
+
   /** Error reset callback */
   onReset?: () => void;
-  
+
   /** Authentication error callback */
   onAuthError?: (error: Error) => void;
-  
+
   /** Whether to redirect to login on auth errors */
   redirectOnAuthError?: boolean;
-  
+
   /** Login path for redirect */
   loginPath?: string;
-  
+
   /** Whether to clear auth data on errors */
   clearAuthOnError?: boolean;
-  
+
   /** Whether to show error details (dev mode) */
   showDetails?: boolean;
-  
+
   /** Boundary name for identification */
   boundaryName?: string;
-  
+
   /** Automatic reset after specified milliseconds */
   resetAfter?: number;
-  
+
   /** Reset on navigation (requires location prop) */
   resetOnPropsChange?: boolean;
-  
+
   /** Props to watch for changes (triggers reset) */
   resetKeys?: unknown[];
 }
@@ -73,22 +75,22 @@ export interface AuthErrorBoundaryProps {
 interface AuthErrorBoundaryState {
   /** Has error occurred */
   hasError: boolean;
-  
+
   /** Error object */
   error: Error | null;
-  
+
   /** Error info with component stack */
   errorInfo: ErrorInfo | null;
-  
+
   /** Error count (for retry limiting) */
   errorCount: number;
-  
+
   /** Timestamp of last error */
   lastErrorTime: number;
-  
+
   /** Is authentication error */
   isAuthError: boolean;
-  
+
   /** HTTP status code if applicable */
   statusCode?: number;
 }
@@ -99,7 +101,7 @@ interface AuthErrorBoundaryState {
 
 /**
  * Check if error is authentication-related
- * 
+ *
  * @param error - Error object
  * @returns True if auth error
  */
@@ -119,13 +121,13 @@ function isAuthenticationError(error: Error): boolean {
     'access denied',
     'permission denied',
   ];
-  
-  return authKeywords.some(keyword => message.includes(keyword));
+
+  return authKeywords.some((keyword) => message.includes(keyword));
 }
 
 /**
  * Extract HTTP status code from error
- * 
+ *
  * @param error - Error object
  * @returns Status code or undefined
  */
@@ -139,20 +141,20 @@ function extractStatusCode(error: Error): number | undefined {
     const statusCode = (error as { statusCode?: unknown }).statusCode;
     return typeof statusCode === 'number' ? statusCode : undefined;
   }
-  
+
   // Try to extract from message
   const message = error.message;
   const match = message.match(/\b(401|403)\b/);
   if (match) {
     return parseInt(match[1], 10);
   }
-  
+
   return undefined;
 }
 
 /**
  * Get auth-specific error message
- * 
+ *
  * @param error - Error object
  * @param statusCode - HTTP status code
  * @returns User-friendly message
@@ -161,19 +163,19 @@ function getAuthErrorMessage(error: Error, statusCode?: number): string {
   if (statusCode === 401 || error.message.includes('401')) {
     return 'Your session has expired. Please log in again.';
   }
-  
+
   if (statusCode === 403 || error.message.includes('403')) {
-    return 'You don\'t have permission to access this resource.';
+    return "You don't have permission to access this resource.";
   }
-  
+
   if (error.message.toLowerCase().includes('token expired')) {
     return 'Your session has expired. Please log in again.';
   }
-  
+
   if (error.message.toLowerCase().includes('invalid token')) {
     return 'Your session is invalid. Please log in again.';
   }
-  
+
   return 'Authentication error. Please log in again.';
 }
 
@@ -184,7 +186,7 @@ function getAuthErrorMessage(error: Error, statusCode?: number): string {
 /**
  * Authentication-aware error boundary component
  * Catches errors and handles auth-related errors specially
- * 
+ *
  * @example
  * <AuthErrorBoundary
  *   redirectOnAuthError={true}
@@ -194,9 +196,12 @@ function getAuthErrorMessage(error: Error, statusCode?: number): string {
  *   <ProtectedApp />
  * </AuthErrorBoundary>
  */
-export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErrorBoundaryState> {
+export class AuthErrorBoundary extends Component<
+  AuthErrorBoundaryProps,
+  AuthErrorBoundaryState
+> {
   private resetTimeoutId: NodeJS.Timeout | null = null;
-  
+
   /**
    *
    */
@@ -211,14 +216,16 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       isAuthError: false,
     };
   }
-  
+
   /**
    * Derive state from error
    */
-  static getDerivedStateFromError(error: Error): Partial<AuthErrorBoundaryState> {
+  static getDerivedStateFromError(
+    error: Error
+  ): Partial<AuthErrorBoundaryState> {
     const isAuthError = isAuthenticationError(error);
     const statusCode = extractStatusCode(error);
-    
+
     return {
       hasError: true,
       error,
@@ -228,29 +235,29 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       statusCode,
     };
   }
-  
+
   /**
    * Component did catch
    */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Update state with error info
-    this.setState(prevState => ({
+    this.setState((prevState) => ({
       errorInfo,
       errorCount: prevState.errorCount + 1,
     }));
-    
+
     const { isAuthError, statusCode } = this.state;
-    
+
     // Handle authentication errors
     if (isAuthError) {
       this.handleAuthError(error);
     }
-    
+
     // Call error callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error(
@@ -260,7 +267,7 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
         { isAuthError, statusCode }
       );
     }
-    
+
     // Set automatic reset timer if specified
     if (this.props.resetAfter && this.props.resetAfter > 0) {
       this.resetTimeoutId = setTimeout(() => {
@@ -268,40 +275,41 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       }, this.props.resetAfter);
     }
   }
-  
+
   /**
    * Handle authentication errors
    */
   private handleAuthError = (error: Error): void => {
-    const { onAuthError, redirectOnAuthError, loginPath, clearAuthOnError } = this.props;
-    
+    const { onAuthError, redirectOnAuthError, loginPath, clearAuthOnError } =
+      this.props;
+
     // Call auth error callback
     if (onAuthError) {
       onAuthError(error);
     }
-    
+
     // Clear auth data if configured
     if (clearAuthOnError) {
       this.clearAuthData();
     }
-    
+
     // Redirect to login if configured
     if (redirectOnAuthError) {
       const path = loginPath || '/login';
       const returnPath = window.location.pathname;
-      
+
       // Preserve return path in sessionStorage
       if (returnPath && returnPath !== path) {
         sessionStorage.setItem('returnPath', returnPath);
       }
-      
+
       // Redirect after a short delay
       setTimeout(() => {
         window.location.href = `${path}?returnUrl=${encodeURIComponent(returnPath)}`;
       }, 1500);
     }
   };
-  
+
   /**
    * Clear authentication data
    */
@@ -311,12 +319,12 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
     localStorage.removeItem('refreshToken');
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('refreshToken');
-    
+
     // Clear user data
     localStorage.removeItem('user');
     sessionStorage.removeItem('user');
   };
-  
+
   /**
    * Component did update
    */
@@ -329,13 +337,13 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       const hasChanges = this.props.resetKeys.some(
         (key, index) => key !== prevProps.resetKeys?.[index]
       );
-      
+
       if (hasChanges && this.state.hasError) {
         this.resetErrorBoundary();
       }
     }
   }
-  
+
   /**
    * Component will unmount
    */
@@ -344,7 +352,7 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       clearTimeout(this.resetTimeoutId);
     }
   }
-  
+
   /**
    * Reset error boundary
    */
@@ -353,12 +361,12 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       clearTimeout(this.resetTimeoutId);
       this.resetTimeoutId = null;
     }
-    
+
     // Call reset callback if provided
     if (this.props.onReset) {
       this.props.onReset();
     }
-    
+
     // Reset state
     this.setState({
       hasError: false,
@@ -370,14 +378,15 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
       statusCode: undefined,
     });
   };
-  
+
   /**
    * Render
    */
   render(): ReactNode {
-    const { hasError, error, errorInfo, errorCount, isAuthError, statusCode } = this.state;
+    const { hasError, error, errorInfo, errorCount, isAuthError, statusCode } =
+      this.state;
     const { children, fallback, showDetails, boundaryName } = this.props;
-    
+
     if (hasError && error) {
       // Render custom fallback if provided
       if (fallback) {
@@ -386,7 +395,7 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
         }
         return fallback;
       }
-      
+
       // Render auth-aware fallback
       return (
         <AuthErrorFallback
@@ -402,7 +411,7 @@ export class AuthErrorBoundary extends Component<AuthErrorBoundaryProps, AuthErr
         />
       );
     }
-    
+
     return children;
   }
 }
@@ -440,8 +449,10 @@ function AuthErrorFallback({
   redirectOnAuthError,
   onReset,
 }: AuthErrorFallbackProps): React.JSX.Element {
-  const authMessage = isAuthError ? getAuthErrorMessage(error, statusCode) : null;
-  
+  const authMessage = isAuthError
+    ? getAuthErrorMessage(error, statusCode)
+    : null;
+
   return (
     <div
       role="alert"
@@ -465,15 +476,23 @@ function AuthErrorFallback({
             fontWeight: 600,
           }}
         >
-          {isAuthError ? '🔒 Authentication Required' : '⚠️ Something went wrong'}
+          {isAuthError
+            ? '🔒 Authentication Required'
+            : '⚠️ Something went wrong'}
         </h2>
         {boundaryName && (
-          <p style={{ margin: '0.5rem 0 0 0', color: '#78350f', fontSize: '0.875rem' }}>
+          <p
+            style={{
+              margin: '0.5rem 0 0 0',
+              color: '#78350f',
+              fontSize: '0.875rem',
+            }}
+          >
             Error Boundary: {boundaryName}
           </p>
         )}
       </div>
-      
+
       {/* Auth-specific message */}
       {authMessage && (
         <div
@@ -484,17 +503,29 @@ function AuthErrorFallback({
             marginBottom: '1rem',
           }}
         >
-          <p style={{ margin: 0, color: isAuthError ? '#92400e' : '#991b1b', fontWeight: 500 }}>
+          <p
+            style={{
+              margin: 0,
+              color: isAuthError ? '#92400e' : '#991b1b',
+              fontWeight: 500,
+            }}
+          >
             {authMessage}
           </p>
           {redirectOnAuthError && (
-            <p style={{ margin: '0.5rem 0 0 0', color: '#78350f', fontSize: '0.875rem' }}>
+            <p
+              style={{
+                margin: '0.5rem 0 0 0',
+                color: '#78350f',
+                fontSize: '0.875rem',
+              }}
+            >
               Redirecting to login page...
             </p>
           )}
         </div>
       )}
-      
+
       {/* Regular error message */}
       {!authMessage && (
         <div
@@ -510,7 +541,7 @@ function AuthErrorFallback({
           </p>
         </div>
       )}
-      
+
       {/* Status code badge */}
       {statusCode && (
         <div style={{ marginBottom: '1rem' }}>
@@ -518,7 +549,12 @@ function AuthErrorFallback({
             style={{
               display: 'inline-block',
               padding: '0.25rem 0.75rem',
-              backgroundColor: statusCode === 401 ? '#fbbf24' : statusCode === 403 ? '#f59e0b' : '#ef4444',
+              backgroundColor:
+                statusCode === 401
+                  ? '#fbbf24'
+                  : statusCode === 403
+                    ? '#f59e0b'
+                    : '#ef4444',
               color: '#fff',
               borderRadius: '9999px',
               fontSize: '0.75rem',
@@ -529,7 +565,7 @@ function AuthErrorFallback({
           </span>
         </div>
       )}
-      
+
       {/* Error details (development only) */}
       {showDetails && !isAuthError && (
         <>
@@ -559,7 +595,7 @@ function AuthErrorFallback({
               {error.stack}
             </pre>
           </details>
-          
+
           {errorInfo?.componentStack && (
             <details style={{ marginBottom: '1rem' }}>
               <summary
@@ -590,9 +626,16 @@ function AuthErrorFallback({
           )}
         </>
       )}
-      
+
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '0.75rem',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
         {!redirectOnAuthError && (
           <>
             <button
@@ -608,15 +651,19 @@ function AuthErrorFallback({
                 fontSize: '0.875rem',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isAuthError ? '#b45309' : '#b91c1c';
+                e.currentTarget.style.backgroundColor = isAuthError
+                  ? '#b45309'
+                  : '#b91c1c';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isAuthError ? '#d97706' : '#dc2626';
+                e.currentTarget.style.backgroundColor = isAuthError
+                  ? '#d97706'
+                  : '#dc2626';
               }}
             >
               {isAuthError ? 'Go to Login' : 'Try Again'}
             </button>
-            
+
             <button
               onClick={() => window.location.reload()}
               style={{
@@ -630,7 +677,9 @@ function AuthErrorFallback({
                 fontSize: '0.875rem',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isAuthError ? '#fffbeb' : '#fef2f2';
+                e.currentTarget.style.backgroundColor = isAuthError
+                  ? '#fffbeb'
+                  : '#fef2f2';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#fff';
@@ -640,7 +689,7 @@ function AuthErrorFallback({
             </button>
           </>
         )}
-        
+
         {errorCount > 1 && (
           <span style={{ color: '#78350f', fontSize: '0.875rem' }}>
             Error occurred {errorCount} times
@@ -655,10 +704,9 @@ function AuthErrorFallback({
  * Hook-based auth error boundary wrapper
  * Provides authentication atoms context
  */
-export function AuthErrorBoundaryWithContext({ children, ...props }: AuthErrorBoundaryProps) {
-  return (
-    <AuthErrorBoundary {...props}>
-      {children}
-    </AuthErrorBoundary>
-  );
+export function AuthErrorBoundaryWithContext({
+  children,
+  ...props
+}: AuthErrorBoundaryProps) {
+  return <AuthErrorBoundary {...props}>{children}</AuthErrorBoundary>;
 }

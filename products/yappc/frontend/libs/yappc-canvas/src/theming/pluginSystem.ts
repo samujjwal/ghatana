@@ -49,11 +49,17 @@ export interface PluginAPI {
 
   // Document mutation (requires writeDocument permission)
   readonly addElement: (element: Partial<CanvasElement>) => string | null;
-  readonly updateElement: (id: string, changes: Partial<CanvasElement>) => boolean;
+  readonly updateElement: (
+    id: string,
+    changes: Partial<CanvasElement>
+  ) => boolean;
   readonly removeElement: (id: string) => boolean;
 
   // Event subscription (requires subscribeEvents permission)
-  readonly on: (event: string, handler: (...args: unknown[]) => void) => () => void;
+  readonly on: (
+    event: string,
+    handler: (...args: unknown[]) => void
+  ) => () => void;
 
   // Tool registration (requires registerTools permission)
   readonly registerTool: (tool: PluginTool) => () => void;
@@ -80,7 +86,10 @@ export interface PluginTool {
 export interface RenderHook {
   readonly id: string;
   readonly priority: number; // Higher = runs later
-  readonly render: (ctx: CanvasRenderingContext2D, document: CanvasDocument) => void;
+  readonly render: (
+    ctx: CanvasRenderingContext2D,
+    document: CanvasDocument
+  ) => void;
 }
 
 /**
@@ -100,7 +109,8 @@ export interface Plugin {
 export class PluginManager {
   private plugins: Map<string, Plugin> = new Map();
   private activePlugins: Set<string> = new Set();
-  private eventHandlers: Map<string, Set<(...args: unknown[]) => void>> = new Map();
+  private eventHandlers: Map<string, Set<(...args: unknown[]) => void>> =
+    new Map();
   private registeredTools: Map<string, PluginTool> = new Map();
   private renderHooks: RenderHook[] = [];
   private documentGetter: (() => CanvasDocument | null) | null = null;
@@ -252,9 +262,14 @@ export class PluginManager {
   /**
    * Execute all render hooks
    */
-  executeRenderHooks(ctx: CanvasRenderingContext2D, document: CanvasDocument): void {
+  executeRenderHooks(
+    ctx: CanvasRenderingContext2D,
+    document: CanvasDocument
+  ): void {
     // Sort by priority
-    const sortedHooks = [...this.renderHooks].sort((a, b) => a.priority - b.priority);
+    const sortedHooks = [...this.renderHooks].sort(
+      (a, b) => a.priority - b.priority
+    );
 
     sortedHooks.forEach((hook) => {
       try {
@@ -274,7 +289,9 @@ export class PluginManager {
     return {
       getDocument: () => {
         if (!permissions.readDocument) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks readDocument permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks readDocument permission`
+          );
           return null;
         }
         return this.documentGetter?.() || null;
@@ -282,7 +299,9 @@ export class PluginManager {
 
       getElement: (id: string) => {
         if (!permissions.readDocument) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks readDocument permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks readDocument permission`
+          );
           return null;
         }
         return this.elementAccessor?.get(id) || null;
@@ -290,7 +309,9 @@ export class PluginManager {
 
       addElement: (element: Partial<CanvasElement>) => {
         if (!permissions.writeDocument) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks writeDocument permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks writeDocument permission`
+          );
           return null;
         }
         return this.elementAccessor?.add(element) || null;
@@ -298,7 +319,9 @@ export class PluginManager {
 
       updateElement: (id: string, changes: Partial<CanvasElement>) => {
         if (!permissions.writeDocument) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks writeDocument permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks writeDocument permission`
+          );
           return false;
         }
         return this.elementAccessor?.update(id, changes) || false;
@@ -306,7 +329,9 @@ export class PluginManager {
 
       removeElement: (id: string) => {
         if (!permissions.writeDocument) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks writeDocument permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks writeDocument permission`
+          );
           return false;
         }
         return this.elementAccessor?.remove(id) || false;
@@ -314,7 +339,9 @@ export class PluginManager {
 
       on: (event: string, handler: (...args: unknown[]) => void) => {
         if (!permissions.subscribeEvents) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks subscribeEvents permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks subscribeEvents permission`
+          );
           return () => {};
         }
 
@@ -331,7 +358,9 @@ export class PluginManager {
 
       registerTool: (tool: PluginTool) => {
         if (!permissions.registerTools) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks registerTools permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks registerTools permission`
+          );
           return () => {};
         }
 
@@ -344,7 +373,9 @@ export class PluginManager {
 
       addRenderHook: (hook: RenderHook) => {
         if (!permissions.modifyRendering) {
-          console.warn(`Plugin "${plugin.metadata.id}" lacks modifyRendering permission`);
+          console.warn(
+            `Plugin "${plugin.metadata.id}" lacks modifyRendering permission`
+          );
           return () => {};
         }
 
@@ -372,7 +403,9 @@ export class PluginManager {
     });
 
     // Remove render hooks
-    this.renderHooks = this.renderHooks.filter((hook) => !hook.id.startsWith(`${pluginId}:`));
+    this.renderHooks = this.renderHooks.filter(
+      (hook) => !hook.id.startsWith(`${pluginId}:`)
+    );
   }
 
   /**

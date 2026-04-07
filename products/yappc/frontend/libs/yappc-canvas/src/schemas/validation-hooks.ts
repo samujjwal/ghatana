@@ -3,26 +3,22 @@
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
 
-import { 
-  componentSchemaRegistry, 
-  validateComponent, 
-  createComponent 
+import {
+  componentSchemaRegistry,
+  validateComponent,
+  createComponent,
 } from './component-registry';
-import type { 
-  CanvasComponent,
-  ValidationResult 
-} from './component-registry';
-import { 
-  validateImportData, 
+import type { CanvasComponent, ValidationResult } from './component-registry';
+import {
+  validateImportData,
   validateExportData,
   getValidationStats,
   createCanvasAPIValidator,
   PRODUCTION_VALIDATION_CONFIG,
   DEVELOPMENT_VALIDATION_CONFIG,
   type CanvasAPIValidationConfig,
-  type ImportValidationResult
+  type ImportValidationResult,
 } from './validation-helpers';
-
 
 // Hook for component validation
 /**
@@ -34,71 +30,93 @@ export interface UseComponentValidationOptions {
   onValidationError?: (errors: string[]) => void;
 }
 
-export const useComponentValidation = (options: UseComponentValidationOptions = {}) => {
-  const { strictMode = false, autoValidate = true, onValidationError } = options;
-  
+export const useComponentValidation = (
+  options: UseComponentValidationOptions = {}
+) => {
+  const {
+    strictMode = false,
+    autoValidate = true,
+    onValidationError,
+  } = options;
+
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [isValidating, setIsValidating] = useState(false);
 
-  const validateSingle = useCallback((type: string, data: unknown): ValidationResult<CanvasComponent> => {
-    setIsValidating(true);
-    
-    try {
-      const result = validateComponent(type, data);
-      
-      if (!result.success) {
-        setValidationErrors(result.errors);
+  const validateSingle = useCallback(
+    (type: string, data: unknown): ValidationResult<CanvasComponent> => {
+      setIsValidating(true);
+
+      try {
+        const result = validateComponent(type, data);
+
+        if (!result.success) {
+          setValidationErrors(result.errors);
+          if (onValidationError) {
+            onValidationError(result.errors);
+          }
+          if (strictMode) {
+            throw new Error(
+              `Component validation failed: ${result.errors.join(', ')}`
+            );
+          }
+        } else {
+          setValidationErrors([]);
+        }
+
+        return result;
+      } finally {
+        setIsValidating(false);
+      }
+    },
+    [strictMode, onValidationError]
+  );
+
+  const validateBatch = useCallback(
+    (
+      components: Array<{ type: string; data: unknown }>
+    ): Array<ValidationResult<CanvasComponent>> => {
+      setIsValidating(true);
+
+      try {
+        const results = components.map(({ type, data }) =>
+          validateComponent(type, data)
+        );
+        const allErrors = results.flatMap((r) => r.errors);
+
+        setValidationErrors(allErrors);
+        if (allErrors.length > 0 && onValidationError) {
+          onValidationError(allErrors);
+        }
+
+        return results;
+      } finally {
+        setIsValidating(false);
+      }
+    },
+    [onValidationError]
+  );
+
+  const createValidated = useCallback(
+    (
+      type: string,
+      overrides: Partial<CanvasComponent> = {}
+    ): CanvasComponent => {
+      try {
+        return createComponent(type, overrides);
+      } catch (error) {
+        const errorMessage = (error as Error).message;
+        setValidationErrors([errorMessage]);
         if (onValidationError) {
-          onValidationError(result.errors);
+          onValidationError([errorMessage]);
         }
         if (strictMode) {
-          throw new Error(`Component validation failed: ${result.errors.join(', ')}`);
+          throw error;
         }
-      } else {
-        setValidationErrors([]);
+        throw error; // createComponent should always throw on failure
       }
-      
-      return result;
-    } finally {
-      setIsValidating(false);
-    }
-  }, [strictMode, onValidationError]);
-
-  const validateBatch = useCallback((
-    components: Array<{ type: string; data: unknown }>
-  ): Array<ValidationResult<CanvasComponent>> => {
-    setIsValidating(true);
-    
-    try {
-      const results = components.map(({ type, data }) => validateComponent(type, data));
-      const allErrors = results.flatMap(r => r.errors);
-      
-      setValidationErrors(allErrors);
-      if (allErrors.length > 0 && onValidationError) {
-        onValidationError(allErrors);
-      }
-      
-      return results;
-    } finally {
-      setIsValidating(false);
-    }
-  }, [onValidationError]);
-
-  const createValidated = useCallback((type: string, overrides: Partial<CanvasComponent> = {}): CanvasComponent => {
-    try {
-      return createComponent(type, overrides);
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      setValidationErrors([errorMessage]);
-      if (onValidationError) {
-        onValidationError([errorMessage]);
-      }
-      if (strictMode) {
-        throw error;
-      }
-      throw error; // createComponent should always throw on failure
-    }
-  }, [strictMode, onValidationError]);
+    },
+    [strictMode, onValidationError]
+  );
 
   return {
     validate: validateSingle,
@@ -124,37 +142,45 @@ export const useCanvasValidation = (
   canvas: { nodes: CanvasComponent[]; edges: unknown[] },
   options: UseCanvasValidationOptions = {}
 ) => {
-  const { 
-    autoValidateOnChange = true, 
+  const {
+    autoValidateOnChange = true,
     validationConfig = PRODUCTION_VALIDATION_CONFIG,
-    onValidationComplete
+    onValidationComplete,
   } = options;
-  
-  const [validationStats, setValidationStats] = useState<ReturnType<typeof getValidationStats> | null>(null);
+
+  const [validationStats, setValidationStats] = useState<ReturnType<
+    typeof getValidationStats
+  > | null>(null);
   const [isValidating, setIsValidating] = useState(false);
 
-  const validator = useMemo(() => createCanvasAPIValidator(validationConfig), [validationConfig]);
+  const validator = useMemo(
+    () => createCanvasAPIValidator(validationConfig),
+    [validationConfig]
+  );
 
   const validateCanvas = useCallback(async () => {
     setIsValidating(true);
-    
+
     try {
       const stats = getValidationStats(canvas);
       setValidationStats(stats);
-      
+
       if (onValidationComplete) {
         onValidationComplete(stats);
       }
-      
+
       return stats;
     } finally {
       setIsValidating(false);
     }
   }, [canvas, onValidationComplete]);
 
-  const validateImport = useCallback((importData: unknown): ImportValidationResult => {
-    return validator.validateImport(importData);
-  }, [validator]);
+  const validateImport = useCallback(
+    (importData: unknown): ImportValidationResult => {
+      return validator.validateImport(importData);
+    },
+    [validator]
+  );
 
   const validateExport = useCallback(() => {
     return validateExportData(canvas.nodes, canvas.edges, {
@@ -188,9 +214,9 @@ export const useSchemaRegistry = () => {
     const updateSchemas = () => {
       setRegisteredSchemas(componentSchemaRegistry.listSchemas());
     };
-    
+
     updateSchemas();
-    
+
     // Set up a simple polling mechanism since we don't have events
     const interval = setInterval(updateSchemas, 5000);
     return () => clearInterval(interval);
@@ -209,9 +235,12 @@ export const useSchemaRegistry = () => {
     return componentSchemaRegistry.getDefaultData(type);
   }, []);
 
-  const setDefaultData = useCallback((type: string, factory: () => Partial<CanvasComponent>) => {
-    componentSchemaRegistry.setDefaultData(type, factory);
-  }, []);
+  const setDefaultData = useCallback(
+    (type: string, factory: () => Partial<CanvasComponent>) => {
+      componentSchemaRegistry.setDefaultData(type, factory);
+    },
+    []
+  );
 
   return {
     registeredSchemas,
@@ -234,64 +263,81 @@ export interface UseComponentCreatorOptions {
   onCreateError?: (error: string) => void;
 }
 
-export const useComponentCreator = (options: UseComponentCreatorOptions = {}) => {
+export const useComponentCreator = (
+  options: UseComponentCreatorOptions = {}
+) => {
   const {
     defaultPosition = { x: 0, y: 0 },
     defaultSize = { width: 200, height: 100 },
     validateOnCreate = true,
-    onCreateError
+    onCreateError,
   } = options;
 
   const { validate } = useComponentValidation({
     strictMode: false,
-    onValidationError: onCreateError ? (errors) => onCreateError(errors.join(', ')) : undefined,
+    onValidationError: onCreateError
+      ? (errors) => onCreateError(errors.join(', '))
+      : undefined,
   });
 
-  const create = useCallback((type: string, customData: Partial<CanvasComponent> = {}): CanvasComponent | null => {
-    try {
-      const component = createComponent(type, {
-        position: defaultPosition,
-        size: defaultSize,
-        ...customData,
-      });
+  const create = useCallback(
+    (
+      type: string,
+      customData: Partial<CanvasComponent> = {}
+    ): CanvasComponent | null => {
+      try {
+        const component = createComponent(type, {
+          position: defaultPosition,
+          size: defaultSize,
+          ...customData,
+        });
 
-      if (validateOnCreate) {
-        const validation = validate(type, component);
-        if (!validation.success) {
-          if (onCreateError) {
-            onCreateError(`Component creation failed: ${validation.errors.join(', ')}`);
+        if (validateOnCreate) {
+          const validation = validate(type, component);
+          if (!validation.success) {
+            if (onCreateError) {
+              onCreateError(
+                `Component creation failed: ${validation.errors.join(', ')}`
+              );
+            }
+            return null;
           }
-          return null;
+          return validation.data!;
         }
-        return validation.data!;
+
+        return component;
+      } catch (error) {
+        if (onCreateError) {
+          onCreateError((error as Error).message);
+        }
+        return null;
+      }
+    },
+    [defaultPosition, defaultSize, validateOnCreate, validate, onCreateError]
+  );
+
+  const createBatch = useCallback(
+    (
+      specs: Array<{ type: string; data?: Partial<CanvasComponent> }>
+    ): CanvasComponent[] => {
+      const results: CanvasComponent[] = [];
+
+      for (const spec of specs) {
+        const component = create(spec.type, spec.data);
+        if (component) {
+          results.push(component);
+        }
       }
 
-      return component;
-    } catch (error) {
-      if (onCreateError) {
-        onCreateError((error as Error).message);
-      }
-      return null;
-    }
-  }, [defaultPosition, defaultSize, validateOnCreate, validate, onCreateError]);
-
-  const createBatch = useCallback((
-    specs: Array<{ type: string; data?: Partial<CanvasComponent> }>
-  ): CanvasComponent[] => {
-    const results: CanvasComponent[] = [];
-    
-    for (const spec of specs) {
-      const component = create(spec.type, spec.data);
-      if (component) {
-        results.push(component);
-      }
-    }
-    
-    return results;
-  }, [create]);
+      return results;
+    },
+    [create]
+  );
 
   const getAvailableTypes = useCallback(() => {
-    return componentSchemaRegistry.listSchemas().filter(type => type !== 'edge');
+    return componentSchemaRegistry
+      .listSchemas()
+      .filter((type) => type !== 'edge');
   }, []);
 
   const getTypeDefault = useCallback((type: string) => {
@@ -320,7 +366,7 @@ export const useRealTimeValidation = (
   options: UseRealTimeValidationOptions = {}
 ) => {
   const { debounceMs = 300, enableRealTime = true } = options;
-  
+
   const [validationState, setValidationState] = useState<{
     isValid: boolean;
     errors: string[];
@@ -348,7 +394,10 @@ export const useRealTimeValidation = (
   useEffect(() => {
     if (!enableRealTime) return;
 
-    const validation = validateComponent(debouncedComponent.type, debouncedComponent);
+    const validation = validateComponent(
+      debouncedComponent.type,
+      debouncedComponent
+    );
     setValidationState({
       isValid: validation.success,
       errors: validation.errors,
@@ -374,10 +423,12 @@ export const useRealTimeValidation = (
 };
 
 // Development vs Production configuration
-export const useValidationConfig = (environment: 'development' | 'production' = 'production') => {
+export const useValidationConfig = (
+  environment: 'development' | 'production' = 'production'
+) => {
   const config = useMemo(() => {
-    return environment === 'development' 
-      ? DEVELOPMENT_VALIDATION_CONFIG 
+    return environment === 'development'
+      ? DEVELOPMENT_VALIDATION_CONFIG
       : PRODUCTION_VALIDATION_CONFIG;
   }, [environment]);
 

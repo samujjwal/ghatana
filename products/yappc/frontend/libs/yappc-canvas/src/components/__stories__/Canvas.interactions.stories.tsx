@@ -51,7 +51,8 @@ const meta: Meta<typeof Canvas> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Canvas interaction stories: selection, dragging, edges, navigation.',
+        component:
+          'Canvas interaction stories: selection, dragging, edges, navigation.',
       },
     },
   },
@@ -116,13 +117,19 @@ export const SelectSingleNode: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('select-single', 'Select Single Node', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument(
+      'select-single',
+      'Select Single Node',
+      elements,
+      ['node-1', 'node-2']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Click a node to select it. Selection indicator shows which node is selected.',
+        story:
+          'Click a node to select it. Selection indicator shows which node is selected.',
       },
     },
   },
@@ -156,13 +163,19 @@ export const SelectMultipleNodes: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('select-multiple', 'Select Multiple Nodes', elements, ['node-1', 'node-2', 'node-3']);
+    const doc = createStoryDocument(
+      'select-multiple',
+      'Select Multiple Nodes',
+      elements,
+      ['node-1', 'node-2', 'node-3']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Ctrl+Click to select multiple nodes. All selected nodes are highlighted.',
+        story:
+          'Ctrl+Click to select multiple nodes. All selected nodes are highlighted.',
       },
     },
   },
@@ -182,13 +195,19 @@ export const DragNodeWithGridSnap: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('drag-snap', 'Drag Node with Grid Snap', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'drag-snap',
+      'Drag Node with Grid Snap',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Drag the node around. It will snap to a 20px grid. Grid lines are shown in the background.',
+        story:
+          'Drag the node around. It will snap to a 20px grid. Grid lines are shown in the background.',
       },
     },
   },
@@ -208,7 +227,12 @@ export const DragNodeFreeForm: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('drag-freeform', 'Drag Node Free Form', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'drag-freeform',
+      'Drag Node Free Form',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -248,13 +272,19 @@ export const DragMultipleNodes: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('drag-multiple', 'Drag Multiple Nodes', elements, ['node-1', 'node-2', 'node-3']);
+    const doc = createStoryDocument(
+      'drag-multiple',
+      'Drag Multiple Nodes',
+      elements,
+      ['node-1', 'node-2', 'node-3']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Select multiple nodes and drag all together. Relative positions are preserved.',
+        story:
+          'Select multiple nodes and drag all together. Relative positions are preserved.',
       },
     },
   },
@@ -281,13 +311,17 @@ export const EdgePreview: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('edge-preview', 'Edge Preview', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument('edge-preview', 'Edge Preview', elements, [
+      'node-1',
+      'node-2',
+    ]);
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Drag from output handle on source node. Preview line follows cursor.',
+        story:
+          'Drag from output handle on source node. Preview line follows cursor.',
       },
     },
   },
@@ -322,7 +356,12 @@ export const EdgeCompletion: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('edge-completion', 'Edge Completion', elements, ['node-1', 'node-2', 'edge-1']);
+    const doc = createStoryDocument(
+      'edge-completion',
+      'Edge Completion',
+      elements,
+      ['node-1', 'node-2', 'edge-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -355,13 +394,19 @@ export const ValidateEdgeConnection: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('edge-validate', 'Validate Edge Connection', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument(
+      'edge-validate',
+      'Validate Edge Connection',
+      elements,
+      ['node-1', 'node-2']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Invalid drop zone highlighted in red. Connection validation prevents invalid edges.',
+        story:
+          'Invalid drop zone highlighted in red. Connection validation prevents invalid edges.',
       },
     },
   },
@@ -395,7 +440,11 @@ export const PanCanvas: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('pan-canvas', 'Pan Canvas', elements, ['node-1', 'node-2', 'node-3']);
+    const doc = createStoryDocument('pan-canvas', 'Pan Canvas', elements, [
+      'node-1',
+      'node-2',
+      'node-3',
+    ]);
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -421,13 +470,19 @@ export const ZoomWithMouseWheel: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('zoom-wheel', 'Zoom with Mouse Wheel', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'zoom-wheel',
+      'Zoom with Mouse Wheel',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Scroll mouse wheel up to zoom in, down to zoom out. Zoom limits are 0.5x to 3x.',
+        story:
+          'Scroll mouse wheel up to zoom in, down to zoom out. Zoom limits are 0.5x to 3x.',
       },
     },
   },
@@ -447,7 +502,12 @@ export const ZoomWithControls: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('zoom-controls', 'Zoom with Controls', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'zoom-controls',
+      'Zoom with Controls',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -480,7 +540,10 @@ export const FitViewButton: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('fit-view', 'Fit View Button', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument('fit-view', 'Fit View Button', elements, [
+      'node-1',
+      'node-2',
+    ]);
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -506,13 +569,19 @@ export const DeselectByClickingBackground: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('deselect-bg', 'Deselect by Clicking Background', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'deselect-bg',
+      'Deselect by Clicking Background',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Click on empty canvas area to deselect. Selection indicator disappears.',
+        story:
+          'Click on empty canvas area to deselect. Selection indicator disappears.',
       },
     },
   },
@@ -546,7 +615,12 @@ export const MarqueeSelection: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('marquee-select', 'Marquee Selection', elements, ['node-1', 'node-2', 'node-3']);
+    const doc = createStoryDocument(
+      'marquee-select',
+      'Marquee Selection',
+      elements,
+      ['node-1', 'node-2', 'node-3']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -572,7 +646,12 @@ export const RightClickContextMenu: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('context-menu', 'Right Click Context Menu', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'context-menu',
+      'Right Click Context Menu',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
@@ -605,13 +684,19 @@ export const KeyboardNavigation: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('keyboard-nav', 'Keyboard Navigation', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument(
+      'keyboard-nav',
+      'Keyboard Navigation',
+      elements,
+      ['node-1', 'node-2']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Tab: Navigate between nodes | Arrow keys: Move selected node | Delete: Remove node',
+        story:
+          'Tab: Navigate between nodes | Arrow keys: Move selected node | Delete: Remove node',
       },
     },
   },
@@ -638,13 +723,19 @@ export const SnapToAlignmentGuides: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('alignment-guides', 'Snap to Alignment Guides', elements, ['node-1', 'node-2']);
+    const doc = createStoryDocument(
+      'alignment-guides',
+      'Snap to Alignment Guides',
+      elements,
+      ['node-1', 'node-2']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Drag nodes near guides to snap for alignment. Guides show when nodes are aligned.',
+        story:
+          'Drag nodes near guides to snap for alignment. Guides show when nodes are aligned.',
       },
     },
   },
@@ -678,13 +769,19 @@ export const MiniMapOverview: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('minimap', 'Mini Map / Overview', elements, ['node-1', 'node-2', 'node-3']);
+    const doc = createStoryDocument(
+      'minimap',
+      'Mini Map / Overview',
+      elements,
+      ['node-1', 'node-2', 'node-3']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Mini map shown in corner displays all nodes and current viewport.',
+        story:
+          'Mini map shown in corner displays all nodes and current viewport.',
       },
     },
   },
@@ -704,13 +801,19 @@ export const UndoRedoHistory: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('undo-redo', 'Undo Redo History', elements, ['node-1']);
+    const doc = createStoryDocument(
+      'undo-redo',
+      'Undo Redo History',
+      elements,
+      ['node-1']
+    );
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Undo/Redo buttons control command history. Previous actions can be reversed.',
+        story:
+          'Undo/Redo buttons control command history. Previous actions can be reversed.',
       },
     },
   },
@@ -730,13 +833,16 @@ export const CopyPaste: Story = {
         updatedAt: new Date(),
       },
     };
-    const doc = createStoryDocument('copy-paste', 'Copy Paste', elements, ['node-1']);
+    const doc = createStoryDocument('copy-paste', 'Copy Paste', elements, [
+      'node-1',
+    ]);
     return <CanvasWithProvider initialDocument={doc} />;
   },
   parameters: {
     docs: {
       description: {
-        story: 'Select node and use Ctrl+C/Ctrl+V to copy and paste. Duplicated nodes get new IDs.',
+        story:
+          'Select node and use Ctrl+C/Ctrl+V to copy and paste. Duplicated nodes get new IDs.',
       },
     },
   },

@@ -18,7 +18,16 @@ import { Kanban as ViewKanbanIcon } from 'lucide-react';
 import { GitBranch as AccountTreeIcon } from 'lucide-react';
 import type React from 'react';
 
-import { AppBar, Avatar, Badge, Box, Button, IconButton, Toolbar, Typography } from '@ghatana/design-system';
+import {
+  AppBar,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  IconButton,
+  Toolbar,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { NavigationPage, TopNavProps } from './types';
 
@@ -72,9 +81,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               WebkitTextFillColor: 'transparent',
             }}
           />
-          <Typography
-            as="h6"
-            className="font-bold" >
+          <Typography as="h6" className="font-bold">
             DevSecOps Canvas
           </Typography>
         </Box>
@@ -158,7 +165,9 @@ export const TopNav: React.FC<TopNavProps> = ({
         <IconButton
           aria-label="Settings"
           onClick={() => handleNavClick('settings')}
-          className={currentPage === 'settings' ? 'text-blue-600' : 'text-gray-500'}
+          className={
+            currentPage === 'settings' ? 'text-blue-600' : 'text-gray-500'
+          }
         >
           <SettingsIcon />
         </IconButton>
@@ -183,7 +192,11 @@ export const TopNav: React.FC<TopNavProps> = ({
               <Typography as="p" className="text-sm" fontWeight={600}>
                 {user.name}
               </Typography>
-              <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+              <Typography
+                as="span"
+                className="text-xs text-gray-500"
+                color="text.secondary"
+              >
                 {user.role}
               </Typography>
             </Box>

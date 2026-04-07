@@ -59,14 +59,24 @@ describe('lifecycle phase preview routes', () => {
       estimatedReadyInHours: 0,
       predictionConfidence: 0.95,
       blockers: [],
-      requiredArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
-      completedArtifacts: ['Idea Brief', 'Problem Statement', 'Success Criteria'],
+      requiredArtifacts: [
+        'Idea Brief',
+        'Problem Statement',
+        'Success Criteria',
+      ],
+      completedArtifacts: [
+        'Idea Brief',
+        'Problem Statement',
+        'Success Criteria',
+      ],
     });
   });
 
   it('returns blockers when approved artifacts are missing', async () => {
     prismaMock.project.findUnique.mockResolvedValue({ id: 'project-2' });
-    prismaMock.lifecycleArtifact.findMany.mockResolvedValue([{ type: 'Idea Brief' }]);
+    prismaMock.lifecycleArtifact.findMany.mockResolvedValue([
+      { type: 'Idea Brief' },
+    ]);
 
     const response = await app.inject({
       method: 'GET',

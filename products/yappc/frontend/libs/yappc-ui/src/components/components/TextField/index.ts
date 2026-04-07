@@ -1,5 +1,5 @@
 export * from './TextField';
-export { 
+export {
   TextField as TextFieldTailwind,
-  type TextFieldProps as TextFieldTailwindProps
+  type TextFieldProps as TextFieldTailwindProps,
 } from './TextField.tailwind';

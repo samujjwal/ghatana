@@ -1,6 +1,6 @@
 /**
  * Tests for Contrast Testing Automation (Feature 2.32)
- * 
+ *
  * Tests WCAG contrast validation including:
  * - Contrast ratio calculation
  * - WCAG AA/AAA compliance
@@ -21,7 +21,7 @@ import {
   exportMarkdownReport,
   validateCanvasTheme,
   type ColorPair,
-  type ContrastTestReport
+  type ContrastTestReport,
 } from '../contrastTester';
 
 describe('contrastTester', () => {
@@ -91,7 +91,7 @@ describe('contrastTester', () => {
         background: '#ffffff',
         element: 'test-element',
         elementType: 'label',
-        textSize: 'normal'
+        textSize: 'normal',
       };
 
       const result = testColorPair(pair, 'AA');
@@ -108,7 +108,7 @@ describe('contrastTester', () => {
         background: '#ffffff',
         element: 'low-contrast',
         elementType: 'label',
-        textSize: 'normal'
+        textSize: 'normal',
       };
 
       const result = testColorPair(pair, 'AA');
@@ -124,7 +124,7 @@ describe('contrastTester', () => {
         background: '#ffffff',
         element: 'medium-contrast',
         elementType: 'label',
-        textSize: 'normal'
+        textSize: 'normal',
       };
 
       const aaResult = testColorPair(pair, 'AA');
@@ -142,11 +142,11 @@ describe('contrastTester', () => {
         background: '#ffffff',
         element: 'large-text',
         elementType: 'label',
-        textSize: 'large'
+        textSize: 'large',
       };
 
       const result = testColorPair(pair, 'AA');
-      
+
       // Large text requires 3:1, normal requires 4.5:1
       expect(result.pass.AA.large).toBe(true);
     });
@@ -156,7 +156,7 @@ describe('contrastTester', () => {
         foreground: '#cccccc',
         background: '#ffffff',
         element: 'fail-test',
-        elementType: 'label'
+        elementType: 'label',
       };
 
       const result = testColorPair(pair, 'AA', true);
@@ -172,7 +172,7 @@ describe('contrastTester', () => {
         foreground: '#cccccc',
         background: '#ffffff',
         element: 'no-remediation',
-        elementType: 'label'
+        elementType: 'label',
       };
 
       const result = testColorPair(pair, 'AA', false);
@@ -193,20 +193,20 @@ describe('contrastTester', () => {
           foreground: '#000000',
           background: '#ffffff',
           element: 'high-contrast',
-          elementType: 'label'
+          elementType: 'label',
         },
         {
           foreground: '#cccccc',
           background: '#ffffff',
           element: 'low-contrast',
-          elementType: 'label'
+          elementType: 'label',
         },
         {
           foreground: '#0000ff',
           background: '#ffffff',
           element: 'blue-text',
-          elementType: 'label'
-        }
+          elementType: 'label',
+        },
       ];
 
       const report = runBatchTests(pairs);
@@ -223,14 +223,14 @@ describe('contrastTester', () => {
           foreground: '#000000',
           background: '#ffffff',
           element: 'test-1',
-          elementType: 'label'
+          elementType: 'label',
         },
         {
           foreground: '#ffffff',
           background: '#000000',
           element: 'test-2',
-          elementType: 'label'
-        }
+          elementType: 'label',
+        },
       ];
 
       const report = runBatchTests(pairs, { wcagLevel: 'AA' });
@@ -245,8 +245,8 @@ describe('contrastTester', () => {
           foreground: '#000000',
           background: '#ffffff',
           element: 'test',
-          elementType: 'label'
-        }
+          elementType: 'label',
+        },
       ];
 
       const report = runBatchTests(pairs);
@@ -261,8 +261,8 @@ describe('contrastTester', () => {
           foreground: '#cccccc',
           background: '#ffffff',
           element: 'fail',
-          elementType: 'label'
-        }
+          elementType: 'label',
+        },
       ];
 
       const report = runBatchTests(pairs);
@@ -278,15 +278,15 @@ describe('contrastTester', () => {
           background: '#ffffff',
           element: 'button',
           elementType: 'button',
-          isInteractive: true
+          isInteractive: true,
         },
         {
           foreground: '#000000',
           background: '#ffffff',
           element: 'label',
           elementType: 'label',
-          isInteractive: false
-        }
+          isInteractive: false,
+        },
       ];
 
       const report = runBatchTests(pairs, { includeInteractive: false });
@@ -310,11 +310,11 @@ describe('contrastTester', () => {
         failed: 0,
         compliance: {
           AA: { normal: 2, large: 2 },
-          AAA: { normal: 2, large: 2 }
+          AAA: { normal: 2, large: 2 },
         },
         results: [],
         summary: '2/2 tests passed (100%)',
-        recommendations: []
+        recommendations: [],
       };
 
       const output = generateCIOutput(report);
@@ -333,11 +333,11 @@ describe('contrastTester', () => {
         failed: 1,
         compliance: {
           AA: { normal: 1, large: 1 },
-          AAA: { normal: 1, large: 1 }
+          AAA: { normal: 1, large: 1 },
         },
         results: [],
         summary: '1/2 tests passed (50%)',
-        recommendations: []
+        recommendations: [],
       };
 
       const output = generateCIOutput(report);
@@ -355,11 +355,11 @@ describe('contrastTester', () => {
         failed: 0,
         compliance: {
           AA: { normal: 1, large: 1 },
-          AAA: { normal: 0, large: 0 }
+          AAA: { normal: 0, large: 0 },
         },
         results: [],
         summary: '0/1 tests passed',
-        recommendations: []
+        recommendations: [],
       };
 
       const output = generateCIOutput(report, { failOnWarning: true });
@@ -379,7 +379,7 @@ describe('contrastTester', () => {
         failed: 1,
         compliance: {
           AA: { normal: 1, large: 1 },
-          AAA: { normal: 1, large: 1 }
+          AAA: { normal: 1, large: 1 },
         },
         results: [
           {
@@ -387,40 +387,40 @@ describe('contrastTester', () => {
               foreground: '#000000',
               background: '#ffffff',
               element: 'pass-test',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 21,
             pass: {
               AA: { normal: true, large: true },
-              AAA: { normal: true, large: true }
+              AAA: { normal: true, large: true },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
             passed: true,
             severity: 'pass',
-            message: 'Passed'
+            message: 'Passed',
           },
           {
             pair: {
               foreground: '#cccccc',
               background: '#ffffff',
               element: 'fail-test',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 1.5,
             pass: {
               AA: { normal: false, large: false },
-              AAA: { normal: false, large: false }
+              AAA: { normal: false, large: false },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
             passed: false,
             severity: 'fail',
-            message: 'Failed'
-          }
+            message: 'Failed',
+          },
         ],
         summary: 'Test summary',
-        recommendations: []
+        recommendations: [],
       };
 
       const xml = generateJUnitXML(report);
@@ -442,7 +442,7 @@ describe('contrastTester', () => {
         failed: 1,
         compliance: {
           AA: { normal: 0, large: 0 },
-          AAA: { normal: 0, large: 0 }
+          AAA: { normal: 0, large: 0 },
         },
         results: [
           {
@@ -450,22 +450,22 @@ describe('contrastTester', () => {
               foreground: '#000000',
               background: '#ffffff',
               element: 'test & <special>',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 1.5,
             pass: {
               AA: { normal: false, large: false },
-              AAA: { normal: false, large: false }
+              AAA: { normal: false, large: false },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
             passed: false,
             severity: 'fail',
-            message: 'Message with & < > characters'
-          }
+            message: 'Message with & < > characters',
+          },
         ],
         summary: 'Test',
-        recommendations: []
+        recommendations: [],
       };
 
       const xml = generateJUnitXML(report);
@@ -491,7 +491,7 @@ describe('contrastTester', () => {
         failed: 1,
         compliance: {
           AA: { normal: 1, large: 1 },
-          AAA: { normal: 1, large: 1 }
+          AAA: { normal: 1, large: 1 },
         },
         results: [
           {
@@ -499,30 +499,30 @@ describe('contrastTester', () => {
               foreground: '#000000',
               background: '#ffffff',
               element: 'success',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 21,
             pass: {
               AA: { normal: true, large: true },
-              AAA: { normal: true, large: true }
+              AAA: { normal: true, large: true },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
             passed: true,
             severity: 'pass',
-            message: 'Passed'
+            message: 'Passed',
           },
           {
             pair: {
               foreground: '#cccccc',
               background: '#ffffff',
               element: 'failure',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 1.5,
             pass: {
               AA: { normal: false, large: false },
-              AAA: { normal: false, large: false }
+              AAA: { normal: false, large: false },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
@@ -533,19 +533,19 @@ describe('contrastTester', () => {
               type: 'darken',
               currentColors: {
                 foreground: '#cccccc',
-                background: '#ffffff'
+                background: '#ffffff',
               },
               suggestedColors: {
-                foreground: '#666666'
+                foreground: '#666666',
               },
               expectedRatio: 4.5,
               achievedRatio: 1.5,
-              improvement: 'Darken foreground'
-            }
-          }
+              improvement: 'Darken foreground',
+            },
+          },
         ],
         summary: '1/2 tests passed',
-        recommendations: ['Fix failures']
+        recommendations: ['Fix failures'],
       };
 
       const markdown = exportMarkdownReport(report);
@@ -568,7 +568,7 @@ describe('contrastTester', () => {
         failed: 0,
         compliance: {
           AA: { normal: 1, large: 1 },
-          AAA: { normal: 1, large: 1 }
+          AAA: { normal: 1, large: 1 },
         },
         results: [
           {
@@ -576,22 +576,22 @@ describe('contrastTester', () => {
               foreground: '#000000',
               background: '#ffffff',
               element: 'test-element',
-              elementType: 'label'
+              elementType: 'label',
             },
             ratio: 21,
             pass: {
               AA: { normal: true, large: true },
-              AAA: { normal: true, large: true }
+              AAA: { normal: true, large: true },
             },
             wcagLevel: 'AA',
             textSize: 'normal',
             passed: true,
             severity: 'pass',
-            message: 'Passed'
-          }
+            message: 'Passed',
+          },
         ],
         summary: '1/1 tests passed',
-        recommendations: []
+        recommendations: [],
       };
 
       const markdown = exportMarkdownReport(report);
@@ -615,8 +615,8 @@ describe('contrastTester', () => {
           selection: '#0066cc',
           error: '#cc0000',
           warning: '#ff9900',
-          success: '#00cc00'
-        }
+          success: '#00cc00',
+        },
       };
 
       const report = validateCanvasTheme(theme);
@@ -630,24 +630,28 @@ describe('contrastTester', () => {
     it('should test element-specific colors', () => {
       const theme = {
         colors: {
-          background: '#ffffff'
+          background: '#ffffff',
         },
         elementTypes: {
           node: {
             fg: '#000000',
-            bg: '#f0f0f0'
+            bg: '#f0f0f0',
           },
           edge: {
             fg: '#666666',
-            bg: '#ffffff'
-          }
-        }
+            bg: '#ffffff',
+          },
+        },
       };
 
       const report = validateCanvasTheme(theme);
 
-      expect(report.results.some(r => r.pair.element === 'node-element')).toBe(true);
-      expect(report.results.some(r => r.pair.element === 'edge-element')).toBe(true);
+      expect(
+        report.results.some((r) => r.pair.element === 'node-element')
+      ).toBe(true);
+      expect(
+        report.results.some((r) => r.pair.element === 'edge-element')
+      ).toBe(true);
     });
 
     it('should provide compliance report for theme', () => {
@@ -655,8 +659,8 @@ describe('contrastTester', () => {
         colors: {
           background: '#ffffff',
           foreground: '#000000',
-          error: '#ff0000'
-        }
+          error: '#ff0000',
+        },
       };
 
       const report = validateCanvasTheme(theme);

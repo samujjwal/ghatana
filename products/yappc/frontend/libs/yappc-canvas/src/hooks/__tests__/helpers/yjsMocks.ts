@@ -48,11 +48,14 @@ export const createMockYMap = () => ({
 /**
  *
  */
-export function withMockYDoc(result: unknown, opts?: {
-  nodesArray?: unknown,
-  edgesArray?: unknown,
-  map?: unknown
-}) {
+export function withMockYDoc(
+  result: unknown,
+  opts?: {
+    nodesArray?: unknown;
+    edgesArray?: unknown;
+    map?: unknown;
+  }
+) {
   const nodesArray = opts?.nodesArray ?? createMockYArray();
   const edgesArray = opts?.edgesArray ?? createMockYArray();
   const map = opts?.map ?? createMockYMap();
@@ -62,7 +65,8 @@ export function withMockYDoc(result: unknown, opts?: {
   ydoc.transact = vi.fn((fn: unknown) => fn());
 
   // getArray called for nodes then edges in many tests
-  ydoc.getArray = vi.fn()
+  ydoc.getArray = vi
+    .fn()
     .mockReturnValueOnce(nodesArray)
     .mockReturnValueOnce(edgesArray);
 

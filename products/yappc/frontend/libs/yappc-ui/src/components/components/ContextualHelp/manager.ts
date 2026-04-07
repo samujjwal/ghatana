@@ -7,7 +7,6 @@ import { DEFAULT_HELP_CONTENT } from './content';
 import type { HelpContent } from './types';
 import { HelpContentUtils } from './utils';
 
-
 /**
  * Main manager for help content
  *

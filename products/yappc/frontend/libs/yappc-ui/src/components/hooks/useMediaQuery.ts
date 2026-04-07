@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 
 /**
  * Hook that tracks a media query match
- * 
+ *
  * @param query - The media query string
  * @returns Whether the media query matches
- * 
+ *
  * @example
  * ```tsx
  * const isMobile = useMediaQuery('(max-width: 768px)');
@@ -22,7 +22,7 @@ export function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);
-    
+
     const handleChange = (event: MediaQueryListEvent) => {
       setMatches(event.matches);
     };

@@ -1,6 +1,6 @@
 /**
  * LINDDUN Threat Catalog
- * 
+ *
  * Privacy threat catalog based on LINDDUN methodology.
  */
 

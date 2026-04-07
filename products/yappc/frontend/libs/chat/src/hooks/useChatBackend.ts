@@ -1,9 +1,9 @@
 /**
  * Chat Backend Integration Hook
- * 
+ *
  * Integrates chat functionality with backend ChatHandler via WebSocket.
  * Handles message sending, typing indicators, read receipts, and reactions.
- * 
+ *
  * @module chat/hooks
  * @doc.type integration
  * @doc.purpose Real-time team chat with backend
@@ -112,38 +112,38 @@ export interface ChatState {
 export interface UseChatBackendConfig {
   /** WebSocket client instance */
   wsClient: WebSocketClient;
-  
+
   /** Current user ID */
   userId: string;
-  
+
   /** Current user name */
   userName: string;
-  
+
   /** User avatar URL */
   userAvatar?: string;
-  
+
   /** Callback when message received */
   onMessageReceived?: (message: ChatMessage) => void;
-  
+
   /** Callback when typing indicator received */
   onTypingUpdate?: (indicator: TypingIndicator) => void;
-  
+
   /** Callback when read receipt received */
   onReadReceipt?: (receipt: ReadReceipt) => void;
-  
+
   /** Callback when reaction received */
   onReaction?: (messageId: string, reaction: ChatReaction) => void;
-  
+
   /** Enable debug logging */
   debug?: boolean;
 }
 
 /**
  * Chat Backend Integration Hook
- * 
+ *
  * Connects chat UI to backend ChatHandler via WebSocket.
  * Handles all chat operations with proper error handling and state management.
- * 
+ *
  * Features:
  * - Send/receive messages in real-time
  * - Typing indicators with auto-clear (5s timeout)
@@ -152,7 +152,7 @@ export interface UseChatBackendConfig {
  * - Thread support
  * - Message replies
  * - Automatic cleanup
- * 
+ *
  * @example
  * ```tsx
  * const chat = useChatBackend({
@@ -163,16 +163,16 @@ export interface UseChatBackendConfig {
  *     console.log('New message:', msg);
  *   },
  * });
- * 
+ *
  * // Send message
  * chat.sendMessage('channel-123', 'Hello team!');
- * 
+ *
  * // Send typing indicator
  * chat.sendTyping('channel-123', true);
- * 
+ *
  * // Mark as read
  * chat.markAsRead('channel-123', 'message-456');
- * 
+ *
  * // Add reaction
  * chat.addReaction('message-456', '👍');
  * ```
@@ -199,7 +199,9 @@ export function useChatBackend(config: UseChatBackendConfig) {
   });
 
   // Typing timeout refs
-  const typingTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const typingTimeouts = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   /**
    * Debug logging
@@ -217,7 +219,11 @@ export function useChatBackend(config: UseChatBackendConfig) {
    * Send chat message
    */
   const sendMessage = useCallback(
-    (channelId: string, content: string, options?: { threadId?: string; replyTo?: string }) => {
+    (
+      channelId: string,
+      content: string,
+      options?: { threadId?: string; replyTo?: string }
+    ) => {
       if (!wsClient.isConnected()) {
         log('Cannot send message - WebSocket not connected');
         return;
@@ -344,51 +350,58 @@ export function useChatBackend(config: UseChatBackendConfig) {
    * Handle typing indicators
    */
   useEffect(() => {
-    const unsubscribe = wsClient.on<TypingIndicator>('chat.typing', (indicator) => {
-      // Ignore own typing
-      if (indicator.userId === userId) {
-        return;
-      }
+    const unsubscribe = wsClient.on<TypingIndicator>(
+      'chat.typing',
+      (indicator) => {
+        // Ignore own typing
+        if (indicator.userId === userId) {
+          return;
+        }
 
-      log('Received typing indicator:', indicator);
+        log('Received typing indicator:', indicator);
 
-      // Update state
-      setState((prev) => {
-        const newTypingUsers = new Map(prev.typingUsers);
-        const channelTyping = newTypingUsers.get(indicator.channelId) || [];
-        
-        // Remove existing indicator for this user
-        const filtered = channelTyping.filter((t) => t.userId !== indicator.userId);
-        
-        // Add new indicator
-        newTypingUsers.set(indicator.channelId, [...filtered, indicator]);
-        
-        return { ...prev, typingUsers: newTypingUsers };
-      });
-
-      // Auto-clear typing indicator after 5 seconds
-      const timeoutKey = `${indicator.channelId}-${indicator.userId}`;
-      const existingTimeout = typingTimeouts.current.get(timeoutKey);
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-      }
-
-      const timeout = setTimeout(() => {
+        // Update state
         setState((prev) => {
           const newTypingUsers = new Map(prev.typingUsers);
           const channelTyping = newTypingUsers.get(indicator.channelId) || [];
-          const filtered = channelTyping.filter((t) => t.userId !== indicator.userId);
-          newTypingUsers.set(indicator.channelId, filtered);
+
+          // Remove existing indicator for this user
+          const filtered = channelTyping.filter(
+            (t) => t.userId !== indicator.userId
+          );
+
+          // Add new indicator
+          newTypingUsers.set(indicator.channelId, [...filtered, indicator]);
+
           return { ...prev, typingUsers: newTypingUsers };
         });
-        typingTimeouts.current.delete(timeoutKey);
-      }, 5000);
 
-      typingTimeouts.current.set(timeoutKey, timeout);
+        // Auto-clear typing indicator after 5 seconds
+        const timeoutKey = `${indicator.channelId}-${indicator.userId}`;
+        const existingTimeout = typingTimeouts.current.get(timeoutKey);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+        }
 
-      // Notify callback
-      onTypingUpdate?.(indicator);
-    });
+        const timeout = setTimeout(() => {
+          setState((prev) => {
+            const newTypingUsers = new Map(prev.typingUsers);
+            const channelTyping = newTypingUsers.get(indicator.channelId) || [];
+            const filtered = channelTyping.filter(
+              (t) => t.userId !== indicator.userId
+            );
+            newTypingUsers.set(indicator.channelId, filtered);
+            return { ...prev, typingUsers: newTypingUsers };
+          });
+          typingTimeouts.current.delete(timeoutKey);
+        }, 5000);
+
+        typingTimeouts.current.set(timeoutKey, timeout);
+
+        // Notify callback
+        onTypingUpdate?.(indicator);
+      }
+    );
 
     return unsubscribe;
   }, [wsClient, userId, onTypingUpdate, log]);
@@ -424,40 +437,49 @@ export function useChatBackend(config: UseChatBackendConfig) {
    * Handle reactions
    */
   useEffect(() => {
-    const unsubscribe = wsClient.on<{ messageId: string; reaction: ChatReaction }>('chat.reaction', (payload) => {
+    const unsubscribe = wsClient.on<{
+      messageId: string;
+      reaction: ChatReaction;
+    }>('chat.reaction', (payload) => {
       log('Received reaction:', payload);
 
       // Update message reactions in state
       setState((prev) => {
         const newMessages = new Map(prev.messages);
-        
+
         // Find and update the message
         for (const [channelId, messages] of newMessages.entries()) {
-          const messageIndex = messages.findIndex((m) => m.id === payload.messageId);
+          const messageIndex = messages.findIndex(
+            (m) => m.id === payload.messageId
+          );
           if (messageIndex !== -1) {
             const updatedMessages = [...messages];
             const message = { ...updatedMessages[messageIndex] };
             message.reactions = message.reactions || [];
-            
+
             // Check if reaction already exists
             const existingIndex = message.reactions.findIndex(
-              (r) => r.emoji === payload.reaction.emoji && r.userId === payload.reaction.userId
+              (r) =>
+                r.emoji === payload.reaction.emoji &&
+                r.userId === payload.reaction.userId
             );
-            
+
             if (existingIndex !== -1) {
               // Remove reaction
-              message.reactions = message.reactions.filter((_, i) => i !== existingIndex);
+              message.reactions = message.reactions.filter(
+                (_, i) => i !== existingIndex
+              );
             } else {
               // Add reaction
               message.reactions = [...message.reactions, payload.reaction];
             }
-            
+
             updatedMessages[messageIndex] = message;
             newMessages.set(channelId, updatedMessages);
             break;
           }
         }
-        
+
         return { ...prev, messages: newMessages };
       });
 
@@ -496,18 +518,20 @@ export function useChatBackend(config: UseChatBackendConfig) {
     // State
     state,
     isConnected: state.isConnected,
-    
+
     // Actions
     sendMessage,
     sendTyping,
     markAsRead,
     addReaction,
     removeReaction,
-    
+
     // Helpers
     getMessages: (channelId: string) => state.messages.get(channelId) || [],
-    getTypingUsers: (channelId: string) => state.typingUsers.get(channelId) || [],
-    getReadReceipts: (messageId: string) => state.readReceipts.get(messageId) || [],
+    getTypingUsers: (channelId: string) =>
+      state.typingUsers.get(channelId) || [],
+    getReadReceipts: (messageId: string) =>
+      state.readReceipts.get(messageId) || [],
   };
 }
 

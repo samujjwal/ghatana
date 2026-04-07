@@ -246,7 +246,8 @@ export function useTasks(filters?: {
         if (filters?.assignee) queryParams.set('assignee', filters.assignee);
         if (filters?.phase) queryParams.set('phase', filters.phase);
 
-        const endpoint = queryParams.size > 0 ? `tasks?${queryParams.toString()}` : 'tasks';
+        const endpoint =
+          queryParams.size > 0 ? `tasks?${queryParams.toString()}` : 'tasks';
         return await fetchConfig<TaskData[]>(endpoint);
       } catch (error) {
         // Backend not ready - return empty array

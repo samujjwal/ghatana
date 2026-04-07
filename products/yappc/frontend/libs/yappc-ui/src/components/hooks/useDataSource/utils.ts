@@ -103,9 +103,7 @@ export class DataSourceUtils {
 
     const json: unknown = await response.json();
     return (
-      config.transformResponse
-        ? config.transformResponse(json)
-        : json
+      config.transformResponse ? config.transformResponse(json) : json
     ) as TData;
   }
 
@@ -164,9 +162,7 @@ export class DataSourceUtils {
 
     const data = parsed.data;
     return (
-      config.transformResponse
-        ? config.transformResponse(data)
-        : data
+      config.transformResponse ? config.transformResponse(data) : data
     ) as TData;
   }
 }

@@ -1,15 +1,15 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom';
 
 import { Box } from '@ghatana/design-system';
 
-import Header from './components/common/Header'
-import DashboardPage from './pages/DashboardPage'
-import LoginPage from './pages/LoginPage'
-import ProjectPage from './pages/ProjectPage'
-import WorkspacePage from './pages/WorkspacePage'
+import Header from './components/common/Header';
+import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
+import ProjectPage from './pages/ProjectPage';
+import WorkspacePage from './pages/WorkspacePage';
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('authToken')
+  const isAuthenticated = !!localStorage.getItem('authToken');
 
   return (
     <Box className="min-h-screen">
@@ -21,7 +21,7 @@ function App() {
         <Route path="/project/:projectId" element={<ProjectPage />} />
       </Routes>
     </Box>
-  )
+  );
 }
 
-export default App
+export default App;

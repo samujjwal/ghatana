@@ -463,7 +463,9 @@ describe.skip('useDataSource', () => {
 
   describe('Transform Response', () => {
     it('transforms response data', async () => {
-      const mockData = { user: { id: 1, first_name: 'John', last_name: 'Doe' } };
+      const mockData = {
+        user: { id: 1, first_name: 'John', last_name: 'Doe' },
+      };
       (global.fetch as unknown).mockResolvedValueOnce({
         ok: true,
         json: async () => mockData,

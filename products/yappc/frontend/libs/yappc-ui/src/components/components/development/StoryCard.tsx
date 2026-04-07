@@ -250,7 +250,8 @@ export const StoryCard: React.FC<StoryCardProps> = ({
             className="pr-indicator"
             style={{
               background:
-                PR_STATUS_COLORS[story.pullRequest!.status] || PR_STATUS_COLORS.open,
+                PR_STATUS_COLORS[story.pullRequest!.status] ||
+                PR_STATUS_COLORS.open,
             }}
           />
           <span className="pr-text">PR #{story.pullRequest!.number}</span>

@@ -88,12 +88,20 @@ describe('AwarenessManager', () => {
     });
 
     it('should get all presence states', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(600);
 
-      manager.setLocalPresence({ userId: 'user2', username: 'Bob', color: '#00ff00' });
+      manager.setLocalPresence({
+        userId: 'user2',
+        username: 'Bob',
+        color: '#00ff00',
+      });
 
       const all = manager.getAllPresence();
       expect(all).toHaveLength(2);
@@ -103,7 +111,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should get specific user presence', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       const presence = manager.getPresence('user1');
       expect(presence?.username).toBe('Alice');
@@ -113,7 +125,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should remove presence', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
       expect(manager.getPresenceCount()).toBe(1);
 
       manager.removePresence('user1');
@@ -133,7 +149,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should set editing indicator', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(200);
@@ -147,7 +167,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should clear editing indicator', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(200);
@@ -164,7 +188,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should throttle editing updates', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(200);
@@ -179,12 +207,20 @@ describe('AwarenessManager', () => {
     });
 
     it('should get all editing users', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(600);
 
-      manager.setLocalPresence({ userId: 'user2', username: 'Bob', color: '#00ff00' });
+      manager.setLocalPresence({
+        userId: 'user2',
+        username: 'Bob',
+        color: '#00ff00',
+      });
 
       vi.advanceTimersByTime(200);
       manager.setEditing('user1', 'node123');
@@ -367,7 +403,11 @@ describe('AwarenessManager', () => {
       const updates: AwarenessUpdate[] = [];
       manager.subscribe((update) => updates.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       expect(updates).toHaveLength(1);
       expect(updates[0].added).toEqual(['user1']);
@@ -378,12 +418,20 @@ describe('AwarenessManager', () => {
       const updates: AwarenessUpdate[] = [];
       manager.subscribe((update) => updates.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(600);
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#00ff00' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#00ff00',
+      });
 
       expect(updates).toHaveLength(2);
       expect(updates[1].updated).toEqual(['user1']);
@@ -396,7 +444,11 @@ describe('AwarenessManager', () => {
       const updates: AwarenessUpdate[] = [];
       manager.subscribe((update) => updates.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
       manager.removePresence('user1');
 
       expect(updates).toHaveLength(2);
@@ -408,7 +460,11 @@ describe('AwarenessManager', () => {
       const updates: AwarenessUpdate[] = [];
       const unsubscribe = manager.subscribe((update) => updates.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
       expect(updates).toHaveLength(1);
 
       unsubscribe();
@@ -416,7 +472,11 @@ describe('AwarenessManager', () => {
       vi.useFakeTimers();
       vi.advanceTimersByTime(600);
 
-      manager.setLocalPresence({ userId: 'user2', username: 'Bob', color: '#00ff00' });
+      manager.setLocalPresence({
+        userId: 'user2',
+        username: 'Bob',
+        color: '#00ff00',
+      });
       expect(updates).toHaveLength(1); // No new update
 
       vi.useRealTimers();
@@ -429,7 +489,11 @@ describe('AwarenessManager', () => {
       manager.subscribe((update) => updates1.push(update));
       manager.subscribe((update) => updates2.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       expect(updates1).toHaveLength(1);
       expect(updates2).toHaveLength(1);
@@ -448,7 +512,11 @@ describe('AwarenessManager', () => {
     });
 
     it('should remove inactive users', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
       expect(manager.getPresenceCount()).toBe(1);
 
       // Fast-forward past inactivity timeout
@@ -461,16 +529,28 @@ describe('AwarenessManager', () => {
     });
 
     it('should not remove active users', () => {
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
 
       // Update activity before timeout
       vi.advanceTimersByTime(600);
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.advanceTimersByTime(600);
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.advanceTimersByTime(15000);
 
@@ -483,7 +563,11 @@ describe('AwarenessManager', () => {
       const updates: AwarenessUpdate[] = [];
       manager.subscribe((update) => updates.push(update));
 
-      manager.setLocalPresence({ userId: 'user1', username: 'Alice', color: '#ff0000' });
+      manager.setLocalPresence({
+        userId: 'user1',
+        username: 'Alice',
+        color: '#ff0000',
+      });
 
       vi.useFakeTimers();
       vi.advanceTimersByTime(15000);
@@ -526,7 +610,9 @@ describe('AwarenessManager', () => {
     it('should reject presence with missing required fields', () => {
       expect(validatePresence({})).toBe(false);
       expect(validatePresence({ userId: 'user1' })).toBe(false);
-      expect(validatePresence({ userId: 'user1', username: 'Alice' })).toBe(false);
+      expect(validatePresence({ userId: 'user1', username: 'Alice' })).toBe(
+        false
+      );
     });
 
     it('should reject presence with invalid color', () => {

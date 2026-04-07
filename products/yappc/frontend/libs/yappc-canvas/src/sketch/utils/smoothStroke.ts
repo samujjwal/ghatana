@@ -50,7 +50,9 @@ const DEFAULT_OPTIONS: SmoothStrokeOptions = {
  * @param points - Flat array [x1, y1, x2, y2, ...]
  * @returns Array of [x, y, pressure] tuples
  */
-export function pointsToInputPoints(points: number[]): [number, number, number][] {
+export function pointsToInputPoints(
+  points: number[]
+): [number, number, number][] {
   const result: [number, number, number][] = [];
   for (let i = 0; i < points.length; i += 2) {
     if (i + 1 < points.length) {
@@ -110,7 +112,10 @@ export function getSmoothStrokePath(
  * @param tolerance - Simplification tolerance
  * @returns Simplified points array
  */
-export function simplifyPoints(points: number[], tolerance: number = 2): number[] {
+export function simplifyPoints(
+  points: number[],
+  tolerance: number = 2
+): number[] {
   if (points.length < 6) {
     return points;
   }

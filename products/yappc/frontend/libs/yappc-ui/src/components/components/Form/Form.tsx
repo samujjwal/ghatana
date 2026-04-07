@@ -34,7 +34,12 @@ export interface FormProps {
 /**
  * Form component that provides form state and handlers to its children
  */
-export const Form = ({ initialValues, onSubmit, validate, children }: FormProps) => {
+export const Form = ({
+  initialValues,
+  onSubmit,
+  validate,
+  children,
+}: FormProps) => {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -46,7 +51,7 @@ export const Form = ({ initialValues, onSubmit, validate, children }: FormProps)
   // Set a field value
   const setFieldValue = (name: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-    
+
     // Validate the field if validate function is provided
     if (validate) {
       const newErrors = validate({ ...values, [name]: value });
@@ -67,27 +72,27 @@ export const Form = ({ initialValues, onSubmit, validate, children }: FormProps)
   // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     const allTouched = Object.keys(values).reduce(
       (acc, key) => ({ ...acc, [key]: true }),
       {}
     );
     setTouched(allTouched);
-    
+
     // Validate all values if validate function is provided
     if (validate) {
       const validationErrors = validate(values);
       setErrors(validationErrors);
-      
+
       // Don't submit if there are errors
       if (Object.keys(validationErrors).length > 0) {
         return;
       }
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await onSubmit(values);
     } finally {
@@ -120,10 +125,10 @@ export const Form = ({ initialValues, onSubmit, validate, children }: FormProps)
 // Custom hook to use the form context
 export const useForm = () => {
   const context = useContext(FormContext);
-  
+
   if (!context) {
     throw new Error('useForm must be used within a Form component');
   }
-  
+
   return context;
 };

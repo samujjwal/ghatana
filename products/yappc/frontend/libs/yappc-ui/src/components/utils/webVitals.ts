@@ -20,9 +20,9 @@ type ReportHandler = (metric: WebVitalsMetric) => void;
 
 /**
  * Report Web Vitals metrics
- * 
+ *
  * @param onReport - Callback to handle metrics
- * 
+ *
  * @example
  * ```tsx
  * reportWebVitals((metric) => {
@@ -40,15 +40,17 @@ export function reportWebVitals(onReport: ReportHandler): void {
   if (typeof window === 'undefined') return;
 
   // Dynamically import web-vitals to avoid bundling it
-  import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
-    onCLS(onReport);
-    onFID(onReport);
-    onFCP(onReport);
-    onLCP(onReport);
-    onTTFB(onReport);
-  }).catch((error) => {
-    console.error('Failed to load web-vitals:', error);
-  });
+  import('web-vitals')
+    .then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
+      onCLS(onReport);
+      onFID(onReport);
+      onFCP(onReport);
+      onLCP(onReport);
+      onTTFB(onReport);
+    })
+    .catch((error) => {
+      console.error('Failed to load web-vitals:', error);
+    });
 }
 
 /**
@@ -67,7 +69,7 @@ export function getPerformanceRating(
   };
 
   const [good, poor] = thresholds[name] || [0, 0];
-  
+
   if (value <= good) return 'good';
   if (value <= poor) return 'needs-improvement';
   return 'poor';
@@ -85,7 +87,7 @@ export class PerformanceMonitor {
    */
   mark(name: string): void {
     if (typeof performance === 'undefined') return;
-    
+
     performance.mark(name);
     this.marks.set(name, performance.now());
   }
@@ -105,7 +107,7 @@ export class PerformanceMonitor {
 
       const entries = performance.getEntriesByName(name, 'measure');
       const duration = entries[entries.length - 1]?.duration || 0;
-      
+
       this.measures.set(name, duration);
       return duration;
     } catch (error) {
@@ -126,7 +128,7 @@ export class PerformanceMonitor {
    */
   clear(): void {
     if (typeof performance === 'undefined') return;
-    
+
     performance.clearMarks();
     performance.clearMeasures();
     this.marks.clear();
@@ -148,9 +150,12 @@ export function trackRenderTime(componentName: string): () => void {
   return () => {
     monitor.mark(endMark);
     const duration = monitor.measure(measureName, startMark, endMark);
-    
-    if (duration > 16) { // Longer than one frame (60fps)
-      console.warn(`Slow render: ${componentName} took ${duration.toFixed(2)}ms`);
+
+    if (duration > 16) {
+      // Longer than one frame (60fps)
+      console.warn(
+        `Slow render: ${componentName} took ${duration.toFixed(2)}ms`
+      );
     }
   };
 }

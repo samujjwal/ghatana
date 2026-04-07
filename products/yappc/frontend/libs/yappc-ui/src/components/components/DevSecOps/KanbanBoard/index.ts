@@ -15,7 +15,7 @@ export type { KanbanBoardProps, KanbanColumn, DragEventData } from './types';
 // AI-enhanced KanbanBoard
 export { SmartKanbanBoard } from './SmartKanbanBoard';
 export type {
-    SmartKanbanBoardProps,
-    KanbanAISuggestion,
-    BoardInsights,
+  SmartKanbanBoardProps,
+  KanbanAISuggestion,
+  BoardInsights,
 } from './SmartKanbanBoard';

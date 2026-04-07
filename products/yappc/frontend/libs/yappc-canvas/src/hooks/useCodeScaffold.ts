@@ -1,14 +1,14 @@
 /**
  * useCodeScaffold Hook
- * 
+ *
  * React hook for code scaffolding from service nodes.
  * Follows Journey 3.1 (Developer - Code Scaffolding) from YAPPC_USER_JOURNEYS.md.
- * 
+ *
  * Features:
  * - Integration with AICodeGenerationService
  * - File generation workflow
  * - IDE synchronization
- * 
+ *
  * @doc.type hook
  * @doc.purpose Code scaffolding state management
  * @doc.layer product
@@ -21,115 +21,125 @@ import type { IAIService } from '@yappc/ai/core';
 
 import type { ScaffoldOptions } from '../components/CodeScaffoldDialog';
 import { AICodeGenerationService } from '../integration/aiCodeGeneration';
-import type { CodeGenerationResult, GeneratedFile, ServiceNodeData, APIEndpointNodeData } from '../integration/types';
+import type {
+  CodeGenerationResult,
+  GeneratedFile,
+  ServiceNodeData,
+  APIEndpointNodeData,
+} from '../integration/types';
 
 /**
  * useCodeScaffold options
  */
 export interface UseCodeScaffoldOptions {
-    /** AI service instance */
-    aiService?: IAIService;
-    /** Callback when scaffolding starts */
-    onScaffoldStart?: (options: ScaffoldOptions) => void;
-    /** Callback when scaffolding completes */
-    onScaffoldComplete?: (result: CodeGenerationResult) => void;
-    /** Callback on error */
-    onError?: (error: Error) => void;
-    /** Callback when files should be written to IDE */
-    onFilesGenerated?: (files: Array<{ path: string; content: string }>) => void;
+  /** AI service instance */
+  aiService?: IAIService;
+  /** Callback when scaffolding starts */
+  onScaffoldStart?: (options: ScaffoldOptions) => void;
+  /** Callback when scaffolding completes */
+  onScaffoldComplete?: (result: CodeGenerationResult) => void;
+  /** Callback on error */
+  onError?: (error: Error) => void;
+  /** Callback when files should be written to IDE */
+  onFilesGenerated?: (files: Array<{ path: string; content: string }>) => void;
 }
 
 /**
  * useCodeScaffold result
  */
 export interface UseCodeScaffoldResult {
-    /** Current generation result */
-    result: CodeGenerationResult | null;
-    /** Loading state */
-    loading: boolean;
-    /** Error if any */
-    error: Error | null;
-    /** Generate code from node */
-    scaffoldCode: (options: ScaffoldOptions) => Promise<CodeGenerationResult>;
-    /** Clear result */
-    clearResult: () => void;
+  /** Current generation result */
+  result: CodeGenerationResult | null;
+  /** Loading state */
+  loading: boolean;
+  /** Error if any */
+  error: Error | null;
+  /** Generate code from node */
+  scaffoldCode: (options: ScaffoldOptions) => Promise<CodeGenerationResult>;
+  /** Clear result */
+  clearResult: () => void;
 }
 
 /**
  * Convert scaffold options to service node data
  */
 function scaffoldOptionsToNodeData(options: ScaffoldOptions): ServiceNodeData {
-    return {
-        label: options.nodeLabel,
-        type: 'service',
-        persona: 'developer',
-        description: `${options.language}/${options.framework} service`,
-        metadata: {
-            language: options.language,
-            framework: options.framework,
-            includeTests: options.includeTests,
-            includeDocumentation: options.includeDocumentation,
-            includeValidation: options.includeValidation,
-        },
-    };
+  return {
+    label: options.nodeLabel,
+    type: 'service',
+    persona: 'developer',
+    description: `${options.language}/${options.framework} service`,
+    metadata: {
+      language: options.language,
+      framework: options.framework,
+      includeTests: options.includeTests,
+      includeDocumentation: options.includeDocumentation,
+      includeValidation: options.includeValidation,
+    },
+  };
 }
 
 /**
  * useCodeScaffold hook
  */
 export function useCodeScaffold(
-    options: UseCodeScaffoldOptions = {}
+  options: UseCodeScaffoldOptions = {}
 ): UseCodeScaffoldResult {
-    const {
-        aiService,
-        onScaffoldStart,
-        onScaffoldComplete,
-        onError,
-        onFilesGenerated,
-    } = options;
+  const {
+    aiService,
+    onScaffoldStart,
+    onScaffoldComplete,
+    onError,
+    onFilesGenerated,
+  } = options;
 
-    const [result, setResult] = useState<CodeGenerationResult | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<Error | null>(null);
+  const [result, setResult] = useState<CodeGenerationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-    /**
-     * Scaffold code from options
-     */
-    const scaffoldCode = useCallback(
-        async (scaffoldOptions: ScaffoldOptions): Promise<CodeGenerationResult> => {
-            setLoading(true);
-            setError(null);
-            setResult(null);
-            onScaffoldStart?.(scaffoldOptions);
+  /**
+   * Scaffold code from options
+   */
+  const scaffoldCode = useCallback(
+    async (scaffoldOptions: ScaffoldOptions): Promise<CodeGenerationResult> => {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+      onScaffoldStart?.(scaffoldOptions);
 
-            try {
-                let generationResult: CodeGenerationResult;
+      try {
+        let generationResult: CodeGenerationResult;
 
-                if (aiService) {
-                    // Use AI service for real code generation
-                    const codeGenService = new AICodeGenerationService(aiService);
-                    const nodeData = scaffoldOptionsToNodeData(scaffoldOptions);
+        if (aiService) {
+          // Use AI service for real code generation
+          const codeGenService = new AICodeGenerationService(aiService);
+          const nodeData = scaffoldOptionsToNodeData(scaffoldOptions);
 
-                    generationResult = await codeGenService.generateService(nodeData, {
-                        model: 'gpt-4',
-                        temperature: 0.3,
-                        persona: 'developer',
-                        includeTests: scaffoldOptions.includeTests,
-                        includeDocumentation: scaffoldOptions.includeDocumentation,
-                    });
-                } else {
-                    // Mock generation for development
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
+          generationResult = await codeGenService.generateService(nodeData, {
+            model: 'gpt-4',
+            temperature: 0.3,
+            persona: 'developer',
+            includeTests: scaffoldOptions.includeTests,
+            includeDocumentation: scaffoldOptions.includeDocumentation,
+          });
+        } else {
+          // Mock generation for development
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-                    const serviceName = scaffoldOptions.nodeLabel
-                        .replace(/\s+/g, '-')
-                        .toLowerCase();
+          const serviceName = scaffoldOptions.nodeLabel
+            .replace(/\s+/g, '-')
+            .toLowerCase();
 
-                    const files: Array<{ path: string; content: string; language: string; type: 'source' | 'test' | 'config' }> = [];
+          const files: Array<{
+            path: string;
+            content: string;
+            language: string;
+            type: 'source' | 'test' | 'config';
+          }> = [];
 
-                    // Generate main service file
-                    if (scaffoldOptions.language === 'typescript') {
-                        const serviceContent = `/**
+          // Generate main service file
+          if (scaffoldOptions.language === 'typescript') {
+            const serviceContent = `/**
  * ${scaffoldOptions.nodeLabel} Service
  * 
  * Generated by YAPPC AI Code Scaffolding
@@ -161,16 +171,16 @@ export class ${scaffoldOptions.nodeLabel.replace(/\s+/g, '')}Service {
 export const ${serviceName}Service = new ${scaffoldOptions.nodeLabel.replace(/\s+/g, '')}Service();
 `;
 
-                        files.push({
-                            path: `src/services/${serviceName}.service.ts`,
-                            content: serviceContent,
-                            language: 'typescript',
-                            type: 'source',
-                        });
+            files.push({
+              path: `src/services/${serviceName}.service.ts`,
+              content: serviceContent,
+              language: 'typescript',
+              type: 'source',
+            });
 
-                        // Generate test file if requested
-                        if (scaffoldOptions.includeTests) {
-                            const testContent = `/**
+            // Generate test file if requested
+            if (scaffoldOptions.includeTests) {
+              const testContent = `/**
  * Tests for ${scaffoldOptions.nodeLabel} Service
  */
 
@@ -200,21 +210,23 @@ describe('${scaffoldOptions.nodeLabel.replace(/\s+/g, '')}Service', () => {
 });
 `;
 
-                            files.push({
-                                path: `src/services/__tests__/${serviceName}.service.test.ts`,
-                                content: testContent,
-                                language: 'typescript',
-                                type: 'test',
-                            });
-                        }
-                    } else if (scaffoldOptions.language === 'java') {
-                        const className = scaffoldOptions.nodeLabel.replace(/\s+/g, '');
-                        const packageName = 'com.ghatana.services';
+              files.push({
+                path: `src/services/__tests__/${serviceName}.service.test.ts`,
+                content: testContent,
+                language: 'typescript',
+                type: 'test',
+              });
+            }
+          } else if (scaffoldOptions.language === 'java') {
+            const className = scaffoldOptions.nodeLabel.replace(/\s+/g, '');
+            const packageName = 'com.ghatana.services';
 
-                        const javaContent = `package ${packageName};
+            const javaContent = `package ${packageName};
 
 import io.activej.promise.Promise;
-${scaffoldOptions.includeDocumentation ? `
+${
+  scaffoldOptions.includeDocumentation
+    ? `
 /**
  * ${scaffoldOptions.nodeLabel} Service
  * 
@@ -224,7 +236,9 @@ ${scaffoldOptions.includeDocumentation ? `
  * @doc.purpose ${scaffoldOptions.nodeLabel} business logic
  * @doc.layer product
  * @doc.pattern Service
- */` : ''}
+ */`
+    : ''
+}
 public class ${className}Service {
     
     /**
@@ -253,59 +267,60 @@ public class ${className}Service {
 }
 `;
 
-                        files.push({
-                            path: `src/main/java/${packageName.replace(/\./g, '/')}/${className}Service.java`,
-                            content: javaContent,
-                            language: 'java',
-                            type: 'source',
-                        });
-                    }
+            files.push({
+              path: `src/main/java/${packageName.replace(/\./g, '/')}/${className}Service.java`,
+              content: javaContent,
+              language: 'java',
+              type: 'source',
+            });
+          }
 
-                    generationResult = {
-                        success: true,
-                        files,
-                        summary: `Generated ${files.length} file(s) for ${scaffoldOptions.nodeLabel} using ${scaffoldOptions.language}/${scaffoldOptions.framework}`,
-                    };
-                }
+          generationResult = {
+            success: true,
+            files,
+            summary: `Generated ${files.length} file(s) for ${scaffoldOptions.nodeLabel} using ${scaffoldOptions.language}/${scaffoldOptions.framework}`,
+          };
+        }
 
-                setResult(generationResult);
-                setLoading(false);
-                onScaffoldComplete?.(generationResult);
+        setResult(generationResult);
+        setLoading(false);
+        onScaffoldComplete?.(generationResult);
 
-                // Notify about generated files
-                if (generationResult.success && onFilesGenerated) {
-                    const fileData = generationResult.files.map((f) => ({
-                        path: f.path,
-                        content: f.content,
-                    }));
-                    onFilesGenerated(fileData);
-                }
+        // Notify about generated files
+        if (generationResult.success && onFilesGenerated) {
+          const fileData = generationResult.files.map((f) => ({
+            path: f.path,
+            content: f.content,
+          }));
+          onFilesGenerated(fileData);
+        }
 
-                return generationResult;
-            } catch (err) {
-                const error = err instanceof Error ? err : new Error('Code scaffolding failed');
-                setError(error);
-                setLoading(false);
-                onError?.(error);
-                throw error;
-            }
-        },
-        [aiService, onScaffoldStart, onScaffoldComplete, onError, onFilesGenerated]
-    );
+        return generationResult;
+      } catch (err) {
+        const error =
+          err instanceof Error ? err : new Error('Code scaffolding failed');
+        setError(error);
+        setLoading(false);
+        onError?.(error);
+        throw error;
+      }
+    },
+    [aiService, onScaffoldStart, onScaffoldComplete, onError, onFilesGenerated]
+  );
 
-    /**
-     * Clear result
-     */
-    const clearResult = useCallback(() => {
-        setResult(null);
-        setError(null);
-    }, []);
+  /**
+   * Clear result
+   */
+  const clearResult = useCallback(() => {
+    setResult(null);
+    setError(null);
+  }, []);
 
-    return {
-        result,
-        loading,
-        error,
-        scaffoldCode,
-        clearResult,
-    };
+  return {
+    result,
+    loading,
+    error,
+    scaffoldCode,
+    clearResult,
+  };
 }

@@ -1,8 +1,8 @@
 /**
  * ErrorStates Components
- * 
+ *
  * Comprehensive error state components for canvas
- * 
+ *
  * Components:
  * - ConnectionLost: Network connection error state
  * - SaveFailure: Save operation failure state
@@ -10,20 +10,36 @@
  * - PermissionDenied: Access denied state
  * - ZoomLimitReached: Zoom boundary notification
  * - EmptySearchResults: No results found state
- * 
+ *
  * @doc.type component
  * @doc.purpose Error handling and user feedback
  * @doc.layer components
  */
 
-import { CloudOff as ConnectionIcon, Save as SaveIcon, Lock as LockIcon, ZoomIn as ZoomIcon, SearchX as SearchIcon, RefreshCw as RefreshIcon, AlertTriangle as WarningIcon } from 'lucide-react';
+import {
+  CloudOff as ConnectionIcon,
+  Save as SaveIcon,
+  Lock as LockIcon,
+  ZoomIn as ZoomIcon,
+  SearchX as SearchIcon,
+  RefreshCw as RefreshIcon,
+  AlertTriangle as WarningIcon,
+} from 'lucide-react';
 import React from 'react';
 
-import { Box, Button, Typography, Spinner as CircularProgress, Alert, AlertTitle } from '@ghatana/design-system';
+import {
+  Box,
+  Button,
+  Typography,
+  Spinner as CircularProgress,
+  Alert,
+  AlertTitle,
+} from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS } = CANVAS_TOKENS;
+const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS } =
+  CANVAS_TOKENS;
 
 // ============================================================================
 // ConnectionLost Component
@@ -32,13 +48,13 @@ const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS } = CANVAS_TOK
 export interface ConnectionLostProps {
   /** Callback when retry clicked */
   onRetry?: () => void;
-  
+
   /** Show reconnecting state */
   isReconnecting?: boolean;
-  
+
   /** Custom message */
   message?: string;
-  
+
   /** Last successful connection time */
   lastConnected?: Date;
 }
@@ -54,12 +70,32 @@ export function ConnectionLost({
 }: ConnectionLostProps) {
   return (
     <Box
-      className="fixed text-center top-[50%] left-[50%] max-w-[400px]" style={{ transform: 'translate(-50%, -50%)', backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: RADIUS.LG, boxShadow: SHADOWS.XL, padding: SPACING.XL, zIndex: CANVAS_TOKENS.Z_INDEX.MODAL }} >
+      className="fixed text-center top-[50%] left-[50%] max-w-[400px]"
+      style={{
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: COLORS.PANEL_BG_LIGHT,
+        borderRadius: RADIUS.LG,
+        boxShadow: SHADOWS.XL,
+        padding: SPACING.XL,
+        zIndex: CANVAS_TOKENS.Z_INDEX.MODAL,
+      }}
+    >
       {/* Icon */}
       <Box
-        className="w-[80px] h-[80px] rounded-full" style={{ backgroundColor: `${COLORS.ERROR}15`, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.MD }}
+        className="w-[80px] h-[80px] rounded-full"
+        style={{
+          backgroundColor: `${COLORS.ERROR}15`,
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: SPACING.MD,
+        }}
       >
-        <ConnectionIcon className="text-[40px]" style={{ color: COLORS.ERROR }} />
+        <ConnectionIcon
+          className="text-[40px]"
+          style={{ color: COLORS.ERROR }}
+        />
       </Box>
 
       {/* Title */}
@@ -101,10 +137,20 @@ export function ConnectionLost({
       {/* Retry Button */}
       <Button
         variant="solid"
-        startIcon={isReconnecting ? <CircularProgress size={16} /> : <RefreshIcon />}
+        startIcon={
+          isReconnecting ? <CircularProgress size={16} /> : <RefreshIcon />
+        }
         onClick={onRetry}
         disabled={isReconnecting}
-        className="text-white hover:opacity-[0.9]" style={{ backgroundColor: COLORS.PRIMARY, paddingLeft: SPACING.XL, paddingRight: SPACING.XL, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, boxShadow: SHADOWS.LG }}
+        className="text-white hover:opacity-[0.9]"
+        style={{
+          backgroundColor: COLORS.PRIMARY,
+          paddingLeft: SPACING.XL,
+          paddingRight: SPACING.XL,
+          paddingTop: SPACING.SM,
+          paddingBottom: SPACING.SM,
+          boxShadow: SHADOWS.LG,
+        }}
       >
         {isReconnecting ? 'Reconnecting...' : 'Retry Connection'}
       </Button>
@@ -119,16 +165,16 @@ export function ConnectionLost({
 export interface SaveFailureProps {
   /** Error message */
   error: string;
-  
+
   /** Callback when retry clicked */
   onRetry?: () => void;
-  
+
   /** Callback when discard clicked */
   onDiscard?: () => void;
-  
+
   /** Show saving state */
   isSaving?: boolean;
-  
+
   /** Number of unsaved changes */
   unsavedChanges?: number;
 }
@@ -147,8 +193,9 @@ export function SaveFailure({
     <Alert
       severity="error"
       icon={<SaveIcon />}
-      className="fixed max-w-[400px]" action={
-        <Box className="flex gap-2" >
+      className="fixed max-w-[400px]"
+      action={
+        <Box className="flex gap-2">
           {onDiscard && (
             <Button
               size="sm"
@@ -164,8 +211,11 @@ export function SaveFailure({
               variant="solid"
               onClick={onRetry}
               disabled={isSaving}
-              startIcon={isSaving ? <CircularProgress size={12} /> : <RefreshIcon />}
-              className="hover:opacity-[0.9]" style={{ backgroundColor: COLORS.ERROR }}
+              startIcon={
+                isSaving ? <CircularProgress size={12} /> : <RefreshIcon />
+              }
+              className="hover:opacity-[0.9]"
+              style={{ backgroundColor: COLORS.ERROR }}
             >
               {isSaving ? 'Saving...' : 'Retry'}
             </Button>
@@ -180,7 +230,9 @@ export function SaveFailure({
         {error}
       </Typography>
       {unsavedChanges > 0 && (
-        <Typography style={{ fontSize: TYPOGRAPHY.XS, color: COLORS.TEXT_SECONDARY }}>
+        <Typography
+          style={{ fontSize: TYPOGRAPHY.XS, color: COLORS.TEXT_SECONDARY }}
+        >
           {unsavedChanges} unsaved {unsavedChanges === 1 ? 'change' : 'changes'}
         </Typography>
       )}
@@ -195,13 +247,13 @@ export function SaveFailure({
 export interface LoadingStateProps {
   /** Loading message */
   message?: string;
-  
+
   /** Show progress percentage */
   progress?: number;
-  
+
   /** Loading type */
   type?: 'canvas' | 'panel' | 'inline';
-  
+
   /** Size variant */
   size?: 'small' | 'medium' | 'large';
 }
@@ -225,9 +277,11 @@ export function LoadingState({
 
   if (type === 'inline') {
     return (
-      <Box className="flex items-center gap-2" >
+      <Box className="flex items-center gap-2">
         <CircularProgress size={16} />
-        <Typography style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }}>
+        <Typography
+          style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }}
+        >
           {message}
         </Typography>
       </Box>
@@ -236,14 +290,17 @@ export function LoadingState({
 
   if (type === 'panel') {
     return (
-      <Box
-        className="flex flex-col items-center justify-center p-8 gap-4" >
+      <Box className="flex flex-col items-center justify-center p-8 gap-4">
         <CircularProgress size={spinnerSize} />
-        <Typography style={{ fontSize: TYPOGRAPHY.BASE, color: COLORS.TEXT_SECONDARY }}>
+        <Typography
+          style={{ fontSize: TYPOGRAPHY.BASE, color: COLORS.TEXT_SECONDARY }}
+        >
           {message}
         </Typography>
         {progress !== undefined && (
-          <Typography style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_DISABLED }}>
+          <Typography
+            style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_DISABLED }}
+          >
             {Math.round(progress)}%
           </Typography>
         )}
@@ -254,7 +311,13 @@ export function LoadingState({
   // Canvas type (full screen overlay)
   return (
     <Box
-      className="fixed flex flex-col items-center justify-center top-[0px] left-[0px] right-[0px] bottom-[0px]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(4px)', zIndex: CANVAS_TOKENS.Z_INDEX.MODAL }} >
+      className="fixed flex flex-col items-center justify-center top-[0px] left-[0px] right-[0px] bottom-[0px]"
+      style={{
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(4px)',
+        zIndex: CANVAS_TOKENS.Z_INDEX.MODAL,
+      }}
+    >
       <CircularProgress size={spinnerSize} />
       <Typography
         style={{
@@ -288,10 +351,10 @@ export function LoadingState({
 export interface PermissionDeniedProps {
   /** Resource being accessed */
   resource?: string;
-  
+
   /** Required permission */
   requiredPermission?: string;
-  
+
   /** Callback when request access clicked */
   onRequestAccess?: () => void;
 }
@@ -305,11 +368,17 @@ export function PermissionDenied({
   onRequestAccess,
 }: PermissionDeniedProps) {
   return (
-    <Box
-      className="flex flex-col items-center justify-center text-center p-12" >
+    <Box className="flex flex-col items-center justify-center text-center p-12">
       {/* Icon */}
       <Box
-        className="w-[80px] h-[80px] rounded-full" style={{ backgroundColor: `${COLORS.WARNING}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.MD }}
+        className="w-[80px] h-[80px] rounded-full"
+        style={{
+          backgroundColor: `${COLORS.WARNING}15`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: SPACING.MD,
+        }}
       >
         <LockIcon className="text-[40px]" style={{ color: COLORS.WARNING }} />
       </Box>
@@ -327,8 +396,7 @@ export function PermissionDenied({
       </Typography>
 
       {/* Message */}
-      <Typography
-        className="max-w-[400px] text-base mb-4" >
+      <Typography className="max-w-[400px] text-base mb-4">
         You don't have permission to access {resource}.
       </Typography>
 
@@ -369,13 +437,13 @@ export function PermissionDenied({
 export interface ZoomLimitReachedProps {
   /** Limit type */
   limitType: 'min' | 'max';
-  
+
   /** Current zoom level */
   currentZoom: number;
-  
+
   /** Auto-hide after duration (ms) */
   autoHideDuration?: number;
-  
+
   /** Callback when dismissed */
   onDismiss?: () => void;
 }
@@ -396,16 +464,24 @@ export function ZoomLimitReached({
     }
   }, [autoHideDuration, onDismiss]);
 
-  const message = limitType === 'min' 
-    ? `Minimum zoom level reached (${(currentZoom * 100).toFixed(0)}%)`
-    : `Maximum zoom level reached (${(currentZoom * 100).toFixed(0)}%)`;
+  const message =
+    limitType === 'min'
+      ? `Minimum zoom level reached (${(currentZoom * 100).toFixed(0)}%)`
+      : `Maximum zoom level reached (${(currentZoom * 100).toFixed(0)}%)`;
 
   return (
     <Alert
       severity="info"
       icon={<ZoomIcon />}
       onClose={onDismiss}
-      className="fixed left-[50%]" style={{ bottom: SPACING.MD + 50, transform: 'translateX(-50%)', boxShadow: SHADOWS.LG, zIndex: CANVAS_TOKENS.Z_INDEX.TOAST }} >
+      className="fixed left-[50%]"
+      style={{
+        bottom: SPACING.MD + 50,
+        transform: 'translateX(-50%)',
+        boxShadow: SHADOWS.LG,
+        zIndex: CANVAS_TOKENS.Z_INDEX.TOAST,
+      }}
+    >
       {message}
     </Alert>
   );
@@ -418,10 +494,10 @@ export function ZoomLimitReached({
 export interface EmptySearchResultsProps {
   /** Search query */
   query: string;
-  
+
   /** Callback when clear search clicked */
   onClearSearch?: () => void;
-  
+
   /** Show suggestions */
   suggestions?: string[];
 }
@@ -435,12 +511,16 @@ export function EmptySearchResults({
   suggestions = [],
 }: EmptySearchResultsProps) {
   return (
-    <Box
-      className="flex flex-col items-center justify-center text-center p-12" >
+    <Box className="flex flex-col items-center justify-center text-center p-12">
       {/* Icon */}
-      <Box
-        className="rounded-full flex items-center justify-center w-[60px] h-[60px] mb-6" >
-        <SearchIcon className="text-[32px]" style={{ color: COLORS.TEXT_DISABLED, backgroundColor: COLORS.NEUTRAL_100 }} />
+      <Box className="rounded-full flex items-center justify-center w-[60px] h-[60px] mb-6">
+        <SearchIcon
+          className="text-[32px]"
+          style={{
+            color: COLORS.TEXT_DISABLED,
+            backgroundColor: COLORS.NEUTRAL_100,
+          }}
+        />
       </Box>
 
       {/* Title */}
@@ -478,11 +558,21 @@ export function EmptySearchResults({
           >
             Try searching for:
           </Typography>
-          <Box className="flex flex-wrap justify-center gap-2" >
+          <Box className="flex flex-wrap justify-center gap-2">
             {suggestions.map((suggestion, index) => (
               <Box
                 key={index}
-                className="cursor-pointer" style={{ paddingLeft: SPACING.SM, paddingRight: SPACING.SM, paddingTop: SPACING.XS, paddingBottom: SPACING.XS, backgroundColor: COLORS.NEUTRAL_100, borderRadius: RADIUS.SM, fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_PRIMARY }}
+                className="cursor-pointer"
+                style={{
+                  paddingLeft: SPACING.SM,
+                  paddingRight: SPACING.SM,
+                  paddingTop: SPACING.XS,
+                  paddingBottom: SPACING.XS,
+                  backgroundColor: COLORS.NEUTRAL_100,
+                  borderRadius: RADIUS.SM,
+                  fontSize: TYPOGRAPHY.SM,
+                  color: COLORS.TEXT_PRIMARY,
+                }}
               >
                 {suggestion}
               </Box>
@@ -515,16 +605,16 @@ export function EmptySearchResults({
 export interface GenericErrorProps {
   /** Error title */
   title?: string;
-  
+
   /** Error message */
   message: string;
-  
+
   /** Error details (for developers) */
   details?: string;
-  
+
   /** Callback when retry clicked */
   onRetry?: () => void;
-  
+
   /** Show error details */
   showDetails?: boolean;
 }
@@ -542,13 +632,22 @@ export function GenericError({
   const [detailsExpanded, setDetailsExpanded] = React.useState(false);
 
   return (
-    <Box
-      className="flex flex-col items-center justify-center text-center p-12" >
+    <Box className="flex flex-col items-center justify-center text-center p-12">
       {/* Icon */}
       <Box
-        className="w-[80px] h-[80px] rounded-full" style={{ backgroundColor: COLORS.NEUTRAL_100, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.MD }}
+        className="w-[80px] h-[80px] rounded-full"
+        style={{
+          backgroundColor: COLORS.NEUTRAL_100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: SPACING.MD,
+        }}
       >
-        <WarningIcon className="text-[40px] text-base mb-6" style={{ color: COLORS.ERROR }} />
+        <WarningIcon
+          className="text-[40px] text-base mb-6"
+          style={{ color: COLORS.ERROR }}
+        />
       </Box>
 
       {/* Title */}
@@ -565,7 +664,8 @@ export function GenericError({
 
       {/* Message */}
       <Typography
-        className="max-w-[400px] text-base mb-6" style={{ color: COLORS.TEXT_SECONDARY }}
+        className="max-w-[400px] text-base mb-6"
+        style={{ color: COLORS.TEXT_SECONDARY }}
       >
         {message}
       </Typography>
@@ -581,8 +681,7 @@ export function GenericError({
             {detailsExpanded ? 'Hide' : 'Show'} Details
           </Button>
           {detailsExpanded && (
-            <Box
-              className="text-left overflow-auto font-mono max-h-[200px] p-4 rounded text-xs" >
+            <Box className="text-left overflow-auto font-mono max-h-[200px] p-4 rounded text-xs">
               {details}
             </Box>
           )}
@@ -595,7 +694,8 @@ export function GenericError({
           variant="solid"
           startIcon={<RefreshIcon />}
           onClick={onRetry}
-          className="text-white hover:opacity-[0.9]" style={{ backgroundColor: COLORS.PRIMARY }}
+          className="text-white hover:opacity-[0.9]"
+          style={{ backgroundColor: COLORS.PRIMARY }}
         >
           Try Again
         </Button>

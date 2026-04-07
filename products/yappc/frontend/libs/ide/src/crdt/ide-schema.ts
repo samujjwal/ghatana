@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - IDE CRDT Schema
- * 
+ *
  * CRDT schema definition for IDE state that extends the existing YAPPC canvas schema.
- * 
+ *
  * @doc.type module
  * @doc.purpose IDE CRDT schema definition
  * @doc.layer product
@@ -17,7 +17,7 @@ import type { IDEFile, IDEFolder, IDEPresence } from '../types';
 
 /**
  * IDE CRDT schema
- * 
+ *
  * Extends the existing YAPPC canvas CRDT state with IDE-specific data.
  * Uses Yjs Map for collaborative text editing and Map for structured data.
  */
@@ -146,7 +146,7 @@ export interface IDECRDTStateWrapper extends CRDTState {
 
 /**
  * Create initial IDE CRDT state
- * 
+ *
  * @doc.returns Initial IDE CRDT state
  */
 export function createInitialIDEState(): IDECRDTState {
@@ -164,7 +164,7 @@ export function createInitialIDEState(): IDECRDTState {
 
 /**
  * Convert IDE file to CRDT format
- * 
+ *
  * @doc.param file - IDE file to convert
  * @doc.returns CRDT file data
  */
@@ -189,7 +189,7 @@ export function fileToCRDT(file: IDEFile): [string, IDEFileCRDT] {
 
 /**
  * Convert CRDT file to IDE file
- * 
+ *
  * @doc.param id - File ID
  * @doc.param crdtFile - CRDT file data
  * @doc.returns IDE file
@@ -211,7 +211,7 @@ export function crdtToFile(id: string, crdtFile: IDEFileCRDT): IDEFile {
 
 /**
  * Convert IDE folder to CRDT format
- * 
+ *
  * @doc.param folder - IDE folder to convert
  * @doc.returns CRDT folder data
  */
@@ -221,7 +221,7 @@ export function folderToCRDT(folder: IDEFolder): [string, IDEFolderCRDT] {
     {
       id: folder.id,
       path: folder.path,
-      children: folder.children.map(child => child.id),
+      children: folder.children.map((child) => child.id),
       metadata: {
         createdAt: folder.createdAt,
         createdBy: 'system',
@@ -232,7 +232,7 @@ export function folderToCRDT(folder: IDEFolder): [string, IDEFolderCRDT] {
 
 /**
  * Convert CRDT folder to IDE folder
- * 
+ *
  * @doc.param id - Folder ID
  * @doc.param crdtFolder - CRDT folder data
  * @doc.returns IDE folder
@@ -248,7 +248,7 @@ export function crdtToFolder(id: string, crdtFolder: IDEFolderCRDT): IDEFolder {
       name: '',
       children: [],
       isExpanded: false,
-      createdAt: 0
+      createdAt: 0,
     })),
     isExpanded: false,
     createdAt: crdtFolder.metadata.createdAt,
@@ -257,11 +257,13 @@ export function crdtToFolder(id: string, crdtFolder: IDEFolderCRDT): IDEFolder {
 
 /**
  * Convert IDE presence to CRDT format
- * 
+ *
  * @doc.param presence - IDE presence to convert
  * @doc.returns CRDT presence data
  */
-export function presenceToCRDT(presence: IDEPresence): [string, IDEPresenceCRDT] {
+export function presenceToCRDT(
+  presence: IDEPresence
+): [string, IDEPresenceCRDT] {
   return [
     presence.userId,
     {
@@ -279,12 +281,15 @@ export function presenceToCRDT(presence: IDEPresence): [string, IDEPresenceCRDT]
 
 /**
  * Convert CRDT presence to IDE presence
- * 
+ *
  * @doc.param id - User ID
  * @doc.param crdtPresence - CRDT presence data
  * @doc.returns IDE presence
  */
-export function crdtToPresence(id: string, crdtPresence: IDEPresenceCRDT): IDEPresence {
+export function crdtToPresence(
+  id: string,
+  crdtPresence: IDEPresenceCRDT
+): IDEPresence {
   return {
     userId: id,
     userName: crdtPresence.userName,
@@ -298,7 +303,7 @@ export function crdtToPresence(id: string, crdtPresence: IDEPresenceCRDT): IDEPr
 
 /**
  * Validate IDE CRDT state
- * 
+ *
  * @doc.param state - IDE CRDT state to validate
  * @doc.returns Validation result
  */
@@ -366,7 +371,7 @@ export function validateIDEState(state: IDECRDTState): {
 
 /**
  * Get IDE state statistics
- * 
+ *
  * @doc.param state - IDE CRDT state
  * @doc.returns State statistics
  */
@@ -381,17 +386,24 @@ export function getIDEStateStats(state: IDECRDTState): {
   return {
     files: state.files.size,
     folders: state.folders.size,
-    activeUsers: Array.from(state.presence.values()).filter((p: unknown) =>
-      (p as IDEPresence & { isOnline?: boolean }).isOnline || false
+    activeUsers: Array.from(state.presence.values()).filter(
+      (p: unknown) =>
+        (p as IDEPresence & { isOnline?: boolean }).isOnline || false
     ).length,
     totalUsers: state.presence.size,
     dirtyFiles: Array.from(state.files.values()).filter((f: unknown) => {
       const fileData = f as { content?: { toString(): string } };
-      return fileData.content?.toString().length !== undefined && fileData.content.toString().length > 0;
+      return (
+        fileData.content?.toString().length !== undefined &&
+        fileData.content.toString().length > 0
+      );
     }).length,
-    totalSize: Array.from(state.files.values()).reduce((total: number, file: unknown) => {
-      const fileData = file as { metadata?: { size?: number } };
-      return total + (fileData.metadata?.size || 0);
-    }, 0),
+    totalSize: Array.from(state.files.values()).reduce(
+      (total: number, file: unknown) => {
+        const fileData = file as { metadata?: { size?: number } };
+        return total + (fileData.metadata?.size || 0);
+      },
+      0
+    ),
   };
 }

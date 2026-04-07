@@ -22,18 +22,20 @@ function makePrismaMock() {
 }
 
 const FUTURE = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
-const PAST   = new Date(Date.now() - 24 * 60 * 60 * 1000);      // 1 day ago
+const PAST = new Date(Date.now() - 24 * 60 * 60 * 1000); // 1 day ago
 
-function makeSession(overrides: Partial<{
-  id: string;
-  userId: string;
-  workspaceId: string | null;
-  sessionToken: string;
-  expiresAt: Date;
-  revokedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}> = {}) {
+function makeSession(
+  overrides: Partial<{
+    id: string;
+    userId: string;
+    workspaceId: string | null;
+    sessionToken: string;
+    expiresAt: Date;
+    revokedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {}
+) {
   return {
     id: 'sess-001',
     userId: 'user-001',
@@ -60,10 +62,12 @@ describe('SessionService.create', () => {
     const token = await svc.create({ userId: 'user-001', expiresAt: FUTURE });
 
     expect(typeof token).toBe('string');
-    expect(token).toHaveLength(64);           // 32 bytes → 64 hex chars
+    expect(token).toHaveLength(64); // 32 bytes → 64 hex chars
     expect(/^[0-9a-f]+$/.test(token)).toBe(true);
     expect(prisma.userSession.create).toHaveBeenCalledOnce();
-    expect(prisma.userSession.create.mock.calls[0][0].data.sessionToken).toBe(token);
+    expect(prisma.userSession.create.mock.calls[0][0].data.sessionToken).toBe(
+      token
+    );
   });
 
   it('passes workspaceId when provided', async () => {
@@ -71,9 +75,15 @@ describe('SessionService.create', () => {
     prisma.userSession.create.mockResolvedValue(undefined);
 
     const svc = new SessionService(prisma as never);
-    await svc.create({ userId: 'user-001', workspaceId: 'ws-001', expiresAt: FUTURE });
+    await svc.create({
+      userId: 'user-001',
+      workspaceId: 'ws-001',
+      expiresAt: FUTURE,
+    });
 
-    expect(prisma.userSession.create.mock.calls[0][0].data.workspaceId).toBe('ws-001');
+    expect(prisma.userSession.create.mock.calls[0][0].data.workspaceId).toBe(
+      'ws-001'
+    );
   });
 
   it('stores null workspaceId when not provided', async () => {
@@ -83,7 +93,9 @@ describe('SessionService.create', () => {
     const svc = new SessionService(prisma as never);
     await svc.create({ userId: 'user-001', expiresAt: FUTURE });
 
-    expect(prisma.userSession.create.mock.calls[0][0].data.workspaceId).toBeNull();
+    expect(
+      prisma.userSession.create.mock.calls[0][0].data.workspaceId
+    ).toBeNull();
   });
 });
 
@@ -133,7 +145,9 @@ describe('SessionService.validateSession', () => {
     prisma.userSession.findUnique.mockResolvedValue(null);
 
     const svc = new SessionService(prisma as never);
-    await expect(svc.validateSession('phantom-token')).rejects.toThrow('not found');
+    await expect(svc.validateSession('phantom-token')).rejects.toThrow(
+      'not found'
+    );
   });
 
   it('throws when session has been revoked', async () => {
@@ -169,7 +183,10 @@ describe('SessionService.revoke', () => {
 
     expect(prisma.userSession.updateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ sessionToken: 'tok-to-revoke', revokedAt: null }),
+        where: expect.objectContaining({
+          sessionToken: 'tok-to-revoke',
+          revokedAt: null,
+        }),
         data: expect.objectContaining({ revokedAt: expect.any(Date) }),
       })
     );

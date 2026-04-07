@@ -24,7 +24,13 @@
  * ```
  */
 
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 
 // ============================================================================
 // Types
@@ -177,7 +183,13 @@ const getStatusIcon = (status: ProgressStepStatus): React.ReactNode => {
       </svg>
     ),
     'in-progress': (
-      <svg className="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        className="spinning"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" opacity="0.25" />
         <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
       </svg>
@@ -248,7 +260,12 @@ interface StepItemProps {
   compact?: boolean;
 }
 
-const StepItem: React.FC<StepItemProps> = ({ step, onRetry, onSkip, compact }) => {
+const StepItem: React.FC<StepItemProps> = ({
+  step,
+  onRetry,
+  onSkip,
+  compact,
+}) => {
   const [expanded, setExpanded] = useState(
     step.status === 'in-progress' || step.status === 'failed'
   );
@@ -417,7 +434,9 @@ const LogViewer: React.FC<LogViewerProps> = ({
               <span className="log-entry-time">
                 {formatTime(log.timestamp)}
               </span>
-              <span className="log-entry-icon">{getLogLevelIcon(log.level)}</span>
+              <span className="log-entry-icon">
+                {getLogLevelIcon(log.level)}
+              </span>
               <span className="log-entry-message">{log.message}</span>
             </div>
           ))
@@ -476,8 +495,11 @@ export const LiveProgressViewer: React.FC<LiveProgressViewerProps> = ({
     let estimatedRemaining: number | undefined;
     if (completedDurations.length > 0 && completedSteps < totalSteps) {
       const avgDuration =
-        completedDurations.reduce((a, b) => a + b, 0) / completedDurations.length;
-      estimatedRemaining = Math.round(avgDuration * (totalSteps - completedSteps));
+        completedDurations.reduce((a, b) => a + b, 0) /
+        completedDurations.length;
+      estimatedRemaining = Math.round(
+        avgDuration * (totalSteps - completedSteps)
+      );
     }
 
     return {

@@ -17,4 +17,3 @@ export type {
   ToastPosition,
   ToastData,
 } from './Toast.tailwind';
-

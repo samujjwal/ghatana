@@ -13,7 +13,6 @@ import { setupServer } from 'msw/node';
 import { eventBus, useEventBus, useEventEmitter } from '../../core/event-bus';
 import { useDataSource } from '../../hooks/useDataSource';
 
-
 // ============================================================================
 // Mock Server Setup
 // ============================================================================
@@ -54,7 +53,11 @@ describe.skip('Event Bus + DataSource Integration', () => {
           fetchCount++;
           return res(
             ctx.json([
-              { id: 1, name: `User ${fetchCount}`, email: `user${fetchCount}@example.com` },
+              {
+                id: 1,
+                name: `User ${fetchCount}`,
+                email: `user${fetchCount}@example.com`,
+              },
             ])
           );
         })
@@ -108,8 +111,16 @@ describe.skip('Event Bus + DataSource Integration', () => {
       );
 
       const { result } = renderHook(() => {
-        const users = useDataSource({ type: 'rest', url: '/api/users', cache: false });
-        const posts = useDataSource({ type: 'rest', url: '/api/posts', cache: false });
+        const users = useDataSource({
+          type: 'rest',
+          url: '/api/users',
+          cache: false,
+        });
+        const posts = useDataSource({
+          type: 'rest',
+          url: '/api/posts',
+          cache: false,
+        });
 
         useEventBus('data:refresh', async (payload: unknown) => {
           if (payload.source === 'users') {
@@ -162,7 +173,10 @@ describe.skip('Event Bus + DataSource Integration', () => {
           type: 'rest',
           url: '/api/users',
           onSuccess: (data) => {
-            eventBus.emit('data:loaded', { source: 'users', count: data.length });
+            eventBus.emit('data:loaded', {
+              source: 'users',
+              count: data.length,
+            });
           },
         });
 
@@ -191,7 +205,10 @@ describe.skip('Event Bus + DataSource Integration', () => {
           type: 'rest',
           url: '/api/error',
           onError: (error) => {
-            eventBus.emit('data:error', { source: 'users', error: error.message });
+            eventBus.emit('data:error', {
+              source: 'users',
+              error: error.message,
+            });
           },
         });
 
@@ -225,7 +242,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
         return { dataSource, emit };
       });
 
-      await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.dataSource.isLoading).toBe(false)
+      );
 
       const originalData = result.current.dataSource.data;
 
@@ -241,15 +260,25 @@ describe.skip('Event Bus + DataSource Integration', () => {
           { id: 999, name: 'Optimistic User', email: 'opt@example.com' },
         ]);
 
-        await result.current.emit({ entityType: 'user', entityId: '999', data: {} });
+        await result.current.emit({
+          entityType: 'user',
+          entityId: '999',
+          data: {},
+        });
 
         // Simulate failed save (would trigger rollback)
         try {
-          await fetch('/api/users', { method: 'POST', body: JSON.stringify({}) });
+          await fetch('/api/users', {
+            method: 'POST',
+            body: JSON.stringify({}),
+          });
         } catch (error) {
           // Rollback on error
           result.current.dataSource.mutate(originalData);
-          await eventBus.emit('data:rollback', { entityType: 'user', entityId: '999' });
+          await eventBus.emit('data:rollback', {
+            entityType: 'user',
+            entityId: '999',
+          });
         }
       });
 
@@ -269,7 +298,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
 
         useEventBus('component2:request-data', async () => {
           component1Updates.push('request-received');
-          await eventBus.emit('component1:data-ready', { data: dataSource.data });
+          await eventBus.emit('component1:data-ready', {
+            data: dataSource.data,
+          });
         });
 
         return dataSource;
@@ -349,7 +380,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
       expect(instance1.current.data).toEqual(instance2.current.data);
 
       // Update from instance1
-      const newData = [{ id: 999, name: 'Updated User', email: 'updated@example.com' }];
+      const newData = [
+        { id: 999, name: 'Updated User', email: 'updated@example.com' },
+      ];
 
       await act(async () => {
         instance1.current.mutate(newData);
@@ -371,7 +404,9 @@ describe.skip('Event Bus + DataSource Integration', () => {
       server.use(
         rest.get('/api/users', (req, res, ctx) => {
           fetchCount++;
-          return res(ctx.json([{ id: fetchCount, name: `Fetch ${fetchCount}` }]));
+          return res(
+            ctx.json([{ id: fetchCount, name: `Fetch ${fetchCount}` }])
+          );
         })
       );
 

@@ -1,6 +1,6 @@
 /**
  * STRIDE Threat Catalog
- * 
+ *
  * Comprehensive catalog of STRIDE threats with mitigations.
  */
 
@@ -15,7 +15,8 @@ export function getSTRIDEThreatCatalog(): ThreatCatalogEntry[] {
       id: 'stride-spoofing-auth',
       category: 'spoofing',
       title: 'Authentication Spoofing',
-      description: 'Attacker may spoof identity to gain unauthorized access to {element}',
+      description:
+        'Attacker may spoof identity to gain unauthorized access to {element}',
       applicableToTypes: ['process', 'external-entity'],
       applicableToFlows: false,
       severity: 'high',
@@ -25,7 +26,9 @@ export function getSTRIDEThreatCatalog(): ThreatCatalogEntry[] {
         'Implement strong password policies',
       ],
       cwe: ['CWE-287', 'CWE-290'],
-      references: ['OWASP A07:2021 - Identification and Authentication Failures'],
+      references: [
+        'OWASP A07:2021 - Identification and Authentication Failures',
+      ],
     },
     {
       id: 'stride-tampering-data',

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - WebSocket Service
- * 
+ *
  * WebSocket service for real-time IDE collaboration with
  * connection management, retry logic, and performance optimization.
- * 
+ *
  * @doc.type service
  * @doc.purpose Real-time collaboration WebSocket service
  * @doc.layer product
@@ -40,7 +40,12 @@ export interface WebSocketServiceConfig {
 /**
  * Connection status
  */
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'error';
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'error';
 
 /**
  * WebSocket service events
@@ -60,7 +65,7 @@ export interface WebSocketServiceEvents {
 
 /**
  * WebSocket Service
- * 
+ *
  * Manages real-time collaboration with WebSocket connection,
  * automatic reconnection, and performance optimization.
  */
@@ -72,7 +77,10 @@ export class WebSocketService {
   private reconnectAttempts = 0;
   private reconnectTimer: NodeJS.Timeout | null = null;
   private healthCheckTimer: NodeJS.Timeout | null = null;
-  private eventListeners: Map<keyof WebSocketServiceEvents, Set<(...args: unknown[]) => void>> = new Map();
+  private eventListeners: Map<
+    keyof WebSocketServiceEvents,
+    Set<(...args: unknown[]) => void>
+  > = new Map();
   private operationQueue: CRDTOperation[] = [];
   private isProcessingQueue = false;
 
@@ -117,14 +125,14 @@ export class WebSocketService {
       'presenceUpdated',
     ];
 
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventListeners.set(event, new Set());
     });
   }
 
   /**
    * Connect to WebSocket server
-   * 
+   *
    * @doc.returns Connection promise
    */
   async connect(): Promise<void> {
@@ -139,9 +147,14 @@ export class WebSocketService {
       this.yDoc = new Y.Doc();
 
       // Initialize WebSocket provider
-      this.provider = new WebsocketProvider(this.config.url, this.config.roomId, this.yDoc, {
-        connect: true,
-      });
+      this.provider = new WebsocketProvider(
+        this.config.url,
+        this.config.roomId,
+        this.yDoc,
+        {
+          connect: true,
+        }
+      );
 
       // Set up provider event listeners
       this.setupProviderListeners();
@@ -159,10 +172,12 @@ export class WebSocketService {
 
       this.setStatus('connected');
       this.reconnectAttempts = 0;
-
     } catch (error) {
       this.setStatus('error');
-      this.emit('error', error instanceof Error ? error : new Error('Connection failed'));
+      this.emit(
+        'error',
+        error instanceof Error ? error : new Error('Connection failed')
+      );
 
       // Attempt reconnection
       this.attemptReconnection();
@@ -198,7 +213,7 @@ export class WebSocketService {
 
   /**
    * Send operation to server
-   * 
+   *
    * @doc.param operation - Operation to send
    * @doc.returns Send success
    */
@@ -224,7 +239,7 @@ export class WebSocketService {
 
   /**
    * Send state to server
-   * 
+   *
    * @doc.param state - State to send
    * @doc.returns Send success
    */
@@ -248,7 +263,7 @@ export class WebSocketService {
 
   /**
    * Get current connection status
-   * 
+   *
    * @doc.returns Connection status
    */
   getStatus(): ConnectionStatus {
@@ -257,7 +272,7 @@ export class WebSocketService {
 
   /**
    * Check if connected
-   * 
+   *
    * @doc.returns Connection state
    */
   isConnected(): boolean {
@@ -266,7 +281,7 @@ export class WebSocketService {
 
   /**
    * Remove event listener
-   * 
+   *
    * @doc.param event - Event name
    * @doc.param listener - Event listener
    */
@@ -466,7 +481,7 @@ export class WebSocketService {
   ): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
-      listeners.forEach(listener => {
+      listeners.forEach((listener) => {
         try {
           listener(...args);
         } catch (error) {
@@ -512,11 +527,13 @@ export class WebSocketService {
 
 /**
  * Create WebSocket service instance
- * 
+ *
  * @doc.param config - Service configuration
  * @doc.returns WebSocket service instance
  */
-export function createWebSocketService(config: WebSocketServiceConfig): WebSocketService {
+export function createWebSocketService(
+  config: WebSocketServiceConfig
+): WebSocketService {
   return new WebSocketService(config);
 }
 

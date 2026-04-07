@@ -70,11 +70,16 @@ describe('pageManager', () => {
 
     it('should create page with options', () => {
       const state = createPageManagerState();
-      
-      const result = createPage(state, 'Page 1', {}, {
-        description: 'Test page',
-        thumbnail: 'thumb.png',
-      });
+
+      const result = createPage(
+        state,
+        'Page 1',
+        {},
+        {
+          description: 'Test page',
+          thumbnail: 'thumb.png',
+        }
+      );
 
       expect(result.page.description).toBe('Test page');
       expect(result.page.thumbnail).toBe('thumb.png');
@@ -107,7 +112,7 @@ describe('pageManager', () => {
 
     it('should get all pages in order', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       const { page: page3 } = createPage(state, 'Page 3', {});
@@ -166,7 +171,7 @@ describe('pageManager', () => {
 
     it('should update page orders after deletion', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       const { page: page3 } = createPage(state, 'Page 3', {});
@@ -187,7 +192,7 @@ describe('pageManager', () => {
   describe('Page Ordering', () => {
     it('should reorder pages', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       const { page: page3 } = createPage(state, 'Page 3', {});
@@ -209,7 +214,7 @@ describe('pageManager', () => {
 
     it('should create page at specific order', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       const { page: page3 } = createPage(state, 'Page 3', {}, { order: 1 });
@@ -225,7 +230,7 @@ describe('pageManager', () => {
   describe('Active Page Management', () => {
     it('should set active page', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -245,7 +250,7 @@ describe('pageManager', () => {
 
     it('should get active page', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -264,7 +269,7 @@ describe('pageManager', () => {
 
     it('should navigate to next page', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       createPage(state, 'Page 3', {});
@@ -276,7 +281,7 @@ describe('pageManager', () => {
 
     it('should not navigate past last page', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -289,7 +294,7 @@ describe('pageManager', () => {
 
     it('should navigate to previous page', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -301,7 +306,7 @@ describe('pageManager', () => {
 
     it('should not navigate before first page', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
 
       const result = previousPage(state);
@@ -315,7 +320,7 @@ describe('pageManager', () => {
     it('should duplicate page', () => {
       const state = createPageManagerState();
       const data = { nodes: ['a', 'b'] };
-      
+
       const { page: original } = createPage(state, 'Original', data, {
         description: 'Test',
         thumbnail: 'thumb.png',
@@ -332,7 +337,7 @@ describe('pageManager', () => {
 
     it('should duplicate with custom name', () => {
       const state = createPageManagerState();
-      
+
       const { page: original } = createPage(state, 'Original', {});
       const result = duplicatePage(state, original.id, 'New Name');
 
@@ -583,7 +588,11 @@ describe('pageManager', () => {
         viewport: { x: 100, y: 200, zoom: 1.5 },
       })!;
 
-      const url = generateDeepLinkURL(state, link.id, 'https://example.com/canvas');
+      const url = generateDeepLinkURL(
+        state,
+        link.id,
+        'https://example.com/canvas'
+      );
 
       expect(url).toContain('page=');
       expect(url).toContain('element=element-1');
@@ -594,8 +603,9 @@ describe('pageManager', () => {
     });
 
     it('should parse deep link from URL', () => {
-      const url = 'https://example.com/canvas?page=page-1&element=element-1&x=100&y=200&zoom=1.5&highlight=true';
-      
+      const url =
+        'https://example.com/canvas?page=page-1&element=element-1&x=100&y=200&zoom=1.5&highlight=true';
+
       const parsed = parseDeepLinkFromURL(url);
 
       expect(parsed).not.toBeNull();
@@ -607,7 +617,7 @@ describe('pageManager', () => {
 
     it('should parse minimal deep link URL', () => {
       const url = 'https://example.com/canvas?page=page-1&element=element-1';
-      
+
       const parsed = parseDeepLinkFromURL(url);
 
       expect(parsed!.pageId).toBe('page-1');
@@ -623,7 +633,9 @@ describe('pageManager', () => {
     });
 
     it('should return null for URL without required params', () => {
-      const parsed = parseDeepLinkFromURL('https://example.com/canvas?page=page-1');
+      const parsed = parseDeepLinkFromURL(
+        'https://example.com/canvas?page=page-1'
+      );
 
       expect(parsed).toBeNull();
     });
@@ -632,7 +644,7 @@ describe('pageManager', () => {
   describe('Navigation History', () => {
     it('should add to history when setting active page', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -644,7 +656,7 @@ describe('pageManager', () => {
 
     it('should go back in history', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -657,7 +669,7 @@ describe('pageManager', () => {
 
     it('should go forward in history', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -671,7 +683,7 @@ describe('pageManager', () => {
 
     it('should truncate forward history', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
       const { page: page3 } = createPage(state, 'Page 3', {});
@@ -686,7 +698,7 @@ describe('pageManager', () => {
 
     it('should check if can go back', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -698,7 +710,7 @@ describe('pageManager', () => {
 
     it('should check if can go forward', () => {
       const state = createPageManagerState();
-      
+
       const { page: page1 } = createPage(state, 'Page 1', {});
       const { page: page2 } = createPage(state, 'Page 2', {});
 
@@ -713,7 +725,7 @@ describe('pageManager', () => {
   describe('Utility Functions', () => {
     it('should get page count', () => {
       const state = createPageManagerState();
-      
+
       expect(getPageCount(state)).toBe(0);
 
       createPage(state, 'Page 1', {});
@@ -724,7 +736,7 @@ describe('pageManager', () => {
 
     it('should search pages by name', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Dashboard', {});
       createPage(state, 'Settings', {});
       createPage(state, 'User Dashboard', {});
@@ -738,7 +750,7 @@ describe('pageManager', () => {
 
     it('should search pages by description', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'Page 1', {}, { description: 'Main dashboard' });
       createPage(state, 'Page 2', {}, { description: 'User settings' });
 
@@ -750,7 +762,7 @@ describe('pageManager', () => {
 
     it('should search case-insensitively', () => {
       const state = createPageManagerState();
-      
+
       createPage(state, 'UPPERCASE', {});
       createPage(state, 'lowercase', {});
 

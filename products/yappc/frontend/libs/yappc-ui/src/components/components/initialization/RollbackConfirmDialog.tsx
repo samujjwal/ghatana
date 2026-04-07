@@ -107,7 +107,12 @@ const formatDate = (date: Date): string => {
 const getImpactIcon = (impact: AffectedResource['impact']): React.ReactNode => {
   const icons: Record<typeof impact, React.ReactNode> = {
     delete: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="3 6 5 6 21 6" />
         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         <line x1="10" y1="11" x2="10" y2="17" />
@@ -115,20 +120,35 @@ const getImpactIcon = (impact: AffectedResource['impact']): React.ReactNode => {
       </svg>
     ),
     revert: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="1 4 1 10 7 10" />
         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
       </svg>
     ),
     orphan: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
     ),
     keep: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
@@ -155,7 +175,9 @@ interface ResourceImpactItemProps {
   resource: AffectedResource;
 }
 
-const ResourceImpactItem: React.FC<ResourceImpactItemProps> = ({ resource }) => {
+const ResourceImpactItem: React.FC<ResourceImpactItemProps> = ({
+  resource,
+}) => {
   const color = getImpactColor(resource.impact);
 
   return (
@@ -201,10 +223,14 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const hasCriticalResources = affectedResources.some((r) => r.critical);
-  const deleteCount = affectedResources.filter((r) => r.impact === 'delete').length;
+  const deleteCount = affectedResources.filter(
+    (r) => r.impact === 'delete'
+  ).length;
 
   const isConfirmDisabled =
-    loading || (requireConfirmation && confirmInput.toLowerCase() !== confirmationText.toLowerCase());
+    loading ||
+    (requireConfirmation &&
+      confirmInput.toLowerCase() !== confirmationText.toLowerCase());
 
   const handleConfirm = useCallback(async () => {
     if (isConfirmDisabled) return;
@@ -258,7 +284,12 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
         {/* Header */}
         <div className="rollback-dialog-header">
           <div className="rollback-dialog-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               <line x1="12" y1="9" x2="12" y2="13" />
               <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -268,7 +299,10 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
             <h2 id="rollback-dialog-title" className="rollback-dialog-title">
               {title || `Rollback "${step.name}"?`}
             </h2>
-            <p id="rollback-dialog-description" className="rollback-dialog-description">
+            <p
+              id="rollback-dialog-description"
+              className="rollback-dialog-description"
+            >
               {description ||
                 'This action will undo the changes made during this step. This cannot be undone.'}
             </p>
@@ -284,13 +318,17 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
           {step.completedAt && (
             <div className="rollback-step-detail">
               <span className="rollback-step-label">Completed</span>
-              <span className="rollback-step-value">{formatDate(step.completedAt)}</span>
+              <span className="rollback-step-value">
+                {formatDate(step.completedAt)}
+              </span>
             </div>
           )}
           {step.durationMs && (
             <div className="rollback-step-detail">
               <span className="rollback-step-label">Duration</span>
-              <span className="rollback-step-value">{formatDuration(step.durationMs)}</span>
+              <span className="rollback-step-value">
+                {formatDuration(step.durationMs)}
+              </span>
             </div>
           )}
         </div>
@@ -312,7 +350,12 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
         {/* Warning */}
         {(hasCriticalResources || deleteCount > 0) && (
           <div className="rollback-warning" role="alert">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -320,14 +363,16 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
             <div>
               {hasCriticalResources && (
                 <p>
-                  <strong>Critical resources will be affected.</strong> Please review
-                  carefully before proceeding.
+                  <strong>Critical resources will be affected.</strong> Please
+                  review carefully before proceeding.
                 </p>
               )}
               {deleteCount > 0 && (
                 <p>
-                  <strong>{deleteCount} resource{deleteCount > 1 ? 's' : ''}</strong> will
-                  be permanently deleted.
+                  <strong>
+                    {deleteCount} resource{deleteCount > 1 ? 's' : ''}
+                  </strong>{' '}
+                  will be permanently deleted.
                 </p>
               )}
             </div>
@@ -337,7 +382,10 @@ export const RollbackConfirmDialog: React.FC<RollbackConfirmDialogProps> = ({
         {/* Confirmation Input */}
         {requireConfirmation && (
           <div className="rollback-confirmation">
-            <label htmlFor="rollback-confirm-input" className="rollback-confirmation-label">
+            <label
+              htmlFor="rollback-confirm-input"
+              className="rollback-confirmation-label"
+            >
               Type <strong>{confirmationText}</strong> to confirm:
             </label>
             <input

@@ -1,9 +1,9 @@
 /**
  * Page Integration Example
- * 
+ *
  * Demonstrates how to integrate pages with backend services.
  * Shows best practices for loading states, error handling, and data fetching.
- * 
+ *
  * @module ui/patterns
  */
 
@@ -14,9 +14,9 @@ import { LoadingState } from '../components/LoadingState';
 
 /**
  * Page Integration Pattern
- * 
+ *
  * This example shows the recommended pattern for integrating pages with backend services.
- * 
+ *
  * Key Features:
  * - Error boundary for graceful error handling
  * - Loading states with skeleton screens
@@ -24,7 +24,7 @@ import { LoadingState } from '../components/LoadingState';
  * - GraphQL integration with Apollo Client
  * - Optimistic updates support
  * - Accessibility compliance
- * 
+ *
  * @example
  * ```tsx
  * // 1. Define your GraphQL query
@@ -39,13 +39,13 @@ import { LoadingState } from '../components/LoadingState';
  *     }
  *   }
  * `;
- * 
+ *
  * // 2. Create your page component
  * export const SprintListPage: React.FC = () => {
  *   const { data, loading, error } = useQuery(GET_SPRINTS, {
  *     variables: { projectId: 'project-123' },
  *   });
- * 
+ *
  *   if (loading) return <LoadingState variant="skeleton" />;
  *   if (error) throw error; // Caught by ErrorBoundary
  *   if (!data?.sprints?.length) {
@@ -60,7 +60,7 @@ import { LoadingState } from '../components/LoadingState';
  *       />
  *     );
  *   }
- * 
+ *
  *   return (
  *     <div>
  *       {data.sprints.map(sprint => (
@@ -69,7 +69,7 @@ import { LoadingState } from '../components/LoadingState';
  *     </div>
  *   );
  * };
- * 
+ *
  * // 3. Wrap with ErrorBoundary in router
  * <Route
  *   path="/sprints"
@@ -105,7 +105,7 @@ interface ExampleItem {
 
 /**
  * Example Page Component
- * 
+ *
  * This is a template showing the recommended integration pattern.
  */
 export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
@@ -138,7 +138,7 @@ export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
         title="No data available"
         description="There are no items to display yet."
         action={{
-          label: "Create Item",
+          label: 'Create Item',
           onClick: () => console.log('Create item clicked'),
         }}
       />
@@ -162,7 +162,7 @@ export const PageIntegrationExample: React.FC<PageIntegrationExampleProps> = ({
 
 /**
  * Best Practices Checklist
- * 
+ *
  * ✅ Wrap page with ErrorBoundary in router
  * ✅ Use LoadingState for loading scenarios
  * ✅ Use EmptyState for no data scenarios

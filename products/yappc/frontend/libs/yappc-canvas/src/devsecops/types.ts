@@ -1,6 +1,6 @@
 /**
  * Runbook Types and Interfaces
- * 
+ *
  * Core type definitions for runbook execution, automation, and workflow management.
  */
 
@@ -12,11 +12,23 @@ export type RunbookType = 'ansible' | 'terraform' | 'script' | 'manual';
 /**
  *
  */
-export type ExecutionStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'rolled-back';
+export type ExecutionStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'rolled-back';
 /**
  *
  */
-export type StepStatus = 'pending' | 'running' | 'success' | 'failed' | 'skipped' | 'rolled-back';
+export type StepStatus =
+  | 'pending'
+  | 'running'
+  | 'success'
+  | 'failed'
+  | 'skipped'
+  | 'rolled-back';
 /**
  *
  */

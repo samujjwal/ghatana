@@ -32,9 +32,7 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const interpolatePath = (
-  points: { x: number; y: number }[]
-): string => {
+const interpolatePath = (points: { x: number; y: number }[]): string => {
   if (points.length < 2) return '';
 
   let path = `M ${points[0].x} ${points[0].y}`;

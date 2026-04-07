@@ -1,9 +1,9 @@
 /**
  * API Deprecation Middleware
- * 
+ *
  * Adds Sunset headers and deprecation notices to legacy endpoints.
  * Follows RFC 8594 ( Sunset HTTP Header Field ) for deprecation signaling.
- * 
+ *
  * @doc.type middleware
  * @doc.purpose Mark legacy API endpoints for deprecation
  * @doc.layer product
@@ -22,7 +22,7 @@ const MIGRATION_TARGET = '/api';
 
 /**
  * Add deprecation headers to response
- * 
+ *
  * Headers added:
  * - Sunset: Date when endpoint will be removed
  * - Deprecation: true
@@ -35,17 +35,20 @@ export function addDeprecationHeaders(
 ): void {
   // Add RFC 8594 Sunset header
   reply.header('Sunset', SUNSET_DATE_ISO);
-  
+
   // Add deprecation flag
   reply.header('Deprecation', 'true');
-  
+
   // Add link to alternative (same path, but will be served by Java backend)
   const alternativeUrl = `${MIGRATION_TARGET}${request.url.replace(/^\/(api|v1)/, '')}`;
   reply.header('Link', `<${alternativeUrl}>; rel="successor-version"`);
-  
+
   // Add warning header (RFC 7234)
-  reply.header('Warning', '299 - "Legacy API endpoint. Migrate to Java backend."');
-  
+  reply.header(
+    'Warning',
+    '299 - "Legacy API endpoint. Migrate to Java backend."'
+  );
+
   done();
 }
 
@@ -59,10 +62,10 @@ export function logDeprecation(
 ): void {
   console.warn(
     `[DEPRECATION] ${request.method} ${request.url} - ` +
-    `Client: ${request.headers['user-agent'] || 'unknown'} - ` +
-    `Sunset: ${SUNSET_DATE_ISO}`
+      `Client: ${request.headers['user-agent'] || 'unknown'} - ` +
+      `Sunset: ${SUNSET_DATE_ISO}`
   );
-  
+
   done();
 }
 
@@ -90,20 +93,23 @@ export function markDeprecated(
 ): void {
   // Add RFC 8594 Sunset header
   reply.header('Sunset', SUNSET_DATE_ISO);
-  
+
   // Add deprecation flag
   reply.header('Deprecation', 'true');
-  
+
   // Add link to alternative (same path, but will be served by Java backend)
   const alternativeUrl = `${MIGRATION_TARGET}${request.url.replace(/^\/(api|v1)/, '')}`;
   reply.header('Link', `<${alternativeUrl}>; rel="successor-version"`);
-  
+
   // Add warning header (RFC 7234)
-  reply.header('Warning', '299 - "Legacy API endpoint. Migrate to Java backend."');
-  
+  reply.header(
+    'Warning',
+    '299 - "Legacy API endpoint. Migrate to Java backend."'
+  );
+
   // Log the deprecation
   console.warn(
     `[DEPRECATION] ${request.method} ${request.url} accessed - ` +
-    `Sunset date: ${SUNSET_DATE_ISO}`
+      `Sunset date: ${SUNSET_DATE_ISO}`
   );
 }

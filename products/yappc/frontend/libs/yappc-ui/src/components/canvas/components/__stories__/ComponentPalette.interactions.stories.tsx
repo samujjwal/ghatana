@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 
-
 import { ComponentPalette } from '../ComponentPalette';
 
 import type { ComponentMetadata } from '../../registry/ComponentRegistry';
@@ -109,14 +108,31 @@ export const CategoryFiltering: Story = {
 
     return (
       <div style={{ width: '400px', height: '600px' }}>
-        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {['all', 'atoms', 'molecules', 'organisms', 'templates', 'custom'].map((cat) => (
+        <div
+          style={{
+            marginBottom: '16px',
+            display: 'flex',
+            gap: '8px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {[
+            'all',
+            'atoms',
+            'molecules',
+            'organisms',
+            'templates',
+            'custom',
+          ].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat as unknown)}
               style={{
                 padding: '6px 12px',
-                border: activeCategory === cat ? '2px solid #0066cc' : '1px solid #ddd',
+                border:
+                  activeCategory === cat
+                    ? '2px solid #0066cc'
+                    : '1px solid #ddd',
                 borderRadius: '4px',
                 background: activeCategory === cat ? '#f0f7ff' : '#fff',
                 cursor: 'pointer',
@@ -163,7 +179,14 @@ export const CombinedSearchAndCategory: Story = {
     return (
       <div style={{ width: '400px', height: '600px' }}>
         <div style={{ marginBottom: '12px' }}>
-          <label style={{ display: 'block', marginBottom: '4px', fontSize: '12px', fontWeight: 'bold' }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: '4px',
+              fontSize: '12px',
+              fontWeight: 'bold',
+            }}
+          >
             Search:
           </label>
           <input
@@ -180,14 +203,31 @@ export const CombinedSearchAndCategory: Story = {
             }}
           />
         </div>
-        <div style={{ marginBottom: '12px', display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {['all', 'atoms', 'molecules', 'organisms', 'templates', 'custom'].map((cat) => (
+        <div
+          style={{
+            marginBottom: '12px',
+            display: 'flex',
+            gap: '4px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {[
+            'all',
+            'atoms',
+            'molecules',
+            'organisms',
+            'templates',
+            'custom',
+          ].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat as unknown)}
               style={{
                 padding: '4px 8px',
-                border: activeCategory === cat ? '2px solid #0066cc' : '1px solid #ddd',
+                border:
+                  activeCategory === cat
+                    ? '2px solid #0066cc'
+                    : '1px solid #ddd',
                 borderRadius: '4px',
                 background: activeCategory === cat ? '#f0f7ff' : '#fff',
                 cursor: 'pointer',
@@ -226,7 +266,9 @@ export const CombinedSearchAndCategory: Story = {
  */
 export const ThemeVariations: Story = {
   render: () => {
-    const [theme, setTheme] = useState<'base' | 'brand' | 'workspace' | 'app'>('base');
+    const [theme, setTheme] = useState<'base' | 'brand' | 'workspace' | 'app'>(
+      'base'
+    );
 
     return (
       <div style={{ width: '400px' }}>
@@ -248,8 +290,13 @@ export const ThemeVariations: Story = {
             </button>
           ))}
         </div>
-        <div style={{ width: '400px', height: '600px', border: '1px solid #ddd' }}>
-          <ComponentPalette theme={theme} onComponentSelect={handleComponentSelect} />
+        <div
+          style={{ width: '400px', height: '600px', border: '1px solid #ddd' }}
+        >
+          <ComponentPalette
+            theme={theme}
+            onComponentSelect={handleComponentSelect}
+          />
         </div>
       </div>
     );
@@ -257,7 +304,8 @@ export const ThemeVariations: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Switch between different theme layers (base, brand, workspace, app) to see styling variations.',
+        story:
+          'Switch between different theme layers (base, brand, workspace, app) to see styling variations.',
       },
     },
   },
@@ -309,7 +357,9 @@ export const DragAndDropInteraction: Story = {
           {droppedItems.length === 0 ? (
             <p style={{ color: '#999' }}>Drag components here</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}
+            >
               {droppedItems.map((item, idx) => (
                 <div
                   key={idx}
@@ -332,7 +382,8 @@ export const DragAndDropInteraction: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Drag components from the palette (left) and drop them in the drop zone (right).',
+        story:
+          'Drag components from the palette (left) and drop them in the drop zone (right).',
       },
     },
   },
@@ -361,7 +412,14 @@ export const ComponentSelectionCallback: Story = {
           <h4 style={{ marginTop: 0 }}>Click Components</h4>
           <ComponentPalette onComponentSelect={handleComponentSelect} />
         </div>
-        <div style={{ flex: 1, overflow: 'auto', background: '#f9f9f9', padding: '16px' }}>
+        <div
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            background: '#f9f9f9',
+            padding: '16px',
+          }}
+        >
           <h4 style={{ marginTop: 0 }}>Selection History</h4>
           {selectedComponents.length === 0 ? (
             <p style={{ color: '#999' }}>Click a component to add to history</p>
@@ -480,7 +538,8 @@ export const EmptyState: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Empty state shown when search returns no results. User can clear search to reset.',
+        story:
+          'Empty state shown when search returns no results. User can clear search to reset.',
       },
     },
   },
@@ -519,14 +578,31 @@ export const LargeComponentSet: Story = {
             }}
           />
         </div>
-        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          {['all', 'atoms', 'molecules', 'organisms', 'templates', 'custom'].map((cat) => (
+        <div
+          style={{
+            display: 'flex',
+            gap: '4px',
+            flexWrap: 'wrap',
+            marginBottom: '8px',
+          }}
+        >
+          {[
+            'all',
+            'atoms',
+            'molecules',
+            'organisms',
+            'templates',
+            'custom',
+          ].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat as unknown)}
               style={{
                 padding: '4px 8px',
-                border: activeCategory === cat ? '2px solid #0066cc' : '1px solid #ddd',
+                border:
+                  activeCategory === cat
+                    ? '2px solid #0066cc'
+                    : '1px solid #ddd',
                 borderRadius: '3px',
                 background: activeCategory === cat ? '#f0f7ff' : '#fff',
                 cursor: 'pointer',
@@ -565,7 +641,9 @@ export const LargeComponentSet: Story = {
  */
 export const KeyboardNavigation: Story = {
   render: () => {
-    const [focusedComponent, setFocusedComponent] = useState<string | null>(null);
+    const [focusedComponent, setFocusedComponent] = useState<string | null>(
+      null
+    );
 
     const handleKeyDown = (e: React.KeyboardEvent, componentType: string) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -657,7 +735,8 @@ export const CustomStyling: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Custom styling applied via className prop. Shows gradient and custom hover effects.',
+        story:
+          'Custom styling applied via className prop. Shows gradient and custom hover effects.',
       },
     },
   },
@@ -677,7 +756,9 @@ export const MixedInteractions: Story = {
     const [activeCategory, setActiveCategory] = useState<
       ComponentMetadata['category'] | 'all'
     >('all');
-    const [theme, setTheme] = useState<'base' | 'brand' | 'workspace' | 'app'>('base');
+    const [theme, setTheme] = useState<'base' | 'brand' | 'workspace' | 'app'>(
+      'base'
+    );
     const [selectedCount, setSelectedCount] = useState(0);
 
     const handleSelect = (componentType: string) => {
@@ -686,8 +767,22 @@ export const MixedInteractions: Story = {
     };
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '100%' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          height: '100%',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <div style={{ flex: 1, minWidth: '200px' }}>
             <input
               type="text"
@@ -720,13 +815,23 @@ export const MixedInteractions: Story = {
           </select>
         </div>
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-          {['all', 'atoms', 'molecules', 'organisms', 'templates', 'custom'].map((cat) => (
+          {[
+            'all',
+            'atoms',
+            'molecules',
+            'organisms',
+            'templates',
+            'custom',
+          ].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat as unknown)}
               style={{
                 padding: '4px 8px',
-                border: activeCategory === cat ? '2px solid #0066cc' : '1px solid #ddd',
+                border:
+                  activeCategory === cat
+                    ? '2px solid #0066cc'
+                    : '1px solid #ddd',
                 borderRadius: '3px',
                 background: activeCategory === cat ? '#f0f7ff' : '#fff',
                 cursor: 'pointer',
@@ -765,7 +870,15 @@ export const MixedInteractions: Story = {
             </button>
           )}
         </div>
-        <div style={{ flex: 1, minHeight: 0, border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            overflow: 'hidden',
+          }}
+        >
           <ComponentPalette
             searchQuery={searchQuery}
             categoryFilter={activeCategory}

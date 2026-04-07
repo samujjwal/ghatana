@@ -15,7 +15,10 @@ export type AlertVariant = 'filled' | 'outlined' | 'standard';
 /**
  * Alert component props
  */
-export interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface AlertProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   /**
    * Severity of the alert (determines color and icon)
    * @default 'info'
@@ -56,49 +59,98 @@ export interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, '
 /**
  * Severity color and icon configurations
  */
-const severityConfig: Record<AlertSeverity, {
-  filled: string;
-  outlined: string;
-  standard: string;
-  icon: React.ReactNode;
-}> = {
+const severityConfig: Record<
+  AlertSeverity,
+  {
+    filled: string;
+    outlined: string;
+    standard: string;
+    icon: React.ReactNode;
+  }
+> = {
   info: {
     filled: 'bg-blue-500 text-white border-blue-500',
     outlined: 'bg-transparent text-blue-700 dark:text-blue-400 border-blue-500',
-    standard: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-l-4 border-blue-500',
+    standard:
+      'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-l-4 border-blue-500',
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
   },
   success: {
     filled: 'bg-green-500 text-white border-green-500',
-    outlined: 'bg-transparent text-green-700 dark:text-green-400 border-green-500',
-    standard: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-l-4 border-green-500',
+    outlined:
+      'bg-transparent text-green-700 dark:text-green-400 border-green-500',
+    standard:
+      'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-l-4 border-green-500',
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
   },
   warning: {
     filled: 'bg-orange-500 text-white border-orange-500',
-    outlined: 'bg-transparent text-orange-700 dark:text-orange-400 border-orange-500',
-    standard: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-l-4 border-orange-500',
+    outlined:
+      'bg-transparent text-orange-700 dark:text-orange-400 border-orange-500',
+    standard:
+      'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-l-4 border-orange-500',
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
       </svg>
     ),
   },
   error: {
     filled: 'bg-red-500 text-white border-red-500',
     outlined: 'bg-transparent text-red-700 dark:text-red-400 border-red-500',
-    standard: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-l-4 border-red-500',
+    standard:
+      'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-l-4 border-red-500',
     icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     ),
   },
@@ -177,30 +229,16 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         {...props}
       >
         {/* Icon */}
-        {!hideIcon && (
-          <div className="flex-shrink-0 mt-0.5">
-            {displayIcon}
-          </div>
-        )}
+        {!hideIcon && <div className="flex-shrink-0 mt-0.5">{displayIcon}</div>}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          {title && (
-            <div className="font-semibold text-sm mb-1">
-              {title}
-            </div>
-          )}
-          <div className="text-sm leading-relaxed">
-            {children}
-          </div>
+          {title && <div className="font-semibold text-sm mb-1">{title}</div>}
+          <div className="text-sm leading-relaxed">{children}</div>
         </div>
 
         {/* Action */}
-        {action && (
-          <div className="flex-shrink-0">
-            {action}
-          </div>
-        )}
+        {action && <div className="flex-shrink-0">{action}</div>}
 
         {/* Close button */}
         {onClose && (
@@ -213,8 +251,18 @@ export const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
             )}
             aria-label="Close alert"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         )}

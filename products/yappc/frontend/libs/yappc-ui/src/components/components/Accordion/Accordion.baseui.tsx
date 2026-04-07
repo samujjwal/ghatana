@@ -6,7 +6,10 @@ import { cn } from '../../utils/cn';
 /**
  * AccordionItem component props
  */
-export interface AccordionItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface AccordionItemProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'title'
+> {
   /**
    * Unique value for the accordion item
    */
@@ -40,8 +43,23 @@ export interface AccordionItemProps extends Omit<React.HTMLAttributes<HTMLDivEle
  *
  * Individual collapsible item within an Accordion
  */
-export const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
-  ({ value, title, children, disabled, icon, defaultOpen = false, className, ...props }, ref) => {
+export const AccordionItem = React.forwardRef<
+  HTMLDivElement,
+  AccordionItemProps
+>(
+  (
+    {
+      value,
+      title,
+      children,
+      disabled,
+      icon,
+      defaultOpen = false,
+      className,
+      ...props
+    },
+    ref
+  ) => {
     const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
     return (
@@ -50,7 +68,10 @@ export const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps
         open={isOpen}
         onOpenChange={setIsOpen}
         disabled={disabled}
-        className={cn('border-b border-grey-200 dark:border-grey-700 last:border-b-0', className)}
+        className={cn(
+          'border-b border-grey-200 dark:border-grey-700 last:border-b-0',
+          className
+        )}
         {...props}
       >
         <Collapsible.Trigger
@@ -72,8 +93,18 @@ export const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps
             )}
           >
             {icon || (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             )}
           </span>
@@ -87,7 +118,9 @@ export const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps
             'data-[state=closed]:max-h-0 data-[state=closed]:opacity-0'
           )}
         >
-          <div className="px-4 py-3 text-grey-700 dark:text-grey-300">{children}</div>
+          <div className="px-4 py-3 text-grey-700 dark:text-grey-300">
+            {children}
+          </div>
         </Collapsible.Panel>
       </Collapsible.Root>
     );

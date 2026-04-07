@@ -133,7 +133,10 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate suggestions',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate suggestions',
         duration: Date.now() - startTime,
       };
     }
@@ -161,7 +164,8 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to analyze quality',
+        error:
+          error instanceof Error ? error.message : 'Failed to analyze quality',
         duration: Date.now() - startTime,
       };
     }
@@ -189,7 +193,10 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate test cases',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate test cases',
         duration: Date.now() - startTime,
       };
     }
@@ -226,7 +233,9 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
    * @param request - Quality analysis request
    * @returns Quality analysis
    */
-  private performQualityAnalysis(request: QualityAnalysisRequest): QualityAnalysis {
+  private performQualityAnalysis(
+    request: QualityAnalysisRequest
+  ): QualityAnalysis {
     const issues: QualityIssue[] = [];
 
     // Check for missing description
@@ -251,7 +260,11 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
 
     // Check for vague requirements
     const vagueWords = ['maybe', 'possibly', 'might', 'could', 'should'];
-    if (vagueWords.some((word) => request.description.toLowerCase().includes(word))) {
+    if (
+      vagueWords.some((word) =>
+        request.description.toLowerCase().includes(word)
+      )
+    ) {
       issues.push({
         type: 'vague-requirements',
         severity: 'medium',
@@ -261,8 +274,12 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
     }
 
     const score = Math.max(0, 100 - issues.length * 15);
-    const completeness = request.description.length > 50 ? 100 : (request.description.length / 50) * 100;
-    const clarity = 100 - (vagueWords.some((w) => request.description.includes(w)) ? 20 : 0);
+    const completeness =
+      request.description.length > 50
+        ? 100
+        : (request.description.length / 50) * 100;
+    const clarity =
+      100 - (vagueWords.some((w) => request.description.includes(w)) ? 20 : 0);
 
     return {
       score,
@@ -334,7 +351,10 @@ Generate {{count}} test cases in JSON format with fields: name, description, ste
    * @param variables - Template variables
    * @returns Filled prompt
    */
-  public fillPrompt(templateName: string, variables: Record<string, unknown>): string {
+  public fillPrompt(
+    templateName: string,
+    variables: Record<string, unknown>
+  ): string {
     const template = this.prompts.get(templateName);
     if (!template) {
       throw new Error(`Template not found: ${templateName}`);

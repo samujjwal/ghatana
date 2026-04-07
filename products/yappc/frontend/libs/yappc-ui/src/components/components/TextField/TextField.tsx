@@ -8,22 +8,25 @@ import { borderRadius } from '../../tokens';
  * Props for the enhanced TextField component.
  * Extends standard input HTML attributes with shape, icon, and adornment support.
  */
-export type TextFieldProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix'> & {
+export type TextFieldProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'prefix'
+> & {
   /**
    * Input shape variant
    */
   shape?: 'rounded' | 'square' | 'soft';
-  
+
   /**
    * Icon to display at the start of the input
    */
   startIcon?: React.ReactNode;
-  
+
   /**
    * Icon to display at the end of the input
    */
   endIcon?: React.ReactNode;
-  
+
   /**
    * Callback for when the end icon is clicked
    */
@@ -73,14 +76,14 @@ const shapeClasses: Record<string, string> = {
  */
 export const TextField = React.forwardRef<HTMLDivElement, TextFieldProps>(
   (props, ref) => {
-    const { 
+    const {
       shape = 'rounded',
       startIcon,
       endIcon,
       onEndIconClick,
       InputProps: inputPropsProp,
       className,
-      ...rest 
+      ...rest
     } = props;
 
     // Build prefix/suffix from icons or InputProps adornments
@@ -90,14 +93,20 @@ export const TextField = React.forwardRef<HTMLDivElement, TextFieldProps>(
         <IconButton onClick={onEndIconClick} size="sm">
           {endIcon}
         </IconButton>
-      ) : endIcon
-    ) : inputPropsProp?.endAdornment || undefined;
+      ) : (
+        endIcon
+      )
+    ) : (
+      inputPropsProp?.endAdornment || undefined
+    );
 
     const fieldClassName = [
       shapeClasses[shape] || shapeClasses.rounded,
       className,
-    ].filter(Boolean).join(' ');
-    
+    ]
+      .filter(Boolean)
+      .join(' ');
+
     return (
       <BaseTextField
         ref={ref as React.Ref<HTMLInputElement>}

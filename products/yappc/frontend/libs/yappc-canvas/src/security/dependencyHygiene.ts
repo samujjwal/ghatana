@@ -215,12 +215,41 @@ interface DependencyHygieneState {
 /**
  * Default patch policies
  */
-const DEFAULT_PATCH_POLICIES: Map<VulnerabilitySeverity, PatchPolicy> = new Map([
-  ['critical', { severity: 'critical', slaDays: 1, autoPatch: false, requireApproval: true }],
-  ['high', { severity: 'high', slaDays: 7, autoPatch: false, requireApproval: true }],
-  ['medium', { severity: 'medium', slaDays: 30, autoPatch: false, requireApproval: false }],
-  ['low', { severity: 'low', slaDays: 90, autoPatch: false, requireApproval: false }],
-]);
+const DEFAULT_PATCH_POLICIES: Map<VulnerabilitySeverity, PatchPolicy> = new Map(
+  [
+    [
+      'critical',
+      {
+        severity: 'critical',
+        slaDays: 1,
+        autoPatch: false,
+        requireApproval: true,
+      },
+    ],
+    [
+      'high',
+      { severity: 'high', slaDays: 7, autoPatch: false, requireApproval: true },
+    ],
+    [
+      'medium',
+      {
+        severity: 'medium',
+        slaDays: 30,
+        autoPatch: false,
+        requireApproval: false,
+      },
+    ],
+    [
+      'low',
+      {
+        severity: 'low',
+        slaDays: 90,
+        autoPatch: false,
+        requireApproval: false,
+      },
+    ],
+  ]
+);
 
 /**
  * Default configuration
@@ -228,7 +257,13 @@ const DEFAULT_PATCH_POLICIES: Map<VulnerabilitySeverity, PatchPolicy> = new Map(
 const DEFAULT_CONFIG: DependencyHygieneConfig = {
   enabled: true,
   allowedLicenses: ['permissive'],
-  allowedLicenseNames: ['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC'],
+  allowedLicenseNames: [
+    'MIT',
+    'Apache-2.0',
+    'BSD-2-Clause',
+    'BSD-3-Clause',
+    'ISC',
+  ],
   blockedLicenseNames: ['AGPL-3.0', 'GPL-3.0'],
   patchPolicies: DEFAULT_PATCH_POLICIES,
   failOnLicenseViolation: true,
@@ -325,7 +360,11 @@ export class DependencyHygieneScanner {
   /**
    * Add vulnerability to dependency
    */
-  addVulnerability(name: string, version: string, vulnerability: Vulnerability): void {
+  addVulnerability(
+    name: string,
+    version: string,
+    vulnerability: Vulnerability
+  ): void {
     const key = `${name}@${version}`;
     const dep = this.state.dependencies.get(key);
 
@@ -343,7 +382,9 @@ export class DependencyHygieneScanner {
   /**
    * Get vulnerabilities by severity
    */
-  getVulnerabilitiesBySeverity(severity: VulnerabilitySeverity): Vulnerability[] {
+  getVulnerabilitiesBySeverity(
+    severity: VulnerabilitySeverity
+  ): Vulnerability[] {
     const vulnerabilities: Vulnerability[] = [];
 
     for (const dep of this.state.dependencies.values()) {
@@ -361,7 +402,9 @@ export class DependencyHygieneScanner {
    * Get vulnerable dependencies
    */
   getVulnerableDependencies(): Dependency[] {
-    return this.getAllDependencies().filter((d) => d.vulnerabilities.length > 0);
+    return this.getAllDependencies().filter(
+      (d) => d.vulnerabilities.length > 0
+    );
   }
 
   /**
@@ -371,7 +414,12 @@ export class DependencyHygieneScanner {
     severity: VulnerabilitySeverity,
     threshold: VulnerabilitySeverity
   ): boolean {
-    const levels: VulnerabilitySeverity[] = ['low', 'medium', 'high', 'critical'];
+    const levels: VulnerabilitySeverity[] = [
+      'low',
+      'medium',
+      'high',
+      'critical',
+    ];
     return levels.indexOf(severity) >= levels.indexOf(threshold);
   }
 
@@ -663,7 +711,10 @@ export class DependencyHygieneScanner {
   /**
    * Validate scan result against policy
    */
-  validateScanResult(result: ScanResult): { passed: boolean; reasons: string[] } {
+  validateScanResult(result: ScanResult): {
+    passed: boolean;
+    reasons: string[];
+  } {
     const reasons: string[] = [];
 
     // Check license violations
@@ -685,8 +736,13 @@ export class DependencyHygieneScanner {
       const lowCount = result.vulnerabilitiesBySeverity.low;
 
       if (
-        (threshold === 'low' && (lowCount > 0 || mediumCount > 0 || highCount > 0 || criticalCount > 0)) ||
-        (threshold === 'medium' && (mediumCount > 0 || highCount > 0 || criticalCount > 0)) ||
+        (threshold === 'low' &&
+          (lowCount > 0 ||
+            mediumCount > 0 ||
+            highCount > 0 ||
+            criticalCount > 0)) ||
+        (threshold === 'medium' &&
+          (mediumCount > 0 || highCount > 0 || criticalCount > 0)) ||
         (threshold === 'high' && (highCount > 0 || criticalCount > 0)) ||
         (threshold === 'critical' && criticalCount > 0)
       ) {

@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Editor Panel Component
- * 
+ *
  * Monaco editor panel with collaborative features.
- * 
+ *
  * @doc.type component
  * @doc.purpose Code editor panel for IDE
  * @doc.layer product
@@ -48,12 +48,12 @@ function mapLanguage(ideLanguage: string): CodeLanguage {
     xml: 'html',
   };
 
-  return (languageMap[ideLanguage.toLowerCase()]) || 'typescript';
+  return languageMap[ideLanguage.toLowerCase()] || 'typescript';
 }
 
 /**
  * Editor Panel Component
- * 
+ *
  * @doc.param props - Component props
  * @doc.returns Editor panel component
  */
@@ -96,7 +96,14 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
         return () => clearTimeout(timeoutId);
       }
     },
-    [activeFile, readOnly, updateFileContent, onContentChange, settings, saveFile]
+    [
+      activeFile,
+      readOnly,
+      updateFileContent,
+      onContentChange,
+      settings,
+      saveFile,
+    ]
   );
 
   const handleSave = useCallback(() => {
@@ -121,7 +128,9 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
   if (!activeFile) {
     return (
-      <div className={`flex flex-col items-center justify-center h-full bg-white dark:bg-gray-900 ${className}`}>
+      <div
+        className={`flex flex-col items-center justify-center h-full bg-white dark:bg-gray-900 ${className}`}
+      >
         <div className="text-center">
           <div className="text-6xl mb-4">📝</div>
           <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -136,7 +145,9 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-white dark:bg-gray-900 ${className}`}>
+    <div
+      className={`flex flex-col h-full bg-white dark:bg-gray-900 ${className}`}
+    >
       {/* Editor Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
@@ -165,7 +176,9 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
       {/* Monaco Editor */}
       <div className="flex-1 overflow-hidden">
         <CodeEditor
-          onMount={(editor) => { editorRef.current = editor; }}
+          onMount={(editor) => {
+            editorRef.current = editor;
+          }}
           value={activeFile.content}
           onChange={handleContentChange}
           config={{

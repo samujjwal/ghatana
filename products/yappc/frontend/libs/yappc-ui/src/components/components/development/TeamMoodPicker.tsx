@@ -70,7 +70,13 @@ export const TeamMoodPicker: React.FC<TeamMoodPickerProps> = ({
 
   // Get mood distribution
   const moodDistribution = useMemo(() => {
-    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const distribution: Record<number, number> = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
     teamMembers.forEach((m) => {
       if (m.mood !== undefined) {
         distribution[m.mood] = (distribution[m.mood] || 0) + 1;
@@ -147,10 +153,8 @@ export const TeamMoodPicker: React.FC<TeamMoodPickerProps> = ({
                 title={option.label}
               >
                 <span className="mood-emoji">{option.emoji}</span>
-                {count > 0 && (
-                  <span className="mood-count">{count}</span>
-                )}
-                
+                {count > 0 && <span className="mood-count">{count}</span>}
+
                 {/* Tooltip with members */}
                 {isHovered && members.length > 0 && (
                   <div className="mood-tooltip">
@@ -178,7 +182,7 @@ export const TeamMoodPicker: React.FC<TeamMoodPickerProps> = ({
               const count = moodDistribution[option.value];
               const percentage = (count / teamMembers.length) * 100;
               if (percentage === 0) return null;
-              
+
               return (
                 <div
                   key={option.value}
@@ -222,8 +226,8 @@ export const TeamMoodPicker: React.FC<TeamMoodPickerProps> = ({
                 confidence >= 70
                   ? '#10B981'
                   : confidence >= 40
-                  ? '#F59E0B'
-                  : '#EF4444',
+                    ? '#F59E0B'
+                    : '#EF4444',
             }}
           />
         </div>

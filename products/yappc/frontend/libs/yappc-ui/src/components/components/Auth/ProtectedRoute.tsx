@@ -1,8 +1,8 @@
 /**
  * Protected Route Component
- * 
+ *
  * Production-grade route protection with role-based access control
- * 
+ *
  * @module ui/components/Auth/ProtectedRoute
  * @doc.type component
  * @doc.purpose Route authorization and access control
@@ -21,34 +21,34 @@ import { Spinner } from '../Loading';
 export interface ProtectedRouteProps {
   /** Content to render when authorized */
   children: ReactNode;
-  
+
   /** Whether user is authenticated */
   isAuthenticated: boolean;
-  
+
   /** Whether authentication is being checked */
   isLoading?: boolean;
-  
+
   /** Required roles (user must have at least one) */
   requiredRoles?: string[];
-  
+
   /** Required permissions (user must have at least one) */
   requiredPermissions?: string[];
-  
+
   /** User's current roles */
   userRoles?: string[];
-  
+
   /** User's current permissions */
   userPermissions?: string[];
-  
+
   /** Redirect path when not authenticated */
   redirectTo?: string;
-  
+
   /** Redirect path when not authorized */
   unauthorizedRedirectTo?: string;
-  
+
   /** Custom fallback component when loading */
   loadingFallback?: ReactNode;
-  
+
   /** Custom fallback component when unauthorized */
   unauthorizedFallback?: ReactNode;
 }
@@ -59,14 +59,14 @@ export interface ProtectedRouteProps {
 
 /**
  * Protected route component with role-based access control
- * 
+ *
  * @example Basic authentication check
  * ```tsx
  * <ProtectedRoute isAuthenticated={isAuthenticated}>
  *   <Dashboard />
  * </ProtectedRoute>
  * ```
- * 
+ *
  * @example Role-based access
  * ```tsx
  * <ProtectedRoute
@@ -77,7 +77,7 @@ export interface ProtectedRouteProps {
  *   <AdminPanel />
  * </ProtectedRoute>
  * ```
- * 
+ *
  * @example Permission-based access
  * ```tsx
  * <ProtectedRoute
@@ -163,7 +163,7 @@ export function ProtectedRoute({
 
 /**
  * HOC for protecting routes with authentication and authorization
- * 
+ *
  * @example
  * ```tsx
  * const ProtectedDashboard = withProtectedRoute(Dashboard, {
@@ -173,14 +173,19 @@ export function ProtectedRoute({
  */
 export function withProtectedRoute<P extends object>(
   Component: React.ComponentType<P>,
-  protectionConfig: Omit<ProtectedRouteProps, 'children' | 'isAuthenticated' | 'isLoading'>
+  protectionConfig: Omit<
+    ProtectedRouteProps,
+    'children' | 'isAuthenticated' | 'isLoading'
+  >
 ) {
-  return function ProtectedComponent(props: P & {
-    isAuthenticated: boolean;
-    isLoading?: boolean;
-  }) {
+  return function ProtectedComponent(
+    props: P & {
+      isAuthenticated: boolean;
+      isLoading?: boolean;
+    }
+  ) {
     const { isAuthenticated, isLoading, ...componentProps } = props;
-    
+
     return (
       <ProtectedRoute
         isAuthenticated={isAuthenticated}
@@ -203,9 +208,15 @@ export function useRouteAccess({
   requiredPermissions = [],
   userRoles = [],
   userPermissions = [],
-}: Omit<ProtectedRouteProps, 'children' | 'redirectTo' | 'unauthorizedRedirectTo'>): {
+}: Omit<
+  ProtectedRouteProps,
+  'children' | 'redirectTo' | 'unauthorizedRedirectTo'
+>): {
   hasAccess: boolean;
-  reason?: 'not_authenticated' | 'insufficient_roles' | 'insufficient_permissions';
+  reason?:
+    | 'not_authenticated'
+    | 'insufficient_roles'
+    | 'insufficient_permissions';
 } {
   if (!isAuthenticated) {
     return { hasAccess: false, reason: 'not_authenticated' };

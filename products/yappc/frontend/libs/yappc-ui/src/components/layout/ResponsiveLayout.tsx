@@ -47,25 +47,25 @@ export function ResponsiveLayout({
   headerContent,
   footerContent,
 }: ResponsiveLayoutProps) {
-  const platform = useGlobalStateValue<'web' | 'desktop' | 'mobile'>('store:platform');
+  const platform = useGlobalStateValue<'web' | 'desktop' | 'mobile'>(
+    'store:platform'
+  );
   const isMobileSize = useIsMobile();
-  
+
   // Determine layout based on platform and screen size
   const showBottomNav = platform === 'mobile' || isMobileSize;
-  const showSidebar = (platform === 'desktop' || platform === 'web') && !isMobileSize;
-  
+  const showSidebar =
+    (platform === 'desktop' || platform === 'web') && !isMobileSize;
+
   return (
     <Box className="flex flex-col h-screen">
       {/* Header */}
       {headerContent && (
-        <Box
-          component="header"
-          className="w-full z-50"
-        >
+        <Box component="header" className="w-full z-50">
           {headerContent}
         </Box>
       )}
-      
+
       {/* Main content area with optional sidebar */}
       <Box className="flex flex-1 overflow-hidden">
         {/* Sidebar (desktop/web) */}
@@ -77,7 +77,7 @@ export function ResponsiveLayout({
             {sidebarContent}
           </Box>
         )}
-        
+
         {/* Main content */}
         <Box
           component="main"
@@ -86,7 +86,7 @@ export function ResponsiveLayout({
           {children}
         </Box>
       </Box>
-      
+
       {/* Footer/Bottom Navigation (mobile) */}
       {showBottomNav && footerContent && (
         <Box

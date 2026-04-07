@@ -100,7 +100,12 @@ export const WithDisabledItems: Story = {
   render: () => {
     const items = [
       ...sampleItems,
-      { id: 6, label: 'Disabled Item', description: 'This item cannot be selected', disabled: true },
+      {
+        id: 6,
+        label: 'Disabled Item',
+        description: 'This item cannot be selected',
+        disabled: true,
+      },
     ];
 
     const [left, setLeft] = React.useState<TransferListItem[]>(items);
@@ -133,7 +138,8 @@ export const UserPermissions: Story = {
       { id: 'share', label: 'Share', description: 'Share with others' },
     ];
 
-    const [available, setAvailable] = React.useState<TransferListItem[]>(permissions);
+    const [available, setAvailable] =
+      React.useState<TransferListItem[]>(permissions);
     const [assigned, setAssigned] = React.useState<TransferListItem[]>([]);
 
     return (

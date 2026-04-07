@@ -1,13 +1,13 @@
 /**
  * Authentication Test Utilities
- * 
+ *
  * Reusable test helpers for authentication testing including:
  * - Wrapper components with auth providers
  * - Mock auth state helpers
  * - Auth-specific render functions
  * - Token management helpers
  * - User factory functions
- * 
+ *
  * @doc.type test-utility
  * @doc.purpose Authentication test helpers and wrappers
  * @doc.layer testing
@@ -40,22 +40,22 @@ import type { User } from '@yappc/core/types';
 export interface MockAuthState {
   /** Authenticated user */
   user: User | null;
-  
+
   /** Authentication token */
   token: string | null;
-  
+
   /** Is authenticated */
   isAuthenticated: boolean;
-  
+
   /** Is loading */
   isLoading: boolean;
-  
+
   /** Error message */
   error: string | null;
-  
+
   /** User roles */
   roles?: string[];
-  
+
   /** User permissions */
   permissions?: string[];
 }
@@ -81,7 +81,7 @@ export interface RenderWithAuthOptions extends Omit<RenderOptions, 'wrapper'> {
 
 /**
  * Create mock user for testing
- * 
+ *
  * @param overrides - User property overrides
  * @returns Mock user object
  */
@@ -98,7 +98,7 @@ export function createMockUser(overrides: Partial<User> = {}): User {
 
 /**
  * Create mock admin user for testing
- * 
+ *
  * @param overrides - User property overrides
  * @returns Mock admin user object
  */
@@ -113,7 +113,7 @@ export function createMockAdminUser(overrides: Partial<User> = {}): User {
 
 /**
  * Create mock auth token
- * 
+ *
  * @param expiresIn - Token expiration in seconds (default: 3600)
  * @returns Mock JWT token string
  */
@@ -128,13 +128,13 @@ export function createMockAuthToken(expiresIn: number = 3600): string {
     })
   );
   const signature = 'mock-signature';
-  
+
   return `${header}.${payload}.${signature}`;
 }
 
 /**
  * Create expired mock auth token
- * 
+ *
  * @returns Expired mock JWT token string
  */
 export function createExpiredMockAuthToken(): string {
@@ -147,13 +147,13 @@ export function createExpiredMockAuthToken(): string {
 
 /**
  * Create authenticated state for testing
- * 
+ *
  * @param user - User object (optional)
  * @returns Mock authenticated state
  */
 export function createAuthenticatedState(user?: User): MockAuthState {
   const mockUser = user || createMockUser();
-  
+
   return {
     user: mockUser,
     token: createMockAuthToken(),
@@ -167,7 +167,7 @@ export function createAuthenticatedState(user?: User): MockAuthState {
 
 /**
  * Create unauthenticated state for testing
- * 
+ *
  * @returns Mock unauthenticated state
  */
 export function createUnauthenticatedState(): MockAuthState {
@@ -182,7 +182,7 @@ export function createUnauthenticatedState(): MockAuthState {
 
 /**
  * Create loading state for testing
- * 
+ *
  * @returns Mock loading state
  */
 export function createLoadingState(): MockAuthState {
@@ -197,11 +197,13 @@ export function createLoadingState(): MockAuthState {
 
 /**
  * Create error state for testing
- * 
+ *
  * @param error - Error message
  * @returns Mock error state
  */
-export function createErrorState(error: string = 'Authentication failed'): MockAuthState {
+export function createErrorState(
+  error: string = 'Authentication failed'
+): MockAuthState {
   return {
     user: null,
     token: null,
@@ -213,13 +215,13 @@ export function createErrorState(error: string = 'Authentication failed'): MockA
 
 /**
  * Create admin authenticated state for testing
- * 
+ *
  * @param user - Admin user object (optional)
  * @returns Mock admin authenticated state
  */
 export function createAdminAuthenticatedState(user?: User): MockAuthState {
   const adminUser = user || createMockAdminUser();
-  
+
   return {
     user: adminUser,
     token: createMockAuthToken(),
@@ -227,7 +229,12 @@ export function createAdminAuthenticatedState(user?: User): MockAuthState {
     isLoading: false,
     error: null,
     roles: (adminUser as unknown).roles || ['admin', 'user'],
-    permissions: (adminUser as unknown).permissions || ['read', 'write', 'delete', 'admin'],
+    permissions: (adminUser as unknown).permissions || [
+      'read',
+      'write',
+      'delete',
+      'admin',
+    ],
   };
 }
 
@@ -238,7 +245,10 @@ export function createAdminAuthenticatedState(user?: User): MockAuthState {
 /**
  * Hydrate atoms component for testing
  */
-function HydrateAtoms({ initialValues, children }: {
+function HydrateAtoms({
+  initialValues,
+  children,
+}: {
   initialValues: Array<[any, any]>;
   children: ReactNode;
 }) {
@@ -249,7 +259,7 @@ function HydrateAtoms({ initialValues, children }: {
 /**
  * Mock authentication provider wrapper for testing
  * Provides Jotai store with initial auth state
- * 
+ *
  * @example
  * const { getByText } = render(
  *   <MockAuthProvider initialAuthState={{ user: mockUser, isAuthenticated: true }}>
@@ -257,31 +267,35 @@ function HydrateAtoms({ initialValues, children }: {
  *   </MockAuthProvider>
  * );
  */
-export function MockAuthProvider({ children, initialAuthState = {} }: MockAuthProviderProps) {
+export function MockAuthProvider({
+  children,
+  initialAuthState = {},
+}: MockAuthProviderProps) {
   const defaultState = createUnauthenticatedState();
   const authState = { ...defaultState, ...initialAuthState };
-  
+
   const initialValues: Array<[any, any]> = [
     [authUserAtom, authState.user],
     [authTokenAtom, authState.token],
     [authLoadingAtom, authState.isLoading],
     [authErrorAtom, authState.error],
-    [authStateAtom, {
-      user: authState.user,
-      token: authState.token,
-      isAuthenticated: authState.isAuthenticated,
-      isLoading: authState.isLoading,
-      error: authState.error,
-    }],
+    [
+      authStateAtom,
+      {
+        user: authState.user,
+        token: authState.token,
+        isAuthenticated: authState.isAuthenticated,
+        isLoading: authState.isLoading,
+        error: authState.error,
+      },
+    ],
   ];
-  
+
   return (
     <JotaiProvider>
       <HydrateAtoms initialValues={initialValues}>
         <ThemeProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
       </HydrateAtoms>
     </JotaiProvider>
@@ -294,11 +308,11 @@ export function MockAuthProvider({ children, initialAuthState = {} }: MockAuthPr
 
 /**
  * Render component with authenticated user
- * 
+ *
  * @param ui - Component to render
  * @param options - Render options with optional auth state
  * @returns Render result
- * 
+ *
  * @example
  * const { getByText } = renderWithAuth(<Dashboard />, {
  *   initialAuthState: { user: createMockUser({ name: 'John' }) }
@@ -309,24 +323,24 @@ export function renderWithAuth(
   options: RenderWithAuthOptions = {}
 ): ReturnType<typeof render> {
   const { initialAuthState, ...renderOptions } = options;
-  
+
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <MockAuthProvider initialAuthState={initialAuthState}>
       {children}
     </MockAuthProvider>
   );
-  
+
   return render(ui, { wrapper: Wrapper, ...renderOptions });
 }
 
 /**
  * Render component with authenticated user
- * 
+ *
  * @param ui - Component to render
  * @param user - User object (optional)
  * @param options - Render options
  * @returns Render result
- * 
+ *
  * @example
  * const { getByText } = renderAuthenticated(<Dashboard />, createMockUser({ name: 'John' }));
  */
@@ -341,11 +355,11 @@ export function renderAuthenticated(
 
 /**
  * Render component with unauthenticated state
- * 
+ *
  * @param ui - Component to render
  * @param options - Render options
  * @returns Render result
- * 
+ *
  * @example
  * const { getByText } = renderUnauthenticated(<LoginPage />);
  */
@@ -359,12 +373,12 @@ export function renderUnauthenticated(
 
 /**
  * Render component with admin user
- * 
+ *
  * @param ui - Component to render
  * @param user - Admin user object (optional)
  * @param options - Render options
  * @returns Render result
- * 
+ *
  * @example
  * const { getByText } = renderAsAdmin(<AdminPanel />);
  */
@@ -379,11 +393,11 @@ export function renderAsAdmin(
 
 /**
  * Render component with loading state
- * 
+ *
  * @param ui - Component to render
  * @param options - Render options
  * @returns Render result
- * 
+ *
  * @example
  * const { getByTestId } = renderLoading(<LoginForm />);
  */
@@ -397,12 +411,12 @@ export function renderLoading(
 
 /**
  * Render component with error state
- * 
+ *
  * @param ui - Component to render
  * @param error - Error message
  * @param options - Render options
  * @returns Render result
- * 
+ *
  * @example
  * const { getByText } = renderWithError(<LoginForm />, 'Invalid credentials');
  */
@@ -421,7 +435,7 @@ export function renderWithError(
 
 /**
  * Mock localStorage with auth token
- * 
+ *
  * @param token - Auth token (optional, creates new if not provided)
  */
 export function mockLocalStorageWithToken(token?: string): void {
@@ -431,7 +445,7 @@ export function mockLocalStorageWithToken(token?: string): void {
 
 /**
  * Mock sessionStorage with auth token
- * 
+ *
  * @param token - Auth token (optional, creates new if not provided)
  */
 export function mockSessionStorageWithToken(token?: string): void {
@@ -451,7 +465,7 @@ export function clearAuthTokens(): void {
 
 /**
  * Mock auth tokens in storage
- * 
+ *
  * @param accessToken - Access token
  * @param refreshToken - Refresh token
  * @param storage - Storage type ('local' | 'session')
@@ -462,7 +476,7 @@ export function mockAuthTokensInStorage(
   storage: 'local' | 'session' = 'local'
 ): void {
   const storageObj = storage === 'local' ? localStorage : sessionStorage;
-  
+
   if (accessToken) {
     storageObj.setItem('authToken', accessToken);
   }
@@ -477,18 +491,21 @@ export function mockAuthTokensInStorage(
 
 /**
  * Assert user is authenticated in the UI
- * 
+ *
  * @param container - Render container
  * @param userName - Expected user name
  */
-export function expectUserAuthenticated(container: HTMLElement, userName: string): void {
+export function expectUserAuthenticated(
+  container: HTMLElement,
+  userName: string
+): void {
   const userElement = container.querySelector(`[data-testid="user-name"]`);
   expect(userElement).toHaveTextContent(userName);
 }
 
 /**
  * Assert user is not authenticated in the UI
- * 
+ *
  * @param container - Render container
  */
 export function expectUserNotAuthenticated(container: HTMLElement): void {
@@ -509,14 +526,14 @@ export const authTestHelpers = {
   createMockAdminUser,
   createMockAuthToken,
   createExpiredMockAuthToken,
-  
+
   // State creators
   createAuthenticatedState,
   createUnauthenticatedState,
   createLoadingState,
   createErrorState,
   createAdminAuthenticatedState,
-  
+
   // Render functions
   renderWithAuth,
   renderAuthenticated,
@@ -524,13 +541,13 @@ export const authTestHelpers = {
   renderAsAdmin,
   renderLoading,
   renderWithError,
-  
+
   // Storage helpers
   mockLocalStorageWithToken,
   mockSessionStorageWithToken,
   clearAuthTokens,
   mockAuthTokensInStorage,
-  
+
   // Assertions
   expectUserAuthenticated,
   expectUserNotAuthenticated,

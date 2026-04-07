@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Accessibility Manager Component
- * 
+ *
  * Comprehensive accessibility compliance manager with WCAG 2.1 AA standards,
  * screen reader support, keyboard navigation, and accessibility testing.
- * 
+ *
  * @doc.type component
  * @doc.purpose Accessibility compliance management for IDE
  * @doc.layer product
@@ -105,7 +105,11 @@ class AccessibilityAuditor {
     );
 
     interactiveElements.forEach((element, index) => {
-      if (!element.hasAttribute('tabindex') && element.tagName !== 'A' && element.tagName !== 'BUTTON') {
+      if (
+        !element.hasAttribute('tabindex') &&
+        element.tagName !== 'A' &&
+        element.tagName !== 'BUTTON'
+      ) {
         this.addViolation({
           id: `keyboard-nav-${index}`,
           type: 'error',
@@ -139,7 +143,8 @@ class AccessibilityAuditor {
           description: 'Interactive element missing ARIA label',
           element: element.tagName.toLowerCase(),
           impact: 'serious',
-          suggestion: 'Add aria-label or aria-labelledby to provide accessible name',
+          suggestion:
+            'Add aria-label or aria-labelledby to provide accessible name',
           selector: this.getSelector(element),
         });
       }
@@ -167,7 +172,9 @@ class AccessibilityAuditor {
   private checkColorContrast(): void {
     // This would require a color contrast calculation library
     // For now, we'll just check for hardcoded colors that might be problematic
-    const elements = document.querySelectorAll('[style*="color"], [class*="text-"]');
+    const elements = document.querySelectorAll(
+      '[style*="color"], [class*="text-"]'
+    );
 
     elements.forEach((element, index) => {
       const computedStyle = window.getComputedStyle(element);
@@ -175,7 +182,10 @@ class AccessibilityAuditor {
       const backgroundColor = computedStyle.backgroundColor;
 
       // Simple check for low contrast (would need proper calculation)
-      if (color === 'rgb(128, 128, 128)' && backgroundColor === 'rgb(248, 248, 248)') {
+      if (
+        color === 'rgb(128, 128, 128)' &&
+        backgroundColor === 'rgb(248, 248, 248)'
+      ) {
         this.addViolation({
           id: `contrast-${index}`,
           type: 'warning',
@@ -184,7 +194,8 @@ class AccessibilityAuditor {
           description: 'Potential low color contrast',
           element: element.tagName.toLowerCase(),
           impact: 'critical',
-          suggestion: 'Increase color contrast to meet WCAG AA standards (4.5:1)',
+          suggestion:
+            'Increase color contrast to meet WCAG AA standards (4.5:1)',
           selector: this.getSelector(element),
         });
       }
@@ -235,7 +246,8 @@ class AccessibilityAuditor {
           description: 'Image missing alt text',
           element: 'img',
           impact: 'serious',
-          suggestion: 'Add descriptive alt text or alt="" for decorative images',
+          suggestion:
+            'Add descriptive alt text or alt="" for decorative images',
           selector: this.getSelector(img),
         });
       }
@@ -249,7 +261,8 @@ class AccessibilityAuditor {
     const inputs = document.querySelectorAll('input, select, textarea');
 
     inputs.forEach((input, index) => {
-      const hasLabel = document.querySelector(`label[for="${input.id}"]`) ||
+      const hasLabel =
+        document.querySelector(`label[for="${input.id}"]`) ||
         input.getAttribute('aria-label') ||
         input.getAttribute('aria-labelledby');
 
@@ -278,7 +291,12 @@ class AccessibilityAuditor {
     links.forEach((link, index) => {
       const text = link.textContent?.trim();
 
-      if (!text || text === 'click here' || text === 'read more' || text === 'learn more') {
+      if (
+        !text ||
+        text === 'click here' ||
+        text === 'read more' ||
+        text === 'learn more'
+      ) {
         this.addViolation({
           id: `link-text-${index}`,
           type: 'warning',
@@ -287,7 +305,8 @@ class AccessibilityAuditor {
           description: 'Link text not descriptive',
           element: 'a',
           impact: 'moderate',
-          suggestion: 'Use descriptive link text that indicates the link destination',
+          suggestion:
+            'Use descriptive link text that indicates the link destination',
           selector: this.getSelector(link),
         });
       }
@@ -405,8 +424,10 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
       const foundViolations = await auditorRef.current.audit();
       setViolations(foundViolations);
 
-      const errors = foundViolations.filter(v => v.type === 'error').length;
-      const warnings = foundViolations.filter(v => v.type === 'warning').length;
+      const errors = foundViolations.filter((v) => v.type === 'error').length;
+      const warnings = foundViolations.filter(
+        (v) => v.type === 'warning'
+      ).length;
 
       setAuditStats({
         total: foundViolations.length,
@@ -416,7 +437,7 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
       });
 
       // Notify about new violations
-      foundViolations.forEach(violation => {
+      foundViolations.forEach((violation) => {
         onViolationFound?.(violation);
       });
     } catch (error) {
@@ -441,25 +462,34 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
   }, [enableAutoAudit, auditInterval, runAudit]);
 
   // Update settings
-  const updateSetting = useCallback(<K extends keyof AccessibilitySettings>(
-    key: K,
-    value: AccessibilitySettings[K]
-  ) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const updateSetting = useCallback(
+    <K extends keyof AccessibilitySettings>(
+      key: K,
+      value: AccessibilitySettings[K]
+    ) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   // Get violation color
   const getViolationColor = (type: string) => {
-    return type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400';
+    return type === 'error'
+      ? 'text-red-600 dark:text-red-400'
+      : 'text-yellow-600 dark:text-yellow-400';
   };
 
   // Get violation background
   const getViolationBg = (type: string) => {
-    return type === 'error' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-yellow-50 dark:bg-yellow-900/20';
+    return type === 'error'
+      ? 'bg-red-50 dark:bg-red-900/20'
+      : 'bg-yellow-50 dark:bg-yellow-900/20';
   };
 
   return (
-    <div className={`p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div
+      className={`p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -487,28 +517,36 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
       {/* Audit overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Issues</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Total Issues
+          </div>
           <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
             {auditStats.total}
           </div>
         </div>
 
         <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <div className="text-sm text-red-600 dark:text-red-400 mb-1">Errors</div>
+          <div className="text-sm text-red-600 dark:text-red-400 mb-1">
+            Errors
+          </div>
           <div className="text-xl font-bold text-red-700 dark:text-red-300">
             {auditStats.errors}
           </div>
         </div>
 
         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-          <div className="text-sm text-yellow-600 dark:text-yellow-400 mb-1">Warnings</div>
+          <div className="text-sm text-yellow-600 dark:text-yellow-400 mb-1">
+            Warnings
+          </div>
           <div className="text-xl font-bold text-yellow-700 dark:text-yellow-300">
             {auditStats.warnings}
           </div>
         </div>
 
         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-          <div className="text-sm text-green-600 dark:text-green-400 mb-1">WCAG Level</div>
+          <div className="text-sm text-green-600 dark:text-green-400 mb-1">
+            WCAG Level
+          </div>
           <div className="text-xl font-bold text-green-700 dark:text-green-300">
             {auditStats.errors === 0 ? 'AA' : 'A'}
           </div>
@@ -525,7 +563,9 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
             <input
               type="checkbox"
               checked={settings.enableHighContrast}
-              onChange={(e) => updateSetting('enableHighContrast', e.target.checked)}
+              onChange={(e) =>
+                updateSetting('enableHighContrast', e.target.checked)
+              }
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             High Contrast
@@ -535,7 +575,9 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
             <input
               type="checkbox"
               checked={settings.enableReducedMotion}
-              onChange={(e) => updateSetting('enableReducedMotion', e.target.checked)}
+              onChange={(e) =>
+                updateSetting('enableReducedMotion', e.target.checked)
+              }
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             Reduced Motion
@@ -545,7 +587,9 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
             <input
               type="checkbox"
               checked={settings.enableLargeText}
-              onChange={(e) => updateSetting('enableLargeText', e.target.checked)}
+              onChange={(e) =>
+                updateSetting('enableLargeText', e.target.checked)
+              }
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             Large Text
@@ -555,7 +599,9 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
             <input
               type="checkbox"
               checked={settings.enableScreenReader}
-              onChange={(e) => updateSetting('enableScreenReader', e.target.checked)}
+              onChange={(e) =>
+                updateSetting('enableScreenReader', e.target.checked)
+              }
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             Screen Reader
@@ -578,13 +624,18 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-sm font-medium ${getViolationColor(violation.type)}`}>
+                      <span
+                        className={`text-sm font-medium ${getViolationColor(violation.type)}`}
+                      >
                         {violation.rule}
                       </span>
-                      <span className={`px-2 py-1 text-xs rounded ${violation.type === 'error'
-                          ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-                        }`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${
+                          violation.type === 'error'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        }`}
+                      >
                         {violation.type}
                       </span>
                     </div>
@@ -609,7 +660,8 @@ export const AccessibilityManager: React.FC<AccessibilityManagerProps> = ({
       {auditStats.lastAudit && (
         <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
           Last audit: {auditStats.lastAudit.toLocaleTimeString()}
-          {enableAutoAudit && ` • Next audit in ${Math.floor(auditInterval / 1000)}s`}
+          {enableAutoAudit &&
+            ` • Next audit in ${Math.floor(auditInterval / 1000)}s`}
         </div>
       )}
     </div>

@@ -16,9 +16,13 @@ import type { CanvasTheme } from '../types/canvas-document';
  */
 export const CanvasThemeSchema = z.object({
   colors: z.object({
-    background: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
+    background: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
     grid: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
-    selection: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
+    selection: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
     hover: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
     focus: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
     error: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
@@ -103,7 +107,9 @@ export function validateThemeJSON(json: string): ThemeValidationResult {
   } catch (error) {
     return {
       valid: false,
-      errors: [`Invalid JSON: ${  error instanceof Error ? error.message : String(error)}`],
+      errors: [
+        `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      ],
     };
   }
 }
@@ -143,14 +149,18 @@ export function checkContrast(theme: CanvasTheme): {
   const selectionLuminance = hexToLuminance(theme.colors.selection);
   const selectionContrast = contrastRatio(bgLuminance, selectionLuminance);
   if (selectionContrast < 3) {
-    warnings.push(`Selection color contrast is ${selectionContrast.toFixed(2)}, should be at least 3:1`);
+    warnings.push(
+      `Selection color contrast is ${selectionContrast.toFixed(2)}, should be at least 3:1`
+    );
   }
 
   // Check error contrast
   const errorLuminance = hexToLuminance(theme.colors.error);
   const errorContrast = contrastRatio(bgLuminance, errorLuminance);
   if (errorContrast < 3) {
-    warnings.push(`Error color contrast is ${errorContrast.toFixed(2)}, should be at least 3:1`);
+    warnings.push(
+      `Error color contrast is ${errorContrast.toFixed(2)}, should be at least 3:1`
+    );
   }
 
   return {

@@ -3,7 +3,6 @@ import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  * Chip variant types
  */
@@ -12,13 +11,13 @@ export type ChipVariant = 'filled' | 'outlined';
 /**
  * Chip color variants
  */
-export type ChipColor = 
-  | 'default' 
-  | 'primary' 
-  | 'secondary' 
-  | 'error' 
-  | 'warning' 
-  | 'info' 
+export type ChipColor =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'warning'
+  | 'info'
   | 'success';
 
 /**
@@ -29,51 +28,54 @@ export type ChipSize = 'small' | 'medium';
 /**
  * Props for the Chip component
  */
-export interface ChipProps extends Omit<HTMLAttributes<HTMLDivElement>, 'color'> {
+export interface ChipProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'color'
+> {
   /**
    * Chip label text
    */
   label: string;
-  
+
   /**
    * Visual variant
    * @default 'filled'
    */
   variant?: ChipVariant;
-  
+
   /**
    * Color scheme
    * @default 'default'
    */
   color?: ChipColor;
-  
+
   /**
    * Size variant
    * @default 'medium'
    */
   size?: ChipSize;
-  
+
   /**
    * Icon to display at the start of the chip
    */
   icon?: ReactNode;
-  
+
   /**
    * Callback fired when delete icon is clicked
    */
   onDelete?: () => void;
-  
+
   /**
    * Makes the chip clickable
    */
   onClick?: () => void;
-  
+
   /**
    * Disabled state
    * @default false
    */
   disabled?: boolean;
-  
+
   /**
    * Additional CSS classes
    */
@@ -82,7 +84,7 @@ export interface ChipProps extends Omit<HTMLAttributes<HTMLDivElement>, 'color'>
 
 /**
  * Chip component for displaying tags, labels, and compact information.
- * 
+ *
  * Features:
  * - Two variants: filled (solid background) and outlined (border only)
  * - 7 color schemes aligned with design system
@@ -92,23 +94,23 @@ export interface ChipProps extends Omit<HTMLAttributes<HTMLDivElement>, 'color'>
  * - Clickable chips with hover states
  * - Disabled state support
  * - Fully keyboard accessible
- * 
+ *
  * @example
  * ```tsx
  * // Basic chip
  * <Chip label="React" color="primary" />
- * 
+ *
  * // Deletable chip
  * <Chip label="TypeScript" onDelete={() => console.log('deleted')} />
- * 
+ *
  * // Clickable chip with icon
- * <Chip 
- *   label="Active" 
- *   icon={<CheckIcon />} 
+ * <Chip
+ *   label="Active"
+ *   icon={<CheckIcon />}
  *   onClick={() => console.log('clicked')}
  *   variant="outlined"
  * />
- * 
+ *
  * // Small disabled chip
  * <Chip label="Disabled" size="small" disabled />
  * ```
@@ -131,14 +133,14 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
   ) => {
     // Size classes
     const sizeClasses: Record<ChipSize, string> = {
-      small: 'h-6 text-xs px-2 gap-1',     // 24px height, 12px font, 8px padding
-      medium: 'h-8 text-sm px-3 gap-1.5',  // 32px height, 14px font, 12px padding
+      small: 'h-6 text-xs px-2 gap-1', // 24px height, 12px font, 8px padding
+      medium: 'h-8 text-sm px-3 gap-1.5', // 32px height, 14px font, 12px padding
     };
 
     // Icon size classes
     const iconSizeClasses: Record<ChipSize, string> = {
-      small: 'w-4 h-4',   // 16px icon
-      medium: 'w-5 h-5',  // 20px icon
+      small: 'w-4 h-4', // 16px icon
+      medium: 'w-5 h-5', // 20px icon
     };
 
     // Color classes for filled variant
@@ -191,14 +193,14 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (disabled) return;
-      
+
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         if (onClick) {
           onClick();
         }
       }
-      
+
       if (e.key === 'Backspace' || e.key === 'Delete') {
         if (onDelete) {
           onDelete();
@@ -219,7 +221,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
           // Size
           sizeClasses[size],
           // Variant and color
-          variant === 'filled' 
+          variant === 'filled'
             ? filledColorClasses[color]
             : `border ${outlinedColorClasses[color]}`,
           // Interactive states
@@ -243,10 +245,10 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
             {icon}
           </span>
         )}
-        
+
         {/* Label */}
         <span className="truncate">{label}</span>
-        
+
         {/* Delete button */}
         {onDelete && (
           <button

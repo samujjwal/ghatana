@@ -26,12 +26,12 @@ export function ShortcutHelper({
   position = 'center',
   className,
   showCategories = true,
-  maxWidth = '600px'
+  maxWidth = '600px',
 }: ShortcutHelperProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { getShortcuts, formatShortcut } = useKeyboardShortcuts({
-    context: context || 'global'
+    context: context || 'global',
   });
 
   const allShortcuts = useMemo(() => {
@@ -42,10 +42,11 @@ export function ShortcutHelper({
     if (!searchQuery.trim()) return allShortcuts;
 
     const query = searchQuery.toLowerCase();
-    return allShortcuts.filter((shortcut) =>
-      (shortcut.description || '').toLowerCase().includes(query) ||
-      (shortcut.key || '').toLowerCase().includes(query) ||
-      (shortcut.category ?? '').toLowerCase().includes(query)
+    return allShortcuts.filter(
+      (shortcut) =>
+        (shortcut.description || '').toLowerCase().includes(query) ||
+        (shortcut.key || '').toLowerCase().includes(query) ||
+        (shortcut.category ?? '').toLowerCase().includes(query)
     );
   }, [allShortcuts, searchQuery]);
 
@@ -88,7 +89,7 @@ export function ShortcutHelper({
       border: '1px solid var(--color-border, #e0e0e0)',
       maxWidth,
       maxHeight: '70vh',
-      overflow: 'hidden'
+      overflow: 'hidden',
     };
 
     switch (position) {
@@ -97,14 +98,14 @@ export function ShortcutHelper({
           ...base,
           bottom: '20px',
           right: '20px',
-          width: '400px'
+          width: '400px',
         };
       case 'bottom-left':
         return {
           ...base,
           bottom: '20px',
           left: '20px',
-          width: '400px'
+          width: '400px',
         };
       case 'center':
       default:
@@ -113,34 +114,37 @@ export function ShortcutHelper({
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          width: '90vw'
+          width: '90vw',
         };
     }
   };
 
-  const overlayStyle: React.CSSProperties = position === 'center' ? {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    zIndex: 9998
-  } : {};
+  const overlayStyle: React.CSSProperties =
+    position === 'center'
+      ? {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          zIndex: 9998,
+        }
+      : {};
 
   const headerStyle: React.CSSProperties = {
     padding: '1.5rem',
     borderBottom: '1px solid var(--color-border, #e0e0e0)',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   };
 
   const titleStyle: React.CSSProperties = {
     margin: 0,
     fontSize: '1.25rem',
     fontWeight: '600',
-    color: 'var(--color-text-primary, #333)'
+    color: 'var(--color-text-primary, #333)',
   };
 
   const closeButtonStyle: React.CSSProperties = {
@@ -153,12 +157,12 @@ export function ShortcutHelper({
     borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   };
 
   const searchStyle: React.CSSProperties = {
     padding: '1rem 1.5rem',
-    borderBottom: '1px solid var(--color-border, #e0e0e0)'
+    borderBottom: '1px solid var(--color-border, #e0e0e0)',
   };
 
   const searchInputStyle: React.CSSProperties = {
@@ -167,13 +171,13 @@ export function ShortcutHelper({
     border: '1px solid var(--color-border, #e0e0e0)',
     borderRadius: '6px',
     fontSize: '0.875rem',
-    outline: 'none'
+    outline: 'none',
   };
 
   const contentStyle: React.CSSProperties = {
     maxHeight: 'calc(70vh - 180px)',
     overflow: 'auto',
-    padding: '1rem 0'
+    padding: '1rem 0',
   };
 
   const categoryStyle: React.CSSProperties = {
@@ -185,7 +189,7 @@ export function ShortcutHelper({
     letterSpacing: '0.5px',
     backgroundColor: 'var(--color-background-secondary, #f8f9fa)',
     margin: '0.5rem 0',
-    borderTop: '1px solid var(--color-border-light, #f0f0f0)'
+    borderTop: '1px solid var(--color-border-light, #f0f0f0)',
   };
 
   const shortcutItemStyle: React.CSSProperties = {
@@ -193,13 +197,13 @@ export function ShortcutHelper({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottom: '1px solid var(--color-border-light, #f0f0f0)'
+    borderBottom: '1px solid var(--color-border-light, #f0f0f0)',
   };
 
   const descriptionStyle: React.CSSProperties = {
     fontSize: '0.875rem',
     color: 'var(--color-text-primary, #333)',
-    margin: 0
+    margin: 0,
   };
 
   const keyStyle: React.CSSProperties = {
@@ -209,21 +213,19 @@ export function ShortcutHelper({
     padding: '0.25rem 0.5rem',
     borderRadius: '4px',
     fontFamily: 'monospace',
-    border: '1px solid var(--color-border, #e0e0e0)'
+    border: '1px solid var(--color-border, #e0e0e0)',
   };
 
   const emptyStateStyle: React.CSSProperties = {
     padding: '2rem',
     textAlign: 'center',
     color: 'var(--color-text-secondary, #666)',
-    fontSize: '0.875rem'
+    fontSize: '0.875rem',
   };
 
   return (
     <>
-      {position === 'center' && (
-        <div style={overlayStyle} onClick={onClose} />
-      )}
+      {position === 'center' && <div style={overlayStyle} onClick={onClose} />}
 
       <div className={className} style={getPositionStyles()}>
         <div style={headerStyle}>
@@ -235,7 +237,7 @@ export function ShortcutHelper({
                   fontSize: '0.875rem',
                   fontWeight: '400',
                   color: 'var(--color-text-secondary, #666)',
-                  marginLeft: '0.5rem'
+                  marginLeft: '0.5rem',
                 }}
               >
                 • {context}
@@ -272,10 +274,11 @@ export function ShortcutHelper({
                 )}
 
                 {shortcuts.map((shortcut, index) => (
-                  <div key={`${shortcut.id}-${index}`} style={shortcutItemStyle}>
-                    <div style={descriptionStyle}>
-                      {shortcut.description}
-                    </div>
+                  <div
+                    key={`${shortcut.id}-${index}`}
+                    style={shortcutItemStyle}
+                  >
+                    <div style={descriptionStyle}>{shortcut.description}</div>
                     <div style={keyStyle}>
                       {formatShortcut(shortcut.key, shortcut.modifiers)}
                     </div>

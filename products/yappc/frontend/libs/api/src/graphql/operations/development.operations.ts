@@ -305,7 +305,7 @@ export const EPIC_FRAGMENT = gql`
 
 export const GET_SPRINT = gql`
   ${SPRINT_FRAGMENT}
-  
+
   query GetSprint($id: ID!) {
     sprint(id: $id) {
       ...SprintFields
@@ -315,7 +315,7 @@ export const GET_SPRINT = gql`
 
 export const LIST_SPRINTS = gql`
   ${SPRINT_FRAGMENT}
-  
+
   query ListSprints($projectId: ID!, $status: SprintStatus) {
     sprints(projectId: $projectId, status: $status) {
       ...SprintFields
@@ -326,7 +326,7 @@ export const LIST_SPRINTS = gql`
 export const GET_ACTIVE_SPRINT = gql`
   ${SPRINT_FRAGMENT}
   ${STORY_FRAGMENT}
-  
+
   query GetActiveSprint($projectId: ID!) {
     activeSprint(projectId: $projectId) {
       ...SprintFields
@@ -340,7 +340,7 @@ export const GET_ACTIVE_SPRINT = gql`
 export const GET_STORY = gql`
   ${STORY_FRAGMENT}
   ${STORY_COMMENT_FRAGMENT}
-  
+
   query GetStory($id: ID!) {
     story(id: $id) {
       ...StoryFields
@@ -364,7 +364,7 @@ export const GET_STORY = gql`
 
 export const LIST_STORIES = gql`
   ${STORY_FRAGMENT}
-  
+
   query ListStories(
     $projectId: ID!
     $filter: StoryFilter
@@ -396,7 +396,7 @@ export const LIST_STORIES = gql`
 
 export const GET_SPRINT_BOARD = gql`
   ${STORY_FRAGMENT}
-  
+
   query GetSprintBoard($sprintId: ID!) {
     sprintBoard(sprintId: $sprintId) {
       columns {
@@ -421,7 +421,7 @@ export const GET_SPRINT_BOARD = gql`
 export const GET_BACKLOG = gql`
   ${STORY_FRAGMENT}
   ${EPIC_FRAGMENT}
-  
+
   query GetBacklog($projectId: ID!, $pagination: PaginationInput) {
     backlog(projectId: $projectId, pagination: $pagination) {
       stories {
@@ -459,7 +459,7 @@ export const GET_BACKLOG = gql`
 
 export const GET_PULL_REQUEST = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   query GetPullRequest($id: ID!) {
     pullRequest(id: $id) {
       ...PullRequestFields
@@ -502,13 +502,17 @@ export const GET_PULL_REQUEST = gql`
 
 export const LIST_PULL_REQUESTS = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   query ListPullRequests(
     $projectId: ID!
     $filter: PullRequestFilter
     $pagination: PaginationInput
   ) {
-    pullRequests(projectId: $projectId, filter: $filter, pagination: $pagination) {
+    pullRequests(
+      projectId: $projectId
+      filter: $filter
+      pagination: $pagination
+    ) {
       edges {
         cursor
         node {
@@ -526,7 +530,7 @@ export const LIST_PULL_REQUESTS = gql`
 
 export const GET_FEATURE_FLAG = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   query GetFeatureFlag($id: ID!) {
     featureFlag(id: $id) {
       ...FeatureFlagFields
@@ -550,7 +554,7 @@ export const GET_FEATURE_FLAG = gql`
 
 export const LIST_FEATURE_FLAGS = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   query ListFeatureFlags($projectId: ID!, $filter: FeatureFlagFilter) {
     featureFlags(projectId: $projectId, filter: $filter) {
       ...FeatureFlagFields
@@ -560,7 +564,7 @@ export const LIST_FEATURE_FLAGS = gql`
 
 export const GET_DEPLOYMENT = gql`
   ${DEPLOYMENT_FRAGMENT}
-  
+
   query GetDeployment($id: ID!) {
     deployment(id: $id) {
       ...DeploymentFields
@@ -570,7 +574,7 @@ export const GET_DEPLOYMENT = gql`
 
 export const LIST_DEPLOYMENTS = gql`
   ${DEPLOYMENT_FRAGMENT}
-  
+
   query ListDeployments(
     $projectId: ID!
     $environment: String
@@ -619,7 +623,7 @@ export const GET_VELOCITY_DATA = gql`
 export const GET_EPIC = gql`
   ${EPIC_FRAGMENT}
   ${STORY_FRAGMENT}
-  
+
   query GetEpic($id: ID!) {
     epic(id: $id) {
       ...EpicFields
@@ -639,7 +643,7 @@ export const GET_EPIC = gql`
 
 export const LIST_EPICS = gql`
   ${EPIC_FRAGMENT}
-  
+
   query ListEpics($projectId: ID!, $filter: EpicFilter) {
     epics(projectId: $projectId, filter: $filter) {
       ...EpicFields
@@ -653,7 +657,7 @@ export const LIST_EPICS = gql`
 
 export const CREATE_SPRINT = gql`
   ${SPRINT_FRAGMENT}
-  
+
   mutation CreateSprint($projectId: ID!, $input: CreateSprintInput!) {
     createSprint(projectId: $projectId, input: $input) {
       ...SprintFields
@@ -663,7 +667,7 @@ export const CREATE_SPRINT = gql`
 
 export const UPDATE_SPRINT = gql`
   ${SPRINT_FRAGMENT}
-  
+
   mutation UpdateSprint($id: ID!, $input: UpdateSprintInput!) {
     updateSprint(id: $id, input: $input) {
       ...SprintFields
@@ -673,7 +677,7 @@ export const UPDATE_SPRINT = gql`
 
 export const START_SPRINT = gql`
   ${SPRINT_FRAGMENT}
-  
+
   mutation StartSprint($id: ID!, $goal: String) {
     startSprint(id: $id, goal: $goal) {
       ...SprintFields
@@ -699,7 +703,7 @@ export const COMPLETE_SPRINT = gql`
 
 export const CREATE_STORY = gql`
   ${STORY_FRAGMENT}
-  
+
   mutation CreateStory($projectId: ID!, $input: CreateStoryInput!) {
     createStory(projectId: $projectId, input: $input) {
       ...StoryFields
@@ -709,7 +713,7 @@ export const CREATE_STORY = gql`
 
 export const UPDATE_STORY = gql`
   ${STORY_FRAGMENT}
-  
+
   mutation UpdateStory($id: ID!, $input: UpdateStoryInput!) {
     updateStory(id: $id, input: $input) {
       ...StoryFields
@@ -727,7 +731,7 @@ export const DELETE_STORY = gql`
 
 export const MOVE_STORY = gql`
   ${STORY_FRAGMENT}
-  
+
   mutation MoveStory($id: ID!, $input: MoveStoryInput!) {
     moveStory(id: $id, input: $input) {
       ...StoryFields
@@ -737,7 +741,7 @@ export const MOVE_STORY = gql`
 
 export const UPDATE_STORY_STATUS = gql`
   ${STORY_FRAGMENT}
-  
+
   mutation UpdateStoryStatus($id: ID!, $status: StoryStatus!) {
     updateStoryStatus(id: $id, status: $status) {
       ...StoryFields
@@ -747,7 +751,7 @@ export const UPDATE_STORY_STATUS = gql`
 
 export const ASSIGN_STORY = gql`
   ${STORY_FRAGMENT}
-  
+
   mutation AssignStory($id: ID!, $assigneeId: ID) {
     assignStory(id: $id, assigneeId: $assigneeId) {
       ...StoryFields
@@ -757,7 +761,7 @@ export const ASSIGN_STORY = gql`
 
 export const ADD_STORY_COMMENT = gql`
   ${STORY_COMMENT_FRAGMENT}
-  
+
   mutation AddStoryComment($storyId: ID!, $input: AddCommentInput!) {
     addStoryComment(storyId: $storyId, input: $input) {
       ...StoryCommentFields
@@ -767,7 +771,7 @@ export const ADD_STORY_COMMENT = gql`
 
 export const UPDATE_STORY_COMMENT = gql`
   ${STORY_COMMENT_FRAGMENT}
-  
+
   mutation UpdateStoryComment($id: ID!, $content: String!) {
     updateStoryComment(id: $id, content: $content) {
       ...StoryCommentFields
@@ -842,7 +846,7 @@ export const TOGGLE_SUBTASK = gql`
 
 export const CREATE_PULL_REQUEST = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   mutation CreatePullRequest($projectId: ID!, $input: CreatePullRequestInput!) {
     createPullRequest(projectId: $projectId, input: $input) {
       ...PullRequestFields
@@ -852,7 +856,7 @@ export const CREATE_PULL_REQUEST = gql`
 
 export const UPDATE_PULL_REQUEST = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   mutation UpdatePullRequest($id: ID!, $input: UpdatePullRequestInput!) {
     updatePullRequest(id: $id, input: $input) {
       ...PullRequestFields
@@ -862,7 +866,7 @@ export const UPDATE_PULL_REQUEST = gql`
 
 export const MERGE_PULL_REQUEST = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   mutation MergePullRequest($id: ID!, $method: MergeMethod!) {
     mergePullRequest(id: $id, method: $method) {
       ...PullRequestFields
@@ -872,7 +876,7 @@ export const MERGE_PULL_REQUEST = gql`
 
 export const CLOSE_PULL_REQUEST = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   mutation ClosePullRequest($id: ID!) {
     closePullRequest(id: $id) {
       ...PullRequestFields
@@ -905,7 +909,7 @@ export const SUBMIT_PR_REVIEW = gql`
 
 export const CREATE_FEATURE_FLAG = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   mutation CreateFeatureFlag($projectId: ID!, $input: CreateFeatureFlagInput!) {
     createFeatureFlag(projectId: $projectId, input: $input) {
       ...FeatureFlagFields
@@ -915,7 +919,7 @@ export const CREATE_FEATURE_FLAG = gql`
 
 export const UPDATE_FEATURE_FLAG = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   mutation UpdateFeatureFlag($id: ID!, $input: UpdateFeatureFlagInput!) {
     updateFeatureFlag(id: $id, input: $input) {
       ...FeatureFlagFields
@@ -925,7 +929,7 @@ export const UPDATE_FEATURE_FLAG = gql`
 
 export const TOGGLE_FEATURE_FLAG = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   mutation ToggleFeatureFlag($id: ID!, $enabled: Boolean!) {
     toggleFeatureFlag(id: $id, enabled: $enabled) {
       ...FeatureFlagFields
@@ -943,7 +947,7 @@ export const DELETE_FEATURE_FLAG = gql`
 
 export const TRIGGER_DEPLOYMENT = gql`
   ${DEPLOYMENT_FRAGMENT}
-  
+
   mutation TriggerDeployment($projectId: ID!, $input: TriggerDeploymentInput!) {
     triggerDeployment(projectId: $projectId, input: $input) {
       ...DeploymentFields
@@ -953,7 +957,7 @@ export const TRIGGER_DEPLOYMENT = gql`
 
 export const ROLLBACK_DEPLOYMENT = gql`
   ${DEPLOYMENT_FRAGMENT}
-  
+
   mutation RollbackDeployment($id: ID!, $reason: String) {
     rollbackDeployment(id: $id, reason: $reason) {
       ...DeploymentFields
@@ -972,7 +976,7 @@ export const CANCEL_DEPLOYMENT = gql`
 
 export const CREATE_EPIC = gql`
   ${EPIC_FRAGMENT}
-  
+
   mutation CreateEpic($projectId: ID!, $input: CreateEpicInput!) {
     createEpic(projectId: $projectId, input: $input) {
       ...EpicFields
@@ -982,7 +986,7 @@ export const CREATE_EPIC = gql`
 
 export const UPDATE_EPIC = gql`
   ${EPIC_FRAGMENT}
-  
+
   mutation UpdateEpic($id: ID!, $input: UpdateEpicInput!) {
     updateEpic(id: $id, input: $input) {
       ...EpicFields
@@ -1005,7 +1009,7 @@ export const DELETE_EPIC = gql`
 
 export const SUBSCRIBE_TO_SPRINT_UPDATES = gql`
   ${SPRINT_FRAGMENT}
-  
+
   subscription OnSprintUpdate($sprintId: ID!) {
     sprintUpdated(sprintId: $sprintId) {
       type
@@ -1018,7 +1022,7 @@ export const SUBSCRIBE_TO_SPRINT_UPDATES = gql`
 
 export const SUBSCRIBE_TO_BOARD_CHANGES = gql`
   ${STORY_FRAGMENT}
-  
+
   subscription OnBoardChange($sprintId: ID!) {
     boardChanged(sprintId: $sprintId) {
       type
@@ -1037,7 +1041,7 @@ export const SUBSCRIBE_TO_BOARD_CHANGES = gql`
 
 export const SUBSCRIBE_TO_STORY_UPDATES = gql`
   ${STORY_FRAGMENT}
-  
+
   subscription OnStoryUpdate($storyId: ID!) {
     storyUpdated(storyId: $storyId) {
       type
@@ -1055,7 +1059,7 @@ export const SUBSCRIBE_TO_STORY_UPDATES = gql`
 
 export const SUBSCRIBE_TO_PR_UPDATES = gql`
   ${PULL_REQUEST_FRAGMENT}
-  
+
   subscription OnPRUpdate($pullRequestId: ID!) {
     pullRequestUpdated(pullRequestId: $pullRequestId) {
       type
@@ -1068,7 +1072,7 @@ export const SUBSCRIBE_TO_PR_UPDATES = gql`
 
 export const SUBSCRIBE_TO_DEPLOYMENT_STATUS = gql`
   ${DEPLOYMENT_FRAGMENT}
-  
+
   subscription OnDeploymentStatus($deploymentId: ID!) {
     deploymentStatusChanged(deploymentId: $deploymentId) {
       ...DeploymentFields
@@ -1078,7 +1082,7 @@ export const SUBSCRIBE_TO_DEPLOYMENT_STATUS = gql`
 
 export const SUBSCRIBE_TO_FEATURE_FLAG_CHANGES = gql`
   ${FEATURE_FLAG_FRAGMENT}
-  
+
   subscription OnFeatureFlagChange($projectId: ID!) {
     featureFlagChanged(projectId: $projectId) {
       type
@@ -1270,5 +1274,10 @@ export interface EpicFilter {
 }
 
 export type SprintStatus = 'planned' | 'active' | 'completed';
-export type StoryStatus = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
+export type StoryStatus =
+  | 'backlog'
+  | 'todo'
+  | 'in_progress'
+  | 'review'
+  | 'done';
 export type MergeMethod = 'merge' | 'squash' | 'rebase';

@@ -3,7 +3,11 @@
 
 import React from 'react';
 
-import { useCommandPalette, useAccessibility, useKeyboardShortcuts } from './hooks';
+import {
+  useCommandPalette,
+  useAccessibility,
+  useKeyboardShortcuts,
+} from './hooks';
 
 // Core hooks and components
 export * from './hooks';
@@ -26,7 +30,7 @@ export const UX_FEATURES = {
   COMMAND_CATEGORIES: true,
   COMMAND_SHORTCUTS: true,
   FUZZY_SEARCH: true,
-  
+
   // Accessibility features
   SCREEN_READER_SUPPORT: true,
   KEYBOARD_NAVIGATION: true,
@@ -34,14 +38,14 @@ export const UX_FEATURES = {
   REDUCED_MOTION: true,
   FOCUS_MANAGEMENT: true,
   ARIA_ANNOUNCEMENTS: true,
-  
+
   // Keyboard shortcuts
   GLOBAL_SHORTCUTS: true,
   CONTEXT_SHORTCUTS: true,
   SHORTCUT_CONFLICTS: true,
   SHORTCUT_HELP: true,
   CUSTOM_SHORTCUTS: true,
-  
+
   // Advanced UX
   USER_PREFERENCES: true,
   PREFERENCE_PERSISTENCE: true,
@@ -57,12 +61,13 @@ export const validateUXSystem = () => {
     componentsLoaded: true,
     accessibilityAPIAvailable: typeof document !== 'undefined',
     keyboardEventsSupported: typeof KeyboardEvent !== 'undefined',
-    focusManagementAvailable: typeof document !== 'undefined' && 'activeElement' in document,
+    focusManagementAvailable:
+      typeof document !== 'undefined' && 'activeElement' in document,
     schemasValid: true,
   };
-  
+
   const healthy = Object.values(checks).every(Boolean);
-  
+
   return {
     healthy,
     checks,
@@ -89,7 +94,7 @@ export const createUXProvider = (config: {
     config,
     initialize: () => {
       console.log('[UX] UX system initialized with config:', config);
-      
+
       // Load user preferences
       if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem('ux-preferences');
@@ -103,7 +108,7 @@ export const createUXProvider = (config: {
           }
         }
       }
-      
+
       return {
         accessibility: {
           enableScreenReader: true,
@@ -124,7 +129,7 @@ export const createUXProvider = (config: {
         },
       };
     },
-    
+
     savePreferences: (preferences: unknown) => {
       if (typeof localStorage !== 'undefined') {
         try {
@@ -144,13 +149,13 @@ export const withCommandPalette = <T extends Record<string, unknown>>(
 ) => {
   const CommandPaletteWrappedComponent = (props: T) => {
     const commandPalette = useCommandPalette({});
-    
+
     return React.createElement(Component, {
       ...props,
       commandPalette,
     });
   };
-  
+
   CommandPaletteWrappedComponent.displayName = `withCommandPalette(${Component.displayName || Component.name})`;
   return CommandPaletteWrappedComponent;
 };
@@ -160,13 +165,13 @@ export const withAccessibility = <T extends Record<string, unknown>>(
 ) => {
   const AccessibilityWrappedComponent = (props: T) => {
     const accessibility = useAccessibility({});
-    
+
     return React.createElement(Component, {
       ...props,
       accessibility,
     });
   };
-  
+
   AccessibilityWrappedComponent.displayName = `withAccessibility(${Component.displayName || Component.name})`;
   return AccessibilityWrappedComponent;
 };
@@ -176,13 +181,13 @@ export const withKeyboardShortcuts = <T extends Record<string, unknown>>(
 ) => {
   const KeyboardShortcutsWrappedComponent = (props: T) => {
     const keyboardShortcuts = useKeyboardShortcuts({});
-    
+
     return React.createElement(Component, {
       ...props,
       keyboardShortcuts,
     });
   };
-  
+
   KeyboardShortcutsWrappedComponent.displayName = `withKeyboardShortcuts(${Component.displayName || Component.name})`;
   return KeyboardShortcutsWrappedComponent;
 };
@@ -190,10 +195,9 @@ export const withKeyboardShortcuts = <T extends Record<string, unknown>>(
 // Accessibility utilities for Canvas components
 export const createCanvasAccessibilityHelpers = () => ({
   announceNodeSelection: (nodeCount: number) => {
-    const message = nodeCount === 1 
-      ? 'One node selected' 
-      : `${nodeCount} nodes selected`;
-    
+    const message =
+      nodeCount === 1 ? 'One node selected' : `${nodeCount} nodes selected`;
+
     // Create announcement manually since we don't import from schemas
     return {
       id: `announcement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -202,7 +206,7 @@ export const createCanvasAccessibilityHelpers = () => ({
       timestamp: new Date().toISOString(),
     };
   },
-  
+
   announceCanvasChange: (changeType: string, nodeCount?: number) => {
     let message = '';
     switch (changeType) {
@@ -221,7 +225,7 @@ export const createCanvasAccessibilityHelpers = () => ({
       default:
         message = `Canvas updated: ${changeType}`;
     }
-    
+
     return {
       id: `announcement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       message,
@@ -229,7 +233,7 @@ export const createCanvasAccessibilityHelpers = () => ({
       timestamp: new Date().toISOString(),
     };
   },
-  
+
   announceZoomChange: (zoomLevel: number) => {
     const message = `Zoom level changed to ${Math.round(zoomLevel * 100)}%`;
     return {
@@ -239,7 +243,7 @@ export const createCanvasAccessibilityHelpers = () => ({
       timestamp: new Date().toISOString(),
     };
   },
-  
+
   announceToolChange: (toolName: string) => {
     const message = `${toolName} tool selected`;
     return {

@@ -7,7 +7,13 @@ import { prefersReducedMotion } from './a11y';
 /**
  *
  */
-export type EasingFunction = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'easeInBack' | 'easeOutBack';
+export type EasingFunction =
+  | 'linear'
+  | 'easeIn'
+  | 'easeOut'
+  | 'easeInOut'
+  | 'easeInBack'
+  | 'easeOutBack';
 
 /**
  * Easing functions
@@ -140,7 +146,7 @@ export const animations = {
 export function getAnimation(
   animationName: keyof typeof animations,
   respectReducedMotion = true
-): typeof animations[keyof typeof animations] | null {
+): (typeof animations)[keyof typeof animations] | null {
   if (respectReducedMotion && prefersReducedMotion()) {
     return null;
   }
@@ -156,7 +162,11 @@ export function createAnimationString(
   easing: string = easings.easeOut,
   delay = 0,
   iterationCount: number | 'infinite' = 1,
-  direction: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse' = 'normal',
+  direction:
+    | 'normal'
+    | 'reverse'
+    | 'alternate'
+    | 'alternate-reverse' = 'normal',
   fillMode: 'none' | 'forwards' | 'backwards' | 'both' = 'both'
 ): string {
   return `${name} ${duration}ms ${easing} ${delay}ms ${iterationCount} ${direction} ${fillMode}`;
@@ -165,19 +175,23 @@ export function createAnimationString(
 /**
  * Generate keyframes CSS
  */
-export function generateKeyframes(name: string, keyframes: Record<string, unknown>): string {
+export function generateKeyframes(
+  name: string,
+  keyframes: Record<string, unknown>
+): string {
   const frames = Object.entries(keyframes)
     .map(([key, value]) => {
-      const frameStyles = typeof value === 'object' && value !== null
-        ? Object.entries(value as Record<string, unknown>)
-        : [];
+      const frameStyles =
+        typeof value === 'object' && value !== null
+          ? Object.entries(value as Record<string, unknown>)
+          : [];
       const props = frameStyles
         .map(([prop, val]) => `${prop}: ${String(val)};`)
         .join(' ');
       return `${key} { ${props} }`;
     })
     .join(' ');
-  
+
   return `@keyframes ${name} { ${frames} }`;
 }
 
@@ -187,18 +201,24 @@ export function generateKeyframes(name: string, keyframes: Record<string, unknow
 export const transitions = {
   all: (duration = durations.normal, easing: EasingFunction = 'easeInOut') =>
     `all ${duration}ms ${easings[easing]}`,
-  
+
   color: (duration = durations.fast, easing: EasingFunction = 'easeInOut') =>
     `color ${duration}ms ${easings[easing]}`,
-  
-  background: (duration = durations.fast, easing: EasingFunction = 'easeInOut') =>
-    `background-color ${duration}ms ${easings[easing]}`,
-  
-  transform: (duration = durations.normal, easing: EasingFunction = 'easeOut') =>
-    `transform ${duration}ms ${easings[easing]}`,
-  
-  opacity: (duration = durations.normal, easing: EasingFunction = 'easeInOut') =>
-    `opacity ${duration}ms ${easings[easing]}`,
+
+  background: (
+    duration = durations.fast,
+    easing: EasingFunction = 'easeInOut'
+  ) => `background-color ${duration}ms ${easings[easing]}`,
+
+  transform: (
+    duration = durations.normal,
+    easing: EasingFunction = 'easeOut'
+  ) => `transform ${duration}ms ${easings[easing]}`,
+
+  opacity: (
+    duration = durations.normal,
+    easing: EasingFunction = 'easeInOut'
+  ) => `opacity ${duration}ms ${easings[easing]}`,
 };
 
 /**

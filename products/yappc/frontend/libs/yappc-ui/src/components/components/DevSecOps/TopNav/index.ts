@@ -5,4 +5,9 @@
  */
 
 export { TopNav } from './TopNav';
-export type { TopNavProps, TopNavUser, UserRole, NavigationPage } from './types';
+export type {
+  TopNavProps,
+  TopNavUser,
+  UserRole,
+  NavigationPage,
+} from './types';

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Keyboard Navigation Hook
- * 
+ *
  * Comprehensive keyboard navigation system with shortcuts,
  * focus management, and accessibility features.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Keyboard navigation for IDE accessibility
  * @doc.layer product
@@ -63,12 +63,12 @@ export const useKeyboardNavigation = () => {
   const detectKeyboardUser = useCallback(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
-        setState(prev => ({ ...prev, isKeyboardUser: true }));
+        setState((prev) => ({ ...prev, isKeyboardUser: true }));
       }
     };
 
     const handleMouseDown = () => {
-      setState(prev => ({ ...prev, isKeyboardUser: false }));
+      setState((prev) => ({ ...prev, isKeyboardUser: false }));
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -90,15 +90,17 @@ export const useKeyboardNavigation = () => {
       shortcut.shiftKey && 'shift',
       shortcut.metaKey && 'meta',
       shortcut.key.toLowerCase(),
-    ].filter(Boolean).join('+');
+    ]
+      .filter(Boolean)
+      .join('+');
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       shortcuts: new Map(prev.shortcuts).set(key, shortcut),
     }));
 
     return () => {
-      setState(prev => {
+      setState((prev) => {
         const newShortcuts = new Map(prev.shortcuts);
         newShortcuts.delete(key);
         return { ...prev, shortcuts: newShortcuts };
@@ -109,22 +111,27 @@ export const useKeyboardNavigation = () => {
   /**
    * Handle keyboard shortcuts
    */
-  const handleShortcuts = useCallback((e: KeyboardEvent) => {
-    const key = [
-      e.ctrlKey && 'ctrl',
-      e.altKey && 'alt',
-      e.shiftKey && 'shift',
-      e.metaKey && 'meta',
-      e.key.toLowerCase(),
-    ].filter(Boolean).join('+');
+  const handleShortcuts = useCallback(
+    (e: KeyboardEvent) => {
+      const key = [
+        e.ctrlKey && 'ctrl',
+        e.altKey && 'alt',
+        e.shiftKey && 'shift',
+        e.metaKey && 'meta',
+        e.key.toLowerCase(),
+      ]
+        .filter(Boolean)
+        .join('+');
 
-    const shortcut = state.shortcuts.get(key);
-    if (shortcut) {
-      e.preventDefault();
-      e.stopPropagation();
-      shortcut.action();
-    }
-  }, [state.shortcuts]);
+      const shortcut = state.shortcuts.get(key);
+      if (shortcut) {
+        e.preventDefault();
+        e.stopPropagation();
+        shortcut.action();
+      }
+    },
+    [state.shortcuts]
+  );
 
   /**
    * Focus management
@@ -135,7 +142,7 @@ export const useKeyboardNavigation = () => {
      */
     trapFocus: useCallback((container: HTMLElement) => {
       containerRef.current = container;
-      
+
       const focusableElements = container.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
@@ -160,7 +167,7 @@ export const useKeyboardNavigation = () => {
       };
 
       container.addEventListener('keydown', handleTabKey);
-      
+
       return () => {
         container.removeEventListener('keydown', handleTabKey);
       };
@@ -177,7 +184,10 @@ export const useKeyboardNavigation = () => {
      * Restore previously saved focus
      */
     restoreFocus: useCallback(() => {
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+      if (
+        previousFocusRef.current &&
+        typeof previousFocusRef.current.focus === 'function'
+      ) {
         previousFocusRef.current.focus();
       }
     }, []),
@@ -186,10 +196,11 @@ export const useKeyboardNavigation = () => {
      * Set focus to element
      */
     setFocus: useCallback((element: HTMLElement | string) => {
-      const el = typeof element === 'string' 
-        ? document.querySelector(element) as HTMLElement
-        : element;
-      
+      const el =
+        typeof element === 'string'
+          ? (document.querySelector(element) as HTMLElement)
+          : element;
+
       if (el && typeof el.focus === 'function') {
         el.focus();
       }
@@ -198,23 +209,29 @@ export const useKeyboardNavigation = () => {
     /**
      * Get next focusable element
      */
-    getNextFocusable: useCallback((current: HTMLElement, direction: 'next' | 'previous' = 'next') => {
-      const focusableElements = Array.from(
-        document.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      );
+    getNextFocusable: useCallback(
+      (current: HTMLElement, direction: 'next' | 'previous' = 'next') => {
+        const focusableElements = Array.from(
+          document.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        );
 
-      const currentIndex = focusableElements.indexOf(current);
-      
-      if (currentIndex === -1) return null;
+        const currentIndex = focusableElements.indexOf(current);
 
-      if (direction === 'next') {
-        return focusableElements[currentIndex + 1] || focusableElements[0];
-      } else {
-        return focusableElements[currentIndex - 1] || focusableElements[focusableElements.length - 1];
-      }
-    }, []),
+        if (currentIndex === -1) return null;
+
+        if (direction === 'next') {
+          return focusableElements[currentIndex + 1] || focusableElements[0];
+        } else {
+          return (
+            focusableElements[currentIndex - 1] ||
+            focusableElements[focusableElements.length - 1]
+          );
+        }
+      },
+      []
+    ),
   };
 
   /**
@@ -225,102 +242,112 @@ export const useKeyboardNavigation = () => {
      * File operations
      */
     file: {
-      newFile: () => registerShortcut({
-        key: 'n',
-        ctrlKey: true,
-        description: 'New File',
-        action: () => console.log('New file'),
-        category: 'file',
-      }),
-      
-      openFile: () => registerShortcut({
-        key: 'o',
-        ctrlKey: true,
-        description: 'Open File',
-        action: () => console.log('Open file'),
-        category: 'file',
-      }),
-      
-      saveFile: () => registerShortcut({
-        key: 's',
-        ctrlKey: true,
-        description: 'Save File',
-        action: () => console.log('Save file'),
-        category: 'file',
-      }),
+      newFile: () =>
+        registerShortcut({
+          key: 'n',
+          ctrlKey: true,
+          description: 'New File',
+          action: () => console.log('New file'),
+          category: 'file',
+        }),
+
+      openFile: () =>
+        registerShortcut({
+          key: 'o',
+          ctrlKey: true,
+          description: 'Open File',
+          action: () => console.log('Open file'),
+          category: 'file',
+        }),
+
+      saveFile: () =>
+        registerShortcut({
+          key: 's',
+          ctrlKey: true,
+          description: 'Save File',
+          action: () => console.log('Save file'),
+          category: 'file',
+        }),
     },
 
     /**
      * Edit operations
      */
     edit: {
-      undo: () => registerShortcut({
-        key: 'z',
-        ctrlKey: true,
-        description: 'Undo',
-        action: () => console.log('Undo'),
-        category: 'edit',
-      }),
-      
-      redo: () => registerShortcut({
-        key: 'y',
-        ctrlKey: true,
-        description: 'Redo',
-        action: () => console.log('Redo'),
-        category: 'edit',
-      }),
-      
-      find: () => registerShortcut({
-        key: 'f',
-        ctrlKey: true,
-        description: 'Find',
-        action: () => console.log('Find'),
-        category: 'edit',
-      }),
+      undo: () =>
+        registerShortcut({
+          key: 'z',
+          ctrlKey: true,
+          description: 'Undo',
+          action: () => console.log('Undo'),
+          category: 'edit',
+        }),
+
+      redo: () =>
+        registerShortcut({
+          key: 'y',
+          ctrlKey: true,
+          description: 'Redo',
+          action: () => console.log('Redo'),
+          category: 'edit',
+        }),
+
+      find: () =>
+        registerShortcut({
+          key: 'f',
+          ctrlKey: true,
+          description: 'Find',
+          action: () => console.log('Find'),
+          category: 'edit',
+        }),
     },
 
     /**
      * Navigation
      */
     navigation: {
-      goToLine: () => registerShortcut({
-        key: 'g',
-        ctrlKey: true,
-        description: 'Go to Line',
-        action: () => console.log('Go to line'),
-        category: 'navigation',
-      }),
-      
-      toggleSidebar: () => registerShortcut({
-        key: 'b',
-        ctrlKey: true,
-        description: 'Toggle Sidebar',
-        action: () => console.log('Toggle sidebar'),
-        category: 'navigation',
-      }),
+      goToLine: () =>
+        registerShortcut({
+          key: 'g',
+          ctrlKey: true,
+          description: 'Go to Line',
+          action: () => console.log('Go to line'),
+          category: 'navigation',
+        }),
+
+      toggleSidebar: () =>
+        registerShortcut({
+          key: 'b',
+          ctrlKey: true,
+          description: 'Toggle Sidebar',
+          action: () => console.log('Toggle sidebar'),
+          category: 'navigation',
+        }),
     },
 
     /**
      * Collaboration
      */
     collaboration: {
-      shareFile: () => registerShortcut({
-        key: 's',
-        ctrlKey: true,
-        shiftKey: true,
-        description: 'Share File',
-        action: () => console.log('Share file'),
-        category: 'collaboration',
-      }),
-      
-      startCollaboration: () => registerShortcut({
-        key: 'c',
-        ctrlKey: true,
-        shiftKey: true,
-        description: 'Start Collaboration',
-        action: () => console.log('Start collaboration'),
-        category: 'collaboration',
-      }),
+      shareFile: () =>
+        registerShortcut({
+          key: 's',
+          ctrlKey: true,
+          shiftKey: true,
+          description: 'Share File',
+          action: () => console.log('Share file'),
+          category: 'collaboration',
+        }),
+
+      startCollaboration: () =>
+        registerShortcut({
+          key: 'c',
+          ctrlKey: true,
+          shiftKey: true,
+          description: 'Start Collaboration',
+          action: () => console.log('Start collaboration'),
+          category: 'collaboration',
+        }),
     },
   };
 
@@ -331,34 +358,44 @@ export const useKeyboardNavigation = () => {
     /**
      * Announce to screen readers
      */
-    announce: useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
-      const announcement = document.createElement('div');
-      announcement.setAttribute('aria-live', priority);
-      announcement.setAttribute('aria-atomic', 'true');
-      announcement.className = 'sr-only';
-      announcement.textContent = message;
+    announce: useCallback(
+      (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('aria-live', priority);
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
 
-      document.body.appendChild(announcement);
+        document.body.appendChild(announcement);
 
-      setTimeout(() => {
-        document.body.removeChild(announcement);
-      }, 1000);
-    }, []),
+        setTimeout(() => {
+          document.body.removeChild(announcement);
+        }, 1000);
+      },
+      []
+    ),
 
     /**
      * Set ARIA attributes
      */
-    setAria: useCallback((element: HTMLElement, attributes: Record<string, string>) => {
-      Object.entries(attributes).forEach(([key, value]) => {
-        element.setAttribute(key, value);
-      });
-    }, []),
+    setAria: useCallback(
+      (element: HTMLElement, attributes: Record<string, string>) => {
+        Object.entries(attributes).forEach(([key, value]) => {
+          element.setAttribute(key, value);
+        });
+      },
+      []
+    ),
 
     /**
      * Check if element is visible
      */
     isVisible: useCallback((element: HTMLElement): boolean => {
-      return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+      return !!(
+        element.offsetWidth ||
+        element.offsetHeight ||
+        element.getClientRects().length
+      );
     }, []),
   };
 
@@ -382,7 +419,9 @@ export const useKeyboardNavigation = () => {
       // Set initial focus
       if (options.initialFocus) {
         if (typeof options.initialFocus === 'string') {
-          const element = container.querySelector(options.initialFocus) as HTMLElement;
+          const element = container.querySelector(
+            options.initialFocus
+          ) as HTMLElement;
           element?.focus();
         } else {
           options.initialFocus.focus();
@@ -427,48 +466,51 @@ export const useKeyboardNavigation = () => {
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const { orientation = 'vertical', loop = true, disabled = false } = options;
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-      if (disabled) return;
+    const handleKeyDown = useCallback(
+      (e: KeyboardEvent) => {
+        if (disabled) return;
 
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'ArrowLeft':
-          e.preventDefault();
-          setSelectedIndex(prev => {
-            const newIndex = prev - 1;
-            if (newIndex < 0) {
-              return loop ? items.length - 1 : -1;
+        switch (e.key) {
+          case 'ArrowUp':
+          case 'ArrowLeft':
+            e.preventDefault();
+            setSelectedIndex((prev) => {
+              const newIndex = prev - 1;
+              if (newIndex < 0) {
+                return loop ? items.length - 1 : -1;
+              }
+              return newIndex;
+            });
+            break;
+
+          case 'ArrowDown':
+          case 'ArrowRight':
+            e.preventDefault();
+            setSelectedIndex((prev) => {
+              const newIndex = prev + 1;
+              if (newIndex >= items.length) {
+                return loop ? 0 : -1;
+              }
+              return newIndex;
+            });
+            break;
+
+          case 'Enter':
+          case ' ':
+            e.preventDefault();
+            if (selectedIndex >= 0 && selectedIndex < items.length) {
+              onSelect(items[selectedIndex], selectedIndex);
             }
-            return newIndex;
-          });
-          break;
+            break;
 
-        case 'ArrowDown':
-        case 'ArrowRight':
-          e.preventDefault();
-          setSelectedIndex(prev => {
-            const newIndex = prev + 1;
-            if (newIndex >= items.length) {
-              return loop ? 0 : -1;
-            }
-            return newIndex;
-          });
-          break;
-
-        case 'Enter':
-        case ' ':
-          e.preventDefault();
-          if (selectedIndex >= 0 && selectedIndex < items.length) {
-            onSelect(items[selectedIndex], selectedIndex);
-          }
-          break;
-
-        case 'Escape':
-          e.preventDefault();
-          setSelectedIndex(-1);
-          break;
-      }
-    }, [items, selectedIndex, onSelect, loop, disabled]);
+          case 'Escape':
+            e.preventDefault();
+            setSelectedIndex(-1);
+            break;
+        }
+      },
+      [items, selectedIndex, onSelect, loop, disabled]
+    );
 
     return {
       selectedIndex,
@@ -487,7 +529,7 @@ export const useKeyboardNavigation = () => {
   useEffect(() => {
     const cleanup = detectKeyboardUser();
     document.addEventListener('keydown', handleShortcuts);
-    
+
     return () => {
       cleanup();
       document.removeEventListener('keydown', handleShortcuts);
@@ -530,26 +572,29 @@ export const useRovingTabIndex = (items: HTMLElement[]) => {
     });
   }, [items, activeIndex, setTabIndex]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setActiveIndex(prev => (prev + 1) % items.length);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setActiveIndex(prev => (prev - 1 + items.length) % items.length);
-        break;
-      case 'Home':
-        e.preventDefault();
-        setActiveIndex(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        setActiveIndex(items.length - 1);
-        break;
-    }
-  }, [items.length]);
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setActiveIndex((prev) => (prev + 1) % items.length);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setActiveIndex((prev) => (prev - 1 + items.length) % items.length);
+          break;
+        case 'Home':
+          e.preventDefault();
+          setActiveIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setActiveIndex(items.length - 1);
+          break;
+      }
+    },
+    [items.length]
+  );
 
   return {
     activeIndex,

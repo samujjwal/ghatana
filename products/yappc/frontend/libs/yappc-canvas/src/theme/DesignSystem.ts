@@ -1,9 +1,9 @@
 /**
  * Design System - Theme and Styling
- * 
+ *
  * Comprehensive design system with theme management, color palettes,
  * typography scales, and component styling utilities.
- * 
+ *
  * Features:
  * - 🎨 Theme management (light/dark/custom)
  * - 🎯 Color palette system
@@ -11,7 +11,7 @@
  * - 📐 Spacing and sizing system
  * - 🎭 Component variants
  * - 🔄 Theme switching and persistence
- * 
+ *
  * @doc.type system
  * @doc.purpose Design system and theming
  * @doc.layer product
@@ -278,7 +278,7 @@ export class ThemeManager {
     this.currentTheme = defaultTheme;
     this.themes.set(lightTheme.name, lightTheme);
     this.themes.set(darkTheme.name, darkTheme);
-    
+
     this.loadThemeFromStorage();
   }
 

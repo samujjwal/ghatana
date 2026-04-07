@@ -36,44 +36,49 @@ describe('DiagramTemplate structure', () => {
     serverlessTemplate,
   ];
 
-  it.each(allTemplates.map(t => [t.id, t] as [string, DiagramTemplate]))(
+  it.each(allTemplates.map((t) => [t.id, t] as [string, DiagramTemplate]))(
     '%s has a non-empty id, name, description and a valid category',
     (_id, template) => {
       expect(template.id).toBeTruthy();
       expect(template.name).toBeTruthy();
       expect(template.description).toBeTruthy();
-      expect(['flowchart', 'uml', 'bpmn', 'er', 'network', 'architecture']).toContain(
-        template.category,
-      );
-    },
+      expect([
+        'flowchart',
+        'uml',
+        'bpmn',
+        'er',
+        'network',
+        'architecture',
+      ]).toContain(template.category);
+    }
   );
 
-  it.each(allTemplates.map(t => [t.id, t] as [string, DiagramTemplate]))(
+  it.each(allTemplates.map((t) => [t.id, t] as [string, DiagramTemplate]))(
     '%s has at least one element and one edge',
     (_id, template) => {
       expect(template.elements.length).toBeGreaterThan(0);
       expect(template.edges.length).toBeGreaterThan(0);
-    },
+    }
   );
 
-  it.each(allTemplates.map(t => [t.id, t] as [string, DiagramTemplate]))(
+  it.each(allTemplates.map((t) => [t.id, t] as [string, DiagramTemplate]))(
     '%s elements all reference unique IDs',
     (_id, template) => {
-      const ids = template.elements.map(e => e.id);
+      const ids = template.elements.map((e) => e.id);
       const unique = new Set(ids);
       expect(unique.size).toBe(ids.length);
-    },
+    }
   );
 
-  it.each(allTemplates.map(t => [t.id, t] as [string, DiagramTemplate]))(
+  it.each(allTemplates.map((t) => [t.id, t] as [string, DiagramTemplate]))(
     '%s edge source and target IDs exist in elements (or qualify as cross-pool refs)',
     (_id, template) => {
-      const elementIds = new Set(template.elements.map(e => e.id));
+      const elementIds = new Set(template.elements.map((e) => e.id));
       for (const edge of template.edges) {
         expect(elementIds.has(edge.source)).toBe(true);
         expect(elementIds.has(edge.target)).toBe(true);
       }
-    },
+    }
   );
 });
 
@@ -85,8 +90,10 @@ describe('bpmnProcessTemplate', () => {
   });
 
   it('contains a start and end node', () => {
-    expect(bpmnProcessTemplate.elements.some(e => e.id === 'start')).toBe(true);
-    expect(bpmnProcessTemplate.elements.some(e => e.id === 'end')).toBe(true);
+    expect(bpmnProcessTemplate.elements.some((e) => e.id === 'start')).toBe(
+      true
+    );
+    expect(bpmnProcessTemplate.elements.some((e) => e.id === 'end')).toBe(true);
   });
 
   it('metadata declares bpmnVersion 2.0', () => {
@@ -102,7 +109,9 @@ describe('bpmnCollaborationTemplate', () => {
   });
 
   it('contains a message-flow edge between pools', () => {
-    const msgFlow = bpmnCollaborationTemplate.edges.find(e => e.id === 'msg-flow');
+    const msgFlow = bpmnCollaborationTemplate.edges.find(
+      (e) => e.id === 'msg-flow'
+    );
     expect(msgFlow).toBeDefined();
   });
 });
@@ -115,14 +124,18 @@ describe('umlClassDiagramTemplate', () => {
   });
 
   it('includes an inheritance edge', () => {
-    const inheritance = umlClassDiagramTemplate.edges.find(e => e.id === 'inheritance');
+    const inheritance = umlClassDiagramTemplate.edges.find(
+      (e) => e.id === 'inheritance'
+    );
     expect(inheritance).toBeDefined();
   });
 });
 
 describe('umlSequenceTemplate', () => {
   it('has at least one actor element', () => {
-    expect(umlSequenceTemplate.elements.some(e => e.id === 'actor')).toBe(true);
+    expect(umlSequenceTemplate.elements.some((e) => e.id === 'actor')).toBe(
+      true
+    );
   });
 
   it('metadata declares supportsFragments', () => {
@@ -150,7 +163,9 @@ describe('networkTopologyTemplate', () => {
   });
 
   it('contains a firewall element', () => {
-    expect(networkTopologyTemplate.elements.some(e => e.id === 'firewall')).toBe(true);
+    expect(
+      networkTopologyTemplate.elements.some((e) => e.id === 'firewall')
+    ).toBe(true);
   });
 });
 
@@ -162,7 +177,9 @@ describe('microservicesTemplate', () => {
   });
 
   it('metadata declares architectureStyle microservices', () => {
-    expect(microservicesTemplate.metadata?.['architectureStyle']).toBe('microservices');
+    expect(microservicesTemplate.metadata?.['architectureStyle']).toBe(
+      'microservices'
+    );
   });
 });
 
@@ -184,7 +201,7 @@ describe('diagramTemplates registry', () => {
   });
 
   it('all registered templates have unique IDs', () => {
-    const ids = diagramTemplates.map(t => t.id);
+    const ids = diagramTemplates.map((t) => t.id);
     const unique = new Set(ids);
     expect(unique.size).toBe(ids.length);
   });
@@ -196,19 +213,19 @@ describe('getTemplatesByCategory', () => {
   it('returns only bpmn templates when queried for bpmn', () => {
     const results = getTemplatesByCategory('bpmn');
     expect(results.length).toBeGreaterThan(0);
-    results.forEach(t => expect(t.category).toBe('bpmn'));
+    results.forEach((t) => expect(t.category).toBe('bpmn'));
   });
 
   it('returns only uml templates when queried for uml', () => {
     const results = getTemplatesByCategory('uml');
     expect(results.length).toBeGreaterThan(0);
-    results.forEach(t => expect(t.category).toBe('uml'));
+    results.forEach((t) => expect(t.category).toBe('uml'));
   });
 
   it('returns only er templates when queried for er', () => {
     const results = getTemplatesByCategory('er');
     expect(results.length).toBeGreaterThan(0);
-    results.forEach(t => expect(t.category).toBe('er'));
+    results.forEach((t) => expect(t.category).toBe('er'));
   });
 
   it('returns empty array for a category with no templates (flowchart)', () => {

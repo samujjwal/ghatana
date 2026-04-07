@@ -1,16 +1,16 @@
 /**
  * Integration Tests
- * 
+ *
  * Provides utilities for component integration testing including CanvasScene
  * mounting, palette drag-and-drop validation, and update flow testing.
- * 
+ *
  * Features:
  * - Component mounting with React Flow provider
  * - DnD metadata validation
  * - Update flow testing with state assertions
  * - Integration test helpers for common scenarios
  * - Mock integration with test utilities
- * 
+ *
  * @module testing/integrationTests
  */
 
@@ -298,7 +298,7 @@ export interface IntegrationTestResults {
 
 /**
  * Integration Tests Manager
- * 
+ *
  * Manages integration test scenarios and provides utilities for component
  * integration testing including CanvasScene mounting, palette DnD, and
  * update flow validation.
@@ -624,7 +624,10 @@ export class IntegrationTestsManager {
 
     // Validate viewport updates
     if (updates.viewport) {
-      if (updates.viewport.x !== undefined && typeof updates.viewport.x !== 'number') {
+      if (
+        updates.viewport.x !== undefined &&
+        typeof updates.viewport.x !== 'number'
+      ) {
         errors.push({
           type: 'viewport',
           message: 'Viewport x must be a number',
@@ -632,7 +635,10 @@ export class IntegrationTestsManager {
         });
       }
 
-      if (updates.viewport.y !== undefined && typeof updates.viewport.y !== 'number') {
+      if (
+        updates.viewport.y !== undefined &&
+        typeof updates.viewport.y !== 'number'
+      ) {
         errors.push({
           type: 'viewport',
           message: 'Viewport y must be a number',
@@ -817,7 +823,9 @@ export class IntegrationTestsManager {
   /**
    * Run scenarios by tags
    */
-  async runScenariosByTags(tags: string[]): Promise<Map<string, IntegrationTestResults>> {
+  async runScenariosByTags(
+    tags: string[]
+  ): Promise<Map<string, IntegrationTestResults>> {
     const results = new Map<string, IntegrationTestResults>();
     const scenarios = this.getScenariosByTags(tags);
 
@@ -832,7 +840,9 @@ export class IntegrationTestsManager {
   /**
    * Get test results
    */
-  getResults(scenarioName?: string): IntegrationTestResults | Map<string, IntegrationTestResults> {
+  getResults(
+    scenarioName?: string
+  ): IntegrationTestResults | Map<string, IntegrationTestResults> {
     if (scenarioName) {
       const result = this.results.get(scenarioName);
       if (!result) {

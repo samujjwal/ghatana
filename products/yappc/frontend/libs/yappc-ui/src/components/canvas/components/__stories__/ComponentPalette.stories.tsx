@@ -11,7 +11,13 @@ import type { Meta, StoryObj } from '@storybook/react';
 // Placeholder for actual ComponentPalette component
 // Real import: import { ComponentPalette } from '../ComponentPalette';
 
-const ComponentPalette: React.FC<unknown> = ({ theme, searchQuery, categoryFilter, onComponentSelect, children }) => (
+const ComponentPalette: React.FC<unknown> = ({
+  theme,
+  searchQuery,
+  categoryFilter,
+  onComponentSelect,
+  children,
+}) => (
   <div
     style={{
       width: '300px',
@@ -68,7 +74,14 @@ const ComponentPalette: React.FC<unknown> = ({ theme, searchQuery, categoryFilte
     >
       {!categoryFilter || categoryFilter === 'atoms' ? (
         <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '6px' }}>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: '#666',
+              marginBottom: '6px',
+            }}
+          >
             Atoms
           </div>
           <div style={{ display: 'grid', gap: '8px' }}>
@@ -103,7 +116,14 @@ const ComponentPalette: React.FC<unknown> = ({ theme, searchQuery, categoryFilte
 
       {!categoryFilter || categoryFilter === 'molecules' ? (
         <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#666', marginBottom: '6px' }}>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 'bold',
+              color: '#666',
+              marginBottom: '6px',
+            }}
+          >
             Molecules
           </div>
           <div style={{ display: 'grid', gap: '8px' }}>
@@ -137,7 +157,14 @@ const ComponentPalette: React.FC<unknown> = ({ theme, searchQuery, categoryFilte
       ) : null}
 
       {searchQuery && (
-        <div style={{ fontSize: '11px', color: '#999', textAlign: 'center', marginTop: '20px' }}>
+        <div
+          style={{
+            fontSize: '11px',
+            color: '#999',
+            textAlign: 'center',
+            marginTop: '20px',
+          }}
+        >
           Found 0 components matching "{searchQuery}"
         </div>
       )}
@@ -152,7 +179,8 @@ const meta: Meta<typeof ComponentPalette> = {
     layout: 'padded',
     docs: {
       description: {
-        component: 'Component palette for selecting and adding components to the canvas.',
+        component:
+          'Component palette for selecting and adding components to the canvas.',
       },
     },
   },
@@ -225,7 +253,9 @@ export const Empty: Story = {
         }}
       >
         <div>
-          <div style={{ fontSize: '14px', marginBottom: '8px' }}>No components available</div>
+          <div style={{ fontSize: '14px', marginBottom: '8px' }}>
+            No components available
+          </div>
           <div style={{ fontSize: '12px' }}>Add components to get started</div>
         </div>
       </div>

@@ -114,7 +114,9 @@ const CanvasWithProvider: React.FC<{
 /**
  * Helper to seed the canvas with initial data.
  */
-const CanvasSetup: React.FC<{ initialDocument?: CanvasDocument }> = ({ initialDocument }) => {
+const CanvasSetup: React.FC<{ initialDocument?: CanvasDocument }> = ({
+  initialDocument,
+}) => {
   const setDocument = useSetAtom(updateDocumentAtom);
 
   useEffect(() => {
@@ -153,7 +155,8 @@ export const Empty: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Empty canvas with no elements. Tests grid rendering and zoom controls.',
+        story:
+          'Empty canvas with no elements. Tests grid rendering and zoom controls.',
       },
     },
   },
@@ -176,7 +179,11 @@ export const SingleNode: Story = {
     };
 
     return (
-      <CanvasWithProvider initialDocument={transformSeedToDocument({ nodes: [{ id: 'node-1', data: { label: 'Start' } }] })}>
+      <CanvasWithProvider
+        initialDocument={transformSeedToDocument({
+          nodes: [{ id: 'node-1', data: { label: 'Start' } }],
+        })}
+      >
         <Canvas
           elements={elements}
           elementOrder={['node-1']}
@@ -236,7 +243,11 @@ export const WithEdges: Story = {
   render: () => {
     const nodes = [
       { id: 'node-1', position: { x: 100, y: 100 }, data: { label: 'Start' } },
-      { id: 'node-2', position: { x: 300, y: 100 }, data: { label: 'Process' } },
+      {
+        id: 'node-2',
+        position: { x: 300, y: 100 },
+        data: { label: 'Process' },
+      },
       { id: 'node-3', position: { x: 500, y: 100 }, data: { label: 'End' } },
     ];
 
@@ -246,7 +257,9 @@ export const WithEdges: Story = {
     ];
 
     return (
-      <CanvasWithProvider initialDocument={transformSeedToDocument({ nodes, edges })}>
+      <CanvasWithProvider
+        initialDocument={transformSeedToDocument({ nodes, edges })}
+      >
         <Canvas
           elements={{}}
           elementOrder={[]}
@@ -322,7 +335,9 @@ export const WithGroups: Story = {
  */
 export const SmallDiagram: Story = {
   render: () => (
-    <CanvasWithProvider initialDocument={transformSeedToDocument(seedScenarios.small())}>
+    <CanvasWithProvider
+      initialDocument={transformSeedToDocument(seedScenarios.small())}
+    >
       <Canvas
         elements={{}}
         elementOrder={[]}
@@ -346,7 +361,9 @@ export const SmallDiagram: Story = {
  */
 export const MediumDiagram: Story = {
   render: () => (
-    <CanvasWithProvider initialDocument={transformSeedToDocument(seedScenarios.medium())}>
+    <CanvasWithProvider
+      initialDocument={transformSeedToDocument(seedScenarios.medium())}
+    >
       <Canvas
         elements={{}}
         elementOrder={[]}
@@ -358,7 +375,8 @@ export const MediumDiagram: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Medium diagram with seed data. Tests layout with more complex structures.',
+        story:
+          'Medium diagram with seed data. Tests layout with more complex structures.',
       },
     },
   },
@@ -370,7 +388,9 @@ export const MediumDiagram: Story = {
  */
 export const LargeDiagram: Story = {
   render: () => (
-    <CanvasWithProvider initialDocument={transformSeedToDocument(seedScenarios.large())}>
+    <CanvasWithProvider
+      initialDocument={transformSeedToDocument(seedScenarios.large())}
+    >
       <Canvas
         elements={{}}
         elementOrder={[]}
@@ -382,7 +402,8 @@ export const LargeDiagram: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Large diagram for performance testing. Should maintain smooth interaction.',
+        story:
+          'Large diagram for performance testing. Should maintain smooth interaction.',
       },
     },
   },
@@ -394,7 +415,9 @@ export const LargeDiagram: Story = {
  */
 export const MicroservicesArchitecture: Story = {
   render: () => (
-    <CanvasWithProvider initialDocument={transformSeedToDocument(seedScenarios.microservices())}>
+    <CanvasWithProvider
+      initialDocument={transformSeedToDocument(seedScenarios.microservices())}
+    >
       <Canvas
         elements={{}}
         elementOrder={[]}
@@ -406,7 +429,8 @@ export const MicroservicesArchitecture: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Microservices architecture diagram showing service interactions.',
+        story:
+          'Microservices architecture diagram showing service interactions.',
       },
     },
   },
@@ -423,12 +447,21 @@ export const MicroservicesArchitecture: Story = {
 export const ZoomedIn: Story = {
   render: () => {
     const nodes = [
-      { id: 'node-1', position: { x: 100, y: 100 }, data: { label: 'Zoomed In' } },
+      {
+        id: 'node-1',
+        position: { x: 100, y: 100 },
+        data: { label: 'Zoomed In' },
+      },
       { id: 'node-2', position: { x: 300, y: 100 }, data: { label: 'View' } },
     ];
 
     return (
-      <CanvasWithProvider initialDocument={transformSeedToDocument({ nodes, viewport: { x: 0, y: 0, zoom: 2 } })}>
+      <CanvasWithProvider
+        initialDocument={transformSeedToDocument({
+          nodes,
+          viewport: { x: 0, y: 0, zoom: 2 },
+        })}
+      >
         <Canvas
           elements={{}}
           elementOrder={[]}
@@ -454,13 +487,22 @@ export const ZoomedIn: Story = {
 export const ZoomedOut: Story = {
   render: () => {
     const nodes = [
-      { id: 'node-1', position: { x: 100, y: 100 }, data: { label: 'Zoomed Out' } },
+      {
+        id: 'node-1',
+        position: { x: 100, y: 100 },
+        data: { label: 'Zoomed Out' },
+      },
       { id: 'node-2', position: { x: 300, y: 100 }, data: { label: 'View' } },
       { id: 'node-3', position: { x: 500, y: 100 }, data: { label: 'Test' } },
     ];
 
     return (
-      <CanvasWithProvider initialDocument={transformSeedToDocument({ nodes, viewport: { x: 0, y: 0, zoom: 0.5 } })}>
+      <CanvasWithProvider
+        initialDocument={transformSeedToDocument({
+          nodes,
+          viewport: { x: 0, y: 0, zoom: 0.5 },
+        })}
+      >
         <Canvas
           elements={{}}
           elementOrder={[]}
@@ -530,7 +572,9 @@ export const Controlled: Story = {
 export const DarkTheme: Story = {
   render: () => (
     <div style={{ background: '#1a1a1a', color: '#fff', minHeight: '100vh' }}>
-      <CanvasWithProvider initialDocument={transformSeedToDocument(seedScenarios.small())}>
+      <CanvasWithProvider
+        initialDocument={transformSeedToDocument(seedScenarios.small())}
+      >
         <Canvas
           elements={{}}
           elementOrder={[]}

@@ -4,7 +4,6 @@
  * Comprehensive demonstrations of Select molecule component with all features
  */
 
-
 import { Stack, Box, Typography, Grid } from '@ghatana/design-system';
 import { useState } from 'react';
 
@@ -332,7 +331,11 @@ export const DependentSelects: Story = {
           value={language}
           onChange={(e) => setLanguage(e.target.value as string)}
           disabled={!country}
-          helperText={country ? 'Select your preferred language' : 'Please select a country first'}
+          helperText={
+            country
+              ? 'Select your preferred language'
+              : 'Please select a country first'
+          }
           fullWidth
         />
       </Stack>
@@ -460,7 +463,8 @@ export const AccessibilityDemo: Story = {
           WCAG 2.1 AA Compliance
         </Typography>
         <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-          All selects and menu items maintain minimum 44px height for touch targets
+          All selects and menu items maintain minimum 44px height for touch
+          targets
         </Typography>
         <Stack spacing={2}>
           <Select
@@ -513,7 +517,8 @@ export const AccessibilityDemo: Story = {
           Keyboard Navigation
         </Typography>
         <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-          Tab to focus, Enter/Space to open, Arrow keys to navigate, Escape to close
+          Tab to focus, Enter/Space to open, Arrow keys to navigate, Escape to
+          close
         </Typography>
         <Stack spacing={2}>
           <Select label="Select 1" options={countryOptions} fullWidth />

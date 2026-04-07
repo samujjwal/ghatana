@@ -22,7 +22,7 @@ export function trackMetric(metric: Omit<Metric, 'timestamp'>): void {
         ...metric.tags,
       },
     });
-    
+
     // Here you would typically send metrics to your analytics service
     // Example: sendToAnalytics(metric);
   } else {
@@ -40,11 +40,11 @@ export async function measure<T>(
   tags?: Record<string, string>
 ): Promise<T> {
   const start = performance.now();
-  
+
   try {
     const result = await fn();
     const duration = performance.now() - start;
-    
+
     trackMetric({
       name: `${name}.success`,
       value: duration,
@@ -53,11 +53,11 @@ export async function measure<T>(
         duration: duration.toFixed(2),
       },
     });
-    
+
     return result;
   } catch (error) {
     const duration = performance.now() - start;
-    
+
     trackMetric({
       name: `${name}.error`,
       value: duration,
@@ -67,7 +67,7 @@ export async function measure<T>(
         duration: duration.toFixed(2),
       },
     });
-    
+
     throw error;
   }
 }

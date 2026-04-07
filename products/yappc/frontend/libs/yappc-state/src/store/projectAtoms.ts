@@ -72,9 +72,7 @@ export const currentProjectAtom =
     'project:current',
     (get) => {
       const id = get(currentProjectIdAtom);
-      const projects = get(
-        projectsAtom
-      );
+      const projects = get(projectsAtom);
       return id ? (projects.find((p) => p.id === id) ?? null) : null;
     },
     'Currently selected project object'
@@ -86,9 +84,7 @@ export const currentProjectAtom =
 export const activeProjectsAtom = StateManager.createDerivedAtom<Project[]>(
   'project:activeList',
   (get) => {
-    const projects = get(
-      projectsAtom
-    );
+    const projects = get(projectsAtom);
     return projects.filter((p) => p.status === 'ACTIVE');
   },
   'Active projects only'

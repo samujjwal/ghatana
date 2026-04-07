@@ -1,6 +1,6 @@
 /**
  * Ansible Playbook Parser
- * 
+ *
  * Parses Ansible playbook YAML into Runbook format for execution and visualization.
  */
 
@@ -22,19 +22,22 @@ function parseYAML(content: string): unknown {
 
 /**
  * Parse Ansible playbook YAML into a Runbook
- * 
+ *
  * @param yamlContent - Ansible playbook YAML string or parsed object
  * @returns Runbook representation of the playbook
- * 
+ *
  * @example
  * ```typescript
  * const runbook = parseAnsiblePlaybook(playbookYaml);
  * console.log(`Parsed ${runbook.steps.length} steps`);
  * ```
  */
-export function parseAnsiblePlaybook(yamlContent: string | Record<string, unknown>): Runbook {
-  const playbook = typeof yamlContent === 'string' ? parseYAML(yamlContent) : yamlContent;
-  
+export function parseAnsiblePlaybook(
+  yamlContent: string | Record<string, unknown>
+): Runbook {
+  const playbook =
+    typeof yamlContent === 'string' ? parseYAML(yamlContent) : yamlContent;
+
   if (!Array.isArray(playbook)) {
     throw new Error('Invalid Ansible playbook: expected array of plays');
   }
@@ -45,7 +48,7 @@ export function parseAnsiblePlaybook(yamlContent: string | Record<string, unknow
   playbook.forEach((play, playIndex) => {
     const playName = play.name || `Play ${playIndex + 1}`;
     const hosts = play.hosts || 'all';
-    
+
     // Add play start checkpoint
     steps.push({
       id: `play-${playIndex}-start`,
@@ -62,9 +65,10 @@ export function parseAnsiblePlaybook(yamlContent: string | Record<string, unknow
     tasks.forEach((task: unknown, taskIndex: number) => {
       const taskName = task.name || `Task ${taskIndex + 1}`;
       const module = Object.keys(task).find(
-        k => k !== 'name' && k !== 'when' && k !== 'register' && k !== 'with_items'
+        (k) =>
+          k !== 'name' && k !== 'when' && k !== 'register' && k !== 'with_items'
       );
-      
+
       const stepId = `step-${stepIndex}`;
       steps.push({
         id: stepId,
@@ -73,7 +77,10 @@ export function parseAnsiblePlaybook(yamlContent: string | Record<string, unknow
         module,
         args: module ? task[module] : undefined,
         command: module ? `ansible ${module}` : undefined,
-        dependsOn: stepIndex > 0 ? [`step-${stepIndex - 1}`] : [`play-${playIndex}-start`],
+        dependsOn:
+          stepIndex > 0
+            ? [`step-${stepIndex - 1}`]
+            : [`play-${playIndex}-start`],
         condition: task.when,
         timeout: task.async || 300,
         metadata: {
@@ -88,7 +95,10 @@ export function parseAnsiblePlaybook(yamlContent: string | Record<string, unknow
       id: `play-${playIndex}-end`,
       name: `End ${playName}`,
       type: 'checkpoint',
-      dependsOn: tasks.length > 0 ? [`step-${stepIndex - 1}`] : [`play-${playIndex}-start`],
+      dependsOn:
+        tasks.length > 0
+          ? [`step-${stepIndex - 1}`]
+          : [`play-${playIndex}-start`],
       metadata: {
         status: 'pending',
       },

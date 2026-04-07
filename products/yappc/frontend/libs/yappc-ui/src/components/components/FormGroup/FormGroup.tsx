@@ -75,7 +75,10 @@ export interface FormGroupProps {
  * </FormGroup>
  * ```
  */
-export const FormGroup = React.forwardRef<HTMLDivElement | HTMLFieldSetElement, FormGroupProps>(
+export const FormGroup = React.forwardRef<
+  HTMLDivElement | HTMLFieldSetElement,
+  FormGroupProps
+>(
   (
     {
       title,
@@ -92,8 +95,8 @@ export const FormGroup = React.forwardRef<HTMLDivElement | HTMLFieldSetElement, 
     const content = (
       <>
         {/* Title */}
-        {title && (
-          asFieldset ? (
+        {title &&
+          (asFieldset ? (
             <legend
               className={cn(
                 'text-base font-semibold text-grey-900 dark:text-grey-100 mb-1',
@@ -113,8 +116,7 @@ export const FormGroup = React.forwardRef<HTMLDivElement | HTMLFieldSetElement, 
             >
               {title}
             </div>
-          )
-        )}
+          ))}
 
         {/* Description */}
         {description && (
@@ -124,9 +126,7 @@ export const FormGroup = React.forwardRef<HTMLDivElement | HTMLFieldSetElement, 
         )}
 
         {/* Content */}
-        <div className={cn('space-y-4', contentClassName)}>
-          {children}
-        </div>
+        <div className={cn('space-y-4', contentClassName)}>{children}</div>
       </>
     );
 

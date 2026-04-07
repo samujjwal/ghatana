@@ -1,8 +1,8 @@
 /**
  * OAuth Provider Configurations
- * 
+ *
  * Pre-configured OAuth providers for common services.
- * 
+ *
  * @module auth/oauth
  */
 
@@ -12,19 +12,20 @@ import type { OAuthProvider } from './types';
  * Get OAuth redirect URI based on environment
  */
 const getRedirectUri = (provider: string): string => {
-  const baseUrl = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : process.env.REACT_APP_BASE_URL || 'http://localhost:3000';
+  const baseUrl =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : process.env.REACT_APP_BASE_URL || 'http://localhost:3000';
   return `${baseUrl}/auth/callback/${provider}`;
 };
 
 /**
  * Google OAuth Provider Configuration
- * 
+ *
  * @param clientId - Google OAuth client ID
  * @param clientSecret - Google OAuth client secret (optional, server-side only)
  * @returns Google OAuth provider configuration
- * 
+ *
  * @example
  * ```ts
  * const google = createGoogleProvider(
@@ -54,11 +55,11 @@ export function createGoogleProvider(
 
 /**
  * GitHub OAuth Provider Configuration
- * 
+ *
  * @param clientId - GitHub OAuth client ID
  * @param clientSecret - GitHub OAuth client secret (optional, server-side only)
  * @returns GitHub OAuth provider configuration
- * 
+ *
  * @example
  * ```ts
  * const github = createGitHubProvider(
@@ -84,7 +85,7 @@ export function createGitHubProvider(
 
 /**
  * Microsoft OAuth Provider Configuration
- * 
+ *
  * @param clientId - Microsoft OAuth client ID
  * @param clientSecret - Microsoft OAuth client secret (optional, server-side only)
  * @param tenant - Microsoft tenant ID (default: 'common')
@@ -109,7 +110,7 @@ export function createMicrosoftProvider(
 
 /**
  * Pre-configured OAuth providers
- * 
+ *
  * Use environment variables to configure providers:
  * - REACT_APP_GOOGLE_CLIENT_ID
  * - REACT_APP_GITHUB_CLIENT_ID

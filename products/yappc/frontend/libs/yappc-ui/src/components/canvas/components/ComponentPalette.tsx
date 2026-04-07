@@ -51,9 +51,9 @@ export function ComponentPalette({
   onComponentSelect,
   className = '',
 }: ComponentPaletteProps) {
-  const [activeCategory, setActiveCategory] = useState<ComponentMetadata['category'] | 'all'>(
-    categoryFilter
-  );
+  const [activeCategory, setActiveCategory] = useState<
+    ComponentMetadata['category'] | 'all'
+  >(categoryFilter);
   const [search, setSearch] = useState(searchQuery);
 
   // Get filtered components
@@ -62,14 +62,18 @@ export function ComponentPalette({
 
     // Apply category filter
     if (activeCategory !== 'all') {
-      components = components.filter((comp) => comp.category === activeCategory);
+      components = components.filter(
+        (comp) => comp.category === activeCategory
+      );
     }
 
     // Apply search filter
     if (search.trim()) {
       components = ComponentRegistry.search(search);
       if (activeCategory !== 'all') {
-        components = components.filter((comp) => comp.category === activeCategory);
+        components = components.filter(
+          (comp) => comp.category === activeCategory
+        );
       }
     }
 
@@ -97,7 +101,10 @@ export function ComponentPalette({
   };
 
   // Handle drag start
-  const handleDragStart = (event: React.DragEvent, component: ComponentMetadata) => {
+  const handleDragStart = (
+    event: React.DragEvent,
+    component: ComponentMetadata
+  ) => {
     // Create default schema
     const schema = ComponentRegistry.createDefaultSchema(component.type);
     if (schema) {
@@ -121,7 +128,16 @@ export function ComponentPalette({
 
       {/* Category Tabs */}
       <div className="palette-categories">
-        {(['all', 'atoms', 'molecules', 'organisms', 'templates', 'custom'] as const).map((cat) => (
+        {(
+          [
+            'all',
+            'atoms',
+            'molecules',
+            'organisms',
+            'templates',
+            'custom',
+          ] as const
+        ).map((cat) => (
           <button
             key={cat}
             className={`category-tab ${activeCategory === cat ? 'active' : ''}`}
@@ -138,7 +154,9 @@ export function ComponentPalette({
         {filteredComponents.length === 0 ? (
           <div className="empty-state">
             <p>No components found</p>
-            {search && <button onClick={() => setSearch('')}>Clear search</button>}
+            {search && (
+              <button onClick={() => setSearch('')}>Clear search</button>
+            )}
           </div>
         ) : (
           filteredComponents.map((component) => (
@@ -167,7 +185,11 @@ interface ComponentCardProps {
 /**
  * Component Card
  */
-function ComponentCard({ component, onClick, onDragStart }: ComponentCardProps) {
+function ComponentCard({
+  component,
+  onClick,
+  onDragStart,
+}: ComponentCardProps) {
   return (
     <div
       className="component-card"

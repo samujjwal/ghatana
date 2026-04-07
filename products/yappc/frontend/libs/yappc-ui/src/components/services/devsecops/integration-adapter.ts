@@ -22,7 +22,9 @@ import type {
 /**
  * Base integration adapter interface
  */
-export interface IntegrationAdapter<T extends ItemIntegration = ItemIntegration> {
+export interface IntegrationAdapter<
+  T extends ItemIntegration = ItemIntegration,
+> {
   /** Provider identifier */
   readonly provider: IntegrationProvider;
 
@@ -77,7 +79,10 @@ export interface GitHubAdapter extends IntegrationAdapter<GitHubIntegration> {
   provider: 'github';
 
   /** Get repository information */
-  getRepository(owner: string, repo: string): Promise<{
+  getRepository(
+    owner: string,
+    repo: string
+  ): Promise<{
     name: string;
     description?: string;
     url: string;
@@ -92,11 +97,7 @@ export interface GitHubAdapter extends IntegrationAdapter<GitHubIntegration> {
   ): Promise<GitHubPullRequest[]>;
 
   /** Get commits for a PR or branch */
-  getCommits(
-    owner: string,
-    repo: string,
-    ref: string
-  ): Promise<GitHubCommit[]>;
+  getCommits(owner: string, repo: string, ref: string): Promise<GitHubCommit[]>;
 
   /** Get issues */
   getIssues(
@@ -123,13 +124,18 @@ export interface SonarQubeAdapter extends IntegrationAdapter<SonarQubeIntegratio
   provider: 'sonarqube';
 
   /** Get project metrics */
-  getProjectMetrics(projectKey: string): Promise<SonarQubeIntegration['metrics']>;
+  getProjectMetrics(
+    projectKey: string
+  ): Promise<SonarQubeIntegration['metrics']>;
 
   /** Get quality gate status */
   getQualityGateStatus(projectKey: string): Promise<'OK' | 'ERROR' | 'WARN'>;
 
   /** Get issues/vulnerabilities */
-  getIssues(projectKey: string, type?: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL'): Promise<{
+  getIssues(
+    projectKey: string,
+    type?: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL'
+  ): Promise<{
     total: number;
     items: Array<{
       key: string;

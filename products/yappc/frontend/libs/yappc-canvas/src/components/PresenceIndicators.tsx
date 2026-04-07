@@ -1,4 +1,14 @@
-import { Circle, Eye as Visibility, Pencil as Edit, MousePointer as Mouse, Pointer as TouchApp, SignalWifiOff, Users as Group, ChevronDown as ExpandMore, ChevronUp as ExpandLess } from 'lucide-react';
+import {
+  Circle,
+  Eye as Visibility,
+  Pencil as Edit,
+  MousePointer as Mouse,
+  Pointer as TouchApp,
+  SignalWifiOff,
+  Users as Group,
+  ChevronDown as ExpandMore,
+  ChevronUp as ExpandLess,
+} from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import {
@@ -52,7 +62,7 @@ export function PresenceIndicators({
   userName,
   position = 'top-right',
   showUserList = true,
-  maxAvatars = 5
+  maxAvatars = 5,
 }: PresenceIndicatorsProps) {
   const {
     remoteUsers,
@@ -60,7 +70,7 @@ export function PresenceIndicators({
     isConnected,
     syncStatus,
     getRemoteCursors,
-    getRemoteSelections
+    getRemoteSelections,
   } = useCollaboration(roomId, userId, userName);
 
   const [showDetails, setShowDetails] = useState(false);
@@ -92,7 +102,7 @@ export function PresenceIndicators({
     const baseStyles = {
       position: 'fixed' as const,
       zIndex: 1300,
-      padding: 2
+      padding: 2,
     };
 
     switch (position) {
@@ -111,11 +121,16 @@ export function PresenceIndicators({
 
   const getSyncStatusColor = () => {
     switch (syncStatus) {
-      case 'synced': return 'success';
-      case 'syncing': return 'warning';
-      case 'error': return 'error';
-      case 'offline': return 'error';
-      default: return 'default';
+      case 'synced':
+        return 'success';
+      case 'syncing':
+        return 'warning';
+      case 'error':
+        return 'error';
+      case 'offline':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -123,20 +138,25 @@ export function PresenceIndicators({
 
   const getSyncStatusIcon = () => {
     switch (syncStatus) {
-      case 'synced': return <Circle size={16} />;
-      case 'syncing': return <Circle size={16} className="animate-pulse" />;
-      case 'error': return <SignalWifiOff size={16} />;
-      case 'offline': return <SignalWifiOff size={16} />;
-      default: return <Circle size={16} />;
+      case 'synced':
+        return <Circle size={16} />;
+      case 'syncing':
+        return <Circle size={16} className="animate-pulse" />;
+      case 'error':
+        return <SignalWifiOff size={16} />;
+      case 'offline':
+        return <SignalWifiOff size={16} />;
+      default:
+        return <Circle size={16} />;
     }
   };
 
-  const onlineUsers = remoteUsers.filter(user => user.isOnline);
+  const onlineUsers = remoteUsers.filter((user) => user.isOnline);
   const totalUsers = onlineUsers.length + 1; // +1 for current user
 
   return (
     <>
-      <Paper 
+      <Paper
         elevation={3}
         style={{
           ...getPositionStyles(),
@@ -152,7 +172,11 @@ export function PresenceIndicators({
               icon={getSyncStatusIcon()}
               label={isConnected ? syncStatus : 'offline'}
               size="small"
-              color={resolveMuiColor(theme, String(getSyncStatusColor()), 'default')}
+              color={resolveMuiColor(
+                theme,
+                String(getSyncStatusColor()),
+                'default'
+              )}
               variant="outlined"
               className="text-[0.7rem] h-[20px]"
             />
@@ -164,7 +188,7 @@ export function PresenceIndicators({
           {/* User Avatars */}
           <Box px={1} pb={1}>
             <Stack direction="row" alignItems="center" spacing={1}>
-              <AvatarGroup 
+              <AvatarGroup
                 max={maxAvatars}
                 className="[&_.MuiAvatar-root]:w-8 [&_.MuiAvatar-root]:h-8 [&_.MuiAvatar-root]:text-sm [&_.MuiAvatar-root]:border-2 [&_.MuiAvatar-root]:border-white"
               >
@@ -177,14 +201,16 @@ export function PresenceIndicators({
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                   >
                     <Avatar
-                      className="border-blue-600 border-[2px_solid]" style={{ backgroundColor: 'currentUser.color' }} >
+                      className="border-blue-600 border-[2px_solid]"
+                      style={{ backgroundColor: 'currentUser.color' }}
+                    >
                       {currentUser.name.charAt(0).toUpperCase()}
                     </Avatar>
                   </Badge>
                 </Tooltip>
 
                 {/* Remote Users */}
-                {onlineUsers.map(user => (
+                {onlineUsers.map((user) => (
                   <Tooltip key={user.id} title={user.name}>
                     <Badge
                       badgeContent={
@@ -201,9 +227,9 @@ export function PresenceIndicators({
                       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     >
                       <Avatar
-                        style={{ 
+                        style={{
                           backgroundColor: user.color,
-                          opacity: user.isOnline ? 1 : 0.5
+                          opacity: user.isOnline ? 1 : 0.5,
                         }}
                       >
                         {user.name.charAt(0).toUpperCase()}
@@ -246,9 +272,7 @@ export function PresenceIndicators({
           <Box p={2} borderBottom="1px solid" borderColor="divider">
             <Stack direction="row" alignItems="center" spacing={1}>
               <Group color="primary" />
-              <Typography variant="h6">
-                Collaborators ({totalUsers})
-              </Typography>
+              <Typography variant="h6">Collaborators ({totalUsers})</Typography>
             </Stack>
           </Box>
 
@@ -273,10 +297,10 @@ export function PresenceIndicators({
             </ListItem>
 
             {/* Remote Users */}
-            {onlineUsers.map(user => {
+            {onlineUsers.map((user) => {
               const userCursor = cursors[user.id];
               const userSelection = selections[user.id];
-              
+
               let activity = 'Viewing';
               if (userCursor) {
                 activity = `Cursor at (${Math.round(userCursor.x)}, ${Math.round(userCursor.y)})`;
@@ -289,7 +313,11 @@ export function PresenceIndicators({
                   <ListItemAvatar>
                     <Badge
                       badgeContent={<Circle size={16} />}
-                      color={resolveMuiColor(theme, user.isOnline ? 'success' : 'error', 'default')}
+                      color={resolveMuiColor(
+                        theme,
+                        user.isOnline ? 'success' : 'error',
+                        'default'
+                      )}
                       overlap="circular"
                     >
                       <Avatar style={{ backgroundColor: user.color }}>
@@ -297,10 +325,7 @@ export function PresenceIndicators({
                       </Avatar>
                     </Badge>
                   </ListItemAvatar>
-                  <ListItemText
-                    primary={user.name}
-                    secondary={activity}
-                  />
+                  <ListItemText primary={user.name} secondary={activity} />
                 </ListItem>
               );
             })}
@@ -310,12 +335,7 @@ export function PresenceIndicators({
 
       {/* Remote Cursors */}
       {Object.entries(cursors).map(([uid, cursor]: [string, any]) => (
-        <RemoteCursor
-          key={uid}
-          x={cursor.x}
-          y={cursor.y}
-          user={cursor.user}
-        />
+        <RemoteCursor key={uid} x={cursor.x} y={cursor.y} user={cursor.user} />
       ))}
     </>
   );
@@ -324,11 +344,21 @@ export function PresenceIndicators({
 /**
  * Remote cursor component showing other users' mouse positions
  */
-function RemoteCursor({ x, y, user }: { x: number; y: number; user: CollaborationUser }) {
+function RemoteCursor({
+  x,
+  y,
+  user,
+}: {
+  x: number;
+  y: number;
+  user: CollaborationUser;
+}) {
   return (
     <Fade in timeout={200}>
       <Box
-        className="fixed pointer-events-none z-[1400]" style={{ left: 'x', top: 'y', transform: 'translate(-2px' }} >
+        className="fixed pointer-events-none z-[1400]"
+        style={{ left: 'x', top: 'y', transform: 'translate(-2px' }}
+      >
         {/* Cursor SVG */}
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path
@@ -348,7 +378,9 @@ function RemoteCursor({ x, y, user }: { x: number; y: number; user: Collaboratio
         {/* User name label */}
         <Paper
           elevation={2}
-          className="absolute px-2 py-1 text-xs whitespace-nowrap rounded top-[20px] left-[10px] text-white" style={{ backgroundColor: 'user.color' }} >
+          className="absolute px-2 py-1 text-xs whitespace-nowrap rounded top-[20px] left-[10px] text-white"
+          style={{ backgroundColor: 'user.color' }}
+        >
           {user.name}
         </Paper>
       </Box>

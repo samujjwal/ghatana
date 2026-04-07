@@ -29,7 +29,11 @@ export { AIPersonaBriefing } from './AIPersonaBriefing';
 export type { AIPersonaBriefingProps } from './AIPersonaBriefing';
 
 // AI Prediction Badge
-export { AIPredictionBadge, usePhaseAIPrediction, useItemAIPrediction } from './AIPredictionBadge';
+export {
+  AIPredictionBadge,
+  usePhaseAIPrediction,
+  useItemAIPrediction,
+} from './AIPredictionBadge';
 export type { AIPredictionBadgeProps, AIPrediction } from './AIPredictionBadge';
 
 // Workflow wizard
@@ -38,7 +42,11 @@ export type { AiWorkflowWizardProps } from './AiWorkflowWizard';
 
 // Phase lifecycle AI suggestions
 export { SuggestionPanel } from './SuggestionPanel';
-export type { SuggestionPanelProps, Suggestion, SuggestionType } from './SuggestionPanel';
+export type {
+  SuggestionPanelProps,
+  Suggestion,
+  SuggestionType,
+} from './SuggestionPanel';
 
 // Workflow step components
 export * from './workflow';

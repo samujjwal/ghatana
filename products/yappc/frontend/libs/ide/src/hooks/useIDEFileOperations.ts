@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - File Operations Hook
- * 
+ *
  * React hook for IDE file operations with CRDT synchronization.
- * 
+ *
  * @doc.type module
  * @doc.purpose File operations hook for IDE
  * @doc.layer product
@@ -29,7 +29,7 @@ import { createTab, addTab, removeTab } from '../utils/tabManager';
 
 /**
  * Hook for IDE file operations
- * 
+ *
  * @doc.returns File operation functions
  */
 export function useIDEFileOperations() {
@@ -170,7 +170,11 @@ export function useIDEFileOperations() {
       });
 
       // Update tab title if open
-      setOpenTabs(openTabs.map((tab) => (tab.fileId === fileId ? { ...tab, title: newName } : tab)));
+      setOpenTabs(
+        openTabs.map((tab) =>
+          tab.fileId === fileId ? { ...tab, title: newName } : tab
+        )
+      );
     },
     [setFiles, setOpenTabs]
   );

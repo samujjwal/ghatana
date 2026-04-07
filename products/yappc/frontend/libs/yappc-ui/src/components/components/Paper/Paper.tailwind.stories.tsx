@@ -32,27 +32,39 @@ export const Elevations: Story = {
   render: () => (
     <div className="grid grid-cols-3 gap-4">
       <Paper elevation={0} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 0</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 0
+        </Typography>
         <Typography variant="body2">No shadow</Typography>
       </Paper>
       <Paper elevation={1} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 1</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 1
+        </Typography>
         <Typography variant="body2">Subtle shadow</Typography>
       </Paper>
       <Paper elevation={2} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 2</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 2
+        </Typography>
         <Typography variant="body2">Light shadow</Typography>
       </Paper>
       <Paper elevation={3} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 3</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 3
+        </Typography>
         <Typography variant="body2">Medium shadow</Typography>
       </Paper>
       <Paper elevation={6} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 6</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 6
+        </Typography>
         <Typography variant="body2">Larger shadow</Typography>
       </Paper>
       <Paper elevation={12} p="p-4">
-        <Typography variant="caption" className="block mb-1">Elevation 12</Typography>
+        <Typography variant="caption" className="block mb-1">
+          Elevation 12
+        </Typography>
         <Typography variant="body2">Extra large shadow</Typography>
       </Paper>
     </div>
@@ -118,7 +130,7 @@ export const NestedPapers: Story = {
       <Typography variant="body2" gutterBottom>
         Papers can be nested to create layered effects
       </Typography>
-      
+
       <Paper elevation={4} p="p-4" className="mt-4">
         <Typography variant="subtitle2" gutterBottom>
           Inner Paper
@@ -145,14 +157,12 @@ export const ContentCard: Story = {
           with different sections.
         </Typography>
         <Typography variant="body2" color="text">
-          You can combine Paper with other layout components to create
-          complex UI structures.
+          You can combine Paper with other layout components to create complex
+          UI structures.
         </Typography>
       </div>
       <div className="border-t border-grey-200 p-4 bg-grey-50">
-        <Typography variant="caption">
-          Footer section
-        </Typography>
+        <Typography variant="caption">Footer section</Typography>
       </div>
     </Paper>
   ),
@@ -162,27 +172,51 @@ export const Dashboard: Story = {
   render: () => (
     <div className="grid grid-cols-2 gap-4">
       <Paper elevation={1} p="p-4">
-        <Typography variant="overline" className="block mb-2">Total Users</Typography>
-        <Typography variant="h3" color="primary">1,234</Typography>
-        <Typography variant="caption" color="success">+12% from last month</Typography>
+        <Typography variant="overline" className="block mb-2">
+          Total Users
+        </Typography>
+        <Typography variant="h3" color="primary">
+          1,234
+        </Typography>
+        <Typography variant="caption" color="success">
+          +12% from last month
+        </Typography>
       </Paper>
-      
+
       <Paper elevation={1} p="p-4">
-        <Typography variant="overline" className="block mb-2">Revenue</Typography>
-        <Typography variant="h3" color="primary">$56,789</Typography>
-        <Typography variant="caption" color="success">+8% from last month</Typography>
+        <Typography variant="overline" className="block mb-2">
+          Revenue
+        </Typography>
+        <Typography variant="h3" color="primary">
+          $56,789
+        </Typography>
+        <Typography variant="caption" color="success">
+          +8% from last month
+        </Typography>
       </Paper>
-      
+
       <Paper elevation={1} p="p-4">
-        <Typography variant="overline" className="block mb-2">Active Sessions</Typography>
-        <Typography variant="h3" color="primary">892</Typography>
-        <Typography variant="caption" color="text">Currently online</Typography>
+        <Typography variant="overline" className="block mb-2">
+          Active Sessions
+        </Typography>
+        <Typography variant="h3" color="primary">
+          892
+        </Typography>
+        <Typography variant="caption" color="text">
+          Currently online
+        </Typography>
       </Paper>
-      
+
       <Paper elevation={1} p="p-4">
-        <Typography variant="overline" className="block mb-2">Conversion Rate</Typography>
-        <Typography variant="h3" color="primary">3.2%</Typography>
-        <Typography variant="caption" color="error">-2% from last month</Typography>
+        <Typography variant="overline" className="block mb-2">
+          Conversion Rate
+        </Typography>
+        <Typography variant="h3" color="primary">
+          3.2%
+        </Typography>
+        <Typography variant="caption" color="error">
+          -2% from last month
+        </Typography>
       </Paper>
     </div>
   ),

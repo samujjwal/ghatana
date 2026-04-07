@@ -15,7 +15,14 @@ import type { Meta, StoryObj } from '@storybook/react';
  */
 
 // Placeholder for actual ComponentPalette component
-const ComponentPalette: React.FC<unknown> = ({ _theme, _searchQuery, _categoryFilter, onComponentSelect, children, components }) => (
+const ComponentPalette: React.FC<unknown> = ({
+  _theme,
+  _searchQuery,
+  _categoryFilter,
+  onComponentSelect,
+  children,
+  components,
+}) => (
   <div
     style={{
       width: '300px',
@@ -70,7 +77,9 @@ const ComponentPalette: React.FC<unknown> = ({ _theme, _searchQuery, _categoryFi
           </div>
         ))
       ) : (
-        <div style={{ padding: '12px', color: '#999', fontSize: '11px' }}>No components</div>
+        <div style={{ padding: '12px', color: '#999', fontSize: '11px' }}>
+          No components
+        </div>
       )}
     </div>
   </div>
@@ -122,7 +131,9 @@ export const AdvancedSearchFuzzy: Story = {
     ];
 
     // Simple fuzzy matching
-    const filtered = allComponents.filter((c) => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filtered = allComponents.filter((c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -147,7 +158,8 @@ export const AdvancedSearchFuzzy: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Fuzzy search matching allows searching for components by partial name. Type "btn" to find all button variants.',
+        story:
+          'Fuzzy search matching allows searching for components by partial name. Type "btn" to find all button variants.',
       },
     },
   },
@@ -158,7 +170,9 @@ export const AdvancedSearchFuzzy: Story = {
 // ============================================
 export const MultiCategoryFiltering: Story = {
   render: () => {
-    const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(['form', 'layout']));
+    const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
+      new Set(['form', 'layout'])
+    );
 
     const allComponents = [
       { id: 'btn', name: 'Button', category: 'form' },
@@ -172,7 +186,9 @@ export const MultiCategoryFiltering: Story = {
 
     const categories = ['form', 'layout', 'feedback', 'overlay'];
 
-    const filtered = allComponents.filter((c) => selectedCategories.has(c.category));
+    const filtered = allComponents.filter((c) =>
+      selectedCategories.has(c.category)
+    );
 
     const toggleCategory = (cat: string) => {
       setSelectedCategories((prev) => {
@@ -189,9 +205,19 @@ export const MultiCategoryFiltering: Story = {
     return (
       <div style={{ display: 'flex', gap: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '12px' }}>Categories:</div>
+          <div style={{ fontWeight: 'bold', fontSize: '12px' }}>
+            Categories:
+          </div>
           {categories.map((cat) => (
-            <label key={cat} style={{ display: 'flex', gap: '6px', fontSize: '12px', cursor: 'pointer' }}>
+            <label
+              key={cat}
+              style={{
+                display: 'flex',
+                gap: '6px',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
               <input
                 type="checkbox"
                 checked={selectedCategories.has(cat)}
@@ -210,7 +236,8 @@ export const MultiCategoryFiltering: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Filter components by multiple categories simultaneously. Select/deselect categories to refine the palette.',
+        story:
+          'Filter components by multiple categories simultaneously. Select/deselect categories to refine the palette.',
       },
     },
   },
@@ -221,7 +248,9 @@ export const MultiCategoryFiltering: Story = {
 // ============================================
 export const CustomComponentGroups: Story = {
   render: () => {
-    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['form', 'layout']));
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+      new Set(['form', 'layout'])
+    );
 
     const groups = [
       {
@@ -266,8 +295,22 @@ export const CustomComponentGroups: Story = {
     };
 
     return (
-      <div style={{ border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden', width: '300px' }}>
-        <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+      <div
+        style={{
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          width: '300px',
+        }}
+      >
+        <div
+          style={{
+            padding: '12px',
+            background: '#f0f0f0',
+            fontWeight: 'bold',
+            fontSize: '12px',
+          }}
+        >
           Component Groups
         </div>
         <div style={{ maxHeight: '600px', overflow: 'auto' }}>
@@ -287,7 +330,9 @@ export const CustomComponentGroups: Story = {
                 }}
               >
                 {group.name}
-                <span style={{ fontSize: '10px' }}>{expandedGroups.has(group.id) ? '▼' : '▶'}</span>
+                <span style={{ fontSize: '10px' }}>
+                  {expandedGroups.has(group.id) ? '▼' : '▶'}
+                </span>
               </div>
               {expandedGroups.has(group.id) && (
                 <div style={{ padding: '4px' }}>
@@ -322,7 +367,8 @@ export const CustomComponentGroups: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Group components into collapsible categories. Click group headers to expand/collapse.',
+        story:
+          'Group components into collapsible categories. Click group headers to expand/collapse.',
       },
     },
   },
@@ -354,7 +400,14 @@ export const DragDropSupport: Story = {
             flexDirection: 'column',
           }}
         >
-          <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+          <div
+            style={{
+              padding: '12px',
+              background: '#f0f0f0',
+              fontWeight: 'bold',
+              fontSize: '12px',
+            }}
+          >
             Drag Components
           </div>
           <div style={{ flex: 1, overflow: 'auto', padding: '8px' }}>
@@ -367,7 +420,8 @@ export const DragDropSupport: Story = {
                 style={{
                   padding: '8px',
                   marginBottom: '4px',
-                  background: draggedComponent?.id === c.id ? '#d1ecf1' : '#fff',
+                  background:
+                    draggedComponent?.id === c.id ? '#d1ecf1' : '#fff',
                   border: '1px solid #ddd',
                   borderRadius: '4px',
                   fontSize: '11px',
@@ -418,7 +472,8 @@ export const DragDropSupport: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Drag components from palette onto canvas. Visual feedback shows drop zones.',
+        story:
+          'Drag components from palette onto canvas. Visual feedback shows drop zones.',
       },
     },
   },
@@ -459,7 +514,14 @@ export const LargeComponentLibrary: Story = {
             fontSize: '14px',
           }}
         />
-        <div style={{ height: '400px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'auto' }}>
+        <div
+          style={{
+            height: '400px',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            overflow: 'auto',
+          }}
+        >
           {filtered.slice(0, 50).map((c) => (
             <div
               key={c.id}
@@ -493,7 +555,8 @@ export const LargeComponentLibrary: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Handle large component libraries with 1000+ components. Search enables efficient lookup.',
+        story:
+          'Handle large component libraries with 1000+ components. Search enables efficient lookup.',
       },
     },
   },
@@ -512,8 +575,22 @@ export const RecentlyUsed: Story = {
     ];
 
     return (
-      <div style={{ border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden', width: '300px' }}>
-        <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+      <div
+        style={{
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          width: '300px',
+        }}
+      >
+        <div
+          style={{
+            padding: '12px',
+            background: '#f0f0f0',
+            fontWeight: 'bold',
+            fontSize: '12px',
+          }}
+        >
           Recently Used (4)
         </div>
         <div style={{ maxHeight: '300px', overflow: 'auto' }}>
@@ -546,7 +623,8 @@ export const RecentlyUsed: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Show frequently used components at the top for quick access. Speeds up common workflows.',
+        story:
+          'Show frequently used components at the top for quick access. Speeds up common workflows.',
       },
     },
   },
@@ -557,7 +635,9 @@ export const RecentlyUsed: Story = {
 // ============================================
 export const FavoritedComponents: Story = {
   render: () => {
-    const [favorites, setFavorites] = useState<Set<string>>(new Set(['btn', 'card']));
+    const [favorites, setFavorites] = useState<Set<string>>(
+      new Set(['btn', 'card'])
+    );
 
     const allComponents = [
       { id: 'btn', name: 'Button', category: 'form' },
@@ -583,10 +663,24 @@ export const FavoritedComponents: Story = {
     const others = allComponents.filter((c) => !favorites.has(c.id));
 
     return (
-      <div style={{ border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden', width: '300px' }}>
+      <div
+        style={{
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          width: '300px',
+        }}
+      >
         {favorited.length > 0 && (
           <>
-            <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+            <div
+              style={{
+                padding: '12px',
+                background: '#f0f0f0',
+                fontWeight: 'bold',
+                fontSize: '12px',
+              }}
+            >
               ⭐ Favorites ({favorited.length})
             </div>
             <div>
@@ -618,7 +712,14 @@ export const FavoritedComponents: Story = {
             </div>
           </>
         )}
-        <div style={{ padding: '12px', background: '#fafafa', fontWeight: 'bold', fontSize: '12px' }}>
+        <div
+          style={{
+            padding: '12px',
+            background: '#fafafa',
+            fontWeight: 'bold',
+            fontSize: '12px',
+          }}
+        >
           Other ({others.length})
         </div>
         <div>
@@ -655,7 +756,8 @@ export const FavoritedComponents: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Star/favorite frequently used components for quick access. Personalized component organization.',
+        story:
+          'Star/favorite frequently used components for quick access. Personalized component organization.',
       },
     },
   },
@@ -671,13 +773,31 @@ export const ComponentPreviewHover: Story = {
     const components = [
       { id: 'btn', name: 'Button', preview: '→ Button' },
       { id: 'input', name: 'Input Field', preview: '→ [Input]' },
-      { id: 'card', name: 'Card Container', preview: '→ ╔════╗\n  ║    ║\n  ╚════╝' },
+      {
+        id: 'card',
+        name: 'Card Container',
+        preview: '→ ╔════╗\n  ║    ║\n  ╚════╝',
+      },
     ];
 
     return (
       <div style={{ display: 'flex', gap: '16px' }}>
-        <div style={{ border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden', width: '200px' }}>
-          <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+        <div
+          style={{
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            overflow: 'hidden',
+            width: '200px',
+          }}
+        >
+          <div
+            style={{
+              padding: '12px',
+              background: '#f0f0f0',
+              fontWeight: 'bold',
+              fontSize: '12px',
+            }}
+          >
             Components
           </div>
           <div>
@@ -691,7 +811,8 @@ export const ComponentPreviewHover: Story = {
                   borderBottom: '1px solid #eee',
                   fontSize: '11px',
                   cursor: 'pointer',
-                  background: hoveredComponent?.id === c.id ? '#f0f7ff' : '#fff',
+                  background:
+                    hoveredComponent?.id === c.id ? '#f0f7ff' : '#fff',
                 }}
               >
                 {c.name}
@@ -700,11 +821,32 @@ export const ComponentPreviewHover: Story = {
           </div>
         </div>
         {hoveredComponent && (
-          <div style={{ border: '1px solid #007bff', borderRadius: '4px', padding: '12px', minWidth: '150px', background: '#f0f7ff' }}>
-            <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '8px' }}>
+          <div
+            style={{
+              border: '1px solid #007bff',
+              borderRadius: '4px',
+              padding: '12px',
+              minWidth: '150px',
+              background: '#f0f7ff',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 'bold',
+                fontSize: '12px',
+                marginBottom: '8px',
+              }}
+            >
               {hoveredComponent.name}
             </div>
-            <pre style={{ fontSize: '10px', margin: 0, color: '#666', whiteSpace: 'pre-wrap' }}>
+            <pre
+              style={{
+                fontSize: '10px',
+                margin: 0,
+                color: '#666',
+                whiteSpace: 'pre-wrap',
+              }}
+            >
               {hoveredComponent.preview}
             </pre>
           </div>
@@ -715,7 +857,8 @@ export const ComponentPreviewHover: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Hover over components to see live preview. Quick visual reference without needing to add to canvas.',
+        story:
+          'Hover over components to see live preview. Quick visual reference without needing to add to canvas.',
       },
     },
   },
@@ -727,11 +870,33 @@ export const ComponentPreviewHover: Story = {
 export const RealtimeSyncTeam: Story = {
   render: () => {
     return (
-      <div style={{ border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden', width: '300px' }}>
-        <div style={{ padding: '12px', background: '#f0f0f0', fontWeight: 'bold', fontSize: '12px' }}>
+      <div
+        style={{
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          width: '300px',
+        }}
+      >
+        <div
+          style={{
+            padding: '12px',
+            background: '#f0f0f0',
+            fontWeight: 'bold',
+            fontSize: '12px',
+          }}
+        >
           Shared Library - Real-time Sync
         </div>
-        <div style={{ padding: '8px', background: '#e8f5e9', fontSize: '11px', color: '#2e7d32', borderBottom: '1px solid #ddd' }}>
+        <div
+          style={{
+            padding: '8px',
+            background: '#e8f5e9',
+            fontSize: '11px',
+            color: '#2e7d32',
+            borderBottom: '1px solid #ddd',
+          }}
+        >
           ✓ Syncing... (Last updated 2 seconds ago)
         </div>
         <div style={{ maxHeight: '300px', overflow: 'auto' }}>
@@ -751,7 +916,14 @@ export const RealtimeSyncTeam: Story = {
             </div>
           ))}
         </div>
-        <div style={{ padding: '8px 12px', background: '#f9f9f9', fontSize: '10px', color: '#999' }}>
+        <div
+          style={{
+            padding: '8px 12px',
+            background: '#f9f9f9',
+            fontSize: '10px',
+            color: '#999',
+          }}
+        >
           5 components shared with team
         </div>
       </div>
@@ -760,7 +932,8 @@ export const RealtimeSyncTeam: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Component library syncs in real-time with team. All team members see updates instantly.',
+        story:
+          'Component library syncs in real-time with team. All team members see updates instantly.',
       },
     },
   },

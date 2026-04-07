@@ -6,7 +6,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 
 import { RendererComponentRegistry } from '../renderer/ComponentRegistry';
-import { NodeRenderer, EditModeWrapper, BatchNodeRenderer } from '../renderer/NodeRenderer';
+import {
+  NodeRenderer,
+  EditModeWrapper,
+  BatchNodeRenderer,
+} from '../renderer/NodeRenderer';
 import { ThemeApplicator } from '../renderer/ThemeApplicator';
 
 import type { ComponentNodeData } from '../types/CanvasNode';
@@ -21,7 +25,9 @@ const MockButton: React.FC<unknown> = ({ label, onClick, color, style }) => (
 describe.skip('NodeRenderer', () => {
   beforeAll(() => {
     // Register mock component
-    RendererComponentRegistry.register('Button', MockButton, { displayName: 'Button' });
+    RendererComponentRegistry.register('Button', MockButton, {
+      displayName: 'Button',
+    });
   });
 
   afterAll(() => {
@@ -122,9 +128,12 @@ describe.skip('NodeRenderer', () => {
 
       fireEvent.click(screen.getByText('Event Button'));
 
-      expect(onEvent).toHaveBeenCalledWith('buttonClicked', expect.objectContaining({
-        source: 'test',
-      }));
+      expect(onEvent).toHaveBeenCalledWith(
+        'buttonClicked',
+        expect.objectContaining({
+          source: 'test',
+        })
+      );
     });
   });
 
@@ -282,9 +291,7 @@ describe.skip('BatchNodeRenderer', () => {
       },
     ];
 
-    render(
-      <BatchNodeRenderer nodes={nodes} themeContext={mockThemeContext} />
-    );
+    render(<BatchNodeRenderer nodes={nodes} themeContext={mockThemeContext} />);
 
     expect(screen.getByText('Button 1')).toBeInTheDocument();
     expect(screen.getByText('Button 2')).toBeInTheDocument();

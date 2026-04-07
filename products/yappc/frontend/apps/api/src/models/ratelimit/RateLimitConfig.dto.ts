@@ -27,10 +27,12 @@ export class RateLimitConfig {
     public userId: string,
     public tier: string,
     public upgradedAt?: Date
-  ) { }
+  ) {}
 
   toDTO(): RateLimitConfigDTO {
-    const tiers: { [key: string]: { requestsPerHour: number; requestsPerDay: number } } = {
+    const tiers: {
+      [key: string]: { requestsPerHour: number; requestsPerDay: number };
+    } = {
       free: { requestsPerHour: 100, requestsPerDay: 500 },
       pro: { requestsPerHour: 10000, requestsPerDay: 100000 },
       enterprise: { requestsPerHour: 999999, requestsPerDay: 999999 },
@@ -50,4 +52,3 @@ export class RateLimitConfig {
     };
   }
 }
-

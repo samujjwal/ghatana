@@ -13,27 +13,30 @@ export type SwitchColor = 'primary' | 'success' | 'error' | 'warning';
 /**
  *
  */
-export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
+export interface SwitchProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'type'
+> {
   /**
    * Switch label
    */
   label?: string;
-  
+
   /**
    * Switch size
    */
   size?: SwitchSize;
-  
+
   /**
    * Switch color
    */
   color?: SwitchColor;
-  
+
   /**
    * Helper text
    */
   helperText?: string;
-  
+
   /**
    * Error message
    */
@@ -42,7 +45,7 @@ export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 
 /**
  * Switch component for toggle controls
- * 
+ *
  * @example
  * ```tsx
  * <Switch
@@ -121,7 +124,9 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-grey-400, #bdbdbd)',
+      backgroundColor: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-grey-400, #bdbdbd)',
       borderRadius: dimensions.height,
       transition: 'background-color 0.2s',
       cursor: disabled ? 'not-allowed' : 'pointer',
@@ -141,14 +146,19 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     };
 
     const labelTextStyle: React.CSSProperties = {
-      fontSize: size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
-      color: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-text-primary, #212121)',
+      fontSize:
+        size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
+      color: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-text-primary, #212121)',
       userSelect: 'none',
     };
 
     const helperStyle: React.CSSProperties = {
       fontSize: '0.75rem',
-      color: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-text-secondary, #757575)',
+      color: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-text-secondary, #757575)',
       marginLeft: `calc(${dimensions.width} + 0.75rem)`,
     };
 
@@ -164,7 +174,11 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
               disabled={disabled}
               aria-invalid={hasError}
               aria-describedby={
-                error ? `${switchId}-error` : helperText ? `${switchId}-helper` : undefined
+                error
+                  ? `${switchId}-error`
+                  : helperText
+                    ? `${switchId}-helper`
+                    : undefined
               }
               {...props}
             />

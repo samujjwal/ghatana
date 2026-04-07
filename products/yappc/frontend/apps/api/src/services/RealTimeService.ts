@@ -47,7 +47,12 @@ export type ServerMessage =
   | { type: 'users-list'; users: Omit<CollaboratorInfo, 'ws'>[] }
   | { type: 'cursor-update'; userId: string; x: number; y: number }
   | { type: 'selection-update'; userId: string; nodeIds: string[] }
-  | { type: 'node-update'; userId: string; nodeId: string; updates: Record<string, unknown> }
+  | {
+      type: 'node-update';
+      userId: string;
+      nodeId: string;
+      updates: Record<string, unknown>;
+    }
   | { type: 'crdt-update'; userId: string; data: string }
   | { type: 'pong' }
   | { type: 'error'; message: string }
@@ -246,7 +251,10 @@ export class RealTimeService {
                 message.nodeId,
                 message.updates
               ).catch((err) =>
-                console.error('[RealTimeService] Failed to persist node update:', err)
+                console.error(
+                  '[RealTimeService] Failed to persist node update:',
+                  err
+                )
               );
               this.broadcastToRoom(
                 room,
@@ -432,14 +440,17 @@ export class RealTimeService {
         content =
           typeof doc.content === 'string'
             ? JSON.parse(doc.content)
-            : doc.content ?? {};
+            : (doc.content ?? {});
       } catch {
         content = {};
       }
 
       // Apply node update: store under nodes[nodeId]
       const nodes = (content.nodes as Record<string, unknown>) ?? {};
-      nodes[nodeId] = { ...(nodes[nodeId] as Record<string, unknown> ?? {}), ...updates };
+      nodes[nodeId] = {
+        ...((nodes[nodeId] as Record<string, unknown>) ?? {}),
+        ...updates,
+      };
       content.nodes = nodes;
 
       await (prisma as unknown).canvasDocument.update({

@@ -12,4 +12,7 @@ export type { EventNodeProps, EventHandler } from './EventNode';
 
 // Event wiring panel
 export { EventWiringPanel } from './EventWiringPanel';
-export type { EventWiringPanelProps, EventConnection } from './EventWiringPanel';
+export type {
+  EventWiringPanelProps,
+  EventConnection,
+} from './EventWiringPanel';

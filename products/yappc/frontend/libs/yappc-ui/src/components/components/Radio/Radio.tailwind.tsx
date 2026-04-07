@@ -1,12 +1,12 @@
 /**
  * Tailwind CSS Radio Component
- * 
+ *
  * Radio button built with native HTML and Tailwind CSS.
  * Uses native <input type="radio"> for full accessibility and keyboard support.
- * 
+ *
  * Note: Base UI does not yet have a Radio component, so this uses native HTML.
  * Will migrate to Base UI Radio when available.
- * 
+ *
  * @example
  * ```tsx
  * // Basic radio group
@@ -15,19 +15,19 @@
  *   <Radio value="option2" label="Option 2" />
  *   <Radio value="option3" label="Option 3" />
  * </RadioGroup>
- * 
+ *
  * // Different colors
  * <RadioGroup>
  *   <Radio value="1" label="Primary" colorScheme="primary" />
  *   <Radio value="2" label="Success" colorScheme="success" />
  * </RadioGroup>
- * 
+ *
  * // Sizes
  * <RadioGroup>
  *   <Radio value="1" label="Small" size="sm" />
  *   <Radio value="2" label="Large" size="lg" />
  * </RadioGroup>
- * 
+ *
  * // Disabled
  * <Radio value="1" label="Disabled" disabled />
  * ```
@@ -44,32 +44,32 @@ export interface RadioGroupProps {
    * Currently selected value
    */
   value?: string;
-  
+
   /**
    * Callback when selected value changes
    */
   onChange?: (value: string) => void;
-  
+
   /**
    * Default value (uncontrolled)
    */
   defaultValue?: string;
-  
+
   /**
    * Radio buttons
    */
   children: React.ReactNode;
-  
+
   /**
    * Name attribute for radio group (shared across radios)
    */
   name: string;
-  
+
   /**
    * Whether the group is disabled
    */
   disabled?: boolean;
-  
+
   /**
    * Additional className for the group container
    */
@@ -79,7 +79,7 @@ export interface RadioGroupProps {
 /**
  * RadioGroup Component - Container for Radio buttons
  * Provides shared state management for radio buttons
- * 
+ *
  * @param props - RadioGroup component props
  * @returns Rendered radio group
  */
@@ -126,45 +126,54 @@ RadioGroup.displayName = 'RadioGroup';
 /**
  * Radio component props
  */
-export interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
+export interface RadioProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'type'
+> {
   /**
    * Value of this radio button
    */
   value: string;
-  
+
   /**
    * Label text displayed next to radio button
    */
   label?: string;
-  
+
   /**
    * Color scheme for the radio button
-   * 
+   *
    * @default 'primary'
    */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
-  
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
+
   /**
    * Size of the radio button
-   * 
+   *
    * - `sm`: 16px (h-4 w-4)
    * - `md`: 20px (h-5 w-5) - default
    * - `lg`: 24px (h-6 w-6)
-   * 
+   *
    * @default 'md'
    */
   size?: 'sm' | 'md' | 'lg';
-  
+
   /**
    * Additional className for the radio element
    */
   className?: string;
-  
+
   /**
    * Additional className for the label
    */
   labelClassName?: string;
-  
+
   /**
    * Additional className for the root container
    */
@@ -173,7 +182,7 @@ export interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 
 /**
  * Radio Component - Single radio button
- * 
+ *
  * @param props - Radio component props
  * @param ref - Forwarded ref to radio input element
  * @returns Rendered radio button
@@ -254,23 +263,23 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
             // Base styles
             'appearance-none rounded-full border-2 transition-colors cursor-pointer',
             'bg-white border-grey-300',
-            
+
             // Checked state - inner dot
             'checked:border-4',
-            
+
             // Focus styles
             'focus:outline-none focus:ring-2 focus:ring-offset-2',
             focusRingClasses[colorScheme],
-            
+
             // Size
             sizeClasses[size].box,
-            
+
             // Color scheme
             colorClasses[colorScheme],
-            
+
             // Disabled
             disabled && 'cursor-not-allowed',
-            
+
             // Custom className
             className
           )}

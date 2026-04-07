@@ -5,7 +5,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { useCanvasPortal } from '../useCanvasPortal';
 
-
 // Mock XYFlow (React Flow v12)
 vi.mock('@xyflow/react', () => ({
   useReactFlow: () => ({
@@ -28,7 +27,8 @@ describe('useCanvasPortal', () => {
   let wrapper: React.ComponentType<{ children: React.ReactNode }>;
 
   beforeEach(() => {
-    wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(Provider, null, children);
+    wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(Provider, null, children);
     vi.clearAllMocks();
   });
 
@@ -70,7 +70,7 @@ describe('useCanvasPortal', () => {
   it('should add portal to canvas', () => {
     const { result } = renderHook(() => useCanvasPortal(), { wrapper });
     const mockSetNodes = vi.fn();
-    
+
     // Mock the React Flow setNodes function by assigning the hook implementation on the module
     const rf = require('@xyflow/react');
     rf.useReactFlow = () => ({
@@ -88,9 +88,7 @@ describe('useCanvasPortal', () => {
       );
     });
 
-    expect(mockSetNodes).toHaveBeenCalledWith(
-      expect.any(Function)
-    );
+    expect(mockSetNodes).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it('should drill down into sub-canvas', () => {
@@ -182,17 +180,28 @@ describe('useCanvasPortal', () => {
     });
 
     const validation = result.current.validateCanvasReferences();
-    
+
     expect(validation.isValid).toBe(false);
     // Robust check: prefer the structured errorsDetailed if available, otherwise
     // fall back to substring matching on the errors array. This mirrors product
     // behavior that surfaces structured diagnostics to consumers while keeping
     // backward-compatible checks for older shapes.
     if ((validation as unknown).errorsDetailed) {
-      const details = (validation as unknown).errorsDetailed as Array<{ code: string; message: string }>;
-      expect(details.some(d => d.code === 'CIRCULAR_REFERENCE' || d.message.includes('Circular reference detected'))).toBe(true);
+      const details = (validation as unknown).errorsDetailed as Array<{
+        code: string;
+        message: string;
+      }>;
+      expect(
+        details.some(
+          (d) =>
+            d.code === 'CIRCULAR_REFERENCE' ||
+            d.message.includes('Circular reference detected')
+        )
+      ).toBe(true);
     } else {
-      expect(validation.errors.some(e => e.includes('Circular reference detected'))).toBe(true);
+      expect(
+        validation.errors.some((e) => e.includes('Circular reference detected'))
+      ).toBe(true);
     }
   });
 
@@ -202,7 +211,7 @@ describe('useCanvasPortal', () => {
     // Simulate having an orphaned canvas in state
     // This would typically happen through external state manipulation
     const validation = result.current.validateCanvasReferences();
-    
+
     // Initially should be valid with no orphaned canvases
     expect(validation.warnings).toEqual([]);
   });
@@ -298,8 +307,9 @@ describe('useCanvasPortal', () => {
 
 describe('PortalElement Interface', () => {
   it('should have correct portal element structure', () => {
-    const { result } = renderHook(() => useCanvasPortal(), { 
-      wrapper: ({ children }: { children: React.ReactNode }) => React.createElement(Provider, null, children)
+    const { result } = renderHook(() => useCanvasPortal(), {
+      wrapper: ({ children }: { children: React.ReactNode }) =>
+        React.createElement(Provider, null, children),
     });
 
     const portal = result.current.createPortal(

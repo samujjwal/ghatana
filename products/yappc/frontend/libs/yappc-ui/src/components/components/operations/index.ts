@@ -11,7 +11,11 @@
 
 // Incident Management
 export { IncidentDashboard } from './IncidentDashboard';
-export type { Incident, IncidentSeverity, IncidentStatus } from './IncidentDashboard';
+export type {
+  Incident,
+  IncidentSeverity,
+  IncidentStatus,
+} from './IncidentDashboard';
 
 // Health & Metrics
 export { HealthStatusCard } from './HealthStatusCard';

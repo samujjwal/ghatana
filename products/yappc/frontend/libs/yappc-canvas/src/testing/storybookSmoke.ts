@@ -1,16 +1,16 @@
 /**
  * Storybook Smoke Tests
- * 
+ *
  * Provides automated Storybook smoke testing via Playwright including
  * drag test specs, CI workflow integration, and artifact management.
- * 
+ *
  * Features:
  * - Playwright-based Storybook automation
  * - Drag-and-drop test specs
  * - Screenshot and trace artifact capture
  * - CI workflow integration
  * - Configurable test scenarios
- * 
+ *
  * @module testing/storybookSmoke
  */
 
@@ -290,7 +290,7 @@ export interface CIWorkflowConfig {
 
 /**
  * Storybook Smoke Tests Manager
- * 
+ *
  * Manages Storybook smoke testing via Playwright including drag tests,
  * artifact capture, and CI workflow integration.
  */
@@ -374,7 +374,9 @@ export class StorybookSmokeManager {
    * Generate story ID from spec
    */
   private generateStoryId(spec: StoryTestSpec): string {
-    return `${spec.component}--${spec.story}`.toLowerCase().replace(/\s+/g, '-');
+    return `${spec.component}--${spec.story}`
+      .toLowerCase()
+      .replace(/\s+/g, '-');
   }
 
   /**
@@ -517,7 +519,9 @@ export class StorybookSmokeManager {
       results,
       artifacts: {
         screenshots: allResults.flatMap((r) => r.screenshots),
-        traces: allResults.map((r) => r.tracePath).filter((p): p is string => p !== undefined),
+        traces: allResults
+          .map((r) => r.tracePath)
+          .filter((p): p is string => p !== undefined),
         videos: [],
       },
       metadata: {
@@ -525,8 +529,10 @@ export class StorybookSmokeManager {
         config: this.config,
         environment: {
           ci: this.isCIEnvironment(),
-          platform: typeof process !== 'undefined' ? process.platform : 'unknown',
-          nodeVersion: typeof process !== 'undefined' ? process.version : 'unknown',
+          platform:
+            typeof process !== 'undefined' ? process.platform : 'unknown',
+          nodeVersion:
+            typeof process !== 'undefined' ? process.version : 'unknown',
         },
       },
     };
@@ -562,7 +568,9 @@ export class StorybookSmokeManager {
       results,
       artifacts: {
         screenshots: allResults.flatMap((r) => r.screenshots),
-        traces: allResults.map((r) => r.tracePath).filter((p): p is string => p !== undefined),
+        traces: allResults
+          .map((r) => r.tracePath)
+          .filter((p): p is string => p !== undefined),
         videos: [],
       },
       metadata: {
@@ -570,8 +578,10 @@ export class StorybookSmokeManager {
         config: this.config,
         environment: {
           ci: this.isCIEnvironment(),
-          platform: typeof process !== 'undefined' ? process.platform : 'unknown',
-          nodeVersion: typeof process !== 'undefined' ? process.version : 'unknown',
+          platform:
+            typeof process !== 'undefined' ? process.platform : 'unknown',
+          nodeVersion:
+            typeof process !== 'undefined' ? process.version : 'unknown',
         },
       },
     };
@@ -582,7 +592,9 @@ export class StorybookSmokeManager {
   /**
    * Get test results
    */
-  getResults(storyId?: string): TestExecutionResult | Map<string, TestExecutionResult> {
+  getResults(
+    storyId?: string
+  ): TestExecutionResult | Map<string, TestExecutionResult> {
     if (storyId) {
       const result = this.results.get(storyId);
       if (!result) {
@@ -751,8 +763,12 @@ export class StorybookSmokeManager {
 
     lines.push('## Environment\n');
     lines.push(`- CI: ${this.suiteResults.metadata.environment.ci}`);
-    lines.push(`- Platform: ${this.suiteResults.metadata.environment.platform}`);
-    lines.push(`- Node: ${this.suiteResults.metadata.environment.nodeVersion}\n`);
+    lines.push(
+      `- Platform: ${this.suiteResults.metadata.environment.platform}`
+    );
+    lines.push(
+      `- Node: ${this.suiteResults.metadata.environment.nodeVersion}\n`
+    );
 
     lines.push('## Tests\n');
     for (const [storyId, result] of this.suiteResults.results) {
@@ -778,7 +794,9 @@ export class StorybookSmokeManager {
         lines.push('#### Assertions\n');
         for (const assertion of result.assertionResults) {
           const assertionStatus = assertion.passed ? '✅' : '❌';
-          lines.push(`- ${assertionStatus} ${assertion.type}: ${assertion.selector}`);
+          lines.push(
+            `- ${assertionStatus} ${assertion.type}: ${assertion.selector}`
+          );
           if (!assertion.passed) {
             lines.push(`  - Expected: ${assertion.expected}`);
             lines.push(`  - Actual: ${assertion.actual}`);
@@ -794,7 +812,9 @@ export class StorybookSmokeManager {
     }
 
     lines.push('## Artifacts\n');
-    lines.push(`- Screenshots: ${this.suiteResults.artifacts.screenshots.length}`);
+    lines.push(
+      `- Screenshots: ${this.suiteResults.artifacts.screenshots.length}`
+    );
     lines.push(`- Traces: ${this.suiteResults.artifacts.traces.length}`);
 
     return lines.join('\n');
@@ -875,7 +895,10 @@ export class StorybookSmokeManager {
       throw new Error('Type action requires text');
     }
 
-    if ((action.type === 'click' || action.type === 'hover') && !action.selector) {
+    if (
+      (action.type === 'click' || action.type === 'hover') &&
+      !action.selector
+    ) {
       throw new Error(`${action.type} action requires selector`);
     }
   }

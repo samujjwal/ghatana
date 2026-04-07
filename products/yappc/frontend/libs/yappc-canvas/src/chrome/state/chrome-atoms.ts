@@ -1,9 +1,9 @@
 /**
  * Canvas Chrome Atoms
- * 
+ *
  * Jotai state management for canvas UI chrome (panels, toolbars, etc.)
  * Implements "calm by default" progressive disclosure pattern
- * 
+ *
  * @doc.type atoms
  * @doc.purpose Canvas UI state management
  * @doc.layer state
@@ -94,7 +94,9 @@ export const chromeDistractionFreeAtom = atom<boolean>(false);
  * Floating toolbar visibility and position
  */
 export const chromeFloatingToolbarVisibleAtom = atom<boolean>(false);
-export const chromeFloatingToolbarPositionAtom = atom<{ x: number; y: number }>({ x: 0, y: 0 });
+export const chromeFloatingToolbarPositionAtom = atom<{ x: number; y: number }>(
+  { x: 0, y: 0 }
+);
 
 /**
  * Zoom state
@@ -123,7 +125,10 @@ export const chromePhaseIndicatorVisibleAtom = atom<boolean>(true);
 /**
  * Hover intent detection
  */
-export const chromeHoverIntentAtom = atom<{ target: string | null; timestamp: number }>({ target: null, timestamp: 0 });
+export const chromeHoverIntentAtom = atom<{
+  target: string | null;
+  timestamp: number;
+}>({ target: null, timestamp: 0 });
 
 /**
  * Empty canvas state
@@ -133,7 +138,9 @@ export const chromeShowEmptyStateAtom = atom<boolean>(true);
 /**
  * Recent actions for context menu
  */
-export const chromeRecentActionsAtom = atom<Array<{ id: string; label: string; timestamp: number }>>([]);
+export const chromeRecentActionsAtom = atom<
+  Array<{ id: string; label: string; timestamp: number }>
+>([]);
 
 /**
  * Derived atom: should inspector auto-open?
@@ -173,44 +180,38 @@ export const chromeUIStateAtom = atom((get) => ({
 /**
  * Action: Toggle focus mode (⌘⇧F)
  */
-export const toggleFocusModeAtom = atom(
-  null,
-  (get, set) => {
-    const current = get(chromeFocusModeAtom);
-    set(chromeFocusModeAtom, !current);
+export const toggleFocusModeAtom = atom(null, (get, set) => {
+  const current = get(chromeFocusModeAtom);
+  set(chromeFocusModeAtom, !current);
 
-    // In focus mode, hide all chrome
-    if (!current) {
-      set(chromeLeftRailVisibleAtom, false);
-      set(chromeInspectorVisibleAtom, false);
-      set(chromeMinimapVisibleAtom, false);
-      set(chromeContextBarVisibleAtom, false);
-      set(chromeBreadcrumbVisibleAtom, false);
-      set(chromePhaseIndicatorVisibleAtom, false);
-    } else {
-      // Restore default visibility
-      set(chromeBreadcrumbVisibleAtom, true);
-      set(chromePhaseIndicatorVisibleAtom, true);
-    }
+  // In focus mode, hide all chrome
+  if (!current) {
+    set(chromeLeftRailVisibleAtom, false);
+    set(chromeInspectorVisibleAtom, false);
+    set(chromeMinimapVisibleAtom, false);
+    set(chromeContextBarVisibleAtom, false);
+    set(chromeBreadcrumbVisibleAtom, false);
+    set(chromePhaseIndicatorVisibleAtom, false);
+  } else {
+    // Restore default visibility
+    set(chromeBreadcrumbVisibleAtom, true);
+    set(chromePhaseIndicatorVisibleAtom, true);
   }
-);
+});
 
 /**
  * Action: Toggle calm mode (deprecated, use focus mode)
  */
-export const toggleCalmModeAtom = atom(
-  null,
-  (get, set) => {
-    const current = get(chromeCalmModeAtom);
-    set(chromeCalmModeAtom, !current);
+export const toggleCalmModeAtom = atom(null, (get, set) => {
+  const current = get(chromeCalmModeAtom);
+  set(chromeCalmModeAtom, !current);
 
-    // When entering calm mode, collapse panels
-    if (!current) {
-      set(chromeLeftRailVisibleAtom, false);
-      set(chromeMinimapVisibleAtom, false);
-    }
+  // When entering calm mode, collapse panels
+  if (!current) {
+    set(chromeLeftRailVisibleAtom, false);
+    set(chromeMinimapVisibleAtom, false);
   }
-);
+});
 
 /**
  * Action: Open specific left panel
@@ -228,63 +229,51 @@ export const openLeftPanelAtom = atom(
 /**
  * Action: Toggle distraction-free mode (alias for focus mode)
  */
-export const toggleDistractionFreeAtom = atom(
-  null,
-  (get, set) => {
-    const current = get(chromeDistractionFreeAtom);
-    set(chromeDistractionFreeAtom, !current);
-    set(chromeFocusModeAtom, !current);
+export const toggleDistractionFreeAtom = atom(null, (get, set) => {
+  const current = get(chromeDistractionFreeAtom);
+  set(chromeDistractionFreeAtom, !current);
+  set(chromeFocusModeAtom, !current);
 
-    // Hide everything in distraction-free mode
-    if (!current) {
-      set(chromeLeftRailVisibleAtom, false);
-      set(chromeInspectorVisibleAtom, false);
-      set(chromeMinimapVisibleAtom, false);
-      set(chromeContextBarVisibleAtom, false);
-    }
+  // Hide everything in distraction-free mode
+  if (!current) {
+    set(chromeLeftRailVisibleAtom, false);
+    set(chromeInspectorVisibleAtom, false);
+    set(chromeMinimapVisibleAtom, false);
+    set(chromeContextBarVisibleAtom, false);
   }
-);
+});
 
 /**
  * Action: Toggle overview mode (⌘⇧O)
  */
-export const toggleOverviewModeAtom = atom(
-  null,
-  (get, set) => {
-    const current = get(chromeOverviewModeAtom);
-    set(chromeOverviewModeAtom, !current);
+export const toggleOverviewModeAtom = atom(null, (get, set) => {
+  const current = get(chromeOverviewModeAtom);
+  set(chromeOverviewModeAtom, !current);
 
-    // In overview mode, zoom to 0.1x-0.25x to show entire lifecycle
-    if (!current) {
-      set(chromeZoomLevelAtom, 0.15);
-    } else {
-      set(chromeZoomLevelAtom, 1);
-    }
+  // In overview mode, zoom to 0.1x-0.25x to show entire lifecycle
+  if (!current) {
+    set(chromeZoomLevelAtom, 0.15);
+  } else {
+    set(chromeZoomLevelAtom, 1);
   }
-);
+});
 
 /**
  * Action: Navigate to frame (drill-down)
  */
-export const navigateToFrameAtom = atom(
-  null,
-  (get, set, frameId: string) => {
-    const currentPath = get(chromeCurrentFramePathAtom);
-    set(chromeCurrentFramePathAtom, [...currentPath, frameId]);
-  }
-);
+export const navigateToFrameAtom = atom(null, (get, set, frameId: string) => {
+  const currentPath = get(chromeCurrentFramePathAtom);
+  set(chromeCurrentFramePathAtom, [...currentPath, frameId]);
+});
 
 /**
  * Action: Navigate up (drill-up)
  */
-export const navigateUpAtom = atom(
-  null,
-  (get, set, levels: number = 1) => {
-    const currentPath = get(chromeCurrentFramePathAtom);
-    const newPath = currentPath.slice(0, -levels);
-    set(chromeCurrentFramePathAtom, newPath);
-  }
-);
+export const navigateUpAtom = atom(null, (get, set, levels: number = 1) => {
+  const currentPath = get(chromeCurrentFramePathAtom);
+  const newPath = currentPath.slice(0, -levels);
+  set(chromeCurrentFramePathAtom, newPath);
+});
 
 /**
  * Action: Add recent action

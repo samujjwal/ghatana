@@ -8,14 +8,17 @@
 
 import React, { useState, useMemo } from 'react';
 
-import { predefinedTemplates, searchTemplates, getTemplatesByCategory } from './predefinedTemplates';
 import {
-  InstantiatedTemplate,
-} from './TemplateDefinition';
+  predefinedTemplates,
+  searchTemplates,
+  getTemplatesByCategory,
+} from './predefinedTemplates';
+import { InstantiatedTemplate } from './TemplateDefinition';
 import type {
   TemplateDefinition,
   TemplateCategory,
-  TemplateInstantiationOptions} from './TemplateDefinition';
+  TemplateInstantiationOptions,
+} from './TemplateDefinition';
 
 // ============================================================================
 // Types
@@ -28,7 +31,10 @@ export interface TemplateManagerProps {
   /**
    * Callback when template is selected for instantiation
    */
-  onInstantiate: (template: TemplateDefinition, options: TemplateInstantiationOptions) => void;
+  onInstantiate: (
+    template: TemplateDefinition,
+    options: TemplateInstantiationOptions
+  ) => void;
 
   /**
    * Callback when template preview is requested
@@ -63,8 +69,11 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
   customTemplates = [],
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'all'>('all');
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<
+    TemplateCategory | 'all'
+  >('all');
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<TemplateDefinition | null>(null);
 
   // Combine predefined and custom templates
   const allTemplates = useMemo(
@@ -98,16 +107,17 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
     return counts;
   }, [allTemplates]);
 
-  const categories: Array<{ value: TemplateCategory | 'all'; label: string }> = [
-    { value: 'all', label: 'All Templates' },
-    { value: 'authentication', label: 'Authentication' },
-    { value: 'dashboard', label: 'Dashboard' },
-    { value: 'form', label: 'Forms' },
-    { value: 'data-display', label: 'Data Display' },
-    { value: 'navigation', label: 'Navigation' },
-    { value: 'settings', label: 'Settings' },
-    { value: 'custom', label: 'Custom' },
-  ];
+  const categories: Array<{ value: TemplateCategory | 'all'; label: string }> =
+    [
+      { value: 'all', label: 'All Templates' },
+      { value: 'authentication', label: 'Authentication' },
+      { value: 'dashboard', label: 'Dashboard' },
+      { value: 'form', label: 'Forms' },
+      { value: 'data-display', label: 'Data Display' },
+      { value: 'navigation', label: 'Navigation' },
+      { value: 'settings', label: 'Settings' },
+      { value: 'custom', label: 'Custom' },
+    ];
 
   const handleInstantiate = (template: TemplateDefinition) => {
     const options: TemplateInstantiationOptions = {
@@ -145,7 +155,13 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
 
       {/* Search */}
       {showSearch && (
-        <div style={{ padding: 16, backgroundColor: '#fff', borderBottom: '1px solid #e0e0e0' }}>
+        <div
+          style={{
+            padding: 16,
+            backgroundColor: '#fff',
+            borderBottom: '1px solid #e0e0e0',
+          }}
+        >
           <input
             type="text"
             placeholder="Search templates..."
@@ -180,7 +196,8 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
               style={{
                 padding: '6px 12px',
                 marginRight: 8,
-                backgroundColor: selectedCategory === cat.value ? '#1976d2' : '#f5f5f5',
+                backgroundColor:
+                  selectedCategory === cat.value ? '#1976d2' : '#f5f5f5',
                 color: selectedCategory === cat.value ? '#fff' : '#000',
                 border: 'none',
                 borderRadius: 16,
@@ -206,8 +223,12 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
             }}
           >
             <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
-            <div style={{ fontSize: 16, marginBottom: 8 }}>No templates found</div>
-            <div style={{ fontSize: 13 }}>Try adjusting your search or filters</div>
+            <div style={{ fontSize: 16, marginBottom: 8 }}>
+              No templates found
+            </div>
+            <div style={{ fontSize: 13 }}>
+              Try adjusting your search or filters
+            </div>
           </div>
         ) : (
           <div
@@ -241,7 +262,13 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
             boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'start',
+            }}
+          >
             <div style={{ flex: 1 }}>
               <h3 style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 600 }}>
                 {selectedTemplate.name}
@@ -338,7 +365,9 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         overflow: 'hidden',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        boxShadow: isSelected ? '0 4px 12px rgba(25, 118, 210, 0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: isSelected
+          ? '0 4px 12px rgba(25, 118, 210, 0.2)'
+          : '0 2px 4px rgba(0,0,0,0.1)',
       }}
     >
       {/* Preview Image */}
@@ -381,9 +410,19 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         </p>
 
         {/* Stats */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 8, fontSize: 11, color: '#999' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            marginBottom: 8,
+            fontSize: 11,
+            color: '#999',
+          }}
+        >
           <span>{template.nodes.length} components</span>
-          {template.bindings && <span>{template.bindings.length} bindings</span>}
+          {template.bindings && (
+            <span>{template.bindings.length} bindings</span>
+          )}
           {template.events && <span>{template.events.length} events</span>}
         </div>
 

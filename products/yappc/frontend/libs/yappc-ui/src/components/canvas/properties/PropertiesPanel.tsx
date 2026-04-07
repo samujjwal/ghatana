@@ -11,12 +11,14 @@ import React, { useMemo } from 'react';
 
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
-import type { ComponentMetadata, PropDefinition } from '../registry/ComponentRegistry';
+import type {
+  ComponentMetadata,
+  PropDefinition,
+} from '../registry/ComponentRegistry';
 import type { ThemeContext } from '../renderer/ThemeApplicator';
 import type { ComponentNodeData } from '../types/CanvasNode';
 
 import { TokenPicker } from './TokenPicker';
-
 
 // ============================================================================
 // Types
@@ -86,7 +88,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'string') {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 4,
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {label}
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
@@ -105,7 +114,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'number') {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 4,
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {label}
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
@@ -124,7 +140,9 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'boolean') {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+        <label
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        >
           <input
             type="checkbox"
             checked={value || false}
@@ -141,7 +159,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'select' && options) {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 4,
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {label}
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
@@ -165,7 +190,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'token' && themeContext) {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 4,
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {label}
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
@@ -183,7 +215,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   if (type === 'color') {
     return (
       <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 4,
+            fontSize: 14,
+            fontWeight: 500,
+          }}
+        >
           {label}
           {required && <span style={{ color: '#d32f2f' }}> *</span>}
         </label>
@@ -192,7 +231,12 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
             type="color"
             value={value || '#000000'}
             onChange={(e) => onChange(e.target.value)}
-            style={{ width: 60, height: 40, border: '1px solid #ccc', borderRadius: 4 }}
+            style={{
+              width: 60,
+              height: 40,
+              border: '1px solid #ccc',
+              borderRadius: 4,
+            }}
           />
           <input
             type="text"
@@ -209,7 +253,14 @@ const PropertyField: React.FC<PropertyFieldProps> = ({
   // Fallback for unsupported types
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 500 }}>
+      <label
+        style={{
+          display: 'block',
+          marginBottom: 4,
+          fontSize: 14,
+          fontWeight: 500,
+        }}
+      >
         {label}
       </label>
       <input
@@ -241,7 +292,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     if (metadata.propDefinitions) {
       for (const propDef of metadata.propDefinitions) {
         if (propDef.required) {
-          rules[propDef.name] = [validators.required(`${propDef.label} is required`)];
+          rules[propDef.name] = [
+            validators.required(`${propDef.label} is required`),
+          ];
         }
       }
     }
@@ -293,7 +346,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   return (
-    <div style={{ padding: 16, backgroundColor: '#fafafa', height: '100%', overflowY: 'auto' }}>
+    <div
+      style={{
+        padding: 16,
+        backgroundColor: '#fafafa',
+        height: '100%',
+        overflowY: 'auto',
+      }}
+    >
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
@@ -308,7 +368,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
       {/* Properties Section */}
       <div style={{ marginBottom: 24 }}>
-        <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#666' }}>
+        <h4
+          style={{
+            margin: '0 0 12px',
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#666',
+          }}
+        >
           Properties
         </h4>
         {renderFields()}
@@ -317,10 +384,24 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       {/* Advanced Section */}
       {showAdvanced && (
         <div style={{ marginBottom: 24 }}>
-          <h4 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600, color: '#666' }}>
+          <h4
+            style={{
+              margin: '0 0 12px',
+              fontSize: 14,
+              fontWeight: 600,
+              color: '#666',
+            }}
+          >
             Advanced
           </h4>
-          <div style={{ padding: 12, backgroundColor: '#fff', borderRadius: 4, fontSize: 12 }}>
+          <div
+            style={{
+              padding: 12,
+              backgroundColor: '#fff',
+              borderRadius: 4,
+              fontSize: 12,
+            }}
+          >
             <div style={{ marginBottom: 8 }}>
               <strong>Component Type:</strong> {metadata.type}
             </div>
@@ -347,8 +428,17 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             marginTop: 16,
           }}
         >
-          <strong style={{ fontSize: 14, color: '#d32f2f' }}>Validation Errors:</strong>
-          <ul style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: 12, color: '#d32f2f' }}>
+          <strong style={{ fontSize: 14, color: '#d32f2f' }}>
+            Validation Errors:
+          </strong>
+          <ul
+            style={{
+              margin: '8px 0 0',
+              paddingLeft: 20,
+              fontSize: 12,
+              color: '#d32f2f',
+            }}
+          >
             {Object.entries(form.errors).map(([field, error]) => (
               <li key={field}>{error}</li>
             ))}

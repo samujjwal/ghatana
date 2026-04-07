@@ -1,13 +1,13 @@
 /**
  * Secure Asset Handler
- * 
+ *
  * Provides secure asset storage and access with:
  * - Signed URL generation with short-lived signatures
  * - Upload URL validation against allowlist
  * - Asset metadata tracking
  * - Access control with expiration
  * - Content-type validation
- * 
+ *
  * Security Features:
  * - Time-limited signed URLs (default: 1 hour)
  * - HMAC-SHA256 signature verification
@@ -15,7 +15,7 @@
  * - File extension and MIME type validation
  * - Size limits per asset type
  * - Automatic cleanup of expired metadata
- * 
+ *
  * @module security/assetHandler
  */
 
@@ -24,7 +24,7 @@ import { createHmac } from 'node:crypto';
 /**
  * Asset types with different security policies
  */
-export type AssetType = 
+export type AssetType =
   | 'image'
   | 'video'
   | 'audio'
@@ -136,19 +136,25 @@ export interface AccessLog {
  * Default maximum sizes (10MB for images, 100MB for video, etc.)
  */
 const DEFAULT_MAX_SIZES: Record<AssetType, number> = {
-  image: 10 * 1024 * 1024,      // 10MB
-  video: 100 * 1024 * 1024,     // 100MB
-  audio: 50 * 1024 * 1024,      // 50MB
-  document: 20 * 1024 * 1024,   // 20MB
-  archive: 50 * 1024 * 1024,    // 50MB
-  other: 10 * 1024 * 1024,      // 10MB
+  image: 10 * 1024 * 1024, // 10MB
+  video: 100 * 1024 * 1024, // 100MB
+  audio: 50 * 1024 * 1024, // 50MB
+  document: 20 * 1024 * 1024, // 20MB
+  archive: 50 * 1024 * 1024, // 50MB
+  other: 10 * 1024 * 1024, // 10MB
 };
 
 /**
  * Default allowed MIME types
  */
 const DEFAULT_ALLOWED_MIME_TYPES: Record<AssetType, string[]> = {
-  image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+  image: [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+  ],
   video: ['video/mp4', 'video/webm', 'video/ogg'],
   audio: ['audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/webm'],
   document: ['application/pdf', 'text/plain', 'text/markdown'],
@@ -158,7 +164,7 @@ const DEFAULT_ALLOWED_MIME_TYPES: Record<AssetType, string[]> = {
 
 /**
  * AssetHandler
- * 
+ *
  * Manages secure asset storage with signed URLs and validation
  */
 export class AssetHandler {
@@ -177,7 +183,10 @@ export class AssetHandler {
       uploadAllowlist: config.uploadAllowlist ?? [],
       signatureTtl: config.signatureTtl ?? 3600,
       maxSizes: { ...DEFAULT_MAX_SIZES, ...config.maxSizes },
-      allowedMimeTypes: { ...DEFAULT_ALLOWED_MIME_TYPES, ...config.allowedMimeTypes },
+      allowedMimeTypes: {
+        ...DEFAULT_ALLOWED_MIME_TYPES,
+        ...config.allowedMimeTypes,
+      },
       trackMetadata: config.trackMetadata ?? true,
       cleanupInterval: config.cleanupInterval ?? 5 * 60 * 1000,
     };
@@ -203,7 +212,7 @@ export class AssetHandler {
 
     // Build URL path
     const path = `/assets/${assetId}`;
-    
+
     // Create signature payload
     const payload = `${assetId}:${expiresAt}:${options.userId ?? ''}`;
     const signature = this.sign(payload);
@@ -305,7 +314,7 @@ export class AssetHandler {
 
       // Check if domain is in allowlist
       const hostname = urlObj.hostname;
-      const allowed = this.config.uploadAllowlist.some(domain => {
+      const allowed = this.config.uploadAllowlist.some((domain) => {
         if (domain.startsWith('*.')) {
           // Wildcard subdomain
           const baseDomain = domain.slice(2);
@@ -363,7 +372,9 @@ export class AssetHandler {
   /**
    * Store asset metadata
    */
-  storeMetadata(metadata: Omit<AssetMetadata, 'accessCount' | 'lastAccessedAt'>): void {
+  storeMetadata(
+    metadata: Omit<AssetMetadata, 'accessCount' | 'lastAccessedAt'>
+  ): void {
     const fullMetadata: AssetMetadata = {
       ...metadata,
       accessCount: 0,
@@ -387,7 +398,7 @@ export class AssetHandler {
     updates: Partial<Omit<AssetMetadata, 'id' | 'uploadedAt' | 'uploadedBy'>>
   ): boolean {
     const metadata = this.metadata.get(assetId);
-    
+
     if (!metadata) {
       return false;
     }
@@ -415,19 +426,19 @@ export class AssetHandler {
     let assets = Array.from(this.metadata.values());
 
     if (filter?.type) {
-      assets = assets.filter(a => a.type === filter.type);
+      assets = assets.filter((a) => a.type === filter.type);
     }
 
     if (filter?.uploadedBy) {
-      assets = assets.filter(a => a.uploadedBy === filter.uploadedBy);
+      assets = assets.filter((a) => a.uploadedBy === filter.uploadedBy);
     }
 
     if (filter?.uploadedAfter) {
-      assets = assets.filter(a => a.uploadedAt >= filter.uploadedAfter!);
+      assets = assets.filter((a) => a.uploadedAt >= filter.uploadedAfter!);
     }
 
     if (filter?.uploadedBefore) {
-      assets = assets.filter(a => a.uploadedAt <= filter.uploadedBefore!);
+      assets = assets.filter((a) => a.uploadedAt <= filter.uploadedBefore!);
     }
 
     return assets;
@@ -445,19 +456,19 @@ export class AssetHandler {
     let logs = this.accessLogs;
 
     if (filter?.assetId) {
-      logs = logs.filter(l => l.assetId === filter.assetId);
+      logs = logs.filter((l) => l.assetId === filter.assetId);
     }
 
     if (filter?.userId) {
-      logs = logs.filter(l => l.userId === filter.userId);
+      logs = logs.filter((l) => l.userId === filter.userId);
     }
 
     if (filter?.granted !== undefined) {
-      logs = logs.filter(l => l.granted === filter.granted);
+      logs = logs.filter((l) => l.granted === filter.granted);
     }
 
     if (filter?.since !== undefined) {
-      logs = logs.filter(l => l.timestamp >= filter.since!);
+      logs = logs.filter((l) => l.timestamp >= filter.since!);
     }
 
     return logs;
@@ -481,7 +492,7 @@ export class AssetHandler {
     deniedAccesses: number;
   } {
     const assets = Array.from(this.metadata.values());
-    
+
     const assetsByType: Record<AssetType, number> = {
       image: 0,
       video: 0,
@@ -500,7 +511,7 @@ export class AssetHandler {
       totalAccesses += asset.accessCount;
     }
 
-    const deniedAccesses = this.accessLogs.filter(l => !l.granted).length;
+    const deniedAccesses = this.accessLogs.filter((l) => !l.granted).length;
 
     return {
       totalAssets: assets.length,
@@ -568,7 +579,7 @@ export class AssetHandler {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
@@ -581,8 +592,14 @@ export class AssetHandler {
     if (contentType.startsWith('image/')) return 'image';
     if (contentType.startsWith('video/')) return 'video';
     if (contentType.startsWith('audio/')) return 'audio';
-    if (contentType === 'application/pdf' || contentType.startsWith('text/')) return 'document';
-    if (contentType.includes('zip') || contentType.includes('tar') || contentType.includes('gzip')) return 'archive';
+    if (contentType === 'application/pdf' || contentType.startsWith('text/'))
+      return 'document';
+    if (
+      contentType.includes('zip') ||
+      contentType.includes('tar') ||
+      contentType.includes('gzip')
+    )
+      return 'archive';
     return 'other';
   }
 

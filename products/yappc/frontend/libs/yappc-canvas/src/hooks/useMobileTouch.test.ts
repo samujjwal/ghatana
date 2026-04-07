@@ -30,9 +30,7 @@ describe('useMobileTouch', () => {
     });
 
     it('should track touch points', () => {
-      const { result } = renderHook(() =>
-        useMobileTouch({} as any)
-      );
+      const { result } = renderHook(() => useMobileTouch({} as any));
 
       const touchEvent = new TouchEvent('touchstart', {
         touches: [{ clientX: 100, clientY: 100, identifier: 0 } as any],
@@ -49,9 +47,7 @@ describe('useMobileTouch', () => {
   describe('Gesture Recognition', () => {
     it('should recognize pinch zoom gesture', () => {
       const onPinch = vi.fn();
-      const { result } = renderHook(() =>
-        useMobileTouch({ onPinch } as any)
-      );
+      const { result } = renderHook(() => useMobileTouch({ onPinch } as any));
 
       // Simulate pinch start
       const startEvent = new TouchEvent('touchstart', {
@@ -70,9 +66,7 @@ describe('useMobileTouch', () => {
 
     it('should recognize swipe gesture', () => {
       const onSwipe = vi.fn();
-      const { result } = renderHook(() =>
-        useMobileTouch({ onSwipe } as any)
-      );
+      const { result } = renderHook(() => useMobileTouch({ onSwipe } as any));
 
       const config: TouchConfig = { swipeThreshold: 50 };
       const configuredResult = useMobileTouch({ onSwipe, ...config } as any);
@@ -101,9 +95,7 @@ describe('useMobileTouch', () => {
 
   describe('Multi-Touch', () => {
     it('should handle multi-touch with 2+ fingers', () => {
-      const { result } = renderHook(() =>
-        useMobileTouch({} as any)
-      );
+      const { result } = renderHook(() => useMobileTouch({} as any));
 
       const multiTouchEvent = new TouchEvent('touchstart', {
         touches: [
@@ -123,9 +115,7 @@ describe('useMobileTouch', () => {
 
   describe('Touch End Handling', () => {
     it('should clear touch state on touch end', () => {
-      const { result } = renderHook(() =>
-        useMobileTouch({} as any)
-      );
+      const { result } = renderHook(() => useMobileTouch({} as any));
 
       const startEvent = new TouchEvent('touchstart', {
         touches: [{ clientX: 100, clientY: 100, identifier: 0 } as any],
@@ -157,9 +147,7 @@ describe('useMobileTouch', () => {
         longPressDuration: 500,
       };
 
-      const { result } = renderHook(() =>
-        useMobileTouch(config as any)
-      );
+      const { result } = renderHook(() => useMobileTouch(config as any));
 
       expect(result.current).toBeDefined();
     });

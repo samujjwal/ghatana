@@ -1,6 +1,6 @@
 /**
  * Offline Queue
- * 
+ *
  * Queues canvas changes when offline and replays them when connection is restored.
  * Implements conflict resolution and retry logic.
  */
@@ -16,38 +16,41 @@ import type {
 /**
  * Offline Queue Configuration
  */
-export interface OfflineQueueConfig extends Pick<SyncConfig, 'maxQueueSize' | 'conflictStrategy' | 'retry'> {
+export interface OfflineQueueConfig extends Pick<
+  SyncConfig,
+  'maxQueueSize' | 'conflictStrategy' | 'retry'
+> {
   /** LocalStorage key for persisting queue */
   storageKey?: string;
-  
+
   /** Enable queue persistence */
   enablePersistence?: boolean;
 }
 
 /**
  * Offline Queue Manager
- * 
+ *
  * Features:
  * - Automatic queuing when offline
  * - Replay on reconnection
  * - Conflict detection and resolution
  * - LocalStorage persistence
  * - Retry with exponential backoff
- * 
+ *
  * @example
  * ```ts
  * const queue = new OfflineQueue({
  *   maxQueueSize: 1000,
  *   conflictStrategy: 'last-write-wins',
  * });
- * 
+ *
  * // Queue operation when offline
  * queue.enqueue({
  *   documentId: 'doc-123',
  *   operation: 'update',
  *   data: { ... },
  * });
- * 
+ *
  * // Replay when back online
  * await queue.replay(syncAdapter);
  * ```
@@ -56,7 +59,7 @@ export class OfflineQueue {
   private config: Required<OfflineQueueConfig>;
   private queue: QueuedOperation[] = [];
   private processing = false;
-  
+
   /**
    *
    */
@@ -72,21 +75,26 @@ export class OfflineQueue {
         initialDelay: 1000,
       },
     };
-    
+
     // Load persisted queue
     if (this.config.enablePersistence) {
       this.loadQueue();
     }
   }
-  
+
   /**
    * Add operation to queue
    */
-  enqueue(operation: Omit<QueuedOperation, 'id' | 'timestamp' | 'retryCount' | 'status'>): void {
+  enqueue(
+    operation: Omit<
+      QueuedOperation,
+      'id' | 'timestamp' | 'retryCount' | 'status'
+    >
+  ): void {
     if (this.queue.length >= this.config.maxQueueSize) {
       throw new Error(`Queue full (max: ${this.config.maxQueueSize})`);
     }
-    
+
     const queued: QueuedOperation = {
       ...operation,
       id: `queue-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -95,32 +103,32 @@ export class OfflineQueue {
       status: 'pending',
       maxRetries: operation.maxRetries ?? this.config.retry.maxRetries,
     };
-    
+
     this.queue.push(queued);
     this.persistQueue();
   }
-  
+
   /**
    * Get all queued operations
    */
   getAll(): QueuedOperation[] {
     return [...this.queue];
   }
-  
+
   /**
    * Get queue for specific document
    */
   getByDocument(documentId: string): QueuedOperation[] {
     return this.queue.filter((op) => op.documentId === documentId);
   }
-  
+
   /**
    * Get queue size
    */
   size(): number {
     return this.queue.length;
   }
-  
+
   /**
    * Clear queue
    */
@@ -132,25 +140,34 @@ export class OfflineQueue {
     }
     this.persistQueue();
   }
-  
+
   /**
    * Replay queued operations
    * Returns results for each operation
    */
   async replay(
-    pushFn: (documentId: string, changes: CanvasChange[]) => Promise<{ success: boolean; error?: unknown }>
-  ): Promise<Array<{ operation: QueuedOperation; success: boolean; error?: unknown }>> {
+    pushFn: (
+      documentId: string,
+      changes: CanvasChange[]
+    ) => Promise<{ success: boolean; error?: unknown }>
+  ): Promise<
+    Array<{ operation: QueuedOperation; success: boolean; error?: unknown }>
+  > {
     if (this.processing) {
       throw new Error('Queue replay already in progress');
     }
-    
+
     this.processing = true;
-    const results: Array<{ operation: QueuedOperation; success: boolean; error?: unknown }> = [];
-    
+    const results: Array<{
+      operation: QueuedOperation;
+      success: boolean;
+      error?: unknown;
+    }> = [];
+
     try {
       // Group operations by document for batching
       const byDocument = new Map<string, QueuedOperation[]>();
-      
+
       for (const op of this.queue) {
         if (op.status === 'pending' || op.status === 'error') {
           if (!byDocument.has(op.documentId)) {
@@ -159,24 +176,24 @@ export class OfflineQueue {
           byDocument.get(op.documentId)!.push(op);
         }
       }
-      
+
       // Process each document's operations
       for (const [documentId, operations] of byDocument) {
         const changes = this.operationsToChanges(operations);
-        
+
         try {
           const result = await this.retryOperation(
             () => pushFn(documentId, changes),
             operations[0].retryCount
           );
-          
+
           if (result.success) {
             // Mark all operations as synced
             operations.forEach((op) => {
               op.status = 'synced';
               results.push({ operation: op, success: true });
             });
-            
+
             // Remove from queue
             this.queue = this.queue.filter((op) => !operations.includes(op));
           } else {
@@ -185,8 +202,12 @@ export class OfflineQueue {
               op.status = 'error';
               op.retryCount++;
               op.error = JSON.stringify(result.error);
-              results.push({ operation: op, success: false, error: result.error });
-              
+              results.push({
+                operation: op,
+                success: false,
+                error: result.error,
+              });
+
               // Remove if max retries exceeded
               if (op.retryCount >= op.maxRetries) {
                 this.queue = this.queue.filter((q) => q.id !== op.id);
@@ -202,15 +223,14 @@ export class OfflineQueue {
           });
         }
       }
-      
+
       this.persistQueue();
       return results;
-      
     } finally {
       this.processing = false;
     }
   }
-  
+
   /**
    * Detect conflicts between queued operations and server state
    */
@@ -218,8 +238,11 @@ export class OfflineQueue {
     queuedOp: QueuedOperation;
     serverChange: CanvasChange;
   }> {
-    const conflicts: Array<{ queuedOp: QueuedOperation; serverChange: CanvasChange }> = [];
-    
+    const conflicts: Array<{
+      queuedOp: QueuedOperation;
+      serverChange: CanvasChange;
+    }> = [];
+
     for (const op of this.queue) {
       for (const serverChange of serverChanges) {
         // Check if operation conflicts with server change
@@ -231,10 +254,10 @@ export class OfflineQueue {
         }
       }
     }
-    
+
     return conflicts;
   }
-  
+
   /**
    * Resolve conflict using configured strategy
    */
@@ -244,19 +267,19 @@ export class OfflineQueue {
     strategy?: ConflictStrategy
   ): CanvasChange {
     const resolveStrategy = strategy || this.config.conflictStrategy;
-    
+
     switch (resolveStrategy) {
       case 'server-wins':
         return serverChange;
-        
+
       case 'client-wins':
         return this.operationToChange(queuedOp);
-        
+
       case 'last-write-wins':
         return queuedOp.timestamp > serverChange.timestamp
           ? this.operationToChange(queuedOp)
           : serverChange;
-        
+
       case 'merge':
         // Simple merge strategy - combine data from both
         return {
@@ -266,15 +289,15 @@ export class OfflineQueue {
             ...queuedOp.data,
           },
         };
-        
+
       case 'manual':
         throw new Error('Manual conflict resolution required');
-        
+
       default:
         return serverChange;
     }
   }
-  
+
   /**
    * Retry operation with exponential backoff
    */
@@ -286,24 +309,25 @@ export class OfflineQueue {
       return await fn();
     } catch (error) {
       if (attemptCount < this.config.retry.maxRetries) {
-        const delay = this.config.retry.initialDelay * 
+        const delay =
+          this.config.retry.initialDelay *
           Math.pow(this.config.retry.backoffMultiplier, attemptCount);
-        
+
         await new Promise((resolve) => setTimeout(resolve, delay));
         return this.retryOperation(fn, attemptCount + 1);
       }
-      
+
       throw error;
     }
   }
-  
+
   /**
    * Convert queued operations to canvas changes
    */
   private operationsToChanges(operations: QueuedOperation[]): CanvasChange[] {
     return operations.map((op) => this.operationToChange(op));
   }
-  
+
   /**
    * Convert queued operation to canvas change
    */
@@ -318,20 +342,20 @@ export class OfflineQueue {
       version: 0, // Will be set by server
     };
   }
-  
+
   /**
    * Persist queue to localStorage
    */
   private persistQueue(): void {
     if (!this.config.enablePersistence) return;
-    
+
     try {
       localStorage.setItem(this.config.storageKey, JSON.stringify(this.queue));
     } catch (error) {
       console.error('Failed to persist queue:', error);
     }
   }
-  
+
   /**
    * Load queue from localStorage
    */

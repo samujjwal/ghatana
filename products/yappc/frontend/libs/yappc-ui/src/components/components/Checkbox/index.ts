@@ -6,7 +6,13 @@ import type { CheckboxProps as GlobalCheckboxProps } from '@yappc/ui';
 
 export type { GlobalCheckboxProps as CheckboxProps };
 
-type LegacyColor = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+type LegacyColor =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'grey';
 
 type LegacySize = NonNullable<GlobalCheckboxProps['size']>;
 
@@ -23,15 +29,17 @@ interface LegacyProps extends Omit<GlobalCheckboxProps, 'tone'> {
   colorScheme?: LegacyColor;
 }
 
-export const Checkbox = React.forwardRef<HTMLInputElement, LegacyProps>((props, ref) => {
-  const { colorScheme = 'primary', ...rest } = props;
+export const Checkbox = React.forwardRef<HTMLInputElement, LegacyProps>(
+  (props, ref) => {
+    const { colorScheme = 'primary', ...rest } = props;
 
-  return React.createElement(GlobalCheckbox, {
-    ref,
-    tone: toneMap[colorScheme] ?? 'primary',
-    ...rest,
-  });
-});
+    return React.createElement(GlobalCheckbox, {
+      ref,
+      tone: toneMap[colorScheme] ?? 'primary',
+      ...rest,
+    });
+  }
+);
 
 Checkbox.displayName = 'Checkbox';
 

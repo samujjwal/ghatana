@@ -1,10 +1,12 @@
 /**
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC UI - Voice Intents to API Actions Mapping
- * 
+ *
  * Maps recognized voice intents to concrete API actions,
  * enabling voice control of YAPPC functionality.
  */
+
+/* eslint-disable sonarjs/no-duplicate-string -- Action names and messages defined in object keys and reused in handlers */
 
 import { type VoiceCommand, type VoiceIntent } from './useVoiceCommands';
 
@@ -28,7 +30,11 @@ export interface VoiceActionContext {
   /** Navigate to a route */
   navigate: (path: string) => void;
   /** Call API endpoint */
-  apiCall: (endpoint: string, method: string, body?: unknown) => Promise<unknown>;
+  apiCall: (
+    endpoint: string,
+    method: string,
+    body?: unknown
+  ) => Promise<unknown>;
   /** Show notification */
   notify: (message: string, type: 'success' | 'error' | 'info') => void;
   /** Refresh data */
@@ -37,7 +43,7 @@ export interface VoiceActionContext {
 
 /**
  * Default voice action handlers
- * 
+ *
  * Maps voice intents to YAPPC API calls. These handlers use the
  * same API endpoints as the UI, ensuring voice/UI parity.
  */
@@ -45,14 +51,18 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
   create_project: async (command, context) => {
     const projectName = command.entities.projectName;
     if (!projectName) {
-      return { success: false, action: 'create_project', message: 'Please specify a project name' };
+      return {
+        success: false,
+        action: 'create_project',
+        message: 'Please specify a project name',
+      };
     }
 
     try {
-      const result = await context.apiCall('/projects', 'POST', {
+      const result = (await context.apiCall('/projects', 'POST', {
         name: projectName,
         description: `Created via voice command`,
-      }) as { id: string };
+      })) as { id: string };
 
       context.notify(`Created project: ${projectName}`, 'success');
       context.navigate(`/projects/${result.id}`);
@@ -75,15 +85,26 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
   open_project: async (command, context) => {
     const projectName = command.entities.projectName;
     if (!projectName) {
-      return { success: false, action: 'open_project', message: 'Please specify a project name' };
+      return {
+        success: false,
+        action: 'open_project',
+        message: 'Please specify a project name',
+      };
     }
 
     // Search for project by name
     try {
-      const projects = await context.apiCall(`/projects?search=${encodeURIComponent(projectName)}`, 'GET') as Array<{ id: string; name: string }>;
-      
+      const projects = (await context.apiCall(
+        `/projects?search=${encodeURIComponent(projectName)}`,
+        'GET'
+      )) as Array<{ id: string; name: string }>;
+
       if (projects.length === 0) {
-        return { success: false, action: 'open_project', message: `No project found matching: ${projectName}` };
+        return {
+          success: false,
+          action: 'open_project',
+          message: `No project found matching: ${projectName}`,
+        };
       }
 
       const project = projects[0];
@@ -106,11 +127,18 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
 
   advance_stage: async (_command, context) => {
     if (!context.projectId) {
-      return { success: false, action: 'advance_stage', message: 'No project is currently open' };
+      return {
+        success: false,
+        action: 'advance_stage',
+        message: 'No project is currently open',
+      };
     }
 
     try {
-      const result = await context.apiCall(`/projects/${context.projectId}/advance`, 'POST') as { currentStage: string };
+      const result = (await context.apiCall(
+        `/projects/${context.projectId}/advance`,
+        'POST'
+      )) as { currentStage: string };
       context.refresh();
       context.notify(`Advanced to stage: ${result.currentStage}`, 'success');
 
@@ -131,11 +159,18 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
 
   go_back_stage: async (_command, context) => {
     if (!context.projectId) {
-      return { success: false, action: 'go_back_stage', message: 'No project is currently open' };
+      return {
+        success: false,
+        action: 'go_back_stage',
+        message: 'No project is currently open',
+      };
     }
 
     try {
-      const result = await context.apiCall(`/projects/${context.projectId}/revert`, 'POST') as { currentStage: string };
+      const result = (await context.apiCall(
+        `/projects/${context.projectId}/revert`,
+        'POST'
+      )) as { currentStage: string };
       context.refresh();
       context.notify(`Reverted to stage: ${result.currentStage}`, 'success');
 
@@ -156,21 +191,29 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
 
   create_task: async (command, context) => {
     if (!context.projectId) {
-      return { success: false, action: 'create_task', message: 'No project is currently open' };
+      return {
+        success: false,
+        action: 'create_task',
+        message: 'No project is currently open',
+      };
     }
 
     const taskTitle = command.entities.taskTitle;
     if (!taskTitle) {
-      return { success: false, action: 'create_task', message: 'Please specify a task title' };
+      return {
+        success: false,
+        action: 'create_task',
+        message: 'Please specify a task title',
+      };
     }
 
     try {
-      const result = await context.apiCall(`/tasks`, 'POST', {
+      const result = (await context.apiCall(`/tasks`, 'POST', {
         projectId: context.projectId,
         title: taskTitle,
         description: 'Created via voice command',
         stage: context.currentStage || 'execute',
-      }) as { id: string; title: string };
+      })) as { id: string; title: string };
 
       context.refresh();
       context.notify(`Created task: ${result.title}`, 'success');
@@ -195,21 +238,36 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
     const assignee = command.entities.assignee;
 
     if (!taskName || !assignee) {
-      return { success: false, action: 'assign_task', message: 'Please specify both task and assignee' };
+      return {
+        success: false,
+        action: 'assign_task',
+        message: 'Please specify both task and assignee',
+      };
     }
 
     // First find the task
     try {
-      const tasks = await context.apiCall(`/tasks?search=${encodeURIComponent(taskName)}`, 'GET') as Array<{ id: string; title: string }>;
-      
+      const tasks = (await context.apiCall(
+        `/tasks?search=${encodeURIComponent(taskName)}`,
+        'GET'
+      )) as Array<{ id: string; title: string }>;
+
       if (tasks.length === 0) {
-        return { success: false, action: 'assign_task', message: `No task found matching: ${taskName}` };
+        return {
+          success: false,
+          action: 'assign_task',
+          message: `No task found matching: ${taskName}`,
+        };
       }
 
       const task = tasks[0];
-      const result = await context.apiCall(`/tasks/${task.id}/assign`, 'POST', {
-        agentId: `agent.yappc.${assignee.replace(/\s+/g, '-')}`,
-      }) as { title: string; assignedAgentId: string };
+      const result = (await context.apiCall(
+        `/tasks/${task.id}/assign`,
+        'POST',
+        {
+          agentId: `agent.yappc.${assignee.replace(/\s+/g, '-')}`,
+        }
+      )) as { title: string; assignedAgentId: string };
 
       context.refresh();
       context.notify(`Assigned ${result.title} to ${assignee}`, 'success');
@@ -232,20 +290,35 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
   complete_task: async (command, context) => {
     const taskName = command.entities.taskName;
     if (!taskName) {
-      return { success: false, action: 'complete_task', message: 'Please specify a task name' };
+      return {
+        success: false,
+        action: 'complete_task',
+        message: 'Please specify a task name',
+      };
     }
 
     try {
-      const tasks = await context.apiCall(`/tasks?search=${encodeURIComponent(taskName)}`, 'GET') as Array<{ id: string; title: string }>;
-      
+      const tasks = (await context.apiCall(
+        `/tasks?search=${encodeURIComponent(taskName)}`,
+        'GET'
+      )) as Array<{ id: string; title: string }>;
+
       if (tasks.length === 0) {
-        return { success: false, action: 'complete_task', message: `No task found matching: ${taskName}` };
+        return {
+          success: false,
+          action: 'complete_task',
+          message: `No task found matching: ${taskName}`,
+        };
       }
 
       const task = tasks[0];
-      const result = await context.apiCall(`/tasks/${task.id}/status`, 'PATCH', {
-        status: 'COMPLETED',
-      }) as { title: string; status: string };
+      const result = (await context.apiCall(
+        `/tasks/${task.id}/status`,
+        'PATCH',
+        {
+          status: 'COMPLETED',
+        }
+      )) as { title: string; status: string };
 
       context.refresh();
       context.notify(`Completed task: ${result.title}`, 'success');
@@ -267,7 +340,11 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
 
   show_tasks: (_command, context) => {
     if (!context.projectId) {
-      return { success: false, action: 'show_tasks', message: 'No project is currently open' };
+      return {
+        success: false,
+        action: 'show_tasks',
+        message: 'No project is currently open',
+      };
     }
 
     context.navigate(`/projects/${context.projectId}/tasks`);
@@ -281,7 +358,11 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
 
   show_metrics: (_command, context) => {
     if (!context.projectId) {
-      return { success: false, action: 'show_metrics', message: 'No project is currently open' };
+      return {
+        success: false,
+        action: 'show_metrics',
+        message: 'No project is currently open',
+      };
     }
 
     context.navigate(`/projects/${context.projectId}/metrics`);
@@ -321,7 +402,8 @@ export const defaultVoiceActions: Record<VoiceIntent, VoiceActionHandler> = {
     return {
       success: false,
       action: 'unknown',
-      message: "I didn't understand that command. Say 'help' for available commands.",
+      message:
+        "I didn't understand that command. Say 'help' for available commands.",
     };
   },
 };
@@ -334,8 +416,9 @@ export async function executeVoiceCommand(
   context: VoiceActionContext,
   customActions?: Partial<Record<VoiceIntent, VoiceActionHandler>>
 ): Promise<VoiceActionResult> {
-  const handler = customActions?.[command.intent] || defaultVoiceActions[command.intent];
-  
+  const handler =
+    customActions?.[command.intent] || defaultVoiceActions[command.intent];
+
   if (!handler) {
     return {
       success: false,

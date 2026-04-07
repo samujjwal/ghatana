@@ -18,7 +18,14 @@ const meta: Meta<typeof Toast> = {
     },
     position: {
       control: 'select',
-      options: ['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'],
+      options: [
+        'top-left',
+        'top-center',
+        'top-right',
+        'bottom-left',
+        'bottom-center',
+        'bottom-right',
+      ],
     },
     duration: {
       control: 'number',
@@ -59,7 +66,14 @@ export const Severities: Story = {
     return (
       <div className="flex flex-col gap-4">
         <button
-          onClick={() => setOpenStates({ info: true, success: true, warning: true, error: true })}
+          onClick={() =>
+            setOpenStates({
+              info: true,
+              success: true,
+              warning: true,
+              error: true,
+            })
+          }
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Show All Toasts
@@ -142,7 +156,9 @@ export const Positions: Story = {
             Bottom Left
           </button>
           <button
-            onClick={() => setPositions({ ...positions, 'bottom-center': true })}
+            onClick={() =>
+              setPositions({ ...positions, 'bottom-center': true })
+            }
             className="px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
           >
             Bottom Center
@@ -263,7 +279,8 @@ export const Persistent: Story = {
  */
 export const LongMessage: Story = {
   args: {
-    message: 'This is a very long message that demonstrates how the toast component handles longer content. The message will wrap to multiple lines while maintaining good readability and layout.',
+    message:
+      'This is a very long message that demonstrates how the toast component handles longer content. The message will wrap to multiple lines while maintaining good readability and layout.',
     severity: 'info',
     open: true,
     onClose: () => {},
@@ -293,7 +310,10 @@ export const RichContent: Story = {
             <div>
               <strong>Update Available</strong>
               <p className="mt-1 text-xs opacity-90">
-                Version 2.0 is now available. <a href="#" className="underline">Learn more</a>
+                Version 2.0 is now available.{' '}
+                <a href="#" className="underline">
+                  Learn more
+                </a>
               </p>
             </div>
           }
@@ -323,25 +343,33 @@ export const WithProvider: Story = {
       return (
         <div className="flex flex-col gap-2">
           <button
-            onClick={() => addToast({ message: 'Info message', severity: 'info' })}
+            onClick={() =>
+              addToast({ message: 'Info message', severity: 'info' })
+            }
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Show Info
           </button>
           <button
-            onClick={() => addToast({ message: 'Success message', severity: 'success' })}
+            onClick={() =>
+              addToast({ message: 'Success message', severity: 'success' })
+            }
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
             Show Success
           </button>
           <button
-            onClick={() => addToast({ message: 'Warning message', severity: 'warning' })}
+            onClick={() =>
+              addToast({ message: 'Warning message', severity: 'warning' })
+            }
             className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
           >
             Show Warning
           </button>
           <button
-            onClick={() => addToast({ message: 'Error message', severity: 'error' })}
+            onClick={() =>
+              addToast({ message: 'Error message', severity: 'error' })
+            }
             className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
           >
             Show Error
@@ -351,7 +379,11 @@ export const WithProvider: Story = {
               addToast({
                 message: 'File deleted successfully',
                 severity: 'success',
-                action: <button className="px-2 py-1 text-xs rounded bg-white/20">Undo</button>,
+                action: (
+                  <button className="px-2 py-1 text-xs rounded bg-white/20">
+                    Undo
+                  </button>
+                ),
               });
             }}
             className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
@@ -385,8 +417,22 @@ export const Stacked: Story = {
         <button
           onClick={() => {
             addToast({ message: 'First toast message', severity: 'info' });
-            setTimeout(() => addToast({ message: 'Second toast message', severity: 'success' }), 500);
-            setTimeout(() => addToast({ message: 'Third toast message', severity: 'warning' }), 1000);
+            setTimeout(
+              () =>
+                addToast({
+                  message: 'Second toast message',
+                  severity: 'success',
+                }),
+              500
+            );
+            setTimeout(
+              () =>
+                addToast({
+                  message: 'Third toast message',
+                  severity: 'warning',
+                }),
+              1000
+            );
           }}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >

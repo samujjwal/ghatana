@@ -28,7 +28,8 @@ window.addEventListener('unhandledrejection', (event) => {
 
   reportFrontendError({
     source: 'unhandled-rejection',
-    message: typeof reason === 'string' ? reason : 'Unhandled promise rejection',
+    message:
+      typeof reason === 'string' ? reason : 'Unhandled promise rejection',
   });
 });
 

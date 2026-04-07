@@ -1,6 +1,11 @@
 import { createTestDOMPurify } from '@yappc/testing/helpers';
 
-import { ContentSanitizer, sanitizeUserContent, sanitizeExportContent, auditExportSecurity } from '../sanitizer';
+import {
+  ContentSanitizer,
+  sanitizeUserContent,
+  sanitizeExportContent,
+  auditExportSecurity,
+} from '../sanitizer';
 
 describe('ContentSanitizer (shared mock)', () => {
   test('sanitizeHTML removes script tags and dangerous attributes', () => {
@@ -18,7 +23,7 @@ describe('ContentSanitizer (shared mock)', () => {
     const input = `body { color: red; expression: something; }`;
     const result = cs.sanitizeCSS(input);
     expect(result.sanitized).not.toContain('expression');
-    expect(result.removed.some(r => r.element === 'expression')).toBe(true);
+    expect(result.removed.some((r) => r.element === 'expression')).toBe(true);
   });
 
   test('sanitizeSVG keeps allowed svg tags', () => {

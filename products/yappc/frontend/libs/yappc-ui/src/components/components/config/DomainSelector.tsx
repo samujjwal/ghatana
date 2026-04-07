@@ -39,7 +39,9 @@ interface DomainSelectorProps {
  * <DomainSelector className="my-4" />
  * ```
  */
-export const DomainSelector: React.FC<DomainSelectorProps> = ({ className = '' }) => {
+export const DomainSelector: React.FC<DomainSelectorProps> = ({
+  className = '',
+}) => {
   const domains = useTaskDomains();
   const [selectedId, setSelectedId] = useAtom(selectedDomainIdAtom);
 
@@ -48,9 +50,7 @@ export const DomainSelector: React.FC<DomainSelectorProps> = ({ className = '' }
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
         Select Domain
       </Typography>
-      <Box
-        className="grid grid-cols-1 sm:grid-cols-2 gap-2"
-      >
+      <Box className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {domains.map((domain) => (
           <Button
             key={domain.id}

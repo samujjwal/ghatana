@@ -35,7 +35,8 @@ import {
 } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
-const { SPACING, Z_INDEX, COLORS, TRANSITIONS, SHADOWS, CANVAS } = CANVAS_TOKENS;
+const { SPACING, Z_INDEX, COLORS, TRANSITIONS, SHADOWS, CANVAS } =
+  CANVAS_TOKENS;
 
 /**
  *
@@ -148,20 +149,22 @@ export function CanvasChromeLayout({
   if (focusMode || distractionFree) {
     return (
       <Box
-        className="w-screen h-screen overflow-hidden relative" style={{ backgroundColor: COLORS.CANVAS_BG_LIGHT }} >
+        className="w-screen h-screen overflow-hidden relative"
+        style={{ backgroundColor: COLORS.CANVAS_BG_LIGHT }}
+      >
         {children}
         {emptyState}
         {/* Show dimmed zoom HUD in focus mode */}
         {enableFocusMode && zoomHUD && (
-          <Box className="opacity-[0.5]">
-            {zoomHUD}
-          </Box>
+          <Box className="opacity-[0.5]">{zoomHUD}</Box>
         )}
       </Box>
     );
   }
 
-  const leftRailWidth = leftRailOpen ? CANVAS.LEFT_RAIL_WIDTH_EXPANDED : CANVAS.LEFT_RAIL_WIDTH_COLLAPSED;
+  const leftRailWidth = leftRailOpen
+    ? CANVAS.LEFT_RAIL_WIDTH_EXPANDED
+    : CANVAS.LEFT_RAIL_WIDTH_COLLAPSED;
   const inspectorWidth = inspectorOpen ? CANVAS.PROPERTIES_PANEL_WIDTH : 0;
   const hasTopBar = topBar !== null && topBar !== undefined;
   const showBreadcrumb = breadcrumbVisible && breadcrumb;
@@ -180,11 +183,29 @@ export function CanvasChromeLayout({
 
   return (
     <Box
-      className="grid" style={{ gridTemplateAreas: gridTemplate, gridTemplateColumns: `${leftRailWidth}px 1fr ${inspectorWidth}px`, gridTemplateRows: gridRows, width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      className="grid"
+      style={{
+        gridTemplateAreas: gridTemplate,
+        gridTemplateColumns: `${leftRailWidth}px 1fr ${inspectorWidth}px`,
+        gridTemplateRows: gridRows,
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+      }}
+    >
       {/* Top Bar - Only rendered if provided */}
       {hasTopBar && (
         <Box
-          className="flex items-center" style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, backgroundColor: COLORS.PANEL_BG_LIGHT, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`, gridArea: 'topbar' }}
+          className="flex items-center"
+          style={{
+            paddingLeft: SPACING.MD,
+            paddingRight: SPACING.MD,
+            paddingTop: SPACING.SM,
+            paddingBottom: SPACING.SM,
+            backgroundColor: COLORS.PANEL_BG_LIGHT,
+            borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`,
+            gridArea: 'topbar',
+          }}
         >
           {topBar || (
             <DefaultTopBar
@@ -197,11 +218,25 @@ export function CanvasChromeLayout({
 
       {/* Left Rail */}
       <Box
-        className="flex flex-row" style={{ backgroundColor: COLORS.PANEL_BG_LIGHT, borderRight: `1px solid ${COLORS.BORDER_LIGHT}`, gridArea: 'leftrail' }}>
+        className="flex flex-row"
+        style={{
+          backgroundColor: COLORS.PANEL_BG_LIGHT,
+          borderRight: `1px solid ${COLORS.BORDER_LIGHT}`,
+          gridArea: 'leftrail',
+        }}
+      >
         {/* Icon strip (always visible) */}
         <Box
-          className="w-[48px] shrink-0 flex flex-col items-center" style={{ gap: SPACING.XS, paddingTop: SPACING.MD, paddingBottom: SPACING.MD, borderRight: leftRailOpen
-              ? `1px solid ${COLORS.BORDER_LIGHT}` : 'none' }}>
+          className="w-[48px] shrink-0 flex flex-col items-center"
+          style={{
+            gap: SPACING.XS,
+            paddingTop: SPACING.MD,
+            paddingBottom: SPACING.MD,
+            borderRight: leftRailOpen
+              ? `1px solid ${COLORS.BORDER_LIGHT}`
+              : 'none',
+          }}
+        >
           <Tooltip title="Outline (O)" placement="right">
             <IconButton
               onClick={() => handlePanelIconClick('outline')}
@@ -294,15 +329,18 @@ export function CanvasChromeLayout({
 
         {/* Panel content (shows when expanded) */}
         {leftRailOpen && (
-          <Box
-            className="flex-1 overflow-hidden flex flex-col w-[232px]"
-          >
+          <Box className="flex-1 overflow-hidden flex flex-col w-[232px]">
             {leftPanel === 'outline' && outline}
             {leftPanel === 'layers' && layers}
             {leftPanel === 'palette' && palette}
             {leftPanel === 'tasks' && tasks}
             {!leftPanel && (
-              <Box className="flex items-center justify-center h-full" style={{ color: COLORS.TEXT_SECONDARY, fontSize: CANVAS_TOKENS.TYPOGRAPHY.SM }}
+              <Box
+                className="flex items-center justify-center h-full"
+                style={{
+                  color: COLORS.TEXT_SECONDARY,
+                  fontSize: CANVAS_TOKENS.TYPOGRAPHY.SM,
+                }}
               >
                 Select a panel from the left
               </Box>
@@ -312,7 +350,8 @@ export function CanvasChromeLayout({
       </Box>
 
       {/* Main Canvas Area */}
-      <Box style={{ gridArea: 'canvas', backgroundColor: COLORS.CANVAS_BG_LIGHT }}
+      <Box
+        style={{ gridArea: 'canvas', backgroundColor: COLORS.CANVAS_BG_LIGHT }}
       >
         {children}
 
@@ -322,7 +361,16 @@ export function CanvasChromeLayout({
         {/* Context Bar (appears on selection) */}
         {contextBar && (
           <Box
-            className="absolute left-[50%]" style={{ bottom: SPACING.LG, zIndex: Z_INDEX.CONTROLS, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: CANVAS_TOKENS.RADIUS.MD, boxShadow: SHADOWS.LG, border: `1px solid ${COLORS.BORDER_LIGHT}`, transform: 'translateX(-50%)' }}
+            className="absolute left-[50%]"
+            style={{
+              bottom: SPACING.LG,
+              zIndex: Z_INDEX.CONTROLS,
+              backgroundColor: COLORS.PANEL_BG_LIGHT,
+              borderRadius: CANVAS_TOKENS.RADIUS.MD,
+              boxShadow: SHADOWS.LG,
+              border: `1px solid ${COLORS.BORDER_LIGHT}`,
+              transform: 'translateX(-50%)',
+            }}
           >
             {contextBar}
           </Box>
@@ -335,7 +383,13 @@ export function CanvasChromeLayout({
       {/* Right Inspector */}
       {inspectorOpen && inspector && (
         <Box
-          className="flex flex-col" style={{ backgroundColor: COLORS.PANEL_BG_LIGHT, borderLeft: `1px solid ${COLORS.BORDER_LIGHT}`, gridArea: 'inspector' }}>
+          className="flex flex-col"
+          style={{
+            backgroundColor: COLORS.PANEL_BG_LIGHT,
+            borderLeft: `1px solid ${COLORS.BORDER_LIGHT}`,
+            gridArea: 'inspector',
+          }}
+        >
           {inspector}
         </Box>
       )}
@@ -355,11 +409,9 @@ function DefaultTopBar({
   phaseIndicator?: ReactNode;
 }) {
   return (
-    <Box
-      className="flex items-center justify-between w-full"
-    >
+    <Box className="flex items-center justify-between w-full">
       {/* Left: Breadcrumb navigation */}
-      <Box className="flex items-center gap-4" >
+      <Box className="flex items-center gap-4">
         {breadcrumb || (
           <Box
             style={{
@@ -374,13 +426,10 @@ function DefaultTopBar({
       </Box>
 
       {/* Center: Phase indicator */}
-      <Box
-        className="flex items-center gap-2" >
-        {phaseIndicator}
-      </Box>
+      <Box className="flex items-center gap-2">{phaseIndicator}</Box>
 
       {/* Right: Actions */}
-      <Box className="flex items-center gap-2" >
+      <Box className="flex items-center gap-2">
         <Tooltip title="Share">
           <IconButton aria-label="Share canvas">
             <span style={{ fontSize: '20px' }}>📤</span>

@@ -10,7 +10,13 @@
  * @doc.phase 4
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 
 import { cn } from '@ghatana/design-system';
 
@@ -60,7 +66,10 @@ export interface LogViewerProps {
 // ============================================================================
 
 const getLevelConfig = (level: LogLevel) => {
-  const configs: Record<LogLevel, { color: string; bg: string; label: string }> = {
+  const configs: Record<
+    LogLevel,
+    { color: string; bg: string; label: string }
+  > = {
     trace: { color: '#9CA3AF', bg: 'rgba(156, 163, 175, 0.1)', label: 'TRC' },
     debug: { color: '#6B7280', bg: 'rgba(107, 114, 128, 0.1)', label: 'DBG' },
     info: { color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)', label: 'INF' },
@@ -86,7 +95,10 @@ const highlightText = (text: string, search: string): React.ReactNode => {
   if (!search.trim()) return text;
 
   try {
-    const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const regex = new RegExp(
+      `(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`,
+      'gi'
+    );
     const parts = text.split(regex);
 
     return parts.map((part, i) =>
@@ -150,7 +162,9 @@ const LogLine: React.FC<LogLineProps> = ({
       {/* Main Row */}
       <div className="log-row">
         {showTimestamp && (
-          <span className="log-timestamp">{formatTimestamp(log.timestamp)}</span>
+          <span className="log-timestamp">
+            {formatTimestamp(log.timestamp)}
+          </span>
         )}
         <span
           className="log-level"
@@ -159,7 +173,9 @@ const LogLine: React.FC<LogLineProps> = ({
           {levelConfig.label}
         </span>
         {showService && <span className="log-service">{log.service}</span>}
-        <span className="log-message">{highlightText(log.message, search)}</span>
+        <span className="log-message">
+          {highlightText(log.message, search)}
+        </span>
         {(log.traceId || hasMetadata) && (
           <button
             type="button"
@@ -181,13 +197,17 @@ const LogLine: React.FC<LogLineProps> = ({
           {log.traceId && (
             <div className="log-detail-row">
               <span className="detail-label">trace_id:</span>
-              <span className="detail-value detail-value--mono">{log.traceId}</span>
+              <span className="detail-value detail-value--mono">
+                {log.traceId}
+              </span>
             </div>
           )}
           {log.spanId && (
             <div className="log-detail-row">
               <span className="detail-label">span_id:</span>
-              <span className="detail-value detail-value--mono">{log.spanId}</span>
+              <span className="detail-value detail-value--mono">
+                {log.spanId}
+              </span>
             </div>
           )}
           {hasMetadata &&
@@ -195,7 +215,9 @@ const LogLine: React.FC<LogLineProps> = ({
               <div key={key} className="log-detail-row">
                 <span className="detail-label">{key}:</span>
                 <span className="detail-value detail-value--mono">
-                  {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                  {typeof value === 'object'
+                    ? JSON.stringify(value)
+                    : String(value)}
                 </span>
               </div>
             ))}
@@ -227,7 +249,9 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [localSearch, setLocalSearch] = useState(filter?.search || '');
   const [selectedLevels, setSelectedLevels] = useState<Set<LogLevel>>(
-    new Set(filter?.levels || ['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
+    new Set(
+      filter?.levels || ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
+    )
   );
 
   // Auto-scroll to bottom when live tail is on
@@ -251,7 +275,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       if (!selectedLevels.has(log.level)) return false;
-      if (filter?.services?.length && !filter.services.includes(log.service)) return false;
+      if (filter?.services?.length && !filter.services.includes(log.service))
+        return false;
       if (localSearch) {
         const searchLower = localSearch.toLowerCase();
         return (
@@ -320,14 +345,19 @@ export const LogViewer: React.FC<LogViewerProps> = ({
 
         {/* Level Filters */}
         <div className="log-level-filters">
-          {(['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as LogLevel[]).map((level) => {
+          {(
+            ['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as LogLevel[]
+          ).map((level) => {
             const config = getLevelConfig(level);
             const isActive = selectedLevels.has(level);
             return (
               <button
                 key={level}
                 type="button"
-                className={cn('level-filter', isActive && 'level-filter--active')}
+                className={cn(
+                  'level-filter',
+                  isActive && 'level-filter--active'
+                )}
                 style={{
                   color: isActive ? config.color : '#9CA3AF',
                   backgroundColor: isActive ? config.bg : 'transparent',
@@ -344,7 +374,10 @@ export const LogViewer: React.FC<LogViewerProps> = ({
         {onToggleLiveTail && (
           <button
             type="button"
-            className={cn('live-tail-btn', isLiveTail && 'live-tail-btn--active')}
+            className={cn(
+              'live-tail-btn',
+              isLiveTail && 'live-tail-btn--active'
+            )}
             onClick={() => onToggleLiveTail(!isLiveTail)}
           >
             <span className="live-indicator" />
@@ -384,7 +417,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({
       <div className="log-footer">
         <span className="log-count">
           {filteredLogs.length.toLocaleString()} logs
-          {filteredLogs.length !== logs.length && ` (${logs.length.toLocaleString()} total)`}
+          {filteredLogs.length !== logs.length &&
+            ` (${logs.length.toLocaleString()} total)`}
         </span>
       </div>
 

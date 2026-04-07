@@ -63,7 +63,11 @@ export interface QualityAnalysis {
  */
 export interface QualityIssue {
   /** Issue type */
-  type: 'missing-description' | 'unclear-title' | 'vague-requirements' | 'missing-acceptance-criteria';
+  type:
+    | 'missing-description'
+    | 'unclear-title'
+    | 'vague-requirements'
+    | 'missing-acceptance-criteria';
   /** Issue severity */
   severity: 'critical' | 'high' | 'medium' | 'low';
   /** Issue description */

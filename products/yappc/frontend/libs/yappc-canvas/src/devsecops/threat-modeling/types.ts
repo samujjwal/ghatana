@@ -1,6 +1,6 @@
 /**
  * Threat Modeling Types
- * 
+ *
  * Type definitions for STRIDE/LINDDUN threat modeling.
  */
 
@@ -40,7 +40,12 @@ export type ThreatSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 /**
  * Threat status in workflow
  */
-export type ThreatStatus = 'identified' | 'analyzing' | 'mitigating' | 'accepted' | 'resolved';
+export type ThreatStatus =
+  | 'identified'
+  | 'analyzing'
+  | 'mitigating'
+  | 'accepted'
+  | 'resolved';
 
 /**
  * Trust boundary zone types

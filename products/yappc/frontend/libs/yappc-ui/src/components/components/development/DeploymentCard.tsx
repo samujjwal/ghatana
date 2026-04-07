@@ -86,14 +86,27 @@ const STATUS_CONFIG: Record<
   pending: { label: 'Pending', color: '#6B7280', bg: '#F3F4F6', icon: '⏳' },
   building: { label: 'Building', color: '#3B82F6', bg: '#EFF6FF', icon: '🔨' },
   testing: { label: 'Testing', color: '#8B5CF6', bg: '#EDE9FE', icon: '🧪' },
-  deploying: { label: 'Deploying', color: '#F59E0B', bg: '#FEF3C7', icon: '🚀' },
+  deploying: {
+    label: 'Deploying',
+    color: '#F59E0B',
+    bg: '#FEF3C7',
+    icon: '🚀',
+  },
   success: { label: 'Success', color: '#10B981', bg: '#D1FAE5', icon: '✓' },
   failed: { label: 'Failed', color: '#EF4444', bg: '#FEE2E2', icon: '✕' },
-  rolled_back: { label: 'Rolled Back', color: '#9333EA', bg: '#F3E8FF', icon: '↩' },
+  rolled_back: {
+    label: 'Rolled Back',
+    color: '#9333EA',
+    bg: '#F3E8FF',
+    icon: '↩',
+  },
   cancelled: { label: 'Cancelled', color: '#9CA3AF', bg: '#F3F4F6', icon: '⊘' },
 };
 
-const ENV_CONFIG: Record<Environment, { label: string; color: string; bg: string }> = {
+const ENV_CONFIG: Record<
+  Environment,
+  { label: string; color: string; bg: string }
+> = {
   development: { label: 'Development', color: '#6B7280', bg: '#F3F4F6' },
   staging: { label: 'Staging', color: '#F59E0B', bg: '#FEF3C7' },
   production: { label: 'Production', color: '#10B981', bg: '#D1FAE5' },
@@ -170,7 +183,10 @@ export const DeploymentCard: React.FC<DeploymentCardProps> = ({
 
   const pipelineProgress = useMemo(() => {
     const completed = pipeline.filter(
-      (s) => s.status === 'success' || s.status === 'failed' || s.status === 'skipped'
+      (s) =>
+        s.status === 'success' ||
+        s.status === 'failed' ||
+        s.status === 'skipped'
     ).length;
     return Math.round((completed / pipeline.length) * 100);
   }, [pipeline]);
@@ -282,10 +298,14 @@ export const DeploymentCard: React.FC<DeploymentCardProps> = ({
                   stage.duration ? ` (${formatDuration(stage.duration)})` : ''
                 }`}
               >
-                <span className="stage-icon">{STAGE_STATUS_ICONS[stage.status]}</span>
+                <span className="stage-icon">
+                  {STAGE_STATUS_ICONS[stage.status]}
+                </span>
                 <span className="stage-name">{stage.name}</span>
                 {stage.duration && (
-                  <span className="stage-duration">{formatDuration(stage.duration)}</span>
+                  <span className="stage-duration">
+                    {formatDuration(stage.duration)}
+                  </span>
                 )}
               </button>
             ))}
@@ -303,7 +323,11 @@ export const DeploymentCard: React.FC<DeploymentCardProps> = ({
             {changes.slice(0, 3).map((change) => (
               <div key={change.id} className="change">
                 <span className="change-icon">
-                  {change.type === 'commit' ? '📝' : change.type === 'pr' ? '🔀' : '🔥'}
+                  {change.type === 'commit'
+                    ? '📝'
+                    : change.type === 'pr'
+                      ? '🔀'
+                      : '🔥'}
                 </span>
                 <span className="change-title">{change.title}</span>
               </div>

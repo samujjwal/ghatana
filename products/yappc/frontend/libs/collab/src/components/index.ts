@@ -11,10 +11,7 @@ export type { PresenceAvatarsProps } from './PresenceAvatars';
 export { UserActivityIndicator } from './UserActivityIndicator';
 export type { UserActivityIndicatorProps } from './UserActivityIndicator';
 
-export {
-  SelectionHighlight,
-  TextCursorIndicator,
-} from './SelectionHighlight';
+export { SelectionHighlight, TextCursorIndicator } from './SelectionHighlight';
 export type {
   SelectionHighlightProps,
   SelectionRange,

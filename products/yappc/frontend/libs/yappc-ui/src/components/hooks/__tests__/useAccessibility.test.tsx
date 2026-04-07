@@ -2,7 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { useAccessibility, useFocusTrap, useKeyboardNavigation } from '../useAccessibility';
+import {
+  useAccessibility,
+  useFocusTrap,
+  useKeyboardNavigation,
+} from '../useAccessibility';
 
 // Mock console methods
 const originalConsoleWarn = console.warn;
@@ -35,7 +39,11 @@ describe('useAccessibility Hook', () => {
         logResults: false,
       });
 
-      return <div ref={ref} data-testid="test-element">Test</div>;
+      return (
+        <div ref={ref} data-testid="test-element">
+          Test
+        </div>
+      );
     };
 
     render(<TestComponent />);
@@ -53,7 +61,11 @@ describe('useAccessibility Hook', () => {
         throwOnFailure: false,
       });
 
-      return <div ref={ref} data-testid="test-element">Test</div>;
+      return (
+        <div ref={ref} data-testid="test-element">
+          Test
+        </div>
+      );
     };
 
     expect(() => render(<TestComponent />)).not.toThrow();
@@ -102,9 +114,15 @@ describe('useKeyboardNavigation Hook', () => {
 
       return (
         <ul ref={ref as unknown} data-testid="nav-container">
-          <li tabIndex={0} data-testid="item-0">Item 1</li>
-          <li tabIndex={0} data-testid="item-1">Item 2</li>
-          <li tabIndex={0} data-testid="item-2">Item 3</li>
+          <li tabIndex={0} data-testid="item-0">
+            Item 1
+          </li>
+          <li tabIndex={0} data-testid="item-1">
+            Item 2
+          </li>
+          <li tabIndex={0} data-testid="item-2">
+            Item 3
+          </li>
           <div data-testid="active-index">{activeIndex}</div>
           <button onClick={() => focusItem(1)}>Focus Item 2</button>
         </ul>
@@ -133,9 +151,15 @@ describe('useKeyboardNavigation Hook', () => {
 
       return (
         <ul ref={ref as unknown} data-testid="nav-container">
-          <li tabIndex={0} data-testid="item-0">Item 1</li>
-          <li tabIndex={0} data-testid="item-1">Item 2</li>
-          <li tabIndex={0} data-testid="item-2">Item 3</li>
+          <li tabIndex={0} data-testid="item-0">
+            Item 1
+          </li>
+          <li tabIndex={0} data-testid="item-1">
+            Item 2
+          </li>
+          <li tabIndex={0} data-testid="item-2">
+            Item 3
+          </li>
           <div data-testid="active-index">{activeIndex}</div>
         </ul>
       );

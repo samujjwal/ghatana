@@ -1,9 +1,9 @@
 /**
  * WebGL Renderer
- * 
+ *
  * GPU-accelerated rendering engine for large-scale canvas applications.
  * Provides 10-100x performance improvement for scenes with 1000+ elements.
- * 
+ *
  * Features:
  * - WebGL 2.0 rendering with WebGL 1.0 fallback
  * - Instanced rendering for identical elements
@@ -11,7 +11,7 @@
  * - Shader-based effects and styling
  * - Automatic capability detection
  * - Graceful fallback to Canvas2D
- * 
+ *
  * @module rendering/webglRenderer
  */
 
@@ -107,23 +107,23 @@ export const DEFAULT_WEBGL_CONFIG: WebGLRendererConfig = {
 
 /**
  * Create a WebGL renderer
- * 
+ *
  * @example
  * ```ts
  * const renderer = createWebGLRenderer(canvas, {
  *   preferWebGL2: true,
  *   antialias: true,
  * });
- * 
+ *
  * if (!renderer.isSupported()) {
  *   console.warn('WebGL not supported, using Canvas2D fallback');
  *   return;
  * }
- * 
+ *
  * renderer.initialize();
  * renderer.setViewport({ x: 0, y: 0, width: 1920, height: 1080, zoom: 1 });
  * renderer.render(elements);
- * 
+ *
  * const stats = renderer.getStats();
  * console.log(`FPS: ${stats.fps}, Draw calls: ${stats.drawCalls}`);
  * ```
@@ -133,14 +133,20 @@ export function createWebGLRenderer(
   config: Partial<WebGLRendererConfig> = {}
 ) {
   const cfg = { ...DEFAULT_WEBGL_CONFIG, ...config };
-  
+
   let gl: WebGLRenderingContext | WebGL2RenderingContext | null = null;
   let capabilities: WebGLCapabilities | null = null;
-  let viewport: ViewportBounds = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
-  
+  let viewport: ViewportBounds = {
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+    zoom: 1,
+  };
+
   const shaderCache = new Map<string, ShaderProgram>();
   const bufferCache = new Map<string, VertexBuffer>();
-  
+
   const stats: WebGLRenderStats = {
     drawCalls: 0,
     triangles: 0,
@@ -151,7 +157,7 @@ export function createWebGLRenderer(
     frameTime: 0,
     fps: 60,
   };
-  
+
   const frameTimes: number[] = [];
 
   /**
@@ -160,7 +166,8 @@ export function createWebGLRenderer(
   function isSupported(): boolean {
     try {
       const testCanvas = document.createElement('canvas');
-      const ctx = testCanvas.getContext('webgl2') || testCanvas.getContext('webgl');
+      const ctx =
+        testCanvas.getContext('webgl2') || testCanvas.getContext('webgl');
       return ctx !== null;
     } catch (e) {
       return false;
@@ -223,12 +230,15 @@ export function createWebGLRenderer(
   /**
    * Detect WebGL capabilities
    */
-  function detectCapabilities(context: WebGLRenderingContext | WebGL2RenderingContext): WebGLCapabilities {
+  function detectCapabilities(
+    context: WebGLRenderingContext | WebGL2RenderingContext
+  ): WebGLCapabilities {
     const isWebGL2 = context instanceof WebGL2RenderingContext;
     const extensions = new Set(context.getSupportedExtensions() || []);
 
-    const maxAnisotropyExt = context.getExtension('EXT_texture_filter_anisotropic') ||
-                              context.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+    const maxAnisotropyExt =
+      context.getExtension('EXT_texture_filter_anisotropic') ||
+      context.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
     const maxAnisotropy = maxAnisotropyExt
       ? context.getParameter(maxAnisotropyExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT)
       : 1;
@@ -237,12 +247,18 @@ export function createWebGLRenderer(
       version: isWebGL2 ? 2 : 1,
       maxTextureSize: context.getParameter(context.MAX_TEXTURE_SIZE),
       maxVertexAttributes: context.getParameter(context.MAX_VERTEX_ATTRIBS),
-      maxVertexUniforms: context.getParameter(context.MAX_VERTEX_UNIFORM_VECTORS),
-      maxFragmentUniforms: context.getParameter(context.MAX_FRAGMENT_UNIFORM_VECTORS),
+      maxVertexUniforms: context.getParameter(
+        context.MAX_VERTEX_UNIFORM_VECTORS
+      ),
+      maxFragmentUniforms: context.getParameter(
+        context.MAX_FRAGMENT_UNIFORM_VECTORS
+      ),
       maxVaryingVectors: context.getParameter(context.MAX_VARYING_VECTORS),
       extensions,
-      supportsInstancedArrays: isWebGL2 || extensions.has('ANGLE_instanced_arrays'),
-      supportsVertexArrayObject: isWebGL2 || extensions.has('OES_vertex_array_object'),
+      supportsInstancedArrays:
+        isWebGL2 || extensions.has('ANGLE_instanced_arrays'),
+      supportsVertexArrayObject:
+        isWebGL2 || extensions.has('OES_vertex_array_object'),
       supportsFloatTextures: isWebGL2 || extensions.has('OES_texture_float'),
       maxAnisotropy,
     };
@@ -251,7 +267,9 @@ export function createWebGLRenderer(
   /**
    * Setup initial WebGL state
    */
-  function setupInitialState(context: WebGLRenderingContext | WebGL2RenderingContext): void {
+  function setupInitialState(
+    context: WebGLRenderingContext | WebGL2RenderingContext
+  ): void {
     // Enable blending for alpha
     context.enable(context.BLEND);
     context.blendFunc(context.SRC_ALPHA, context.ONE_MINUS_SRC_ALPHA);
@@ -313,7 +331,10 @@ export function createWebGLRenderer(
   /**
    * Create shader program from source
    */
-  function createShaderProgram(vertexSource: string, fragmentSource: string): ShaderProgram | null {
+  function createShaderProgram(
+    vertexSource: string,
+    fragmentSource: string
+  ): ShaderProgram | null {
     if (!gl) return null;
 
     // Compile vertex shader
@@ -462,10 +483,46 @@ export function createWebGLRenderer(
     // Create vertex data for a rectangle
     const vertices = new Float32Array([
       // Position (x, y), Color (r, g, b, a), Offset (x, y), Size (w, h)
-      0, 0, 0.5, 0.5, 0.5, 1.0, bounds.x, bounds.y, bounds.width, bounds.height,
-      1, 0, 0.5, 0.5, 0.5, 1.0, bounds.x, bounds.y, bounds.width, bounds.height,
-      0, 1, 0.5, 0.5, 0.5, 1.0, bounds.x, bounds.y, bounds.width, bounds.height,
-      1, 1, 0.5, 0.5, 0.5, 1.0, bounds.x, bounds.y, bounds.width, bounds.height,
+      0,
+      0,
+      0.5,
+      0.5,
+      0.5,
+      1.0,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
+      1,
+      0,
+      0.5,
+      0.5,
+      0.5,
+      1.0,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
+      0,
+      1,
+      0.5,
+      0.5,
+      0.5,
+      1.0,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
+      1,
+      1,
+      0.5,
+      0.5,
+      0.5,
+      1.0,
+      bounds.x,
+      bounds.y,
+      bounds.width,
+      bounds.height,
     ]);
 
     // Create buffer
@@ -477,7 +534,7 @@ export function createWebGLRenderer(
 
     // Setup attributes
     const stride = 10 * Float32Array.BYTES_PER_ELEMENT;
-    
+
     const positionLoc = program.attributes.get('a_position');
     if (positionLoc !== undefined) {
       gl.enableVertexAttribArray(positionLoc);
@@ -487,19 +544,40 @@ export function createWebGLRenderer(
     const colorLoc = program.attributes.get('a_color');
     if (colorLoc !== undefined) {
       gl.enableVertexAttribArray(colorLoc);
-      gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, stride, 2 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(
+        colorLoc,
+        4,
+        gl.FLOAT,
+        false,
+        stride,
+        2 * Float32Array.BYTES_PER_ELEMENT
+      );
     }
 
     const offsetLoc = program.attributes.get('a_offset');
     if (offsetLoc !== undefined) {
       gl.enableVertexAttribArray(offsetLoc);
-      gl.vertexAttribPointer(offsetLoc, 2, gl.FLOAT, false, stride, 6 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(
+        offsetLoc,
+        2,
+        gl.FLOAT,
+        false,
+        stride,
+        6 * Float32Array.BYTES_PER_ELEMENT
+      );
     }
 
     const sizeLoc = program.attributes.get('a_size');
     if (sizeLoc !== undefined) {
       gl.enableVertexAttribArray(sizeLoc);
-      gl.vertexAttribPointer(sizeLoc, 2, gl.FLOAT, false, stride, 8 * Float32Array.BYTES_PER_ELEMENT);
+      gl.vertexAttribPointer(
+        sizeLoc,
+        2,
+        gl.FLOAT,
+        false,
+        stride,
+        8 * Float32Array.BYTES_PER_ELEMENT
+      );
     }
 
     // Draw
@@ -517,13 +595,19 @@ export function createWebGLRenderer(
    */
   function getTransformMatrix(): Float32Array {
     const { zoom } = viewport;
-    
+
     // Create transformation matrix (scale and translate)
     // For WebGL, we use a simple 2D transformation
     return new Float32Array([
-      zoom, 0, 0,
-      0, zoom, 0,
-      -viewport.x * zoom, -viewport.y * zoom, 1,
+      zoom,
+      0,
+      0,
+      0,
+      zoom,
+      0,
+      -viewport.x * zoom,
+      -viewport.y * zoom,
+      1,
     ]);
   }
 
@@ -536,10 +620,10 @@ export function createWebGLRenderer(
       frameTimes.shift();
     }
 
-    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    const avgFrameTime =
+      frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
     stats.frameTime = avgFrameTime;
     stats.fps = 1000 / avgFrameTime;
-
   }
 
   /**

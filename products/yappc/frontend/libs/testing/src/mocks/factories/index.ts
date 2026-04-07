@@ -1,6 +1,6 @@
 /**
  * Test data factories
- * 
+ *
  * This module exports factory functions for creating test data.
  * Each factory creates realistic test data with sensible defaults
  * that can be overridden as needed.

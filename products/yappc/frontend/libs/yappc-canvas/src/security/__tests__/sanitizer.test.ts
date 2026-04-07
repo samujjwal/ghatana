@@ -10,8 +10,8 @@ import {
   type SanitizationPolicy,
   type ExportNode,
   type ExportEdge,
-
-  ExportSanitizer} from '../sanitizer';
+  ExportSanitizer,
+} from '../sanitizer';
 
 describe('ExportSanitizer', () => {
   describe('Node Sanitization', () => {
@@ -68,7 +68,8 @@ describe('ExportSanitizer', () => {
 
       const result = sanitizer.sanitizeNode(node);
 
-      const dataLabel = (result.data.data as Record<string, unknown>)?.label as string;
+      const dataLabel = (result.data.data as Record<string, unknown>)
+        ?.label as string;
       expect(dataLabel).not.toContain('<script>');
       expect(dataLabel).toContain('<p>');
     });
@@ -101,7 +102,10 @@ describe('ExportSanitizer', () => {
       const result = sanitizer.sanitizeNode(node);
 
       expect(result.data.metadata).toBeDefined();
-      expect((result.data.metadata as Record<string, unknown>).tags).toEqual(['tag1', 'tag2']);
+      expect((result.data.metadata as Record<string, unknown>).tags).toEqual([
+        'tag1',
+        'tag2',
+      ]);
     });
   });
 
@@ -158,7 +162,8 @@ describe('ExportSanitizer', () => {
 
       const result = sanitizer.sanitizeEdge(edge);
 
-      const dataLabel = (result.data.data as Record<string, unknown>)?.label as string;
+      const dataLabel = (result.data.data as Record<string, unknown>)
+        ?.label as string;
       expect(dataLabel).not.toContain('javascript:');
     });
   });
@@ -194,7 +199,9 @@ describe('ExportSanitizer', () => {
 
       expect(result.data.nodes).toHaveLength(2);
       expect(result.sanitized).toBe(true);
-      expect(result.removed.some((r) => r.includes('dangerousField'))).toBe(true);
+      expect(result.removed.some((r) => r.includes('dangerousField'))).toBe(
+        true
+      );
     });
 
     it('should sanitize all edges in document', () => {
@@ -247,7 +254,9 @@ describe('ExportSanitizer', () => {
       const result = sanitizer.sanitizeDocument(document);
 
       expect(result.data.metadata).toBeDefined();
-      expect((result.data.metadata as Record<string, unknown>).version).toBe('1.0');
+      expect((result.data.metadata as Record<string, unknown>).version).toBe(
+        '1.0'
+      );
     });
 
     it('should handle invalid node entries', () => {
@@ -275,7 +284,8 @@ describe('ExportSanitizer', () => {
     });
 
     it('should remove script tags', () => {
-      const html = '<p>Safe content</p><script>alert("xss")</script><p>More safe content</p>';
+      const html =
+        '<p>Safe content</p><script>alert("xss")</script><p>More safe content</p>';
 
       const result = sanitizer.sanitizeHtml(html);
 
@@ -375,7 +385,9 @@ describe('ExportSanitizer', () => {
       sanitizer.sanitizeNode(node);
 
       const log = sanitizer.getAuditLog();
-      const removedEntry = log.find((entry) => entry.action === 'remove' && entry.field === 'dangerousField');
+      const removedEntry = log.find(
+        (entry) => entry.action === 'remove' && entry.field === 'dangerousField'
+      );
       expect(removedEntry).toBeDefined();
       expect(removedEntry?.reason).toContain('not in allowlist');
     });
@@ -415,7 +427,7 @@ describe('ExportSanitizer', () => {
     });
 
     it('should truncate long original values', () => {
-      const longHtml = `<script>${  'x'.repeat(200)  }</script>`;
+      const longHtml = `<script>${'x'.repeat(200)}</script>`;
 
       sanitizer.sanitizeHtml(longHtml);
 
@@ -550,7 +562,7 @@ describe('ExportSanitizer', () => {
 
       const result = sanitizer.sanitizeNode(node);
       const data = result.data.data as Record<string, unknown>;
-      expect((data.description as string)).not.toContain('<script>');
+      expect(data.description as string).not.toContain('<script>');
       expect(data.title).toBe('Plain title');
     });
 

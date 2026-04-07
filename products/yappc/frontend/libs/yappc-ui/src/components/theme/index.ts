@@ -19,7 +19,10 @@ export {
   useThemeMode,
   useWorkspaceTheme,
 } from './theme/EnhancedThemeProvider';
-export type { MultiLayerThemeContextValue, ThemeLayer } from './theme/EnhancedThemeProvider';
+export type {
+  MultiLayerThemeContextValue,
+  ThemeLayer,
+} from './theme/EnhancedThemeProvider';
 export {
   default as resolveThemeColor,
   resolveMuiColor,

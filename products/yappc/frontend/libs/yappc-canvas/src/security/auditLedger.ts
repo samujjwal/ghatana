@@ -185,7 +185,11 @@ export interface ChainIssue {
   /** Entry ID */
   entryId: string;
   /** Type of issue */
-  issueType: 'hash_mismatch' | 'signature_invalid' | 'sequence_gap' | 'timestamp_anomaly';
+  issueType:
+    | 'hash_mismatch'
+    | 'signature_invalid'
+    | 'sequence_gap'
+    | 'timestamp_anomaly';
   /** Issue description */
   description: string;
   /** Severity of the issue */
@@ -226,12 +230,18 @@ export interface AuditLedger {
 /**
  * Severity hierarchy (for filtering)
  */
-const SEVERITY_HIERARCHY: AuditSeverity[] = ['info', 'warning', 'error', 'critical'];
+const SEVERITY_HIERARCHY: AuditSeverity[] = [
+  'info',
+  'warning',
+  'error',
+  'critical',
+];
 
 /**
  * Initial hash for the chain (genesis block)
  */
-const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
+const GENESIS_HASH =
+  '0000000000000000000000000000000000000000000000000000000000000000';
 
 /**
  * Creates a hash of content (simplified for demo; use crypto in production)
@@ -249,7 +259,10 @@ function hashContent(content: string): string {
 /**
  * Signs an entry (simplified for demo; use crypto in production)
  */
-function signEntry(entry: Omit<AuditLedgerEntry, 'signature'>, signingKey: string): string {
+function signEntry(
+  entry: Omit<AuditLedgerEntry, 'signature'>,
+  signingKey: string
+): string {
   const payload = JSON.stringify({ ...entry, key: signingKey });
   return `SIG_${hashContent(payload)}`;
 }
@@ -257,7 +270,10 @@ function signEntry(entry: Omit<AuditLedgerEntry, 'signature'>, signingKey: strin
 /**
  * Verifies an entry signature
  */
-function verifyEntrySignature(entry: AuditLedgerEntry, signingKey: string): boolean {
+function verifyEntrySignature(
+  entry: AuditLedgerEntry,
+  signingKey: string
+): boolean {
   const { signature, ...entryWithoutSig } = entry;
   const expectedSignature = signEntry(entryWithoutSig, signingKey);
   return signature === expectedSignature;
@@ -266,7 +282,10 @@ function verifyEntrySignature(entry: AuditLedgerEntry, signingKey: string): bool
 /**
  * Creates a new audit ledger
  */
-export function createAuditLedger(signingKey: string, retentionPolicies?: RetentionPolicy[]): AuditLedger {
+export function createAuditLedger(
+  signingKey: string,
+  retentionPolicies?: RetentionPolicy[]
+): AuditLedger {
   return {
     entries: [],
     entriesById: new Map(),
@@ -376,13 +395,22 @@ export function appendAuditEntry(
   const newEntriesById = new Map(ledger.entriesById).set(entryId, newEntry);
 
   const actorEntries = ledger.entriesByActor.get(event.actor) || [];
-  const newEntriesByActor = new Map(ledger.entriesByActor).set(event.actor, [...actorEntries, entryId]);
+  const newEntriesByActor = new Map(ledger.entriesByActor).set(event.actor, [
+    ...actorEntries,
+    entryId,
+  ]);
 
   const resourceEntries = ledger.entriesByResource.get(event.resource) || [];
-  const newEntriesByResource = new Map(ledger.entriesByResource).set(event.resource, [...resourceEntries, entryId]);
+  const newEntriesByResource = new Map(ledger.entriesByResource).set(
+    event.resource,
+    [...resourceEntries, entryId]
+  );
 
   const tierEntries = ledger.entriesByTier.get('hot') || [];
-  const newEntriesByTier = new Map(ledger.entriesByTier).set('hot', [...tierEntries, entryId]);
+  const newEntriesByTier = new Map(ledger.entriesByTier).set('hot', [
+    ...tierEntries,
+    entryId,
+  ]);
 
   return {
     ...ledger,
@@ -414,7 +442,9 @@ export function appendAuditEntry(
 /**
  * Verifies the integrity of the entire audit chain
  */
-export function verifyChainIntegrity(ledger: AuditLedger): ChainVerificationResult {
+export function verifyChainIntegrity(
+  ledger: AuditLedger
+): ChainVerificationResult {
   const issues: ChainIssue[] = [];
   let validEntries = 0;
   let expectedPreviousHash = GENESIS_HASH;
@@ -529,8 +559,10 @@ export function applyRetentionPolicies(ledger: AuditLedger): AuditLedger {
     const entryAgeDays = entryAge / (24 * 60 * 60 * 1000);
 
     // Find applicable policy
-    const policy = ledger.retentionPolicies.find((p) =>
-      !p.applicableEventTypes || p.applicableEventTypes.includes(entry.eventType)
+    const policy = ledger.retentionPolicies.find(
+      (p) =>
+        !p.applicableEventTypes ||
+        p.applicableEventTypes.includes(entry.eventType)
     );
 
     if (!policy) continue;
@@ -538,11 +570,19 @@ export function applyRetentionPolicies(ledger: AuditLedger): AuditLedger {
     // Determine target tier based on age
     let targetTier: StorageTier = entry.storageTier;
 
-    if (entryAgeDays > policy.hotRetentionDays + policy.warmRetentionDays + policy.coldRetentionDays) {
+    if (
+      entryAgeDays >
+      policy.hotRetentionDays +
+        policy.warmRetentionDays +
+        policy.coldRetentionDays
+    ) {
       if (policy.archiveAfterCold) {
         targetTier = 'archived';
       }
-    } else if (entryAgeDays > policy.hotRetentionDays + policy.warmRetentionDays) {
+    } else if (
+      entryAgeDays >
+      policy.hotRetentionDays + policy.warmRetentionDays
+    ) {
       targetTier = 'cold';
     } else if (entryAgeDays > policy.hotRetentionDays) {
       targetTier = 'warm';
@@ -560,7 +600,11 @@ export function applyRetentionPolicies(ledger: AuditLedger): AuditLedger {
 /**
  * Transitions an entry to a different storage tier
  */
-function transitionEntryTier(ledger: AuditLedger, entryId: string, newTier: StorageTier): AuditLedger {
+function transitionEntryTier(
+  ledger: AuditLedger,
+  entryId: string,
+  newTier: StorageTier
+): AuditLedger {
   const entry = ledger.entriesById.get(entryId);
   if (!entry) {
     throw new Error(`Entry '${entryId}' not found`);
@@ -588,8 +632,13 @@ function transitionEntryTier(ledger: AuditLedger, entryId: string, newTier: Stor
   const newEntriesById = new Map(ledger.entriesById).set(entryId, updatedEntry);
 
   // Update tier index
-  const oldTierEntries = (ledger.entriesByTier.get(oldTier) || []).filter((id) => id !== entryId);
-  const newTierEntries = [...(ledger.entriesByTier.get(newTier) || []), entryId];
+  const oldTierEntries = (ledger.entriesByTier.get(oldTier) || []).filter(
+    (id) => id !== entryId
+  );
+  const newTierEntries = [
+    ...(ledger.entriesByTier.get(newTier) || []),
+    entryId,
+  ];
 
   const newEntriesByTier = new Map(ledger.entriesByTier);
   newEntriesByTier.set(oldTier, oldTierEntries);
@@ -623,23 +672,33 @@ export function exportAuditLedger(
   let filteredEntries = ledger.entries;
 
   if (options.startTime !== undefined) {
-    filteredEntries = filteredEntries.filter((e) => e.timestamp >= options.startTime!);
+    filteredEntries = filteredEntries.filter(
+      (e) => e.timestamp >= options.startTime!
+    );
   }
 
   if (options.endTime !== undefined) {
-    filteredEntries = filteredEntries.filter((e) => e.timestamp <= options.endTime!);
+    filteredEntries = filteredEntries.filter(
+      (e) => e.timestamp <= options.endTime!
+    );
   }
 
   if (options.eventTypes && options.eventTypes.length > 0) {
-    filteredEntries = filteredEntries.filter((e) => options.eventTypes!.includes(e.eventType));
+    filteredEntries = filteredEntries.filter((e) =>
+      options.eventTypes!.includes(e.eventType)
+    );
   }
 
   if (options.actors && options.actors.length > 0) {
-    filteredEntries = filteredEntries.filter((e) => options.actors!.includes(e.actor));
+    filteredEntries = filteredEntries.filter((e) =>
+      options.actors!.includes(e.actor)
+    );
   }
 
   if (options.resources && options.resources.length > 0) {
-    filteredEntries = filteredEntries.filter((e) => options.resources!.includes(e.resource));
+    filteredEntries = filteredEntries.filter((e) =>
+      options.resources!.includes(e.resource)
+    );
   }
 
   if (options.minSeverity) {
@@ -711,7 +770,10 @@ export function exportAuditLedger(
 /**
  * Gets entries by actor
  */
-export function getEntriesByActor(ledger: AuditLedger, actor: string): AuditLedgerEntry[] {
+export function getEntriesByActor(
+  ledger: AuditLedger,
+  actor: string
+): AuditLedgerEntry[] {
   const entryIds = ledger.entriesByActor.get(actor) || [];
   return entryIds.map((id) => ledger.entriesById.get(id)!).filter(Boolean);
 }
@@ -719,7 +781,10 @@ export function getEntriesByActor(ledger: AuditLedger, actor: string): AuditLedg
 /**
  * Gets entries by resource
  */
-export function getEntriesByResource(ledger: AuditLedger, resource: string): AuditLedgerEntry[] {
+export function getEntriesByResource(
+  ledger: AuditLedger,
+  resource: string
+): AuditLedgerEntry[] {
   const entryIds = ledger.entriesByResource.get(resource) || [];
   return entryIds.map((id) => ledger.entriesById.get(id)!).filter(Boolean);
 }
@@ -727,7 +792,10 @@ export function getEntriesByResource(ledger: AuditLedger, resource: string): Aud
 /**
  * Gets entries by storage tier
  */
-export function getEntriesByTier(ledger: AuditLedger, tier: StorageTier): AuditLedgerEntry[] {
+export function getEntriesByTier(
+  ledger: AuditLedger,
+  tier: StorageTier
+): AuditLedgerEntry[] {
   const entryIds = ledger.entriesByTier.get(tier) || [];
   return entryIds.map((id) => ledger.entriesById.get(id)!).filter(Boolean);
 }
@@ -735,7 +803,9 @@ export function getEntriesByTier(ledger: AuditLedger, tier: StorageTier): AuditL
 /**
  * Gets audit statistics
  */
-export function getAuditStatistics(ledger: AuditLedger): AuditLedger['statistics'] {
+export function getAuditStatistics(
+  ledger: AuditLedger
+): AuditLedger['statistics'] {
   return ledger.statistics;
 }
 
@@ -770,7 +840,9 @@ export function searchAuditEntries(
 
   if (query.minSeverity) {
     const minIndex = SEVERITY_HIERARCHY.indexOf(query.minSeverity);
-    results = results.filter((e) => SEVERITY_HIERARCHY.indexOf(e.severity) >= minIndex);
+    results = results.filter(
+      (e) => SEVERITY_HIERARCHY.indexOf(e.severity) >= minIndex
+    );
   }
 
   if (query.startTime !== undefined) {
@@ -791,10 +863,15 @@ export function searchAuditEntries(
 /**
  * Adds a retention policy to the ledger
  */
-export function addRetentionPolicy(ledger: AuditLedger, policy: RetentionPolicy): AuditLedger {
+export function addRetentionPolicy(
+  ledger: AuditLedger,
+  policy: RetentionPolicy
+): AuditLedger {
   // Check for duplicate policy names
   if (ledger.retentionPolicies.some((p) => p.name === policy.name)) {
-    throw new Error(`Retention policy with name '${policy.name}' already exists`);
+    throw new Error(
+      `Retention policy with name '${policy.name}' already exists`
+    );
   }
 
   return {
@@ -806,9 +883,14 @@ export function addRetentionPolicy(ledger: AuditLedger, policy: RetentionPolicy)
 /**
  * Removes a retention policy
  */
-export function removeRetentionPolicy(ledger: AuditLedger, policyName: string): AuditLedger {
+export function removeRetentionPolicy(
+  ledger: AuditLedger,
+  policyName: string
+): AuditLedger {
   return {
     ...ledger,
-    retentionPolicies: ledger.retentionPolicies.filter((p) => p.name !== policyName),
+    retentionPolicies: ledger.retentionPolicies.filter(
+      (p) => p.name !== policyName
+    ),
   };
 }

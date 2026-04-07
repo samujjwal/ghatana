@@ -1,6 +1,6 @@
 /**
  * AEP Mode Integration Examples for YAPPC
- * 
+ *
  * Shows how to integrate AEP in both library and service modes
  */
 
@@ -179,7 +179,9 @@ export async function integrateAepWithCanvas(): Promise<void> {
   const client = await getGlobalAepClient();
 
   // When user creates a frame
-  async function onCreateFrame(frameData: Record<string, unknown>): Promise<void> {
+  async function onCreateFrame(
+    frameData: Record<string, unknown>
+  ): Promise<void> {
     // Publish event to AEP
     await client.publishEvent('canvas:frame:created', {
       frameId: frameData.id,

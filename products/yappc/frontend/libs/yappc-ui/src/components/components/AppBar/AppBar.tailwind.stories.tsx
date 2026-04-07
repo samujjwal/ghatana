@@ -95,7 +95,9 @@ export const Positions: Story = {
       </div>
 
       <div className="relative h-32 border-2 border-dashed border-grey-300">
-        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">Fixed (within container)</p>
+        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">
+          Fixed (within container)
+        </p>
         <AppBar position="fixed">
           <div className="px-6 w-full">
             <h2 className="text-lg font-medium">Fixed AppBar</h2>
@@ -104,7 +106,9 @@ export const Positions: Story = {
       </div>
 
       <div className="h-48 overflow-auto border-2 border-dashed border-grey-300">
-        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">Sticky (scroll to see effect)</p>
+        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">
+          Sticky (scroll to see effect)
+        </p>
         <AppBar position="sticky">
           <div className="px-6 w-full">
             <h2 className="text-lg font-medium">Sticky AppBar</h2>
@@ -119,7 +123,9 @@ export const Positions: Story = {
       </div>
 
       <div className="relative h-32 border-2 border-dashed border-grey-300">
-        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">Absolute (positioned within container)</p>
+        <p className="text-sm text-grey-600 mb-2 px-4 pt-2">
+          Absolute (positioned within container)
+        </p>
         <AppBar position="absolute">
           <div className="px-6 w-full">
             <h2 className="text-lg font-medium">Absolute AppBar</h2>
@@ -166,7 +172,9 @@ export const Colors: Story = {
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-8 rounded-lg">
         <AppBar color="transparent">
           <div className="px-6 w-full">
-            <h2 className="text-lg font-medium text-white">Transparent (inherits background)</h2>
+            <h2 className="text-lg font-medium text-white">
+              Transparent (inherits background)
+            </h2>
           </div>
         </AppBar>
       </div>
@@ -248,15 +256,29 @@ export const WithBlur: Story = {
       {/* AppBar with blur */}
       <AppBar position="sticky" color="transparent" blur elevation={0}>
         <div className="px-6 w-full flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white drop-shadow-lg">Glassmorphism AppBar</h1>
+          <h1 className="text-xl font-bold text-white drop-shadow-lg">
+            Glassmorphism AppBar
+          </h1>
           <nav className="flex gap-2">
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            >
               Home
             </Button>
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            >
               Features
             </Button>
-            <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+            >
               Pricing
             </Button>
           </nav>
@@ -289,26 +311,50 @@ export const CompleteHeader: Story = {
 
         {/* Navigation */}
         <nav className="hidden md:flex gap-1">
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Dashboard
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Projects
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Team
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Settings
           </Button>
         </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="border-white text-white hover:bg-white/20">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white text-white hover:bg-white/20"
+          >
             Login
           </Button>
-          <Button variant="solid" size="sm" className="bg-white text-primary-500 hover:bg-grey-100">
+          <Button
+            variant="solid"
+            size="sm"
+            className="bg-white text-primary-500 hover:bg-grey-100"
+          >
             Sign Up
           </Button>
         </div>
@@ -339,7 +385,12 @@ export const WithSearch: Story = {
         {/* User actions */}
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -366,8 +417,18 @@ export const Responsive: Story = {
       <div className="px-4 md:px-6 w-full flex items-center justify-between">
         {/* Mobile menu button */}
         <button className="md:hidden p-2 text-white hover:bg-white/20 rounded-lg">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
 
@@ -376,19 +437,35 @@ export const Responsive: Story = {
 
         {/* Desktop navigation - hidden on mobile */}
         <nav className="hidden md:flex gap-2">
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Home
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Features
           </Button>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             About
           </Button>
         </nav>
 
         {/* Actions */}
-        <Button variant="outline" size="sm" className="border-white text-white hover:bg-white/20">
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-white text-white hover:bg-white/20"
+        >
           Login
         </Button>
       </div>
@@ -405,7 +482,11 @@ export const WithTabs: Story = {
       <AppBar position="sticky" color="primary" elevation={0}>
         <div className="px-6 w-full flex items-center justify-between">
           <h1 className="text-xl font-bold">Dashboard</h1>
-          <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-white hover:bg-white/20"
+          >
             Settings
           </Button>
         </div>
@@ -438,7 +519,9 @@ export const SemanticVariants: Story = {
   render: () => (
     <div className="space-y-4">
       <div>
-        <p className="text-sm text-grey-600 mb-2">As &lt;header&gt; (default)</p>
+        <p className="text-sm text-grey-600 mb-2">
+          As &lt;header&gt; (default)
+        </p>
         <AppBar component="header">
           <div className="px-6 w-full">
             <h2 className="text-lg font-medium">Header Element</h2>

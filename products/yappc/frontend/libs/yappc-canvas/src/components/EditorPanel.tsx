@@ -1,8 +1,8 @@
 /**
  * Editor Panel - IDE to Canvas Bridge
- * 
+ *
  * Maps IDE EditorPanel to CanvasEditorPanel
- * 
+ *
  * @deprecated Use CanvasEditorPanel from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -28,7 +28,7 @@ export interface EditorPanelProps {
 
 /**
  * EditorPanel - Bridge to Canvas Editor System
- * 
+ *
  * Maps IDE EditorPanel to Canvas code editor components.
  * During migration, this wraps the canvas editor surface.
  */
@@ -44,13 +44,13 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] EditorPanel from @ghatana/yappc-ide is deprecated. ' +
-      'Use CanvasEditorPanel or CodeEditor from @ghatana/yappc-canvas. ' +
-      'See LIBRARY_CONSOLIDATION_PLAN.md'
+        'Use CanvasEditorPanel or CodeEditor from @ghatana/yappc-canvas. ' +
+        'See LIBRARY_CONSOLIDATION_PLAN.md'
     );
   }, []);
 
   return (
-    <div 
+    <div
       className={`editor-panel-bridge ${className || ''}`}
       data-theme={theme}
       data-language={language}
@@ -63,7 +63,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
 
 /**
  * CodeEditor - Bridge Component
- * 
+ *
  * Maps IDE CodeEditor to Canvas code editor.
  */
 export interface CodeEditorProps extends EditorPanelProps {
@@ -79,8 +79,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = (props) => {
   useEffect(() => {
     console.warn(
       '[MIGRATION] CodeEditor from @ghatana/yappc-ide is deprecated. ' +
-      'Use CodeEditor from @ghatana/yappc-canvas. ' +
-      'See LIBRARY_CONSOLIDATION_PLAN.md'
+        'Use CodeEditor from @ghatana/yappc-canvas. ' +
+        'See LIBRARY_CONSOLIDATION_PLAN.md'
     );
   }, []);
 

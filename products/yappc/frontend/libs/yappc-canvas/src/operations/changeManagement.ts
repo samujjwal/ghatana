@@ -1,6 +1,6 @@
 /**
  * Canvas Change Management System
- * 
+ *
  * Provides change management capabilities for canvas-based applications:
  * - Architecture Decision Records (ADR)
  * - Release notes generation
@@ -8,7 +8,7 @@
  * - Approval tracking
  * - Change calendar management
  * - Rollback planning
- * 
+ *
  * @module operations/changeManagement
  */
 
@@ -152,7 +152,12 @@ export interface ChangeEvent {
   estimatedDuration: number; // milliseconds
   actualStartTime?: Date;
   actualEndTime?: Date;
-  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled' | 'rolled-back';
+  status:
+    | 'scheduled'
+    | 'in-progress'
+    | 'completed'
+    | 'cancelled'
+    | 'rolled-back';
   maintenanceWindow?: {
     start: Date;
     end: Date;
@@ -175,7 +180,7 @@ export interface ChangeManagementConfig {
 
 /**
  * Change Management Manager
- * 
+ *
  * Manages the change management lifecycle including:
  * - ADR tracking and documentation
  * - Change request workflows
@@ -206,7 +211,8 @@ export class ChangeManagementManager {
       minApprovers: config.minApprovers || 2,
       changeRetentionDays: config.changeRetentionDays || 365,
       autoGenerateReleaseNotes: config.autoGenerateReleaseNotes ?? true,
-      maintenanceWindowBufferMinutes: config.maintenanceWindowBufferMinutes || 30,
+      maintenanceWindowBufferMinutes:
+        config.maintenanceWindowBufferMinutes || 30,
     };
   }
 
@@ -239,7 +245,9 @@ export class ChangeManagementManager {
    * Get ADR by number
    */
   getADRByNumber(number: number): ADR | null {
-    return Array.from(this.adrs.values()).find((a) => a.number === number) ?? null;
+    return (
+      Array.from(this.adrs.values()).find((a) => a.number === number) ?? null
+    );
   }
 
   /**
@@ -556,8 +564,9 @@ export class ChangeManagementManager {
    */
   getReleaseNoteByVersion(version: string): ReleaseNote | null {
     return (
-      Array.from(this.releaseNotes.values()).find((r) => r.version === version) ??
-      null
+      Array.from(this.releaseNotes.values()).find(
+        (r) => r.version === version
+      ) ?? null
     );
   }
 
@@ -565,8 +574,8 @@ export class ChangeManagementManager {
    * Get all release notes
    */
   getAllReleaseNotes(): ReleaseNote[] {
-    return Array.from(this.releaseNotes.values()).sort((a, b) =>
-      b.releaseDate.getTime() - a.releaseDate.getTime()
+    return Array.from(this.releaseNotes.values()).sort(
+      (a, b) => b.releaseDate.getTime() - a.releaseDate.getTime()
     );
   }
 
@@ -738,7 +747,8 @@ export class ChangeManagementManager {
     if (rejected.length > 0) {
       change.approvalStatus = 'rejected';
     } else if (approved.length >= this.config.minApprovers) {
-      change.approvalStatus = conditional.length > 0 ? 'conditional' : 'approved';
+      change.approvalStatus =
+        conditional.length > 0 ? 'conditional' : 'approved';
     } else {
       change.approvalStatus = 'pending';
     }
@@ -804,7 +814,9 @@ export function calculateAvgApprovalTime(changes: ChangeRequest[]): number {
       .sort((a, b) => b.approvedAt!.getTime() - a.approvedAt!.getTime())[0];
 
     if (lastApproval?.approvedAt) {
-      return sum + (lastApproval.approvedAt.getTime() - change.createdAt.getTime());
+      return (
+        sum + (lastApproval.approvedAt.getTime() - change.createdAt.getTime())
+      );
     }
     return sum;
   }, 0);
@@ -829,16 +841,20 @@ export function formatChangeDuration(durationMs: number): string {
 /**
  * Validate change request
  */
-export function validateChangeRequest(
-  change: ChangeRequest
-): { valid: boolean; errors: string[] } {
+export function validateChangeRequest(change: ChangeRequest): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (!change.title || change.title.trim().length === 0) {
     errors.push('Change title is required');
   }
 
-  if (!change.implementationPlan || change.implementationPlan.trim().length === 0) {
+  if (
+    !change.implementationPlan ||
+    change.implementationPlan.trim().length === 0
+  ) {
     errors.push('Implementation plan is required');
   }
 
@@ -847,14 +863,20 @@ export function validateChangeRequest(
   }
 
   if (change.riskLevel === 'high' || change.riskLevel === 'critical') {
-    if (!change.testing.unit || !change.testing.integration || !change.testing.e2e) {
+    if (
+      !change.testing.unit ||
+      !change.testing.integration ||
+      !change.testing.e2e
+    ) {
       errors.push('High/critical risk changes require all test types');
     }
   }
 
   if (change.impact.downtime > 4 * 60 * 60 * 1000) {
     // > 4 hours
-    errors.push('Downtime exceeds 4 hours - consider breaking into smaller changes');
+    errors.push(
+      'Downtime exceeds 4 hours - consider breaking into smaller changes'
+    );
   }
 
   return {

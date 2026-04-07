@@ -4,7 +4,10 @@ import { Grid as GlobalGrid } from '@ghatana/design-system';
 
 import type { GridProps as GlobalGridProps } from '@yappc/ui';
 
-export interface GridProps extends Omit<GlobalGridProps, 'columns' | 'cols' | 'gap'> {
+export interface GridProps extends Omit<
+  GlobalGridProps,
+  'columns' | 'cols' | 'gap'
+> {
   cols?: string;
   rows?: string;
   gap?: string;

@@ -348,9 +348,7 @@ export class DeploymentManager {
     );
 
     if (!healthCheck.healthy) {
-      throw new Error(
-        `Cannot switch to unhealthy slot: ${healthCheck.error}`
-      );
+      throw new Error(`Cannot switch to unhealthy slot: ${healthCheck.error}`);
     }
 
     // Update active slot
@@ -907,9 +905,10 @@ export function estimateDeploymentTime(
 /**
  * Validate deployment configuration
  */
-export function validateDeploymentConfig(
-  config: DeploymentConfig
-): { valid: boolean; errors: string[] } {
+export function validateDeploymentConfig(config: DeploymentConfig): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (!config.artifactUrl.startsWith('http')) {

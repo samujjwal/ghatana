@@ -1,12 +1,12 @@
 /**
  * Production WebGL Renderer Adapter
- * 
+ *
  * Integrates the production-grade WebGL renderer from Feature 1.10
  * with the renderer abstraction interface from Feature 2.27.
- * 
+ *
  * This adapter bridges the high-performance rendering engine
  * with the unified renderer interface for seamless switching.
- * 
+ *
  * @module renderer/productionWebGLRenderer
  */
 
@@ -28,20 +28,20 @@ import type {
 
 /**
  * Production WebGL Renderer with full Feature 1.10 capabilities
- * 
+ *
  * Wraps the production webglRenderer.ts implementation with the
  * IRenderer interface for use in renderer switching.
  */
 export class ProductionWebGLRenderer implements IRenderer {
   type: RendererType = 'webgl';
   capabilities: RendererCapabilities;
-  
+
   private container?: HTMLElement;
   private canvas?: HTMLCanvasElement;
   private renderer?: ReturnType<typeof createWebGLRenderer>;
   private state: CanvasState;
   private config: WebGLRendererConfig;
-  
+
   /**
    *
    */
@@ -50,13 +50,13 @@ export class ProductionWebGLRenderer implements IRenderer {
     this.state = this.createEmptyState();
     this.capabilities = this.createInitialCapabilities();
   }
-  
+
   /**
    *
    */
   async initialize(container: HTMLElement): Promise<void> {
     this.container = container;
-    
+
     // Create canvas element
     this.canvas = document.createElement('canvas');
     this.canvas.width = container.clientWidth || 800;
@@ -64,23 +64,23 @@ export class ProductionWebGLRenderer implements IRenderer {
     this.canvas.style.display = 'block';
     this.canvas.style.width = '100%';
     this.canvas.style.height = '100%';
-    
+
     // Clear container and add canvas
     this.container.innerHTML = '';
     this.container.appendChild(this.canvas);
-    
+
     // Initialize production WebGL renderer
     this.renderer = createWebGLRenderer(this.canvas, this.config);
-    
+
     if (!this.renderer.isSupported()) {
       throw new Error('WebGL not supported in this environment');
     }
-    
+
     this.renderer.initialize();
-    
+
     // Update capabilities with detected features
     this.updateCapabilities();
-    
+
     // Set initial viewport
     this.renderer.setViewport({
       x: this.state.viewport.x,
@@ -90,7 +90,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       zoom: this.state.viewport.zoom,
     });
   }
-  
+
   /**
    *
    */
@@ -99,30 +99,30 @@ export class ProductionWebGLRenderer implements IRenderer {
       this.renderer.dispose();
       this.renderer = undefined;
     }
-    
+
     if (this.canvas) {
       this.canvas.remove();
       this.canvas = undefined;
     }
-    
+
     if (this.container) {
       this.container.innerHTML = '';
     }
   }
-  
+
   /**
    *
    */
   saveState(): CanvasState {
     return JSON.parse(JSON.stringify(this.state));
   }
-  
+
   /**
    *
    */
   restoreState(state: CanvasState): void {
     this.state = JSON.parse(JSON.stringify(state));
-    
+
     // Update renderer viewport if initialized
     if (this.renderer && this.canvas) {
       this.renderer.setViewport({
@@ -134,7 +134,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       });
     }
   }
-  
+
   /**
    *
    */
@@ -142,40 +142,40 @@ export class ProductionWebGLRenderer implements IRenderer {
     if (!this.renderer) {
       return;
     }
-    
+
     // Convert state to CanvasElement format
     const elements = this.stateToElements();
-    
+
     // Render using production WebGL renderer
     this.renderer.render(elements);
   }
-  
+
   /**
    *
    */
   clear(): void {
     this.state = this.createEmptyState();
-    
+
     if (this.renderer) {
       this.renderer.clear();
     }
   }
-  
+
   /**
    *
    */
   getPerformance(): RendererPerformance {
     const memoryUsage = this.estimateMemoryUsage();
-    
+
     if (!this.renderer) {
       return {
         ...this.createEmptyPerformance(),
         memoryUsage, // Still report memory based on state even if not initialized
       };
     }
-    
+
     const stats = this.renderer.getStats();
-    
+
     return {
       fps: stats.fps,
       drawCalls: stats.drawCalls,
@@ -186,13 +186,13 @@ export class ProductionWebGLRenderer implements IRenderer {
       lastFrameTime: stats.frameTime,
     };
   }
-  
+
   /**
    *
    */
   setViewport(x: number, y: number, zoom: number): void {
     this.state.viewport = { x, y, zoom };
-    
+
     if (this.renderer && this.canvas) {
       this.renderer.setViewport({
         x,
@@ -203,70 +203,70 @@ export class ProductionWebGLRenderer implements IRenderer {
       });
     }
   }
-  
+
   /**
    *
    */
   getViewport() {
     return this.state.viewport;
   }
-  
+
   /**
    *
    */
   addNode(node: CanvasState['nodes'][0]): void {
     this.state.nodes.push(node);
   }
-  
+
   /**
    *
    */
   updateNode(id: string, updates: Partial<CanvasState['nodes'][0]>): void {
-    const node = this.state.nodes.find(n => n.id === id);
+    const node = this.state.nodes.find((n) => n.id === id);
     if (node) {
       Object.assign(node, updates);
     }
   }
-  
+
   /**
    *
    */
   removeNode(id: string): void {
-    this.state.nodes = this.state.nodes.filter(n => n.id !== id);
+    this.state.nodes = this.state.nodes.filter((n) => n.id !== id);
     // Also remove edges connected to this node
     this.state.edges = this.state.edges.filter(
-      e => e.source !== id && e.target !== id
+      (e) => e.source !== id && e.target !== id
     );
   }
-  
+
   /**
    *
    */
   addEdge(edge: CanvasState['edges'][0]): void {
     this.state.edges.push(edge);
   }
-  
+
   /**
    *
    */
   updateEdge(id: string, updates: Partial<CanvasState['edges'][0]>): void {
-    const edge = this.state.edges.find(e => e.id === id);
+    const edge = this.state.edges.find((e) => e.id === id);
     if (edge) {
       Object.assign(edge, updates);
     }
   }
-  
+
   /**
    *
    */
   removeEdge(id: string): void {
-    this.state.edges = this.state.edges.filter(e => e.id !== id);
+    this.state.edges = this.state.edges.filter((e) => e.id !== id);
   }
-  
+
   // ============================================================================
   // Helper Methods
   // ============================================================================
-  
+
   /**
    *
    */
@@ -280,7 +280,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       metadata: {},
     };
   }
-  
+
   /**
    *
    */
@@ -296,7 +296,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       extensions: [],
     };
   }
-  
+
   /**
    *
    */
@@ -304,7 +304,7 @@ export class ProductionWebGLRenderer implements IRenderer {
     if (!this.renderer) {
       return;
     }
-    
+
     const caps = this.renderer.getCapabilities();
 
     if (!caps) {
@@ -332,7 +332,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       extensions: Array.from(caps.extensions ?? []),
     };
   }
-  
+
   /**
    *
    */
@@ -347,7 +347,7 @@ export class ProductionWebGLRenderer implements IRenderer {
       lastFrameTime: 0,
     };
   }
-  
+
   /**
    *
    */
@@ -357,25 +357,26 @@ export class ProductionWebGLRenderer implements IRenderer {
     // ~50 bytes per edge (endpoints, color, width)
     const nodeMemory = this.state.nodes.length * 100;
     const edgeMemory = this.state.edges.length * 50;
-    
+
     const totalBytes = nodeMemory + edgeMemory;
     return totalBytes / (1024 * 1024); // Convert to MB
   }
-  
+
   /**
    * Convert renderer state to CanvasElement format
-   * 
+   *
    * Maps the CanvasState format (used by renderer switcher) to
    * the CanvasElement format (used by production renderer).
    */
   private stateToElements(): CanvasElement[] {
     const elements: CanvasElement[] = [];
 
-    this.state.nodes.forEach(node => {
+    this.state.nodes.forEach((node) => {
       const width = (node.data.width as number) || 120;
       const height = (node.data.height as number) || 60;
       const style = node.style ?? {};
-      const elementType = typeof node.data.type === 'string' ? node.data.type : 'node';
+      const elementType =
+        typeof node.data.type === 'string' ? node.data.type : 'node';
       const timestamp = new Date();
 
       elements.push({
@@ -409,9 +410,9 @@ export class ProductionWebGLRenderer implements IRenderer {
       });
     });
 
-    this.state.edges.forEach(edge => {
-      const sourceNode = this.state.nodes.find(n => n.id === edge.source);
-      const targetNode = this.state.nodes.find(n => n.id === edge.target);
+    this.state.edges.forEach((edge) => {
+      const sourceNode = this.state.nodes.find((n) => n.id === edge.source);
+      const targetNode = this.state.nodes.find((n) => n.id === edge.target);
 
       if (!sourceNode || !targetNode) {
         return;
@@ -460,23 +461,23 @@ export class ProductionWebGLRenderer implements IRenderer {
 
     return elements;
   }
-  
+
   /**
    * Get the underlying production renderer instance
-   * 
+   *
    * Allows access to advanced features not exposed through IRenderer interface
    */
   getProductionRenderer(): ReturnType<typeof createWebGLRenderer> | undefined {
     return this.renderer;
   }
-  
+
   /**
    * Check if renderer is initialized and ready
    */
   isReady(): boolean {
     return this.renderer !== undefined && this.canvas !== undefined;
   }
-  
+
   /**
    * Get detailed WebGL capabilities
    */
@@ -484,7 +485,7 @@ export class ProductionWebGLRenderer implements IRenderer {
     if (!this.renderer) {
       return null;
     }
-    
+
     return this.renderer.getCapabilities();
   }
 }

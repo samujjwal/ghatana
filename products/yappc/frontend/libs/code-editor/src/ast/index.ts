@@ -101,10 +101,7 @@ export class ComponentParser {
 
     const visit = (node: ts.Node) => {
       // Look for Props interface
-      if (
-        ts.isInterfaceDeclaration(node) &&
-        node.name.text === 'Props'
-      ) {
+      if (ts.isInterfaceDeclaration(node) && node.name.text === 'Props') {
         if (node.members) {
           for (const member of node.members) {
             if (ts.isPropertySignature(member) && member.name) {
@@ -275,4 +272,9 @@ export class ComponentParser {
   }
 }
 
-export type { ComponentMetadata, PropDefinition, TypeDefinition, InterfaceDefinition } from './types';
+export type {
+  ComponentMetadata,
+  PropDefinition,
+  TypeDefinition,
+  InterfaceDefinition,
+} from './types';

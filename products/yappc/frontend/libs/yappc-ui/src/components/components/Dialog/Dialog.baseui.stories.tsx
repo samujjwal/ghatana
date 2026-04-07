@@ -64,7 +64,9 @@ export const Sizes: Story = {
     open: false,
   },
   render: function Render(args) {
-    const [size, setSize] = useState<'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full' | null>(null);
+    const [size, setSize] = useState<
+      'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full' | null
+    >(null);
 
     return (
       <div className="flex flex-wrap gap-2">
@@ -105,7 +107,9 @@ export const Shapes: Story = {
     open: false,
   },
   render: function Render(args) {
-    const [shape, setShape] = useState<'rounded' | 'square' | 'soft' | null>(null);
+    const [shape, setShape] = useState<'rounded' | 'square' | 'soft' | null>(
+      null
+    );
 
     return (
       <div className="flex gap-2">
@@ -140,7 +144,9 @@ export const ContentPadding: Story = {
     open: false,
   },
   render: function Render(args) {
-    const [padding, setPadding] = useState<'none' | 'normal' | 'dense' | null>(null);
+    const [padding, setPadding] = useState<'none' | 'normal' | 'dense' | null>(
+      null
+    );
 
     return (
       <div className="flex gap-2">
@@ -228,8 +234,13 @@ export const NoHeader: Story = {
             </Button>
           }
         >
-          <h2 className="text-lg font-bold mb-4">Custom Header Inside Content</h2>
-          <p>When you don't use the header prop, you can create your own header inside the content area.</p>
+          <h2 className="text-lg font-bold mb-4">
+            Custom Header Inside Content
+          </h2>
+          <p>
+            When you don't use the header prop, you can create your own header
+            inside the content area.
+          </p>
         </Dialog>
       </>
     );
@@ -361,7 +372,10 @@ export const FormDialog: Story = {
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium mb-1"
+              >
                 Description
               </label>
               <textarea
@@ -410,38 +424,38 @@ export const ScrollableContent: Story = {
           <div className="space-y-4">
             <h3 className="font-semibold">1. Introduction</h3>
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor 
-              incididunt ut labore et dolore magna aliqua.
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
 
             <h3 className="font-semibold">2. User Responsibilities</h3>
             <p>
-              Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip 
-              ex ea commodo consequat.
+              Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat.
             </p>
 
             <h3 className="font-semibold">3. Privacy Policy</h3>
             <p>
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
-              fugiat nulla pariatur.
+              Duis aute irure dolor in reprehenderit in voluptate velit esse
+              cillum dolore eu fugiat nulla pariatur.
             </p>
 
             <h3 className="font-semibold">4. Termination</h3>
             <p>
-              Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt 
-              mollit anim id est laborum.
+              Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
+              officia deserunt mollit anim id est laborum.
             </p>
 
             <h3 className="font-semibold">5. Limitation of Liability</h3>
             <p>
-              Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque 
-              laudantium, totam rem aperiam.
+              Sed ut perspiciatis unde omnis iste natus error sit voluptatem
+              accusantium doloremque laudantium, totam rem aperiam.
             </p>
 
             <h3 className="font-semibold">6. Governing Law</h3>
             <p>
-              Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta 
-              sunt explicabo.
+              Eaque ipsa quae ab illo inventore veritatis et quasi architecto
+              beatae vitae dicta sunt explicabo.
             </p>
           </div>
         </Dialog>
@@ -492,11 +506,20 @@ export const KeyboardAccessibility: Story = {
         >
           <p>Try navigating this dialog using only your keyboard!</p>
           <p className="mt-2 text-sm text-grey-600">
-            Focus is trapped within the dialog when open. Press ESC or click outside to close.
+            Focus is trapped within the dialog when open. Press ESC or click
+            outside to close.
           </p>
           <div className="mt-4 space-y-2">
-            <input type="text" placeholder="Input 1" className="w-full px-3 py-2 border rounded" />
-            <input type="text" placeholder="Input 2" className="w-full px-3 py-2 border rounded" />
+            <input
+              type="text"
+              placeholder="Input 1"
+              className="w-full px-3 py-2 border rounded"
+            />
+            <input
+              type="text"
+              placeholder="Input 2"
+              className="w-full px-3 py-2 border rounded"
+            />
           </div>
         </Dialog>
       </>

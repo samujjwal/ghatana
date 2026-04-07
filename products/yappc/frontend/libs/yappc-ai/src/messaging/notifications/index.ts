@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-notifications
- * 
+ *
  * Real-time notification library for YAPPC.
  * Provides notification components and hooks for system notifications.
- * 
+ *
  * @module notifications
  */
 

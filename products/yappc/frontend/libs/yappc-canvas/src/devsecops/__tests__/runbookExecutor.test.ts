@@ -76,11 +76,11 @@ describe.skip('Runbook - Ansible Playbook Parsing', () => {
 
     expect(runbook.type).toBe('ansible');
     expect(runbook.name).toBe('Deploy Web Server');
-    
+
     // Should have: play-start, 2 tasks, play-end
     expect(runbook.steps).toHaveLength(4);
-    
-    const taskSteps = runbook.steps.filter(s => s.type === 'task');
+
+    const taskSteps = runbook.steps.filter((s) => s.type === 'task');
     expect(taskSteps).toHaveLength(2);
     expect(taskSteps[0].name).toBe('Install nginx');
     expect(taskSteps[0].module).toBe('apt');
@@ -93,9 +93,7 @@ describe.skip('Runbook - Ansible Playbook Parsing', () => {
       {
         name: 'Setup Database',
         hosts: 'database',
-        tasks: [
-          { name: 'Install PostgreSQL', apt: { name: 'postgresql' } },
-        ],
+        tasks: [{ name: 'Install PostgreSQL', apt: { name: 'postgresql' } }],
       },
       {
         name: 'Setup Application',
@@ -110,10 +108,10 @@ describe.skip('Runbook - Ansible Playbook Parsing', () => {
 
     // 2 plays × (start + tasks + end)
     expect(runbook.steps.length).toBeGreaterThan(4);
-    
-    const play1Start = runbook.steps.find(s => s.id === 'play-0-start');
-    const play2Start = runbook.steps.find(s => s.id === 'play-1-start');
-    
+
+    const play1Start = runbook.steps.find((s) => s.id === 'play-0-start');
+    const play2Start = runbook.steps.find((s) => s.id === 'play-1-start');
+
     expect(play1Start?.name).toContain('Setup Database');
     expect(play2Start?.name).toContain('Setup Application');
   });
@@ -132,8 +130,8 @@ describe.skip('Runbook - Ansible Playbook Parsing', () => {
 
     const runbook = parseAnsiblePlaybook(playbook);
 
-    const task1 = runbook.steps.find(s => s.name === 'Task 1');
-    const task2 = runbook.steps.find(s => s.name === 'Task 2');
+    const task1 = runbook.steps.find((s) => s.name === 'Task 1');
+    const task2 = runbook.steps.find((s) => s.name === 'Task 2');
 
     expect(task1?.dependsOn).toContain('play-0-start');
     expect(task2?.dependsOn).toContain('step-0'); // Depends on Task 1
@@ -156,7 +154,7 @@ describe.skip('Runbook - Ansible Playbook Parsing', () => {
 
     const runbook = parseAnsiblePlaybook(playbook);
 
-    const task = runbook.steps.find(s => s.type === 'task');
+    const task = runbook.steps.find((s) => s.type === 'task');
     expect(task?.condition).toBe("environment == 'production'");
   });
 });
@@ -199,8 +197,8 @@ describe.skip('Runbook - Terraform Plan Parsing', () => {
     expect(runbook.type).toBe('terraform');
     expect(runbook.version).toBe('1.5.0');
     expect(runbook.steps).toHaveLength(2);
-    
-    const createSteps = runbook.steps.filter(s => s.name.includes('create'));
+
+    const createSteps = runbook.steps.filter((s) => s.name.includes('create'));
     expect(createSteps).toHaveLength(2);
   });
 
@@ -387,9 +385,10 @@ describe.skip('Runbook - Canvas Conversion', () => {
     const edge = doc.elements['edge-a-b'];
     expect(edge).toBeDefined();
     expect(edge.type).toBe('edge');
-    
+
     if (edge.type === 'edge') {
-      const canvasEdge = edge as import('../../types/canvas-document').CanvasEdge;
+      const canvasEdge =
+        edge as import('../../types/canvas-document').CanvasEdge;
       expect(canvasEdge.sourceId).toBe('a');
       expect(canvasEdge.targetId).toBe('b');
     }
@@ -498,7 +497,7 @@ describe.skip('Runbook - Step Execution', () => {
     const mockExecutor = async () => ({ success: true });
     const updated = executeStep(runbook, 'step-1', mockExecutor);
 
-    const step = updated.steps.find(s => s.id === 'step-1');
+    const step = updated.steps.find((s) => s.id === 'step-1');
     expect(step?.metadata.status).toBe('running');
     expect(step?.metadata.startTime).toBeDefined();
   });
@@ -562,7 +561,7 @@ describe.skip('Runbook - Step Execution', () => {
       output: 'Task completed successfully',
     });
 
-    const step = updated.steps.find(s => s.id === 'step-1');
+    const step = updated.steps.find((s) => s.id === 'step-1');
     expect(step?.metadata.status).toBe('success');
     expect(step?.metadata.endTime).toBeDefined();
     expect(step?.metadata.duration).toBeGreaterThanOrEqual(0);
@@ -594,7 +593,7 @@ describe.skip('Runbook - Step Execution', () => {
       error: 'Connection timeout',
     });
 
-    const step = updated.steps.find(s => s.id === 'step-1');
+    const step = updated.steps.find((s) => s.id === 'step-1');
     expect(step?.metadata.status).toBe('failed');
     expect(step?.metadata.error).toBe('Connection timeout');
   });
@@ -677,10 +676,12 @@ describe.skip('Runbook - Rollback', () => {
 
     // Should have original 3 steps + 2 rollback steps (for step-2 and step-1)
     expect(rolledBack.steps.length).toBeGreaterThan(3);
-    
-    const rollbackSteps = rolledBack.steps.filter(s => s.id.startsWith('rollback-'));
+
+    const rollbackSteps = rolledBack.steps.filter((s) =>
+      s.id.startsWith('rollback-')
+    );
     expect(rollbackSteps).toHaveLength(2);
-    
+
     // Rollback should be in reverse order: step-2 before step-1
     expect(rollbackSteps[0].id).toBe('rollback-step-2');
     expect(rollbackSteps[1].id).toBe('rollback-step-1');
@@ -717,7 +718,9 @@ describe.skip('Runbook - Rollback', () => {
 
     const rolledBack = rollbackRunbook(runbook);
 
-    const rollbackSteps = rolledBack.steps.filter(s => s.id.startsWith('rollback-'));
+    const rollbackSteps = rolledBack.steps.filter((s) =>
+      s.id.startsWith('rollback-')
+    );
     expect(rollbackSteps).toHaveLength(1); // Only step-1 was completed
   });
 });
@@ -779,7 +782,13 @@ describe.skip('Runbook - Approval Gates', () => {
       metadata: { status: 'paused' },
     };
 
-    const updated = processApproval(runbook, 'approval-1', 'admin', true, 'Approved');
+    const updated = processApproval(
+      runbook,
+      'approval-1',
+      'admin',
+      true,
+      'Approved'
+    );
 
     const gate = updated.approvalGates[0];
     expect(gate.approvals).toHaveLength(1);
@@ -816,7 +825,13 @@ describe.skip('Runbook - Approval Gates', () => {
       metadata: { status: 'paused' },
     };
 
-    const updated = processApproval(runbook, 'approval-1', 'admin', false, 'Too risky');
+    const updated = processApproval(
+      runbook,
+      'approval-1',
+      'admin',
+      false,
+      'Too risky'
+    );
 
     const gate = updated.approvalGates[0];
     expect(gate.status).toBe('rejected');
@@ -1003,7 +1018,7 @@ describe.skip('Runbook - Analysis', () => {
     const analysis = analyzeRunbook(runbook);
 
     expect(analysis.risk).toBe('high');
-    const approvalRecommendation = analysis.recommendations.find(r =>
+    const approvalRecommendation = analysis.recommendations.find((r) =>
       r.includes('approval gates')
     );
     expect(approvalRecommendation).toBeDefined();

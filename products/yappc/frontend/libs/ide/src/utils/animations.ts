@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Animation Utilities
- * 
+ *
  * Smooth animations and transitions for enhanced user experience
  * with spring physics, easing functions, and performance optimizations.
- * 
+ *
  * @doc.type module
  * @doc.purpose Animation utilities for IDE interactions
  * @doc.layer product
@@ -27,18 +27,18 @@ export const TIMING = {
 export const EASING = {
   // Linear
   linear: 'cubic-bezier(0, 0, 1, 1)',
-  
+
   // Ease
   ease: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
   easeIn: 'cubic-bezier(0.42, 0, 1, 1)',
   easeOut: 'cubic-bezier(0, 0, 0.58, 1)',
   easeInOut: 'cubic-bezier(0.42, 0, 0.58, 1)',
-  
+
   // Custom spring-like easings
   spring: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
   springGentle: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
   bounce: 'cubic-bezier(0.68, -0.6, 0.32, 1.6)',
-  
+
   // Material design inspired
   accelerate: 'cubic-bezier(0.4, 0, 1, 1)',
   decelerate: 'cubic-bezier(0, 0, 0.2, 1)',
@@ -58,7 +58,7 @@ export const VARIANTS = {
     from: { opacity: 1 },
     to: { opacity: 0 },
   },
-  
+
   // Slide animations
   slideUp: {
     from: { transform: 'translateY(20px)', opacity: 0 },
@@ -76,7 +76,7 @@ export const VARIANTS = {
     from: { transform: 'translateX(-20px)', opacity: 0 },
     to: { transform: 'translateX(0)', opacity: 1 },
   },
-  
+
   // Scale animations
   scaleIn: {
     from: { transform: 'scale(0.9)', opacity: 0 },
@@ -86,7 +86,7 @@ export const VARIANTS = {
     from: { transform: 'scale(1)', opacity: 1 },
     to: { transform: 'scale(0.9)', opacity: 0 },
   },
-  
+
   // Bounce animations
   bounceIn: {
     '0%': { transform: 'scale(0.3)', opacity: 0 },
@@ -94,7 +94,7 @@ export const VARIANTS = {
     '70%': { transform: 'scale(0.9)' },
     '100%': { transform: 'scale(1)', opacity: 1 },
   },
-  
+
   // Rotate animations
   rotateIn: {
     from: { transform: 'rotate(-180deg) scale(0.5)', opacity: 0 },
@@ -115,14 +115,17 @@ export const css = {
     easing: keyof typeof EASING = 'ease'
   ): string => {
     return properties
-      .map(prop => `${prop} ${TIMING[duration]} ${EASING[easing]}`)
+      .map((prop) => `${prop} ${TIMING[duration]} ${EASING[easing]}`)
       .join(', ');
   },
 
   /**
    * Create animation keyframes
    */
-  keyframes: (name: string, frames: Record<string, Record<string, string>>): string => {
+  keyframes: (
+    name: string,
+    frames: Record<string, Record<string, string>>
+  ): string => {
     const keyframeRules = Object.entries(frames)
       .map(([percentage, styles]) => {
         const styleDeclarations = Object.entries(styles)
@@ -170,13 +173,13 @@ export const spring = {
    */
   generate: (config: { tension: number; friction: number }) => {
     const { tension, friction } = config;
-    
+
     // Calculate approximate duration based on spring physics
     const duration = Math.round(1000 * Math.sqrt(tension / friction));
-    
+
     // Generate cubic-bezier approximation
     const damping = friction / (2 * Math.sqrt(tension));
-    
+
     let easing: string;
     if (damping < 1) {
       // Underdamped (oscillatory)
@@ -265,7 +268,11 @@ export const hooks = {
   ): Record<string, string> => {
     if (!animation) return baseStyles;
 
-    const { duration = 'normal', easing = 'ease', fillMode = 'none' } = animation;
+    const {
+      duration = 'normal',
+      easing = 'ease',
+      fillMode = 'none',
+    } = animation;
 
     return {
       ...baseStyles,
@@ -284,7 +291,7 @@ export const hooks = {
     const settings = performance.getOptimizedSettings(duration, easing);
     return {
       transition: properties
-        .map(prop => `${prop} ${settings.duration} ${settings.easing}`)
+        .map((prop) => `${prop} ${settings.duration} ${settings.easing}`)
         .join(', '),
     };
   },
@@ -298,7 +305,11 @@ export const patterns = {
    * Hover effect with scale and shadow
    */
   hover: {
-    transition: hooks.transitionStyle(['transform', 'box-shadow'], 'fast', 'easeOut'),
+    transition: hooks.transitionStyle(
+      ['transform', 'box-shadow'],
+      'fast',
+      'easeOut'
+    ),
     '&:hover': {
       transform: 'scale(1.02)',
       boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
@@ -309,7 +320,11 @@ export const patterns = {
    * Focus effect with outline and scale
    */
   focus: {
-    transition: hooks.transitionStyle(['outline-offset', 'outline-color'], 'fast', 'easeOut'),
+    transition: hooks.transitionStyle(
+      ['outline-offset', 'outline-color'],
+      'fast',
+      'easeOut'
+    ),
     '&:focus': {
       outlineOffset: '2px',
       outlineColor: '#3b82f6',
@@ -344,7 +359,12 @@ export const patterns = {
   slideFadeIn: {
     ...hooks.animatedStyle(
       {},
-      { name: 'slideFadeIn', duration: 'normal', easing: 'easeOut', fillMode: 'both' }
+      {
+        name: 'slideFadeIn',
+        duration: 'normal',
+        easing: 'easeOut',
+        fillMode: 'both',
+      }
     ),
     '@keyframes slideFadeIn': {
       from: {
@@ -364,7 +384,12 @@ export const patterns = {
   scaleFadeIn: {
     ...hooks.animatedStyle(
       {},
-      { name: 'scaleFadeIn', duration: 'fast', easing: 'spring', fillMode: 'both' }
+      {
+        name: 'scaleFadeIn',
+        duration: 'fast',
+        easing: 'spring',
+        fillMode: 'both',
+      }
     ),
     '@keyframes scaleFadeIn': {
       from: {
@@ -405,7 +430,7 @@ export const utils = {
     index: number,
     staggerAmount: number = 50
   ): number => {
-    return baseDelay + (index * staggerAmount);
+    return baseDelay + index * staggerAmount;
   },
 
   /**
@@ -417,7 +442,7 @@ export const utils = {
   ): Record<string, Record<string, string>> => {
     return Array.from({ length: 10 }, (_, index) => ({
       [`&:nth-child(${index + 1})`]: {
-        animationDelay: `${baseDelay + (index * staggerAmount)}ms`,
+        animationDelay: `${baseDelay + index * staggerAmount}ms`,
       },
     })).reduce((acc, styles) => ({ ...acc, ...styles }), {});
   },
@@ -427,8 +452,10 @@ export const utils = {
    */
   isInViewport: (element: HTMLElement, threshold: number = 0.1): boolean => {
     const rect = element.getBoundingClientRect();
-    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-    const windowWidth = window.innerWidth || document.documentElement.clientWidth;
+    const windowHeight =
+      window.innerHeight || document.documentElement.clientHeight;
+    const windowWidth =
+      window.innerWidth || document.documentElement.clientWidth;
 
     const verticalThreshold = windowHeight * threshold;
     const horizontalThreshold = windowWidth * threshold;

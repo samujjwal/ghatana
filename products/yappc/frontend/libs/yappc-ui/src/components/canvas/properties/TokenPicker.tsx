@@ -236,7 +236,8 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     border: 'none',
-                    backgroundColor: value === token.path ? '#e3f2fd' : 'transparent',
+                    backgroundColor:
+                      value === token.path ? '#e3f2fd' : 'transparent',
                     textAlign: 'left',
                     cursor: 'pointer',
                     display: 'flex',
@@ -279,8 +280,8 @@ export const TokenPicker: React.FC<TokenPickerProps> = ({
               textAlign: 'center',
             }}
           >
-            {filteredTokens.length} token{filteredTokens.length !== 1 ? 's' : ''}{' '}
-            available
+            {filteredTokens.length} token
+            {filteredTokens.length !== 1 ? 's' : ''} available
           </div>
         </div>
       )}

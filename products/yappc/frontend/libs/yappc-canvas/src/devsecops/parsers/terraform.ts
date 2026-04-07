@@ -1,10 +1,16 @@
 /**
  * Terraform Plan Parser
- * 
+ *
  * Parses Terraform plan JSON into Runbook format with approval gates for high-risk changes.
  */
 
-import type { Runbook, RunbookStep, ResourceChange, ApprovalGate, ResourceAction } from '../types';
+import type {
+  Runbook,
+  RunbookStep,
+  ResourceChange,
+  ApprovalGate,
+  ResourceAction,
+} from '../types';
 
 /**
  * Map Terraform action to ResourceAction
@@ -26,27 +32,35 @@ function mapTerraformAction(action: string): ResourceAction {
 /**
  * Calculate risk level for a resource change
  */
-function calculateResourceRisk(action: string, resourceType: string): 'low' | 'medium' | 'high' {
+function calculateResourceRisk(
+  action: string,
+  resourceType: string
+): 'low' | 'medium' | 'high' {
   // High-risk resources
-  const highRiskTypes = ['aws_db_instance', 'aws_rds_cluster', 'aws_s3_bucket', 'aws_iam_role'];
-  
+  const highRiskTypes = [
+    'aws_db_instance',
+    'aws_rds_cluster',
+    'aws_s3_bucket',
+    'aws_iam_role',
+  ];
+
   if (action === 'delete') {
     return 'high';
   }
-  
-  if (highRiskTypes.some(type => resourceType.includes(type))) {
+
+  if (highRiskTypes.some((type) => resourceType.includes(type))) {
     return action === 'create' ? 'medium' : 'high';
   }
-  
+
   return action === 'create' ? 'low' : 'medium';
 }
 
 /**
  * Parse Terraform plan JSON into a Runbook
- * 
+ *
  * @param plan - Terraform plan JSON string or parsed object
  * @returns Runbook representation with approval gates for high-risk changes
- * 
+ *
  * @example
  * ```typescript
  * const runbook = parseTerraformPlan(planJson);
@@ -55,7 +69,7 @@ function calculateResourceRisk(action: string, resourceType: string): 'low' | 'm
  */
 export function parseTerraformPlan(plan: string | any): Runbook {
   const planData = typeof plan === 'string' ? JSON.parse(plan) : plan;
-  
+
   const steps: RunbookStep[] = [];
   const changes: ResourceChange[] = [];
   const approvalGates: ApprovalGate[] = [];
@@ -84,7 +98,10 @@ export function parseTerraformPlan(plan: string | any): Runbook {
 
     // Create step for this resource change
     const stepId = `tf-${action}-${index}`;
-    const dependsOn = index > 0 ? [`tf-${resourceChanges[index - 1].change?.actions?.[0]}-${index - 1}`] : [];
+    const dependsOn =
+      index > 0
+        ? [`tf-${resourceChanges[index - 1].change?.actions?.[0]}-${index - 1}`]
+        : [];
 
     steps.push({
       id: stepId,

@@ -1,8 +1,8 @@
 /**
  * Error Reporting Utilities
- * 
+ *
  * Error logging and reporting for production monitoring
- * 
+ *
  * @module ui/error
  * @doc.type utility
  * @doc.purpose Error logging and reporting
@@ -21,13 +21,13 @@ import type { ErrorInfo } from 'react';
 export enum ErrorSeverity {
   /** Low severity - minor issues */
   LOW = 'low',
-  
+
   /** Medium severity - notable but not critical */
   MEDIUM = 'medium',
-  
+
   /** High severity - significant issues */
   HIGH = 'high',
-  
+
   /** Critical severity - app-breaking issues */
   CRITICAL = 'critical',
 }
@@ -38,16 +38,16 @@ export enum ErrorSeverity {
 export interface ErrorContext {
   /** User ID if available */
   userId?: string;
-  
+
   /** Current route/page */
   route?: string;
-  
+
   /** Component that threw error */
   component?: string;
-  
+
   /** Error boundary name */
   boundaryName?: string;
-  
+
   /** Additional custom context */
   [key: string]: unknown;
 }
@@ -58,28 +58,28 @@ export interface ErrorContext {
 export interface ErrorReport {
   /** Error message */
   message: string;
-  
+
   /** Error stack trace */
   stack?: string;
-  
+
   /** Component stack from React */
   componentStack?: string;
-  
+
   /** Error severity */
   severity: ErrorSeverity;
-  
+
   /** Error context/metadata */
   context: ErrorContext;
-  
+
   /** Timestamp */
   timestamp: number;
-  
+
   /** Environment */
   environment: string;
-  
+
   /** User agent */
   userAgent: string;
-  
+
   /** URL where error occurred */
   url: string;
 }
@@ -90,10 +90,10 @@ export interface ErrorReport {
 export interface ErrorReporter {
   /** Report error */
   report: (error: Error, errorInfo?: ErrorInfo, context?: ErrorContext) => void;
-  
+
   /** Set global context */
   setContext: (context: Partial<ErrorContext>) => void;
-  
+
   /** Set user */
   setUser: (userId: string) => void;
 }
@@ -107,7 +107,7 @@ export interface ErrorReporter {
  */
 export function classifyErrorSeverity(error: Error): ErrorSeverity {
   const message = error.message.toLowerCase();
-  
+
   // Critical errors
   if (
     message.includes('network') ||
@@ -118,7 +118,7 @@ export function classifyErrorSeverity(error: Error): ErrorSeverity {
   ) {
     return ErrorSeverity.CRITICAL;
   }
-  
+
   // High severity errors
   if (
     message.includes('failed to fetch') ||
@@ -129,7 +129,7 @@ export function classifyErrorSeverity(error: Error): ErrorSeverity {
   ) {
     return ErrorSeverity.HIGH;
   }
-  
+
   // Medium severity errors
   if (
     message.includes('warning') ||
@@ -138,7 +138,7 @@ export function classifyErrorSeverity(error: Error): ErrorSeverity {
   ) {
     return ErrorSeverity.MEDIUM;
   }
-  
+
   // Default to medium
   return ErrorSeverity.MEDIUM;
 }
@@ -182,27 +182,29 @@ export function buildErrorReport(
  */
 export class ConsoleErrorReporter implements ErrorReporter {
   private globalContext: ErrorContext = {};
-  
+
   setContext(context: Partial<ErrorContext>): void {
     this.globalContext = { ...this.globalContext, ...context };
   }
-  
+
   setUser(userId: string): void {
     this.globalContext.userId = userId;
   }
-  
-  report(error: Error, errorInfo?: ErrorInfo, context: ErrorContext = {}): void {
-    const report = buildErrorReport(
-      error,
-      errorInfo,
-      { ...this.globalContext, ...context }
-    );
-    
+
+  report(
+    error: Error,
+    errorInfo?: ErrorInfo,
+    context: ErrorContext = {}
+  ): void {
+    const report = buildErrorReport(error, errorInfo, {
+      ...this.globalContext,
+      ...context,
+    });
+
     // Use different console methods based on severity
-    const logMethod = report.severity === ErrorSeverity.CRITICAL 
-      ? console.error 
-      : console.warn;
-    
+    const logMethod =
+      report.severity === ErrorSeverity.CRITICAL ? console.error : console.warn;
+
     logMethod('[Error Report]', {
       severity: report.severity,
       message: report.message,
@@ -226,7 +228,7 @@ export class RemoteErrorReporter implements ErrorReporter {
   private globalContext: ErrorContext = {};
   private endpoint: string;
   private apiKey?: string;
-  
+
   /**
    *
    */
@@ -234,31 +236,34 @@ export class RemoteErrorReporter implements ErrorReporter {
     this.endpoint = endpoint;
     this.apiKey = apiKey;
   }
-  
+
   setContext(context: Partial<ErrorContext>): void {
     this.globalContext = { ...this.globalContext, ...context };
   }
-  
+
   setUser(userId: string): void {
     this.globalContext.userId = userId;
   }
-  
-  report(error: Error, errorInfo?: ErrorInfo, context: ErrorContext = {}): void {
-    const report = buildErrorReport(
-      error,
-      errorInfo,
-      { ...this.globalContext, ...context }
-    );
-    
+
+  report(
+    error: Error,
+    errorInfo?: ErrorInfo,
+    context: ErrorContext = {}
+  ): void {
+    const report = buildErrorReport(error, errorInfo, {
+      ...this.globalContext,
+      ...context,
+    });
+
     try {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      
+
       if (this.apiKey) {
         headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
-      
+
       void fetch(this.endpoint, {
         method: 'POST',
         headers,
@@ -287,24 +292,28 @@ export class RemoteErrorReporter implements ErrorReporter {
  */
 export class CompositeErrorReporter implements ErrorReporter {
   private reporters: ErrorReporter[];
-  
+
   /**
    *
    */
   constructor(reporters: ErrorReporter[]) {
     this.reporters = reporters;
   }
-  
+
   setContext(context: Partial<ErrorContext>): void {
-    this.reporters.forEach(reporter => reporter.setContext(context));
+    this.reporters.forEach((reporter) => reporter.setContext(context));
   }
-  
+
   setUser(userId: string): void {
-    this.reporters.forEach(reporter => reporter.setUser(userId));
+    this.reporters.forEach((reporter) => reporter.setUser(userId));
   }
-  
-  report(error: Error, errorInfo?: ErrorInfo, context: ErrorContext = {}): void {
-    this.reporters.forEach(reporter => {
+
+  report(
+    error: Error,
+    errorInfo?: ErrorInfo,
+    context: ErrorContext = {}
+  ): void {
+    this.reporters.forEach((reporter) => {
       try {
         reporter.report(error, errorInfo, context);
       } catch (reportError) {
@@ -323,17 +332,17 @@ export class CompositeErrorReporter implements ErrorReporter {
  */
 export function createDefaultErrorReporter(): ErrorReporter {
   const reporters: ErrorReporter[] = [new ConsoleErrorReporter()];
-  
+
   // Add remote reporter in production
   if (process.env.NODE_ENV === 'production') {
     const endpoint = process.env.VITE_ERROR_REPORTING_ENDPOINT;
     const apiKey = process.env.VITE_ERROR_REPORTING_API_KEY;
-    
+
     if (endpoint) {
       reporters.push(new RemoteErrorReporter(endpoint, apiKey));
     }
   }
-  
+
   return new CompositeErrorReporter(reporters);
 }
 

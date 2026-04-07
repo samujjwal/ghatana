@@ -45,7 +45,10 @@ export interface TreeNode {
 /**
  * TreeView component props
  */
-export interface TreeViewProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
+export interface TreeViewProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onSelect'
+> {
   /**
    * Tree data
    */
@@ -85,7 +88,11 @@ export interface TreeViewProps extends Omit<React.HTMLAttributes<HTMLDivElement>
   /**
    * Custom render function for nodes
    */
-  renderNode?: (node: TreeNode, isSelected: boolean, isExpanded: boolean) => React.ReactNode;
+  renderNode?: (
+    node: TreeNode,
+    isSelected: boolean,
+    isExpanded: boolean
+  ) => React.ReactNode;
 
   /**
    * Default expanded state
@@ -115,7 +122,10 @@ export interface TreeViewProps extends Omit<React.HTMLAttributes<HTMLDivElement>
 /**
  * Chevron icon for expand/collapse
  */
-const ChevronIcon: React.FC<{ className?: string; expanded?: boolean }> = ({ className, expanded }) => (
+const ChevronIcon: React.FC<{ className?: string; expanded?: boolean }> = ({
+  className,
+  expanded,
+}) => (
   <svg
     className={cn('transition-transform', expanded && 'rotate-90', className)}
     fill="none"
@@ -130,12 +140,11 @@ const ChevronIcon: React.FC<{ className?: string; expanded?: boolean }> = ({ cla
 /**
  * Default folder icons
  */
-const FolderIcon: React.FC<{ className?: string; expanded?: boolean }> = ({ className, expanded }) => (
-  <svg
-    className={className}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-  >
+const FolderIcon: React.FC<{ className?: string; expanded?: boolean }> = ({
+  className,
+  expanded,
+}) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     {expanded ? (
       <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
     ) : (
@@ -148,11 +157,7 @@ const FolderIcon: React.FC<{ className?: string; expanded?: boolean }> = ({ clas
  * File icon
  */
 const FileIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    className={className}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-  >
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
   </svg>
 );
@@ -166,7 +171,14 @@ const LoadingSpinner: React.FC<{ className?: string }> = ({ className }) => (
     fill="none"
     viewBox="0 0 24 24"
   >
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
     <path
       className="opacity-75"
       fill="currentColor"
@@ -214,7 +226,9 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
     },
     ref
   ) => {
-    const [internalExpanded, setInternalExpanded] = React.useState<Set<string | number>>(() => {
+    const [internalExpanded, setInternalExpanded] = React.useState<
+      Set<string | number>
+    >(() => {
       if (defaultExpanded) {
         const allIds = new Set<string | number>();
         const collectIds = (nodes: TreeNode[]) => {
@@ -231,12 +245,17 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
       return new Set();
     });
 
-    const [loadingNodes, setLoadingNodes] = React.useState<Set<string | number>>(new Set());
-    const [loadedChildren, setLoadedChildren] = React.useState<Map<string | number, TreeNode[]>>(new Map());
+    const [loadingNodes, setLoadingNodes] = React.useState<
+      Set<string | number>
+    >(new Set());
+    const [loadedChildren, setLoadedChildren] = React.useState<
+      Map<string | number, TreeNode[]>
+    >(new Map());
 
-    const expanded = controlledExpanded !== undefined 
-      ? new Set(controlledExpanded) 
-      : internalExpanded;
+    const expanded =
+      controlledExpanded !== undefined
+        ? new Set(controlledExpanded)
+        : internalExpanded;
 
     const isExpanded = (id: string | number) => expanded.has(id);
     const isSelected = (id: string | number) => selected.includes(id);
@@ -252,9 +271,13 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
         newExpanded.add(node.id);
 
         // Load children if async and not loaded
-        if (onLoadChildren && !loadedChildren.has(node.id) && (!node.children || node.children.length === 0)) {
+        if (
+          onLoadChildren &&
+          !loadedChildren.has(node.id) &&
+          (!node.children || node.children.length === 0)
+        ) {
           setLoadingNodes((prev) => new Set(prev).add(node.id));
-          
+
           try {
             const children = await onLoadChildren(node);
             setLoadedChildren((prev) => new Map(prev).set(node.id, children));
@@ -319,21 +342,30 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
       }
     };
 
-    const renderTreeNode = (node: TreeNode, level: number = 0): React.ReactNode => {
+    const renderTreeNode = (
+      node: TreeNode,
+      level: number = 0
+    ): React.ReactNode => {
       const nodeExpanded = isExpanded(node.id);
       const nodeSelected = isSelected(node.id);
-      const hasChildren = (node.children && node.children.length > 0) || onLoadChildren;
+      const hasChildren =
+        (node.children && node.children.length > 0) || onLoadChildren;
       const isLoading = loadingNodes.has(node.id);
       const children = loadedChildren.get(node.id) || node.children || [];
 
       return (
-        <div key={node.id} role="treeitem" aria-expanded={hasChildren ? nodeExpanded : undefined}>
+        <div
+          key={node.id}
+          role="treeitem"
+          aria-expanded={hasChildren ? nodeExpanded : undefined}
+        >
           <div
             className={cn(
               'flex items-center gap-1 py-1.5 px-2 rounded cursor-pointer transition-colors',
               'hover:bg-grey-100',
               nodeSelected && 'bg-primary-100 text-primary-700',
-              node.disabled && 'opacity-50 cursor-not-allowed hover:bg-transparent'
+              node.disabled &&
+                'opacity-50 cursor-not-allowed hover:bg-transparent'
             )}
             style={{ paddingLeft: `${level * indent + 8}px` }}
             onClick={() => handleSelect(node)}
@@ -358,7 +390,10 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
                 {isLoading ? (
                   <LoadingSpinner className="w-4 h-4 text-grey-500" />
                 ) : (
-                  <ChevronIcon className="w-4 h-4 text-grey-600" expanded={nodeExpanded} />
+                  <ChevronIcon
+                    className="w-4 h-4 text-grey-600"
+                    expanded={nodeExpanded}
+                  />
                 )}
               </button>
             )}
@@ -371,7 +406,10 @@ export const TreeView = React.forwardRef<HTMLDivElement, TreeViewProps>(
                 {node.icon ? (
                   <span className="w-5 h-5 flex-shrink-0">{node.icon}</span>
                 ) : hasChildren ? (
-                  <FolderIcon className="w-5 h-5 flex-shrink-0 text-warning-600" expanded={nodeExpanded} />
+                  <FolderIcon
+                    className="w-5 h-5 flex-shrink-0 text-warning-600"
+                    expanded={nodeExpanded}
+                  />
                 ) : (
                   <FileIcon className="w-5 h-5 flex-shrink-0 text-grey-500" />
                 )}

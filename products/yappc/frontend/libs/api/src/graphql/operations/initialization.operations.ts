@@ -191,7 +191,7 @@ export const WIZARD_PRESET_FRAGMENT = gql`
 
 export const GET_INITIALIZATION_PROJECT = gql`
   ${INITIALIZATION_PROJECT_FRAGMENT}
-  
+
   query GetInitializationProject($id: ID!) {
     initializationProject(id: $id) {
       ...InitializationProjectFields
@@ -201,7 +201,7 @@ export const GET_INITIALIZATION_PROJECT = gql`
 
 export const GET_INFRASTRUCTURE_STATUS = gql`
   ${INFRASTRUCTURE_STATUS_FRAGMENT}
-  
+
   query GetInfrastructureStatus($projectId: ID!) {
     infrastructureStatus(projectId: $projectId) {
       ...InfrastructureStatusFields
@@ -211,7 +211,7 @@ export const GET_INFRASTRUCTURE_STATUS = gql`
 
 export const LIST_ENVIRONMENTS = gql`
   ${ENVIRONMENT_FRAGMENT}
-  
+
   query ListEnvironments($projectId: ID!) {
     environments(projectId: $projectId) {
       ...EnvironmentFields
@@ -221,7 +221,7 @@ export const LIST_ENVIRONMENTS = gql`
 
 export const GET_ENVIRONMENT = gql`
   ${ENVIRONMENT_FRAGMENT}
-  
+
   query GetEnvironment($id: ID!) {
     environment(id: $id) {
       ...EnvironmentFields
@@ -231,7 +231,7 @@ export const GET_ENVIRONMENT = gql`
 
 export const GET_WIZARD_PRESETS = gql`
   ${WIZARD_PRESET_FRAGMENT}
-  
+
   query GetWizardPresets($category: String, $search: String) {
     wizardPresets(category: $category, search: $search) {
       ...WizardPresetFields
@@ -283,7 +283,11 @@ export const GET_AVAILABLE_INSTANCE_TYPES = gql`
     $region: String!
     $category: String
   ) {
-    availableInstanceTypes(provider: $provider, region: $region, category: $category) {
+    availableInstanceTypes(
+      provider: $provider
+      region: $region
+      category: $category
+    ) {
       id
       name
       displayName
@@ -383,8 +387,10 @@ export const GET_INITIALIZATION_LOGS = gql`
 
 export const CREATE_INITIALIZATION_PROJECT = gql`
   ${INITIALIZATION_PROJECT_FRAGMENT}
-  
-  mutation CreateInitializationProject($input: CreateInitializationProjectInput!) {
+
+  mutation CreateInitializationProject(
+    $input: CreateInitializationProjectInput!
+  ) {
     createInitializationProject(input: $input) {
       project {
         ...InitializationProjectFields
@@ -396,12 +402,15 @@ export const CREATE_INITIALIZATION_PROJECT = gql`
 
 export const UPDATE_PROJECT_CONFIGURATION = gql`
   ${INITIALIZATION_PROJECT_FRAGMENT}
-  
+
   mutation UpdateProjectConfiguration(
     $projectId: ID!
     $configuration: InitializationConfigInput!
   ) {
-    updateProjectConfiguration(projectId: $projectId, configuration: $configuration) {
+    updateProjectConfiguration(
+      projectId: $projectId
+      configuration: $configuration
+    ) {
       ...InitializationProjectFields
     }
   }
@@ -409,7 +418,7 @@ export const UPDATE_PROJECT_CONFIGURATION = gql`
 
 export const APPLY_WIZARD_PRESET = gql`
   ${INITIALIZATION_PROJECT_FRAGMENT}
-  
+
   mutation ApplyWizardPreset($projectId: ID!, $presetId: ID!) {
     applyWizardPreset(projectId: $projectId, presetId: $presetId) {
       ...InitializationProjectFields
@@ -445,7 +454,7 @@ export const GO_BACK_WIZARD_STEP = gql`
 
 export const START_INFRASTRUCTURE_PROVISIONING = gql`
   ${INFRASTRUCTURE_STATUS_FRAGMENT}
-  
+
   mutation StartInfrastructureProvisioning($projectId: ID!) {
     startInfrastructureProvisioning(projectId: $projectId) {
       ...InfrastructureStatusFields
@@ -478,7 +487,7 @@ export const RETRY_FAILED_COMPONENT = gql`
 
 export const CREATE_ENVIRONMENT = gql`
   ${ENVIRONMENT_FRAGMENT}
-  
+
   mutation CreateEnvironment($projectId: ID!, $input: CreateEnvironmentInput!) {
     createEnvironment(projectId: $projectId, input: $input) {
       ...EnvironmentFields
@@ -488,7 +497,7 @@ export const CREATE_ENVIRONMENT = gql`
 
 export const UPDATE_ENVIRONMENT = gql`
   ${ENVIRONMENT_FRAGMENT}
-  
+
   mutation UpdateEnvironment($id: ID!, $input: UpdateEnvironmentInput!) {
     updateEnvironment(id: $id, input: $input) {
       ...EnvironmentFields
@@ -552,7 +561,11 @@ export const UPDATE_TEAM_MEMBER_ROLE = gql`
     $memberId: ID!
     $role: TeamRole!
   ) {
-    updateTeamMemberRole(projectId: $projectId, memberId: $memberId, role: $role) {
+    updateTeamMemberRole(
+      projectId: $projectId
+      memberId: $memberId
+      role: $role
+    ) {
       id
       role
     }
@@ -586,8 +599,12 @@ export const FINALIZE_INITIALIZATION = gql`
 
 export const SAVE_CONFIGURATION_AS_PRESET = gql`
   ${WIZARD_PRESET_FRAGMENT}
-  
-  mutation SaveConfigurationAsPreset($projectId: ID!, $name: String!, $description: String) {
+
+  mutation SaveConfigurationAsPreset(
+    $projectId: ID!
+    $name: String!
+    $description: String
+  ) {
     saveConfigurationAsPreset(
       projectId: $projectId
       name: $name
@@ -604,7 +621,7 @@ export const SAVE_CONFIGURATION_AS_PRESET = gql`
 
 export const SUBSCRIBE_TO_PROVISIONING_STATUS = gql`
   ${INFRASTRUCTURE_STATUS_FRAGMENT}
-  
+
   subscription OnProvisioningStatusUpdate($projectId: ID!) {
     provisioningStatusUpdated(projectId: $projectId) {
       ...InfrastructureStatusFields
@@ -647,7 +664,7 @@ export const SUBSCRIBE_TO_COST_UPDATES = gql`
 
 export const SUBSCRIBE_TO_ENVIRONMENT_STATUS = gql`
   ${ENVIRONMENT_FRAGMENT}
-  
+
   subscription OnEnvironmentStatusChange($projectId: ID!) {
     environmentStatusChanged(projectId: $projectId) {
       ...EnvironmentFields
@@ -723,7 +740,12 @@ export interface StorageConfigInput {
 }
 
 export interface CICDConfigInput {
-  provider: 'github-actions' | 'gitlab-ci' | 'circleci' | 'jenkins' | 'azure-pipelines';
+  provider:
+    | 'github-actions'
+    | 'gitlab-ci'
+    | 'circleci'
+    | 'jenkins'
+    | 'azure-pipelines';
   buildCommand: string;
   testCommand: string;
   deployCommand: string;

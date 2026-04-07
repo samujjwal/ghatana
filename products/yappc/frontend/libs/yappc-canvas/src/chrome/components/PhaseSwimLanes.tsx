@@ -1,8 +1,8 @@
 /**
  * PhaseSwimLanes Component
- * 
+ *
  * Lifecycle phase swim lanes for spatial organization
- * 
+ *
  * Features:
  * - Horizontal swim lane layout (2000px width each)
  * - Phase boundaries with visual delimiters (100px separator)
@@ -10,7 +10,7 @@
  * - Connectors between phases
  * - Auto-layout within lanes
  * - Drag-and-drop between lanes
- * 
+ *
  * @doc.type component
  * @doc.purpose Phase-based spatial organization
  * @doc.layer components
@@ -27,21 +27,21 @@ const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, CANVAS } = CANVAS_TOKENS;
 export interface PhaseSwimLanesProps {
   /** Current zoom level */
   zoom: number;
-  
+
   /** Viewport position */
   viewportX: number;
   viewportY: number;
-  
+
   /** Viewport dimensions */
   viewportWidth: number;
   viewportHeight: number;
-  
+
   /** Callback when lane clicked */
   onLaneClick?: (phaseId: string) => void;
-  
+
   /** Show connectors between phases */
   showConnectors?: boolean;
-  
+
   /** Lane height (default: canvas height) */
   laneHeight?: number;
 }
@@ -51,7 +51,7 @@ const SEPARATOR_WIDTH = CANVAS.PHASE_SEPARATOR_WIDTH; // 100px
 
 /**
  * PhaseSwimLanes - Horizontal swim lanes for lifecycle phases
- * 
+ *
  * Provides spatial organization by lifecycle phase with visual
  * delimiters and phase labels. Visible at overview zoom levels.
  */
@@ -75,7 +75,7 @@ export function PhaseSwimLanes({
     const phases = Object.entries(LIFECYCLE_PHASES);
     const lanes: Array<{
       id: string;
-      phase: typeof LIFECYCLE_PHASES[keyof typeof LIFECYCLE_PHASES];
+      phase: (typeof LIFECYCLE_PHASES)[keyof typeof LIFECYCLE_PHASES];
       x: number;
       index: number;
     }> = [];
@@ -98,20 +98,32 @@ export function PhaseSwimLanes({
   }
 
   return (
-    <Box
-      className="absolute w-full h-full pointer-events-none top-[0px] left-[0px]" >
+    <Box className="absolute w-full h-full pointer-events-none top-[0px] left-[0px]">
       {visibleLanes.map(({ id, phase, x, index }) => (
         <React.Fragment key={id}>
           {/* Lane Background */}
           <Box
             onClick={() => onLaneClick?.(id)}
-            className="absolute top-[0px]" style={{ left: x, width: LANE_WIDTH, height: laneHeight, backgroundColor: `${phase.color}11`, pointerEvents: 'auto' as const }}
+            className="absolute top-[0px]"
+            style={{
+              left: x,
+              width: LANE_WIDTH,
+              height: laneHeight,
+              backgroundColor: `${phase.color}11`,
+              pointerEvents: 'auto' as const,
+            }}
           />
 
           {/* Phase Label (visible at low zoom) */}
           {zoom < 0.5 && (
             <Box
-              className="absolute pointer-events-none text-center top-[40px]" style={{ left: x + LANE_WIDTH / 2, transform: 'translateX(-50%)', zIndex: CANVAS_TOKENS.Z_INDEX.BACKGROUND }} >
+              className="absolute pointer-events-none text-center top-[40px]"
+              style={{
+                left: x + LANE_WIDTH / 2,
+                transform: 'translateX(-50%)',
+                zIndex: CANVAS_TOKENS.Z_INDEX.BACKGROUND,
+              }}
+            >
               {/* Emoji Icon */}
               <Box
                 style={{
@@ -155,12 +167,19 @@ export function PhaseSwimLanes({
           {/* Separator (between lanes) */}
           {index < Object.keys(LIFECYCLE_PHASES).length - 1 && (
             <Box
-              className="absolute top-[0px]" style={{ left: x + LANE_WIDTH, width: SEPARATOR_WIDTH, height: laneHeight, backgroundColor: COLORS.NEUTRAL_100, borderLeft: `1px dashed ${COLORS.BORDER_LIGHT}`, borderRight: `1px dashed ${COLORS.BORDER_LIGHT}`}}
+              className="absolute top-[0px]"
+              style={{
+                left: x + LANE_WIDTH,
+                width: SEPARATOR_WIDTH,
+                height: laneHeight,
+                backgroundColor: COLORS.NEUTRAL_100,
+                borderLeft: `1px dashed ${COLORS.BORDER_LIGHT}`,
+                borderRight: `1px dashed ${COLORS.BORDER_LIGHT}`,
+              }}
             >
               {/* Connector Arrow (if enabled) */}
               {showConnectors && zoom < 0.5 && (
-                <Box
-                  className="absolute top-[50%] left-[50%] text-[32px] opacity-[0.5]" >
+                <Box className="absolute top-[50%] left-[50%] text-[32px] opacity-[0.5]">
                   →
                 </Box>
               )}
@@ -178,9 +197,9 @@ export function PhaseSwimLanes({
 export function getPhaseLaneX(phaseId: string): number {
   const phases = Object.keys(LIFECYCLE_PHASES);
   const index = phases.indexOf(phaseId);
-  
+
   if (index === -1) return 0;
-  
+
   return index * (LANE_WIDTH + SEPARATOR_WIDTH);
 }
 
@@ -191,15 +210,15 @@ export function getPhaseFromX(x: number): string | null {
   const phases = Object.keys(LIFECYCLE_PHASES);
   const totalWidth = LANE_WIDTH + SEPARATOR_WIDTH;
   const index = Math.floor(x / totalWidth);
-  
+
   if (index < 0 || index >= phases.length) return null;
-  
+
   // Check if in separator
   const laneX = index * totalWidth;
   if (x >= laneX + LANE_WIDTH && x < laneX + LANE_WIDTH + SEPARATOR_WIDTH) {
     return null; // In separator
   }
-  
+
   return phases[index];
 }
 
@@ -210,10 +229,11 @@ export function snapToLaneCenter(x: number): number {
   const phases = Object.keys(LIFECYCLE_PHASES);
   const totalWidth = LANE_WIDTH + SEPARATOR_WIDTH;
   const index = Math.floor(x / totalWidth);
-  
+
   if (index < 0) return LANE_WIDTH / 2;
-  if (index >= phases.length) return (phases.length - 1) * totalWidth + LANE_WIDTH / 2;
-  
+  if (index >= phases.length)
+    return (phases.length - 1) * totalWidth + LANE_WIDTH / 2;
+
   return index * totalWidth + LANE_WIDTH / 2;
 }
 
@@ -227,12 +247,12 @@ export function getAllPhaseLaneBounds(): Array<{
   centerX: number;
 }> {
   const phases = Object.keys(LIFECYCLE_PHASES);
-  
+
   return phases.map((phaseId, index) => {
     const minX = index * (LANE_WIDTH + SEPARATOR_WIDTH);
     const maxX = minX + LANE_WIDTH;
     const centerX = minX + LANE_WIDTH / 2;
-    
+
     return { phaseId, minX, maxX, centerX };
   });
 }

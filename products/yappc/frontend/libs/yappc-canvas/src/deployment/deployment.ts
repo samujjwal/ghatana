@@ -1,16 +1,16 @@
 /**
  * Deployment Utilities for Blue/Green Deployments
- * 
+ *
  * Provides utilities for managing blue/green deployments, health checks,
  * traffic routing, and rollback procedures.
- * 
+ *
  * Features:
  * - Environment slot management (blue/green)
  * - Health check validation
  * - Traffic routing configuration
  * - Automated rollback on failure
  * - Deployment status tracking
- * 
+ *
  * @module deployment
  */
 
@@ -274,9 +274,7 @@ export async function runHealthChecksWithRetries(
 /**
  * Get inactive slot
  */
-export function getInactiveSlot(
-  state: DeploymentState
-): DeploymentSlot {
+export function getInactiveSlot(state: DeploymentState): DeploymentSlot {
   return state.activeSlot === 'blue' ? 'green' : 'blue';
 }
 

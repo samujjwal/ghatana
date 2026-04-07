@@ -445,7 +445,10 @@ describe('versioningResolvers.Mutation.pruneCanvasVersionHistory', () => {
 
   it('handles pruning with large keepCount', async () => {
     const serviceMock = makeVersioningServiceMock();
-    serviceMock.pruneHistory.mockResolvedValue({ prunedCount: 0, keptCount: 100 });
+    serviceMock.pruneHistory.mockResolvedValue({
+      prunedCount: 0,
+      keptCount: 100,
+    });
     mockGetVersioningService.mockReturnValue(serviceMock);
 
     const result = await versioningResolvers.Mutation.pruneCanvasVersionHistory(
@@ -517,11 +520,12 @@ describe('Versioning Resolvers - Integration', () => {
     expect(getResult.version).toBe(2);
 
     // Restore
-    const restoreResult = await versioningResolvers.Mutation.restoreCanvasVersion(
-      undefined,
-      { canvasId: 'canvas-1', version: 2 },
-      context
-    );
+    const restoreResult =
+      await versioningResolvers.Mutation.restoreCanvasVersion(
+        undefined,
+        { canvasId: 'canvas-1', version: 2 },
+        context
+      );
     expect(restoreResult.changeType).toBe('RESTORE');
   });
 

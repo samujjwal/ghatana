@@ -5,7 +5,13 @@
  * Covers controlled/uncontrolled modes, event callbacks, and API methods.
  */
 
-import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  renderHook,
+  act,
+} from '@testing-library/react';
 import React, { useState } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -18,7 +24,10 @@ import {
   type CanvasViewportEvent,
 } from '../canvasContext';
 
-import type { CanvasDocument, CanvasElement } from '../../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasElement,
+} from '../../types/canvas-document';
 
 describe('CanvasProvider', () => {
   const mockDocument: CanvasDocument = {
@@ -77,13 +86,17 @@ describe('CanvasProvider', () => {
         </CanvasProvider>
       );
 
-      expect(screen.getByTestId('doc-title')).toHaveTextContent('Test Document');
+      expect(screen.getByTestId('doc-title')).toHaveTextContent(
+        'Test Document'
+      );
     });
 
     it('should initialize with initial document', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -95,7 +108,9 @@ describe('CanvasProvider', () => {
     it('should manage internal state', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -109,7 +124,9 @@ describe('CanvasProvider', () => {
     it('should add element to internal state', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -130,7 +147,9 @@ describe('CanvasProvider', () => {
     it('should clear selection', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -154,7 +173,10 @@ describe('CanvasProvider', () => {
         const [doc, setDoc] = useState(mockDocument);
 
         return (
-          <CanvasProvider document={doc} onDocumentChange={(e) => setDoc(e.document)}>
+          <CanvasProvider
+            document={doc}
+            onDocumentChange={(e) => setDoc(e.document)}
+          >
             <TestComponent />
           </CanvasProvider>
         );
@@ -172,13 +194,15 @@ describe('CanvasProvider', () => {
 
       render(<TestWrapper />);
 
-      expect(screen.getByTestId('doc-title')).toHaveTextContent('Test Document');
+      expect(screen.getByTestId('doc-title')).toHaveTextContent(
+        'Test Document'
+      );
       expect(screen.getByTestId('is-controlled')).toHaveTextContent('true');
     });
 
     it('should call onDocumentChange when document changes', async () => {
       const onDocumentChange = vi.fn();
-      
+
       const TestWrapper = () => {
         const [doc, setDoc] = useState(mockDocument);
 
@@ -197,7 +221,11 @@ describe('CanvasProvider', () => {
       const TestComponent = () => {
         const { api } = useCanvas();
         return (
-          <button onClick={() => api.addElement({ type: 'node' } as Partial<CanvasElement>)}>
+          <button
+            onClick={() =>
+              api.addElement({ type: 'node' } as Partial<CanvasElement>)
+            }
+          >
             Add
           </button>
         );
@@ -217,7 +245,9 @@ describe('CanvasProvider', () => {
 
     it('should use external selected IDs', () => {
       const TestWrapper = () => {
-        const [selectedIds, setSelectedIds] = useState<readonly string[]>(['node-1']);
+        const [selectedIds, setSelectedIds] = useState<readonly string[]>([
+          'node-1',
+        ]);
 
         return (
           <CanvasProvider
@@ -232,7 +262,9 @@ describe('CanvasProvider', () => {
 
       const TestComponent = () => {
         const { selection } = useCanvas();
-        return <div data-testid="selection">{selection.selectedIds.join(',')}</div>;
+        return (
+          <div data-testid="selection">{selection.selectedIds.join(',')}</div>
+        );
       };
 
       render(<TestWrapper />);
@@ -313,9 +345,7 @@ describe('CanvasProvider', () => {
 
       const TestComponent = () => {
         const { api } = useCanvas();
-        return (
-          <button onClick={() => api.zoomViewport(0.5)}>Zoom</button>
-        );
+        return <button onClick={() => api.zoomViewport(0.5)}>Zoom</button>;
       };
 
       render(<TestWrapper />);
@@ -341,7 +371,9 @@ describe('CanvasProvider', () => {
     it('should add element and return ID', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -360,7 +392,9 @@ describe('CanvasProvider', () => {
     it('should get element by ID', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -372,7 +406,9 @@ describe('CanvasProvider', () => {
     it('should get all elements', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -396,7 +432,9 @@ describe('CanvasProvider', () => {
 
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={docWithMultiple}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={docWithMultiple}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -404,13 +442,18 @@ describe('CanvasProvider', () => {
         result.current.api.selectElements(['node-1', 'node-2']);
       });
 
-      expect(result.current.selection.selectedIds).toEqual(['node-1', 'node-2']);
+      expect(result.current.selection.selectedIds).toEqual([
+        'node-1',
+        'node-2',
+      ]);
     });
 
     it('should append to selection', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -424,13 +467,18 @@ describe('CanvasProvider', () => {
         result.current.api.selectElement('node-2', true);
       });
 
-      expect(result.current.selection.selectedIds).toEqual(['node-1', 'node-2']);
+      expect(result.current.selection.selectedIds).toEqual([
+        'node-1',
+        'node-2',
+      ]);
     });
 
     it('should get current selection', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -445,7 +493,9 @@ describe('CanvasProvider', () => {
     it('should pan viewport', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -461,7 +511,9 @@ describe('CanvasProvider', () => {
     it('should zoom viewport', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -476,7 +528,9 @@ describe('CanvasProvider', () => {
     it('should clamp zoom within limits', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -491,7 +545,9 @@ describe('CanvasProvider', () => {
     it('should fit elements to screen', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -507,7 +563,9 @@ describe('CanvasProvider', () => {
     it('should convert screen to canvas coordinates', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -519,7 +577,9 @@ describe('CanvasProvider', () => {
     it('should convert canvas to screen coordinates', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -531,7 +591,9 @@ describe('CanvasProvider', () => {
     it('should get current document', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -542,7 +604,9 @@ describe('CanvasProvider', () => {
     it('should get UI state', () => {
       const { result } = renderHook(() => useCanvas(), {
         wrapper: ({ children }) => (
-          <CanvasProvider initialDocument={mockDocument}>{children}</CanvasProvider>
+          <CanvasProvider initialDocument={mockDocument}>
+            {children}
+          </CanvasProvider>
         ),
       });
 
@@ -560,7 +624,9 @@ describe('CanvasProvider', () => {
       };
 
       // Suppress console.error for this test
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       expect(() => render(<TestComponent />)).toThrow(
         'useCanvas must be used within a CanvasProvider'
@@ -592,7 +658,11 @@ describe('CanvasProvider', () => {
       const TestComponent = () => {
         const { api } = useCanvas();
         return (
-          <button onClick={() => api.addElement({ type: 'node' } as Partial<CanvasElement>)}>
+          <button
+            onClick={() =>
+              api.addElement({ type: 'node' } as Partial<CanvasElement>)
+            }
+          >
             Add
           </button>
         );
@@ -638,7 +708,11 @@ describe('CanvasProvider', () => {
       const TestComponent = () => {
         const { api } = useCanvas();
         return (
-          <button onClick={() => api.addElement({ type: 'node' } as Partial<CanvasElement>)}>
+          <button
+            onClick={() =>
+              api.addElement({ type: 'node' } as Partial<CanvasElement>)
+            }
+          >
             Add
           </button>
         );
@@ -715,14 +789,18 @@ describe('CanvasFlow', () => {
   });
 
   it('should apply custom dimensions', () => {
-    render(<CanvasFlow initialDocument={mockDocument} width={800} height={600} />);
+    render(
+      <CanvasFlow initialDocument={mockDocument} width={800} height={600} />
+    );
 
     const container = screen.getByRole('application');
     expect(container).toHaveStyle({ width: '800px', height: '600px' });
   });
 
   it('should apply custom class name', () => {
-    render(<CanvasFlow initialDocument={mockDocument} className="custom-canvas" />);
+    render(
+      <CanvasFlow initialDocument={mockDocument} className="custom-canvas" />
+    );
 
     // The className is applied directly to the application role element (CanvasFlowInner wrapper)
     const container = screen.getByRole('application');
@@ -730,7 +808,9 @@ describe('CanvasFlow', () => {
   });
 
   it('should use custom ARIA label', () => {
-    render(<CanvasFlow initialDocument={mockDocument} ariaLabel="My Custom Canvas" />);
+    render(
+      <CanvasFlow initialDocument={mockDocument} ariaLabel="My Custom Canvas" />
+    );
 
     expect(screen.getByLabelText('My Custom Canvas')).toBeInTheDocument();
   });
@@ -739,10 +819,7 @@ describe('CanvasFlow', () => {
     const onDocumentChange = vi.fn();
 
     render(
-      <CanvasFlow
-        document={mockDocument}
-        onDocumentChange={onDocumentChange}
-      />
+      <CanvasFlow document={mockDocument} onDocumentChange={onDocumentChange} />
     );
 
     expect(screen.getByText(/Test Document/)).toBeInTheDocument();

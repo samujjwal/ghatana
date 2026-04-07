@@ -3,7 +3,6 @@ import type { ImgHTMLAttributes } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  * Avatar size variants
  */
@@ -17,47 +16,50 @@ export type AvatarVariant = 'circular' | 'rounded' | 'square';
 /**
  * Avatar color variants mapped to design tokens
  */
-export type AvatarColor = 
-  | 'primary' 
-  | 'secondary' 
-  | 'error' 
-  | 'warning' 
-  | 'info' 
-  | 'success' 
+export type AvatarColor =
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'success'
   | 'default';
 
 /**
  * Props for the Avatar component
  */
-export interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'size'> {
+export interface AvatarProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  'size'
+> {
   /**
    * Avatar size
    * @default 'medium'
    */
   size?: AvatarSize;
-  
+
   /**
    * Avatar variant (shape)
    * @default 'circular'
    */
   variant?: AvatarVariant;
-  
+
   /**
    * Fallback text (initials) - required for accessibility
    */
   alt: string;
-  
+
   /**
    * Image source URL
    */
   src?: string;
-  
+
   /**
    * Background color for fallback (when no image)
    * @default 'info'
    */
   color?: AvatarColor;
-  
+
   /**
    * Additional CSS classes
    */
@@ -66,7 +68,7 @@ export interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, '
 
 /**
  * Avatar component for displaying user profile images with fallback initials.
- * 
+ *
  * Features:
  * - Displays image or fallback initials
  * - 4 size variants: small (32px), medium (40px), large (56px), xlarge (80px)
@@ -75,15 +77,15 @@ export interface AvatarProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, '
  * - Automatic initials generation from alt text
  * - Image loading states with smooth transition
  * - Full accessibility support
- * 
+ *
  * @example
  * ```tsx
  * // With image
  * <Avatar src="/avatar.jpg" alt="John Doe" size="medium" />
- * 
+ *
  * // With initials fallback
  * <Avatar alt="Jane Smith" size="large" variant="rounded" color="primary" />
- * 
+ *
  * // Custom styling
  * <Avatar alt="JS" className="border-2 border-primary-500" />
  * ```
@@ -106,17 +108,17 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
 
     // Size classes mapping
     const sizeClasses: Record<AvatarSize, string> = {
-      small: 'w-8 h-8 text-xs',     // 32px, 12px font
+      small: 'w-8 h-8 text-xs', // 32px, 12px font
       medium: 'w-10 h-10 text-base', // 40px, 16px font
-      large: 'w-14 h-14 text-xl',   // 56px, 20px font
+      large: 'w-14 h-14 text-xl', // 56px, 20px font
       xlarge: 'w-20 h-20 text-3xl', // 80px, 30px font
     };
 
     // Variant (shape) classes
     const variantClasses: Record<AvatarVariant, string> = {
       circular: 'rounded-full',
-      rounded: 'rounded-lg',  // 8px border radius
-      square: 'rounded',      // 4px border radius
+      rounded: 'rounded-lg', // 8px border radius
+      square: 'rounded', // 4px border radius
     };
 
     // Color classes for fallback background
@@ -188,7 +190,9 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
               {...props}
             />
             {/* Show initials while image is loading */}
-            {!imageLoaded && <span className="absolute">{getInitials(alt)}</span>}
+            {!imageLoaded && (
+              <span className="absolute">{getInitials(alt)}</span>
+            )}
           </>
         ) : (
           <span>{getInitials(alt)}</span>
@@ -208,19 +212,19 @@ export interface AvatarGroupProps {
    * Avatar components to display
    */
   children: React.ReactNode;
-  
+
   /**
    * Maximum number of avatars to show before displaying "+N"
    * @default 5
    */
   max?: number;
-  
+
   /**
    * Spacing variant for avatar overlap
    * @default 'medium'
    */
   spacing?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Additional CSS classes
    */
@@ -229,14 +233,14 @@ export interface AvatarGroupProps {
 
 /**
  * AvatarGroup component for displaying multiple avatars with overlap effect.
- * 
+ *
  * Features:
  * - Overlapping avatar layout
  * - Configurable maximum visible avatars
  * - Shows "+N" badge for remaining avatars
  * - Three spacing variants
  * - White border around each avatar for separation
- * 
+ *
  * @example
  * ```tsx
  * <AvatarGroup max={3} spacing="medium">
@@ -260,9 +264,9 @@ export function AvatarGroup({
 
   // Spacing classes for overlap amount
   const spacingClasses: Record<string, string> = {
-    small: '-ml-1',   // 4px overlap
-    medium: '-ml-2',  // 8px overlap
-    large: '-ml-3',   // 12px overlap
+    small: '-ml-1', // 4px overlap
+    medium: '-ml-2', // 8px overlap
+    large: '-ml-3', // 12px overlap
   };
 
   return (

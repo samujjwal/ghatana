@@ -32,7 +32,10 @@ import { Button } from '@ghatana/design-system';
 import { Badge } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-import type { BootstrapPhase, CanvasNode as BootstrapNode } from '@yappc/canvas';
+import type {
+  BootstrapPhase,
+  CanvasNode as BootstrapNode,
+} from '@yappc/canvas';
 import {
   currentPhaseAtom,
   canvasNodesAtom,
@@ -120,30 +123,33 @@ const PHASE_LANE_CONFIG: Record<
 const PhaseLanes: React.FC<PhaseLanesProps> = ({ activeLane }) => {
   return (
     <div className="pointer-events-none absolute inset-0 flex">
-      {(Object.entries(PHASE_LANE_CONFIG) as [PhaseLane, typeof PHASE_LANE_CONFIG.mvp][]).map(
-        ([lane, config]) => (
+      {(
+        Object.entries(PHASE_LANE_CONFIG) as [
+          PhaseLane,
+          typeof PHASE_LANE_CONFIG.mvp,
+        ][]
+      ).map(([lane, config]) => (
+        <div
+          key={lane}
+          className={cn(
+            'flex flex-col border-r border-dashed border-zinc-800 transition-colors duration-300',
+            config.bgColor,
+            activeLane === lane && 'bg-opacity-20'
+          )}
+          style={{ width: config.width }}
+        >
           <div
-            key={lane}
             className={cn(
-              'flex flex-col border-r border-dashed border-zinc-800 transition-colors duration-300',
-              config.bgColor,
-              activeLane === lane && 'bg-opacity-20'
+              'border-b border-dashed border-zinc-800 px-4 py-2',
+              config.color
             )}
-            style={{ width: config.width }}
           >
-            <div
-              className={cn(
-                'border-b border-dashed border-zinc-800 px-4 py-2',
-                config.color
-              )}
-            >
-              <span className="text-xs font-medium uppercase tracking-wider">
-                {config.label}
-              </span>
-            </div>
+            <span className="text-xs font-medium uppercase tracking-wider">
+              {config.label}
+            </span>
           </div>
-        )
-      )}
+        </div>
+      ))}
     </div>
   );
 };
@@ -315,7 +321,12 @@ const CanvasActionBar: React.FC<CanvasActionBarProps> = ({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onExport('json')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onExport('json')}
+          >
             <Download className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -324,7 +335,12 @@ const CanvasActionBar: React.FC<CanvasActionBarProps> = ({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onShare}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onShare}
+          >
             <Share2 className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -333,7 +349,12 @@ const CanvasActionBar: React.FC<CanvasActionBarProps> = ({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onFullscreen}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={onFullscreen}
+          >
             <Maximize2 className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -375,7 +396,8 @@ export const BootstrapCanvas: React.FC<BootstrapCanvasProps> = ({
   const activeLane: PhaseLane | undefined = useMemo(() => {
     if (currentPhase === 'enter' || currentPhase === 'explore') return 'mvp';
     if (currentPhase === 'refine') return 'v2';
-    if (currentPhase === 'validate' || currentPhase === 'complete') return undefined;
+    if (currentPhase === 'validate' || currentPhase === 'complete')
+      return undefined;
     return undefined;
   }, [currentPhase]);
 
@@ -428,20 +450,23 @@ export const BootstrapCanvas: React.FC<BootstrapCanvasProps> = ({
   }, []);
 
   return (
-    <div className={cn('bootstrap-canvas-container relative h-full w-full', className)}>
+    <div
+      className={cn(
+        'bootstrap-canvas-container relative h-full w-full',
+        className
+      )}
+    >
       {/* Phase Progress Bar */}
       {showPhaseProgress && (
         <div className="absolute left-0 right-0 top-0 z-20 border-b border-zinc-800 bg-zinc-900/95 px-4 py-3 backdrop-blur-sm">
-          <PhaseProgressBar
-            currentPhase={currentPhase}
-            showLabels
-            size="sm"
-          />
+          <PhaseProgressBar currentPhase={currentPhase} showLabels size="sm" />
         </div>
       )}
 
       {/* Canvas Area */}
-      <div className={cn('relative h-full w-full', showPhaseProgress && 'pt-16')}>
+      <div
+        className={cn('relative h-full w-full', showPhaseProgress && 'pt-16')}
+      >
         {/* Phase Lanes Background */}
         {showPhaseLanes && <PhaseLanes activeLane={activeLane} />}
 
@@ -461,8 +486,14 @@ export const BootstrapCanvas: React.FC<BootstrapCanvasProps> = ({
         {showValidation && validationReport && (
           <ValidationOverlay
             score={validationReport.overallScore}
-            errorCount={validationReport.checks.filter((c) => c.status === 'failed').length}
-            warningCount={validationReport.checks.filter((c) => c.status === 'warning').length}
+            errorCount={
+              validationReport.checks.filter((c) => c.status === 'failed')
+                .length
+            }
+            warningCount={
+              validationReport.checks.filter((c) => c.status === 'warning')
+                .length
+            }
             onOpenDetails={handleOpenValidationDetails}
           />
         )}

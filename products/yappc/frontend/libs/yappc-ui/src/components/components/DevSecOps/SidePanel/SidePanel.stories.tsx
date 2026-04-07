@@ -7,7 +7,6 @@
 import { Box, Button, Typography, Divider, Chip } from '@ghatana/design-system';
 import { useState } from 'react';
 
-
 import { SidePanel } from './SidePanel';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 
@@ -116,14 +115,24 @@ export const ItemDetails: Story = {
           title="Feature #123: User Authentication"
         >
           <Box className="mb-6">
-            <Chip label="High Priority" tone="danger" size="sm" className="mr-2" />
+            <Chip
+              label="High Priority"
+              tone="danger"
+              size="sm"
+              className="mr-2"
+            />
             <Chip label="In Progress" tone="warning" size="sm" />
           </Box>
 
           <Typography as="h6" gutterBottom>
             Description
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            paragraph
+          >
             Implement OAuth 2.0 authentication with support for Google, GitHub,
             and email/password login.
           </Typography>

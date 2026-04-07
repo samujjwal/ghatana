@@ -3,7 +3,6 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  * Divider orientation variants
  */
@@ -28,24 +27,24 @@ export interface DividerProps extends HTMLAttributes<HTMLHRElement> {
    * @default 'horizontal'
    */
   orientation?: DividerOrientation;
-  
+
   /**
    * Width/spacing variant
    * @default 'fullWidth'
    */
   variant?: DividerVariant;
-  
+
   /**
    * Text or content to display within the divider
    */
   children?: React.ReactNode;
-  
+
   /**
    * Alignment of text within divider
    * @default 'center'
    */
   textAlign?: DividerTextAlign;
-  
+
   /**
    * Additional CSS classes
    */
@@ -54,7 +53,7 @@ export interface DividerProps extends HTMLAttributes<HTMLHRElement> {
 
 /**
  * Divider component for visually separating content sections.
- * 
+ *
  * Features:
  * - Two orientations: horizontal (default) and vertical
  * - Three width variants: fullWidth, inset, middle
@@ -62,22 +61,22 @@ export interface DividerProps extends HTMLAttributes<HTMLHRElement> {
  * - Text alignment options: left, center, right
  * - Semantic HTML using hr element
  * - Design token colors for consistency
- * 
+ *
  * @example
  * ```tsx
  * // Simple horizontal divider
  * <Divider />
- * 
+ *
  * // Divider with text
  * <Divider>OR</Divider>
- * 
+ *
  * // Vertical divider
  * <div className="flex items-center h-12">
  *   <span>Left content</span>
  *   <Divider orientation="vertical" />
  *   <span>Right content</span>
  * </div>
- * 
+ *
  * // Inset divider (reduced width)
  * <Divider variant="inset" />
  * ```
@@ -100,8 +99,8 @@ export const Divider = forwardRef<HTMLHRElement, DividerProps>(
     // Variant margin classes
     const variantClasses: Record<DividerVariant, string> = {
       fullWidth: '',
-      inset: isVertical ? 'my-2' : 'mx-4',     // 8px/16px inset
-      middle: isVertical ? 'my-4' : 'mx-8',    // 16px/32px middle spacing
+      inset: isVertical ? 'my-2' : 'mx-4', // 8px/16px inset
+      middle: isVertical ? 'my-4' : 'mx-8', // 16px/32px middle spacing
     };
 
     // Text alignment classes
@@ -118,7 +117,7 @@ export const Divider = forwardRef<HTMLHRElement, DividerProps>(
           ref={ref}
           className={cn(
             'border-0 shrink-0',
-            isVertical 
+            isVertical
               ? 'border-l border-l-grey-300 w-px h-full'
               : 'border-t border-t-grey-300 h-px w-full',
             variantClasses[variant],
@@ -145,13 +144,13 @@ export const Divider = forwardRef<HTMLHRElement, DividerProps>(
           <hr
             className={cn(
               'border-0 flex-1 shrink-0',
-              isVertical 
+              isVertical
                 ? 'border-l border-l-grey-300 w-px h-full'
                 : 'border-t border-t-grey-300 h-px w-full'
             )}
           />
         )}
-        
+
         {/* Text content */}
         <span
           className={cn(
@@ -161,13 +160,13 @@ export const Divider = forwardRef<HTMLHRElement, DividerProps>(
         >
           {children}
         </span>
-        
+
         {/* Trailing line */}
         {(textAlign === 'center' || textAlign === 'left') && (
           <hr
             className={cn(
               'border-0 flex-1 shrink-0',
-              isVertical 
+              isVertical
                 ? 'border-l border-l-grey-300 w-px h-full'
                 : 'border-t border-t-grey-300 h-px w-full'
             )}

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Responsive Design Hook
- * 
+ *
  * Responsive design utilities for IDE layout adaptation
  * across different screen sizes and device types.
- * 
+ *
  * @doc.type hook
  * @doc.purpose Responsive design for IDE layout adaptation
  * @doc.layer product
@@ -106,14 +106,14 @@ export const useResponsiveDesign = () => {
    */
   function getCurrentBreakpoint(width: number): Breakpoint {
     const entries = Object.entries(BREAKPOINTS) as [Breakpoint, number][];
-    
+
     for (let i = entries.length - 1; i >= 0; i--) {
       const [key, value] = entries[i];
       if (width >= value) {
         return key;
       }
     }
-    
+
     return 'xs';
   }
 
@@ -149,7 +149,7 @@ export const useResponsiveDesign = () => {
     const deviceType = getDeviceType(width);
     const orientation = getOrientation(width, height);
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       width,
       height,
@@ -170,7 +170,7 @@ export const useResponsiveDesign = () => {
     if (typeof window === 'undefined') return;
 
     let resizeTimer: NodeJS.Timeout;
-    
+
     const debouncedResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(handleResize, 100);
@@ -189,35 +189,40 @@ export const useResponsiveDesign = () => {
   /**
    * Media query helpers
    */
-  const mediaQuery = useMemo(() => ({
-    /**
-     * Check if current breakpoint matches or is larger
-     */
-    up: (breakpoint: Breakpoint): boolean => {
-      return state.width >= BREAKPOINTS[breakpoint];
-    },
+  const mediaQuery = useMemo(
+    () => ({
+      /**
+       * Check if current breakpoint matches or is larger
+       */
+      up: (breakpoint: Breakpoint): boolean => {
+        return state.width >= BREAKPOINTS[breakpoint];
+      },
 
-    /**
-     * Check if current breakpoint matches or is smaller
-     */
-    down: (breakpoint: Breakpoint): boolean => {
-      return state.width < BREAKPOINTS[breakpoint];
-    },
+      /**
+       * Check if current breakpoint matches or is smaller
+       */
+      down: (breakpoint: Breakpoint): boolean => {
+        return state.width < BREAKPOINTS[breakpoint];
+      },
 
-    /**
-     * Check if current breakpoint is exactly
-     */
-    only: (breakpoint: Breakpoint): boolean => {
-      return state.breakpoint === breakpoint;
-    },
+      /**
+       * Check if current breakpoint is exactly
+       */
+      only: (breakpoint: Breakpoint): boolean => {
+        return state.breakpoint === breakpoint;
+      },
 
-    /**
-     * Check if current breakpoint is in range
-     */
-    between: (min: Breakpoint, max: Breakpoint): boolean => {
-      return state.width >= BREAKPOINTS[min] && state.width < BREAKPOINTS[max];
-    },
-  }), [state.width, state.breakpoint]);
+      /**
+       * Check if current breakpoint is in range
+       */
+      between: (min: Breakpoint, max: Breakpoint): boolean => {
+        return (
+          state.width >= BREAKPOINTS[min] && state.width < BREAKPOINTS[max]
+        );
+      },
+    }),
+    [state.width, state.breakpoint]
+  );
 
   /**
    * Layout configuration based on screen size
@@ -261,118 +266,130 @@ export const useResponsiveDesign = () => {
   /**
    * Touch-specific adjustments
    */
-  const touch = useMemo(() => ({
-    /**
-     * Get appropriate touch targets
-     */
-    getTouchTarget: (size: 'small' | 'medium' | 'large') => {
-      const sizes = {
-        small: state.isTouchDevice ? '44px' : '32px',
-        medium: state.isTouchDevice ? '48px' : '40px',
-        large: state.isTouchDevice ? '52px' : '48px',
-      };
-      return sizes[size];
-    },
+  const touch = useMemo(
+    () => ({
+      /**
+       * Get appropriate touch targets
+       */
+      getTouchTarget: (size: 'small' | 'medium' | 'large') => {
+        const sizes = {
+          small: state.isTouchDevice ? '44px' : '32px',
+          medium: state.isTouchDevice ? '48px' : '40px',
+          large: state.isTouchDevice ? '52px' : '48px',
+        };
+        return sizes[size];
+      },
 
-    /**
-     * Get spacing for touch interfaces
-     */
-    getSpacing: (type: 'tight' | 'normal' | 'loose') => {
-      const spacing = {
-        tight: state.isTouchDevice ? '8px' : '4px',
-        normal: state.isTouchDevice ? '16px' : '8px',
-        loose: state.isTouchDevice ? '24px' : '16px',
-      };
-      return spacing[type];
-    },
+      /**
+       * Get spacing for touch interfaces
+       */
+      getSpacing: (type: 'tight' | 'normal' | 'loose') => {
+        const spacing = {
+          tight: state.isTouchDevice ? '8px' : '4px',
+          normal: state.isTouchDevice ? '16px' : '8px',
+          loose: state.isTouchDevice ? '24px' : '16px',
+        };
+        return spacing[type];
+      },
 
-    /**
-     * Check if hover interactions should be disabled
-     */
-    disableHover: state.isTouchDevice,
-  }), [state.isTouchDevice]);
+      /**
+       * Check if hover interactions should be disabled
+       */
+      disableHover: state.isTouchDevice,
+    }),
+    [state.isTouchDevice]
+  );
 
   /**
    * Performance optimizations
    */
-  const performance = useMemo(() => ({
-    /**
-     * Reduce animations on low-end devices
-     */
-    reduceAnimations: state.pixelRatio < 2 || state.width < BREAKPOINTS.md,
+  const performance = useMemo(
+    () => ({
+      /**
+       * Reduce animations on low-end devices
+       */
+      reduceAnimations: state.pixelRatio < 2 || state.width < BREAKPOINTS.md,
 
-    /**
-     * Enable virtual scrolling for large lists
-     */
-    enableVirtualScrolling: state.width < BREAKPOINTS.lg,
+      /**
+       * Enable virtual scrolling for large lists
+       */
+      enableVirtualScrolling: state.width < BREAKPOINTS.lg,
 
-    /**
-     * Lazy load components
-     */
-    lazyLoadComponents: state.width < BREAKPOINTS.lg,
+      /**
+       * Lazy load components
+       */
+      lazyLoadComponents: state.width < BREAKPOINTS.lg,
 
-    /**
-     * Debounce resize events
-     */
-    debounceResize: true,
-  }), [state.pixelRatio, state.width]);
+      /**
+       * Debounce resize events
+       */
+      debounceResize: true,
+    }),
+    [state.pixelRatio, state.width]
+  );
 
   /**
    * Accessibility adjustments
    */
-  const accessibility = useMemo(() => ({
-    /**
-     * Increase touch targets for accessibility
-     */
-    largeTouchTargets: state.isTouchDevice || state.pixelRatio > 1,
+  const accessibility = useMemo(
+    () => ({
+      /**
+       * Increase touch targets for accessibility
+       */
+      largeTouchTargets: state.isTouchDevice || state.pixelRatio > 1,
 
-    /**
-     * High contrast mode detection
-     */
-    highContrast: () => {
-      if (typeof window === 'undefined') return false;
-      return window.matchMedia('(prefers-contrast: high)').matches;
-    },
+      /**
+       * High contrast mode detection
+       */
+      highContrast: () => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(prefers-contrast: high)').matches;
+      },
 
-    /**
-     * Reduced motion preference
-     */
-    reducedMotion: () => {
-      if (typeof window === 'undefined') return false;
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    },
-  }), [state.isTouchDevice, state.pixelRatio]);
+      /**
+       * Reduced motion preference
+       */
+      reducedMotion: () => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      },
+    }),
+    [state.isTouchDevice, state.pixelRatio]
+  );
 
   /**
    * Container queries simulation
    */
-  const container = useMemo(() => ({
-    /**
-     * Get container class based on available width
-     */
-    getContainerClass: (availableWidth: number) => {
-      if (availableWidth < BREAKPOINTS.sm) return 'container-xs';
-      if (availableWidth < BREAKPOINTS.md) return 'container-sm';
-      if (availableWidth < BREAKPOINTS.lg) return 'container-md';
-      if (availableWidth < BREAKPOINTS.xl) return 'container-lg';
-      if (availableWidth < BREAKPOINTS['2xl']) return 'container-xl';
-      return 'container-2xl';
-    },
+  const container = useMemo(
+    () => ({
+      /**
+       * Get container class based on available width
+       */
+      getContainerClass: (availableWidth: number) => {
+        if (availableWidth < BREAKPOINTS.sm) return 'container-xs';
+        if (availableWidth < BREAKPOINTS.md) return 'container-sm';
+        if (availableWidth < BREAKPOINTS.lg) return 'container-md';
+        if (availableWidth < BREAKPOINTS.xl) return 'container-lg';
+        if (availableWidth < BREAKPOINTS['2xl']) return 'container-xl';
+        return 'container-2xl';
+      },
 
-    /**
-     * Get column count for grid layouts
-     */
-    getColumns: (minWidth: number, availableWidth: number) => {
-      return Math.floor(availableWidth / minWidth);
-    },
+      /**
+       * Get column count for grid layouts
+       */
+      getColumns: (minWidth: number, availableWidth: number) => {
+        return Math.floor(availableWidth / minWidth);
+      },
 
-    /**
-     * Get optimal item size for masonry layout
-     */
-    getMasonryItemWidth: (columns: number, gap: number = 16) => {
-      return `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
-    },
-  }), []);
+      /**
+       * Get optimal item size for masonry layout
+       */
+      getMasonryItemWidth: (columns: number, gap: number = 16) => {
+        return `calc((100% - ${(columns - 1) * gap}px) / ${columns})`;
+      },
+    }),
+    []
+  );
 
   return {
     // Current state
@@ -401,17 +418,20 @@ export const useResponsiveDesign = () => {
       /**
        * Convert responsive value to CSS
        */
-      responsiveValue: (values: Partial<Record<Breakpoint, string>>, defaultValue: string) => {
+      responsiveValue: (
+        values: Partial<Record<Breakpoint, string>>,
+        defaultValue: string
+      ) => {
         const breakpoint = state.breakpoint;
         const breakpointKeys = Object.keys(BREAKPOINTS) as Breakpoint[];
-        
+
         for (let i = breakpointKeys.indexOf(breakpoint); i >= 0; i--) {
           const key = breakpointKeys[i];
           if (values[key]) {
             return values[key];
           }
         }
-        
+
         return defaultValue;
       },
 

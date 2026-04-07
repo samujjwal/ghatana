@@ -1,6 +1,6 @@
 /**
  * Threat Analysis Engine
- * 
+ *
  * Analyzes threat models and generates threats based on STRIDE/LINDDUN.
  */
 
@@ -23,7 +23,7 @@ export function analyzeThreatModel(
 ): ThreatAnalysisResult {
   const newThreats: Threat[] = [];
   const now = new Date();
-  
+
   // Get applicable catalogs
   const catalogs: ThreatCatalogEntry[] = [];
   if (state.config.enableSTRIDE) {
@@ -32,22 +32,29 @@ export function analyzeThreatModel(
   if (state.config.enableLINDDUN) {
     catalogs.push(...getLINDDUNThreatCatalog());
   }
-  
+
   // Analyze elements
   for (const element of state.elements) {
     for (const catalogEntry of catalogs) {
       if (catalogEntry.applicableToTypes.includes(element.type)) {
         // Check if threat already exists
         const existingThreat = state.threats.find(
-          t => t.affectedElements.includes(element.id) &&
-               t.category === catalogEntry.category
+          (t) =>
+            t.affectedElements.includes(element.id) &&
+            t.category === catalogEntry.category
         );
-        
-        if (!existingThreat && catalogEntry.severity >= state.config.minSeverity) {
+
+        if (
+          !existingThreat &&
+          catalogEntry.severity >= state.config.minSeverity
+        ) {
           const threat: Threat = {
             id: `threat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             title: catalogEntry.title.replace('{element}', element.name),
-            description: catalogEntry.description.replace('{element}', element.name),
+            description: catalogEntry.description.replace(
+              '{element}',
+              element.name
+            ),
             category: catalogEntry.category,
             severity: catalogEntry.severity,
             status: 'identified',
@@ -68,13 +75,13 @@ export function analyzeThreatModel(
             cwe: catalogEntry.cwe,
             references: catalogEntry.references,
           };
-          
+
           newThreats.push(threat);
         }
       }
     }
   }
-  
+
   // Analyze flows
   for (const flow of state.flows) {
     for (const catalogEntry of catalogs) {
@@ -94,37 +101,40 @@ export function analyzeThreatModel(
             discoveredAt: now,
             updatedAt: now,
           };
-          
+
           newThreats.push(threat);
         }
       }
     }
   }
-  
+
   // Calculate summary
   const allThreats = [...state.threats, ...newThreats];
   const summary = {
     total: allThreats.length,
     bySeverity: {
-      critical: allThreats.filter(t => t.severity === 'critical').length,
-      high: allThreats.filter(t => t.severity === 'high').length,
-      medium: allThreats.filter(t => t.severity === 'medium').length,
-      low: allThreats.filter(t => t.severity === 'low').length,
-      info: allThreats.filter(t => t.severity === 'info').length,
+      critical: allThreats.filter((t) => t.severity === 'critical').length,
+      high: allThreats.filter((t) => t.severity === 'high').length,
+      medium: allThreats.filter((t) => t.severity === 'medium').length,
+      low: allThreats.filter((t) => t.severity === 'low').length,
+      info: allThreats.filter((t) => t.severity === 'info').length,
     },
-    byCategory: allThreats.reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
+    byCategory: allThreats.reduce(
+      (acc, t) => {
+        acc[t.category] = (acc[t.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    ),
     byStatus: {
-      identified: allThreats.filter(t => t.status === 'identified').length,
-      analyzing: allThreats.filter(t => t.status === 'analyzing').length,
-      mitigating: allThreats.filter(t => t.status === 'mitigating').length,
-      accepted: allThreats.filter(t => t.status === 'accepted').length,
-      resolved: allThreats.filter(t => t.status === 'resolved').length,
+      identified: allThreats.filter((t) => t.status === 'identified').length,
+      analyzing: allThreats.filter((t) => t.status === 'analyzing').length,
+      mitigating: allThreats.filter((t) => t.status === 'mitigating').length,
+      accepted: allThreats.filter((t) => t.status === 'accepted').length,
+      resolved: allThreats.filter((t) => t.status === 'resolved').length,
     },
   };
-  
+
   return {
     newThreats,
     updatedThreats: [],

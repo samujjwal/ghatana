@@ -70,7 +70,9 @@ export const Variants: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">None (default) - No markers</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          None (default) - No markers
+        </h3>
         <List variant="none">
           <ListItem>Home</ListItem>
           <ListItem>Profile</ListItem>
@@ -79,7 +81,9 @@ export const Variants: Story = {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">Bullet - Disc markers</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          Bullet - Disc markers
+        </h3>
         <List variant="bullet">
           <ListItem>Apples</ListItem>
           <ListItem>Bananas</ListItem>
@@ -88,7 +92,9 @@ export const Variants: Story = {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">Numbered - Decimal markers</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          Numbered - Decimal markers
+        </h3>
         <List variant="numbered">
           <ListItem>First step</ListItem>
           <ListItem>Second step</ListItem>
@@ -106,7 +112,9 @@ export const WithDividers: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">Without dividers</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          Without dividers
+        </h3>
         <div className="border border-grey-300 rounded-lg">
           <List disablePadding>
             <ListItem>Item 1</ListItem>
@@ -117,7 +125,9 @@ export const WithDividers: Story = {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">With dividers</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          With dividers
+        </h3>
         <div className="border border-grey-300 rounded-lg">
           <List dividers disablePadding>
             <ListItem>Item 1</ListItem>
@@ -137,7 +147,9 @@ export const DenseSpacing: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">Normal spacing</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          Normal spacing
+        </h3>
         <div className="border border-grey-300 rounded-lg">
           <List disablePadding>
             <ListItem>Item 1</ListItem>
@@ -149,7 +161,9 @@ export const DenseSpacing: Story = {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium text-grey-700 mb-2">Dense spacing</h3>
+        <h3 className="text-sm font-medium text-grey-700 mb-2">
+          Dense spacing
+        </h3>
         <div className="border border-grey-300 rounded-lg">
           <List dense disablePadding>
             <ListItem dense>Item 1</ListItem>
@@ -171,7 +185,9 @@ export const PaddingOptions: Story = {
     <div className="space-y-6">
       {(['none', 'sm', 'md', 'lg'] as const).map((padding) => (
         <div key={padding}>
-          <h3 className="text-sm font-medium text-grey-700 mb-2">Padding: {padding}</h3>
+          <h3 className="text-sm font-medium text-grey-700 mb-2">
+            Padding: {padding}
+          </h3>
           <div className="border border-grey-300 rounded-lg">
             <List padding={padding}>
               <ListItem>Item 1</ListItem>
@@ -194,7 +210,12 @@ export const WithIcons: Story = {
       <List dividers disablePadding>
         <ListItem
           icon={
-            <svg className="w-full h-full text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-full h-full text-primary-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -208,7 +229,12 @@ export const WithIcons: Story = {
         </ListItem>
         <ListItem
           icon={
-            <svg className="w-full h-full text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-full h-full text-primary-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -222,14 +248,24 @@ export const WithIcons: Story = {
         </ListItem>
         <ListItem
           icon={
-            <svg className="w-full h-full text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-full h-full text-primary-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
               />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           }
         >
@@ -247,10 +283,18 @@ export const WithSecondaryText: Story = {
   render: () => (
     <div className="border border-grey-300 rounded-lg">
       <List dividers disablePadding>
-        <ListItem secondaryText="View and edit your personal information">My Profile</ListItem>
-        <ListItem secondaryText="Manage your account preferences">Account Settings</ListItem>
-        <ListItem secondaryText="Control your privacy and security">Privacy & Security</ListItem>
-        <ListItem secondaryText="Configure notification preferences">Notifications</ListItem>
+        <ListItem secondaryText="View and edit your personal information">
+          My Profile
+        </ListItem>
+        <ListItem secondaryText="Manage your account preferences">
+          Account Settings
+        </ListItem>
+        <ListItem secondaryText="Control your privacy and security">
+          Privacy & Security
+        </ListItem>
+        <ListItem secondaryText="Configure notification preferences">
+          Notifications
+        </ListItem>
       </List>
     </div>
   ),
@@ -290,8 +334,18 @@ export const WithSelection: Story = {
         <ListItem
           clickable
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
             </svg>
           }
         >
@@ -301,8 +355,18 @@ export const WithSelection: Story = {
           clickable
           selected
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
             </svg>
           }
         >
@@ -311,9 +375,24 @@ export const WithSelection: Story = {
         <ListItem
           clickable
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           }
         >
@@ -353,8 +432,18 @@ export const NavigationList: Story = {
           clickable
           selected
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
           }
           secondaryText="Overview and stats"
@@ -364,8 +453,18 @@ export const NavigationList: Story = {
         <ListItem
           clickable
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+              />
             </svg>
           }
           secondaryText="Manage your projects"
@@ -375,8 +474,18 @@ export const NavigationList: Story = {
         <ListItem
           clickable
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
             </svg>
           }
           secondaryText="Team members"
@@ -386,9 +495,24 @@ export const NavigationList: Story = {
         <ListItem
           clickable
           icon={
-            <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className="w-full h-full"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           }
           secondaryText="Account preferences"
@@ -409,21 +533,33 @@ export const ContactList: Story = {
       <List dividers disablePadding>
         <ListItem
           clickable
-          icon={<div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium">JD</div>}
+          icon={
+            <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium">
+              JD
+            </div>
+          }
           secondaryText="john.doe@example.com"
         >
           John Doe
         </ListItem>
         <ListItem
           clickable
-          icon={<div className="w-10 h-10 rounded-full bg-secondary-500 flex items-center justify-center text-white font-medium">JS</div>}
+          icon={
+            <div className="w-10 h-10 rounded-full bg-secondary-500 flex items-center justify-center text-white font-medium">
+              JS
+            </div>
+          }
           secondaryText="jane.smith@example.com"
         >
           Jane Smith
         </ListItem>
         <ListItem
           clickable
-          icon={<div className="w-10 h-10 rounded-full bg-success-500 flex items-center justify-center text-white font-medium">BJ</div>}
+          icon={
+            <div className="w-10 h-10 rounded-full bg-success-500 flex items-center justify-center text-white font-medium">
+              BJ
+            </div>
+          }
           secondaryText="bob.johnson@example.com"
         >
           Bob Johnson

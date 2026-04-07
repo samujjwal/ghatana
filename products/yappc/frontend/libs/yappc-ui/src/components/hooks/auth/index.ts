@@ -1,6 +1,6 @@
 /**
  * Authentication Utility Hooks
- * 
+ *
  * Collection of reusable authentication hooks for common auth patterns:
  * - Session timeout detection
  * - Token refresh management
@@ -8,7 +8,7 @@
  * - Auth state persistence
  * - Login/logout helpers
  * - Protected navigation
- * 
+ *
  * @module ui/hooks/auth
  * @doc.type hooks
  * @doc.purpose Authentication utility hooks
@@ -43,7 +43,9 @@ function readUserPermissions(user: User | null): string[] {
   return Array.isArray(authUser?.permissions) ? authUser.permissions : [];
 }
 
-function parseStoredAuth(value: string): { token?: string; user?: User } | null {
+function parseStoredAuth(
+  value: string
+): { token?: string; user?: User } | null {
   const parsed: unknown = JSON.parse(value);
   if (typeof parsed !== 'object' || parsed === null) {
     return null;
@@ -66,26 +68,26 @@ function parseStoredAuth(value: string): { token?: string; user?: User } | null 
 export interface UseSessionTimeoutOptions {
   /** Timeout duration in milliseconds */
   timeout?: number;
-  
+
   /** Warning duration before timeout in milliseconds */
   warningTime?: number;
-  
+
   /** Callback when session times out */
   onTimeout?: () => void;
-  
+
   /** Callback when warning time is reached */
   onWarning?: () => void;
-  
+
   /** Whether to reset on activity */
   resetOnActivity?: boolean;
 }
 
 /**
  * Hook to detect session timeout and warn user
- * 
+ *
  * @param options - Timeout options
  * @returns Session timeout state and reset function
- * 
+ *
  * @example
  * const { isWarning, isTimedOut, resetTimeout } = useSessionTimeout({
  *   timeout: 30 * 60 * 1000, // 30 minutes
@@ -101,29 +103,29 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
     onWarning,
     resetOnActivity = true,
   } = options;
-  
+
   const [isWarning, setIsWarning] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const warningIdRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
-  
+
   const user = useAtomValue(authUserAtom);
   const isAuthenticated = !!user;
-  
+
   const resetTimeout = useCallback(() => {
     // Clear existing timers
     if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
     if (warningIdRef.current) clearTimeout(warningIdRef.current);
-    
+
     // Reset state
     setIsWarning(false);
     setIsTimedOut(false);
     lastActivityRef.current = Date.now();
-    
+
     // Only set timers if authenticated
     if (!isAuthenticated) return;
-    
+
     // Set warning timer
     if (warningTime > 0 && timeout > warningTime) {
       warningIdRef.current = setTimeout(() => {
@@ -131,27 +133,27 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
         if (onWarning) onWarning();
       }, timeout - warningTime);
     }
-    
+
     // Set timeout timer
     timeoutIdRef.current = setTimeout(() => {
       setIsTimedOut(true);
       if (onTimeout) onTimeout();
     }, timeout);
   }, [timeout, warningTime, onTimeout, onWarning, isAuthenticated]);
-  
+
   // Activity event handler
   const handleActivity = useCallback(() => {
     if (!resetOnActivity || !isAuthenticated) return;
-    
+
     const now = Date.now();
     const timeSinceLastActivity = now - lastActivityRef.current;
-    
+
     // Only reset if enough time has passed (throttle)
     if (timeSinceLastActivity > 5000) {
       resetTimeout();
     }
   }, [resetOnActivity, resetTimeout, isAuthenticated]);
-  
+
   // Setup and cleanup
   useEffect(() => {
     if (!isAuthenticated) {
@@ -159,9 +161,9 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
       setIsTimedOut(false);
       return;
     }
-    
+
     resetTimeout();
-    
+
     // Add activity listeners
     if (resetOnActivity) {
       window.addEventListener('mousemove', handleActivity);
@@ -169,23 +171,25 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
       window.addEventListener('click', handleActivity);
       window.addEventListener('scroll', handleActivity);
     }
-    
+
     return () => {
       if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
       if (warningIdRef.current) clearTimeout(warningIdRef.current);
-      
+
       window.removeEventListener('mousemove', handleActivity);
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('scroll', handleActivity);
     };
   }, [isAuthenticated, resetTimeout, resetOnActivity, handleActivity]);
-  
+
   return {
     isWarning,
     isTimedOut,
     resetTimeout,
-    timeRemaining: isTimedOut ? 0 : timeout - (Date.now() - lastActivityRef.current),
+    timeRemaining: isTimedOut
+      ? 0
+      : timeout - (Date.now() - lastActivityRef.current),
   };
 }
 
@@ -196,23 +200,23 @@ export function useSessionTimeout(options: UseSessionTimeoutOptions = {}) {
 export interface UseTokenRefreshOptions {
   /** Refresh interval in milliseconds */
   refreshInterval?: number;
-  
+
   /** Time before expiration to refresh (in milliseconds) */
   refreshBeforeExpiry?: number;
-  
+
   /** Callback to refresh token */
   onRefresh?: (token: string) => Promise<string>;
-  
+
   /** Callback on refresh error */
   onError?: (error: Error) => void;
 }
 
 /**
  * Hook to automatically refresh authentication token
- * 
+ *
  * @param options - Refresh options
  * @returns Token refresh state
- * 
+ *
  * @example
  * const { isRefreshing, refreshToken } = useTokenRefresh({
  *   refreshBeforeExpiry: 5 * 60 * 1000, // 5 minutes
@@ -226,16 +230,16 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
     onRefresh,
     onError,
   } = options;
-  
+
   const [token, setToken] = useAtom(authTokenAtom);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const refreshToken = useCallback(async () => {
     if (!token || !onRefresh) return;
-    
+
     setIsRefreshing(true);
-    
+
     try {
       const newToken = await onRefresh(token);
       setToken(newToken);
@@ -245,12 +249,16 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
       setIsRefreshing(false);
     }
   }, [token, onRefresh, onError, setToken]);
-  
+
   // Parse JWT token to get expiration
   const getTokenExpiry = useCallback((token: string): number | null => {
     try {
       const payload: unknown = JSON.parse(atob(token.split('.')[1]));
-      if (typeof payload !== 'object' || payload === null || !('exp' in payload)) {
+      if (
+        typeof payload !== 'object' ||
+        payload === null ||
+        !('exp' in payload)
+      ) {
         return null;
       }
 
@@ -260,25 +268,25 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
       return null;
     }
   }, []);
-  
+
   // Setup refresh timer
   useEffect(() => {
     if (!token || !onRefresh) return;
-    
+
     const expiry = getTokenExpiry(token);
     let delay = refreshInterval;
-    
+
     // If token has expiry, calculate refresh time
     if (expiry) {
       const timeUntilExpiry = expiry - Date.now();
       delay = Math.max(timeUntilExpiry - refreshBeforeExpiry, 0);
     }
-    
+
     // Clear existing timeout
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
     }
-    
+
     // Set new timeout
     if (delay > 0) {
       refreshTimeoutRef.current = setTimeout(() => {
@@ -288,14 +296,21 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
       // Token already expired or will expire soon
       void refreshToken();
     }
-    
+
     return () => {
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
     };
-  }, [token, refreshInterval, refreshBeforeExpiry, onRefresh, getTokenExpiry, refreshToken]);
-  
+  }, [
+    token,
+    refreshInterval,
+    refreshBeforeExpiry,
+    onRefresh,
+    getTokenExpiry,
+    refreshToken,
+  ]);
+
   return {
     isRefreshing,
     refreshToken,
@@ -309,11 +324,11 @@ export function useTokenRefresh(options: UseTokenRefreshOptions = {}) {
 
 /**
  * Hook to check user permissions
- * 
+ *
  * @param requiredPermissions - Required permissions (string or array)
  * @param requireAll - Whether all permissions are required (default: false)
  * @returns Permission check result
- * 
+ *
  * @example
  * const { hasPermission, isLoading } = usePermission('admin');
  * const { hasPermission } = usePermission(['read', 'write'], true);
@@ -324,20 +339,22 @@ export function usePermission(
 ) {
   const user = useAtomValue(authUserAtom);
   const isLoading = useAtomValue(authLoadingAtom);
-  
+
   const userPermissions = readUserPermissions(user);
-  const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-  
+  const permissions = Array.isArray(requiredPermissions)
+    ? requiredPermissions
+    : [requiredPermissions];
+
   const hasPermission = useMemo(() => {
     if (!user) return false;
-    
+
     if (requireAll) {
-      return permissions.every(p => userPermissions.includes(p));
+      return permissions.every((p) => userPermissions.includes(p));
     }
-    
-    return permissions.some(p => userPermissions.includes(p));
+
+    return permissions.some((p) => userPermissions.includes(p));
   }, [user, userPermissions, permissions, requireAll]);
-  
+
   return {
     hasPermission,
     isLoading,
@@ -351,11 +368,11 @@ export function usePermission(
 
 /**
  * Hook to check user roles
- * 
+ *
  * @param requiredRoles - Required roles (string or array)
  * @param requireAll - Whether all roles are required (default: false)
  * @returns Role check result
- * 
+ *
  * @example
  * const { hasRole, isAdmin } = useRole('admin');
  * const { hasRole } = useRole(['admin', 'moderator']);
@@ -366,22 +383,22 @@ export function useRole(
 ) {
   const user = useAtomValue(authUserAtom);
   const isLoading = useAtomValue(authLoadingAtom);
-  
+
   const userRoles = readUserRoles(user);
   const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-  
+
   const hasRole = useMemo(() => {
     if (!user) return false;
-    
+
     if (requireAll) {
-      return roles.every(r => userRoles.includes(r));
+      return roles.every((r) => userRoles.includes(r));
     }
-    
-    return roles.some(r => userRoles.includes(r));
+
+    return roles.some((r) => userRoles.includes(r));
   }, [user, userRoles, roles, requireAll]);
-  
+
   const isAdmin = useMemo(() => userRoles.includes('admin'), [userRoles]);
-  
+
   return {
     hasRole,
     isAdmin,
@@ -397,22 +414,22 @@ export function useRole(
 export interface UseAuthPersistenceOptions {
   /** Storage key for auth data */
   storageKey?: string;
-  
+
   /** Storage type */
   storage?: 'local' | 'session';
-  
+
   /** Whether to persist user data */
   persistUser?: boolean;
-  
+
   /** Whether to persist token */
   persistToken?: boolean;
 }
 
 /**
  * Hook to persist auth state to storage
- * 
+ *
  * @param options - Persistence options
- * 
+ *
  * @example
  * useAuthPersistence({
  *   storage: 'local',
@@ -427,23 +444,23 @@ export function useAuthPersistence(options: UseAuthPersistenceOptions = {}) {
     persistUser = true,
     persistToken = true,
   } = options;
-  
+
   const [user, setUser] = useAtom(authUserAtom);
   const [token, setToken] = useAtom(authTokenAtom);
-  
+
   const storageObj = storage === 'local' ? localStorage : sessionStorage;
-  
+
   // Load from storage on mount
   useEffect(() => {
     try {
       const stored = storageObj.getItem(storageKey);
       if (stored) {
         const data = parseStoredAuth(stored);
-        
+
         if (persistUser && data?.user) {
           setUser(data.user);
         }
-        
+
         if (persistToken && data?.token) {
           setToken(data.token);
         }
@@ -452,20 +469,20 @@ export function useAuthPersistence(options: UseAuthPersistenceOptions = {}) {
       console.error('Failed to load auth from storage:', error);
     }
   }, [storageKey, storageObj, persistUser, persistToken, setUser, setToken]);
-  
+
   // Save to storage on change
   useEffect(() => {
     try {
       const data: Record<string, unknown> = {};
-      
+
       if (persistUser && user) {
         data.user = user;
       }
-      
+
       if (persistToken && token) {
         data.token = token;
       }
-      
+
       if (Object.keys(data).length > 0) {
         storageObj.setItem(storageKey, JSON.stringify(data));
       } else {
@@ -475,11 +492,11 @@ export function useAuthPersistence(options: UseAuthPersistenceOptions = {}) {
       console.error('Failed to save auth to storage:', error);
     }
   }, [user, token, storageKey, storageObj, persistUser, persistToken]);
-  
+
   const clearStorage = useCallback(() => {
     storageObj.removeItem(storageKey);
   }, [storageObj, storageKey]);
-  
+
   return {
     clearStorage,
   };
@@ -492,72 +509,80 @@ export function useAuthPersistence(options: UseAuthPersistenceOptions = {}) {
 export interface UseProtectedNavigationOptions {
   /** Login path for redirect */
   loginPath?: string;
-  
+
   /** Whether to preserve return path */
   preserveReturnPath?: boolean;
 }
 
 /**
  * Hook for navigation with authentication checks
- * 
+ *
  * @param options - Navigation options
  * @returns Navigation functions with auth checks
- * 
+ *
  * @example
  * const { navigateTo, navigateToLogin } = useProtectedNavigation();
  * navigateTo('/dashboard'); // Redirects to login if not authenticated
  */
-export function useProtectedNavigation(options: UseProtectedNavigationOptions = {}) {
-  const {
-    loginPath = '/login',
-    preserveReturnPath = true,
-  } = options;
-  
+export function useProtectedNavigation(
+  options: UseProtectedNavigationOptions = {}
+) {
+  const { loginPath = '/login', preserveReturnPath = true } = options;
+
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAtomValue(authUserAtom);
   const isAuthenticated = !!user;
-  
-  const navigateTo = useCallback((path: string, requireAuth: boolean = true) => {
-    if (requireAuth && !isAuthenticated) {
-      // Save return path
-      if (preserveReturnPath) {
+
+  const navigateTo = useCallback(
+    (path: string, requireAuth: boolean = true) => {
+      if (requireAuth && !isAuthenticated) {
+        // Save return path
+        if (preserveReturnPath) {
+          sessionStorage.setItem('returnPath', path);
+        }
+
+        // Navigate to login with return URL
+        void navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
+          state: { from: path },
+        });
+        return;
+      }
+
+      void navigate(path);
+    },
+    [isAuthenticated, preserveReturnPath, navigate, loginPath]
+  );
+
+  const navigateToLogin = useCallback(
+    (returnPath?: string) => {
+      const path = returnPath || location.pathname;
+
+      if (preserveReturnPath && path !== loginPath) {
         sessionStorage.setItem('returnPath', path);
       }
-      
-      // Navigate to login with return URL
+
       void navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
         state: { from: path },
       });
-      return;
-    }
-    
-    void navigate(path);
-  }, [isAuthenticated, preserveReturnPath, navigate, loginPath]);
-  
-  const navigateToLogin = useCallback((returnPath?: string) => {
-    const path = returnPath || location.pathname;
-    
-    if (preserveReturnPath && path !== loginPath) {
-      sessionStorage.setItem('returnPath', path);
-    }
-    
-    void navigate(`${loginPath}?returnUrl=${encodeURIComponent(path)}`, {
-      state: { from: path },
-    });
-  }, [navigate, loginPath, location, preserveReturnPath]);
-  
-  const navigateToReturnPath = useCallback((defaultPath: string = '/') => {
-    const returnPath = sessionStorage.getItem('returnPath');
-    
-    if (returnPath) {
-      sessionStorage.removeItem('returnPath');
-      void navigate(returnPath);
-    } else {
-      void navigate(defaultPath);
-    }
-  }, [navigate]);
-  
+    },
+    [navigate, loginPath, location, preserveReturnPath]
+  );
+
+  const navigateToReturnPath = useCallback(
+    (defaultPath: string = '/') => {
+      const returnPath = sessionStorage.getItem('returnPath');
+
+      if (returnPath) {
+        sessionStorage.removeItem('returnPath');
+        void navigate(returnPath);
+      } else {
+        void navigate(defaultPath);
+      }
+    },
+    [navigate]
+  );
+
   return {
     navigateTo,
     navigateToLogin,
@@ -572,9 +597,9 @@ export function useProtectedNavigation(options: UseProtectedNavigationOptions = 
 
 /**
  * Hook to get comprehensive auth status
- * 
+ *
  * @returns Complete auth status
- * 
+ *
  * @example
  * const {
  *   isAuthenticated,
@@ -589,41 +614,41 @@ export function useAuthStatus() {
   const token = useAtomValue(authTokenAtom);
   const isLoading = useAtomValue(authLoadingAtom);
   const error = useAtomValue(authErrorAtom);
-  
+
   const isAuthenticated = !!user && !!token;
   const userRoles = readUserRoles(user);
   const userPermissions = readUserPermissions(user);
-  
+
   const hasRole = useCallback(
     (role: string | string[]) => {
       const roles = Array.isArray(role) ? role : [role];
-      return roles.some(r => userRoles.includes(r));
+      return roles.some((r) => userRoles.includes(r));
     },
     [userRoles]
   );
-  
+
   const hasPermission = useCallback(
     (permission: string | string[]) => {
       const permissions = Array.isArray(permission) ? permission : [permission];
-      return permissions.some(p => userPermissions.includes(p));
+      return permissions.some((p) => userPermissions.includes(p));
     },
     [userPermissions]
   );
-  
+
   const hasAllRoles = useCallback(
     (roles: string[]) => {
-      return roles.every(r => userRoles.includes(r));
+      return roles.every((r) => userRoles.includes(r));
     },
     [userRoles]
   );
-  
+
   const hasAllPermissions = useCallback(
     (permissions: string[]) => {
-      return permissions.every(p => userPermissions.includes(p));
+      return permissions.every((p) => userPermissions.includes(p));
     },
     [userPermissions]
   );
-  
+
   return {
     user,
     token,
@@ -639,4 +664,3 @@ export function useAuthStatus() {
     isAdmin: userRoles.includes('admin'),
   };
 }
-

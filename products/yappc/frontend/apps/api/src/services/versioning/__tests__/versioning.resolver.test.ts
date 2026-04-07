@@ -183,7 +183,9 @@ describe('createSnapshot Mutation', () => {
     });
 
     expect(result.createdAt).toBe('2024-03-25T14:30:00Z');
-    expect(new Date(result.createdAt).toISOString()).toBe('2024-03-25T14:30:00Z');
+    expect(new Date(result.createdAt).toISOString()).toBe(
+      '2024-03-25T14:30:00Z'
+    );
   });
 });
 

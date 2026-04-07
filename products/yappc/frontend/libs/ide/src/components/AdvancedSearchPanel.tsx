@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Advanced Search Panel Component
- * 
+ *
  * Comprehensive search interface with filters, patterns, and saved queries.
- * 
+ *
  * @doc.type component
  * @doc.purpose Advanced search UI for IDE
  * @doc.layer product
@@ -12,7 +12,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
-import type { FileSearchQuery, SearchResult } from '../hooks/useAdvancedFileOperations';
+import type {
+  FileSearchQuery,
+  SearchResult,
+} from '../hooks/useAdvancedFileOperations';
 
 import { InteractiveButton } from './MicroInteractions';
 
@@ -46,12 +49,8 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
   onClose,
   isVisible,
 }) => {
-  const {
-    searchFiles,
-    clearSearch,
-    searchResults,
-    isSearching,
-  } = useAdvancedFileOperations();
+  const { searchFiles, clearSearch, searchResults, isSearching } =
+    useAdvancedFileOperations();
 
   const [query, setQuery] = useState<FileSearchQuery>({
     pattern: '',
@@ -70,7 +69,7 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
       if (saved) {
         setSavedQueries(JSON.parse(saved));
       }
-      
+
       const history = localStorage.getItem('ide-search-history');
       if (history) {
         setSearchHistory(JSON.parse(history));
@@ -85,9 +84,12 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
 
     try {
       await searchFiles(query);
-      
+
       // Update search history
-      const newHistory = [query, ...searchHistory.filter(h => h.pattern !== query.pattern)].slice(0, 20);
+      const newHistory = [
+        query,
+        ...searchHistory.filter((h) => h.pattern !== query.pattern),
+      ].slice(0, 20);
       setSearchHistory(newHistory);
       localStorage.setItem('ide-search-history', JSON.stringify(newHistory));
     } catch (error) {
@@ -117,23 +119,31 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     setShowSavedQueries(false);
   }, []);
 
-  const handleDeleteQuery = useCallback((id: string) => {
-    const updated = savedQueries.filter(q => q.id !== id);
-    setSavedQueries(updated);
-    localStorage.setItem('ide-saved-queries', JSON.stringify(updated));
-  }, [savedQueries]);
+  const handleDeleteQuery = useCallback(
+    (id: string) => {
+      const updated = savedQueries.filter((q) => q.id !== id);
+      setSavedQueries(updated);
+      localStorage.setItem('ide-saved-queries', JSON.stringify(updated));
+    },
+    [savedQueries]
+  );
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handleSearch();
-    }
-  }, [handleSearch]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${className}`}>
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${className}`}
+    >
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -148,11 +158,7 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
             >
               Saved Queries
             </InteractiveButton>
-            <InteractiveButton
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-            >
+            <InteractiveButton variant="ghost" size="sm" onClick={onClose}>
               ✕
             </InteractiveButton>
           </div>
@@ -170,7 +176,9 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                 <input
                   type="text"
                   value={query.pattern}
-                  onChange={(e) => setQuery({ ...query, pattern: e.target.value })}
+                  onChange={(e) =>
+                    setQuery({ ...query, pattern: e.target.value })
+                  }
                   onKeyPress={handleKeyPress}
                   placeholder="Enter search pattern..."
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
@@ -185,7 +193,9 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                 </label>
                 <textarea
                   value={query.content || ''}
-                  onChange={(e) => setQuery({ ...query, content: e.target.value })}
+                  onChange={(e) =>
+                    setQuery({ ...query, content: e.target.value })
+                  }
                   placeholder="Search within file contents..."
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
@@ -200,10 +210,15 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                 <input
                   type="text"
                   value={query.fileTypes?.join(', ') || ''}
-                  onChange={(e) => setQuery({ 
-                    ...query, 
-                    fileTypes: e.target.value.split(',').map(t => t.trim()).filter(Boolean) 
-                  })}
+                  onChange={(e) =>
+                    setQuery({
+                      ...query,
+                      fileTypes: e.target.value
+                        .split(',')
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
                   placeholder="js, ts, jsx, tsx"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                 />
@@ -218,14 +233,28 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                   <input
                     type="number"
                     value={query.minSize || ''}
-                    onChange={(e) => setQuery({ ...query, minSize: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      setQuery({
+                        ...query,
+                        minSize: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      })
+                    }
                     placeholder="Min"
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                   />
                   <input
                     type="number"
                     value={query.maxSize || ''}
-                    onChange={(e) => setQuery({ ...query, maxSize: e.target.value ? Number(e.target.value) : undefined })}
+                    onChange={(e) =>
+                      setQuery({
+                        ...query,
+                        maxSize: e.target.value
+                          ? Number(e.target.value)
+                          : undefined,
+                      })
+                    }
                     placeholder="Max"
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                   />
@@ -238,7 +267,9 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                   <input
                     type="checkbox"
                     checked={query.caseSensitive}
-                    onChange={(e) => setQuery({ ...query, caseSensitive: e.target.checked })}
+                    onChange={(e) =>
+                      setQuery({ ...query, caseSensitive: e.target.checked })
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -249,7 +280,9 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                   <input
                     type="checkbox"
                     checked={query.regex}
-                    onChange={(e) => setQuery({ ...query, regex: e.target.checked })}
+                    onChange={(e) =>
+                      setQuery({ ...query, regex: e.target.checked })
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -279,7 +312,11 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                   variant="ghost"
                   onClick={() => {
                     clearSearch();
-                    setQuery({ pattern: '', caseSensitive: false, regex: false });
+                    setQuery({
+                      pattern: '',
+                      caseSensitive: false,
+                      regex: false,
+                    });
                   }}
                 >
                   Clear
@@ -397,7 +434,10 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
                     {result.matches.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {result.matches.slice(0, 3).map((match, matchIndex) => (
-                          <div key={matchIndex} className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                          <div
+                            key={matchIndex}
+                            className="text-xs text-gray-600 dark:text-gray-400 font-mono"
+                          >
                             Line {match.line}: {match.context}
                           </div>
                         ))}

@@ -1,13 +1,19 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
-import { AppBar, Toolbar, Typography, Button, Box } from '@ghatana/design-system';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+} from '@ghatana/design-system';
 const Header = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken')
-    navigate('/login')
-  }
+    localStorage.removeItem('authToken');
+    navigate('/login');
+  };
 
   return (
     <AppBar position="static">
@@ -25,7 +31,7 @@ const Header = () => {
         </Box>
       </Toolbar>
     </AppBar>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

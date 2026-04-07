@@ -88,7 +88,7 @@ export const Closable: Story = {
     severity: 'info',
     title: 'Closable Alert',
     children: 'Click the × button to close this alert.',
-  onClose: () => console.log('Alert closed'),
+    onClose: () => console.log('Alert closed'),
   },
 };
 
@@ -97,7 +97,7 @@ export const WithoutIcon: Story = {
     severity: 'info',
     title: 'No Icon',
     children: 'This alert has no icon.',
-  hideIcon: true,
+    hideIcon: true,
   },
 };
 
@@ -126,7 +126,7 @@ export const AllVariants: Story = {
 
 export const SuccessVariant: Story = {
   args: {
-  severity: 'success',
+    severity: 'success',
     title: 'Payment Successful',
     children: 'Your payment of $99.99 has been processed successfully.',
   },
@@ -134,25 +134,28 @@ export const SuccessVariant: Story = {
 
 export const ErrorVariant: Story = {
   args: {
-  severity: 'error',
+    severity: 'error',
     title: 'Connection Failed',
-    children: 'Unable to connect to the server. Please check your internet connection and try again.',
+    children:
+      'Unable to connect to the server. Please check your internet connection and try again.',
   },
 };
 
 export const WarningVariant: Story = {
   args: {
-  severity: 'warning',
+    severity: 'warning',
     title: 'Storage Limit Reached',
-    children: 'You have used 95% of your storage space. Consider upgrading your plan.',
+    children:
+      'You have used 95% of your storage space. Consider upgrading your plan.',
   },
 };
 
 export const InfoVariant: Story = {
   args: {
-  severity: 'info',
+    severity: 'info',
     title: 'New Features Available',
-    children: 'We have released new features. Check out our changelog to learn more.',
+    children:
+      'We have released new features. Check out our changelog to learn more.',
   },
 };
 
@@ -163,10 +166,10 @@ export const InfoVariant: Story = {
 export const WithoutTitles: Story = {
   render: () => (
     <Stack spacing={2}>
-  <Alert severity="success">Operation completed successfully.</Alert>
-  <Alert severity="error">Something went wrong.</Alert>
-  <Alert severity="warning">Please review your input.</Alert>
-  <Alert severity="info">Loading your data...</Alert>
+      <Alert severity="success">Operation completed successfully.</Alert>
+      <Alert severity="error">Something went wrong.</Alert>
+      <Alert severity="warning">Please review your input.</Alert>
+      <Alert severity="info">Loading your data...</Alert>
     </Stack>
   ),
 };
@@ -241,11 +244,19 @@ export const ClosableAlerts: Story = {
             You can close this info alert.
           </Alert>
         )}
-        {!alerts.success && !alerts.error && !alerts.warning && !alerts.info && (
-          <Typography as="p" className="text-sm" color="text.secondary" className="text-center">
-            All alerts closed. Refresh to see them again.
-          </Typography>
-        )}
+        {!alerts.success &&
+          !alerts.error &&
+          !alerts.warning &&
+          !alerts.info && (
+            <Typography
+              as="p"
+              className="text-sm"
+              color="text.secondary"
+              className="text-center"
+            >
+              All alerts closed. Refresh to see them again.
+            </Typography>
+          )}
       </Stack>
     );
   },
@@ -264,7 +275,7 @@ export const ShortMessage: Story = {
 
 export const LongMessage: Story = {
   args: {
-  severity: 'warning',
+    severity: 'warning',
     title: 'Important Security Notice',
     children:
       'We have detected unusual activity on your account. For your security, we recommend changing your password immediately. If you did not authorize this activity, please contact our support team as soon as possible. We take the security of your account very seriously and have implemented additional measures to protect your data.',
@@ -273,7 +284,7 @@ export const LongMessage: Story = {
 
 export const MultilineMessage: Story = {
   render: () => (
-  <Alert severity="error" title="Validation Errors">
+    <Alert severity="error" title="Validation Errors">
       <div>
         <div>• Email address is required</div>
         <div>• Password must be at least 8 characters</div>
@@ -287,13 +298,13 @@ export const MultilineMessage: Story = {
 export const WithLinks: Story = {
   render: () => (
     <Stack spacing={2}>
-  <Alert severity="info" title="System Maintenance">
+      <Alert severity="info" title="System Maintenance">
         Our system will undergo maintenance on Sunday, 2:00 AM - 4:00 AM.{' '}
         <a href="#" style={{ color: 'inherit', fontWeight: 600 }}>
           Learn more
         </a>
       </Alert>
-  <Alert severity="warning" title="Update Available">
+      <Alert severity="warning" title="Update Available">
         A new version is available.{' '}
         <a href="#" style={{ color: 'inherit', fontWeight: 600 }}>
           Update now
@@ -409,7 +420,8 @@ export const AccessibilityDemo: Story = {
           Keyboard Navigation
         </Typography>
         <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-          Closable alerts can be dismissed with keyboard (Tab to focus, Enter to close)
+          Closable alerts can be dismissed with keyboard (Tab to focus, Enter to
+          close)
         </Typography>
         <Alert severity="warning" title="Try Keyboard Navigation">
           Tab to the close button and press Enter to dismiss.

@@ -34,7 +34,8 @@ describe('RateLimitMiddleware', () => {
 
   beforeEach(() => {
     // GIVEN: Fresh mocks and middleware instance
-    mockRateLimitService = new RateLimitingService() as jest.Mocked<RateLimitingService>;
+    mockRateLimitService =
+      new RateLimitingService() as jest.Mocked<RateLimitingService>;
     middleware = new RateLimitMiddleware(mockRateLimitService);
 
     mockRequest = {
@@ -421,12 +422,10 @@ describe('RateLimitMiddleware', () => {
 
     it('should handle concurrent requests correctly', async () => {
       // GIVEN: Multiple concurrent requests
-      mockRateLimitService.allowRequest = jest
-        .fn()
-        .mockResolvedValue({
-          allowed: true,
-          remaining: 50,
-        });
+      mockRateLimitService.allowRequest = jest.fn().mockResolvedValue({
+        allowed: true,
+        remaining: 50,
+      });
 
       // WHEN: Process multiple requests
       const promises = Array.from({ length: 5 }, () =>
@@ -486,15 +485,8 @@ describe('RateLimitMiddleware', () => {
       );
 
       // THEN: Should use custom header names
-      expect(mockResponse.set).toHaveBeenCalledWith(
-        'X-Custom-Limit',
-        '100'
-      );
-      expect(mockResponse.set).toHaveBeenCalledWith(
-        'X-Custom-Remaining',
-        '50'
-      );
+      expect(mockResponse.set).toHaveBeenCalledWith('X-Custom-Limit', '100');
+      expect(mockResponse.set).toHaveBeenCalledWith('X-Custom-Remaining', '50');
     });
   });
 });
-

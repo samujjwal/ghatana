@@ -161,7 +161,9 @@ export function useRegisteredComponent(type: string): ComponentType | null {
   React.useEffect(() => {
     const loadComponent = async () => {
       if (!RendererComponentRegistry.has(type)) {
-        console.warn(`Component type "${type}" not registered in RendererComponentRegistry`);
+        console.warn(
+          `Component type "${type}" not registered in RendererComponentRegistry`
+        );
         setComponent(null);
         return;
       }

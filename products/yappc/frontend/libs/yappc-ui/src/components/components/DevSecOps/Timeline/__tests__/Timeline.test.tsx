@@ -147,7 +147,9 @@ describe('Timeline', () => {
   });
 
   it('does not render today indicator when showToday is false', () => {
-    const { container } = render(<Timeline items={mockItems} showToday={false} />);
+    const { container } = render(
+      <Timeline items={mockItems} showToday={false} />
+    );
 
     const todayLine = container.querySelector(
       'line[stroke="var(--ds-error-500, #ef4444)"]'
@@ -193,7 +195,9 @@ describe('Timeline', () => {
   it('renders grid lines', () => {
     const { container } = render(<Timeline items={mockItems} />);
 
-    const gridLines = container.querySelectorAll('line[stroke="var(--ds-border-color, #e0e0e0)"]');
+    const gridLines = container.querySelectorAll(
+      'line[stroke="var(--ds-border-color, #e0e0e0)"]'
+    );
     expect(gridLines.length).toBeGreaterThan(0);
   });
 

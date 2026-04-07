@@ -76,9 +76,9 @@ export function useBatchUpdates<T = () => void>(
 
   const flush = useCallback(() => {
     const state = batchStateRef.current;
-    
+
     if (state.pending.length === 0) return;
-    
+
     // Clear any pending timer
     if (state.timer !== null) {
       clearTimeout(state.timer);
@@ -90,7 +90,7 @@ export function useBatchUpdates<T = () => void>(
     state.pending = [];
     state.lastFlush = Date.now();
 
-    updates.forEach(update => {
+    updates.forEach((update) => {
       if (typeof update === 'function') {
         (update as () => void)();
       }
@@ -246,7 +246,12 @@ export function useDebouncedAutosave(
     }, fullConfig.debounceDelay);
 
     setIsPending(true);
-  }, [fullConfig.enabled, fullConfig.debounceDelay, fullConfig.maxWait, executeSave]);
+  }, [
+    fullConfig.enabled,
+    fullConfig.debounceDelay,
+    fullConfig.maxWait,
+    executeSave,
+  ]);
 
   const forceSave = useCallback(() => {
     if (timerRef.current !== null) {
@@ -299,7 +304,7 @@ export function useDebouncedAutosave(
 export function batchAtomUpdates(updates: (() => void)[]): void {
   // React 18+ automatically batches updates in event handlers and effects
   // For React 17, we would need to use unstable_batchedUpdates
-  updates.forEach(update => update());
+  updates.forEach((update) => update());
 }
 
 /**
@@ -321,7 +326,9 @@ export interface WorkerConfig {
 /**
  * Default worker configuration
  */
-export const DEFAULT_WORKER_CONFIG: Required<Omit<WorkerConfig, 'workerScript'>> = {
+export const DEFAULT_WORKER_CONFIG: Required<
+  Omit<WorkerConfig, 'workerScript'>
+> = {
   enabled: typeof Worker !== 'undefined',
   timeout: 30000,
   maxConcurrent: 4,
@@ -366,20 +373,20 @@ export function useWorkerOffload(config: WorkerConfig = {}) {
    * Check if Web Workers are supported
    */
   const isSupported = typeof Worker !== 'undefined';
-  
+
   /**
    * Offload a computation to a Web Worker
    * Currently falls back to synchronous execution in all cases
    */
-  const offloadComputation = useCallback(async <T, R>(
-    data: T,
-    computeFn: (data: T) => R
-  ): Promise<R> => {
-    // TODO: Implement actual worker offloading
-    // For now, execute synchronously as fallback
-    return Promise.resolve(computeFn(data));
-  }, []);
-  
+  const offloadComputation = useCallback(
+    async <T, R>(data: T, computeFn: (data: T) => R): Promise<R> => {
+      // TODO: Implement actual worker offloading
+      // For now, execute synchronously as fallback
+      return Promise.resolve(computeFn(data));
+    },
+    []
+  );
+
   /**
    * Terminate the worker immediately
    * No-op in synchronous fallback mode
@@ -387,7 +394,7 @@ export function useWorkerOffload(config: WorkerConfig = {}) {
   const terminate = useCallback(() => {
     // No-op
   }, []);
-  
+
   /**
    * Get current worker statistics
    */
@@ -397,10 +404,11 @@ export function useWorkerOffload(config: WorkerConfig = {}) {
       activeTasks: 0,
       queuedTasks: 0,
       runningTasks: 0,
-      maxConcurrent: config.maxConcurrent ?? DEFAULT_WORKER_CONFIG.maxConcurrent,
+      maxConcurrent:
+        config.maxConcurrent ?? DEFAULT_WORKER_CONFIG.maxConcurrent,
     };
   }, [config.maxConcurrent]);
-  
+
   return {
     offloadComputation,
     isSupported,

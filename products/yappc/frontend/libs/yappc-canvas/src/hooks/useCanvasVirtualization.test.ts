@@ -8,17 +8,29 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCanvasVirtualization } from './useCanvasVirtualization';
-import type { VirtualElement, ViewportBounds, VirtualizationConfig } from './useCanvasVirtualization';
+import type {
+  VirtualElement,
+  ViewportBounds,
+  VirtualizationConfig,
+} from './useCanvasVirtualization';
 
 describe('useCanvasVirtualization', () => {
   describe('Basic Functionality', () => {
     it('should initialize with empty elements', () => {
-      const { result } = renderHook(() => 
-        useCanvasVirtualization({ elements: [], viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+      const { result } = renderHook(() =>
+        useCanvasVirtualization({
+          elements: [],
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       expect(result.current.visibleElements).toEqual([]);
-      expect(result.current.viewportBounds).toEqual({ x: 0, y: 0, width: 800, height: 600 });
+      expect(result.current.viewportBounds).toEqual({
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      });
     });
 
     it('should initialize with provided elements', () => {
@@ -26,9 +38,14 @@ describe('useCanvasVirtualization', () => {
         { id: '1', x: 0, y: 0, width: 100, height: 100 },
         { id: '2', x: 150, y: 150, width: 100, height: 100 },
       ];
-      const viewportBounds: ViewportBounds = { x: 0, y: 0, width: 800, height: 600 };
+      const viewportBounds: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      };
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useCanvasVirtualization({ elements, viewportBounds })
       );
 
@@ -39,16 +56,21 @@ describe('useCanvasVirtualization', () => {
   describe('Viewport Visibility Calculation', () => {
     it('should only include elements within viewport', () => {
       const elements: VirtualElement[] = [
-        { id: 'visible', x: 0, y: 0, width: 100, height: 100 },      // Within viewport
-        { id: 'outside', x: 900, y: 900, width: 100, height: 100 },  // Outside viewport
+        { id: 'visible', x: 0, y: 0, width: 100, height: 100 }, // Within viewport
+        { id: 'outside', x: 900, y: 900, width: 100, height: 100 }, // Outside viewport
       ];
-      const viewportBounds: ViewportBounds = { x: 0, y: 0, width: 800, height: 600 };
+      const viewportBounds: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      };
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useCanvasVirtualization({ elements, viewportBounds })
       );
 
-      const visibleIds = result.current.visibleElements.map(e => e.id);
+      const visibleIds = result.current.visibleElements.map((e) => e.id);
       expect(visibleIds).toContain('visible');
       expect(visibleIds).not.toContain('outside');
     });
@@ -57,9 +79,14 @@ describe('useCanvasVirtualization', () => {
       const elements: VirtualElement[] = [
         { id: 'partial', x: 750, y: 550, width: 100, height: 100 }, // Partially visible
       ];
-      const viewportBounds: ViewportBounds = { x: 0, y: 0, width: 800, height: 600 };
+      const viewportBounds: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      };
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useCanvasVirtualization({ elements, viewportBounds })
       );
 
@@ -70,13 +97,16 @@ describe('useCanvasVirtualization', () => {
 
   describe('Viewport Movement', () => {
     it('should update visible elements when viewport moves', () => {
-      const elements: VirtualElement[] = Array.from({ length: 100 }, (_, i) => ({
-        id: `elem-${i}`,
-        x: i * 150,
-        y: i * 150,
-        width: 100,
-        height: 100,
-      }));
+      const elements: VirtualElement[] = Array.from(
+        { length: 100 },
+        (_, i) => ({
+          id: `elem-${i}`,
+          x: i * 150,
+          y: i * 150,
+          width: 100,
+          height: 100,
+        })
+      );
 
       const { result, rerender } = renderHook(
         ({ viewportBounds }: { viewportBounds: ViewportBounds }) =>
@@ -91,11 +121,15 @@ describe('useCanvasVirtualization', () => {
       const initialCount = result.current.visibleElements.length;
 
       act(() => {
-        rerender({ viewportBounds: { x: 500, y: 500, width: 800, height: 600 } });
+        rerender({
+          viewportBounds: { x: 500, y: 500, width: 800, height: 600 },
+        });
       });
 
       expect(result.current.visibleElements.length).toBeGreaterThan(0);
-      expect(result.current.visibleElements.length).toBeLessThanOrEqual(elements.length);
+      expect(result.current.visibleElements.length).toBeLessThanOrEqual(
+        elements.length
+      );
     });
 
     it('should handle rapid viewport changes', () => {
@@ -108,7 +142,10 @@ describe('useCanvasVirtualization', () => {
       }));
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       // Simulate rapid viewport movements
@@ -138,32 +175,47 @@ describe('useCanvasVirtualization', () => {
       }));
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       const zoomedOut = result.current.zoom(0.5); // Zoom out 50%
-      expect(zoomedOut.visibleElements.length).toBeGreaterThanOrEqual(result.current.visibleElements.length);
+      expect(zoomedOut.visibleElements.length).toBeGreaterThanOrEqual(
+        result.current.visibleElements.length
+      );
     });
 
     it('should handle zoom in (smaller viewport)', () => {
-      const elements: VirtualElement[] = Array.from({ length: 100 }, (_, i) => ({
-        id: `elem-${i}`,
-        x: (i % 10) * 200,
-        y: Math.floor(i / 10) * 200,
-        width: 100,
-        height: 100,
-      }));
+      const elements: VirtualElement[] = Array.from(
+        { length: 100 },
+        (_, i) => ({
+          id: `elem-${i}`,
+          x: (i % 10) * 200,
+          y: Math.floor(i / 10) * 200,
+          width: 100,
+          height: 100,
+        })
+      );
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       const zoomedIn = result.current.zoom(2);
-      expect(zoomedIn.visibleElements.length).toBeLessThanOrEqual(result.current.visibleElements.length);
+      expect(zoomedIn.visibleElements.length).toBeLessThanOrEqual(
+        result.current.visibleElements.length
+      );
     });
 
     it('should maintain valid zoom boundaries', () => {
-      const elements: VirtualElement[] = [{ id: '1', x: 0, y: 0, width: 100, height: 100 }];
+      const elements: VirtualElement[] = [
+        { id: '1', x: 0, y: 0, width: 100, height: 100 },
+      ];
 
       const { result } = renderHook(() =>
         useCanvasVirtualization({
@@ -181,36 +233,50 @@ describe('useCanvasVirtualization', () => {
 
   describe('Performance with Large Element Sets', () => {
     it('should efficiently handle 1000+ elements', () => {
-      const elements: VirtualElement[] = Array.from({ length: 1000 }, (_, i) => ({
-        id: `elem-${i}`,
-        x: (i % 100) * 100,
-        y: Math.floor(i / 100) * 100,
-        width: 80,
-        height: 80,
-      }));
+      const elements: VirtualElement[] = Array.from(
+        { length: 1000 },
+        (_, i) => ({
+          id: `elem-${i}`,
+          x: (i % 100) * 100,
+          y: Math.floor(i / 100) * 100,
+          width: 80,
+          height: 80,
+        })
+      );
 
       const startTime = performance.now();
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
       const endTime = performance.now();
 
       expect(result.current.visibleElements.length).toBeGreaterThan(0);
-      expect(result.current.visibleElements.length).toBeLessThan(elements.length);
+      expect(result.current.visibleElements.length).toBeLessThan(
+        elements.length
+      );
       expect(endTime - startTime).toBeLessThan(100); // Should compute in less than 100ms
     });
 
     it('should use spatial indexing for O(1) queries', () => {
-      const elements: VirtualElement[] = Array.from({ length: 500 }, (_, i) => ({
-        id: `elem-${i}`,
-        x: Math.random() * 5000,
-        y: Math.random() * 5000,
-        width: 50,
-        height: 50,
-      }));
+      const elements: VirtualElement[] = Array.from(
+        { length: 500 },
+        (_, i) => ({
+          id: `elem-${i}`,
+          x: Math.random() * 5000,
+          y: Math.random() * 5000,
+          width: 50,
+          height: 50,
+        })
+      );
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       // Multiple viewport queries should be fast
@@ -231,16 +297,22 @@ describe('useCanvasVirtualization', () => {
 
   describe('Memory Management', () => {
     it('should not leak memory on element updates', () => {
-      const elements: VirtualElement[] = Array.from({ length: 100 }, (_, i) => ({
-        id: `elem-${i}`,
-        x: i * 100,
-        y: i * 100,
-        width: 50,
-        height: 50,
-      }));
+      const elements: VirtualElement[] = Array.from(
+        { length: 100 },
+        (_, i) => ({
+          id: `elem-${i}`,
+          x: i * 100,
+          y: i * 100,
+          width: 50,
+          height: 50,
+        })
+      );
 
       const { result, unmount } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       expect(result.current.visibleElements).toBeDefined();
@@ -251,10 +323,15 @@ describe('useCanvasVirtualization', () => {
 
     it('should properly clean up spatial index on unmount', () => {
       const onCleanupSpy = vi.fn();
-      const elements: VirtualElement[] = [{ id: '1', x: 0, y: 0, width: 100, height: 100 }];
+      const elements: VirtualElement[] = [
+        { id: '1', x: 0, y: 0, width: 100, height: 100 },
+      ];
 
       const { unmount } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       unmount();
@@ -270,7 +347,10 @@ describe('useCanvasVirtualization', () => {
       ];
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       expect(result.current.visibleElements).toBeDefined();
@@ -281,7 +361,12 @@ describe('useCanvasVirtualization', () => {
         { id: 'negative', x: -100, y: -100, width: 200, height: 200 },
         { id: 'positive', x: 100, y: 100, width: 100, height: 100 },
       ];
-      const viewportBounds: ViewportBounds = { x: -50, y: -50, width: 800, height: 600 };
+      const viewportBounds: ViewportBounds = {
+        x: -50,
+        y: -50,
+        width: 800,
+        height: 600,
+      };
 
       const { result } = renderHook(() =>
         useCanvasVirtualization({ elements, viewportBounds })
@@ -296,7 +381,10 @@ describe('useCanvasVirtualization', () => {
       ];
 
       const { result } = renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
 
       expect(result.current.visibleElements.length).toBe(0);
@@ -306,7 +394,12 @@ describe('useCanvasVirtualization', () => {
       const elements: VirtualElement[] = [
         { id: '1', x: 10, y: 10, width: 50, height: 50 },
       ];
-      const viewportBounds: ViewportBounds = { x: 0, y: 0, width: 5000, height: 5000 };
+      const viewportBounds: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 5000,
+        height: 5000,
+      };
 
       const { result } = renderHook(() =>
         useCanvasVirtualization({ elements, viewportBounds })
@@ -346,17 +439,23 @@ describe('useCanvasVirtualization', () => {
 
 describe('useCanvasVirtualization — Large Dataset Performance (>10,000 elements)', () => {
   it('should initialize and compute visible elements for 10,000 elements within 500ms', () => {
-    const elements: VirtualElement[] = Array.from({ length: 10_000 }, (_, i) => ({
-      id: `elem-${i}`,
-      x: (i % 200) * 120,
-      y: Math.floor(i / 200) * 120,
-      width: 100,
-      height: 100,
-    }));
+    const elements: VirtualElement[] = Array.from(
+      { length: 10_000 },
+      (_, i) => ({
+        id: `elem-${i}`,
+        x: (i % 200) * 120,
+        y: Math.floor(i / 200) * 120,
+        width: 100,
+        height: 100,
+      })
+    );
 
     const startTime = performance.now();
     const { result } = renderHook(() =>
-      useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+      useCanvasVirtualization({
+        elements,
+        viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+      })
     );
     const initTime = performance.now() - startTime;
 
@@ -366,31 +465,45 @@ describe('useCanvasVirtualization — Large Dataset Performance (>10,000 element
   });
 
   it('should handle 50,000 elements without crashing', () => {
-    const elements: VirtualElement[] = Array.from({ length: 50_000 }, (_, i) => ({
-      id: `elem-${i}`,
-      x: (i % 500) * 110,
-      y: Math.floor(i / 500) * 110,
-      width: 100,
-      height: 100,
-    }));
+    const elements: VirtualElement[] = Array.from(
+      { length: 50_000 },
+      (_, i) => ({
+        id: `elem-${i}`,
+        x: (i % 500) * 110,
+        y: Math.floor(i / 500) * 110,
+        width: 100,
+        height: 100,
+      })
+    );
 
     expect(() => {
       renderHook(() =>
-        useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+        useCanvasVirtualization({
+          elements,
+          viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+        })
       );
     }).not.toThrow();
   });
 
   it('should return only viewport-visible elements from 10,000-element dataset', () => {
-    const elements: VirtualElement[] = Array.from({ length: 10_000 }, (_, i) => ({
-      id: `elem-${i}`,
-      x: (i % 100) * 100,
-      y: Math.floor(i / 100) * 100,
-      width: 90,
-      height: 90,
-    }));
+    const elements: VirtualElement[] = Array.from(
+      { length: 10_000 },
+      (_, i) => ({
+        id: `elem-${i}`,
+        x: (i % 100) * 100,
+        y: Math.floor(i / 100) * 100,
+        width: 90,
+        height: 90,
+      })
+    );
 
-    const viewportBounds: ViewportBounds = { x: 0, y: 0, width: 800, height: 600 };
+    const viewportBounds: ViewportBounds = {
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+    };
 
     const { result } = renderHook(() =>
       useCanvasVirtualization({ elements, viewportBounds })
@@ -402,16 +515,22 @@ describe('useCanvasVirtualization — Large Dataset Performance (>10,000 element
   });
 
   it('should pan across a 10,000-element dataset with 20 viewport updates in under 1 second', () => {
-    const elements: VirtualElement[] = Array.from({ length: 10_000 }, (_, i) => ({
-      id: `elem-${i}`,
-      x: (i % 200) * 100,
-      y: Math.floor(i / 200) * 100,
-      width: 90,
-      height: 90,
-    }));
+    const elements: VirtualElement[] = Array.from(
+      { length: 10_000 },
+      (_, i) => ({
+        id: `elem-${i}`,
+        x: (i % 200) * 100,
+        y: Math.floor(i / 200) * 100,
+        width: 90,
+        height: 90,
+      })
+    );
 
     const { result } = renderHook(() =>
-      useCanvasVirtualization({ elements, viewportBounds: { x: 0, y: 0, width: 800, height: 600 } })
+      useCanvasVirtualization({
+        elements,
+        viewportBounds: { x: 0, y: 0, width: 800, height: 600 },
+      })
     );
 
     const startTime = performance.now();

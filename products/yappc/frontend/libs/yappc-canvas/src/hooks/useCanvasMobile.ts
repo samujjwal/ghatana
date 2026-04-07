@@ -1,6 +1,6 @@
 /**
  * Consolidated Canvas Mobile Hook
- * 
+ *
  * Replaces: useMobileCanvas + touch interactions
  * Provides: Mobile-specific features
  */
@@ -16,11 +16,11 @@ export interface UseCanvasMobileReturn {
   onPinchZoom: (scale: number) => void;
   onPan: (delta: { x: number; y: number }) => void;
   onDoubleTap: (position: { x: number; y: number }) => void;
-  
+
   isMobileView: boolean;
   showMobileToolbar: boolean;
   setShowMobileToolbar: (show: boolean) => void;
-  
+
   viewportSize: { width: number; height: number };
   orientation: 'portrait' | 'landscape';
 }
@@ -59,7 +59,9 @@ export function useCanvasMobile(
         width: window.innerWidth,
         height: window.innerHeight,
       });
-      setOrientation(window.innerWidth < window.innerHeight ? 'portrait' : 'landscape');
+      setOrientation(
+        window.innerWidth < window.innerHeight ? 'portrait' : 'landscape'
+      );
     };
 
     window.addEventListener('resize', handleResize);

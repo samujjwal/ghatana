@@ -7,7 +7,10 @@
 
 import type * as Y from 'yjs';
 
-import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
+import {
+  type CollaborationManager,
+  type CollaborationUser,
+} from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -92,7 +95,10 @@ export class CanvasCollaboration {
   private viewportMap: Y.Map<unknown>;
   private selectionsMap: Y.Map<unknown>;
   private userId: string;
-  private listeners: Map<CanvasChangeType, Set<(event: CanvasChangeEvent) => void>>;
+  private listeners: Map<
+    CanvasChangeType,
+    Set<(event: CanvasChangeEvent) => void>
+  >;
   private cursors: Map<string, UserCursor>;
   private cursorUpdateInterval: number | null = null;
   private localCursorPosition: { x: number; y: number } | null = null;

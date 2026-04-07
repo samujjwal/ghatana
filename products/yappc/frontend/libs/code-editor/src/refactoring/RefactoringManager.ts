@@ -1,20 +1,20 @@
 /**
  * Advanced Refactoring Tools
- * 
+ *
  * Comprehensive code refactoring system with support for:
  * - Variable/function renaming
  * - Extract method/variable
  * - Inline refactoring
  * - Code transformation
  * - Refactoring history and undo/redo
- * 
+ *
  * Features:
  * - 🔄 Multiple refactoring operations
  * - 📊 Refactoring impact analysis
  * - 🔙 Undo/redo support
  * - 👥 Collaborative refactoring
  * - ⚡ Performance optimized
- * 
+ *
  * @doc.type system
  * @doc.purpose Advanced code refactoring
  * @doc.layer product
@@ -24,7 +24,7 @@
 /**
  * Refactoring operation type
  */
-export type RefactoringType = 
+export type RefactoringType =
   | 'rename'
   | 'extract-method'
   | 'extract-variable'
@@ -109,7 +109,7 @@ export class RefactoringManager {
   ): RefactoringOperation {
     const content = this.fileContents.get(fileId) || '';
     const lines = content.split('\n');
-    
+
     // Find all occurrences of the identifier
     const changes: RefactoringChange[] = [];
     const affectedFiles = new Set<string>();
@@ -121,7 +121,7 @@ export class RefactoringManager {
 
     while ((match = regex.exec(content)) !== null) {
       const startPos = match.index;
-      
+
       // Convert position to line/column
       let line = 0;
       let column = 0;
@@ -227,7 +227,10 @@ export class RefactoringManager {
 
     // Extract selected code
     const startLine = lines[range.startLine];
-    const selectedCode = startLine.substring(range.startColumn, range.endColumn);
+    const selectedCode = startLine.substring(
+      range.startColumn,
+      range.endColumn
+    );
 
     // Create variable declaration
     const varDeclaration = `const ${variableName} = ${selectedCode};`;

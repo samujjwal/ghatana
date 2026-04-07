@@ -40,7 +40,11 @@ import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 // Types
 // =============================================================================
 
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'changes_requested';
+export type ApprovalStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'changes_requested';
 
 export interface Approver {
   id: string;
@@ -128,12 +132,15 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md';
 }
 
-const STATUS_CONFIG: Record<ApprovalStatus, {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  color: string;
-  bgColor: string;
-}> = {
+const STATUS_CONFIG: Record<
+  ApprovalStatus,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+    bgColor: string;
+  }
+> = {
   pending: {
     icon: Clock,
     label: 'Pending',
@@ -202,9 +209,11 @@ const ApproverCard: React.FC<ApproverCardProps> = ({
       variants={itemVariants}
       className={cn(
         'flex items-start gap-3 rounded-lg p-3',
-        approver.status === 'approved' && 'bg-success-50/50 dark:bg-success-950/20',
+        approver.status === 'approved' &&
+          'bg-success-50/50 dark:bg-success-950/20',
         approver.status === 'rejected' && 'bg-error-50/50 dark:bg-error-950/20',
-        approver.status === 'changes_requested' && 'bg-warning-50/50 dark:bg-warning-950/20',
+        approver.status === 'changes_requested' &&
+          'bg-warning-50/50 dark:bg-warning-950/20',
         approver.status === 'pending' && 'bg-neutral-50 dark:bg-neutral-800/50'
       )}
     >
@@ -280,7 +289,9 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
   onRequestChanges,
   loading,
 }) => {
-  const [action, setAction] = useState<'approve' | 'reject' | 'changes' | null>(null);
+  const [action, setAction] = useState<'approve' | 'reject' | 'changes' | null>(
+    null
+  );
   const [comment, setComment] = useState('');
 
   const handleSubmit = () => {
@@ -350,7 +361,9 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
           >
             <Textarea
               value={comment}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComment(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                setComment(e.target.value)
+              }
               placeholder={
                 action === 'approve'
                   ? 'Add an optional comment...'
@@ -390,7 +403,11 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
                 {loading ? (
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
                   >
                     <Clock className="mr-2 h-4 w-4" />
                   </motion.div>
@@ -437,35 +454,45 @@ export const ApprovalPanel: React.FC<ApprovalPanelProps> = ({
   const currentUserApprover = approval.approvers.find(
     (a) => a.id === currentUserId
   );
-  const hasResponded = currentUserApprover && currentUserApprover.status !== 'pending';
+  const hasResponded =
+    currentUserApprover && currentUserApprover.status !== 'pending';
 
   // Handlers
-  const handleApprove = useCallback(async (comment?: string) => {
-    setLoading(true);
-    try {
-      await onApprove(comment);
-    } finally {
-      setLoading(false);
-    }
-  }, [onApprove]);
+  const handleApprove = useCallback(
+    async (comment?: string) => {
+      setLoading(true);
+      try {
+        await onApprove(comment);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onApprove]
+  );
 
-  const handleReject = useCallback(async (comment: string) => {
-    setLoading(true);
-    try {
-      await onReject(comment);
-    } finally {
-      setLoading(false);
-    }
-  }, [onReject]);
+  const handleReject = useCallback(
+    async (comment: string) => {
+      setLoading(true);
+      try {
+        await onReject(comment);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onReject]
+  );
 
-  const handleRequestChanges = useCallback(async (comment: string) => {
-    setLoading(true);
-    try {
-      await onRequestChanges(comment);
-    } finally {
-      setLoading(false);
-    }
-  }, [onRequestChanges]);
+  const handleRequestChanges = useCallback(
+    async (comment: string) => {
+      setLoading(true);
+      try {
+        await onRequestChanges(comment);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onRequestChanges]
+  );
 
   // Compact mode
   if (compact) {

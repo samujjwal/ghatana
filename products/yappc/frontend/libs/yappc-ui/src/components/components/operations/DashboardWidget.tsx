@@ -119,9 +119,10 @@ interface ChartProps {
 }
 
 const SimpleLineChart: React.FC<ChartProps> = ({ data, height = 120 }) => {
-  const series = Array.isArray(data) && data[0] && 'data' in data[0]
-    ? (data as WidgetSeries[])
-    : [{ name: 'default', data: data as WidgetDataPoint[] }];
+  const series =
+    Array.isArray(data) && data[0] && 'data' in data[0]
+      ? (data as WidgetSeries[])
+      : [{ name: 'default', data: data as WidgetDataPoint[] }];
 
   const allValues = series.flatMap((s) => s.data.map((d) => d.value));
   const minVal = Math.min(...allValues);
@@ -131,11 +132,14 @@ const SimpleLineChart: React.FC<ChartProps> = ({ data, height = 120 }) => {
   return (
     <svg width="100%" height={height} className="simple-chart">
       {series.map((s, si) => {
-        const points = s.data.map((d, i) => {
-          const x = (i / (s.data.length - 1)) * 100;
-          const y = height - ((d.value - minVal) / range) * (height - 20) - 10;
-          return `${x}%,${y}`;
-        }).join(' ');
+        const points = s.data
+          .map((d, i) => {
+            const x = (i / (s.data.length - 1)) * 100;
+            const y =
+              height - ((d.value - minVal) / range) * (height - 20) - 10;
+            return `${x}%,${y}`;
+          })
+          .join(' ');
 
         return (
           <polyline
@@ -154,9 +158,10 @@ const SimpleLineChart: React.FC<ChartProps> = ({ data, height = 120 }) => {
 };
 
 const SimpleBarChart: React.FC<ChartProps> = ({ data, height = 120 }) => {
-  const points = Array.isArray(data) && data[0] && 'data' in data[0]
-    ? (data as WidgetSeries[])[0].data
-    : (data as WidgetDataPoint[]);
+  const points =
+    Array.isArray(data) && data[0] && 'data' in data[0]
+      ? (data as WidgetSeries[])[0].data
+      : (data as WidgetDataPoint[]);
 
   const maxVal = Math.max(...points.map((d) => d.value));
   const barWidth = 100 / points.length;
@@ -191,11 +196,11 @@ const SimpleBarChart: React.FC<ChartProps> = ({ data, height = 120 }) => {
   );
 };
 
-const SimpleGauge: React.FC<{ value: number; max?: number; thresholds?: { warning: number; critical: number } }> = ({
-  value,
-  max = 100,
-  thresholds,
-}) => {
+const SimpleGauge: React.FC<{
+  value: number;
+  max?: number;
+  thresholds?: { warning: number; critical: number };
+}> = ({ value, max = 100, thresholds }) => {
   const percentage = Math.min((value / max) * 100, 100);
   const angle = (percentage / 100) * 180;
 
@@ -288,7 +293,9 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
       case 'stat':
         return (
           <div className="widget-stat">
-            <span className="stat-value">{formatStatValue(data as number)}</span>
+            <span className="stat-value">
+              {formatStatValue(data as number)}
+            </span>
           </div>
         );
 
@@ -310,10 +317,7 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
 
       case 'gauge':
         return (
-          <SimpleGauge
-            value={data as number}
-            thresholds={config.thresholds}
-          />
+          <SimpleGauge value={data as number} thresholds={config.thresholds} />
         );
 
       case 'text':
@@ -332,7 +336,9 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
                 {tableData.slice(0, 5).map((row, i) => (
                   <tr key={i}>
                     <td className="table-label">{row.label}</td>
-                    <td className="table-value">{formatStatValue(row.value)}</td>
+                    <td className="table-value">
+                      {formatStatValue(row.value)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -404,11 +410,16 @@ export const DashboardWidget: React.FC<DashboardWidgetProps> = ({
                   {onResize && (
                     <>
                       <div className="menu-divider" />
-                      {(['small', 'medium', 'large', 'full'] as WidgetSize[]).map((size) => (
+                      {(
+                        ['small', 'medium', 'large', 'full'] as WidgetSize[]
+                      ).map((size) => (
                         <button
                           key={size}
                           type="button"
-                          className={cn('menu-item', config.size === size && 'menu-item--active')}
+                          className={cn(
+                            'menu-item',
+                            config.size === size && 'menu-item--active'
+                          )}
                           onClick={() => {
                             onResize(config.id, size);
                             setShowMenu(false);

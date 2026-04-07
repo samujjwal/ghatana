@@ -261,7 +261,7 @@ export function tagControl(
 ): ComplianceStore {
   const tagId = store.config.autoGenerateIds
     ? `tag-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-    : `${tag.elementId  }-${  tag.controlId}`;
+    : `${tag.elementId}-${tag.controlId}`;
 
   const now = new Date();
   const fullTag: ControlTag = {
@@ -555,8 +555,7 @@ export function getCoverageReport(
   // Calculate coverage percentage
   // Formula: (satisfied + partial/2) / (total - notApplicable) * 100
   const applicable = totalCount - statusCounts['not-applicable'];
-  const effectiveCovered =
-    statusCounts.satisfied + statusCounts.partial * 0.5;
+  const effectiveCovered = statusCounts.satisfied + statusCounts.partial * 0.5;
   const coveragePercentage =
     applicable > 0 ? (effectiveCovered / applicable) * 100 : 0;
 
@@ -639,10 +638,7 @@ export async function exportAuditBundle(
   if (options.includeAuditLogs) {
     auditLogs = store.auditLog.filter((log) => {
       if (log.framework !== options.framework) return false;
-      if (
-        options.controlIds &&
-        !options.controlIds.includes(log.controlId)
-      ) {
+      if (options.controlIds && !options.controlIds.includes(log.controlId)) {
         return false;
       }
       if (options.dateRange) {
@@ -706,14 +702,12 @@ export function searchControlTags(
   }
 
   if (query.hasGaps !== undefined) {
-    tags = tags.filter((t) => (t.gaps.length > 0) === query.hasGaps);
+    tags = tags.filter((t) => t.gaps.length > 0 === query.hasGaps);
   }
 
   if (query.severity) {
     tags = tags.filter((t) =>
-      t.gaps.some(
-        (gap) => gap.severity === query.severity && !gap.resolvedAt
-      )
+      t.gaps.some((gap) => gap.severity === query.severity && !gap.resolvedAt)
     );
   }
 

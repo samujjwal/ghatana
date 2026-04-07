@@ -117,7 +117,9 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
   };
 
   const configuredEvents = Object.keys(events);
-  const unconfiguredEvents = availableEvents.filter((e) => !configuredEvents.includes(e));
+  const unconfiguredEvents = availableEvents.filter(
+    (e) => !configuredEvents.includes(e)
+  );
 
   return (
     <div
@@ -130,7 +132,9 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
     >
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Event Wiring</h4>
+        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+          Event Wiring
+        </h4>
         <p style={{ margin: '4px 0 0', fontSize: 11, color: '#666' }}>
           Configure event handlers and emitters
         </p>
@@ -146,7 +150,14 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
             borderRadius: 4,
           }}
         >
-          <label style={{ display: 'block', marginBottom: 8, fontSize: 12, fontWeight: 500 }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: 8,
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
             Add Event Handler
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -219,9 +230,21 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                 }}
               >
                 {/* Event Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 12,
+                  }}
+                >
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: 'monospace',
+                      }}
+                    >
                       {eventName}
                     </div>
                     <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>
@@ -230,7 +253,9 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button
-                      onClick={() => setEditingEvent(isEditing ? null : eventName)}
+                      onClick={() =>
+                        setEditingEvent(isEditing ? null : eventName)
+                      }
                       style={{
                         padding: '4px 8px',
                         backgroundColor: isEditing ? '#1976d2' : '#e0e0e0',
@@ -264,7 +289,14 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                   <>
                     {/* Target Event */}
                     <div style={{ marginBottom: 12 }}>
-                      <label style={{ display: 'block', marginBottom: 4, fontSize: 11, fontWeight: 500 }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                        }}
+                      >
                         Emit To
                       </label>
                       <select
@@ -286,18 +318,29 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                         {targetEvents.map((target) => (
                           <option key={target.name} value={target.name}>
                             {target.name}
-                            {target.description ? ` — ${target.description}` : ''}
+                            {target.description
+                              ? ` — ${target.description}`
+                              : ''}
                           </option>
                         ))}
                       </select>
-                      <div style={{ marginTop: 4, fontSize: 10, color: '#666' }}>
+                      <div
+                        style={{ marginTop: 4, fontSize: 10, color: '#666' }}
+                      >
                         The event to emit when {eventName} is triggered
                       </div>
                     </div>
 
                     {/* Payload Editor */}
                     <div>
-                      <label style={{ display: 'block', marginBottom: 4, fontSize: 11, fontWeight: 500 }}>
+                      <label
+                        style={{
+                          display: 'block',
+                          marginBottom: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                        }}
+                      >
                         Payload (JSON)
                       </label>
                       <textarea
@@ -324,7 +367,9 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                         }}
                         placeholder='{\n  "key": "value"\n}'
                       />
-                      <div style={{ marginTop: 4, fontSize: 10, color: '#666' }}>
+                      <div
+                        style={{ marginTop: 4, fontSize: 10, color: '#666' }}
+                      >
                         Additional data to include with the event
                       </div>
                     </div>
@@ -353,12 +398,13 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
                         {config.emit}
                       </code>
                     </div>
-                    {config.payload && Object.keys(config.payload).length > 0 && (
-                      <div style={{ color: '#666' }}>
-                        Payload: {Object.keys(config.payload).length} field
-                        {Object.keys(config.payload).length !== 1 ? 's' : ''}
-                      </div>
-                    )}
+                    {config.payload &&
+                      Object.keys(config.payload).length > 0 && (
+                        <div style={{ color: '#666' }}>
+                          Payload: {Object.keys(config.payload).length} field
+                          {Object.keys(config.payload).length !== 1 ? 's' : ''}
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -378,8 +424,8 @@ export const EventWiringPanel: React.FC<EventWiringPanelProps> = ({
           color: '#2e7d32',
         }}
       >
-        <strong>💡 Tip:</strong> Connect components through events to create interactive UIs without
-        tight coupling.
+        <strong>💡 Tip:</strong> Connect components through events to create
+        interactive UIs without tight coupling.
       </div>
     </div>
   );

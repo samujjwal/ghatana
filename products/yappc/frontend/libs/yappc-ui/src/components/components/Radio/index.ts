@@ -1,7 +1,7 @@
 export * from './Radio';
-export { 
+export {
   Radio as RadioTailwind,
   RadioGroup as RadioGroupTailwind,
   type RadioProps as RadioTailwindProps,
-  type RadioGroupProps as RadioGroupTailwindProps
+  type RadioGroupProps as RadioGroupTailwindProps,
 } from './Radio.tailwind';

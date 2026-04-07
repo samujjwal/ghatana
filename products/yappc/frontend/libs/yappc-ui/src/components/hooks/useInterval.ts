@@ -2,10 +2,10 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Hook for setting up an interval
- * 
+ *
  * @param callback - Function to call on each interval
  * @param delay - Delay in milliseconds (null to pause)
- * 
+ *
  * @example
  * ```tsx
  * const [count, setCount] = useState(0);

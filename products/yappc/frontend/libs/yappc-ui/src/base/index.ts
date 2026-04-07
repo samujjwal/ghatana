@@ -1,12 +1,5 @@
-export {
-  Popover,
-  PopoverTrigger,
-  PopoverClose,
-} from './components/Popover';
-export type {
-  PopoverProps,
-  PopoverPlacement,
-} from './components/Popover';
+export { Popover, PopoverTrigger, PopoverClose } from './components/Popover';
+export type { PopoverProps, PopoverPlacement } from './components/Popover';
 export {
   Select,
   SelectTailwind,

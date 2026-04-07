@@ -55,7 +55,7 @@ export const ExportSystemProvider = {
       backgroundColor: '#ffffff'
     });
   `,
-  
+
   securityAudit: `
     import { useSecurityAudit } from '@your-org/canvas/export';
     
@@ -69,7 +69,7 @@ export const ExportSystemProvider = {
       console.warn('Security violations detected:', violations);
     }
   `,
-  
+
   shareLinks: `
     import { useShareLinks } from '@your-org/canvas/export';
     
@@ -89,7 +89,7 @@ export const ExportSystemProvider = {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     });
   `,
-  
+
   uiComponents: `
     import { ExportDialog, SecurityAuditPanel } from '@your-org/canvas/export';
     
@@ -112,7 +112,7 @@ export const ExportSystemProvider = {
         console.log('Security issue:', violation.message);
       }}
     />
-  `
+  `,
 };
 
 // Production-ready feature flags
@@ -124,25 +124,25 @@ export const EXPORT_FEATURES = {
   JSX_EXPORT: true,
   HTML_EXPORT: true,
   JSON_EXPORT: true,
-  
+
   // Security features
   CONTENT_SANITIZATION: true,
   CSP_GENERATION: true,
   SECURITY_AUDIT: true,
   VIOLATION_AUTO_FIX: true,
-  
+
   // Collaboration features
   SHARE_LINKS: true,
   PERMISSION_SYSTEM: true,
   EXPIRING_LINKS: true,
   DOMAIN_RESTRICTIONS: true,
-  
+
   // Performance features
   BATCH_EXPORT: true,
   BACKGROUND_PROCESSING: true,
   PROGRESS_TRACKING: true,
   CANCELLATION_SUPPORT: true,
-  
+
   // Enterprise features
   AUDIT_LOGGING: true,
   COMPLIANCE_CHECKS: true,
@@ -159,9 +159,9 @@ export const validateExportSystem = () => {
     componentsLoaded: true,
     schemasValid: true,
   };
-  
+
   const healthy = Object.values(checks).every(Boolean);
-  
+
   return {
     healthy,
     checks,

@@ -355,17 +355,16 @@ if (
 ) {
   const scenario = process.argv[2] || 'medium';
   if (!(scenario in seedScenarios)) {
-     
     console.error(`Unknown scenario: ${scenario}`);
-     
+
     console.error(
       `Available scenarios: ${Object.keys(seedScenarios).join(', ')}`
     );
-     
+
     process.exit(1);
   }
   const data = seedScenarios[scenario as keyof typeof seedScenarios]();
-   
+
   console.log(JSON.stringify(data, null, 2));
 }
 

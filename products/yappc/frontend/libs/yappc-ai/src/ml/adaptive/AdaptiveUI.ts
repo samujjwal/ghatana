@@ -371,7 +371,7 @@ export class AdaptiveUI {
           const changes = this.detectChanges(beforeState, element);
 
           results.push({
-            type: (rule.type ?? 'features'),
+            type: rule.type ?? 'features',
             applied: true,
             changes,
             reason: `Applied ${rule.id} based on user context`,
@@ -387,7 +387,7 @@ export class AdaptiveUI {
       } catch (error) {
         console.error(`Failed to apply rule ${rule.id}:`, error);
         results.push({
-          type: (rule.type ?? 'features'),
+          type: rule.type ?? 'features',
           applied: false,
           changes: [],
           reason: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

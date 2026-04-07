@@ -1,9 +1,9 @@
 /**
  * Responsive Layout Pattern
- * 
+ *
  * Demonstrates responsive design patterns for YAPPC.
  * Mobile-first approach with progressive enhancement.
- * 
+ *
  * @module ui/patterns
  */
 
@@ -12,27 +12,27 @@ import React, { useState, useEffect } from 'react';
 export interface ResponsiveLayoutProps {
   /** Children to render */
   children: React.ReactNode;
-  
+
   /** Sidebar content */
   sidebar?: React.ReactNode;
-  
+
   /** Header content */
   header?: React.ReactNode;
-  
+
   /** Show sidebar on mobile */
   mobileSidebar?: boolean;
 }
 
 /**
  * Responsive Layout Component
- * 
+ *
  * Provides responsive layout with mobile, tablet, and desktop breakpoints.
- * 
+ *
  * Breakpoints:
  * - Mobile: < 640px
  * - Tablet: 640px - 1024px
  * - Desktop: > 1024px
- * 
+ *
  * @example
  * ```tsx
  * <ResponsiveLayout
@@ -51,7 +51,9 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   mobileSidebar = false,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>(
+    'desktop'
+  );
 
   useEffect(() => {
     const handleResize = () => {
@@ -77,7 +79,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         <header className="sticky top-0 z-40 bg-zinc-900 border-b border-zinc-800">
           <div className="flex items-center justify-between px-4 py-3">
             {header}
-            
+
             {/* Mobile menu button */}
             {sidebar && mobileSidebar && screenSize === 'mobile' && (
               <button
@@ -85,8 +87,18 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
                 className="p-2 text-zinc-400 hover:text-white"
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
                 </svg>
               </button>
             )}
@@ -99,10 +111,12 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         {sidebar && (
           <>
             {/* Desktop sidebar */}
-            <aside className={`
+            <aside
+              className={`
               ${screenSize === 'mobile' ? 'hidden' : 'block'}
               w-64 bg-zinc-900 border-r border-zinc-800 min-h-screen
-            `}>
+            `}
+            >
               {sidebar}
             </aside>
 
@@ -123,10 +137,12 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
 
         {/* Main content */}
         <main className="flex-1 min-h-screen">
-          <div className={`
+          <div
+            className={`
             ${screenSize === 'mobile' ? 'p-4' : 'p-6'}
             max-w-7xl mx-auto
-          `}>
+          `}
+          >
             {children}
           </div>
         </main>
@@ -137,7 +153,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
 
 /**
  * Responsive Grid Component
- * 
+ *
  * Auto-responsive grid that adapts to screen size.
  */
 export interface ResponsiveGridProps {
@@ -189,7 +205,8 @@ export const useMediaQuery = (query: string): boolean => {
 };
 
 export const useIsMobile = () => useMediaQuery('(max-width: 639px)');
-export const useIsTablet = () => useMediaQuery('(min-width: 640px) and (max-width: 1023px)');
+export const useIsTablet = () =>
+  useMediaQuery('(min-width: 640px) and (max-width: 1023px)');
 export const useIsDesktop = () => useMediaQuery('(min-width: 1024px)');
 
 export default ResponsiveLayout;

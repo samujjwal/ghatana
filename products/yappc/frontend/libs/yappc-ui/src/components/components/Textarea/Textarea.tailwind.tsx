@@ -1,9 +1,9 @@
 /**
  * Textarea Component (Tailwind CSS + Base UI)
- * 
+ *
  * A multiline text input component using Base UI Field primitives styled with Tailwind CSS.
  * Supports auto-resize, character counting, and full accessibility.
- * 
+ *
  * @example
  * ```tsx
  * <TextareaTailwind
@@ -24,7 +24,10 @@ import { cn } from '../../utils/cn';
 /**
  * Props for Textarea component
  */
-export interface TextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
+export interface TextareaProps extends Omit<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'size'
+> {
   /** Label for the textarea */
   label?: string;
   /** Error message */
@@ -36,7 +39,13 @@ export interface TextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTex
   /** Variant style */
   variant?: 'outline' | 'filled';
   /** Color scheme for focus states */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
   /** Whether to auto-resize based on content */
   autoResize?: boolean;
   /** Maximum character count */
@@ -51,7 +60,7 @@ export interface TextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTex
 
 /**
  * Textarea component for multiline text input
- * 
+ *
  * Built with Base UI Field primitives and styled with Tailwind CSS.
  * Supports auto-resize, character counting, and accessibility.
  */
@@ -125,7 +134,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     // Character count
     const currentLength = typeof value === 'string' ? value.length : 0;
-    const showCharCount = showCounter || (maxLength !== undefined);
+    const showCharCount = showCounter || maxLength !== undefined;
 
     return (
       <Field.Root

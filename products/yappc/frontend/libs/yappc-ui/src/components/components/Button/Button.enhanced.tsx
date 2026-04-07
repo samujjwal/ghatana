@@ -32,7 +32,15 @@ import {
 /**
  * Tooltip placement options
  */
-type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right' | 'top-start' | 'top-end' | 'bottom-start' | 'bottom-end';
+type TooltipPlacement =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-start'
+  | 'top-end'
+  | 'bottom-start'
+  | 'bottom-end';
 
 /**
  * Props for the enhanced Button component.
@@ -133,19 +141,34 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /**
    * Button variant
    */
-  variant?: 'solid' | 'outlined' | 'text' | 'contained' | 'outline' | 'ghost' | 'soft' | 'link';
+  variant?:
+    | 'solid'
+    | 'outlined'
+    | 'text'
+    | 'contained'
+    | 'outline'
+    | 'ghost'
+    | 'soft'
+    | 'link';
 
   /**
    * Color tone
    */
-  color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'inherit';
+  color?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'inherit';
 }
 
 /** Map shape to Tailwind border-radius */
 const shapeClasses: Record<string, string> = {
-  rounded: 'rounded-lg',     // ~8px
-  square: 'rounded',         // ~4px
-  pill: 'rounded-full',      // 9999px
+  rounded: 'rounded-lg', // ~8px
+  square: 'rounded', // ~4px
+  pill: 'rounded-full', // 9999px
 };
 
 /** Map elevation to Tailwind shadow */
@@ -216,132 +239,147 @@ const sizeClasses: Record<string, string> = {
  * </Button>
  * ```
  */
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  const {
-    children,
-    shape = 'rounded',
-    elevation = 1,
-    disableRipple = false,
-    rippleColor,
-    tooltip,
-    tooltipPlacement = 'top',
-    tooltipProps,
-    loading = false,
-    disabled,
-    size = 'medium',
-    className,
-    variant,
-    ...rest
-  } = props;
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (props, ref) => {
+    const {
+      children,
+      shape = 'rounded',
+      elevation = 1,
+      disableRipple = false,
+      rippleColor,
+      tooltip,
+      tooltipPlacement = 'top',
+      tooltipProps,
+      loading = false,
+      disabled,
+      size = 'medium',
+      className,
+      variant,
+      ...rest
+    } = props;
 
-  // Extract accessibility props
-  const { a11yProps, rest: otherProps } = getA11yProps(rest);
+    // Extract accessibility props
+    const { a11yProps, rest: otherProps } = getA11yProps(rest);
 
-  // Extract and clone icons to mark them as decorative
-  const { startIcon, endIcon } = otherProps;
-  const clonedStartIcon =
-    startIcon && React.isValidElement(startIcon)
-      ? React.cloneElement(startIcon, {
-          'aria-hidden': true,
-        })
-      : startIcon;
+    // Extract and clone icons to mark them as decorative
+    const { startIcon, endIcon } = otherProps;
+    const clonedStartIcon =
+      startIcon && React.isValidElement(startIcon)
+        ? React.cloneElement(startIcon, {
+            'aria-hidden': true,
+          })
+        : startIcon;
 
-  const clonedEndIcon =
-    endIcon && React.isValidElement(endIcon)
-      ? React.cloneElement(endIcon, {
-          'aria-hidden': true,
-        })
-      : endIcon;
+    const clonedEndIcon =
+      endIcon && React.isValidElement(endIcon)
+        ? React.cloneElement(endIcon, {
+            'aria-hidden': true,
+          })
+        : endIcon;
 
-  // Build button props
-  const buttonProps = { ...otherProps } as unknown;
-  if (startIcon) buttonProps.startIcon = clonedStartIcon;
-  if (endIcon) buttonProps.endIcon = clonedEndIcon;
+    // Build button props
+    const buttonProps = { ...otherProps } as unknown;
+    if (startIcon) buttonProps.startIcon = clonedStartIcon;
+    if (endIcon) buttonProps.endIcon = clonedEndIcon;
 
-  // Use accessibility hook for audit
-  const { ref: a11yRef } = useAccessibility<HTMLButtonElement>({
-    componentName: 'Button',
-    devOnly: true,
-    logResults: false,
-  });
+    // Use accessibility hook for audit
+    const { ref: a11yRef } = useAccessibility<HTMLButtonElement>({
+      componentName: 'Button',
+      devOnly: true,
+      logResults: false,
+    });
 
-  // Combine refs
-  const setRefs = React.useCallback(
-    (element: HTMLButtonElement | null) => {
-      a11yRef.current = element;
+    // Combine refs
+    const setRefs = React.useCallback(
+      (element: HTMLButtonElement | null) => {
+        a11yRef.current = element;
 
-      if (ref) {
-        if (typeof ref === 'function') {
-          ref(element);
-        } else {
-          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = element;
+        if (ref) {
+          if (typeof ref === 'function') {
+            ref(element);
+          } else {
+            (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+              element;
+          }
         }
-      }
-    },
-    [a11yRef, ref]
-  );
-
-  // Keyboard activation handler
-  const { onKeyDown: handleKeyDown } = useKeyboardActivate();
-
-  // Compute aria-label from children when not explicitly provided
-  const computedAriaLabel = computeAriaLabel(
-    children,
-    buttonProps['aria-label'] || a11yProps['aria-label']
-  );
-
-  // Compose Tailwind classes for enhanced styling
-  const buttonClassName = [
-    shapeClasses[shape] || shapeClasses.rounded,
-    elevationClasses[elevation] || elevationClasses[1],
-    sizeClasses[size] || sizeClasses.medium,
-    'relative overflow-hidden font-medium normal-case',
-    'transition-all duration-200 ease-in-out',
-    'hover:shadow-md',
-    'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 focus-visible:ring-4 focus-visible:ring-primary/20',
-    'active:scale-[0.98] active:transition-transform active:duration-100',
-    'disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed',
-    loading ? 'opacity-70 pointer-events-none cursor-wait' : '',
-    'contrast-more:border-2 contrast-more:border-current',
-    'motion-reduce:transition-none motion-reduce:active:transform-none',
-    className,
-  ].filter(Boolean).join(' ');
-
-  // Map variant to BaseButton variant
-  const baseVariant = variant === 'contained' ? 'solid' : variant === 'text' ? 'ghost' : variant;
-
-  // Create button element
-  const buttonElement = (
-    <BaseButton
-      ref={setRefs}
-      variant={baseVariant as unknown}
-      loading={loading}
-      disabled={disabled || loading}
-      aria-disabled={disabled || loading ? true : undefined}
-      aria-busy={loading ? true : undefined}
-      size={size}
-      className={buttonClassName}
-      {...buttonProps}
-      {...a11yProps}
-      {...(computedAriaLabel ? { 'aria-label': computedAriaLabel } : {})}
-      onKeyDown={handleKeyDown}
-    >
-      {children}
-    </BaseButton>
-  );
-
-  // Wrap with tooltip if provided
-  if (tooltip) {
-    const describedById = `button-tooltip-${Math.random().toString(36).slice(2, 9)}`;
-    return (
-      <Tooltip title={tooltip} placement={tooltipPlacement} arrow {...tooltipProps}>
-        {wrapForTooltip(buttonElement, { 'aria-describedby': describedById })}
-      </Tooltip>
+      },
+      [a11yRef, ref]
     );
-  }
 
-  return buttonElement;
-});
+    // Keyboard activation handler
+    const { onKeyDown: handleKeyDown } = useKeyboardActivate();
+
+    // Compute aria-label from children when not explicitly provided
+    const computedAriaLabel = computeAriaLabel(
+      children,
+      buttonProps['aria-label'] || a11yProps['aria-label']
+    );
+
+    // Compose Tailwind classes for enhanced styling
+    const buttonClassName = [
+      shapeClasses[shape] || shapeClasses.rounded,
+      elevationClasses[elevation] || elevationClasses[1],
+      sizeClasses[size] || sizeClasses.medium,
+      'relative overflow-hidden font-medium normal-case',
+      'transition-all duration-200 ease-in-out',
+      'hover:shadow-md',
+      'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 focus-visible:ring-4 focus-visible:ring-primary/20',
+      'active:scale-[0.98] active:transition-transform active:duration-100',
+      'disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed',
+      loading ? 'opacity-70 pointer-events-none cursor-wait' : '',
+      'contrast-more:border-2 contrast-more:border-current',
+      'motion-reduce:transition-none motion-reduce:active:transform-none',
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    // Map variant to BaseButton variant
+    const baseVariant =
+      variant === 'contained'
+        ? 'solid'
+        : variant === 'text'
+          ? 'ghost'
+          : variant;
+
+    // Create button element
+    const buttonElement = (
+      <BaseButton
+        ref={setRefs}
+        variant={baseVariant as unknown}
+        loading={loading}
+        disabled={disabled || loading}
+        aria-disabled={disabled || loading ? true : undefined}
+        aria-busy={loading ? true : undefined}
+        size={size}
+        className={buttonClassName}
+        {...buttonProps}
+        {...a11yProps}
+        {...(computedAriaLabel ? { 'aria-label': computedAriaLabel } : {})}
+        onKeyDown={handleKeyDown}
+      >
+        {children}
+      </BaseButton>
+    );
+
+    // Wrap with tooltip if provided
+    if (tooltip) {
+      const describedById = `button-tooltip-${Math.random().toString(36).slice(2, 9)}`;
+      return (
+        <Tooltip
+          title={tooltip}
+          placement={tooltipPlacement}
+          arrow
+          {...tooltipProps}
+        >
+          {wrapForTooltip(buttonElement, { 'aria-describedby': describedById })}
+        </Tooltip>
+      );
+    }
+
+    return buttonElement;
+  }
+);
 
 Button.displayName = 'Button';
 

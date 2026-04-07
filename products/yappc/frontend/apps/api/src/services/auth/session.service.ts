@@ -149,10 +149,7 @@ export class SessionService {
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const result = await this.prisma.userSession.deleteMany({
       where: {
-        OR: [
-          { revokedAt: { lte: cutoff } },
-          { expiresAt: { lte: cutoff } },
-        ],
+        OR: [{ revokedAt: { lte: cutoff } }, { expiresAt: { lte: cutoff } }],
       },
     });
     return result.count;

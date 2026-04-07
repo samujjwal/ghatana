@@ -9,7 +9,13 @@
 import { X as CloseIcon } from 'lucide-react';
 import type React from 'react';
 
-import { Box, Divider, Drawer, IconButton, Typography } from '@ghatana/design-system';
+import {
+  Box,
+  Divider,
+  Drawer,
+  IconButton,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { SidePanelProps } from './types';
 
@@ -66,9 +72,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
       <Divider />
 
-      <Box
-        className="p-6 overflow-y-auto flex-grow [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-neutral-300 [&::-webkit-scrollbar-thumb]:rounded"
-      >
+      <Box className="p-6 overflow-y-auto flex-grow [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-neutral-300 [&::-webkit-scrollbar-thumb]:rounded">
         {children}
       </Box>
     </Drawer>

@@ -8,7 +8,11 @@
 
 import React, { useState, useMemo } from 'react';
 
-import type { ValidationIssue, ValidationResult, ValidationSeverity } from './CanvasValidator';
+import type {
+  ValidationIssue,
+  ValidationResult,
+  ValidationSeverity,
+} from './CanvasValidator';
 
 // ============================================================================
 // Types
@@ -56,8 +60,12 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
   collapsible = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [severityFilter, setSeverityFilter] = useState<ValidationSeverity | 'all'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<ValidationIssue['category'] | 'all'>('all');
+  const [severityFilter, setSeverityFilter] = useState<
+    ValidationSeverity | 'all'
+  >('all');
+  const [categoryFilter, setCategoryFilter] = useState<
+    ValidationIssue['category'] | 'all'
+  >('all');
 
   // Filter issues
   const filteredIssues = useMemo(() => {
@@ -147,12 +155,14 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
           <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
             {validationResult.errorCount > 0 && (
               <span style={{ color: '#f44336', fontWeight: 500 }}>
-                {validationResult.errorCount} Error{validationResult.errorCount !== 1 ? 's' : ''}
+                {validationResult.errorCount} Error
+                {validationResult.errorCount !== 1 ? 's' : ''}
               </span>
             )}
             {validationResult.warningCount > 0 && (
               <span style={{ color: '#ff9800', fontWeight: 500 }}>
-                {validationResult.warningCount} Warning{validationResult.warningCount !== 1 ? 's' : ''}
+                {validationResult.warningCount} Warning
+                {validationResult.warningCount !== 1 ? 's' : ''}
               </span>
             )}
             {validationResult.infoCount > 0 && (
@@ -192,7 +202,14 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
               }}
             >
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 11, fontWeight: 500 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 4,
+                    fontSize: 11,
+                    fontWeight: 500,
+                  }}
+                >
                   Severity
                 </label>
                 <select
@@ -206,14 +223,29 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
                     fontSize: 12,
                   }}
                 >
-                  <option value="all">All ({validationResult.issues.length})</option>
-                  <option value="error">Errors ({validationResult.errorCount})</option>
-                  <option value="warning">Warnings ({validationResult.warningCount})</option>
-                  <option value="info">Info ({validationResult.infoCount})</option>
+                  <option value="all">
+                    All ({validationResult.issues.length})
+                  </option>
+                  <option value="error">
+                    Errors ({validationResult.errorCount})
+                  </option>
+                  <option value="warning">
+                    Warnings ({validationResult.warningCount})
+                  </option>
+                  <option value="info">
+                    Info ({validationResult.infoCount})
+                  </option>
                 </select>
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: 4, fontSize: 11, fontWeight: 500 }}>
+                <label
+                  style={{
+                    display: 'block',
+                    marginBottom: 4,
+                    fontSize: 11,
+                    fontWeight: 500,
+                  }}
+                >
                   Category
                 </label>
                 <select
@@ -241,7 +273,14 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
           {/* Issues List */}
           <div style={{ maxHeight: 400, overflow: 'auto' }}>
             {filteredIssues.length === 0 ? (
-              <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: 13 }}>
+              <div
+                style={{
+                  padding: 24,
+                  textAlign: 'center',
+                  color: '#999',
+                  fontSize: 13,
+                }}
+              >
                 No issues match the selected filters
               </div>
             ) : (
@@ -264,9 +303,13 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'start', gap: 12 }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'start', gap: 12 }}
+                  >
                     {/* Icon */}
-                    <div style={{ fontSize: 20 }}>{getSeverityIcon(issue.severity)}</div>
+                    <div style={{ fontSize: 20 }}>
+                      {getSeverityIcon(issue.severity)}
+                    </div>
 
                     {/* Content */}
                     <div style={{ flex: 1 }}>
@@ -280,8 +323,17 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
                       >
                         {issue.message}
                       </div>
-                      <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#666' }}>
-                        <span style={{ textTransform: 'capitalize' }}>{issue.category}</span>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 12,
+                          fontSize: 11,
+                          color: '#666',
+                        }}
+                      >
+                        <span style={{ textTransform: 'capitalize' }}>
+                          {issue.category}
+                        </span>
                         {issue.nodeId && <span>Node: {issue.nodeId}</span>}
                       </div>
                       {issue.suggestion && (
@@ -339,11 +391,13 @@ export const ErrorPanel: React.FC<ErrorPanelProps> = ({
             }}
           >
             <span>
-              Showing {filteredIssues.length} of {validationResult.issues.length} issues
+              Showing {filteredIssues.length} of{' '}
+              {validationResult.issues.length} issues
             </span>
             {onAutoFix && (
               <span>
-                {validationResult.issues.filter((i) => i.autoFixable).length} auto-fixable
+                {validationResult.issues.filter((i) => i.autoFixable).length}{' '}
+                auto-fixable
               </span>
             )}
           </div>

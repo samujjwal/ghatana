@@ -1,18 +1,18 @@
-import { ApolloProvider } from '@apollo/client'
-import { Provider } from 'jotai'
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { ApolloProvider } from '@apollo/client';
+import { Provider } from 'jotai';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 
-import App from './App.tsx'
-import { apolloClient } from './services/apollo.ts'
-import './index.css'
+import App from './App.tsx';
+import { apolloClient } from './services/apollo.ts';
+import './index.css';
 
 const theme = createTheme({
   palette: {
     mode: 'light',
   },
-})
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -26,5 +26,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </ThemeProvider>
       </ApolloProvider>
     </Provider>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);

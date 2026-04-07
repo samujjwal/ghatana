@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
 // Permission and Role Schemas - Phase 6 Implementation
-export const UserRoleSchema = z.enum(['owner', 'admin', 'editor', 'viewer', 'commenter']);
+export const UserRoleSchema = z.enum([
+  'owner',
+  'admin',
+  'editor',
+  'viewer',
+  'commenter',
+]);
 
 export const PermissionScopeSchema = z.object({
   canRead: z.boolean(),
@@ -37,7 +43,16 @@ export const ShareTokenSchema = z.object({
 });
 
 export const PermissionRequestSchema = z.object({
-  action: z.enum(['read', 'edit', 'delete', 'comment', 'share', 'invite', 'manage', 'export']),
+  action: z.enum([
+    'read',
+    'edit',
+    'delete',
+    'comment',
+    'share',
+    'invite',
+    'manage',
+    'export',
+  ]),
   resourceType: z.enum(['canvas', 'node', 'edge', 'comment']),
   resourceId: z.string(),
   userId: z.string(),
@@ -99,15 +114,21 @@ export type PermissionResponse = z.infer<typeof PermissionResponseSchema>;
 /**
  *
  */
-export type CreatePermissionRequest = z.infer<typeof CreatePermissionRequestSchema>;
+export type CreatePermissionRequest = z.infer<
+  typeof CreatePermissionRequestSchema
+>;
 /**
  *
  */
-export type UpdatePermissionRequest = z.infer<typeof UpdatePermissionRequestSchema>;
+export type UpdatePermissionRequest = z.infer<
+  typeof UpdatePermissionRequestSchema
+>;
 /**
  *
  */
-export type CreateShareTokenRequest = z.infer<typeof CreateShareTokenRequestSchema>;
+export type CreateShareTokenRequest = z.infer<
+  typeof CreateShareTokenRequestSchema
+>;
 
 // Permission helpers
 export const getDefaultPermissions = (role: UserRole): PermissionScope => {

@@ -40,11 +40,7 @@ export const Default: Story = {
     const [page, setPage] = React.useState(1);
 
     return (
-      <Pagination
-        currentPage={page}
-        totalPages={10}
-        onPageChange={setPage}
-      />
+      <Pagination currentPage={page} totalPages={10} onPageChange={setPage} />
     );
   },
 };
@@ -138,11 +134,7 @@ export const FewPages: Story = {
     const [page, setPage] = React.useState(2);
 
     return (
-      <Pagination
-        currentPage={page}
-        totalPages={5}
-        onPageChange={setPage}
-      />
+      <Pagination currentPage={page} totalPages={5} onPageChange={setPage} />
     );
   },
 };
@@ -296,13 +288,7 @@ export const Playground: Story = {
   render: (args) => {
     const [page, setPage] = React.useState(args.currentPage);
 
-    return (
-      <Pagination
-        {...args}
-        currentPage={page}
-        onPageChange={setPage}
-      />
-    );
+    return <Pagination {...args} currentPage={page} onPageChange={setPage} />;
   },
   args: {
     currentPage: 5,

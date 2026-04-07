@@ -446,7 +446,7 @@ function layoutForceDirected(
       const dy = edge.target.y - edge.source.y;
       const dist = Math.sqrt(dx * dx + dy * dy + 0.01);
 
-      const force = (dist * dist) * attraction;
+      const force = dist * dist * attraction;
 
       const fx = (dx / dist) * force;
       const fy = (dy / dist) * force;
@@ -605,7 +605,7 @@ function layoutConcentric(
     }
 
     currentRadius += radiusIncrement;
-    nodesInRing = Math.ceil(2 * Math.PI * currentRadius / 100); // Estimate nodes per ring
+    nodesInRing = Math.ceil((2 * Math.PI * currentRadius) / 100); // Estimate nodes per ring
   }
 
   const bounds = calculateBounds(positioned);

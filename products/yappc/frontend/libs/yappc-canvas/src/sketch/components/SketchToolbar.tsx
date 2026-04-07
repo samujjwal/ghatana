@@ -9,7 +9,19 @@
  * @doc.pattern Component
  */
 
-import { Hand as SelectIcon, Pencil as PenIcon, Wand2 as EraserIcon, Square as RectangleIcon, Circle as EllipseIcon, StickyNote as StickyIcon, Type as TextIcon, Highlighter as HighlighterIcon, MoveRight as LineIcon, MoveRight as ArrowIcon, Image as ImageIcon } from 'lucide-react';
+import {
+  Hand as SelectIcon,
+  Pencil as PenIcon,
+  Wand2 as EraserIcon,
+  Square as RectangleIcon,
+  Circle as EllipseIcon,
+  StickyNote as StickyIcon,
+  Type as TextIcon,
+  Highlighter as HighlighterIcon,
+  MoveRight as LineIcon,
+  MoveRight as ArrowIcon,
+  Image as ImageIcon,
+} from 'lucide-react';
 import React from 'react';
 
 import {
@@ -36,17 +48,72 @@ interface ToolConfig {
  * Configuration for all sketch tools
  */
 const TOOL_CONFIG: Record<SketchTool, ToolConfig> = {
-  select: { icon: <SelectIcon size={16} />, label: 'Select', shortcut: 'V', group: 'selection' },
-  pen: { icon: <PenIcon size={16} />, label: 'Pen', shortcut: 'P', group: 'drawing' },
-  highlighter: { icon: <HighlighterIcon size={16} />, label: 'Highlighter', shortcut: 'H', group: 'drawing' },
-  eraser: { icon: <EraserIcon size={16} />, label: 'Eraser', shortcut: 'E', group: 'drawing' },
-  rectangle: { icon: <RectangleIcon size={16} />, label: 'Rectangle', shortcut: 'R', group: 'shapes' },
-  ellipse: { icon: <EllipseIcon size={16} />, label: 'Ellipse', shortcut: 'O', group: 'shapes' },
-  line: { icon: <LineIcon size={16} />, label: 'Line', shortcut: 'L', group: 'shapes' },
-  arrow: { icon: <ArrowIcon size={16} />, label: 'Arrow', shortcut: 'A', group: 'shapes' },
-  text: { icon: <TextIcon size={16} />, label: 'Text', shortcut: 'T', group: 'annotation' },
-  sticky: { icon: <StickyIcon size={16} />, label: 'Sticky Note', shortcut: 'S', group: 'annotation' },
-  image: { icon: <ImageIcon size={16} />, label: 'Image', shortcut: 'I', group: 'annotation' },
+  select: {
+    icon: <SelectIcon size={16} />,
+    label: 'Select',
+    shortcut: 'V',
+    group: 'selection',
+  },
+  pen: {
+    icon: <PenIcon size={16} />,
+    label: 'Pen',
+    shortcut: 'P',
+    group: 'drawing',
+  },
+  highlighter: {
+    icon: <HighlighterIcon size={16} />,
+    label: 'Highlighter',
+    shortcut: 'H',
+    group: 'drawing',
+  },
+  eraser: {
+    icon: <EraserIcon size={16} />,
+    label: 'Eraser',
+    shortcut: 'E',
+    group: 'drawing',
+  },
+  rectangle: {
+    icon: <RectangleIcon size={16} />,
+    label: 'Rectangle',
+    shortcut: 'R',
+    group: 'shapes',
+  },
+  ellipse: {
+    icon: <EllipseIcon size={16} />,
+    label: 'Ellipse',
+    shortcut: 'O',
+    group: 'shapes',
+  },
+  line: {
+    icon: <LineIcon size={16} />,
+    label: 'Line',
+    shortcut: 'L',
+    group: 'shapes',
+  },
+  arrow: {
+    icon: <ArrowIcon size={16} />,
+    label: 'Arrow',
+    shortcut: 'A',
+    group: 'shapes',
+  },
+  text: {
+    icon: <TextIcon size={16} />,
+    label: 'Text',
+    shortcut: 'T',
+    group: 'annotation',
+  },
+  sticky: {
+    icon: <StickyIcon size={16} />,
+    label: 'Sticky Note',
+    shortcut: 'S',
+    group: 'annotation',
+  },
+  image: {
+    icon: <ImageIcon size={16} />,
+    label: 'Image',
+    shortcut: 'I',
+    group: 'annotation',
+  },
 };
 
 /**
@@ -105,7 +172,10 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({
   compact = false,
   className,
 }) => {
-  const handleChange = (_event: React.MouseEvent<HTMLElement>, newTool: SketchTool | null) => {
+  const handleChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newTool: SketchTool | null
+  ) => {
     if (newTool !== null) {
       onToolChange(newTool);
     }
@@ -117,10 +187,14 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({
   // Group tools by category
   const groupedTools = showGroups
     ? {
-        selection: visibleTools.filter((t) => TOOL_CONFIG[t].group === 'selection'),
+        selection: visibleTools.filter(
+          (t) => TOOL_CONFIG[t].group === 'selection'
+        ),
         drawing: visibleTools.filter((t) => TOOL_CONFIG[t].group === 'drawing'),
         shapes: visibleTools.filter((t) => TOOL_CONFIG[t].group === 'shapes'),
-        annotation: visibleTools.filter((t) => TOOL_CONFIG[t].group === 'annotation'),
+        annotation: visibleTools.filter(
+          (t) => TOOL_CONFIG[t].group === 'annotation'
+        ),
       }
     : null;
 
@@ -152,20 +226,32 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({
       <Paper
         elevation={3}
         className={className}
-         style={{ flexDirection: orientation === 'vertical' ? 'column' : 'row' }}
+        style={{ flexDirection: orientation === 'vertical' ? 'column' : 'row' }}
         data-testid="sketch-toolbar"
       >
         {Object.entries(groupedTools).map(([group, groupTools], index) => {
           if (groupTools.length === 0) return null;
           return (
             <React.Fragment key={group}>
-              {index > 0 && groupedTools[Object.keys(groupedTools)[index - 1] as keyof typeof groupedTools].length > 0 && (
-                <Divider
-                  orientation={orientation === 'vertical' ? 'horizontal' : 'vertical'}
-                  flexItem
-                  style={{ marginTop: orientation === 'vertical' ? 4 : 0, marginBottom: orientation === 'vertical' ? 4 : 0, marginLeft: orientation === 'horizontal' ? 4 : 0, marginRight: orientation === 'horizontal' ? 4 : 0 }}
-                />
-              )}
+              {index > 0 &&
+                groupedTools[
+                  Object.keys(groupedTools)[
+                    index - 1
+                  ] as keyof typeof groupedTools
+                ].length > 0 && (
+                  <Divider
+                    orientation={
+                      orientation === 'vertical' ? 'horizontal' : 'vertical'
+                    }
+                    flexItem
+                    style={{
+                      marginTop: orientation === 'vertical' ? 4 : 0,
+                      marginBottom: orientation === 'vertical' ? 4 : 0,
+                      marginLeft: orientation === 'horizontal' ? 4 : 0,
+                      marginRight: orientation === 'horizontal' ? 4 : 0,
+                    }}
+                  />
+                )}
               <ToggleButtonGroup
                 orientation={orientation}
                 value={activeTool}
@@ -187,7 +273,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({
     <Paper
       elevation={3}
       className={className}
-       style={{ flexDirection: orientation === 'vertical' ? 'column' : 'row' }}
+      style={{ flexDirection: orientation === 'vertical' ? 'column' : 'row' }}
       data-testid="sketch-toolbar"
     >
       <ToggleButtonGroup

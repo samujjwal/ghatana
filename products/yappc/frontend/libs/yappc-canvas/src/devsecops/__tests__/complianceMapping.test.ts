@@ -8,8 +8,8 @@ import {
   createComplianceStore,
   type ComplianceControl,
   type Evidence,
-
-  ComplianceStore} from '../complianceMapping';
+  ComplianceStore,
+} from '../complianceMapping';
 
 describe.skip('ComplianceStore', () => {
   let store: ComplianceStore;
@@ -70,7 +70,9 @@ describe.skip('ComplianceStore', () => {
     });
 
     it('should return false when updating non-existent control', () => {
-      const updated = store.updateControl('non-existent', { status: 'implemented' });
+      const updated = store.updateControl('non-existent', {
+        status: 'implemented',
+      });
       expect(updated).toBe(false);
     });
 
@@ -140,7 +142,7 @@ describe.skip('ComplianceStore', () => {
     it('should filter by framework', () => {
       const soc2Controls = store.listControls({ framework: 'SOC2' });
       expect(soc2Controls.length).toBe(2);
-      expect(soc2Controls.every(c => c.framework === 'SOC2')).toBe(true);
+      expect(soc2Controls.every((c) => c.framework === 'SOC2')).toBe(true);
     });
 
     it('should filter by status', () => {
@@ -152,13 +154,13 @@ describe.skip('ComplianceStore', () => {
     it('should filter by severity', () => {
       const highControls = store.listControls({ severity: 'high' });
       expect(highControls.length).toBe(2);
-      expect(highControls.every(c => c.severity === 'high')).toBe(true);
+      expect(highControls.every((c) => c.severity === 'high')).toBe(true);
     });
 
     it('should filter by owner', () => {
       const aliceControls = store.listControls({ owner: 'alice' });
       expect(aliceControls.length).toBe(2);
-      expect(aliceControls.every(c => c.owner === 'alice')).toBe(true);
+      expect(aliceControls.every((c) => c.owner === 'alice')).toBe(true);
     });
 
     it('should combine filters', () => {
@@ -169,11 +171,14 @@ describe.skip('ComplianceStore', () => {
       });
 
       expect(filtered.length).toBe(2);
-      expect(filtered.every(c => 
-        c.framework === 'SOC2' && 
-        c.severity === 'high' && 
-        c.owner === 'alice'
-      )).toBe(true);
+      expect(
+        filtered.every(
+          (c) =>
+            c.framework === 'SOC2' &&
+            c.severity === 'high' &&
+            c.owner === 'alice'
+        )
+      ).toBe(true);
     });
   });
 
@@ -223,7 +228,7 @@ describe.skip('ComplianceStore', () => {
 
     it('should detach control from node', () => {
       store.attachControlToNode('ctrl-1', 'node-1');
-      
+
       const detached = store.detachControlFromNode('ctrl-1', 'node-1');
       expect(detached).toBe(true);
 
@@ -242,8 +247,8 @@ describe.skip('ComplianceStore', () => {
 
       const controls = store.getNodeControls('node-1');
       expect(controls.length).toBe(2);
-      expect(controls.map(c => c.id)).toContain('ctrl-1');
-      expect(controls.map(c => c.id)).toContain('ctrl-2');
+      expect(controls.map((c) => c.id)).toContain('ctrl-1');
+      expect(controls.map((c) => c.id)).toContain('ctrl-2');
     });
 
     it('should return empty array for node with no controls', () => {
@@ -408,33 +413,43 @@ describe.skip('ComplianceStore', () => {
     });
 
     it('should include node coverage', () => {
-      const report = store.generateCoverageReport({ includeNodeCoverage: true });
+      const report = store.generateCoverageReport({
+        includeNodeCoverage: true,
+      });
 
       expect(report.nodeCoverage.length).toBe(2);
-      
-      const node1Coverage = report.nodeCoverage.find(n => n.nodeId === 'node-1');
+
+      const node1Coverage = report.nodeCoverage.find(
+        (n) => n.nodeId === 'node-1'
+      );
       expect(node1Coverage).toBeDefined();
       expect(node1Coverage!.controlIds.length).toBe(2);
     });
 
     it('should exclude node coverage when requested', () => {
-      const report = store.generateCoverageReport({ includeNodeCoverage: false });
+      const report = store.generateCoverageReport({
+        includeNodeCoverage: false,
+      });
       expect(report.nodeCoverage).toEqual([]);
     });
 
     it('should calculate node coverage percentage', () => {
       const report = store.generateCoverageReport();
-      
-      const node1Coverage = report.nodeCoverage.find(n => n.nodeId === 'node-1');
+
+      const node1Coverage = report.nodeCoverage.find(
+        (n) => n.nodeId === 'node-1'
+      );
       expect(node1Coverage!.coverage).toBe(50); // 1 validated out of 2
     });
 
     it('should identify nodes with failures', () => {
       store.attachControlToNode('ctrl-4', 'node-3');
-      
+
       const report = store.generateCoverageReport();
-      
-      const node3Coverage = report.nodeCoverage.find(n => n.nodeId === 'node-3');
+
+      const node3Coverage = report.nodeCoverage.find(
+        (n) => n.nodeId === 'node-3'
+      );
       expect(node3Coverage!.hasFailures).toBe(true);
     });
   });
@@ -540,7 +555,7 @@ describe.skip('ComplianceStore', () => {
 
       expect(exported).toContain('"totalControls"');
       expect(exported).toContain('"overallCoverage"');
-      
+
       const parsed = JSON.parse(exported);
       expect(parsed.totalControls).toBe(1);
     });
@@ -549,7 +564,9 @@ describe.skip('ComplianceStore', () => {
       const report = store.generateCoverageReport();
       const exported = store.exportCoverageReport(report, 'csv');
 
-      expect(exported).toContain('Control ID,Framework,Title,Status,Severity,Owner,Node Count');
+      expect(exported).toContain(
+        'Control ID,Framework,Title,Status,Severity,Owner,Node Count'
+      );
       expect(exported).toContain('CC6.1');
       expect(exported).toContain('SOC2');
       expect(exported).toContain('validated');

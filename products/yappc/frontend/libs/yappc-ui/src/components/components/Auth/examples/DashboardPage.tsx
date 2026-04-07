@@ -1,9 +1,9 @@
 /**
  * Dashboard Page Example
- * 
+ *
  * Production-ready protected dashboard demonstrating route protection,
  * user state management, and secure content display.
- * 
+ *
  * @doc.type example
  * @doc.purpose Protected page example
  * @doc.layer ui
@@ -28,18 +28,18 @@ export interface DashboardPageProps {
    * @default ['user']
    */
   requiredRoles?: string[];
-  
+
   /**
    * Required permissions to access dashboard
    */
   requiredPermissions?: string[];
-  
+
   /**
    * Custom page title
    * @default 'Dashboard'
    */
   title?: string;
-  
+
   /**
    * Show user welcome message
    * @default true
@@ -49,15 +49,15 @@ export interface DashboardPageProps {
 
 /**
  * Dashboard Page Component
- * 
+ *
  * Protected dashboard page demonstrating authentication state access,
  * role-based content, and user actions.
- * 
+ *
  * @example Basic Usage
  * ```tsx
  * <DashboardPage />
  * ```
- * 
+ *
  * @example Admin Dashboard
  * ```tsx
  * <DashboardPage
@@ -65,7 +65,7 @@ export interface DashboardPageProps {
  *   title="Admin Dashboard"
  * />
  * ```
- * 
+ *
  * @example With Router
  * ```tsx
  * <Route
@@ -83,7 +83,7 @@ export function DashboardPage({
   const navigate = useNavigate();
   const { user, logout, isLoading, isAuthenticated } = useAuth();
   const toast = useToast();
-  
+
   /**
    * Handle logout action
    */
@@ -102,18 +102,19 @@ export function DashboardPage({
       });
     }
   };
-  
+
   /**
    * Dashboard Content
    */
   const DashboardContent = () => (
     <Page
       pageTitle={title}
-      subtitle={showWelcome && (user as unknown)?.name ? `Welcome back, ${(user as unknown).name}!` : undefined}
-      breadcrumbs={[
-        { label: 'Home', href: '/' },
-        { label: title },
-      ]}
+      subtitle={
+        showWelcome && (user as unknown)?.name
+          ? `Welcome back, ${(user as unknown).name}!`
+          : undefined
+      }
+      breadcrumbs={[{ label: 'Home', href: '/' }, { label: title }]}
       actions={
         <button
           onClick={handleLogout}
@@ -157,7 +158,7 @@ export function DashboardPage({
         >
           Account Information
         </h2>
-        
+
         <div style={{ display: 'grid', gap: '12px' }}>
           <div>
             <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
@@ -167,7 +168,7 @@ export function DashboardPage({
               {(user as unknown)?.name || 'N/A'}
             </span>
           </div>
-          
+
           <div>
             <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
               Email:
@@ -176,10 +177,12 @@ export function DashboardPage({
               {user?.email || 'N/A'}
             </span>
           </div>
-          
+
           {(user as unknown)?.roles && (user as unknown).roles.length > 0 && (
             <div>
-              <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
+              <span
+                style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}
+              >
                 Roles:
               </span>{' '}
               <span style={{ fontSize: '14px', color: '#1a1a1a' }}>
@@ -187,20 +190,23 @@ export function DashboardPage({
               </span>
             </div>
           )}
-          
-          {(user as unknown)?.permissions && (user as unknown).permissions.length > 0 && (
-            <div>
-              <span style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}>
-                Permissions:
-              </span>{' '}
-              <span style={{ fontSize: '14px', color: '#1a1a1a' }}>
-                {(user as unknown).permissions.join(', ')}
-              </span>
-            </div>
-          )}
+
+          {(user as unknown)?.permissions &&
+            (user as unknown).permissions.length > 0 && (
+              <div>
+                <span
+                  style={{ fontSize: '14px', color: '#666', fontWeight: 600 }}
+                >
+                  Permissions:
+                </span>{' '}
+                <span style={{ fontSize: '14px', color: '#1a1a1a' }}>
+                  {(user as unknown).permissions.join(', ')}
+                </span>
+              </div>
+            )}
         </div>
       </div>
-      
+
       {/* Quick Actions */}
       <div
         style={{
@@ -220,7 +226,7 @@ export function DashboardPage({
         >
           Quick Actions
         </h2>
-        
+
         <div
           style={{
             display: 'grid',
@@ -244,7 +250,7 @@ export function DashboardPage({
           >
             Edit Profile
           </button>
-          
+
           <button
             onClick={() => navigate('/settings')}
             style={{
@@ -261,7 +267,7 @@ export function DashboardPage({
           >
             Settings
           </button>
-          
+
           <button
             onClick={() => navigate('/help')}
             style={{
@@ -280,7 +286,7 @@ export function DashboardPage({
           </button>
         </div>
       </div>
-      
+
       {/* Role-Based Content */}
       {(user as unknown)?.roles?.includes('admin') && (
         <div
@@ -303,8 +309,8 @@ export function DashboardPage({
             🔐 Admin Access
           </h2>
           <p style={{ fontSize: '14px', color: '#92400e', margin: 0 }}>
-            You have administrative privileges. Access the admin panel to manage users,
-            settings, and system configuration.
+            You have administrative privileges. Access the admin panel to manage
+            users, settings, and system configuration.
           </p>
           <button
             onClick={() => navigate('/admin')}
@@ -326,7 +332,7 @@ export function DashboardPage({
       )}
     </Page>
   );
-  
+
   return (
     <ProtectedRoute
       isAuthenticated={isAuthenticated}

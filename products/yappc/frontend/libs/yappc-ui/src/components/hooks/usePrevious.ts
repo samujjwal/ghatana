@@ -2,15 +2,15 @@ import { useRef, useEffect } from 'react';
 
 /**
  * Hook that returns the previous value of a variable
- * 
+ *
  * @param value - The value to track
  * @returns The previous value
- * 
+ *
  * @example
  * ```tsx
  * const [count, setCount] = useState(0);
  * const previousCount = usePrevious(count);
- * 
+ *
  * // previousCount will be the value from the last render
  * ```
  */

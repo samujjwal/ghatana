@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Tab Bar Component
- * 
+ *
  * Editor tab management component with drag-and-drop support.
- * 
+ *
  * @doc.type component
  * @doc.purpose Tab management for IDE editor
  * @doc.layer product
@@ -13,7 +13,11 @@ import { useAtom } from 'jotai';
 import React, { useCallback, useState } from 'react';
 
 import { useIDEFileOperations } from '../hooks/useIDEFileOperations';
-import { ideOpenTabsAtom, ideActiveFileIdAtom, ideFilesAtom } from '../state/atoms';
+import {
+  ideOpenTabsAtom,
+  ideActiveFileIdAtom,
+  ideFilesAtom,
+} from '../state/atoms';
 import type { IDETab } from '../types';
 import { setActiveTab, getActiveTab } from '../utils/tabManager';
 
@@ -51,9 +55,10 @@ const TabItem: React.FC<TabItemProps> = ({
       className={`
         group relative flex items-center gap-2 px-3 py-2 min-w-[120px] max-w-[200px]
         border-r border-gray-200 dark:border-gray-700 cursor-pointer
-        ${isActive
-          ? 'bg-white dark:bg-gray-800 border-b-2 border-b-blue-500'
-          : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'
+        ${
+          isActive
+            ? 'bg-white dark:bg-gray-800 border-b-2 border-b-blue-500'
+            : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'
         }
         ${tab.isPinned ? 'border-l-2 border-l-blue-400' : ''}
       `}
@@ -72,13 +77,14 @@ const TabItem: React.FC<TabItemProps> = ({
       )}
 
       {/* Tab title */}
-      <span className="flex-1 truncate text-sm">
-        {tab.title}
-      </span>
+      <span className="flex-1 truncate text-sm">{tab.title}</span>
 
       {/* Dirty indicator */}
       {tab.isDirty && (
-        <span className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500" aria-label="Unsaved changes" />
+        <span
+          className="flex-shrink-0 w-2 h-2 rounded-full bg-orange-500"
+          aria-label="Unsaved changes"
+        />
       )}
 
       {/* Close button */}
@@ -120,10 +126,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Menu */}
       <div
@@ -183,7 +186,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
 
 /**
  * Tab Bar Component
- * 
+ *
  * @doc.param props - Component props
  * @doc.returns Tab bar component
  */
@@ -198,7 +201,11 @@ export const TabBar: React.FC<TabBarProps> = ({
   const [, setActiveFileId] = useAtom(ideActiveFileIdAtom);
   const [files] = useAtom(ideFilesAtom);
   const { closeFile, saveFile } = useIDEFileOperations();
-  const [contextMenu, setContextMenu] = useState<{ tabId: string; x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    tabId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const activeTab = getActiveTab(openTabs);
 
@@ -261,7 +268,9 @@ export const TabBar: React.FC<TabBarProps> = ({
       const tabIndex = openTabs.findIndex((t) => t.id === tabId);
       if (tabIndex === -1) return;
 
-      const tabsToClose = openTabs.slice(tabIndex + 1).filter((t) => !t.isPinned);
+      const tabsToClose = openTabs
+        .slice(tabIndex + 1)
+        .filter((t) => !t.isPinned);
       tabsToClose.forEach((tab) => {
         const file = files[tab.fileId];
         if (!file?.isDirty) {
@@ -282,19 +291,26 @@ export const TabBar: React.FC<TabBarProps> = ({
     });
   }, [openTabs, files, closeFile]);
 
-  const closeTabById = useCallback((tabId: string) => {
-    const tab = openTabs.find((t) => t.id === tabId);
-    if (!tab) return;
+  const closeTabById = useCallback(
+    (tabId: string) => {
+      const tab = openTabs.find((t) => t.id === tabId);
+      if (!tab) return;
 
-    const file = files[tab.fileId];
-    if (!file?.isDirty) {
-      closeFile(tab.fileId);
-    }
-  }, [openTabs, files, closeFile]);
+      const file = files[tab.fileId];
+      if (!file?.isDirty) {
+        closeFile(tab.fileId);
+      }
+    },
+    [openTabs, files, closeFile]
+  );
 
   const handlePinTab = useCallback(
     (tabId: string) => {
-      setOpenTabs(openTabs.map((t) => (t.id === tabId ? { ...t, isPinned: !t.isPinned } : t)));
+      setOpenTabs(
+        openTabs.map((t) =>
+          t.id === tabId ? { ...t, isPinned: !t.isPinned } : t
+        )
+      );
     },
     [setOpenTabs]
   );
@@ -313,9 +329,14 @@ export const TabBar: React.FC<TabBarProps> = ({
   const hiddenTabsCount = Math.max(0, openTabs.length - maxVisibleTabs);
 
   return (
-    <div className={`flex items-center bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${className}`}>
+    <div
+      className={`flex items-center bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${className}`}
+    >
       {/* Tabs */}
-      <div className="flex-1 flex overflow-x-auto scrollbar-thin" role="tablist">
+      <div
+        className="flex-1 flex overflow-x-auto scrollbar-thin"
+        role="tablist"
+      >
         {visibleTabs.length === 0 ? (
           <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
             No files open

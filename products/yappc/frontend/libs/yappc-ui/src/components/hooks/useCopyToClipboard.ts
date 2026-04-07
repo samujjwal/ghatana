@@ -14,13 +14,13 @@ type CopyFn = (text: string) => Promise<boolean>;
 
 /**
  * Hook that provides copy to clipboard functionality
- * 
+ *
  * @returns A tuple of [copiedText, copy function]
- * 
+ *
  * @example
  * ```tsx
  * const [copiedText, copy] = useCopyToClipboard();
- * 
+ *
  * const handleCopy = async () => {
  *   const success = await copy('Text to copy');
  *   if (success) {

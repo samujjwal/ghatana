@@ -73,7 +73,11 @@ export interface ValidationResult {
  */
 export interface SecurityEvent {
   /** Event type */
-  type: 'rate_limit' | 'validation_error' | 'malformed_payload' | 'connection_closed';
+  type:
+    | 'rate_limit'
+    | 'validation_error'
+    | 'malformed_payload'
+    | 'connection_closed';
   /** User ID */
   userId: string;
   /** Event timestamp */
@@ -169,7 +173,10 @@ export class CollabSecurityManager {
     // Refill tokens based on time elapsed
     const elapsed = now - state.lastRefill;
     const tokensToAdd = (elapsed / 1000) * this.rateLimitConfig.refillRate;
-    state.tokens = Math.min(state.tokens + tokensToAdd, this.rateLimitConfig.burstCapacity);
+    state.tokens = Math.min(
+      state.tokens + tokensToAdd,
+      this.rateLimitConfig.burstCapacity
+    );
     state.lastRefill = now;
 
     state.totalRequests++;
@@ -185,7 +192,9 @@ export class CollabSecurityManager {
 
     // Calculate retry after
     const tokensNeeded = 1 - state.tokens;
-    const retryAfter = Math.ceil((tokensNeeded / this.rateLimitConfig.refillRate) * 1000);
+    const retryAfter = Math.ceil(
+      (tokensNeeded / this.rateLimitConfig.refillRate) * 1000
+    );
 
     // Log security event
     this.logSecurityEvent({
@@ -253,7 +262,10 @@ export class CollabSecurityManager {
 
         // Check string length
         if (expectedType === 'string' && typeof value === 'string') {
-          if (this.schema.maxStringLength && value.length > this.schema.maxStringLength) {
+          if (
+            this.schema.maxStringLength &&
+            value.length > this.schema.maxStringLength
+          ) {
             errors.push({
               code: 'STRING_TOO_LONG',
               message: `Field '${field}' exceeds maximum length`,
@@ -266,14 +278,27 @@ export class CollabSecurityManager {
 
         // Check array length
         if (expectedType === 'array' && Array.isArray(value)) {
-          if (this.schema.maxArrayLength && value.length > this.schema.maxArrayLength) {
-            warnings.push(`Field '${field}' array length exceeds recommended size (${value.length})`);
+          if (
+            this.schema.maxArrayLength &&
+            value.length > this.schema.maxArrayLength
+          ) {
+            warnings.push(
+              `Field '${field}' array length exceeds recommended size (${value.length})`
+            );
           }
         }
 
         // Validate nested objects
-        if (expectedType === 'object' && this.schema.nested && field in this.schema.nested) {
-          const nestedResult = this.validateNested(value, this.schema.nested[field], field);
+        if (
+          expectedType === 'object' &&
+          this.schema.nested &&
+          field in this.schema.nested
+        ) {
+          const nestedResult = this.validateNested(
+            value,
+            this.schema.nested[field],
+            field
+          );
           errors.push(...nestedResult.errors);
           warnings.push(...nestedResult.warnings);
         }
@@ -328,7 +353,9 @@ export class CollabSecurityManager {
       const fieldPath = `${parentField}.${field}`;
       if (field in data) {
         const fieldValue = data[field];
-        const actualType = Array.isArray(fieldValue) ? 'array' : typeof fieldValue;
+        const actualType = Array.isArray(fieldValue)
+          ? 'array'
+          : typeof fieldValue;
 
         if (actualType !== expectedType) {
           errors.push({
@@ -393,7 +420,10 @@ export class CollabSecurityManager {
   /**
    * Handle security violation
    */
-  handleViolation(userId: string, violationType: 'rate_limit' | 'validation' | 'malformed'): {
+  handleViolation(
+    userId: string,
+    violationType: 'rate_limit' | 'validation' | 'malformed'
+  ): {
     shouldDisconnect: boolean;
     reason: string;
   } {

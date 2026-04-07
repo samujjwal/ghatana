@@ -19,7 +19,12 @@ import { cn } from '@ghatana/design-system';
 // ============================================================================
 
 export type TrendDirection = 'up' | 'down' | 'flat';
-export type MetricFormat = 'number' | 'percentage' | 'bytes' | 'duration' | 'currency';
+export type MetricFormat =
+  | 'number'
+  | 'percentage'
+  | 'bytes'
+  | 'duration'
+  | 'currency';
 
 export interface SparklinePoint {
   timestamp: number;
@@ -50,7 +55,11 @@ export interface MetricCardProps {
 // Utility Functions
 // ============================================================================
 
-const formatValue = (value: number | string, format?: MetricFormat, unit?: string): string => {
+const formatValue = (
+  value: number | string,
+  format?: MetricFormat,
+  unit?: string
+): string => {
   if (typeof value === 'string') return value;
 
   switch (format) {
@@ -169,7 +178,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 }) => {
   const formattedValue = formatValue(value, format, unit);
   const thresholdStatus = getThresholdStatus(value, threshold);
-  const trendConfig = trend ? getTrendConfig(trend.direction, trend.isPositive) : null;
+  const trendConfig = trend
+    ? getTrendConfig(trend.direction, trend.isPositive)
+    : null;
 
   return (
     <div
@@ -204,7 +215,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         {sparkline && sparkline.length > 0 && (
           <Sparkline
             data={sparkline}
-            color={thresholdStatus === 'critical' ? '#EF4444' : thresholdStatus === 'warning' ? '#F59E0B' : '#3B82F6'}
+            color={
+              thresholdStatus === 'critical'
+                ? '#EF4444'
+                : thresholdStatus === 'warning'
+                  ? '#F59E0B'
+                  : '#3B82F6'
+            }
           />
         )}
       </div>

@@ -52,8 +52,6 @@ import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@yappc/ui';
 import { ScrollArea } from '@yappc/ui';
 
-
-
 // =============================================================================
 // Types
 // =============================================================================
@@ -98,7 +96,9 @@ export interface ValidationReport {
   }>;
 }
 
-function isValidationState(value: unknown): value is { report?: ValidationReport } {
+function isValidationState(
+  value: unknown
+): value is { report?: ValidationReport } {
   return typeof value === 'object' && value !== null;
 }
 
@@ -118,15 +118,24 @@ interface ValidationPanelProps {
 // Subcomponents
 // =============================================================================
 
-const SeverityIcon = ({ severity, className }: { severity: ValidationSeverity; className?: string }) => {
-  const icons: Record<ValidationSeverity, React.ComponentType<{ className?: string }>> = {
+const SeverityIcon = ({
+  severity,
+  className,
+}: {
+  severity: ValidationSeverity;
+  className?: string;
+}) => {
+  const icons: Record<
+    ValidationSeverity,
+    React.ComponentType<{ className?: string }>
+  > = {
     error: AlertCircle,
     warning: AlertTriangle,
     info: Info,
     success: CheckCircle2,
   };
   const Icon = icons[severity];
-  
+
   const colors: Record<ValidationSeverity, string> = {
     error: 'text-red-500',
     warning: 'text-amber-500',
@@ -137,219 +146,229 @@ const SeverityIcon = ({ severity, className }: { severity: ValidationSeverity; c
   return <Icon className={cn('w-4 h-4', colors[severity], className)} />;
 };
 
-const IssueCard = React.memo(({
-  issue,
-  isExpanded,
-  onToggle,
-  onAutoFix,
-  onClick,
-  onDismiss,
-  isFixing,
-}: {
-  issue: ValidationIssue;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onAutoFix?: () => void;
-  onClick?: () => void;
-  onDismiss?: () => void;
-  isFixing?: boolean;
-}) => {
-  const severityColors: Record<ValidationSeverity, string> = {
-    error: 'border-l-red-500 bg-red-500/5 hover:bg-red-500/10',
-    warning: 'border-l-amber-500 bg-amber-500/5 hover:bg-amber-500/10',
-    info: 'border-l-blue-500 bg-blue-500/5 hover:bg-blue-500/10',
-    success: 'border-l-green-500 bg-green-500/5 hover:bg-green-500/10',
-  };
+const IssueCard = React.memo(
+  ({
+    issue,
+    isExpanded,
+    onToggle,
+    onAutoFix,
+    onClick,
+    onDismiss,
+    isFixing,
+  }: {
+    issue: ValidationIssue;
+    isExpanded: boolean;
+    onToggle: () => void;
+    onAutoFix?: () => void;
+    onClick?: () => void;
+    onDismiss?: () => void;
+    isFixing?: boolean;
+  }) => {
+    const severityColors: Record<ValidationSeverity, string> = {
+      error: 'border-l-red-500 bg-red-500/5 hover:bg-red-500/10',
+      warning: 'border-l-amber-500 bg-amber-500/5 hover:bg-amber-500/10',
+      info: 'border-l-blue-500 bg-blue-500/5 hover:bg-blue-500/10',
+      success: 'border-l-green-500 bg-green-500/5 hover:bg-green-500/10',
+    };
 
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className={cn(
-        'border-l-4 rounded-r-lg transition-colors',
-        severityColors[issue.severity]
-      )}
-    >
-      <Collapsible open={isExpanded} onOpenChange={onToggle}>
-        <div className="flex items-start gap-3 p-3">
-          <SeverityIcon severity={issue.severity} className="mt-0.5 flex-shrink-0" />
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div
-                className="flex-1 cursor-pointer"
-                onClick={onClick}
-              >
-                <p className="text-sm font-medium text-zinc-100 leading-tight">
-                  {issue.message}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
-                    {issue.category}
-                  </Badge>
-                  {issue.rule && (
-                    <span className="text-xs text-zinc-500">{issue.rule}</span>
-                  )}
-                </div>
-              </div>
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        className={cn(
+          'border-l-4 rounded-r-lg transition-colors',
+          severityColors[issue.severity]
+        )}
+      >
+        <Collapsible open={isExpanded} onOpenChange={onToggle}>
+          <div className="flex items-start gap-3 p-3">
+            <SeverityIcon
+              severity={issue.severity}
+              className="mt-0.5 flex-shrink-0"
+            />
 
-              <div className="flex items-center gap-1 flex-shrink-0">
-                {issue.autoFixable && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAutoFix?.();
-                        }}
-                        disabled={isFixing}
-                      >
-                        {isFixing ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Wand2 className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Auto-fix</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {onDismiss && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDismiss();
-                        }}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Dismiss</TooltipContent>
-                  </Tooltip>
-                )}
-
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    {isExpanded ? (
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    ) : (
-                      <ChevronRight className="w-3.5 h-3.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 cursor-pointer" onClick={onClick}>
+                  <p className="text-sm font-medium text-zinc-100 leading-tight">
+                    {issue.message}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {issue.category}
+                    </Badge>
+                    {issue.rule && (
+                      <span className="text-xs text-zinc-500">
+                        {issue.rule}
+                      </span>
                     )}
-                  </Button>
-                </CollapsibleTrigger>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {issue.autoFixable && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAutoFix?.();
+                          }}
+                          disabled={isFixing}
+                        >
+                          {isFixing ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Wand2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Auto-fix</TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  {onDismiss && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDismiss();
+                          }}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Dismiss</TooltipContent>
+                    </Tooltip>
+                  )}
+
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      {isExpanded ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <CollapsibleContent>
-          <div className="px-3 pb-3 pl-10 space-y-3">
-            {issue.details && (
-              <p className="text-sm text-zinc-400">{issue.details}</p>
-            )}
+          <CollapsibleContent>
+            <div className="px-3 pb-3 pl-10 space-y-3">
+              {issue.details && (
+                <p className="text-sm text-zinc-400">{issue.details}</p>
+              )}
 
-            {issue.location && (
-              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <FileCode className="w-3.5 h-3.5" />
-                {issue.location.nodeId && <span>Node: {issue.location.nodeId}</span>}
-                {issue.location.path && <span>{issue.location.path}</span>}
-                {issue.location.line && (
-                  <span>
-                    Line {issue.location.line}
-                    {issue.location.column && `:${issue.location.column}`}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {issue.autoFixable && issue.autoFixDescription && (
-              <div className="flex items-start gap-2 p-2 rounded bg-zinc-800/50">
-                <Wand2 className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-medium text-violet-400">Auto-fix available</p>
-                  <p className="text-xs text-zinc-400">{issue.autoFixDescription}</p>
+              {issue.location && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <FileCode className="w-3.5 h-3.5" />
+                  {issue.location.nodeId && (
+                    <span>Node: {issue.location.nodeId}</span>
+                  )}
+                  {issue.location.path && <span>{issue.location.path}</span>}
+                  {issue.location.line && (
+                    <span>
+                      Line {issue.location.line}
+                      {issue.location.column && `:${issue.location.column}`}
+                    </span>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {issue.suggestions && issue.suggestions.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-zinc-400">Suggestions:</p>
-                <ul className="space-y-1">
-                  {issue.suggestions.map((suggestion, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-xs text-zinc-400"
-                    >
-                      <Sparkles className="w-3 h-3 text-violet-400 flex-shrink-0 mt-0.5" />
-                      {suggestion}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              {issue.autoFixable && issue.autoFixDescription && (
+                <div className="flex items-start gap-2 p-2 rounded bg-zinc-800/50">
+                  <Wand2 className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-violet-400">
+                      Auto-fix available
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {issue.autoFixDescription}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            {issue.documentationUrl && (
-              <a
-                href={issue.documentationUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Learn more
-              </a>
-            )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-    </motion.div>
-  );
-});
+              {issue.suggestions && issue.suggestions.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-zinc-400">
+                    Suggestions:
+                  </p>
+                  <ul className="space-y-1">
+                    {issue.suggestions.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-xs text-zinc-400"
+                      >
+                        <Sparkles className="w-3 h-3 text-violet-400 flex-shrink-0 mt-0.5" />
+                        {suggestion}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {issue.documentationUrl && (
+                <a
+                  href={issue.documentationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Learn more
+                </a>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </motion.div>
+    );
+  }
+);
 
 IssueCard.displayName = 'IssueCard';
 
-const CategorySummary = React.memo(({
-  categories,
-}: {
-  categories: ValidationReport['categories'];
-}) => (
-  <div className="grid grid-cols-2 gap-2 p-3 bg-zinc-800/50 rounded-lg">
-    {categories.map((category) => (
-      <div
-        key={category.name}
-        className="flex items-center justify-between p-2 rounded bg-zinc-900/50"
-      >
-        <span className="text-xs text-zinc-400">{category.name}</span>
-        <div className="flex items-center gap-1">
-          {category.status === 'pass' && (
-            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-          )}
-          {category.status === 'fail' && (
-            <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-          )}
-          {category.status === 'warn' && (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-          )}
-          {category.issues > 0 && (
-            <span className="text-xs text-zinc-500">{category.issues}</span>
-          )}
+const CategorySummary = React.memo(
+  ({ categories }: { categories: ValidationReport['categories'] }) => (
+    <div className="grid grid-cols-2 gap-2 p-3 bg-zinc-800/50 rounded-lg">
+      {categories.map((category) => (
+        <div
+          key={category.name}
+          className="flex items-center justify-between p-2 rounded bg-zinc-900/50"
+        >
+          <span className="text-xs text-zinc-400">{category.name}</span>
+          <div className="flex items-center gap-1">
+            {category.status === 'pass' && (
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+            )}
+            {category.status === 'fail' && (
+              <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+            )}
+            {category.status === 'warn' && (
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            )}
+            {category.issues > 0 && (
+              <span className="text-xs text-zinc-500">{category.issues}</span>
+            )}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-));
+      ))}
+    </div>
+  )
+);
 
 CategorySummary.displayName = 'CategorySummary';
 
@@ -480,8 +499,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
           <h2 className="text-lg font-semibold text-zinc-100">Validation</h2>
           {activeReport && (
             <p className="text-xs text-zinc-500">
-              Last run:{' '}
-              {new Date(activeReport.timestamp).toLocaleTimeString()}
+              Last run: {new Date(activeReport.timestamp).toLocaleTimeString()}
             </p>
           )}
         </div>
@@ -667,7 +685,9 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
               <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
                 <Check className="w-6 h-6 text-zinc-500" />
               </div>
-              <p className="text-sm text-zinc-400 mb-2">No validation run yet</p>
+              <p className="text-sm text-zinc-400 mb-2">
+                No validation run yet
+              </p>
               <p className="text-xs text-zinc-500">
                 Click "Validate" to check your project configuration
               </p>
@@ -697,9 +717,11 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
                   isExpanded={expandedIssues.has(issue.id)}
                   onToggle={() => handleToggleExpand(issue.id)}
                   onAutoFix={
-                    issue.autoFixable ? () => {
-                      void handleAutoFix(issue.id);
-                    } : undefined
+                    issue.autoFixable
+                      ? () => {
+                          void handleAutoFix(issue.id);
+                        }
+                      : undefined
                   }
                   onClick={() => onIssueClick?.(issue)}
                   onDismiss={

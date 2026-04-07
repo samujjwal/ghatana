@@ -15,10 +15,10 @@ import type {
 
 /**
  * DevSecOps API Client
- * 
+ *
  * Provides methods for interacting with the DevSecOps API.
  * Uses real API calls to the Fastify backend server.
- * 
+ *
  * @example
  * ```ts
  * const client = new DevSecOpsClient();
@@ -38,15 +38,15 @@ export class DevSecOpsClient {
 
   /**
    * Create a new DevSecOps API client
-   * 
+   *
    * Uses relative `/api/devsecops/...` paths which are proxied
    * by Vite to the backend server in development.
    */
-  constructor() { }
+  constructor() {}
 
   /**
    * Fetch all phases from the API
-   * 
+   *
    * @returns Promise resolving to array of phase objects
    * @example
    * ```ts
@@ -62,7 +62,7 @@ export class DevSecOpsClient {
 
   /**
    * Fetch detailed information for a specific phase
-   * 
+   *
    * @param phaseId - Unique identifier for the phase
    * @returns Promise resolving to phase details
    * @example
@@ -72,15 +72,18 @@ export class DevSecOpsClient {
    * ```
    */
   async getPhase(phaseId: string) {
-    const response = await fetch(`/api/devsecops/phases/${encodeURIComponent(phaseId)}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await fetch(
+      `/api/devsecops/phases/${encodeURIComponent(phaseId)}`,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to fetch phase ${phaseId} (status ${response.status})`,
+        `DevSecOpsClient: failed to fetch phase ${phaseId} (status ${response.status})`
       );
     }
 
@@ -90,7 +93,7 @@ export class DevSecOpsClient {
 
   /**
    * Fetch all items with optional filtering
-   * 
+   *
    * @param filters - Optional filter parameters (status, priority, owner, etc.)
    * @returns Promise resolving to array of items
    * @example
@@ -204,7 +207,7 @@ export class DevSecOpsClient {
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to fetch overview (status ${response.status})`,
+        `DevSecOpsClient: failed to fetch overview (status ${response.status})`
       );
     }
 
@@ -223,7 +226,7 @@ export class DevSecOpsClient {
    */
   private wrapResponse<T>(
     data: T,
-    metadata?: ApiResponse<unknown>['metadata'],
+    metadata?: ApiResponse<unknown>['metadata']
   ): ApiResponse<T> {
     return {
       data,
@@ -239,12 +242,17 @@ export class DevSecOpsClient {
    *
    */
   private isApiResponse<T>(value: unknown): value is ApiResponse<T> {
-    return !!value && typeof value === 'object' && 'data' in value && 'success' in value;
+    return (
+      !!value &&
+      typeof value === 'object' &&
+      'data' in value &&
+      'success' in value
+    );
   }
 
   /**
    * Fetch detailed information for a specific item
-   * 
+   *
    * @param itemId - Unique identifier for the item
    * @returns Promise resolving to item details
    * @example
@@ -254,15 +262,18 @@ export class DevSecOpsClient {
    * ```
    */
   async getItem(itemId: string) {
-    const response = await fetch(`/api/devsecops/items/${encodeURIComponent(itemId)}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await fetch(
+      `/api/devsecops/items/${encodeURIComponent(itemId)}`,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to fetch item ${itemId} (status ${response.status})`,
+        `DevSecOpsClient: failed to fetch item ${itemId} (status ${response.status})`
       );
     }
 
@@ -274,7 +285,7 @@ export class DevSecOpsClient {
 
   /**
    * Fetch all available reports
-   * 
+   *
    * @returns Promise resolving to array of report summaries
    * @example
    * ```ts
@@ -291,7 +302,7 @@ export class DevSecOpsClient {
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to fetch reports (status ${response.status})`,
+        `DevSecOpsClient: failed to fetch reports (status ${response.status})`
       );
     }
 
@@ -301,7 +312,7 @@ export class DevSecOpsClient {
 
   /**
    * Fetch detailed information for a specific report
-   * 
+   *
    * @param reportId - Unique identifier for the report
    * @returns Promise resolving to report details with KPIs and risks
    * @example
@@ -311,15 +322,18 @@ export class DevSecOpsClient {
    * ```
    */
   async getReport(reportId: string) {
-    const response = await fetch(`/api/devsecops/reports/${encodeURIComponent(reportId)}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await fetch(
+      `/api/devsecops/reports/${encodeURIComponent(reportId)}`,
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to fetch report ${reportId} (status ${response.status})`,
+        `DevSecOpsClient: failed to fetch report ${reportId} (status ${response.status})`
       );
     }
 
@@ -329,7 +343,7 @@ export class DevSecOpsClient {
 
   /**
    * Update the status of an item
-   * 
+   *
    * @param itemId - Unique identifier for the item to update
    * @param status - New status value (e.g., 'todo', 'in-progress', 'completed', 'blocked')
    * @returns Promise resolving to success response
@@ -339,7 +353,10 @@ export class DevSecOpsClient {
    * // Returns: ApiResponse<Item>
    * ```
    */
-  async updateItemStatus(itemId: string, status: Item['status']): Promise<ApiResponse<Item>> {
+  async updateItemStatus(
+    itemId: string,
+    status: Item['status']
+  ): Promise<ApiResponse<Item>> {
     return this.updateItem(itemId, { status });
   }
 
@@ -358,7 +375,7 @@ export class DevSecOpsClient {
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to create item (status ${response.status})`,
+        `DevSecOpsClient: failed to create item (status ${response.status})`
       );
     }
 
@@ -371,19 +388,25 @@ export class DevSecOpsClient {
   /**
    * Update an existing DevSecOps item
    */
-  async updateItem(itemId: string, data: Partial<Item>): Promise<ApiResponse<Item>> {
-    const response = await fetch(`/api/devsecops/items/${encodeURIComponent(itemId)}`, {
-      method: 'PATCH',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+  async updateItem(
+    itemId: string,
+    data: Partial<Item>
+  ): Promise<ApiResponse<Item>> {
+    const response = await fetch(
+      `/api/devsecops/items/${encodeURIComponent(itemId)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to update item ${itemId} (status ${response.status})`,
+        `DevSecOpsClient: failed to update item ${itemId} (status ${response.status})`
       );
     }
 
@@ -398,7 +421,7 @@ export class DevSecOpsClient {
    */
   async bulkUpdateItems(
     itemIds: string[],
-    data: Partial<Item>,
+    data: Partial<Item>
   ): Promise<ApiResponse<BulkOperationResult>> {
     const response = await fetch('/api/devsecops/items/bulk', {
       method: 'PATCH',
@@ -411,7 +434,7 @@ export class DevSecOpsClient {
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to bulk update items (status ${response.status})`,
+        `DevSecOpsClient: failed to bulk update items (status ${response.status})`
       );
     }
 
@@ -425,12 +448,15 @@ export class DevSecOpsClient {
    * Delete a DevSecOps item.
    */
   async deleteItem(itemId: string): Promise<ApiResponse<boolean>> {
-    const response = await fetch(`/api/devsecops/items/${encodeURIComponent(itemId)}`, {
-      method: 'DELETE',
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await fetch(
+      `/api/devsecops/items/${encodeURIComponent(itemId)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
 
     if (response.status === 404) {
       throw new Error(`DevSecOpsClient: item ${itemId} not found`);
@@ -438,7 +464,7 @@ export class DevSecOpsClient {
 
     if (!response.ok) {
       throw new Error(
-        `DevSecOpsClient: failed to delete item ${itemId} (status ${response.status})`,
+        `DevSecOpsClient: failed to delete item ${itemId} (status ${response.status})`
       );
     }
 
@@ -447,7 +473,6 @@ export class DevSecOpsClient {
       ? payload
       : this.wrapResponse(payload as boolean);
   }
-
 }
 
 // Export singleton instance

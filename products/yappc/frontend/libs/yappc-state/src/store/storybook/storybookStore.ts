@@ -7,17 +7,17 @@ import { atomWithStorage } from 'jotai/utils';
  * This file contains atoms that are specifically for use in Storybook stories.
  * These atoms provide mock state for components in the Storybook development environment,
  * allowing component demonstration without backend dependencies.
- * 
+ *
  * **Note:** These atoms are for development/documentation purposes only and should
  * not be used in production code.
  */
 
 /**
  * Storybook theme atom with localStorage persistence
- * 
+ *
  * Controls color scheme in Storybook stories for testing components in different themes.
  * Persists across Storybook sessions using localStorage key 'storybook-theme'.
- * 
+ *
  * @example
  * ```tsx
  * // In a Storybook story
@@ -35,14 +35,17 @@ import { atomWithStorage } from 'jotai/utils';
  * };
  * ```
  */
-export const storybookThemeAtom = atomWithStorage<'light' | 'dark'>('storybook-theme', 'light');
+export const storybookThemeAtom = atomWithStorage<'light' | 'dark'>(
+  'storybook-theme',
+  'light'
+);
 
 /**
  * Storybook platform atom
- * 
+ *
  * Simulates different platform contexts (web/desktop/mobile) in Storybook stories
  * for testing responsive behavior and platform-specific features.
- * 
+ *
  * @example
  * ```tsx
  * // In a Storybook story
@@ -50,11 +53,11 @@ export const storybookThemeAtom = atomWithStorage<'light' | 'dark'>('storybook-t
  *   decorators: [
  *     (Story) => {
  *       const [, setPlatform] = useAtom(storybookPlatformAtom);
- *       
+ *
  *       useEffect(() => {
  *         setPlatform('mobile');
  *       }, []);
- *       
+ *
  *       return <Story />;
  *     }
  *   ]
@@ -65,16 +68,16 @@ export const storybookPlatformAtom = atom<'web' | 'desktop' | 'mobile'>('web');
 
 /**
  * Storybook user preferences atom with localStorage persistence
- * 
+ *
  * Mock user preferences for testing components that depend on user settings.
  * Persists across Storybook sessions using localStorage key 'storybook-preferences'.
- * 
+ *
  * @example
  * ```tsx
  * // In a component story
  * function NotificationSettings() {
  *   const [prefs, setPrefs] = useAtom(storybookPreferencesAtom);
- *   
+ *
  *   return (
  *     <div>
  *       <label>
@@ -90,18 +93,21 @@ export const storybookPlatformAtom = atom<'web' | 'desktop' | 'mobile'>('web');
  * }
  * ```
  */
-export const storybookPreferencesAtom = atomWithStorage('storybook-preferences', {
-  notifications: true,
-  autoSave: true,
-  compactView: false,
-  developerMode: false,
-});
+export const storybookPreferencesAtom = atomWithStorage(
+  'storybook-preferences',
+  {
+    notifications: true,
+    autoSave: true,
+    compactView: false,
+    developerMode: false,
+  }
+);
 
 /**
  * Storybook workspace interface
- * 
+ *
  * Represents a mock workspace for Storybook component demonstrations.
- * 
+ *
  * @example
  * ```tsx
  * const demoWorkspace: StorybookWorkspace = {
@@ -128,23 +134,23 @@ export interface StorybookWorkspace {
 
 /**
  * Storybook workspaces atom with localStorage persistence
- * 
+ *
  * Mock workspace list for testing workspace selection, listing, and management components.
  * Persists across Storybook sessions using localStorage key 'storybook-workspaces'.
  * Includes 3 sample workspaces with varying states (favorite/non-favorite, different ages).
- * 
+ *
  * @example
  * ```tsx
  * // In a workspace list story
  * function WorkspaceList() {
  *   const [workspaces, setWorkspaces] = useAtom(storybookWorkspacesAtom);
- *   
+ *
  *   const toggleFavorite = (id: string) => {
  *     setWorkspaces(workspaces.map(ws =>
  *       ws.id === id ? { ...ws, favorite: !ws.favorite } : ws
  *     ));
  *   };
- *   
+ *
  *   return (
  *     <ul>
  *       {workspaces.map(ws => (
@@ -160,36 +166,39 @@ export interface StorybookWorkspace {
  * }
  * ```
  */
-export const storybookWorkspacesAtom = atomWithStorage<StorybookWorkspace[]>('storybook-workspaces', [
-  {
-    id: 'workspace-1',
-    name: 'Demo Workspace',
-    description: 'A demo workspace for Storybook',
-    lastModified: new Date().toISOString(),
-    favorite: true,
-  },
-  {
-    id: 'workspace-2',
-    name: 'Project X',
-    description: 'Top secret project',
-    lastModified: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    favorite: false,
-  },
-  {
-    id: 'workspace-3',
-    name: 'Mobile App',
-    description: 'Mobile application prototype',
-    lastModified: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    favorite: true,
-  },
-]);
+export const storybookWorkspacesAtom = atomWithStorage<StorybookWorkspace[]>(
+  'storybook-workspaces',
+  [
+    {
+      id: 'workspace-1',
+      name: 'Demo Workspace',
+      description: 'A demo workspace for Storybook',
+      lastModified: new Date().toISOString(),
+      favorite: true,
+    },
+    {
+      id: 'workspace-2',
+      name: 'Project X',
+      description: 'Top secret project',
+      lastModified: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      favorite: false,
+    },
+    {
+      id: 'workspace-3',
+      name: 'Mobile App',
+      description: 'Mobile application prototype',
+      lastModified: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      favorite: true,
+    },
+  ]
+);
 
 /**
  * Storybook diagram node interface
- * 
+ *
  * Represents a node in a flow diagram for testing diagram/flowchart components.
  * Compatible with React Flow and similar diagram libraries.
- * 
+ *
  * @example
  * ```tsx
  * const processNode: StorybookDiagramNode = {
@@ -222,16 +231,16 @@ export interface StorybookDiagramNode {
 
 /**
  * Storybook diagram nodes atom
- * 
+ *
  * Mock node collection for testing diagram/flowchart components.
  * Includes 3 sample nodes with different types (default, input, output) arranged horizontally.
- * 
+ *
  * @example
  * ```tsx
  * // In a diagram component story
  * function DiagramEditor() {
  *   const [nodes, setNodes] = useAtom(storybookDiagramNodesAtom);
- *   
+ *
  *   const addNode = () => {
  *     const newNode: StorybookDiagramNode = {
  *       id: `node-${Date.now()}`,
@@ -241,7 +250,7 @@ export interface StorybookDiagramNode {
  *     };
  *     setNodes([...nodes, newNode]);
  *   };
- *   
+ *
  *   return (
  *     <>
  *       <ReactFlow nodes={nodes} />
@@ -274,10 +283,10 @@ export const storybookDiagramNodesAtom = atom<StorybookDiagramNode[]>([
 
 /**
  * Storybook diagram edge interface
- * 
+ *
  * Represents a connection between diagram nodes for testing diagram/flowchart components.
  * Compatible with React Flow and similar diagram libraries.
- * 
+ *
  * @example
  * ```tsx
  * const dataFlowEdge: StorybookDiagramEdge = {
@@ -307,18 +316,18 @@ export interface StorybookDiagramEdge {
 
 /**
  * Storybook diagram edges atom
- * 
+ *
  * Mock edge collection for testing diagram/flowchart components.
  * Includes 2 sample edges connecting the nodes in storybookDiagramNodesAtom,
  * with one static and one animated edge.
- * 
+ *
  * @example
  * ```tsx
  * // In a diagram component story
  * function DiagramEditor() {
  *   const [edges, setEdges] = useAtom(storybookDiagramEdgesAtom);
  *   const [nodes] = useAtom(storybookDiagramNodesAtom);
- *   
+ *
  *   const connectNodes = (sourceId: string, targetId: string) => {
  *     const newEdge: StorybookDiagramEdge = {
  *       id: `edge-${Date.now()}`,
@@ -329,7 +338,7 @@ export interface StorybookDiagramEdge {
  *     };
  *     setEdges([...edges, newEdge]);
  *   };
- *   
+ *
  *   return <ReactFlow nodes={nodes} edges={edges} />;
  * }
  * ```
@@ -353,10 +362,10 @@ export const storybookDiagramEdgesAtom = atom<StorybookDiagramEdge[]>([
 
 /**
  * Storybook notification interface
- * 
+ *
  * Represents a notification message for testing notification components.
  * Includes type, message, optional title, timestamp, and read status.
- * 
+ *
  * @example
  * ```tsx
  * const notification: StorybookNotification = {
@@ -386,25 +395,25 @@ export interface StorybookNotification {
 
 /**
  * Storybook notifications atom
- * 
+ *
  * Mock notification list for testing notification components.
  * Includes 4 sample notifications covering all types (info, success, warning, error)
  * with varying ages and read states.
- * 
+ *
  * @example
  * ```tsx
  * // In a notification center story
  * function NotificationCenter() {
  *   const [notifications, setNotifications] = useAtom(storybookNotificationsAtom);
- *   
+ *
  *   const markAsRead = (id: string) => {
  *     setNotifications(notifications.map(n =>
  *       n.id === id ? { ...n, read: true } : n
  *     ));
  *   };
- *   
+ *
  *   const unreadCount = notifications.filter(n => !n.read).length;
- *   
+ *
  *   return (
  *     <div>
  *       <h3>Notifications ({unreadCount} unread)</h3>
@@ -457,10 +466,10 @@ export const storybookNotificationsAtom = atom<StorybookNotification[]>([
 
 /**
  * Storybook user interface
- * 
+ *
  * Represents a mock user for testing user-related components.
  * Includes basic user information and role.
- * 
+ *
  * @example
  * ```tsx
  * const adminUser: StorybookUser = {
@@ -487,17 +496,17 @@ export interface StorybookUser {
 
 /**
  * Storybook user atom with localStorage persistence
- * 
+ *
  * Mock authenticated user for testing user profile, settings, and permission-based components.
  * Persists across Storybook sessions using localStorage key 'storybook-user'.
  * Default user is an admin with full permissions.
- * 
+ *
  * @example
  * ```tsx
  * // In a user profile story
  * function UserProfile() {
  *   const [user, setUser] = useAtom(storybookUserAtom);
- *   
+ *
  *   return (
  *     <div>
  *       <img src={user.avatar} alt={user.name} />
@@ -507,13 +516,13 @@ export interface StorybookUser {
  *     </div>
  *   );
  * }
- * 
+ *
  * // Testing different roles
  * export const GuestUserView: Story = {
  *   decorators: [
  *     (Story) => {
  *       const [, setUser] = useAtom(storybookUserAtom);
- *       
+ *
  *       useEffect(() => {
  *         setUser({
  *           id: 'guest-1',
@@ -522,17 +531,20 @@ export interface StorybookUser {
  *           role: 'guest'
  *         });
  *       }, []);
- *       
+ *
  *       return <Story />;
  *     }
  *   ]
  * };
  * ```
  */
-export const storybookUserAtom = atomWithStorage<StorybookUser>('storybook-user', {
-  id: 'user-1',
-  name: 'John Doe',
-  email: 'john.doe@example.com',
-  avatar: 'https://i.pravatar.cc/150?u=john.doe@example.com',
-  role: 'admin',
-});
+export const storybookUserAtom = atomWithStorage<StorybookUser>(
+  'storybook-user',
+  {
+    id: 'user-1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    avatar: 'https://i.pravatar.cc/150?u=john.doe@example.com',
+    role: 'admin',
+  }
+);

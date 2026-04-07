@@ -13,37 +13,40 @@ export interface SelectOption {
 /**
  *
  */
-export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+export interface SelectProps extends Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  'size'
+> {
   /**
    * Select label
    */
   label?: string;
-  
+
   /**
    * Helper text
    */
   helperText?: string;
-  
+
   /**
    * Error message
    */
   error?: string;
-  
+
   /**
    * Select size variant
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Full width select
    */
   fullWidth?: boolean;
-  
+
   /**
    * Select options
    */
   options: SelectOption[];
-  
+
   /**
    * Placeholder text
    */
@@ -52,7 +55,7 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
 
 /**
  * Select component for choosing from a list of options
- * 
+ *
  * @example
  * ```tsx
  * <Select
@@ -113,7 +116,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       ...sizeStyles[size],
       width: '100%',
       border: '1px solid',
-      borderColor: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-grey-300, #e0e0e0)',
+      borderColor: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-grey-300, #e0e0e0)',
       borderRadius: '0.375rem',
       outline: 'none',
       transition: 'all 0.2s ease-in-out',
@@ -128,13 +133,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const labelStyle: React.CSSProperties = {
       fontSize: '0.875rem',
       fontWeight: 500,
-      color: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-text-primary, #424242)',
+      color: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-text-primary, #424242)',
       marginBottom: '0.25rem',
     };
 
     const helperStyle: React.CSSProperties = {
       fontSize: '0.75rem',
-      color: hasError ? 'var(--color-error-main, #f44336)' : 'var(--color-text-secondary, #757575)',
+      color: hasError
+        ? 'var(--color-error-main, #f44336)'
+        : 'var(--color-text-secondary, #757575)',
       marginTop: '0.25rem',
     };
 
@@ -143,17 +152,30 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label htmlFor={selectId} style={labelStyle}>
             {label}
-            {props.required && <span style={{ color: 'var(--color-error-main, #f44336)', marginLeft: '0.25rem' }}>*</span>}
+            {props.required && (
+              <span
+                style={{
+                  color: 'var(--color-error-main, #f44336)',
+                  marginLeft: '0.25rem',
+                }}
+              >
+                *
+              </span>
+            )}
           </label>
         )}
-        
+
         <select
           ref={ref}
           id={selectId}
           style={selectStyle}
           aria-invalid={hasError}
           aria-describedby={
-            error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined
+            error
+              ? `${selectId}-error`
+              : helperText
+                ? `${selectId}-helper`
+                : undefined
           }
           {...props}
         >

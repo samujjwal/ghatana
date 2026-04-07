@@ -87,8 +87,8 @@ export class AuditLoggingMiddleware {
     private prisma: PrismaClient,
     private tenantExtractor: TenantExtractor,
     private actorExtractor: ActorExtractor = (req) =>
-      req.headers['x-user-id'] as string || 'anonymous'
-  ) { }
+      (req.headers['x-user-id'] as string) || 'anonymous'
+  ) {}
 
   /**
    * Creates Express middleware function.
@@ -165,9 +165,7 @@ export class AuditLoggingMiddleware {
       const severity = this.determineSeverity(res.statusCode);
 
       // Redact sensitive data
-      const sanitizedBody = this.redactSensitiveData(
-        req.body || {}
-      );
+      const sanitizedBody = this.redactSensitiveData(req.body || {});
       const sanitizedResponse = this.redactSensitiveData(
         typeof responseBody === 'string'
           ? JSON.parse(responseBody)
@@ -342,9 +340,7 @@ export class AuditLoggingMiddleware {
     }
 
     return (
-      req.socket.remoteAddress ||
-      req.connection.remoteAddress ||
-      'unknown'
+      req.socket.remoteAddress || req.connection.remoteAddress || 'unknown'
     );
   }
 
@@ -359,4 +355,3 @@ export class AuditLoggingMiddleware {
     return this.EXCLUDED_ROUTES.some((excluded) => path.startsWith(excluded));
   }
 }
-

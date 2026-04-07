@@ -4,27 +4,30 @@ import type { InputHTMLAttributes } from 'react';
 /**
  *
  */
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface CheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   /**
    * Checkbox label
    */
   label?: string;
-  
+
   /**
    * Helper text displayed below the checkbox
    */
   helperText?: string;
-  
+
   /**
    * Error message
    */
   error?: string;
-  
+
   /**
    * Checkbox size variant
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Indeterminate state
    */
@@ -33,7 +36,7 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 
 /**
  * Checkbox component for boolean selection
- * 
+ *
  * @example
  * ```tsx
  * <Checkbox
@@ -89,7 +92,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     };
 
     const labelTextStyle: React.CSSProperties = {
-      fontSize: size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
+      fontSize:
+        size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
       color: hasError ? '#f44336' : '#212121',
       userSelect: 'none',
     };
@@ -110,7 +114,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             style={checkboxStyle}
             aria-invalid={hasError}
             aria-describedby={
-              error ? `${checkboxId}-error` : helperText ? `${checkboxId}-helper` : undefined
+              error
+                ? `${checkboxId}-error`
+                : helperText
+                  ? `${checkboxId}-helper`
+                  : undefined
             }
             {...props}
           />

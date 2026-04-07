@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - IDE CRDT Handler
- * 
+ *
  * Handles IDE-specific CRDT operations and state management.
  * Integrates with existing CRDT core infrastructure.
- * 
+ *
  * @doc.type module
  * @doc.purpose IDE CRDT operation handler
  * @doc.layer product
@@ -20,7 +20,7 @@ import type { IDECRDTState } from './ide-schema';
 
 /**
  * IDE CRDT handler
- * 
+ *
  * Processes IDE-specific CRDT operations and updates state.
  */
 export class IDECRDTHandler {
@@ -36,7 +36,7 @@ export class IDECRDTHandler {
 
   /**
    * Apply IDE CRDT operation
-   * 
+   *
    * @doc.param operation - CRDT operation to apply
    * @doc.returns Operation result
    */
@@ -79,14 +79,20 @@ export class IDECRDTHandler {
           return { success: false, error: `Unknown operation type: ${type}` };
       }
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
   /**
    * Handle create file operation
    */
-  private handleCreateFile(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleCreateFile(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { path, content, language, metadata } = operation.data;
 
     // Check if file already exists
@@ -119,7 +125,10 @@ export class IDECRDTHandler {
   /**
    * Handle update file content operation
    */
-  private handleUpdateFileContent(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleUpdateFileContent(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { fileId, changes } = operation.data;
     const file = this.state.files.get(fileId);
 
@@ -156,7 +165,7 @@ export class IDECRDTHandler {
       }
       file.metadata.modifiedAt = operation.timestamp;
       file.metadata.modifiedBy = operation.replicaId;
-      file.metadata.size = (currentContent).length;
+      file.metadata.size = currentContent.length;
     }
 
     this.notifyListeners();
@@ -166,7 +175,10 @@ export class IDECRDTHandler {
   /**
    * Handle delete file operation
    */
-  private handleDeleteFile(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleDeleteFile(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { fileId } = operation.data;
     const file = this.state.files.get(fileId);
 
@@ -182,7 +194,7 @@ export class IDECRDTHandler {
       if (editorState.activeFileId === fileId) {
         editorState.activeFileId = null;
       }
-      editorState.openTabs = editorState.openTabs.filter(id => id !== fileId);
+      editorState.openTabs = editorState.openTabs.filter((id) => id !== fileId);
     }
 
     this.notifyListeners();
@@ -192,7 +204,10 @@ export class IDECRDTHandler {
   /**
    * Handle rename file operation
    */
-  private handleRenameFile(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleRenameFile(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { fileId, newPath, newLanguage } = operation.data;
     const file = this.state.files.get(fileId);
 
@@ -222,7 +237,10 @@ export class IDECRDTHandler {
   /**
    * Handle create folder operation
    */
-  private handleCreateFolder(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleCreateFolder(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { path, metadata } = operation.data;
 
     // Check if folder already exists
@@ -251,7 +269,10 @@ export class IDECRDTHandler {
   /**
    * Handle delete folder operation
    */
-  private handleDeleteFolder(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleDeleteFolder(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { folderId } = operation.data;
     const folder = this.state.folders.get(folderId);
 
@@ -279,7 +300,10 @@ export class IDECRDTHandler {
   /**
    * Handle rename folder operation
    */
-  private handleRenameFolder(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleRenameFolder(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { folderId, newPath } = operation.data;
     const folder = this.state.folders.get(folderId);
 
@@ -304,7 +328,10 @@ export class IDECRDTHandler {
   /**
    * Handle update editor state operation
    */
-  private handleUpdateEditorState(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleUpdateEditorState(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { userId, activeFileId, cursorPosition, selection } = operation.data;
 
     // Update or create editor state
@@ -331,8 +358,18 @@ export class IDECRDTHandler {
   /**
    * Handle update presence operation
    */
-  private handleUpdatePresence(operation: CRDTOperation): { success: boolean; error?: string } {
-    const { userId, userName, userColor, activeFileId, cursorPosition, lastActivity } = operation.data;
+  private handleUpdatePresence(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
+    const {
+      userId,
+      userName,
+      userColor,
+      activeFileId,
+      cursorPosition,
+      lastActivity,
+    } = operation.data;
 
     // Update presence
     this.state.presence.set(userId, {
@@ -353,7 +390,10 @@ export class IDECRDTHandler {
   /**
    * Handle create tab operation
    */
-  private handleCreateTab(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleCreateTab(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { tabId, fileId } = operation.data;
 
     // Allow creating tabs even if the file is not yet present in the IDE state.
@@ -384,7 +424,10 @@ export class IDECRDTHandler {
   /**
    * Handle close tab operation
    */
-  private handleCloseTab(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleCloseTab(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { tabId } = operation.data;
     const userId = operation.replicaId;
     const editorState = this.state.editorState.get(userId);
@@ -394,12 +437,15 @@ export class IDECRDTHandler {
     }
 
     // Remove from open tabs
-    editorState.openTabs = editorState.openTabs.filter(id => id !== tabId);
+    editorState.openTabs = editorState.openTabs.filter((id) => id !== tabId);
 
     // Update active file if needed
     if (editorState.activeFileId === tabId) {
       const remainingTabs = editorState.openTabs;
-      editorState.activeFileId = remainingTabs.length > 0 ? remainingTabs[remainingTabs.length - 1] : null;
+      editorState.activeFileId =
+        remainingTabs.length > 0
+          ? remainingTabs[remainingTabs.length - 1]
+          : null;
     }
 
     editorState.lastActivity = operation.timestamp;
@@ -413,7 +459,10 @@ export class IDECRDTHandler {
   /**
    * Handle update tab operation
    */
-  private handleUpdateTab(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleUpdateTab(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { tabId: _tabId, updates: _updates } = operation.data;
 
     // Tab updates are handled at the component level
@@ -426,7 +475,10 @@ export class IDECRDTHandler {
   /**
    * Handle move tab operation
    */
-  private handleMoveTab(operation: CRDTOperation): { success: boolean; error?: string } {
+  private handleMoveTab(operation: CRDTOperation): {
+    success: boolean;
+    error?: string;
+  } {
     const { tabId, newIndex } = operation.data;
     const userId = operation.replicaId;
     const editorState = this.state.editorState.get(userId);
@@ -452,7 +504,7 @@ export class IDECRDTHandler {
 
   /**
    * Get current state
-   * 
+   *
    * @doc.returns Current IDE CRDT state
    */
   getState(): IDECRDTState {
@@ -461,7 +513,7 @@ export class IDECRDTHandler {
 
   /**
    * Add state change listener
-   * 
+   *
    * @doc.param id - Listener ID
    * @doc.param listener - Listener function
    */
@@ -471,7 +523,7 @@ export class IDECRDTHandler {
 
   /**
    * Remove state change listener
-   * 
+   *
    * @doc.param id - Listener ID
    */
   removeListener(id: string): void {
@@ -489,7 +541,7 @@ export class IDECRDTHandler {
 
   /**
    * Get file content as string
-   * 
+   *
    * @doc.param fileId - File ID
    * @doc.returns File content
    */
@@ -506,7 +558,7 @@ export class IDECRDTHandler {
 
   /**
    * Set file content
-   * 
+   *
    * @doc.param fileId - File ID
    * @doc.param content - New content
    */

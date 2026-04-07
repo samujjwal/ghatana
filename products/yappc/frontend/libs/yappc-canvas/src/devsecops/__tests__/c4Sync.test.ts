@@ -25,7 +25,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
   describe('Configuration Creation', () => {
     it('should create default C4 sync config', () => {
       const config = createC4SyncConfig();
-      
+
       expect(config.autoSync).toBe(false);
       expect(config.validateOnSync).toBe(true);
       expect(config.defaultEnvironment).toBe('dev');
@@ -39,7 +39,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
         defaultEnvironment: 'production',
         enableEnvironmentOverlays: false,
       });
-      
+
       expect(config.autoSync).toBe(true);
       expect(config.defaultEnvironment).toBe('production');
       expect(config.enableEnvironmentOverlays).toBe(false);
@@ -51,7 +51,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should create initial sync state', () => {
       const config = createC4SyncConfig();
       const state = createC4SyncState(config);
-      
+
       expect(state.config).toBe(config);
       expect(state.workspace).toBeNull();
       expect(state.activeView).toBeNull();
@@ -77,9 +77,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           }
         }
       `;
-      
+
       const workspace = parseC4DSL(dsl);
-      
+
       expect(workspace.name).toBe('My System');
       expect(workspace.model.elements).toHaveLength(2);
       expect(workspace.model.elements[0]).toMatchObject({
@@ -122,9 +122,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           }
         }
       `;
-      
+
       const workspace = parseC4DSL(dsl);
-      
+
       expect(workspace.model.elements).toHaveLength(3);
       expect(workspace.model.elements[1]).toMatchObject({
         id: 'api',
@@ -153,9 +153,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           }
         }
       `;
-      
+
       const workspace = parseC4DSL(dsl);
-      
+
       expect(workspace.views).toHaveLength(2);
       expect(workspace.views[0].type).toBe('system-context');
       expect(workspace.views[1].type).toBe('container');
@@ -188,7 +188,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
 
     it('should convert workspace to canvas document', () => {
       const canvas = c4WorkspaceToCanvas(sampleWorkspace, 'context-1');
-      
+
       expect(canvas.id).toBe('c4-view-context-1');
       expect(canvas.version).toBe('1.0.0');
       expect(canvas.elementOrder).toHaveLength(5); // 3 nodes + 2 edges
@@ -198,7 +198,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should create nodes with correct properties', () => {
       const canvas = c4WorkspaceToCanvas(sampleWorkspace, 'context-1');
       const userNode = canvas.elements['user'];
-      
+
       expect(userNode).toBeDefined();
       expect(userNode.type).toBe('node');
       expect(userNode.data).toMatchObject({
@@ -212,7 +212,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should create edges with correct relationships', () => {
       const canvas = c4WorkspaceToCanvas(sampleWorkspace, 'context-1');
       const edge = canvas.elements['rel-1'];
-      
+
       expect(edge).toBeDefined();
       expect(edge.type).toBe('edge');
       if (edge.type === 'edge') {
@@ -240,9 +240,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           },
         ],
       };
-      
+
       const canvas = c4WorkspaceToCanvas(workspace, 'filtered');
-      
+
       expect(canvas.elements['user']).toBeDefined();
       expect(canvas.elements['api']).toBeDefined();
       expect(canvas.elements['db']).toBeUndefined();
@@ -255,7 +255,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should import DSL and update state', () => {
       const config = createC4SyncConfig();
       const state = createC4SyncState(config);
-      
+
       const dsl = `
         workspace "Import Test" {
           model {
@@ -270,9 +270,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           }
         }
       `;
-      
+
       const updated = importC4DSL(state, dsl);
-      
+
       expect(updated.workspace).toBeDefined();
       expect(updated.workspace?.name).toBe('Import Test');
       expect(updated.workspace?.model.elements).toHaveLength(2);
@@ -307,7 +307,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
 
     it('should set active view', () => {
       const updated = setActiveView(state, 'container-system');
-      
+
       expect(updated.activeView).toBe('container-system');
     });
 
@@ -319,7 +319,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
 
     it('should throw error when no workspace loaded', () => {
       const emptyState = createC4SyncState(createC4SyncConfig());
-      
+
       expect(() => {
         setActiveView(emptyState, 'any-view');
       }).toThrow('No workspace loaded');
@@ -335,15 +335,35 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           relationships: [],
         },
         views: [
-          { key: 'context-1', type: 'system-context', softwareSystemId: 'sys1', include: [] },
-          { key: 'container-1', type: 'container', softwareSystemId: 'sys1', include: [] },
-          { key: 'container-2', type: 'container', softwareSystemId: 'sys1', include: [] },
-          { key: 'component-1', type: 'component', containerId: 'api', include: [] },
+          {
+            key: 'context-1',
+            type: 'system-context',
+            softwareSystemId: 'sys1',
+            include: [],
+          },
+          {
+            key: 'container-1',
+            type: 'container',
+            softwareSystemId: 'sys1',
+            include: [],
+          },
+          {
+            key: 'container-2',
+            type: 'container',
+            softwareSystemId: 'sys1',
+            include: [],
+          },
+          {
+            key: 'component-1',
+            type: 'component',
+            containerId: 'api',
+            include: [],
+          },
         ],
       };
-      
+
       const hierarchy = buildViewHierarchy(workspace);
-      
+
       expect(hierarchy.systemContext).toHaveLength(1);
       expect(hierarchy.containers.get('sys1')).toHaveLength(2);
       expect(hierarchy.components.get('api')).toHaveLength(1);
@@ -355,9 +375,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
         model: { elements: [], relationships: [] },
         views: [],
       };
-      
+
       const hierarchy = buildViewHierarchy(workspace);
-      
+
       expect(hierarchy.systemContext).toHaveLength(0);
       expect(hierarchy.containers.size).toBe(0);
       expect(hierarchy.components.size).toBe(0);
@@ -377,9 +397,27 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
           relationships: [],
         },
         views: [
-          { key: 'context-sys', type: 'system-context', softwareSystemId: 'sys', include: [], title: 'System Context' },
-          { key: 'container-sys', type: 'container', softwareSystemId: 'sys', include: [], title: 'Containers' },
-          { key: 'component-api', type: 'component', containerId: 'api', include: [], title: 'Components' },
+          {
+            key: 'context-sys',
+            type: 'system-context',
+            softwareSystemId: 'sys',
+            include: [],
+            title: 'System Context',
+          },
+          {
+            key: 'container-sys',
+            type: 'container',
+            softwareSystemId: 'sys',
+            include: [],
+            title: 'Containers',
+          },
+          {
+            key: 'component-api',
+            type: 'component',
+            containerId: 'api',
+            include: [],
+            title: 'Components',
+          },
         ],
       };
       state = { ...state, workspace, activeView: 'context-sys' };
@@ -387,7 +425,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
 
     it('should drill down from context to container', () => {
       const updated = drillDown(state, 'sys');
-      
+
       expect(updated.activeView).toBe('container-sys');
       expect(updated.breadcrumbs).toHaveLength(1);
       expect(updated.breadcrumbs[0]).toMatchObject({
@@ -400,7 +438,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should drill down from container to component', () => {
       state = { ...state, activeView: 'container-sys' };
       const updated = drillDown(state, 'api');
-      
+
       expect(updated.activeView).toBe('component-api');
       expect(updated.breadcrumbs).toHaveLength(1);
     });
@@ -413,7 +451,7 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
 
     it('should throw error when no workspace', () => {
       const emptyState = createC4SyncState(createC4SyncConfig());
-      
+
       expect(() => {
         drillDown(emptyState, 'sys');
       }).toThrow('No workspace or active view');
@@ -428,30 +466,45 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
         name: 'Nav Test',
         model: { elements: [], relationships: [] },
         views: [
-          { key: 'context-sys', type: 'system-context', softwareSystemId: 'sys', include: [] },
-          { key: 'container-sys', type: 'container', softwareSystemId: 'sys', include: [] },
-          { key: 'component-api', type: 'component', containerId: 'api', include: [] },
+          {
+            key: 'context-sys',
+            type: 'system-context',
+            softwareSystemId: 'sys',
+            include: [],
+          },
+          {
+            key: 'container-sys',
+            type: 'container',
+            softwareSystemId: 'sys',
+            include: [],
+          },
+          {
+            key: 'component-api',
+            type: 'component',
+            containerId: 'api',
+            include: [],
+          },
         ],
       };
       state = { ...state, workspace, activeView: 'context-sys' };
-      
+
       // Drill down twice
       state = drillDown(state, 'sys');
       state = drillDown(state, 'api');
-      
+
       expect(state.breadcrumbs).toHaveLength(2);
       expect(state.activeView).toBe('component-api');
-      
+
       // Navigate up one level
       const updated = navigateUp(state, 0);
-      
+
       expect(updated.activeView).toBe('context-sys');
       expect(updated.breadcrumbs).toHaveLength(0);
     });
 
     it('should throw error for invalid breadcrumb index', () => {
       const state = createC4SyncState(createC4SyncConfig());
-      
+
       expect(() => {
         navigateUp(state, 5);
       }).toThrow('Invalid breadcrumb index');
@@ -462,9 +515,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should set active environment', () => {
       const config = createC4SyncConfig();
       const state = createC4SyncState(config);
-      
+
       const updated = setActiveEnvironment(state, 'production');
-      
+
       expect(updated.activeEnvironment).toBe('production');
     });
 
@@ -475,8 +528,18 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
         name: 'Env Test',
         model: {
           elements: [
-            { id: 'dev-svc', name: 'Dev Service', type: 'container', environment: 'dev' },
-            { id: 'prod-svc', name: 'Prod Service', type: 'container', environment: 'production' },
+            {
+              id: 'dev-svc',
+              name: 'Dev Service',
+              type: 'container',
+              environment: 'dev',
+            },
+            {
+              id: 'prod-svc',
+              name: 'Prod Service',
+              type: 'container',
+              environment: 'production',
+            },
             { id: 'all-svc', name: 'All Envs', type: 'container' },
           ],
           relationships: [],
@@ -484,9 +547,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
         views: [],
       };
       state = { ...state, workspace, activeEnvironment: 'production' };
-      
+
       const overlay = getEnvironmentOverlay(state);
-      
+
       expect(overlay.environment).toBe('production');
       expect(overlay.elementsToShow).toContain('prod-svc');
       expect(overlay.elementsToShow).toContain('all-svc');
@@ -497,9 +560,9 @@ describe.skip('Feature 2.21: C4 Modeling - c4Sync', () => {
     it('should return empty overlay when disabled', () => {
       const config = createC4SyncConfig({ enableEnvironmentOverlays: false });
       const state = createC4SyncState(config);
-      
+
       const overlay = getEnvironmentOverlay(state);
-      
+
       expect(overlay.elementsToShow).toHaveLength(0);
       expect(overlay.elementsToHide).toHaveLength(0);
       expect(overlay.styleOverrides.size).toBe(0);

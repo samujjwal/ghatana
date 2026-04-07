@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - File Explorer Component
- * 
+ *
  * File tree navigation component with collaborative features.
- * 
+ *
  * @doc.type component
  * @doc.purpose File tree navigation for IDE
  * @doc.layer product
@@ -113,11 +113,14 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 }) => {
   const paddingLeft = level * 16 + 8;
 
-  const handleClick = useCallback((event: React.MouseEvent) => {
-    if (isFile(node)) {
-      onFileClick((node).id, event);
-    }
-  }, [node, onFileClick]);
+  const handleClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (isFile(node)) {
+        onFileClick(node.id, event);
+      }
+    },
+    [node, onFileClick]
+  );
 
   if (isFile(node)) {
     const file = node;
@@ -144,7 +147,11 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
         </span>
         <span className="flex-1 truncate text-sm">
           {file.name}
-          {file.isDirty && <span className="ml-1 text-orange-500" title="Unsaved changes">●</span>}
+          {file.isDirty && (
+            <span className="ml-1 text-orange-500" title="Unsaved changes">
+              ●
+            </span>
+          )}
         </span>
         {showFileSize && (
           <span className="text-xs text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">
@@ -156,7 +163,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
             <input
               type="checkbox"
               checked={isSelected}
-              onChange={() => { }} // Handled by parent click
+              onChange={() => {}} // Handled by parent click
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               onClick={(e) => e.stopPropagation()}
             />
@@ -215,7 +222,7 @@ const FileTreeItem: React.FC<FileTreeItemProps> = ({
 
 /**
  * Enhanced File Explorer Component
- * 
+ *
  * @doc.param props - Component props
  * @doc.returns Enhanced file explorer component
  */
@@ -253,7 +260,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   // Guard against missing or uninitialized fileTree (e.g., during initial load)
   const flattenedTree = useMemo(() => {
     if (!fileTree) return [] as unknown[];
-    return flattenTree(fileTree.children as unknown[] || [], new Set()) as unknown[];
+    return flattenTree(
+      (fileTree.children as unknown[]) || [],
+      new Set()
+    ) as unknown[];
   }, [fileTree]);
 
   const virtualScroll = useVirtualScroll(
@@ -284,36 +294,42 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     [toggleFolderExpanded]
   );
 
-  const handleSearchResultSelect = useCallback((result: unknown) => {
-    handleFileClick(result.file.id, {} as React.MouseEvent);
-  }, [handleFileClick]);
+  const handleSearchResultSelect = useCallback(
+    (result: unknown) => {
+      handleFileClick(result.file.id, {} as React.MouseEvent);
+    },
+    [handleFileClick]
+  );
 
   // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (enableMultiSelect) {
-      switch (event.key) {
-        case 'a':
-        case 'A':
-          if (event.ctrlKey || event.metaKey) {
-            event.preventDefault();
-            // Select all would be implemented here
-          }
-          break;
-        case 'Delete':
-        case 'Backspace':
-          if (selectionCount > 0) {
-            event.preventDefault();
-            bulkDelete();
-          }
-          break;
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (enableMultiSelect) {
+        switch (event.key) {
+          case 'a':
+          case 'A':
+            if (event.ctrlKey || event.metaKey) {
+              event.preventDefault();
+              // Select all would be implemented here
+            }
+            break;
+          case 'Delete':
+          case 'Backspace':
+            if (selectionCount > 0) {
+              event.preventDefault();
+              bulkDelete();
+            }
+            break;
+        }
       }
-    }
-  }, [enableMultiSelect, selectionCount, bulkDelete]);
+    },
+    [enableMultiSelect, selectionCount, bulkDelete]
+  );
 
   // Render tree items (virtual or regular)
   const renderTreeItems = () => {
     const itemsToRender = enableVirtualScroll
-      ? virtualScroll.items.map(item => flattenedTree[item.index])
+      ? virtualScroll.items.map((item) => flattenedTree[item.index])
       : flattenedTree;
 
     return itemsToRender.map((node, _index) => {
@@ -430,7 +446,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
             <div className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300">
               <div className="animate-spin h-3 w-3 border border-blue-500 border-t-transparent rounded-full" />
               <span>
-                Performing bulk {bulkOperation.type} on {bulkOperation.fileIds.length} items...
+                Performing bulk {bulkOperation.type} on{' '}
+                {bulkOperation.fileIds.length} items...
               </span>
             </div>
           </div>
@@ -440,11 +457,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         <div
           className={`flex-1 overflow-auto ${enableVirtualScroll ? 'relative' : ''}`}
           style={{ maxHeight: enableVirtualScroll ? maxHeight : undefined }}
-          onScroll={enableVirtualScroll ? virtualScroll.handleScroll : undefined}
+          onScroll={
+            enableVirtualScroll ? virtualScroll.handleScroll : undefined
+          }
         >
           {/* If the file tree is not yet available (e.g., backend loading), show a placeholder */}
           {!fileTree ? (
-            <div className="p-4 text-sm text-gray-500">No workspace loaded — the file tree will appear here when available.</div>
+            <div className="p-4 text-sm text-gray-500">
+              No workspace loaded — the file tree will appear here when
+              available.
+            </div>
           ) : enableVirtualScroll ? (
             <>
               {/* Spacer for items above viewport */}
@@ -454,9 +476,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               {renderTreeItems()}
 
               {/* Spacer for items below viewport */}
-              <div style={{
-                height: virtualScroll.totalHeight - virtualScroll.offsetY - (virtualScroll.items.length * itemHeight)
-              }} />
+              <div
+                style={{
+                  height:
+                    virtualScroll.totalHeight -
+                    virtualScroll.offsetY -
+                    virtualScroll.items.length * itemHeight,
+                }}
+              />
             </>
           ) : (
             renderTreeItems()
@@ -465,7 +492,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
         {/* Status Bar */}
         <div className="px-3 py-1 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-          {Object.keys(files).length} files • {Object.keys(files).filter(f => files[f].isDirty).length} dirty
+          {Object.keys(files).length} files •{' '}
+          {Object.keys(files).filter((f) => files[f].isDirty).length} dirty
           {enableVirtualScroll && ` • Virtual scrolling enabled`}
         </div>
       </div>

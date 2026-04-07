@@ -76,8 +76,16 @@ describe('MonitoringManager', () => {
     });
 
     it('should get all exporters', () => {
-      manager.createExporter({ prefix: 'canvas', endpoint: '/metrics', scrapeInterval: 15000 });
-      manager.createExporter({ prefix: 'api', endpoint: '/api/metrics', scrapeInterval: 10000 });
+      manager.createExporter({
+        prefix: 'canvas',
+        endpoint: '/metrics',
+        scrapeInterval: 15000,
+      });
+      manager.createExporter({
+        prefix: 'api',
+        endpoint: '/api/metrics',
+        scrapeInterval: 10000,
+      });
 
       const exporters = manager.getAllExporters();
       expect(exporters).toHaveLength(2);
@@ -139,7 +147,9 @@ describe('MonitoringManager', () => {
         labels: ['canvas_id'],
       });
 
-      manager.recordMetric(exporter.id, 'render_fps', 60, { canvas_id: 'main' });
+      manager.recordMetric(exporter.id, 'render_fps', 60, {
+        canvas_id: 'main',
+      });
 
       const retrieved = manager.getExporter(exporter.id);
       expect(retrieved?.samples).toHaveLength(1);
@@ -181,7 +191,9 @@ describe('MonitoringManager', () => {
         labels: ['canvas_id'],
       });
 
-      manager.recordMetric(exporter.id, 'render_fps', 60, { canvas_id: 'main' });
+      manager.recordMetric(exporter.id, 'render_fps', 60, {
+        canvas_id: 'main',
+      });
 
       const output = manager.exportPrometheusMetrics(exporter.id);
 
@@ -368,7 +380,7 @@ describe('MonitoringManager', () => {
 
       const instance1 = manager.fireAlert(rule.id, 1);
       const instance2 = manager.fireAlert(rule.id, 2);
-      
+
       // Resolve second alert before checking
       manager.resolveAlert(instance2.id);
 
@@ -716,7 +728,11 @@ describe('MonitoringManager', () => {
 
   describe('Reset Operations', () => {
     it('should reset manager state', () => {
-      manager.createExporter({ prefix: 'test', endpoint: '/metrics', scrapeInterval: 15000 });
+      manager.createExporter({
+        prefix: 'test',
+        endpoint: '/metrics',
+        scrapeInterval: 15000,
+      });
       manager.createAlertRule({
         name: 'Test',
         expr: 'test > 0',

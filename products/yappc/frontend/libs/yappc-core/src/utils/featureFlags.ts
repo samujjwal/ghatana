@@ -18,7 +18,7 @@ export function getFeatureFlags(): FeatureFlags {
   try {
     const flags = process.env.NEXT_PUBLIC_FEATURE_FLAGS;
     if (!flags) return DEFAULT_FEATURES;
-    
+
     const parsed = JSON.parse(flags);
     return { ...DEFAULT_FEATURES, ...parsed };
   } catch (error) {

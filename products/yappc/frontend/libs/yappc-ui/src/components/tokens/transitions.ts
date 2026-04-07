@@ -1,6 +1,6 @@
 /**
  * Transition tokens for the design system
- * 
+ *
  * These tokens define the animation and transition styles for the application,
  * with consistent timing and easing for interactive elements.
  */
@@ -13,31 +13,31 @@ export const durations = {
    * Instant transitions (no animation)
    */
   instant: 0,
-  
+
   /**
    * Very fast transitions (75ms)
    * Use for micro-interactions
    */
   fastest: 75,
-  
+
   /**
    * Fast transitions (150ms)
    * Use for simple hover states
    */
   fast: 150,
-  
+
   /**
    * Normal transitions (250ms)
    * Default for most interactions
    */
   normal: 250,
-  
+
   /**
    * Slow transitions (350ms)
    * Use for complex state changes
    */
   slow: 350,
-  
+
   /**
    * Very slow transitions (500ms)
    * Use for page transitions or major layout changes
@@ -53,42 +53,42 @@ export const easings = {
    * Linear easing - constant speed
    */
   linear: 'linear',
-  
+
   /**
    * Ease - gradual acceleration and deceleration
    * Best for general use
    */
   ease: 'ease',
-  
+
   /**
    * Ease in - slow start, fast end
    */
   easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
-  
+
   /**
    * Ease out - fast start, slow end
    * Best for enter animations
    */
   easeOut: 'cubic-bezier(0, 0, 0.2, 1)',
-  
+
   /**
    * Ease in-out - slow start and end
    * Best for state changes
    */
   easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  
+
   /**
    * Sharp - quick start and end
    * Use for temporary objects (tooltips, popovers)
    */
   sharp: 'cubic-bezier(0.4, 0, 0.6, 1)',
-  
+
   /**
    * Emphasized - pronounced ease
    * Use for attention-grabbing animations
    */
   emphasized: 'cubic-bezier(0.2, 0, 0, 1)',
-  
+
   /**
    * Bounce - playful bounce effect
    * Use sparingly for delight
@@ -104,27 +104,27 @@ export const properties = {
    * All properties
    */
   all: 'all',
-  
+
   /**
    * Color properties
    */
   colors: 'background-color, border-color, color, fill, stroke',
-  
+
   /**
    * Opacity
    */
   opacity: 'opacity',
-  
+
   /**
    * Shadow
    */
   shadow: 'box-shadow',
-  
+
   /**
    * Transform
    */
   transform: 'transform',
-  
+
   /**
    * Layout properties
    */
@@ -139,47 +139,47 @@ export const transitions = {
    * Default transition for most elements
    */
   default: `${properties.all} ${durations.normal}ms ${easings.easeInOut}`,
-  
+
   /**
    * Hover state transition
    */
   hover: `${properties.colors} ${durations.fast}ms ${easings.easeOut}, ${properties.shadow} ${durations.fast}ms ${easings.easeOut}`,
-  
+
   /**
    * Focus state transition
    */
   focus: `${properties.colors} ${durations.fast}ms ${easings.easeOut}, box-shadow ${durations.fast}ms ${easings.easeOut}`,
-  
+
   /**
    * Active/pressed state
    */
   active: `${properties.transform} ${durations.fastest}ms ${easings.sharp}`,
-  
+
   /**
    * Fade in/out
    */
   fade: `${properties.opacity} ${durations.normal}ms ${easings.easeInOut}`,
-  
+
   /**
    * Slide transitions
    */
   slide: `${properties.transform} ${durations.normal}ms ${easings.easeOut}`,
-  
+
   /**
    * Scale transitions
    */
   scale: `${properties.transform} ${durations.fast}ms ${easings.easeOut}`,
-  
+
   /**
    * Color transitions
    */
   color: `${properties.colors} ${durations.normal}ms ${easings.easeInOut}`,
-  
+
   /**
    * Shadow transitions (for elevation changes)
    */
   elevation: `${properties.shadow} ${durations.normal}ms ${easings.easeOut}`,
-  
+
   /**
    * Layout transitions (use sparingly - can cause reflows)
    */
@@ -202,7 +202,7 @@ export const animations = {
     timing: easings.linear,
     iteration: 'infinite',
   },
-  
+
   /**
    * Pulse animation
    */
@@ -215,7 +215,7 @@ export const animations = {
     timing: easings.easeInOut,
     iteration: 'infinite',
   },
-  
+
   /**
    * Ping animation (expanding ring)
    */
@@ -228,7 +228,7 @@ export const animations = {
     timing: easings.easeOut,
     iteration: 'infinite',
   },
-  
+
   /**
    * Bounce animation
    */
@@ -241,7 +241,7 @@ export const animations = {
     duration: durations.slow,
     timing: easings.bounce,
   },
-  
+
   /**
    * Slide in from top
    */
@@ -253,7 +253,7 @@ export const animations = {
     duration: durations.normal,
     timing: easings.easeOut,
   },
-  
+
   /**
    * Slide in from bottom
    */
@@ -269,7 +269,7 @@ export const animations = {
 
 /**
  * Reduced motion preferences
- * 
+ *
  * @example
  * ```css
  * @media (prefers-reduced-motion: reduce) {
@@ -284,12 +284,12 @@ export const reducedMotion = {
    * Duration for reduced motion (very short or none)
    */
   duration: durations.fastest,
-  
+
   /**
    * Easing for reduced motion (simple)
    */
   easing: easings.linear,
-  
+
   /**
    * Transition for reduced motion
    */

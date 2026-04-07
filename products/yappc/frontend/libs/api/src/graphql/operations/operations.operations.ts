@@ -410,7 +410,7 @@ export const POSTMORTEM_FRAGMENT = gql`
 
 export const GET_INCIDENT = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   query GetIncident($id: ID!) {
     incident(id: $id) {
       ...IncidentFields
@@ -440,7 +440,7 @@ export const GET_INCIDENT = gql`
 
 export const LIST_INCIDENTS = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   query ListIncidents(
     $projectId: ID!
     $filter: IncidentFilter
@@ -485,7 +485,7 @@ export const LIST_INCIDENTS = gql`
 
 export const GET_ACTIVE_INCIDENTS = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   query GetActiveIncidents($projectId: ID!) {
     activeIncidents(projectId: $projectId) {
       ...IncidentFields
@@ -495,7 +495,7 @@ export const GET_ACTIVE_INCIDENTS = gql`
 
 export const GET_ALERT = gql`
   ${ALERT_FRAGMENT}
-  
+
   query GetAlert($id: ID!) {
     alert(id: $id) {
       ...AlertFields
@@ -514,7 +514,7 @@ export const GET_ALERT = gql`
 
 export const LIST_ALERTS = gql`
   ${ALERT_FRAGMENT}
-  
+
   query ListAlerts(
     $projectId: ID!
     $filter: AlertFilter
@@ -548,7 +548,7 @@ export const LIST_ALERTS = gql`
 
 export const GET_DASHBOARD = gql`
   ${DASHBOARD_FRAGMENT}
-  
+
   query GetDashboard($id: ID!) {
     dashboard(id: $id) {
       ...DashboardFields
@@ -558,7 +558,7 @@ export const GET_DASHBOARD = gql`
 
 export const LIST_DASHBOARDS = gql`
   ${DASHBOARD_FRAGMENT}
-  
+
   query ListDashboards($projectId: ID!, $filter: DashboardFilter) {
     dashboards(projectId: $projectId, filter: $filter) {
       ...DashboardFields
@@ -592,7 +592,7 @@ export const QUERY_METRICS = gql`
 
 export const GET_RUNBOOK = gql`
   ${RUNBOOK_FRAGMENT}
-  
+
   query GetRunbook($id: ID!) {
     runbook(id: $id) {
       ...RunbookFields
@@ -620,7 +620,7 @@ export const GET_RUNBOOK = gql`
 
 export const LIST_RUNBOOKS = gql`
   ${RUNBOOK_FRAGMENT}
-  
+
   query ListRunbooks($projectId: ID!, $filter: RunbookFilter) {
     runbooks(projectId: $projectId, filter: $filter) {
       ...RunbookFields
@@ -630,7 +630,7 @@ export const LIST_RUNBOOKS = gql`
 
 export const GET_SERVICE = gql`
   ${SERVICE_FRAGMENT}
-  
+
   query GetService($id: ID!) {
     service(id: $id) {
       ...ServiceFields
@@ -653,7 +653,7 @@ export const GET_SERVICE = gql`
 
 export const LIST_SERVICES = gql`
   ${SERVICE_FRAGMENT}
-  
+
   query ListServices($projectId: ID!, $filter: ServiceFilter) {
     services(projectId: $projectId, filter: $filter) {
       ...ServiceFields
@@ -694,7 +694,7 @@ export const GET_SERVICE_MAP = gql`
 
 export const SEARCH_LOGS = gql`
   ${LOG_ENTRY_FRAGMENT}
-  
+
   query SearchLogs($projectId: ID!, $query: LogQueryInput!) {
     searchLogs(projectId: $projectId, query: $query) {
       entries {
@@ -723,7 +723,7 @@ export const SEARCH_LOGS = gql`
 
 export const GET_LOG_CONTEXT = gql`
   ${LOG_ENTRY_FRAGMENT}
-  
+
   query GetLogContext($id: ID!, $before: Int, $after: Int) {
     logContext(id: $id, before: $before, after: $after) {
       before {
@@ -741,7 +741,7 @@ export const GET_LOG_CONTEXT = gql`
 
 export const GET_ON_CALL_SCHEDULE = gql`
   ${ON_CALL_SCHEDULE_FRAGMENT}
-  
+
   query GetOnCallSchedule($id: ID!) {
     onCallSchedule(id: $id) {
       ...OnCallScheduleFields
@@ -751,7 +751,7 @@ export const GET_ON_CALL_SCHEDULE = gql`
 
 export const LIST_ON_CALL_SCHEDULES = gql`
   ${ON_CALL_SCHEDULE_FRAGMENT}
-  
+
   query ListOnCallSchedules($projectId: ID!) {
     onCallSchedules(projectId: $projectId) {
       ...OnCallScheduleFields
@@ -761,7 +761,7 @@ export const LIST_ON_CALL_SCHEDULES = gql`
 
 export const GET_POSTMORTEM = gql`
   ${POSTMORTEM_FRAGMENT}
-  
+
   query GetPostmortem($id: ID!) {
     postmortem(id: $id) {
       ...PostmortemFields
@@ -771,7 +771,7 @@ export const GET_POSTMORTEM = gql`
 
 export const LIST_POSTMORTEMS = gql`
   ${POSTMORTEM_FRAGMENT}
-  
+
   query ListPostmortems($projectId: ID!, $pagination: PaginationInput) {
     postmortems(projectId: $projectId, pagination: $pagination) {
       edges {
@@ -836,7 +836,7 @@ export const GET_OPS_OVERVIEW = gql`
 
 export const CREATE_INCIDENT = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   mutation CreateIncident($projectId: ID!, $input: CreateIncidentInput!) {
     createIncident(projectId: $projectId, input: $input) {
       ...IncidentFields
@@ -846,7 +846,7 @@ export const CREATE_INCIDENT = gql`
 
 export const UPDATE_INCIDENT = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   mutation UpdateIncident($id: ID!, $input: UpdateIncidentInput!) {
     updateIncident(id: $id, input: $input) {
       ...IncidentFields
@@ -856,8 +856,12 @@ export const UPDATE_INCIDENT = gql`
 
 export const UPDATE_INCIDENT_STATUS = gql`
   ${INCIDENT_FRAGMENT}
-  
-  mutation UpdateIncidentStatus($id: ID!, $status: IncidentStatus!, $note: String) {
+
+  mutation UpdateIncidentStatus(
+    $id: ID!
+    $status: IncidentStatus!
+    $note: String
+  ) {
     updateIncidentStatus(id: $id, status: $status, note: $note) {
       ...IncidentFields
     }
@@ -866,7 +870,7 @@ export const UPDATE_INCIDENT_STATUS = gql`
 
 export const ACKNOWLEDGE_INCIDENT = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   mutation AcknowledgeIncident($id: ID!) {
     acknowledgeIncident(id: $id) {
       ...IncidentFields
@@ -876,7 +880,7 @@ export const ACKNOWLEDGE_INCIDENT = gql`
 
 export const RESOLVE_INCIDENT = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   mutation ResolveIncident($id: ID!, $resolution: String!) {
     resolveIncident(id: $id, resolution: $resolution) {
       ...IncidentFields
@@ -886,7 +890,7 @@ export const RESOLVE_INCIDENT = gql`
 
 export const ASSIGN_INCIDENT_COMMANDER = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   mutation AssignIncidentCommander($id: ID!, $commanderId: ID!) {
     assignIncidentCommander(id: $id, commanderId: $commanderId) {
       ...IncidentFields
@@ -895,7 +899,10 @@ export const ASSIGN_INCIDENT_COMMANDER = gql`
 `;
 
 export const ADD_INCIDENT_TIMELINE_EVENT = gql`
-  mutation AddIncidentTimelineEvent($incidentId: ID!, $input: TimelineEventInput!) {
+  mutation AddIncidentTimelineEvent(
+    $incidentId: ID!
+    $input: TimelineEventInput!
+  ) {
     addIncidentTimelineEvent(incidentId: $incidentId, input: $input) {
       id
       timestamp
@@ -910,8 +917,16 @@ export const ADD_INCIDENT_TIMELINE_EVENT = gql`
 `;
 
 export const SEND_WAR_ROOM_MESSAGE = gql`
-  mutation SendWarRoomMessage($incidentId: ID!, $content: String!, $type: MessageType) {
-    sendWarRoomMessage(incidentId: $incidentId, content: $content, type: $type) {
+  mutation SendWarRoomMessage(
+    $incidentId: ID!
+    $content: String!
+    $type: MessageType
+  ) {
+    sendWarRoomMessage(
+      incidentId: $incidentId
+      content: $content
+      type: $type
+    ) {
       id
       content
       timestamp
@@ -927,7 +942,7 @@ export const SEND_WAR_ROOM_MESSAGE = gql`
 
 export const ACKNOWLEDGE_ALERT = gql`
   ${ALERT_FRAGMENT}
-  
+
   mutation AcknowledgeAlert($id: ID!, $note: String) {
     acknowledgeAlert(id: $id, note: $note) {
       ...AlertFields
@@ -937,7 +952,7 @@ export const ACKNOWLEDGE_ALERT = gql`
 
 export const RESOLVE_ALERT = gql`
   ${ALERT_FRAGMENT}
-  
+
   mutation ResolveAlert($id: ID!, $note: String) {
     resolveAlert(id: $id, note: $note) {
       ...AlertFields
@@ -947,7 +962,7 @@ export const RESOLVE_ALERT = gql`
 
 export const SILENCE_ALERT = gql`
   ${ALERT_FRAGMENT}
-  
+
   mutation SilenceAlert($id: ID!, $duration: Int!, $reason: String) {
     silenceAlert(id: $id, duration: $duration, reason: $reason) {
       ...AlertFields
@@ -974,7 +989,7 @@ export const LINK_ALERT_TO_INCIDENT = gql`
 
 export const CREATE_DASHBOARD = gql`
   ${DASHBOARD_FRAGMENT}
-  
+
   mutation CreateDashboard($projectId: ID!, $input: CreateDashboardInput!) {
     createDashboard(projectId: $projectId, input: $input) {
       ...DashboardFields
@@ -984,7 +999,7 @@ export const CREATE_DASHBOARD = gql`
 
 export const UPDATE_DASHBOARD = gql`
   ${DASHBOARD_FRAGMENT}
-  
+
   mutation UpdateDashboard($id: ID!, $input: UpdateDashboardInput!) {
     updateDashboard(id: $id, input: $input) {
       ...DashboardFields
@@ -1044,7 +1059,7 @@ export const DELETE_DASHBOARD_WIDGET = gql`
 
 export const CREATE_RUNBOOK = gql`
   ${RUNBOOK_FRAGMENT}
-  
+
   mutation CreateRunbook($projectId: ID!, $input: CreateRunbookInput!) {
     createRunbook(projectId: $projectId, input: $input) {
       ...RunbookFields
@@ -1054,7 +1069,7 @@ export const CREATE_RUNBOOK = gql`
 
 export const UPDATE_RUNBOOK = gql`
   ${RUNBOOK_FRAGMENT}
-  
+
   mutation UpdateRunbook($id: ID!, $input: UpdateRunbookInput!) {
     updateRunbook(id: $id, input: $input) {
       ...RunbookFields
@@ -1091,7 +1106,7 @@ export const CANCEL_RUNBOOK_EXECUTION = gql`
 
 export const CREATE_SERVICE = gql`
   ${SERVICE_FRAGMENT}
-  
+
   mutation CreateService($projectId: ID!, $input: CreateServiceInput!) {
     createService(projectId: $projectId, input: $input) {
       ...ServiceFields
@@ -1101,7 +1116,7 @@ export const CREATE_SERVICE = gql`
 
 export const UPDATE_SERVICE = gql`
   ${SERVICE_FRAGMENT}
-  
+
   mutation UpdateService($id: ID!, $input: UpdateServiceInput!) {
     updateService(id: $id, input: $input) {
       ...ServiceFields
@@ -1118,7 +1133,10 @@ export const DELETE_SERVICE = gql`
 `;
 
 export const CREATE_ON_CALL_OVERRIDE = gql`
-  mutation CreateOnCallOverride($scheduleId: ID!, $input: OnCallOverrideInput!) {
+  mutation CreateOnCallOverride(
+    $scheduleId: ID!
+    $input: OnCallOverrideInput!
+  ) {
     createOnCallOverride(scheduleId: $scheduleId, input: $input) {
       id
       user {
@@ -1142,7 +1160,7 @@ export const DELETE_ON_CALL_OVERRIDE = gql`
 
 export const CREATE_POSTMORTEM = gql`
   ${POSTMORTEM_FRAGMENT}
-  
+
   mutation CreatePostmortem($incidentId: ID!) {
     createPostmortem(incidentId: $incidentId) {
       ...PostmortemFields
@@ -1152,7 +1170,7 @@ export const CREATE_POSTMORTEM = gql`
 
 export const UPDATE_POSTMORTEM = gql`
   ${POSTMORTEM_FRAGMENT}
-  
+
   mutation UpdatePostmortem($id: ID!, $input: UpdatePostmortemInput!) {
     updatePostmortem(id: $id, input: $input) {
       ...PostmortemFields
@@ -1162,7 +1180,7 @@ export const UPDATE_POSTMORTEM = gql`
 
 export const PUBLISH_POSTMORTEM = gql`
   ${POSTMORTEM_FRAGMENT}
-  
+
   mutation PublishPostmortem($id: ID!) {
     publishPostmortem(id: $id) {
       ...PostmortemFields
@@ -1171,7 +1189,10 @@ export const PUBLISH_POSTMORTEM = gql`
 `;
 
 export const ADD_POSTMORTEM_ACTION_ITEM = gql`
-  mutation AddPostmortemActionItem($postmortemId: ID!, $input: ActionItemInput!) {
+  mutation AddPostmortemActionItem(
+    $postmortemId: ID!
+    $input: ActionItemInput!
+  ) {
     addPostmortemActionItem(postmortemId: $postmortemId, input: $input) {
       id
       title
@@ -1203,7 +1224,7 @@ export const UPDATE_ACTION_ITEM_STATUS = gql`
 
 export const SUBSCRIBE_TO_INCIDENT_UPDATES = gql`
   ${INCIDENT_FRAGMENT}
-  
+
   subscription OnIncidentUpdate($incidentId: ID!) {
     incidentUpdated(incidentId: $incidentId) {
       type
@@ -1233,7 +1254,7 @@ export const SUBSCRIBE_TO_WAR_ROOM = gql`
 
 export const SUBSCRIBE_TO_ALERTS = gql`
   ${ALERT_FRAGMENT}
-  
+
   subscription OnAlertChange($projectId: ID!) {
     alertChanged(projectId: $projectId) {
       type
@@ -1246,7 +1267,7 @@ export const SUBSCRIBE_TO_ALERTS = gql`
 
 export const SUBSCRIBE_TO_SERVICE_STATUS = gql`
   ${SERVICE_FRAGMENT}
-  
+
   subscription OnServiceStatusChange($projectId: ID!) {
     serviceStatusChanged(projectId: $projectId) {
       ...ServiceFields
@@ -1270,7 +1291,7 @@ export const SUBSCRIBE_TO_METRICS = gql`
 
 export const SUBSCRIBE_TO_LOG_STREAM = gql`
   ${LOG_ENTRY_FRAGMENT}
-  
+
   subscription OnLogEntry($projectId: ID!, $filter: LogFilterInput) {
     logEntry(projectId: $projectId, filter: $filter) {
       ...LogEntryFields
@@ -1352,7 +1373,14 @@ export interface UpdateDashboardInput {
 }
 
 export interface WidgetInput {
-  type: 'line_chart' | 'bar_chart' | 'gauge' | 'stat' | 'table' | 'heatmap' | 'logs';
+  type:
+    | 'line_chart'
+    | 'bar_chart'
+    | 'gauge'
+    | 'stat'
+    | 'table'
+    | 'heatmap'
+    | 'logs';
   title: string;
   position: { x: number; y: number; width: number; height: number };
   config: {
@@ -1553,6 +1581,15 @@ export interface ServiceFilter {
   search?: string;
 }
 
-export type IncidentStatus = 'triggered' | 'acknowledged' | 'investigating' | 'mitigating' | 'resolved';
+export type IncidentStatus =
+  | 'triggered'
+  | 'acknowledged'
+  | 'investigating'
+  | 'mitigating'
+  | 'resolved';
 export type MessageType = 'message' | 'status_update' | 'action' | 'system';
-export type ActionItemStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
+export type ActionItemStatus =
+  | 'open'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';

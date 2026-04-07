@@ -7,7 +7,10 @@ export interface JwtRuntimeConfig {
 
 type EnvironmentMap = NodeJS.ProcessEnv;
 
-function requireSecret(name: 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET', env: EnvironmentMap): string {
+function requireSecret(
+  name: 'JWT_ACCESS_SECRET' | 'JWT_REFRESH_SECRET',
+  env: EnvironmentMap
+): string {
   const value = env[name];
   if (!value) {
     throw new Error(`${name} is required`);

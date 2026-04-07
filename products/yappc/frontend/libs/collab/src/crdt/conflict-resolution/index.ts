@@ -102,7 +102,10 @@ export class ConflictResolutionEngine {
    * @param operationB - Second operation
    * @returns Detected conflicts
    */
-  public detectConflicts(operationA: CRDTOperation, operationB: CRDTOperation): Conflict[] {
+  public detectConflicts(
+    operationA: CRDTOperation,
+    operationB: CRDTOperation
+  ): Conflict[] {
     const conflicts: Conflict[] = [];
 
     // Check if operations target the same resource
@@ -121,7 +124,9 @@ export class ConflictResolutionEngine {
       operationB.type === 'insert' &&
       this.targetsSamePosition(operationA, operationB)
     ) {
-      conflicts.push(this.createConflict('ordering-conflict', operationA, operationB));
+      conflicts.push(
+        this.createConflict('ordering-conflict', operationA, operationB)
+      );
     }
 
     // Concurrent update conflict
@@ -131,7 +136,9 @@ export class ConflictResolutionEngine {
       operationB.type === 'update' &&
       this.touchesSameField(operationA, operationB)
     ) {
-      conflicts.push(this.createConflict('concurrent-update', operationA, operationB));
+      conflicts.push(
+        this.createConflict('concurrent-update', operationA, operationB)
+      );
     }
 
     // Concurrent delete conflict
@@ -140,7 +147,9 @@ export class ConflictResolutionEngine {
       operationA.type === 'delete' &&
       operationB.type === 'delete'
     ) {
-      conflicts.push(this.createConflict('concurrent-delete', operationA, operationB));
+      conflicts.push(
+        this.createConflict('concurrent-delete', operationA, operationB)
+      );
     }
 
     // Update-delete conflict
@@ -148,14 +157,18 @@ export class ConflictResolutionEngine {
       (operationA.type === 'update' && operationB.type === 'delete') ||
       (operationA.type === 'delete' && operationB.type === 'update')
     ) {
-      conflicts.push(this.createConflict('structural-conflict', operationA, operationB));
+      conflicts.push(
+        this.createConflict('structural-conflict', operationA, operationB)
+      );
     }
 
     if (
-      ((operationA.type === 'delete' && operationB.type === 'insert') ||
-        (operationA.type === 'insert' && operationB.type === 'delete'))
+      (operationA.type === 'delete' && operationB.type === 'insert') ||
+      (operationA.type === 'insert' && operationB.type === 'delete')
     ) {
-      conflicts.push(this.createConflict('structural-conflict', operationA, operationB));
+      conflicts.push(
+        this.createConflict('structural-conflict', operationA, operationB)
+      );
     }
 
     // Move conflict
@@ -164,7 +177,9 @@ export class ConflictResolutionEngine {
       operationA.type === 'move' &&
       operationB.type === 'move'
     ) {
-      conflicts.push(this.createConflict('move-conflict', operationA, operationB));
+      conflicts.push(
+        this.createConflict('move-conflict', operationA, operationB)
+      );
     }
 
     return conflicts;
@@ -173,7 +188,10 @@ export class ConflictResolutionEngine {
   /**
    *
    */
-  private isConcurrent(a: CRDTOperation['vectorClock'], b: CRDTOperation['vectorClock']): boolean {
+  private isConcurrent(
+    a: CRDTOperation['vectorClock'],
+    b: CRDTOperation['vectorClock']
+  ): boolean {
     let aGreater = false;
     let bGreater = false;
 
@@ -197,7 +215,10 @@ export class ConflictResolutionEngine {
   /**
    *
    */
-  private touchesSameField(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
+  private touchesSameField(
+    operationA: CRDTOperation,
+    operationB: CRDTOperation
+  ): boolean {
     const fieldsA = this.extractFieldNames(operationA.data);
     const fieldsB = this.extractFieldNames(operationB.data);
 
@@ -232,14 +253,19 @@ export class ConflictResolutionEngine {
       return new Set(Object.keys(payload));
     }
 
-    const keys = Object.keys(data).filter((key) => !['field', 'value', 'position', 'index'].includes(key));
+    const keys = Object.keys(data).filter(
+      (key) => !['field', 'value', 'position', 'index'].includes(key)
+    );
     return new Set(keys);
   }
 
   /**
    *
    */
-  private targetsSamePosition(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
+  private targetsSamePosition(
+    operationA: CRDTOperation,
+    operationB: CRDTOperation
+  ): boolean {
     const positionA = this.extractPosition(operationA.data);
     const positionB = this.extractPosition(operationB.data);
 
@@ -334,7 +360,8 @@ export class ConflictResolutionEngine {
   public analyzeConflict(conflict: Conflict): ConflictAnalysis {
     const suggestions = this.generateResolutionSuggestions(conflict);
     const autoResolution = this.getAutoResolution(conflict);
-    const canAutoResolve = autoResolution.resolved || suggestions.some((s) => s.confidence > 0.8);
+    const canAutoResolve =
+      autoResolution.resolved || suggestions.some((s) => s.confidence > 0.8);
 
     return {
       id: `analysis-${Date.now()}`,
@@ -352,7 +379,9 @@ export class ConflictResolutionEngine {
    * @param conflict - Conflict
    * @returns Resolution suggestions
    */
-  private generateResolutionSuggestions(conflict: Conflict): ResolutionSuggestion[] {
+  private generateResolutionSuggestions(
+    conflict: Conflict
+  ): ResolutionSuggestion[] {
     const suggestions: ResolutionSuggestion[] = [];
     const autoResolution = this.getAutoResolution(conflict);
 
@@ -364,7 +393,9 @@ export class ConflictResolutionEngine {
         confidence: 0.95,
         resultingValue: autoResolution.operations,
         pros: ['Deterministic', 'Fast', 'Preserves collaboration flow'],
-        cons: ['Rule-based resolution may still need user review for semantic intent'],
+        cons: [
+          'Rule-based resolution may still need user review for semantic intent',
+        ],
       });
     }
 
@@ -507,14 +538,20 @@ export class ConflictResolutionEngine {
           break;
 
         case 'merge':
-          resolvedValue = this.mergeValues(conflict.operationA.data, conflict.operationB.data);
+          resolvedValue = this.mergeValues(
+            conflict.operationA.data,
+            conflict.operationB.data
+          );
           break;
 
         case 'custom':
           if (!customResolver) {
             throw new Error('Custom resolver required for custom strategy');
           }
-          resolvedValue = customResolver(conflict.operationA.data, conflict.operationB.data);
+          resolvedValue = customResolver(
+            conflict.operationA.data,
+            conflict.operationB.data
+          );
           break;
 
         default:
@@ -526,7 +563,10 @@ export class ConflictResolutionEngine {
 
       // Update statistics
       this.statistics.totalResolved++;
-      this.statistics.totalPending = Math.max(0, this.statistics.totalPending - 1);
+      this.statistics.totalPending = Math.max(
+        0,
+        this.statistics.totalPending - 1
+      );
 
       return {
         id: `resolution-${Date.now()}`,
@@ -617,13 +657,20 @@ export class ConflictResolutionEngine {
       mergedValue = input.local; // Only local changed
     } else if (input.remote !== input.base && input.local === input.base) {
       mergedValue = input.remote; // Only remote changed
-    } else if (input.local !== input.base && input.remote !== input.base && input.local === input.remote) {
+    } else if (
+      input.local !== input.base &&
+      input.remote !== input.base &&
+      input.local === input.remote
+    ) {
       mergedValue = input.local; // Same change on both sides
     } else if (conflicts.length === 0) {
       mergedValue = input.remote; // Default to remote
     } else {
       // Resolve conflict using strategy
-      mergedValue = this.resolveConflict(conflicts[0], input.strategy).resolvedValue;
+      mergedValue = this.resolveConflict(
+        conflicts[0],
+        input.strategy
+      ).resolvedValue;
     }
 
     return {
@@ -674,7 +721,10 @@ export class ConflictResolutionEngine {
     const conflictsBySeverity = new Map<ConflictSeverity, number>();
 
     for (const conflict of this.conflicts.values()) {
-      conflictsByType.set(conflict.type, (conflictsByType.get(conflict.type) || 0) + 1);
+      conflictsByType.set(
+        conflict.type,
+        (conflictsByType.get(conflict.type) || 0) + 1
+      );
       conflictsBySeverity.set(
         conflict.severity,
         (conflictsBySeverity.get(conflict.severity) || 0) + 1
@@ -757,4 +807,7 @@ export type {
   ConflictStatistics,
 };
 export { autoResolveOperations } from './auto-resolver.js';
-export type { AutoResolutionResult, AutoResolutionRule } from './auto-resolver.js';
+export type {
+  AutoResolutionResult,
+  AutoResolutionRule,
+} from './auto-resolver.js';

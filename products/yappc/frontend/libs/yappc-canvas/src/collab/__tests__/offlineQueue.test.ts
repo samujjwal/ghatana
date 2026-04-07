@@ -8,8 +8,8 @@ import {
   createOfflineQueue,
   type EditOperation,
   type EditConflict,
-
-  OfflineQueueManager} from '../offlineQueue';
+  OfflineQueueManager,
+} from '../offlineQueue';
 
 describe('OfflineQueueManager', () => {
   let manager: OfflineQueueManager;
@@ -128,7 +128,9 @@ describe('OfflineQueueManager', () => {
       await manager.queueEdit(op1);
       await manager.queueEdit(op2);
 
-      await expect(manager.queueEdit(op3)).rejects.toThrow('Queue size limit reached');
+      await expect(manager.queueEdit(op3)).rejects.toThrow(
+        'Queue size limit reached'
+      );
     });
 
     it('should clear queue', async () => {
@@ -209,7 +211,7 @@ describe('OfflineQueueManager', () => {
       };
 
       const syncFn = vi.fn().mockRejectedValue(new Error('Network error'));
-      manager.updateConfig({ 
+      manager.updateConfig({
         syncOperation: syncFn,
         initialRetryDelay: 1000,
       });
@@ -239,7 +241,7 @@ describe('OfflineQueueManager', () => {
       };
 
       const syncFn = vi.fn().mockRejectedValue(new Error('Network error'));
-      manager.updateConfig({ 
+      manager.updateConfig({
         syncOperation: syncFn,
         maxRetryAttempts: 3,
       });
@@ -267,7 +269,7 @@ describe('OfflineQueueManager', () => {
       };
 
       const syncFn = vi.fn().mockRejectedValue(new Error('Network error'));
-      manager.updateConfig({ 
+      manager.updateConfig({
         syncOperation: syncFn,
         initialRetryDelay: 5000,
       });
@@ -513,14 +515,22 @@ describe('OfflineQueueManager', () => {
       };
 
       const conflict = manager.detectConflict(local, remote);
-      const result = await manager.resolveConflict(conflict!.id, 'manual', 'user-1');
+      const result = await manager.resolveConflict(
+        conflict!.id,
+        'manual',
+        'user-1'
+      );
 
       expect(result).toBe(true);
       expect(manager.getConflicts()).toHaveLength(0);
     });
 
     it('should return false for non-existent conflict', async () => {
-      const result = await manager.resolveConflict('non-existent', 'local', 'user-1');
+      const result = await manager.resolveConflict(
+        'non-existent',
+        'local',
+        'user-1'
+      );
       expect(result).toBe(false);
     });
   });

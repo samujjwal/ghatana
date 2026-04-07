@@ -268,8 +268,8 @@ export class CoverageAnalyzer {
    * Analyze coverage data
    */
   analyze(coverageData: Record<string, FileCoverage>): CoverageAnalysisResult {
-    const files = Object.values(coverageData).filter((file) =>
-      !this.isExcluded(file.path)
+    const files = Object.values(coverageData).filter(
+      (file) => !this.isExcluded(file.path)
     );
 
     // Mark critical paths
@@ -336,7 +336,12 @@ export class CoverageAnalyzer {
     for (const file of files) {
       const thresholds = this.getThresholdsForFile(file);
 
-      for (const metric of ['statements', 'branches', 'functions', 'lines'] as const) {
+      for (const metric of [
+        'statements',
+        'branches',
+        'functions',
+        'lines',
+      ] as const) {
         const actual = file.metrics[metric];
         const required = thresholds[metric];
 
@@ -375,12 +380,14 @@ export class CoverageAnalyzer {
     }
 
     // Fall back to global
-    return this.config.thresholds.global || {
-      statements: 0,
-      branches: 0,
-      functions: 0,
-      lines: 0,
-    };
+    return (
+      this.config.thresholds.global || {
+        statements: 0,
+        branches: 0,
+        functions: 0,
+        lines: 0,
+      }
+    );
   }
 
   /**
@@ -445,9 +452,7 @@ export class CoverageAnalyzer {
   /**
    * Compare with previous coverage
    */
-  compareToPrevious(
-    current: CoverageAnalysisResult
-  ): CoverageDelta | null {
+  compareToPrevious(current: CoverageAnalysisResult): CoverageDelta | null {
     if (!this.previousCoverage) return null;
 
     const prev = this.previousCoverage.totalCoverage;
@@ -504,10 +509,7 @@ export class CoverageAnalyzer {
   /**
    * Generate report in specified format
    */
-  generateReport(
-    result: CoverageAnalysisResult,
-    format: ReportFormat
-  ): string {
+  generateReport(result: CoverageAnalysisResult, format: ReportFormat): string {
     switch (format) {
       case 'json':
         return this.generateJsonReport(result);
@@ -545,9 +547,7 @@ export class CoverageAnalyzer {
       );
 
       if (fileViolations.length === 0) {
-        lines.push(
-          `    <testcase name="${file.path}" classname="coverage"/>`
-        );
+        lines.push(`    <testcase name="${file.path}" classname="coverage"/>`);
       } else {
         lines.push(`    <testcase name="${file.path}" classname="coverage">`);
         for (const violation of fileViolations) {

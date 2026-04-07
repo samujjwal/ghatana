@@ -38,7 +38,7 @@ export const DEFAULT_ANIMATION_CONFIG: AnimationConfig = {
  */
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false;
-  
+
   const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   return mediaQuery.matches;
 }
@@ -72,7 +72,7 @@ export function useReducedMotion(): boolean {
     if (typeof window === 'undefined') return undefined;
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    
+
     const handleChange = () => {
       setReduced(mediaQuery.matches);
     };
@@ -82,13 +82,13 @@ export function useReducedMotion(): boolean {
       mediaQuery.addEventListener('change', handleChange);
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
-    
+
     // Legacy API (Safari < 14)
     if (mediaQuery.addListener) {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
-    
+
     return undefined;
   }, []);
 
@@ -199,11 +199,11 @@ export function useTransition(
   easing: string = 'ease'
 ): string {
   const reducedMotion = useReducedMotion();
-  
+
   if (reducedMotion) {
     return 'none';
   }
-  
+
   return `${property} ${duration}ms ${easing}`;
 }
 
@@ -233,7 +233,7 @@ export function getSpringConfig(config: SpringConfig = {}): SpringConfig {
       velocity: 0,
     };
   }
-  
+
   return {
     tension: 170,
     friction: 26,
@@ -285,9 +285,10 @@ export const CANVAS_ANIMATIONS = {
  * @param type - Animation type
  * @returns Animation config respecting reduced motion
  */
-export function getCanvasAnimation(
-  type: keyof typeof CANVAS_ANIMATIONS
-): { duration: number; easing: string } {
+export function getCanvasAnimation(type: keyof typeof CANVAS_ANIMATIONS): {
+  duration: number;
+  easing: string;
+} {
   const preset = CANVAS_ANIMATIONS[type];
   return prefersReducedMotion() ? preset.reduced : preset.normal;
 }
@@ -310,10 +311,13 @@ export function getCanvasAnimation(
 export function useCanvasAnimations() {
   const reducedMotion = useReducedMotion();
 
-  return useCallback((type: keyof typeof CANVAS_ANIMATIONS) => {
-    const preset = CANVAS_ANIMATIONS[type];
-    return reducedMotion ? preset.reduced : preset.normal;
-  }, [reducedMotion]);
+  return useCallback(
+    (type: keyof typeof CANVAS_ANIMATIONS) => {
+      const preset = CANVAS_ANIMATIONS[type];
+      return reducedMotion ? preset.reduced : preset.normal;
+    },
+    [reducedMotion]
+  );
 }
 
 /**
@@ -332,7 +336,11 @@ export function isZoomLevelSafe(zoom: number): boolean {
  * Clamp zoom to safe bounds (for accessibility, not viewport)
  * Note: Renamed to avoid conflict with viewport clampZoom
  */
-export function clampZoomLevel(zoom: number, min: number = 0.1, max: number = 4): number {
+export function clampZoomLevel(
+  zoom: number,
+  min: number = 0.1,
+  max: number = 4
+): number {
   return Math.max(min, Math.min(max, zoom));
 }
 
@@ -354,11 +362,11 @@ export function getResponsiveFontSize(baseSize: number, zoom: number): number {
  */
 export function isBrowserZoomHigh(): boolean {
   if (typeof window === 'undefined') return false;
-  
+
   // Use window.devicePixelRatio as a proxy for zoom level
   // Note: This is an approximation and may not work perfectly across all browsers
   const ratio = window.devicePixelRatio || 1;
-  
+
   // devicePixelRatio > 2 typically indicates high zoom or high-DPI display
   // We return false for high-DPI displays to avoid false positives
   return ratio > 2;

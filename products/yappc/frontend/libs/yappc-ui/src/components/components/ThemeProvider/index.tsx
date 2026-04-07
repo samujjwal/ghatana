@@ -15,26 +15,36 @@ import { StateManager } from '@yappc/state';
 type Theme = 'light' | 'dark' | 'system';
 type ThemeWithoutSystem = 'light' | 'dark';
 
-const baseThemeAtomRef = StateManager.getAtom<ThemeWithoutSystem>('store:theme');
+const baseThemeAtomRef =
+  StateManager.getAtom<ThemeWithoutSystem>('store:theme');
 
 if (!baseThemeAtomRef) {
-  throw new Error('[ThemeProvider] Expected "store:theme" atom to be registered in StateManager');
+  throw new Error(
+    '[ThemeProvider] Expected "store:theme" atom to be registered in StateManager'
+  );
 }
 
 // Create a derived atom that handles the 'system' theme
 export const themeAtom = atom(
   (get) => {
-    const theme = get(baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>);
+    const theme = get(
+      baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>
+    );
     return theme;
   },
   (get, set, update: Theme) => {
     // Only update if the theme is different
-    const currentTheme = get(baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>);
+    const currentTheme = get(
+      baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>
+    );
     if (currentTheme !== update) {
-      set(baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>, 
-          update === 'system' 
-            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-            : update as ThemeWithoutSystem
+      set(
+        baseThemeAtomRef as WritableAtom<ThemeWithoutSystem, [Theme], void>,
+        update === 'system'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : (update as ThemeWithoutSystem)
       );
     }
   }
@@ -66,27 +76,28 @@ export function ThemeProvider({
   );
   const [currentTheme, setCurrentTheme] = useState<Theme>('system');
 
-  const isDark = theme === 'dark' || (currentTheme === 'system' && systemTheme === 'dark');
+  const isDark =
+    theme === 'dark' || (currentTheme === 'system' && systemTheme === 'dark');
 
   // Handle theme changes
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
       const newTheme = e.matches ? 'dark' : 'light';
       setSystemTheme(newTheme);
-      
+
       if (currentTheme === 'system') {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(newTheme);
       }
     };
-    
+
     // Set initial theme
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-    
+
     if (currentTheme === 'system') {
       const systemTheme = mediaQuery.matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
@@ -94,9 +105,9 @@ export function ThemeProvider({
     } else {
       root.classList.add(currentTheme);
     }
-    
+
     mediaQuery.addEventListener('change', handleSystemThemeChange);
-    
+
     return () => {
       mediaQuery.removeEventListener('change', handleSystemThemeChange);
     };
@@ -121,18 +132,16 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-  
+
   if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
-  
+
   return context;
 };

@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Bulk Operations Toolbar Component
- * 
+ *
  * Toolbar for bulk file operations with progress indicators.
- * 
+ *
  * @doc.type component
  * @doc.purpose Bulk operations UI for IDE
  * @doc.layer product
@@ -56,7 +56,7 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
       // Build operation for reporting, but bulkRename expects a pattern string
       const operation: BulkOperation = {
         type: 'rename',
-        fileIds: selectedFiles.map(f => f.id),
+        fileIds: selectedFiles.map((f) => f.id),
         options: { pattern: renamePattern },
       };
 
@@ -70,7 +70,14 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedFiles, renamePattern, bulkRename, onOperationComplete, onOperationError, clearSelection]);
+  }, [
+    selectedFiles,
+    renamePattern,
+    bulkRename,
+    onOperationComplete,
+    onOperationError,
+    clearSelection,
+  ]);
 
   const handleBulkMove = useCallback(async () => {
     if (!moveDestination.trim()) return;
@@ -79,7 +86,7 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
     try {
       const operation: BulkOperation = {
         type: 'move',
-        fileIds: selectedFiles.map(f => f.id),
+        fileIds: selectedFiles.map((f) => f.id),
         destination: moveDestination,
       };
 
@@ -93,17 +100,26 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedFiles, moveDestination, bulkMove, onOperationComplete, onOperationError, clearSelection]);
+  }, [
+    selectedFiles,
+    moveDestination,
+    bulkMove,
+    onOperationComplete,
+    onOperationError,
+    clearSelection,
+  ]);
 
   const handleBulkDelete = useCallback(async () => {
-    const confirmed = window.confirm(`Are you sure you want to delete ${selectionCount} selected file(s)?`);
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectionCount} selected file(s)?`
+    );
     if (!confirmed) return;
 
     setIsProcessing(true);
     try {
       const operation: BulkOperation = {
         type: 'delete',
-        fileIds: selectedFiles.map(f => f.id),
+        fileIds: selectedFiles.map((f) => f.id),
       };
 
       await bulkDelete();
@@ -114,14 +130,23 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [selectedFiles, selectionCount, bulkDelete, onOperationComplete, onOperationError, clearSelection]);
+  }, [
+    selectedFiles,
+    selectionCount,
+    bulkDelete,
+    onOperationComplete,
+    onOperationError,
+    clearSelection,
+  ]);
 
   if (selectionCount === 0) {
     return null;
   }
 
   return (
-    <div className={`border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 ${className}`}>
+    <div
+      className={`border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2 ${className}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

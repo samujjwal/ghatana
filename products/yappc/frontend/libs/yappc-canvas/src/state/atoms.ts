@@ -47,40 +47,41 @@ import type {
 } from '../types/canvas-document';
 
 // Core document state - registered with StateManager
-export const canvasDocumentAtom = StateManager.createPersistentAtom<CanvasDocument>(
-  'canvas:document',
-  {
-  id: 'default',
-  version: '1.0.0',
-  title: 'Untitled Canvas',
-  viewport: {
-    center: { x: 0, y: 0 },
-    zoom: 1.0,
-  },
-  elements: {},
-  elementOrder: [],
-  metadata: {},
-  capabilities: {
-    canEdit: true,
-    canZoom: true,
-    canPan: true,
-    canSelect: true,
-    canUndo: true,
-    canRedo: true,
-    canExport: true,
-    canImport: true,
-    canCollaborate: false,
-    canPersist: true,
-    allowedElementTypes: ['node', 'edge', 'group'],
-  },
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  },
-  {
-    description: 'Canvas document state with persistence',
-    storage: 'local',
-  }
-);
+export const canvasDocumentAtom =
+  StateManager.createPersistentAtom<CanvasDocument>(
+    'canvas:document',
+    {
+      id: 'default',
+      version: '1.0.0',
+      title: 'Untitled Canvas',
+      viewport: {
+        center: { x: 0, y: 0 },
+        zoom: 1.0,
+      },
+      elements: {},
+      elementOrder: [],
+      metadata: {},
+      capabilities: {
+        canEdit: true,
+        canZoom: true,
+        canPan: true,
+        canSelect: true,
+        canUndo: true,
+        canRedo: true,
+        canExport: true,
+        canImport: true,
+        canCollaborate: false,
+        canPersist: true,
+        allowedElementTypes: ['node', 'edge', 'group'],
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    {
+      description: 'Canvas document state with persistence',
+      storage: 'local',
+    }
+  );
 
 // Selection state - registered with StateManager
 export const canvasSelectionAtom = StateManager.createAtom<CanvasSelection>(
@@ -128,15 +129,16 @@ export const canvasUIStateAtom = StateManager.createAtom<CanvasUIState>(
 );
 
 // Performance tracking - registered with StateManager
-export const canvasPerformanceAtom = StateManager.createAtom<CanvasPerformanceMetrics>(
-  'canvas:performance',
-  {
-    renderTime: 0,
-    lastUpdate: new Date(),
-    fps: 60,
-  },
-  'Canvas performance metrics'
-);
+export const canvasPerformanceAtom =
+  StateManager.createAtom<CanvasPerformanceMetrics>(
+    'canvas:performance',
+    {
+      renderTime: 0,
+      lastUpdate: new Date(),
+      fps: 60,
+    },
+    'Canvas performance metrics'
+  );
 
 // Collaboration state - registered with StateManager
 export const canvasCollaborationAtom = StateManager.createAtom(
@@ -509,7 +511,9 @@ export const boundingBoxAtom = atom((get) => {
 
   selectedElements.forEach((element) => {
     if (element.type === 'node') {
-      const node = element as CanvasElement & { bounds: { x: number; y: number; width: number; height: number } };
+      const node = element as CanvasElement & {
+        bounds: { x: number; y: number; width: number; height: number };
+      };
       minX = Math.min(minX, node.bounds.x);
       minY = Math.min(minY, node.bounds.y);
       maxX = Math.max(maxX, node.bounds.x + node.bounds.width);
@@ -533,16 +537,24 @@ export const boundingBoxAtom = atom((get) => {
 // --- Interaction Mode & Sketch/Diagram (from legacy canvasAtoms) ---
 
 export type CanvasInteractionMode = 'navigate' | 'sketch' | 'code' | 'diagram';
-export const canvasInteractionModeAtom = atom<CanvasInteractionMode>('navigate');
+export const canvasInteractionModeAtom =
+  atom<CanvasInteractionMode>('navigate');
 
 export type SketchTool = 'pen' | 'rect' | 'ellipse' | 'eraser';
 export const sketchToolAtom = atom<SketchTool>('pen');
 export const sketchColorAtom = atom<string>('#000000');
 export const sketchStrokeWidthAtom = atom<number>(2);
 
-export type DiagramType = 'mermaid' | 'excalidraw' | 'flowchart' | 'sequence' | 'class';
+export type DiagramType =
+  | 'mermaid'
+  | 'excalidraw'
+  | 'flowchart'
+  | 'sequence'
+  | 'class';
 export const diagramTypeAtom = atom<DiagramType>('mermaid');
-export const diagramContentAtom = atom<string>('graph TD\n  A[Start] --> B[End]');
+export const diagramContentAtom = atom<string>(
+  'graph TD\n  A[Start] --> B[End]'
+);
 export const diagramZoomAtom = atom<number>(1);
 export const showDiagramEditorAtom = atom<boolean>(false);
 
@@ -557,14 +569,16 @@ export interface CanvasCommandAction {
   onExecute: () => void;
 }
 
-export const commandRegistryAtom = atom<Map<string, CanvasCommandAction>>(new Map());
+export const commandRegistryAtom = atom<Map<string, CanvasCommandAction>>(
+  new Map()
+);
 
 export const sortedCommandsAtom = atom<CanvasCommandAction[]>((get) =>
   [...get(commandRegistryAtom).values()].sort((a, b) => {
     const ga = a.group ?? '';
     const gb = b.group ?? '';
     return ga !== gb ? ga.localeCompare(gb) : a.label.localeCompare(b.label);
-  }),
+  })
 );
 
 export const registerCommandsAtom = atom(
@@ -577,15 +591,12 @@ export const registerCommandsAtom = atom(
   }
 );
 
-export const unregisterCommandsAtom = atom(
-  null,
-  (get, set, ids: string[]) => {
-    const prev = get(commandRegistryAtom);
-    const next = new Map(prev);
-    for (const id of ids) next.delete(id);
-    set(commandRegistryAtom, next);
-  }
-);
+export const unregisterCommandsAtom = atom(null, (get, set, ids: string[]) => {
+  const prev = get(commandRegistryAtom);
+  const next = new Map(prev);
+  for (const id of ids) next.delete(id);
+  set(commandRegistryAtom, next);
+});
 
 // --- Workspace UI atoms (from legacy canvasAtoms) ---
 
@@ -607,7 +618,7 @@ export const prefersReducedMotionAtom = atom<boolean>(
 export const prefersDarkModeAtom = atom<boolean>(
   typeof globalThis.window !== 'undefined'
     ? globalThis.document.documentElement.classList.contains('dark') ||
-      globalThis.window.matchMedia('(prefers-color-scheme: dark)').matches
+        globalThis.window.matchMedia('(prefers-color-scheme: dark)').matches
     : false
 );
 
@@ -615,9 +626,10 @@ export const canvasAnnouncementAtom = atom<string>('');
 
 // --- Alignment guides (from legacy canvasAtoms) ---
 
-export const alignmentGuidesAtom = atom<{ vertical: number | null; horizontal: number | null }>(
-  { vertical: null, horizontal: null }
-);
+export const alignmentGuidesAtom = atom<{
+  vertical: number | null;
+  horizontal: number | null;
+}>({ vertical: null, horizontal: null });
 
 // --- Phase zone centers (from legacy canvasAtoms) ---
 
@@ -635,7 +647,13 @@ export const MAX_HISTORY_SIZE = 100;
 
 // --- Lifecycle & Task atoms (from unifiedCanvasAtom) ---
 
-export type LifecyclePhase = 'design' | 'backlog' | 'build' | 'test' | 'deploy' | 'monitor';
+export type LifecyclePhase =
+  | 'design'
+  | 'backlog'
+  | 'build'
+  | 'test'
+  | 'deploy'
+  | 'monitor';
 
 export interface PhaseProgress {
   phase: LifecyclePhase;
@@ -733,4 +751,6 @@ export interface CanvasProjectMetadata {
   buildTool?: string;
 }
 
-export const canvasProjectMetadataAtom = atom<CanvasProjectMetadata | null>(null);
+export const canvasProjectMetadataAtom = atom<CanvasProjectMetadata | null>(
+  null
+);

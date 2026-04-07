@@ -5,7 +5,10 @@
  * showing who's online and what they're working on.
  */
 
-import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
+import {
+  type CollaborationManager,
+  type CollaborationUser,
+} from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -59,7 +62,10 @@ export class PresenceManager {
   private userColor: string;
   private presence: PresenceState;
   private users: Map<string, PresenceUser>;
-  private listeners: Map<PresenceEventType, Set<(event: PresenceEvent) => void>>;
+  private listeners: Map<
+    PresenceEventType,
+    Set<(event: PresenceEvent) => void>
+  >;
   private updateInterval: number | null = null;
   private activityTimeout: number | null = null;
   private lastActivity: number;
@@ -292,7 +298,8 @@ export class PresenceManager {
    */
   getOnlineUsers(): PresenceUser[] {
     return this.getUsers().filter(
-      (user) => user.presence.status === 'online' || user.presence.status === 'busy'
+      (user) =>
+        user.presence.status === 'online' || user.presence.status === 'busy'
     );
   }
 
@@ -316,9 +323,12 @@ export class PresenceManager {
   getUsersAtLocation(location: Partial<PresenceLocation>): PresenceUser[] {
     return this.getUsers().filter((user) => {
       if (!user.presence.location) return false;
-      if (location.type && user.presence.location.type !== location.type) return false;
-      if (location.path && user.presence.location.path !== location.path) return false;
-      if (location.id && user.presence.location.id !== location.id) return false;
+      if (location.type && user.presence.location.type !== location.type)
+        return false;
+      if (location.path && user.presence.location.path !== location.path)
+        return false;
+      if (location.id && user.presence.location.id !== location.id)
+        return false;
       return true;
     });
   }
@@ -394,7 +404,9 @@ export class PresenceManager {
 /**
  * Get color for presence status
  */
-export function getPresenceStatusColor(status: PresenceState['status']): string {
+export function getPresenceStatusColor(
+  status: PresenceState['status']
+): string {
   switch (status) {
     case 'online':
       return '#22c55e'; // green-500
@@ -412,7 +424,9 @@ export function getPresenceStatusColor(status: PresenceState['status']): string 
 /**
  * Get label for presence status
  */
-export function getPresenceStatusLabel(status: PresenceState['status']): string {
+export function getPresenceStatusLabel(
+  status: PresenceState['status']
+): string {
   switch (status) {
     case 'online':
       return 'Online';

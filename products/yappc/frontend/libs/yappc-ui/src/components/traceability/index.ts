@@ -36,7 +36,8 @@ import type {
  */
 export class TraceabilityManager {
   private links: Map<string, TraceabilityLink> = new Map();
-  private listeners: Map<TraceabilityEvent, Set<TraceabilityEventListener>> = new Map();
+  private listeners: Map<TraceabilityEvent, Set<TraceabilityEventListener>> =
+    new Map();
   private options: Required<TraceabilityOptions>;
 
   /**
@@ -80,7 +81,10 @@ export class TraceabilityManager {
    * @param event - Event name
    * @param listener - Event listener
    */
-  public on(event: TraceabilityEvent, listener: TraceabilityEventListener): void {
+  public on(
+    event: TraceabilityEvent,
+    listener: TraceabilityEventListener
+  ): void {
     const listeners = this.listeners.get(event);
     if (listeners) {
       listeners.add(listener);
@@ -93,7 +97,10 @@ export class TraceabilityManager {
    * @param event - Event name
    * @param listener - Event listener
    */
-  public off(event: TraceabilityEvent, listener: TraceabilityEventListener): void {
+  public off(
+    event: TraceabilityEvent,
+    listener: TraceabilityEventListener
+  ): void {
     const listeners = this.listeners.get(event);
     if (listeners) {
       listeners.delete(listener);
@@ -150,11 +157,17 @@ export class TraceabilityManager {
    * @param componentId - Component ID
    * @param requirementId - Requirement ID
    */
-  public unlinkComponentFromRequirement(componentId: string, requirementId: string): void {
+  public unlinkComponentFromRequirement(
+    componentId: string,
+    requirementId: string
+  ): void {
     const keysToDelete: string[] = [];
 
     for (const [key, link] of this.links) {
-      if (link.componentId === componentId && link.requirementId === requirementId) {
+      if (
+        link.componentId === componentId &&
+        link.requirementId === requirementId
+      ) {
         keysToDelete.push(key);
       }
     }
@@ -278,7 +291,10 @@ export class TraceabilityManager {
    * @param allRequirementIds - All requirement IDs
    * @returns Coverage analysis
    */
-  public analyzeCoverage(componentId: string, allRequirementIds: string[]): CoverageAnalysis {
+  public analyzeCoverage(
+    componentId: string,
+    allRequirementIds: string[]
+  ): CoverageAnalysis {
     const componentReqs = this.getComponentRequirements(componentId);
     const coveredCount = componentReqs.requirementIds.length;
     const totalCount = allRequirementIds.length;
@@ -305,7 +321,10 @@ export class TraceabilityManager {
    * @param requirementIds - Requirement IDs
    * @returns Traceability matrix
    */
-  public generateMatrix(componentIds: string[], requirementIds: string[]): TraceabilityMatrix {
+  public generateMatrix(
+    componentIds: string[],
+    requirementIds: string[]
+  ): TraceabilityMatrix {
     const matrix: boolean[][] = [];
 
     for (let i = 0; i < componentIds.length; i++) {
@@ -332,7 +351,10 @@ export class TraceabilityManager {
    * @param requirementIds - Requirement IDs
    * @returns Gap analysis
    */
-  public analyzeGaps(componentIds: string[], requirementIds: string[]): GapAnalysis {
+  public analyzeGaps(
+    componentIds: string[],
+    requirementIds: string[]
+  ): GapAnalysis {
     const uncoveredRequirements: string[] = [];
     const overImplementedRequirements: string[] = [];
     const orphanedComponents: string[] = [];
@@ -355,7 +377,8 @@ export class TraceabilityManager {
 
     // Determine severity
     let severity: 'critical' | 'high' | 'medium' | 'low' = 'low';
-    const gapPercentage = (uncoveredRequirements.length / requirementIds.length) * 100;
+    const gapPercentage =
+      (uncoveredRequirements.length / requirementIds.length) * 100;
 
     if (gapPercentage > 50) {
       severity = 'critical';

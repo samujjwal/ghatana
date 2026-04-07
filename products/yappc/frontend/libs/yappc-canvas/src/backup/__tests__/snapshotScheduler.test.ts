@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   createSnapshotScheduler,
   type Snapshot,
-
-  SnapshotScheduler} from '../snapshotScheduler';
+  SnapshotScheduler,
+} from '../snapshotScheduler';
 
 describe('SnapshotScheduler', () => {
   let scheduler: SnapshotScheduler;
@@ -46,10 +46,12 @@ describe('SnapshotScheduler', () => {
       const full = scheduler.createSnapshot('full');
 
       // Update state
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1', label: 'Test' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1', label: 'Test' }],
+          edges: [],
+        })
+      );
 
       // Create diff
       const diff = scheduler.createSnapshot('diff');
@@ -129,23 +131,29 @@ describe('SnapshotScheduler', () => {
     beforeEach(() => {
       scheduler.updateState(JSON.stringify({ nodes: [], edges: [] }));
 
-      scheduler.createSnapshot('full', { tags: ['daily'], createdBy: 'user-1' });
+      scheduler.createSnapshot('full', {
+        tags: ['daily'],
+        createdBy: 'user-1',
+      });
       vi.advanceTimersByTime(1000);
       scheduler.createSnapshot('full');
       vi.advanceTimersByTime(1000);
-      scheduler.createSnapshot('diff', { tags: ['hourly'], createdBy: 'user-2' });
+      scheduler.createSnapshot('diff', {
+        tags: ['hourly'],
+        createdBy: 'user-2',
+      });
     });
 
     it('should filter by type', () => {
       const fullSnapshots = scheduler.listSnapshots({ type: 'full' });
       expect(fullSnapshots.length).toBe(2);
-      expect(fullSnapshots.every(s => s.metadata.type === 'full')).toBe(true);
+      expect(fullSnapshots.every((s) => s.metadata.type === 'full')).toBe(true);
     });
 
     it('should filter by date range', () => {
       const now = Date.now();
       const snapshots = scheduler.listSnapshots();
-      
+
       const startDate = snapshots[1].metadata.timestamp;
       const endDate = snapshots[0].metadata.timestamp;
 
@@ -199,7 +207,9 @@ describe('SnapshotScheduler', () => {
 
     it('should not delete snapshot with dependents', () => {
       const full = scheduler.createSnapshot('full');
-      scheduler.updateState(JSON.stringify({ nodes: [{ id: '1' }], edges: [] }));
+      scheduler.updateState(
+        JSON.stringify({ nodes: [{ id: '1' }], edges: [] })
+      );
       scheduler.createSnapshot('diff'); // Depends on full
 
       const deleted = scheduler.deleteSnapshot(full.metadata.id);
@@ -230,7 +240,10 @@ describe('SnapshotScheduler', () => {
     });
 
     it('should skip verification when checksums disabled', () => {
-      scheduler = createSnapshotScheduler({ enabled: false, enableChecksums: false });
+      scheduler = createSnapshotScheduler({
+        enabled: false,
+        enableChecksums: false,
+      });
       scheduler.updateState(JSON.stringify({ nodes: [], edges: [] }));
 
       const snapshot = scheduler.createSnapshot('full');
@@ -266,7 +279,9 @@ describe('SnapshotScheduler', () => {
       scheduler.updateState(baseData);
       const full = scheduler.createSnapshot('full');
 
-      scheduler.updateState(JSON.stringify({ nodes: [{ id: '1' }], edges: [] }));
+      scheduler.updateState(
+        JSON.stringify({ nodes: [{ id: '1' }], edges: [] })
+      );
       const diff = scheduler.createSnapshot('diff');
 
       const restored = scheduler.restore(diff.metadata.id);
@@ -297,8 +312,8 @@ describe('SnapshotScheduler', () => {
       const schedules = scheduler.listSchedules();
       expect(schedules.length).toBe(2);
 
-      const fullSchedule = schedules.find(s => s.type === 'full');
-      const diffSchedule = schedules.find(s => s.type === 'diff');
+      const fullSchedule = schedules.find((s) => s.type === 'full');
+      const diffSchedule = schedules.find((s) => s.type === 'diff');
 
       expect(fullSchedule).toBeDefined();
       expect(diffSchedule).toBeDefined();
@@ -322,7 +337,9 @@ describe('SnapshotScheduler', () => {
     });
 
     it('should return false when updating non-existent schedule', () => {
-      const updated = scheduler.updateSchedule('non-existent', { interval: 1000 });
+      const updated = scheduler.updateSchedule('non-existent', {
+        interval: 1000,
+      });
       expect(updated).toBe(false);
     });
 
@@ -426,9 +443,11 @@ describe('SnapshotScheduler', () => {
 
     it('should not delete snapshots with dependents during cleanup', () => {
       const full = scheduler.createSnapshot('full');
-      scheduler.updateState(JSON.stringify({ nodes: [{ id: '1' }], edges: [] }));
+      scheduler.updateState(
+        JSON.stringify({ nodes: [{ id: '1' }], edges: [] })
+      );
       scheduler.createSnapshot('diff'); // Depends on full
-      
+
       // Create more to trigger cleanup
       scheduler.createSnapshot('full');
       scheduler.createSnapshot('full');
@@ -446,9 +465,9 @@ describe('SnapshotScheduler', () => {
       scheduler.updateState(JSON.stringify({ nodes: [], edges: [] }));
 
       const old = scheduler.createSnapshot('full');
-      
+
       vi.advanceTimersByTime(2000);
-      
+
       scheduler.createSnapshot('full'); // Trigger cleanup
 
       const retrieved = scheduler.getSnapshot(old.metadata.id);
@@ -472,7 +491,9 @@ describe('SnapshotScheduler', () => {
     it('should count by type', () => {
       scheduler.createSnapshot('full');
       scheduler.createSnapshot('full');
-      scheduler.updateState(JSON.stringify({ nodes: [{ id: '1' }], edges: [] }));
+      scheduler.updateState(
+        JSON.stringify({ nodes: [{ id: '1' }], edges: [] })
+      );
       scheduler.createSnapshot('diff');
 
       const stats = scheduler.getStatistics();
@@ -548,20 +569,24 @@ describe('SnapshotScheduler', () => {
       scheduler.updateState(JSON.stringify({ nodes: [], edges: [] }));
       const full = scheduler.createSnapshot('full');
 
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1', label: 'New' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1', label: 'New' }],
+          edges: [],
+        })
+      );
 
       const diff = scheduler.createSnapshot('diff');
       expect(diff.diff!.addedNodes).toContain('node-1');
     });
 
     it('should detect removed nodes', () => {
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1', label: 'Test' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1', label: 'Test' }],
+          edges: [],
+        })
+      );
       const full = scheduler.createSnapshot('full');
 
       scheduler.updateState(JSON.stringify({ nodes: [], edges: [] }));
@@ -571,32 +596,40 @@ describe('SnapshotScheduler', () => {
     });
 
     it('should detect modified nodes', () => {
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1', label: 'Original' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1', label: 'Original' }],
+          edges: [],
+        })
+      );
       const full = scheduler.createSnapshot('full');
 
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1', label: 'Modified' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1', label: 'Modified' }],
+          edges: [],
+        })
+      );
 
       const diff = scheduler.createSnapshot('diff');
       expect(diff.diff!.modifiedNodes).toContain('node-1');
     });
 
     it('should detect edge changes', () => {
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1' }, { id: 'node-2' }],
-        edges: [],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1' }, { id: 'node-2' }],
+          edges: [],
+        })
+      );
       const full = scheduler.createSnapshot('full');
 
-      scheduler.updateState(JSON.stringify({
-        nodes: [{ id: 'node-1' }, { id: 'node-2' }],
-        edges: [{ source: 'node-1', target: 'node-2' }],
-      }));
+      scheduler.updateState(
+        JSON.stringify({
+          nodes: [{ id: 'node-1' }, { id: 'node-2' }],
+          edges: [{ source: 'node-1', target: 'node-2' }],
+        })
+      );
 
       const diff = scheduler.createSnapshot('diff');
       expect(diff.diff!.addedEdges).toContain('node-1-node-2');

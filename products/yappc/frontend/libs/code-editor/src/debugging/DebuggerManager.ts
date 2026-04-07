@@ -1,6 +1,6 @@
 /**
  * Debugging Capabilities System
- * 
+ *
  * Comprehensive debugging system with support for:
  * - Breakpoint management
  * - Step execution (step over, step into, step out)
@@ -8,7 +8,7 @@
  * - Call stack navigation
  * - Debug console
  * - Execution control (pause, resume, stop)
- * 
+ *
  * Features:
  * - 🔴 Breakpoint management with conditions
  * - ⏸️ Execution control (pause, resume, step)
@@ -16,7 +16,7 @@
  * - 📞 Call stack navigation
  * - 💬 Debug console with REPL
  * - 🔄 Real-time state updates
- * 
+ *
  * @doc.type system
  * @doc.purpose Debugging and execution control
  * @doc.layer product
@@ -111,7 +111,8 @@ export class DebuggerManager {
   private currentSessionId: string | null = null;
   private breakpoints: Map<string, Breakpoint> = new Map();
   private listeners: Set<(session: DebugSession) => void> = new Set();
-  private breakpointListeners: Set<(breakpoint: Breakpoint) => void> = new Set();
+  private breakpointListeners: Set<(breakpoint: Breakpoint) => void> =
+    new Set();
 
   /**
    *

@@ -39,7 +39,6 @@ import { atom } from 'jotai';
 import type { Atom, WritableAtom, Getter, Setter } from 'jotai';
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -137,12 +136,9 @@ export class StateManager {
       return this.atoms.get(key) as WritableAtom<T, [T], void>;
     }
 
-    const newAtom = atom(
-      defaultValue,
-      (_get, set, nextValue: T) => {
-        set(newAtom, nextValue);
-      }
-    );
+    const newAtom = atom(defaultValue, (_get, set, nextValue: T) => {
+      set(newAtom, nextValue);
+    });
 
     // Store atom and metadata
     this.atoms.set(key, newAtom);
@@ -357,9 +353,10 @@ export class StateManager {
       return this.atoms.get(key) as Atom<AsyncState<T>>;
     }
 
-    const initialState: AsyncState<T> = options.initialData !== undefined
-      ? { status: 'success', data: options.initialData, error: null }
-      : { status: 'idle', data: null, error: null };
+    const initialState: AsyncState<T> =
+      options.initialData !== undefined
+        ? { status: 'success', data: options.initialData, error: null }
+        : { status: 'idle', data: null, error: null };
 
     const newAtom = atom<AsyncState<T>>(initialState);
 

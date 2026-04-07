@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - File System Utilities
- * 
+ *
  * Utilities for file and folder operations with UUID-based stable identity.
- * 
+ *
  * @doc.type module
  * @doc.purpose File system utilities for IDE
  * @doc.layer product
@@ -15,7 +15,7 @@ import type { IDEFile, IDEFolder, FileTreeNode } from '../types';
 
 /**
  * Create a new IDE file
- * 
+ *
  * @doc.param path - File path
  * @doc.param content - File content
  * @doc.param language - Programming language
@@ -28,7 +28,7 @@ export function createFile(
 ): IDEFile {
   const name = path.split('/').pop() || 'untitled';
   const now = Date.now();
-  
+
   return {
     id: uuidv4(),
     path,
@@ -45,14 +45,14 @@ export function createFile(
 
 /**
  * Create a new IDE folder
- * 
+ *
  * @doc.param path - Folder path
  * @doc.returns New IDE folder with UUID
  */
 export function createFolder(path: string): IDEFolder {
   const name = path.split('/').pop() || 'untitled';
   const now = Date.now();
-  
+
   return {
     id: uuidv4(),
     path,
@@ -65,13 +65,13 @@ export function createFolder(path: string): IDEFolder {
 
 /**
  * Detect language from file extension
- * 
+ *
  * @doc.param filename - File name with extension
  * @doc.returns Language identifier
  */
 export function detectLanguage(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase();
-  
+
   const languageMap: Record<string, string> = {
     ts: 'typescript',
     tsx: 'typescript',
@@ -107,13 +107,13 @@ export function detectLanguage(filename: string): string {
     ini: 'ini',
     dockerfile: 'dockerfile',
   };
-  
+
   return ext ? languageMap[ext] || 'plaintext' : 'plaintext';
 }
 
 /**
  * Check if a node is a file
- * 
+ *
  * @doc.param node - File tree node
  * @doc.returns True if node is a file
  */
@@ -123,7 +123,7 @@ export function isFile(node: FileTreeNode): node is IDEFile {
 
 /**
  * Check if a node is a folder
- * 
+ *
  * @doc.param node - File tree node
  * @doc.returns True if node is a folder
  */
@@ -133,7 +133,7 @@ export function isFolder(node: FileTreeNode): node is IDEFolder {
 
 /**
  * Get file extension
- * 
+ *
  * @doc.param filename - File name
  * @doc.returns File extension without dot
  */
@@ -143,7 +143,7 @@ export function getFileExtension(filename: string): string {
 
 /**
  * Get file name without extension
- * 
+ *
  * @doc.param filename - File name
  * @doc.returns File name without extension
  */
@@ -155,7 +155,7 @@ export function getFileNameWithoutExtension(filename: string): string {
 
 /**
  * Get parent path from a file path
- * 
+ *
  * @doc.param path - File or folder path
  * @doc.returns Parent path or null if root
  */
@@ -167,21 +167,17 @@ export function getParentPath(path: string): string | null {
 
 /**
  * Join path segments
- * 
+ *
  * @doc.param segments - Path segments
  * @doc.returns Joined path
  */
 export function joinPath(...segments: string[]): string {
-  return '/' + segments
-    .join('/')
-    .split('/')
-    .filter(Boolean)
-    .join('/');
+  return '/' + segments.join('/').split('/').filter(Boolean).join('/');
 }
 
 /**
  * Normalize path
- * 
+ *
  * @doc.param path - Path to normalize
  * @doc.returns Normalized path
  */
@@ -191,7 +187,7 @@ export function normalizePath(path: string): string {
 
 /**
  * Check if path is valid
- * 
+ *
  * @doc.param path - Path to validate
  * @doc.returns True if path is valid
  */
@@ -204,7 +200,7 @@ export function isValidPath(path: string): boolean {
 
 /**
  * Sort file tree nodes (folders first, then alphabetically)
- * 
+ *
  * @doc.param nodes - Array of file tree nodes
  * @doc.returns Sorted array
  */
@@ -212,11 +208,11 @@ export function sortFileTreeNodes(nodes: FileTreeNode[]): FileTreeNode[] {
   return [...nodes].sort((a, b) => {
     const aIsFolder = isFolder(a);
     const bIsFolder = isFolder(b);
-    
+
     // Folders first
     if (aIsFolder && !bIsFolder) return -1;
     if (!aIsFolder && bIsFolder) return 1;
-    
+
     // Alphabetically
     return a.name.localeCompare(b.name);
   });
@@ -224,12 +220,15 @@ export function sortFileTreeNodes(nodes: FileTreeNode[]): FileTreeNode[] {
 
 /**
  * Find file by path in file tree
- * 
+ *
  * @doc.param folder - Root folder
  * @doc.param path - File path to find
  * @doc.returns File if found, null otherwise
  */
-export function findFileByPath(folder: IDEFolder, path: string): IDEFile | null {
+export function findFileByPath(
+  folder: IDEFolder,
+  path: string
+): IDEFile | null {
   for (const child of folder.children) {
     if (isFile(child) && child.path === path) {
       return child;
@@ -244,14 +243,17 @@ export function findFileByPath(folder: IDEFolder, path: string): IDEFile | null 
 
 /**
  * Find folder by path in file tree
- * 
+ *
  * @doc.param folder - Root folder
  * @doc.param path - Folder path to find
  * @doc.returns Folder if found, null otherwise
  */
-export function findFolderByPath(folder: IDEFolder, path: string): IDEFolder | null {
+export function findFolderByPath(
+  folder: IDEFolder,
+  path: string
+): IDEFolder | null {
   if (folder.path === path) return folder;
-  
+
   for (const child of folder.children) {
     if (isFolder(child)) {
       const found = findFolderByPath(child, path);
@@ -263,13 +265,13 @@ export function findFolderByPath(folder: IDEFolder, path: string): IDEFolder | n
 
 /**
  * Get all files in a folder recursively
- * 
+ *
  * @doc.param folder - Root folder
  * @doc.returns Array of all files
  */
 export function getAllFiles(folder: IDEFolder): IDEFile[] {
   const files: IDEFile[] = [];
-  
+
   for (const child of folder.children) {
     if (isFile(child)) {
       files.push(child);
@@ -277,13 +279,13 @@ export function getAllFiles(folder: IDEFolder): IDEFile[] {
       files.push(...getAllFiles(child));
     }
   }
-  
+
   return files;
 }
 
 /**
  * Calculate folder size (total size of all files)
- * 
+ *
  * @doc.param folder - Folder to calculate size for
  * @doc.returns Total size in bytes
  */
@@ -293,16 +295,16 @@ export function calculateFolderSize(folder: IDEFolder): number {
 
 /**
  * Format file size for display
- * 
+ *
  * @doc.param bytes - Size in bytes
  * @doc.returns Formatted size string
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';
-  
+
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const k = 1024;
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${units[i]}`;
 }

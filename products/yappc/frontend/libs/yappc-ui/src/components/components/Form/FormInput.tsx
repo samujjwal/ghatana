@@ -6,14 +6,17 @@ import { FormField } from './FormField';
 /**
  *
  */
-export interface FormInputProps extends Omit<InputProps, 'onChange' | 'onBlur' | 'value' | 'error'> {
+export interface FormInputProps extends Omit<
+  InputProps,
+  'onChange' | 'onBlur' | 'value' | 'error'
+> {
   name: string;
   validate?: (value: unknown) => string | undefined;
 }
 
 /**
  * FormInput component that integrates the Input component with the Form context
- * 
+ *
  * @example
  * ```tsx
  * <Form initialValues={{ email: '' }} onSubmit={handleSubmit}>

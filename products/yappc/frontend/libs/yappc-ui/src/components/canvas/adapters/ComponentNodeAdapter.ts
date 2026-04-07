@@ -5,11 +5,14 @@
  */
 
 import type { ComponentNode, ComponentNodeData } from '../types';
-import type { TransformContext, TransformOptions, TransformResult } from '../types/ComponentSchema';
+import type {
+  TransformContext,
+  TransformOptions,
+  TransformResult,
+} from '../types/ComponentSchema';
 
 import { DesignTokenMapper } from './DesignTokenMapper';
 import { PropertyTransformer } from './PropertyTransformer';
-
 
 /**
  * Component schema (simplified, will integrate with Phase 2)
@@ -90,11 +93,12 @@ export class ComponentNodeAdapter {
 
     try {
       // Generate or use existing ID
-      const id = options.preserveIds && schema.id
-        ? schema.id
-        : options.generateIds
-        ? this.generateId()
-        : schema.id || this.generateId();
+      const id =
+        options.preserveIds && schema.id
+          ? schema.id
+          : options.generateIds
+            ? this.generateId()
+            : schema.id || this.generateId();
 
       // Transform props to node data
       const nodeData = PropertyTransformer.propsToNodeData(
@@ -161,7 +165,11 @@ export class ComponentNodeAdapter {
         if (!validation.valid) {
           errors.push(...validation.errors.map((e) => e.message));
         }
-        warnings.push(...validation.errors.filter((e) => e.severity === 'warning').map((e) => e.message));
+        warnings.push(
+          ...validation.errors
+            .filter((e) => e.severity === 'warning')
+            .map((e) => e.message)
+        );
       }
 
       return {
@@ -176,7 +184,9 @@ export class ComponentNodeAdapter {
           : undefined,
       };
     } catch (error) {
-      errors.push(`Schema to node conversion failed: ${(error as Error).message}`);
+      errors.push(
+        `Schema to node conversion failed: ${(error as Error).message}`
+      );
       throw new Error(`Failed to convert schema to node: ${errors.join(', ')}`);
     }
   }
@@ -193,7 +203,15 @@ export class ComponentNodeAdapter {
 
     try {
       // Extract node data
-      const { componentType, props, tokens, dataBinding, validation, events, metadata } = node.data;
+      const {
+        componentType,
+        props,
+        tokens,
+        dataBinding,
+        validation,
+        events,
+        metadata,
+      } = node.data;
 
       // Transform node data to props
       const transformedProps = PropertyTransformer.nodeDataToProps(node.data);
@@ -235,7 +253,11 @@ export class ComponentNodeAdapter {
         if (!validation.valid) {
           errors.push(...validation.errors.map((e) => e.message));
         }
-        warnings.push(...validation.errors.filter((e) => e.severity === 'warning').map((e) => e.message));
+        warnings.push(
+          ...validation.errors
+            .filter((e) => e.severity === 'warning')
+            .map((e) => e.message)
+        );
       }
 
       return {
@@ -249,7 +271,9 @@ export class ComponentNodeAdapter {
           : undefined,
       };
     } catch (error) {
-      errors.push(`Node to schema conversion failed: ${(error as Error).message}`);
+      errors.push(
+        `Node to schema conversion failed: ${(error as Error).message}`
+      );
       throw new Error(`Failed to convert node to schema: ${errors.join(', ')}`);
     }
   }
@@ -267,7 +291,10 @@ export class ComponentNodeAdapter {
 
     try {
       // Schema -> Node
-      const nodeResult = this.schemaToNode(originalSchema, context, { ...options, validate: true });
+      const nodeResult = this.schemaToNode(originalSchema, context, {
+        ...options,
+        validate: true,
+      });
 
       if (nodeResult.errors.length > 0) {
         errors.push(...nodeResult.errors);
@@ -275,7 +302,10 @@ export class ComponentNodeAdapter {
       warnings.push(...nodeResult.warnings);
 
       // Node -> Schema
-      const schemaResult = this.nodeToSchema(nodeResult.data, { ...options, validate: true });
+      const schemaResult = this.nodeToSchema(nodeResult.data, {
+        ...options,
+        validate: true,
+      });
 
       if (schemaResult.errors.length > 0) {
         errors.push(...schemaResult.errors);
@@ -283,7 +313,10 @@ export class ComponentNodeAdapter {
       warnings.push(...schemaResult.warnings);
 
       // Compare schemas
-      const comparisonErrors = this.compareSchemas(originalSchema, schemaResult.data);
+      const comparisonErrors = this.compareSchemas(
+        originalSchema,
+        schemaResult.data
+      );
       if (comparisonErrors.length > 0) {
         errors.push(...comparisonErrors);
       }
@@ -310,15 +343,24 @@ export class ComponentNodeAdapter {
     // Check for explicit size in props
     if (props.width && props.height) {
       return {
-        width: typeof props.width === 'number' ? props.width : parseInt(props.width, 10),
-        height: typeof props.height === 'number' ? props.height : parseInt(props.height, 10),
+        width:
+          typeof props.width === 'number'
+            ? props.width
+            : parseInt(props.width, 10),
+        height:
+          typeof props.height === 'number'
+            ? props.height
+            : parseInt(props.height, 10),
       };
     }
 
     // Check for children (containers should be larger)
     const hasChildren = schema?.children && schema.children.length > 0;
     if (hasChildren) {
-      const defaultSize = DEFAULT_COMPONENT_SIZES[componentType] || { width: 400, height: 300 };
+      const defaultSize = DEFAULT_COMPONENT_SIZES[componentType] || {
+        width: 400,
+        height: 300,
+      };
       return {
         width: defaultSize.width * 1.5,
         height: defaultSize.height * 1.5,
@@ -326,7 +368,9 @@ export class ComponentNodeAdapter {
     }
 
     // Return default size for component type
-    return DEFAULT_COMPONENT_SIZES[componentType] || { width: 200, height: 100 };
+    return (
+      DEFAULT_COMPONENT_SIZES[componentType] || { width: 200, height: 100 }
+    );
   }
 
   /**
@@ -341,24 +385,48 @@ export class ComponentNodeAdapter {
    */
   private static validateNode(node: ComponentNode): {
     valid: boolean;
-    errors: Array<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }>;
+    errors: Array<{
+      field: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+    }>;
   } {
-    const errors: Array<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }> = [];
+    const errors: Array<{
+      field: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+    }> = [];
 
     if (!node.id) {
-      errors.push({ field: 'id', message: 'Node missing ID', severity: 'error' });
+      errors.push({
+        field: 'id',
+        message: 'Node missing ID',
+        severity: 'error',
+      });
     }
 
     if (!node.data.componentType) {
-      errors.push({ field: 'componentType', message: 'Node missing component type', severity: 'error' });
+      errors.push({
+        field: 'componentType',
+        message: 'Node missing component type',
+        severity: 'error',
+      });
     }
 
     if (!node.position) {
-      errors.push({ field: 'position', message: 'Node missing position', severity: 'error' });
+      errors.push({
+        field: 'position',
+        message: 'Node missing position',
+        severity: 'error',
+      });
     }
 
     if (!node.size) {
-      errors.push({ field: 'size', message: 'Node missing size', severity: 'error' });
+      errors.push({
+        field: 'size',
+        message: 'Node missing size',
+        severity: 'error',
+      });
     }
 
     // Validate token references
@@ -375,7 +443,10 @@ export class ComponentNodeAdapter {
       }
     }
 
-    return { valid: errors.filter((e) => e.severity === 'error').length === 0, errors };
+    return {
+      valid: errors.filter((e) => e.severity === 'error').length === 0,
+      errors,
+    };
   }
 
   /**
@@ -383,25 +454,47 @@ export class ComponentNodeAdapter {
    */
   private static validateSchema(schema: ComponentSchema): {
     valid: boolean;
-    errors: Array<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }>;
+    errors: Array<{
+      field: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+    }>;
   } {
-    const errors: Array<{ field: string; message: string; severity: 'error' | 'warning' | 'info' }> = [];
+    const errors: Array<{
+      field: string;
+      message: string;
+      severity: 'error' | 'warning' | 'info';
+    }> = [];
 
     if (!schema.type) {
-      errors.push({ field: 'type', message: 'Schema missing type', severity: 'error' });
+      errors.push({
+        field: 'type',
+        message: 'Schema missing type',
+        severity: 'error',
+      });
     }
 
     if (!schema.props) {
-      errors.push({ field: 'props', message: 'Schema missing props', severity: 'warning' });
+      errors.push({
+        field: 'props',
+        message: 'Schema missing props',
+        severity: 'warning',
+      });
     }
 
-    return { valid: errors.filter((e) => e.severity === 'error').length === 0, errors };
+    return {
+      valid: errors.filter((e) => e.severity === 'error').length === 0,
+      errors,
+    };
   }
 
   /**
    * Compare two schemas for equality
    */
-  private static compareSchemas(schema1: ComponentSchema, schema2: ComponentSchema): string[] {
+  private static compareSchemas(
+    schema1: ComponentSchema,
+    schema2: ComponentSchema
+  ): string[] {
     const errors: string[] = [];
 
     if (schema1.type !== schema2.type) {
@@ -413,7 +506,9 @@ export class ComponentNodeAdapter {
     const props2Keys = Object.keys(schema2.props || {}).sort();
 
     if (JSON.stringify(props1Keys) !== JSON.stringify(props2Keys)) {
-      errors.push(`Props keys mismatch: ${props1Keys.join(',')} !== ${props2Keys.join(',')}`);
+      errors.push(
+        `Props keys mismatch: ${props1Keys.join(',')} !== ${props2Keys.join(',')}`
+      );
     }
 
     return errors;
@@ -438,7 +533,9 @@ export class ComponentNodeAdapter {
         warnings.push(...result.warnings);
         errors.push(...result.errors);
       } catch (error) {
-        errors.push(`Failed to convert schema ${schema.id}: ${(error as Error).message}`);
+        errors.push(
+          `Failed to convert schema ${schema.id}: ${(error as Error).message}`
+        );
       }
     }
 
@@ -463,7 +560,9 @@ export class ComponentNodeAdapter {
         warnings.push(...result.warnings);
         errors.push(...result.errors);
       } catch (error) {
-        errors.push(`Failed to convert node ${node.id}: ${(error as Error).message}`);
+        errors.push(
+          `Failed to convert node ${node.id}: ${(error as Error).message}`
+        );
       }
     }
 

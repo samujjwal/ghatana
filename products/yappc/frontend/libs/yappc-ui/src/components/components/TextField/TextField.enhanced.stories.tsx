@@ -406,8 +406,10 @@ export const FullFeatured: Story = {
     };
 
     const getHelperText = () => {
-      if (validationState === 'error') return 'Username must be at least 3 characters';
-      if (validationState === 'warning') return 'Recommended minimum is 8 characters';
+      if (validationState === 'error')
+        return 'Username must be at least 3 characters';
+      if (validationState === 'warning')
+        return 'Recommended minimum is 8 characters';
       if (validationState === 'success') return 'Username looks good!';
       return 'Choose a unique username';
     };
@@ -549,9 +551,24 @@ export const AccessibilityDemo: Story = {
           Tab to focus, Escape to clear (when clearable)
         </Typography>
         <Stack spacing={2}>
-          <TextField label="Field 1" placeholder="Tab to navigate" fullWidth clearable />
-          <TextField label="Field 2" placeholder="Tab to navigate" fullWidth clearable />
-          <TextField label="Field 3" placeholder="Tab to navigate" fullWidth clearable />
+          <TextField
+            label="Field 1"
+            placeholder="Tab to navigate"
+            fullWidth
+            clearable
+          />
+          <TextField
+            label="Field 2"
+            placeholder="Tab to navigate"
+            fullWidth
+            clearable
+          />
+          <TextField
+            label="Field 3"
+            placeholder="Tab to navigate"
+            fullWidth
+            clearable
+          />
         </Stack>
       </Box>
     </Stack>

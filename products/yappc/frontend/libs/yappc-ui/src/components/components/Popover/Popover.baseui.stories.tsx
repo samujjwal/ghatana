@@ -60,7 +60,10 @@ type Story = StoryObj<typeof Popover>;
 export const Default: Story = {
   render: () => (
     <Popover trigger={<Button>Open Popover</Button>}>
-      <p>This is the popover content. It appears when you click the trigger button.</p>
+      <p>
+        This is the popover content. It appears when you click the trigger
+        button.
+      </p>
     </Popover>
   ),
 };
@@ -71,7 +74,10 @@ export const Default: Story = {
 export const Placements: Story = {
   render: () => (
     <div className="grid grid-cols-3 gap-8 p-16">
-      <Popover trigger={<Button size="sm">Top Start</Button>} placement="top-start">
+      <Popover
+        trigger={<Button size="sm">Top Start</Button>}
+        placement="top-start"
+      >
         Top Start
       </Popover>
       <Popover trigger={<Button size="sm">Top</Button>} placement="top">
@@ -81,11 +87,19 @@ export const Placements: Story = {
         Top End
       </Popover>
 
-      <Popover trigger={<Button size="sm">Left Start</Button>} placement="left-start">
+      <Popover
+        trigger={<Button size="sm">Left Start</Button>}
+        placement="left-start"
+      >
         Left Start
       </Popover>
-      <div className="text-center text-grey-500 text-sm py-4">Trigger Button</div>
-      <Popover trigger={<Button size="sm">Right Start</Button>} placement="right-start">
+      <div className="text-center text-grey-500 text-sm py-4">
+        Trigger Button
+      </div>
+      <Popover
+        trigger={<Button size="sm">Right Start</Button>}
+        placement="right-start"
+      >
         Right Start
       </Popover>
 
@@ -97,21 +111,33 @@ export const Placements: Story = {
         Right
       </Popover>
 
-      <Popover trigger={<Button size="sm">Left End</Button>} placement="left-end">
+      <Popover
+        trigger={<Button size="sm">Left End</Button>}
+        placement="left-end"
+      >
         Left End
       </Popover>
       <div />
-      <Popover trigger={<Button size="sm">Right End</Button>} placement="right-end">
+      <Popover
+        trigger={<Button size="sm">Right End</Button>}
+        placement="right-end"
+      >
         Right End
       </Popover>
 
-      <Popover trigger={<Button size="sm">Bottom Start</Button>} placement="bottom-start">
+      <Popover
+        trigger={<Button size="sm">Bottom Start</Button>}
+        placement="bottom-start"
+      >
         Bottom Start
       </Popover>
       <Popover trigger={<Button size="sm">Bottom</Button>} placement="bottom">
         Bottom (Default)
       </Popover>
-      <Popover trigger={<Button size="sm">Bottom End</Button>} placement="bottom-end">
+      <Popover
+        trigger={<Button size="sm">Bottom End</Button>}
+        placement="bottom-end"
+      >
         Bottom End
       </Popover>
     </div>
@@ -163,9 +189,7 @@ export const CustomOffset: Story = {
       <Popover trigger={<Button>Small Offset (4px)</Button>} offset={4}>
         Close to trigger
       </Popover>
-      <Popover trigger={<Button>Default (8px)</Button>}>
-        Default offset
-      </Popover>
+      <Popover trigger={<Button>Default (8px)</Button>}>Default offset</Popover>
       <Popover trigger={<Button>Large Offset (16px)</Button>} offset={16}>
         Far from trigger
       </Popover>
@@ -197,7 +221,9 @@ export const Controlled: Story = {
           trigger={<Button>Toggle Programmatically</Button>}
         >
           <p>This popover is controlled by external state.</p>
-          <p className="mt-2 text-sm">Click the buttons above or the trigger to toggle.</p>
+          <p className="mt-2 text-sm">
+            Click the buttons above or the trigger to toggle.
+          </p>
         </Popover>
       </div>
     );
@@ -213,7 +239,9 @@ export const WithCloseButton: Story = {
       trigger={<Button>Open with Close Button</Button>}
       title="Notification"
     >
-      <p className="mb-3">This is an important notification that you can dismiss.</p>
+      <p className="mb-3">
+        This is an important notification that you can dismiss.
+      </p>
       <PopoverClose>
         <Button size="sm" variant="outline" className="w-full">
           Dismiss
@@ -242,7 +270,8 @@ export const RichContent: Story = {
         />
         <h4 className="font-semibold">Premium Widget</h4>
         <p className="text-sm">
-          A high-quality widget with advanced features and exceptional performance.
+          A high-quality widget with advanced features and exceptional
+          performance.
         </p>
         <div className="flex items-center justify-between pt-2">
           <span className="text-lg font-bold text-primary-600">$299</span>
@@ -330,7 +359,12 @@ export const HelpTooltip: Story = {
         <Popover
           trigger={
             <button className="text-grey-400 hover:text-grey-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -362,11 +396,10 @@ export const HelpTooltip: Story = {
  */
 export const Nested: Story = {
   render: () => (
-    <Popover
-      trigger={<Button>Open First Popover</Button>}
-      title="First Level"
-    >
-      <p className="mb-3">This is the first popover. You can nest another popover inside:</p>
+    <Popover trigger={<Button>Open First Popover</Button>} title="First Level">
+      <p className="mb-3">
+        This is the first popover. You can nest another popover inside:
+      </p>
       <Popover
         trigger={<Button size="sm">Open Second Popover</Button>}
         placement="right"
@@ -392,7 +425,10 @@ export const DarkMode: Story = {
         title="Dark Theme"
         description="This popover automatically adapts to dark mode"
       >
-        <p>All colors and styles are theme-aware and adjust for optimal contrast in dark mode.</p>
+        <p>
+          All colors and styles are theme-aware and adjust for optimal contrast
+          in dark mode.
+        </p>
       </Popover>
     </div>
   ),

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Search Bar Component
- * 
+ *
  * Advanced file search with filtering, highlighting, and history.
  * Integrates with advanced file operations hook.
- * 
+ *
  * @doc.type component
  * @doc.purpose Advanced file search for IDE
  * @doc.layer product
@@ -13,7 +13,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import { useAdvancedFileOperations } from '../hooks/useAdvancedFileOperations';
-import type { FileSearchQuery, SearchResult } from '../hooks/useAdvancedFileOperations';
+import type {
+  FileSearchQuery,
+  SearchResult,
+} from '../hooks/useAdvancedFileOperations';
 
 /**
  * Search Bar Props
@@ -45,12 +48,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   showHistory = true,
   autoFocus = false,
 }) => {
-  const {
-    searchFiles,
-    clearSearch,
-    searchResults,
-    isSearching,
-  } = useAdvancedFileOperations();
+  const { searchFiles, clearSearch, searchResults, isSearching } =
+    useAdvancedFileOperations();
 
   // Search state
   const [query, setQuery] = useState('');
@@ -82,37 +81,46 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }, [showHistory]);
 
   // Save search history to localStorage
-  const saveToHistory = useCallback((query: FileSearchQuery, resultCount: number) => {
-    if (!showHistory) return;
+  const saveToHistory = useCallback(
+    (query: FileSearchQuery, resultCount: number) => {
+      if (!showHistory) return;
 
-    const historyItem: SearchHistoryItem = {
-      query,
-      timestamp: Date.now(),
-      resultCount,
-    };
+      const historyItem: SearchHistoryItem = {
+        query,
+        timestamp: Date.now(),
+        resultCount,
+      };
 
-    setHistory(prev => {
-      const updated = [historyItem, ...prev.filter(h => 
-        JSON.stringify(h.query) !== JSON.stringify(query)
-      )].slice(0, 10); // Keep last 10 searches
+      setHistory((prev) => {
+        const updated = [
+          historyItem,
+          ...prev.filter(
+            (h) => JSON.stringify(h.query) !== JSON.stringify(query)
+          ),
+        ].slice(0, 10); // Keep last 10 searches
 
-      try {
-        localStorage.setItem('ide-search-history', JSON.stringify(updated));
-      } catch (error) {
-        console.warn('Failed to save search history:', error);
-      }
+        try {
+          localStorage.setItem('ide-search-history', JSON.stringify(updated));
+        } catch (error) {
+          console.warn('Failed to save search history:', error);
+        }
 
-      return updated;
-    });
-  }, [showHistory]);
+        return updated;
+      });
+    },
+    [showHistory]
+  );
 
   // Handle search input
-  const handleInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setQuery(value);
-    setSearchQuery(prev => ({ ...prev, pattern: value }));
-    setSelectedIndex(-1);
-  }, []);
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setQuery(value);
+      setSearchQuery((prev) => ({ ...prev, pattern: value }));
+      setSelectedIndex(-1);
+    },
+    []
+  );
 
   // Handle search submission
   const handleSearch = useCallback(async () => {
@@ -124,68 +132,84 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }, [searchQuery, searchFiles, searchResults.length, saveToHistory]);
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    const results = isExpanded ? searchResults : history;
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const results = isExpanded ? searchResults : history;
 
-    switch (event.key) {
-      case 'Enter':
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < results.length) {
-          if (isExpanded) {
-            onResultSelect?.(results[selectedIndex] as SearchResult);
+      switch (event.key) {
+        case 'Enter':
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < results.length) {
+            if (isExpanded) {
+              onResultSelect?.(results[selectedIndex] as SearchResult);
+            } else {
+              // Load historical search
+              const historyItem = results[selectedIndex] as SearchHistoryItem;
+              setQuery(historyItem.query.pattern);
+              setSearchQuery(historyItem.query);
+              handleSearch();
+            }
           } else {
-            // Load historical search
-            const historyItem = results[selectedIndex] as SearchHistoryItem;
-            setQuery(historyItem.query.pattern);
-            setSearchQuery(historyItem.query);
             handleSearch();
           }
-        } else {
-          handleSearch();
-        }
-        break;
+          break;
 
-      case 'Escape':
-        event.preventDefault();
-        setIsExpanded(false);
-        setSelectedIndex(-1);
-        inputRef.current?.blur();
-        break;
+        case 'Escape':
+          event.preventDefault();
+          setIsExpanded(false);
+          setSelectedIndex(-1);
+          inputRef.current?.blur();
+          break;
 
-      case 'ArrowDown':
-        event.preventDefault();
-        setSelectedIndex(prev => 
-          prev < results.length - 1 ? prev + 1 : 0
-        );
-        break;
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev < results.length - 1 ? prev + 1 : 0
+          );
+          break;
 
-      case 'ArrowUp':
-        event.preventDefault();
-        setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : results.length - 1
-        );
-        break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex((prev) =>
+            prev > 0 ? prev - 1 : results.length - 1
+          );
+          break;
 
-      case 'Tab':
-        event.preventDefault();
-        // Focus on search options
-        break;
-    }
-  }, [isExpanded, searchResults, history, selectedIndex, onResultSelect, handleSearch]);
+        case 'Tab':
+          event.preventDefault();
+          // Focus on search options
+          break;
+      }
+    },
+    [
+      isExpanded,
+      searchResults,
+      history,
+      selectedIndex,
+      onResultSelect,
+      handleSearch,
+    ]
+  );
 
   // Handle result click
-  const handleResultClick = useCallback((result: SearchResult) => {
-    onResultSelect?.(result);
-    setIsExpanded(false);
-    setSelectedIndex(-1);
-  }, [onResultSelect]);
+  const handleResultClick = useCallback(
+    (result: SearchResult) => {
+      onResultSelect?.(result);
+      setIsExpanded(false);
+      setSelectedIndex(-1);
+    },
+    [onResultSelect]
+  );
 
   // Handle history item click
-  const handleHistoryClick = useCallback((historyItem: SearchHistoryItem) => {
-    setQuery(historyItem.query.pattern);
-    setSearchQuery(historyItem.query);
-    handleSearch();
-  }, [handleSearch]);
+  const handleHistoryClick = useCallback(
+    (historyItem: SearchHistoryItem) => {
+      setQuery(historyItem.query.pattern);
+      setSearchQuery(historyItem.query);
+      handleSearch();
+    },
+    [handleSearch]
+  );
 
   // Clear search
   const handleClear = useCallback(() => {
@@ -198,16 +222,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   // Toggle search options
   const toggleOptions = useCallback(() => {
-    setIsExpanded(prev => !prev);
+    setIsExpanded((prev) => !prev);
   }, []);
 
   // Update search options
-  const updateSearchOption = useCallback(<K extends keyof FileSearchQuery>(
-    key: K,
-    value: FileSearchQuery[K]
-  ) => {
-    setSearchQuery(prev => ({ ...prev, [key]: value }));
-  }, []);
+  const updateSearchOption = useCallback(
+    <K extends keyof FileSearchQuery>(key: K, value: FileSearchQuery[K]) => {
+      setSearchQuery((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   // Highlight text in search results
   const highlightText = useCallback((text: string, pattern: string) => {
@@ -216,9 +240,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     const regex = new RegExp(`(${pattern})`, 'gi');
     const parts = text.split(regex);
 
-    return parts.map((part, index) => 
+    return parts.map((part, index) =>
       regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100">
+        <mark
+          key={index}
+          className="bg-yellow-200 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100"
+        >
           {part}
         </mark>
       ) : (
@@ -244,12 +271,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           {isSearching ? (
             <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
           ) : (
-            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="h-4 w-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           )}
         </div>
-        
+
         <input
           ref={inputRef}
           type="text"
@@ -261,24 +298,44 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           autoFocus={autoFocus}
           className="flex-1 px-2 py-2 bg-transparent outline-none text-sm"
         />
-        
+
         {query && (
           <button
             onClick={handleClear}
             className="px-2 py-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         )}
-        
+
         <button
           onClick={toggleOptions}
           className="px-2 py-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-l border-gray-300 dark:border-gray-600"
         >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            />
           </svg>
         </button>
       </div>
@@ -293,17 +350,21 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <input
                   type="checkbox"
                   checked={searchQuery.caseSensitive}
-                  onChange={(e) => updateSearchOption('caseSensitive', e.target.checked)}
+                  onChange={(e) =>
+                    updateSearchOption('caseSensitive', e.target.checked)
+                  }
                   className="rounded"
                 />
                 <span>Case Sensitive</span>
               </label>
-              
+
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={searchQuery.regex}
-                  onChange={(e) => updateSearchOption('regex', e.target.checked)}
+                  onChange={(e) =>
+                    updateSearchOption('regex', e.target.checked)
+                  }
                   className="rounded"
                 />
                 <span>Regular Expression</span>
@@ -319,7 +380,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <div
                   key={result.file.id}
                   className={`px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-700 ${
-                    index === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    index === selectedIndex
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : ''
                   }`}
                   onClick={() => handleResultClick(result)}
                 >
@@ -336,16 +399,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                       Score: {result.score}
                     </span>
                   </div>
-                  
+
                   <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
                     {result.file.path}
                   </div>
-                  
+
                   {result.matches.length > 0 && (
                     <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                       {result.matches.slice(0, 2).map((match, i) => (
                         <div key={i} className="truncate">
-                          Line {match.line}: {highlightText(match.text, searchQuery.pattern)}
+                          Line {match.line}:{' '}
+                          {highlightText(match.text, searchQuery.pattern)}
                         </div>
                       ))}
                       {result.matches.length > 2 && (
@@ -367,7 +431,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                   <div
                     key={item.timestamp}
                     className={`px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer rounded text-sm ${
-                      index === selectedIndex ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                      index === selectedIndex
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : ''
                     }`}
                     onClick={() => handleHistoryClick(item)}
                   >

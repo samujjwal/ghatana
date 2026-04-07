@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - IDE-Canvas Bridge
- * 
+ *
  * Bridges IDE CRDT state with canvas CRDT state for seamless collaboration.
  * Handles bidirectional synchronization between IDE and canvas.
- * 
+ *
  * @doc.type module
  * @doc.purpose IDE-Canvas synchronization bridge
  * @doc.layer product
@@ -26,7 +26,8 @@ import type { IDECRDTState } from './ide-schema';
 export class IDECanvasBridge {
   private ideHandler: IDECRDTHandler;
   private canvasState: unknown; // Will be populated with canvas CRDT state
-  private syncListeners: Map<string, (operation: CRDTOperation) => void> = new Map();
+  private syncListeners: Map<string, (operation: CRDTOperation) => void> =
+    new Map();
 
   /**
    *
@@ -41,26 +42,39 @@ export class IDECanvasBridge {
 
   /**
    * Initialize bridge and set up listeners
-   * 
+   *
    * @doc.returns Initialization result
    */
   initialize(): { success: boolean; error?: string } {
     try {
       // Set up IDE state listener
-      this.ideHandler.addListener('ide-canvas-bridge', this.handleIDEStateChange.bind(this));
+      this.ideHandler.addListener(
+        'ide-canvas-bridge',
+        this.handleIDEStateChange.bind(this)
+      );
 
       // Set up canvas state listener (implementation depends on canvas CRDT)
       this.setupCanvasListener();
 
       // If the canvas exposes an addListener API, register a listener for bridge events
-      if (this.canvasState && typeof this.canvasState.addListener === 'function') {
-        this.canvasState.addListener('ide-canvas-bridge', (op: CRDTOperation) => this.handleCanvasStateChange(op));
-        this.syncListeners.set('canvas', (op: CRDTOperation) => this.handleCanvasStateChange(op));
+      if (
+        this.canvasState &&
+        typeof this.canvasState.addListener === 'function'
+      ) {
+        this.canvasState.addListener('ide-canvas-bridge', (op: CRDTOperation) =>
+          this.handleCanvasStateChange(op)
+        );
+        this.syncListeners.set('canvas', (op: CRDTOperation) =>
+          this.handleCanvasStateChange(op)
+        );
       }
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -92,9 +106,10 @@ export class IDECanvasBridge {
    * Check if operation affects IDE canvas nodes
    */
   private isIDECanvasOperation(operation: CRDTOperation): boolean {
-    return operation.targetId === 'ide-node' ||
-      operation.type === 'update' &&
-      operation.data?.nodeType === 'ide';
+    return (
+      operation.targetId === 'ide-node' ||
+      (operation.type === 'update' && operation.data?.nodeType === 'ide')
+    );
   }
 
   /**
@@ -138,7 +153,12 @@ export class IDECanvasBridge {
    */
   private createFileCanvasNode(file: unknown): CanvasNodeLite {
     const rawContent = file && file.content;
-    const content = typeof rawContent === 'string' ? rawContent : (rawContent && typeof (rawContent as unknown).toString === 'function' ? (rawContent as unknown).toString() : '');
+    const content =
+      typeof rawContent === 'string'
+        ? rawContent
+        : rawContent && typeof (rawContent as unknown).toString === 'function'
+          ? (rawContent as unknown).toString()
+          : '';
 
     return {
       id: `file-${file.id}`,
@@ -176,7 +196,10 @@ export class IDECanvasBridge {
   /**
    * Update IDE canvas node with current state
    */
-  private updateIDECanvasNode(node: CanvasNodeLite, ideState: IDECRDTState): CanvasNodeLite {
+  private updateIDECanvasNode(
+    node: CanvasNodeLite,
+    ideState: IDECRDTState
+  ): CanvasNodeLite {
     const ideNodeData = node.data as IDECanvasNodeData;
 
     return {
@@ -207,7 +230,12 @@ export class IDECanvasBridge {
 
     for (const [id, file] of files) {
       const rawContent = file && file.content;
-      const content = typeof rawContent === 'string' ? rawContent : (rawContent && typeof (rawContent as unknown).toString === 'function' ? (rawContent as unknown).toString() : '');
+      const content =
+        typeof rawContent === 'string'
+          ? rawContent
+          : rawContent && typeof (rawContent as unknown).toString === 'function'
+            ? (rawContent as unknown).toString()
+            : '';
 
       result[id] = {
         id,
@@ -229,7 +257,9 @@ export class IDECanvasBridge {
   /**
    * Map CRDT folders to IDE state format
    */
-  private mapFoldersToIDEState(folders: IDECRDTState['folders']): Record<string, IDEFolder> {
+  private mapFoldersToIDEState(
+    folders: IDECRDTState['folders']
+  ): Record<string, IDEFolder> {
     const result: Record<string, IDEFolder> = {};
 
     for (const [id, folder] of folders) {
@@ -237,7 +267,9 @@ export class IDECanvasBridge {
         id,
         path: folder.path,
         name: folder.path.split('/').pop() || 'untitled',
-        children: folder.children.map(childId => ({ id: childId }) as unknown),
+        children: folder.children.map(
+          (childId) => ({ id: childId }) as unknown
+        ),
         isExpanded: false,
         createdAt: folder.metadata.createdAt,
       };
@@ -249,7 +281,9 @@ export class IDECanvasBridge {
   /**
    * Map editor state to simplified format
    */
-  private mapEditorState(editorState: IDECRDTState['editorState']): Record<string, unknown> {
+  private mapEditorState(
+    editorState: IDECRDTState['editorState']
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
     for (const [userId, state] of editorState) {
@@ -268,7 +302,9 @@ export class IDECanvasBridge {
   /**
    * Map presence to IDE state format
    */
-  private mapPresence(presence: IDECRDTState['presence']): Record<string, unknown> {
+  private mapPresence(
+    presence: IDECRDTState['presence']
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
 
     for (const [userId, presenceData] of presence) {
@@ -309,17 +345,25 @@ export class IDECanvasBridge {
 
       // Sync files
       if (ideNodeData.ideState.files) {
-        const canvasFiles = (ideNodeData.ideState.files instanceof Y.Map)
-          ? (yMapToRecord(ideNodeData.ideState.files) as Record<string, IDEFile>)
-          : (ideNodeData.ideState.files as Record<string, IDEFile>);
+        const canvasFiles =
+          ideNodeData.ideState.files instanceof Y.Map
+            ? (yMapToRecord(ideNodeData.ideState.files) as Record<
+                string,
+                IDEFile
+              >)
+            : (ideNodeData.ideState.files as Record<string, IDEFile>);
         this.syncCanvasFilesToIDE(canvasFiles, ideState);
       }
 
       // Sync folders
       if (ideNodeData.ideState.folders) {
-        const canvasFolders = (ideNodeData.ideState.folders instanceof Y.Map)
-          ? (yMapToRecord(ideNodeData.ideState.folders) as Record<string, IDEFolder>)
-          : (ideNodeData.ideState.folders as Record<string, IDEFolder>);
+        const canvasFolders =
+          ideNodeData.ideState.folders instanceof Y.Map
+            ? (yMapToRecord(ideNodeData.ideState.folders) as Record<
+                string,
+                IDEFolder
+              >)
+            : (ideNodeData.ideState.folders as Record<string, IDEFolder>);
         this.syncCanvasFoldersToIDE(canvasFolders, ideState);
       }
     }
@@ -328,7 +372,10 @@ export class IDECanvasBridge {
   /**
    * Sync canvas files to IDE
    */
-  private syncCanvasFilesToIDE(canvasFiles: Record<string, IDEFile>, ideState: unknown): void {
+  private syncCanvasFilesToIDE(
+    canvasFiles: Record<string, IDEFile>,
+    ideState: unknown
+  ): void {
     for (const [fileId, file] of Object.entries(canvasFiles)) {
       const existingFile = ideState.files.get(fileId);
 
@@ -355,7 +402,10 @@ export class IDECanvasBridge {
           existingFile.metadata.modifiedAt = file.lastModified;
           existingFile.metadata.modifiedBy = 'canvas';
           existingFile.metadata.size = file.size;
-        } else if ((current as unknown)?.delete && (current as unknown)?.insert) {
+        } else if (
+          (current as unknown)?.delete &&
+          (current as unknown)?.insert
+        ) {
           // Y.Text-like
           (current as unknown).delete(0, (current as unknown).length);
           (current as unknown).insert(0, file.content);
@@ -370,7 +420,10 @@ export class IDECanvasBridge {
   /**
    * Sync canvas folders to IDE
    */
-  private syncCanvasFoldersToIDE(canvasFolders: Record<string, IDEFolder>, ideState: IDECRDTState): void {
+  private syncCanvasFoldersToIDE(
+    canvasFolders: Record<string, IDEFolder>,
+    ideState: IDECRDTState
+  ): void {
     for (const [folderId, folder] of Object.entries(canvasFolders)) {
       const existingFolder = ideState.folders.get(folderId);
 
@@ -379,7 +432,7 @@ export class IDECanvasBridge {
         ideState.folders.set(folderId, {
           id: folderId,
           path: folder.path,
-          children: folder.children.map(child => child.id),
+          children: folder.children.map((child) => child.id),
           metadata: {
             createdAt: folder.createdAt,
             createdBy: 'canvas',
@@ -405,7 +458,7 @@ export class IDECanvasBridge {
       ? nodeSource
       : [...(nodeSource.values?.() ?? [])];
 
-    return nodeList.filter((n) => (n).type === 'ide');
+    return nodeList.filter((n) => n.type === 'ide');
   }
 
   /**
@@ -427,7 +480,9 @@ export class IDECanvasBridge {
     } else if (canvasAny?.nodeMap instanceof Map) {
       canvasAny.nodeMap.set(node.id, node);
     } else if (Array.isArray(canvasAny?.nodes)) {
-      const idx = (canvasAny.nodes as CanvasNodeLite[]).findIndex((n) => n.id === node.id);
+      const idx = (canvasAny.nodes as CanvasNodeLite[]).findIndex(
+        (n) => n.id === node.id
+      );
       if (idx >= 0) {
         canvasAny.nodes[idx] = node;
       } else {
@@ -459,7 +514,7 @@ export class IDECanvasBridge {
 
   /**
    * Generate code from canvas node
-   * 
+   *
    * @doc.param canvasNode - Canvas node to generate code from
    * @doc.returns Generated code
    */
@@ -478,7 +533,10 @@ export class IDECanvasBridge {
     }
 
     // Structural nodes: generate a minimal code scaffold from metadata
-    const name = (data?.label ?? data?.name ?? data?.fileName ?? canvasNode.id) as string;
+    const name = (data?.label ??
+      data?.name ??
+      data?.fileName ??
+      canvasNode.id) as string;
     const sanitized = name.replace(/[^a-zA-Z0-9_$]/g, '_');
 
     switch (canvasNode.type) {
@@ -530,7 +588,7 @@ export class IDECanvasBridge {
 
   /**
    * Update canvas from code changes
-   * 
+   *
    * @doc.param fileId - File ID
    * @doc.param code - Updated code
    */
@@ -590,7 +648,10 @@ export class IDECanvasBridge {
   /**
    * Handle conflicts between IDE and canvas
    */
-  private handleConflict(ideOperation: CRDTOperation, canvasOperation: CRDTOperation): {
+  private handleConflict(
+    ideOperation: CRDTOperation,
+    canvasOperation: CRDTOperation
+  ): {
     resolved: boolean;
     winner: 'ide' | 'canvas' | 'merge';
     result?: CRDTOperation;

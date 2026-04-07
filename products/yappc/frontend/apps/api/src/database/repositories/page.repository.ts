@@ -116,7 +116,10 @@ export class PageRepository extends BaseRepository<Page, 'page'> {
    * @doc.layer product
    * @doc.pattern Repository
    */
-  async updateContent(pageId: string, content: Record<string, unknown>): Promise<Page> {
+  async updateContent(
+    pageId: string,
+    content: Record<string, unknown>
+  ): Promise<Page> {
     return this.update({ id: pageId }, { content });
   }
 

@@ -1,8 +1,8 @@
 /**
  * LoginForm Component Tests
- * 
+ *
  * Unit tests for LoginForm component
- * 
+ *
  * @module ui/components/Auth/__tests__/LoginForm.test
  */
 
@@ -31,7 +31,9 @@ describe('LoginForm', () => {
 
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /sign in/i })
+      ).toBeInTheDocument();
     });
 
     it('should render remember me checkbox when enabled', () => {
@@ -61,7 +63,9 @@ describe('LoginForm', () => {
     it('should render custom submit text', () => {
       render(<LoginForm submitText="Log In" />);
 
-      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /log in/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -97,7 +101,7 @@ describe('LoginForm', () => {
       render(<LoginForm />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      
+
       // Enter invalid email
       await user.type(emailInput, 'invalid');
       await user.tab();
@@ -121,8 +125,12 @@ describe('LoginForm', () => {
       const user = userEvent.setup();
       render(<LoginForm />);
 
-      const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
-      const toggleButton = screen.getByRole('button', { name: /show password/i });
+      const passwordInput = screen.getByLabelText(
+        /password/i
+      ) as HTMLInputElement;
+      const toggleButton = screen.getByRole('button', {
+        name: /show password/i,
+      });
 
       expect(passwordInput.type).toBe('password');
 
@@ -139,7 +147,9 @@ describe('LoginForm', () => {
       const user = userEvent.setup();
       render(<LoginForm showRememberMe={true} />);
 
-      const checkbox = screen.getByLabelText(/remember me/i) as HTMLInputElement;
+      const checkbox = screen.getByLabelText(
+        /remember me/i
+      ) as HTMLInputElement;
 
       expect(checkbox.checked).toBe(false);
 
@@ -181,7 +191,11 @@ describe('LoginForm', () => {
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123', false);
+        expect(mockLogin).toHaveBeenCalledWith(
+          'test@example.com',
+          'password123',
+          false
+        );
       });
     });
 
@@ -203,7 +217,11 @@ describe('LoginForm', () => {
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith('test@example.com', 'password123', true);
+        expect(mockLogin).toHaveBeenCalledWith(
+          'test@example.com',
+          'password123',
+          true
+        );
       });
     });
 
@@ -330,7 +348,7 @@ describe('LoginForm', () => {
 
       await user.tab();
       // Skip show password button
-      
+
       await user.tab();
       expect(rememberMeCheckbox).toHaveFocus();
 
@@ -350,7 +368,9 @@ describe('LoginForm', () => {
 
       render(<LoginForm />);
 
-      expect(screen.getByText(/invalid email or password/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/invalid email or password/i)
+      ).toBeInTheDocument();
     });
 
     it('should display field-specific errors', async () => {

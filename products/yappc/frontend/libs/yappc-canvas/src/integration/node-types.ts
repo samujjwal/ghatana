@@ -1,9 +1,9 @@
 /**
  * Canvas Integration Node Types
- * 
+ *
  * Type definitions for integration nodes (Service, API, Database).
  * Extracted to prevent circular dependencies between integration and components.
- * 
+ *
  * @doc.type types
  * @doc.purpose Integration node type definitions
  * @doc.layer canvas/integration
@@ -13,28 +13,28 @@
  * Base persona node data (extracted from PersonaNodes to avoid circular deps)
  */
 export type PersonaNodeType =
-    | 'aiPrompt'
-    | 'userStory'
-    | 'requirement'
-    | 'apiEndpoint'
-    | 'service'
-    | 'database'
-    | 'algorithm'
-    | 'dataStructure'
-    | 'codeBlock'
-    | 'testSuite'
-    | 'uiScreen'
-    | 'wireframe';
+  | 'aiPrompt'
+  | 'userStory'
+  | 'requirement'
+  | 'apiEndpoint'
+  | 'service'
+  | 'database'
+  | 'algorithm'
+  | 'dataStructure'
+  | 'codeBlock'
+  | 'testSuite'
+  | 'uiScreen'
+  | 'wireframe';
 
 export interface PersonaNodeData {
-    label: string;
-    type: PersonaNodeType;
-    persona: 'pm' | 'architect' | 'developer' | 'qa' | 'ux';
-    description?: string;
-    status?: 'draft' | 'ready' | 'in-progress' | 'completed' | 'error';
-    metadata?: Record<string, unknown>;
-    aiGenerated?: boolean;
-    lastUpdated?: string;
+  label: string;
+  type: PersonaNodeType;
+  persona: 'pm' | 'architect' | 'developer' | 'qa' | 'ux';
+  description?: string;
+  status?: 'draft' | 'ready' | 'in-progress' | 'completed' | 'error';
+  metadata?: Record<string, unknown>;
+  aiGenerated?: boolean;
+  lastUpdated?: string;
 }
 
 /**

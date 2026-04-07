@@ -1,9 +1,9 @@
 /**
  * Feature 2.14: Diagram-as-Code
- * 
+ *
  * Text-based synchronization for canvas diagrams with CI/CD integration.
  * Enables version control, automated updates, and inline editing with error detection.
- * 
+ *
  * @module dslSync
  */
 
@@ -12,12 +12,7 @@ import type { CanvasDocument } from './formatAdapters';
 /**
  * DSL format types
  */
-export type DSLFormat =
-  | 'mermaid'
-  | 'plantuml'
-  | 'graphviz'
-  | 'c4'
-  | 'custom';
+export type DSLFormat = 'mermaid' | 'plantuml' | 'graphviz' | 'c4' | 'custom';
 
 /**
  * Sync direction
@@ -27,7 +22,7 @@ export type SyncDirection = 'dsl-to-canvas' | 'canvas-to-dsl' | 'bidirectional';
 /**
  * Sync status
  */
-export type SyncStatus = 
+export type SyncStatus =
   | 'synced'
   | 'out-of-sync'
   | 'conflict'
@@ -226,7 +221,7 @@ export function validateDSL(
   const errors: DSLError[] = [];
   const warnings: DSLError[] = [];
   const info: DSLError[] = [];
-  
+
   // Basic validation (can be extended with actual parsers)
   if (!dslContent.trim()) {
     errors.push({
@@ -238,7 +233,7 @@ export function validateDSL(
     });
     return { valid: false, errors, warnings, info };
   }
-  
+
   // Format-specific validation
   switch (format) {
     case 'mermaid':
@@ -261,13 +256,13 @@ function validateMermaid(content: string): DSLValidationResult {
   const errors: DSLError[] = [];
   const warnings: DSLError[] = [];
   const info: DSLError[] = [];
-  
+
   const lines = content.split('\n');
-  
+
   lines.forEach((line, index) => {
     const lineNum = index + 1;
     const trimmed = line.trim();
-    
+
     // Check for diagram type declaration
     if (lineNum === 1) {
       if (!trimmed.match(/^(flowchart|graph|sequenceDiagram|classDiagram)/)) {
@@ -280,7 +275,7 @@ function validateMermaid(content: string): DSLValidationResult {
         });
       }
     }
-    
+
     // Check for unbalanced brackets
     const openBrackets = (line.match(/[\[\(\{]/g) || []).length;
     const closeBrackets = (line.match(/[\]\)\}]/g) || []).length;
@@ -292,7 +287,7 @@ function validateMermaid(content: string): DSLValidationResult {
         code: 'UNBALANCED_BRACKETS',
       });
     }
-    
+
     // Check for invalid arrow syntax
     if (trimmed.includes('->') && !trimmed.match(/\w+\s*-->?\s*\w+/)) {
       errors.push({
@@ -304,7 +299,7 @@ function validateMermaid(content: string): DSLValidationResult {
       });
     }
   });
-  
+
   return {
     valid: errors.length === 0,
     errors,
@@ -319,7 +314,7 @@ function validateMermaid(content: string): DSLValidationResult {
 function validatePlantUML(content: string): DSLValidationResult {
   const errors: DSLError[] = [];
   const warnings: DSLError[] = [];
-  
+
   if (!content.includes('@startuml')) {
     errors.push({
       message: 'Missing @startuml declaration',
@@ -328,7 +323,7 @@ function validatePlantUML(content: string): DSLValidationResult {
       code: 'MISSING_START',
     });
   }
-  
+
   if (!content.includes('@enduml')) {
     errors.push({
       message: 'Missing @enduml declaration',
@@ -337,7 +332,7 @@ function validatePlantUML(content: string): DSLValidationResult {
       code: 'MISSING_END',
     });
   }
-  
+
   return { valid: errors.length === 0, errors, warnings, info: [] };
 }
 
@@ -347,7 +342,7 @@ function validatePlantUML(content: string): DSLValidationResult {
 function validateGraphviz(content: string): DSLValidationResult {
   const errors: DSLError[] = [];
   const warnings: DSLError[] = [];
-  
+
   if (!content.match(/^(di)?graph\s+\w+/)) {
     errors.push({
       message: 'Missing graph declaration',
@@ -357,7 +352,7 @@ function validateGraphviz(content: string): DSLValidationResult {
       suggestion: 'Start with: digraph G {',
     });
   }
-  
+
   const openBraces = (content.match(/\{/g) || []).length;
   const closeBraces = (content.match(/\}/g) || []).length;
   if (openBraces !== closeBraces) {
@@ -368,7 +363,7 @@ function validateGraphviz(content: string): DSLValidationResult {
       code: 'UNMATCHED_BRACES',
     });
   }
-  
+
   return { valid: errors.length === 0, errors, warnings, info: [] };
 }
 
@@ -378,17 +373,17 @@ function validateGraphviz(content: string): DSLValidationResult {
 function validateC4(content: string): DSLValidationResult {
   const errors: DSLError[] = [];
   const warnings: DSLError[] = [];
-  
+
   const lines = content.split('\n');
   let hasWorkspace = false;
-  
+
   lines.forEach((line, index) => {
     const trimmed = line.trim();
     if (trimmed.startsWith('workspace ')) {
       hasWorkspace = true;
     }
   });
-  
+
   if (!hasWorkspace) {
     warnings.push({
       message: 'C4 workspace not declared',
@@ -397,7 +392,7 @@ function validateC4(content: string): DSLValidationResult {
       code: 'MISSING_WORKSPACE',
     });
   }
-  
+
   return { valid: errors.length === 0, errors, warnings, info: [] };
 }
 
@@ -446,20 +441,20 @@ export function canvasToDSL(
  */
 function canvasToMermaid(document: CanvasDocument): string {
   let mermaid = 'flowchart TB\n';
-  
+
   // Add nodes
   document.nodes.forEach((node) => {
     const shape = getNodeShape(node.type);
     mermaid += `  ${node.id}${shape}${node.label}${shape.replace('[', ']').replace('(', ')')}\n`;
   });
-  
+
   // Add edges
   document.edges.forEach((edge) => {
     const arrow = edge.type === 'dashed' ? '-.->' : '-->';
     const label = edge.label ? `|${edge.label}|` : '';
     mermaid += `  ${edge.source} ${arrow}${label} ${edge.target}\n`;
   });
-  
+
   return mermaid;
 }
 
@@ -468,17 +463,17 @@ function canvasToMermaid(document: CanvasDocument): string {
  */
 function canvasToPlantUML(document: CanvasDocument): string {
   let puml = '@startuml\n';
-  
+
   document.nodes.forEach((node) => {
     puml += `rectangle "${node.label}" as ${node.id}\n`;
   });
-  
+
   document.edges.forEach((edge) => {
     const arrow = edge.type === 'dashed' ? '..>' : '-->';
     const label = edge.label ? ` : ${edge.label}` : '';
     puml += `${edge.source} ${arrow} ${edge.target}${label}\n`;
   });
-  
+
   puml += '@enduml\n';
   return puml;
 }
@@ -488,18 +483,18 @@ function canvasToPlantUML(document: CanvasDocument): string {
  */
 function canvasToGraphviz(document: CanvasDocument): string {
   let dot = 'digraph G {\n';
-  
+
   document.nodes.forEach((node) => {
     const shape = node.type === 'ellipse' ? 'ellipse' : 'box';
     dot += `  ${node.id} [label="${node.label}", shape=${shape}];\n`;
   });
-  
+
   document.edges.forEach((edge) => {
     const style = edge.type === 'dashed' ? ', style=dashed' : '';
     const label = edge.label ? `, label="${edge.label}"` : '';
     dot += `  ${edge.source} -> ${edge.target}${style}${label};\n`;
   });
-  
+
   dot += '}\n';
   return dot;
 }
@@ -510,16 +505,16 @@ function canvasToGraphviz(document: CanvasDocument): string {
 function canvasToC4(document: CanvasDocument): string {
   let c4 = 'workspace {\n';
   c4 += '  model {\n';
-  
+
   document.nodes.forEach((node) => {
     c4 += `    ${node.id} = person "${node.label}"\n`;
   });
-  
+
   document.edges.forEach((edge) => {
     const label = edge.label || 'uses';
     c4 += `    ${edge.source} -> ${edge.target} "${label}"\n`;
   });
-  
+
   c4 += '  }\n';
   c4 += '}\n';
   return c4;
@@ -550,7 +545,7 @@ export function syncDSL(state: DSLSyncState): DSLSyncResult {
   const errors: DSLError[] = [];
   const conflicts: SyncConflict[] = [];
   const timestamp = new Date();
-  
+
   // Validate if enabled
   if (state.config.validateBeforeSync) {
     const validation = validateDSL(state.dslContent, state.config.format);
@@ -572,31 +567,37 @@ export function syncDSL(state: DSLSyncState): DSLSyncResult {
     }
     errors.push(...validation.warnings);
   }
-  
+
   // Parse DSL to canvas
   const parsedDocument = parseDSLToCanvas(
     state.dslContent,
     state.config.format
   );
-  
+
   // Detect conflicts if enabled
   if (state.config.detectConflicts) {
     conflicts.push(...detectConflicts(state.canvasDocument, parsedDocument));
   }
-  
+
   // Calculate changes
   const changes = calculateChanges(state.canvasDocument, parsedDocument);
-  
+
   // Determine status
   let status: SyncStatus = 'synced';
   if (errors.some((e) => e.severity === 'error')) {
     status = 'error';
   } else if (conflicts.length > 0) {
     status = 'conflict';
-  } else if (changes.nodesAdded + changes.edgesAdded + changes.nodesUpdated + changes.edgesUpdated > 0) {
+  } else if (
+    changes.nodesAdded +
+      changes.edgesAdded +
+      changes.nodesUpdated +
+      changes.edgesUpdated >
+    0
+  ) {
     status = 'out-of-sync';
   }
-  
+
   return {
     status,
     document: parsedDocument,
@@ -615,7 +616,7 @@ function detectConflicts(
   dsl: CanvasDocument
 ): SyncConflict[] {
   const conflicts: SyncConflict[] = [];
-  
+
   // Check for node conflicts
   canvas.nodes.forEach((canvasNode) => {
     const dslNode = dsl.nodes.find((n) => n.id === canvasNode.id);
@@ -632,7 +633,7 @@ function detectConflicts(
       }
     }
   });
-  
+
   return conflicts;
 }
 
@@ -651,7 +652,7 @@ function calculateChanges(
     edgesUpdated: 0,
     edgesDeleted: 0,
   };
-  
+
   // Count node changes
   newDoc.nodes.forEach((newNode) => {
     const oldNode = oldDoc.nodes.find((n) => n.id === newNode.id);
@@ -661,11 +662,11 @@ function calculateChanges(
       changes.nodesUpdated++;
     }
   });
-  
-  changes.nodesDeleted = oldDoc.nodes.length - newDoc.nodes.filter((n) =>
-    oldDoc.nodes.some((o) => o.id === n.id)
-  ).length;
-  
+
+  changes.nodesDeleted =
+    oldDoc.nodes.length -
+    newDoc.nodes.filter((n) => oldDoc.nodes.some((o) => o.id === n.id)).length;
+
   // Count edge changes
   newDoc.edges.forEach((newEdge) => {
     const oldEdge = oldDoc.edges.find((e) => e.id === newEdge.id);
@@ -675,11 +676,11 @@ function calculateChanges(
       changes.edgesUpdated++;
     }
   });
-  
-  changes.edgesDeleted = oldDoc.edges.length - newDoc.edges.filter((e) =>
-    oldDoc.edges.some((o) => o.id === e.id)
-  ).length;
-  
+
+  changes.edgesDeleted =
+    oldDoc.edges.length -
+    newDoc.edges.filter((e) => oldDoc.edges.some((o) => o.id === e.id)).length;
+
   return changes;
 }
 
@@ -695,9 +696,9 @@ export function resolveConflict(
   if (!conflict) {
     return state;
   }
-  
+
   const updatedConflicts = state.conflicts.filter((c) => c.id !== conflictId);
-  
+
   return {
     ...state,
     conflicts: updatedConflicts,
@@ -734,7 +735,7 @@ export function triggerCIPipeline(
   if (!state.ciConfig?.enabled) {
     return false;
   }
-  
+
   switch (event) {
     case 'commit':
       return state.ciConfig.onCommit;
@@ -776,7 +777,7 @@ jobs:
       - name: Sync to Canvas
         run: npm run sync-to-canvas
 `;
-    
+
     case 'gitlab-ci':
       return `diagram-sync:
   stage: build
@@ -788,7 +789,7 @@ jobs:
       - "**/*.mmd"
       - "**/*.puml"
 `;
-    
+
     case 'jenkins':
       return `pipeline {
   agent any
@@ -809,7 +810,7 @@ jobs:
   }
 }
 `;
-    
+
     case 'circleci':
       return `version: 2.1
 jobs:
@@ -832,7 +833,7 @@ workflows:
                 - main
                 - develop
 `;
-    
+
     default:
       return '';
   }

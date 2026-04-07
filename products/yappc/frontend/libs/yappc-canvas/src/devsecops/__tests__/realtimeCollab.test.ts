@@ -422,7 +422,11 @@ describe.skip('realtimeCollab', () => {
         metadata: {},
       };
 
-      const resolution = resolveConflict(operation, [conflictingOp], 'latest-wins');
+      const resolution = resolveConflict(
+        operation,
+        [conflictingOp],
+        'latest-wins'
+      );
 
       expect(resolution.resolution).toBe('accept');
     });
@@ -774,7 +778,10 @@ describe.skip('realtimeCollab', () => {
       const collaborators = getElementCollaborators(session, 'node-1');
 
       expect(collaborators).toHaveLength(2);
-      expect(collaborators.map(c => c.id).sort()).toEqual(['user-1', 'user-2']);
+      expect(collaborators.map((c) => c.id).sort()).toEqual([
+        'user-1',
+        'user-2',
+      ]);
     });
   });
 

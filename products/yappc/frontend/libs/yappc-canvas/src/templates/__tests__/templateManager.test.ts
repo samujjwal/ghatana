@@ -494,7 +494,9 @@ describe('templateManager', () => {
         ],
       };
 
-      expect(() => applyParameters(template, {})).toThrow('Parameter "Name" is required');
+      expect(() => applyParameters(template, {})).toThrow(
+        'Parameter "Name" is required'
+      );
     });
 
     it('should validate parameter types', () => {
@@ -514,9 +516,9 @@ describe('templateManager', () => {
         ],
       };
 
-      expect(() => applyParameters(template, { count: 'not-a-number' as unknown })).toThrow(
-        'Parameter "Count" must be a number'
-      );
+      expect(() =>
+        applyParameters(template, { count: 'not-a-number' as unknown })
+      ).toThrow('Parameter "Count" must be a number');
     });
 
     it('should validate number ranges', () => {
@@ -945,7 +947,10 @@ describe('templateManager', () => {
       state = addToGallery(state, template1);
       state = addToGallery(state, template2);
 
-      const results = searchTemplates(state, { sortBy: 'usage', sortOrder: 'desc' });
+      const results = searchTemplates(state, {
+        sortBy: 'usage',
+        sortOrder: 'desc',
+      });
 
       expect(results[0].id).toBe('tpl-2');
     });

@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   createProviderManager,
   type JWTPayload,
-
-  ProviderManager} from '../providerManager';
+  ProviderManager,
+} from '../providerManager';
 
 describe('ProviderManager', () => {
   let manager: ProviderManager;
@@ -59,10 +59,10 @@ describe('ProviderManager', () => {
   describe('Connection Management', () => {
     it('should connect to WebSocket provider', async () => {
       const connected = await manager.connect('room-1');
-      
+
       // May succeed or fail based on random simulation
       expect(typeof connected).toBe('boolean');
-      
+
       if (connected) {
         const state = manager.getState();
         expect(state.status).toBe('connected');
@@ -83,7 +83,7 @@ describe('ProviderManager', () => {
 
     it('should not connect if already connected', async () => {
       await manager.connect('room-1');
-      
+
       if (manager.getState().status === 'connected') {
         const result = await manager.connect('room-1');
         expect(result).toBe(false);
@@ -92,7 +92,7 @@ describe('ProviderManager', () => {
 
     it('should disconnect from provider', async () => {
       await manager.connect('room-1');
-      
+
       manager.disconnect();
 
       const state = manager.getState();
@@ -468,15 +468,19 @@ describe('ProviderManager', () => {
       await manager.connect('room-1');
 
       const connectingEvents = manager.getEventHistory({ type: 'connecting' });
-      expect(connectingEvents.every(e => e.type === 'connecting')).toBe(true);
+      expect(connectingEvents.every((e) => e.type === 'connecting')).toBe(true);
     });
 
     it('should filter events by provider', async () => {
       await manager.connect('room-1');
 
-      const websocketEvents = manager.getEventHistory({ provider: 'websocket' });
+      const websocketEvents = manager.getEventHistory({
+        provider: 'websocket',
+      });
       if (websocketEvents.length > 0) {
-        expect(websocketEvents.every(e => e.provider === 'websocket')).toBe(true);
+        expect(websocketEvents.every((e) => e.provider === 'websocket')).toBe(
+          true
+        );
       }
     });
 
@@ -486,7 +490,9 @@ describe('ProviderManager', () => {
       const endDate = Date.now();
 
       const events = manager.getEventHistory({ startDate, endDate });
-      expect(events.every(e => e.timestamp >= startDate && e.timestamp <= endDate)).toBe(true);
+      expect(
+        events.every((e) => e.timestamp >= startDate && e.timestamp <= endDate)
+      ).toBe(true);
     });
 
     it('should return events in descending chronological order', async () => {
@@ -496,7 +502,9 @@ describe('ProviderManager', () => {
       const history = manager.getEventHistory();
       if (history.length > 1) {
         for (let i = 0; i < history.length - 1; i++) {
-          expect(history[i].timestamp).toBeGreaterThanOrEqual(history[i + 1].timestamp);
+          expect(history[i].timestamp).toBeGreaterThanOrEqual(
+            history[i + 1].timestamp
+          );
         }
       }
     });

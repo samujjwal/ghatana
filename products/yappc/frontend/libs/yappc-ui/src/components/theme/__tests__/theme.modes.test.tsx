@@ -58,7 +58,7 @@ describe('Theme Modes', () => {
     // Mock localStorage
     const getItemMock = jest.spyOn(Storage.prototype, 'getItem');
     const setItemMock = jest.spyOn(Storage.prototype, 'setItem');
-    
+
     // Render with theme provider
     render(
       <ThemeProvider defaultMode="light" storageKey="test-theme-key">
@@ -68,10 +68,10 @@ describe('Theme Modes', () => {
 
     // Toggle theme
     fireEvent.click(screen.getByTestId('theme-toggle'));
-    
+
     // Check if localStorage was updated
     expect(setItemMock).toHaveBeenCalledWith('test-theme-key', 'dark');
-    
+
     // Cleanup
     getItemMock.mockRestore();
     setItemMock.mockRestore();
@@ -81,7 +81,7 @@ describe('Theme Modes', () => {
     // Mock matchMedia for dark mode preference
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation(query => ({
+      value: jest.fn().mockImplementation((query) => ({
         matches: query === '(prefers-color-scheme: dark)',
         media: query,
         onchange: null,
@@ -95,36 +95,39 @@ describe('Theme Modes', () => {
 
     // Clear any stored preference
     localStorage.removeItem('theme-mode');
-    
+
     // Render with theme provider (no explicit default)
     render(
       <ThemeProvider>
         <ThemeDisplay />
       </ThemeProvider>
     );
-    
+
     // Should use system preference (dark)
     expect(screen.getByTestId('theme-mode')).toHaveTextContent('dark');
   });
 
   it('should render ThemeToggle component correctly', () => {
     renderWithTheme(<ThemeToggle data-testid="toggle-button" />, {}, 'light');
-    
+
     const toggleButton = screen.getByRole('button');
     expect(toggleButton).toBeInTheDocument();
     expect(toggleButton).toHaveAttribute('aria-label', 'Switch to dark mode');
-    
+
     // Toggle theme
     fireEvent.click(toggleButton);
-    
-  // Re-render with updated theme — ensure previous render is unmounted first
-  // so we don't end up with duplicate ThemeToggle buttons in the document.
-  // renderWithTheme calls cleanup() internally, but call it here for clarity.
-   
-  const { cleanup } = require('@testing-library/react');
-  cleanup();
-  renderWithTheme(<ThemeToggle data-testid="toggle-button" />, {}, 'dark');
+
+    // Re-render with updated theme — ensure previous render is unmounted first
+    // so we don't end up with duplicate ThemeToggle buttons in the document.
+    // renderWithTheme calls cleanup() internally, but call it here for clarity.
+
+    const { cleanup } = require('@testing-library/react');
+    cleanup();
+    renderWithTheme(<ThemeToggle data-testid="toggle-button" />, {}, 'dark');
     const updatedToggleButton = screen.getByRole('button');
-    expect(updatedToggleButton).toHaveAttribute('aria-label', 'Switch to light mode');
+    expect(updatedToggleButton).toHaveAttribute(
+      'aria-label',
+      'Switch to light mode'
+    );
   });
 });

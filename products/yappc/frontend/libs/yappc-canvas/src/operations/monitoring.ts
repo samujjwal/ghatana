@@ -299,7 +299,8 @@ export class MonitoringManager {
       id: this.generateExporterId(params.prefix),
       metrics: [],
       samples: [],
-      scrapeInterval: params.scrapeInterval || this.config.defaultScrapeInterval,
+      scrapeInterval:
+        params.scrapeInterval || this.config.defaultScrapeInterval,
       createdAt: new Date(),
     };
 
@@ -400,7 +401,7 @@ export class MonitoringManager {
     // Export each metric
     for (const metric of exporter.metrics) {
       const samples = metricGroups.get(metric.name) || [];
-      
+
       // Add help text
       lines.push(`# HELP ${exporter.prefix}_${metric.name} ${metric.help}`);
       lines.push(`# TYPE ${exporter.prefix}_${metric.name} ${metric.type}`);
@@ -410,11 +411,11 @@ export class MonitoringManager {
         const labelStr = Object.entries(sample.labels)
           .map(([k, v]) => `${k}="${v}"`)
           .join(',');
-        
+
         const metricLine = labelStr
           ? `${exporter.prefix}_${metric.name}{${labelStr}} ${sample.value}`
           : `${exporter.prefix}_${metric.name} ${sample.value}`;
-        
+
         lines.push(metricLine);
       }
     }
@@ -568,7 +569,10 @@ export class MonitoringManager {
    * Create dashboard
    */
   createDashboard(
-    params: Omit<Dashboard, 'id' | 'createdAt' | 'updatedAt' | 'refreshInterval' | 'timeRange'> & {
+    params: Omit<
+      Dashboard,
+      'id' | 'createdAt' | 'updatedAt' | 'refreshInterval' | 'timeRange'
+    > & {
       refreshInterval?: number;
       timeRange?: string;
     }
@@ -642,7 +646,9 @@ export class MonitoringManager {
   /**
    * Create runbook
    */
-  createRunbook(params: Omit<Runbook, 'id' | 'createdAt' | 'updatedAt'>): Runbook {
+  createRunbook(
+    params: Omit<Runbook, 'id' | 'createdAt' | 'updatedAt'>
+  ): Runbook {
     const runbook: Runbook = {
       ...params,
       id: this.generateRunbookId(params.title),

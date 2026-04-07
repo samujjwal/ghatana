@@ -7,7 +7,6 @@ import type {
 } from './types';
 import { SimpleCache, DataSourceUtils } from './utils';
 
-
 // Global shared cache instance
 const CACHE = new SimpleCache();
 
@@ -55,7 +54,7 @@ const CACHE = new SimpleCache();
  * });
  * ```
  */
- 
+
 export function useDataSource<TData = unknown>(
   config: DataSourceConfig<TData>
 ): DataSourceResult<TData> {

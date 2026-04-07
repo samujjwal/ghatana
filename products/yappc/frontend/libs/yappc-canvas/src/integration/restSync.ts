@@ -1,6 +1,6 @@
 /**
  * REST API Sync Adapter
- * 
+ *
  * Synchronizes Canvas documents with a REST API backend.
  * Implements diff-based syncing with audit trail integration.
  */
@@ -25,27 +25,30 @@ interface RestEndpoints {
 /**
  * REST Sync Adapter Configuration
  */
-export interface RestSyncConfig extends Pick<SyncConfig, 'endpoint' | 'authToken' | 'retry'> {
+export interface RestSyncConfig extends Pick<
+  SyncConfig,
+  'endpoint' | 'authToken' | 'retry'
+> {
   /** Custom endpoints (required) */
   endpoints: RestEndpoints;
-  
+
   /** Request timeout in milliseconds */
   timeout?: number;
-  
+
   /** Enable diff-based syncing */
   enableDiff?: boolean;
 }
 
 /**
  * REST API Sync Adapter
- * 
+ *
  * Features:
  * - Pull/push operations with diff support
  * - Automatic retry with exponential backoff
  * - Authentication via Bearer token
  * - Audit trail integration
  * - Conflict detection
- * 
+ *
  * @example
  * ```ts
  * const adapter = new RestSyncAdapter({
@@ -53,18 +56,18 @@ export interface RestSyncConfig extends Pick<SyncConfig, 'endpoint' | 'authToken
  *   authToken: 'your-token',
  *   enableDiff: true,
  * });
- * 
+ *
  * await adapter.connect();
  * const result = await adapter.pull('doc-123');
  * ```
  */
 export class RestSyncAdapter implements SyncAdapter {
   readonly type = 'rest' as const;
-  
+
   private config: Required<RestSyncConfig>;
   private connected = false;
   private abortController?: AbortController;
-  
+
   /**
    *
    */
@@ -72,9 +75,10 @@ export class RestSyncAdapter implements SyncAdapter {
     const defaultEndpoints: RestEndpoints = {
       pull: (id) => `${config.endpoint}/documents/${id}`,
       push: (id) => `${config.endpoint}/documents/${id}`,
-      diff: (id, version) => `${config.endpoint}/documents/${id}/diff?since=${version}`,
+      diff: (id, version) =>
+        `${config.endpoint}/documents/${id}/diff?since=${version}`,
     };
-    
+
     this.config = {
       endpoint: config.endpoint,
       authToken: config.authToken || '',
@@ -91,30 +95,32 @@ export class RestSyncAdapter implements SyncAdapter {
       },
     };
   }
-  
+
   /**
    * Initialize connection and validate credentials
    */
   async connect(): Promise<void> {
     if (this.connected) return;
-    
+
     try {
       // Validate endpoint accessibility
       const response = await this.fetch(`${this.config.endpoint}/health`, {
         method: 'GET',
       });
-      
+
       if (!response.ok) {
         throw new Error(`REST API unreachable: ${response.status}`);
       }
-      
+
       this.connected = true;
       this.abortController = new AbortController();
     } catch (error) {
-      throw new Error(`REST connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `REST connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-  
+
   /**
    * Close connection
    */
@@ -125,14 +131,14 @@ export class RestSyncAdapter implements SyncAdapter {
     }
     this.connected = false;
   }
-  
+
   /**
    * Check connection status
    */
   isConnected(): boolean {
     return this.connected;
   }
-  
+
   /**
    * Pull latest data from server
    * Uses diff-based sync if enabled and version provided
@@ -141,21 +147,23 @@ export class RestSyncAdapter implements SyncAdapter {
     if (!this.connected) {
       throw new Error('Not connected. Call connect() first.');
     }
-    
+
     try {
       const useDiff = this.config.enableDiff && currentVersion !== undefined;
       const endpoint = useDiff
         ? this.config.endpoints.diff(documentId, currentVersion)
         : this.config.endpoints.pull(documentId);
-      
-      const response = await this.fetchWithRetry<RestResponse<{
-        document?: unknown;
-        changes?: CanvasChange[];
-        version: number;
-      }>>(endpoint, {
+
+      const response = await this.fetchWithRetry<
+        RestResponse<{
+          document?: unknown;
+          changes?: CanvasChange[];
+          version: number;
+        }>
+      >(endpoint, {
         method: 'GET',
       });
-      
+
       if (response.error) {
         return {
           success: false,
@@ -164,13 +172,15 @@ export class RestSyncAdapter implements SyncAdapter {
           error: response.error,
         };
       }
-      
+
       const data = response.data!;
-      
+
       return {
         success: true,
         version: data.version,
-        changes: useDiff ? (data.changes || []) : this.fullDocumentToChanges(data.document, documentId, data.version),
+        changes: useDiff
+          ? data.changes || []
+          : this.fullDocumentToChanges(data.document, documentId, data.version),
       };
     } catch (error) {
       return {
@@ -185,7 +195,7 @@ export class RestSyncAdapter implements SyncAdapter {
       };
     }
   }
-  
+
   /**
    * Push local changes to server
    * Applies diffs with audit entries
@@ -194,18 +204,20 @@ export class RestSyncAdapter implements SyncAdapter {
     if (!this.connected) {
       throw new Error('Not connected. Call connect() first.');
     }
-    
+
     try {
       const endpoint = this.config.endpoints.push(documentId);
-      
-      const response = await this.fetchWithRetry<RestResponse<{
-        version: number;
-        conflicts?: Array<{
-          changeId: string;
-          localChange: CanvasChange;
-          serverChange: CanvasChange;
-        }>;
-      }>>(endpoint, {
+
+      const response = await this.fetchWithRetry<
+        RestResponse<{
+          version: number;
+          conflicts?: Array<{
+            changeId: string;
+            localChange: CanvasChange;
+            serverChange: CanvasChange;
+          }>;
+        }>
+      >(endpoint, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +232,7 @@ export class RestSyncAdapter implements SyncAdapter {
           },
         }),
       });
-      
+
       if (response.error) {
         return {
           success: false,
@@ -229,9 +241,9 @@ export class RestSyncAdapter implements SyncAdapter {
           error: response.error,
         };
       }
-      
+
       const data = response.data!;
-      
+
       // Convert conflicts to standard format
       const conflicts = data.conflicts?.map((c) => ({
         changeId: c.changeId,
@@ -241,7 +253,7 @@ export class RestSyncAdapter implements SyncAdapter {
         strategy: 'last-write-wins' as const,
         resolved: false,
       }));
-      
+
       return {
         success: true,
         version: data.version,
@@ -261,24 +273,27 @@ export class RestSyncAdapter implements SyncAdapter {
       };
     }
   }
-  
+
   /**
    * Fetch with authentication and timeout
    */
-  private async fetch(url: string, options: RequestInit = {}): Promise<Response> {
+  private async fetch(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<Response> {
     const headers = new Headers(options.headers);
-    
+
     if (this.config.authToken) {
       headers.set('Authorization', `Bearer ${this.config.authToken}`);
     }
-    
+
     return fetch(url, {
       ...options,
       headers,
       signal: this.abortController?.signal,
     });
   }
-  
+
   /**
    * Fetch with automatic retry and exponential backoff
    */
@@ -289,18 +304,20 @@ export class RestSyncAdapter implements SyncAdapter {
   ): Promise<T> {
     try {
       const response = await this.fetch(url, options);
-      
+
       if (!response.ok) {
         // Retry on 5xx errors
         if (response.status >= 500 && attempt < this.config.retry.maxRetries) {
           await this.delay(this.getBackoffDelay(attempt));
           return this.fetchWithRetry<T>(url, options, attempt + 1);
         }
-        
+
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(`HTTP ${response.status}: ${errorData.message || response.statusText}`);
+        throw new Error(
+          `HTTP ${response.status}: ${errorData.message || response.statusText}`
+        );
       }
-      
+
       return await response.json();
     } catch (error) {
       // Retry on network errors
@@ -308,38 +325,47 @@ export class RestSyncAdapter implements SyncAdapter {
         await this.delay(this.getBackoffDelay(attempt));
         return this.fetchWithRetry<T>(url, options, attempt + 1);
       }
-      
+
       throw error;
     }
   }
-  
+
   /**
    * Calculate exponential backoff delay
    */
   private getBackoffDelay(attempt: number): number {
-    return this.config.retry.initialDelay * Math.pow(this.config.retry.backoffMultiplier, attempt);
+    return (
+      this.config.retry.initialDelay *
+      Math.pow(this.config.retry.backoffMultiplier, attempt)
+    );
   }
-  
+
   /**
    * Delay helper
    */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-  
+
   /**
    * Convert full document to change list (for initial sync)
    */
-  private fullDocumentToChanges(document: unknown, documentId: string, version: number): CanvasChange[] {
-    return [{
-      id: `full-sync-${Date.now()}`,
-      documentId,
-      operation: 'update',
-      timestamp: Date.now(),
-      userId: 'system',
-      data: document,
-      version,
-    }];
+  private fullDocumentToChanges(
+    document: unknown,
+    documentId: string,
+    version: number
+  ): CanvasChange[] {
+    return [
+      {
+        id: `full-sync-${Date.now()}`,
+        documentId,
+        operation: 'update',
+        timestamp: Date.now(),
+        userId: 'system',
+        data: document,
+        version,
+      },
+    ];
   }
 }
 

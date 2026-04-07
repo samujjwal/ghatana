@@ -12,7 +12,10 @@ export function generateId(prefix = 'id'): string {
 /**
  * Announce message to screen readers
  */
-export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+export function announceToScreenReader(
+  message: string,
+  priority: 'polite' | 'assertive' = 'polite'
+): void {
   if (typeof document === 'undefined') return;
 
   const announcement = document.createElement('div');
@@ -24,14 +27,14 @@ export function announceToScreenReader(message: string, priority: 'polite' | 'as
   announcement.style.width = '1px';
   announcement.style.height = '1px';
   announcement.style.overflow = 'hidden';
-  
+
   document.body.appendChild(announcement);
-  
+
   // Delay to ensure screen reader picks it up
   setTimeout(() => {
     announcement.textContent = message;
   }, 100);
-  
+
   // Remove after announcement
   setTimeout(() => {
     document.body.removeChild(announcement);
@@ -44,13 +47,13 @@ export function announceToScreenReader(message: string, priority: 'polite' | 'as
 export function isFocusable(element: HTMLElement): boolean {
   if (element.tabIndex < 0) return false;
   if (element.hasAttribute('disabled')) return false;
-  
+
   const tagName = element.tagName.toLowerCase();
   const focusableTags = ['a', 'button', 'input', 'select', 'textarea'];
-  
+
   if (focusableTags.includes(tagName)) return true;
   if (element.tabIndex >= 0) return true;
-  
+
   return false;
 }
 
@@ -66,7 +69,7 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
     'textarea:not([disabled])',
     '[tabindex]:not([tabindex="-1"])',
   ].join(',');
-  
+
   return Array.from(container.querySelectorAll<HTMLElement>(selector));
 }
 
@@ -77,10 +80,10 @@ export function trapFocus(container: HTMLElement): () => void {
   const focusableElements = getFocusableElements(container);
   const firstElement = focusableElements[0];
   const lastElement = focusableElements[focusableElements.length - 1];
-  
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key !== 'Tab') return;
-    
+
     if (e.shiftKey) {
       if (document.activeElement === firstElement) {
         e.preventDefault();
@@ -93,10 +96,10 @@ export function trapFocus(container: HTMLElement): () => void {
       }
     }
   };
-  
+
   container.addEventListener('keydown', handleKeyDown);
   firstElement?.focus();
-  
+
   return () => {
     container.removeEventListener('keydown', handleKeyDown);
   };

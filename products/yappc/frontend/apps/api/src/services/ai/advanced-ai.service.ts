@@ -1,9 +1,9 @@
 /**
  * Advanced AI Features - Multi-Model Routing and Context-Aware Suggestions
- * 
+ *
  * Implements intelligent AI provider selection, context-aware suggestion generation,
  * and advanced AI capabilities for the YAPPC platform.
- * 
+ *
  * @doc.type service
  * @doc.purpose Advanced AI features with multi-model routing
  * @doc.layer product
@@ -95,7 +95,10 @@ export interface MultiModelRouter {
   selectProvider(request: AIRequest): AIProvider;
   routeRequest(request: AIRequest): Promise<AISuggestion[]>;
   getProviderMetrics(): ProviderMetrics;
-  updateProviderPerformance(providerId: string, metrics: PerformanceMetrics): void;
+  updateProviderPerformance(
+    providerId: string,
+    metrics: PerformanceMetrics
+  ): void;
 }
 
 export interface ProviderMetrics {
@@ -164,7 +167,7 @@ class AIProviderRegistry {
       costPerToken: 0.000001,
       maxTokens: 4096,
       latency: 800,
-      reliability: 0.90,
+      reliability: 0.9,
       specialties: ['text', 'code', 'speed'],
     });
 
@@ -227,12 +230,16 @@ class AIProviderRegistry {
     return Array.from(this.providers.values());
   }
 
-  getProvidersByCapability(capability: keyof AIProviderCapabilities): AIProvider[] {
-    return this.getAllProviders().filter(provider => provider.capabilities[capability]);
+  getProvidersByCapability(
+    capability: keyof AIProviderCapabilities
+  ): AIProvider[] {
+    return this.getAllProviders().filter(
+      (provider) => provider.capabilities[capability]
+    );
   }
 
   getProvidersBySpecialty(specialty: string): AIProvider[] {
-    return this.getAllProviders().filter(provider => 
+    return this.getAllProviders().filter((provider) =>
       provider.specialties.includes(specialty)
     );
   }
@@ -244,17 +251,25 @@ class AIProviderRegistry {
       if (!metrics.success) {
         current.errorCount++;
       }
-      
+
       // Update rolling averages
       const alpha = 0.1; // Learning rate
-      current.successRate = current.successRate * (1 - alpha) + (metrics.success ? 1 : 0) * alpha;
-      current.averageLatency = current.averageLatency * (1 - alpha) + metrics.latency * alpha;
-      current.averageCost = current.averageCost * (1 - alpha) + metrics.cost * alpha;
-      
+      current.successRate =
+        current.successRate * (1 - alpha) + (metrics.success ? 1 : 0) * alpha;
+      current.averageLatency =
+        current.averageLatency * (1 - alpha) + metrics.latency * alpha;
+      current.averageCost =
+        current.averageCost * (1 - alpha) + metrics.cost * alpha;
+
       if (metrics.userFeedback) {
-        const feedbackScore = metrics.userFeedback === 'positive' ? 1 : 
-                           metrics.userFeedback === 'negative' ? 0 : 0.5;
-        current.userSatisfaction = current.userSatisfaction * (1 - alpha) + feedbackScore * alpha;
+        const feedbackScore =
+          metrics.userFeedback === 'positive'
+            ? 1
+            : metrics.userFeedback === 'negative'
+              ? 0
+              : 0.5;
+        current.userSatisfaction =
+          current.userSatisfaction * (1 - alpha) + feedbackScore * alpha;
       }
     }
   }
@@ -288,28 +303,38 @@ class ContextAwareSuggestionEngine {
 
     // Analyze context
     const contextAnalysis = this.contextAnalyzer.analyze(request.context);
-    
+
     // Select appropriate providers
     const providers = this.selectProvidersForContext(request, contextAnalysis);
-    
+
     // Generate suggestions from multiple providers
     const suggestions: AISuggestion[] = [];
-    
+
     for (const provider of providers) {
       try {
-        const providerSuggestions = await this.generateProviderSuggestions(provider, request, contextAnalysis);
+        const providerSuggestions = await this.generateProviderSuggestions(
+          provider,
+          request,
+          contextAnalysis
+        );
         suggestions.push(...providerSuggestions);
       } catch (error) {
-        console.error(`Error generating suggestions from ${provider.name}:`, error);
+        console.error(
+          `Error generating suggestions from ${provider.name}:`,
+          error
+        );
       }
     }
 
     // Rank and filter suggestions
-    const rankedSuggestions = this.rankSuggestions(suggestions, contextAnalysis);
-    
+    const rankedSuggestions = this.rankSuggestions(
+      suggestions,
+      contextAnalysis
+    );
+
     // Cache results
     this.suggestionCache.set(cacheKey, rankedSuggestions);
-    
+
     return rankedSuggestions;
   }
 
@@ -317,11 +342,14 @@ class ContextAwareSuggestionEngine {
     return `${request.type}-${request.prompt.substring(0, 100)}-${JSON.stringify(request.context)}`;
   }
 
-  private selectProvidersForContext(request: AIRequest, analysis: ContextAnalysis): AIProvider[] {
+  private selectProvidersForContext(
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): AIProvider[] {
     const providers = this.providerRegistry.getAllProviders();
-    
+
     // Filter by capabilities
-    const capableProviders = providers.filter(provider => {
+    const capableProviders = providers.filter((provider) => {
       switch (request.type) {
         case 'code':
           return provider.capabilities.codeGeneration;
@@ -333,21 +361,27 @@ class ContextAwareSuggestionEngine {
     });
 
     // Sort by context relevance
-    return capableProviders.sort((a, b) => {
-      const aScore = this.calculateProviderScore(a, request, analysis);
-      const bScore = this.calculateProviderScore(b, request, analysis);
-      return bScore - aScore;
-    }).slice(0, 3); // Top 3 providers
+    return capableProviders
+      .sort((a, b) => {
+        const aScore = this.calculateProviderScore(a, request, analysis);
+        const bScore = this.calculateProviderScore(b, request, analysis);
+        return bScore - aScore;
+      })
+      .slice(0, 3); // Top 3 providers
   }
 
-  private calculateProviderScore(provider: AIProvider, request: AIRequest, analysis: ContextAnalysis): number {
+  private calculateProviderScore(
+    provider: AIProvider,
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): number {
     let score = 0;
 
     // Base reliability score
     score += provider.reliability * 0.3;
 
     // Specialty matching
-    const matchingSpecialties = provider.specialties.filter(specialty => 
+    const matchingSpecialties = provider.specialties.filter((specialty) =>
       analysis.relevantSpecialties.includes(specialty)
     );
     score += (matchingSpecialties.length / provider.specialties.length) * 0.2;
@@ -369,7 +403,9 @@ class ContextAwareSuggestionEngine {
     }
 
     // User preference
-    if (request.context.userPreferences.preferredProviders.includes(provider.id)) {
+    if (
+      request.context.userPreferences.preferredProviders.includes(provider.id)
+    ) {
       score += 0.1;
     }
     if (request.context.userPreferences.avoidProviders.includes(provider.id)) {
@@ -379,22 +415,32 @@ class ContextAwareSuggestionEngine {
     return score;
   }
 
-  private async generateProviderSuggestions(provider: AIProvider, request: AIRequest, analysis: ContextAnalysis): Promise<AISuggestion[]> {
+  private async generateProviderSuggestions(
+    provider: AIProvider,
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): Promise<AISuggestion[]> {
     // This would integrate with the actual AI provider APIs
     // For now, we'll simulate the response
-    
+
     const suggestions: AISuggestion[] = [];
-    
+
     // Generate different types of suggestions based on context
     if (request.type === 'code') {
-      suggestions.push(...this.generateCodeSuggestions(provider, request, analysis));
+      suggestions.push(
+        ...this.generateCodeSuggestions(provider, request, analysis)
+      );
     } else if (request.type === 'analysis') {
-      suggestions.push(...this.generateAnalysisSuggestions(provider, request, analysis));
+      suggestions.push(
+        ...this.generateAnalysisSuggestions(provider, request, analysis)
+      );
     } else {
-      suggestions.push(...this.generateTextSuggestions(provider, request, analysis));
+      suggestions.push(
+        ...this.generateTextSuggestions(provider, request, analysis)
+      );
     }
 
-    return suggestions.map(suggestion => ({
+    return suggestions.map((suggestion) => ({
       ...suggestion,
       provider: provider.id,
       estimatedCost: this.estimateCost(suggestion, provider),
@@ -402,7 +448,11 @@ class ContextAwareSuggestionEngine {
     }));
   }
 
-  private generateCodeSuggestions(provider: AIProvider, request: AIRequest, analysis: ContextAnalysis): AISuggestion[] {
+  private generateCodeSuggestions(
+    provider: AIProvider,
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): AISuggestion[] {
     return [
       {
         id: `${provider.id}-code-1`,
@@ -416,7 +466,8 @@ class ContextAwareSuggestionEngine {
         },
         confidence: 0.85,
         provider: provider.id,
-        reasoning: 'Based on the React/TypeScript stack detected in the project',
+        reasoning:
+          'Based on the React/TypeScript stack detected in the project',
         context: ['project-type', 'technologies'],
         estimatedCost: 0.01,
         estimatedTime: 2000,
@@ -433,7 +484,8 @@ class ContextAwareSuggestionEngine {
         },
         confidence: 0.78,
         provider: provider.id,
-        reasoning: 'API endpoint needed for the current workspace functionality',
+        reasoning:
+          'API endpoint needed for the current workspace functionality',
         context: ['project-type', 'current-phase'],
         estimatedCost: 0.008,
         estimatedTime: 1500,
@@ -441,13 +493,18 @@ class ContextAwareSuggestionEngine {
     ];
   }
 
-  private generateAnalysisSuggestions(provider: AIProvider, request: AIRequest, analysis: ContextAnalysis): AISuggestion[] {
+  private generateAnalysisSuggestions(
+    provider: AIProvider,
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): AISuggestion[] {
     return [
       {
         id: `${provider.id}-analysis-1`,
         type: 'insight',
         title: 'Architecture Analysis',
-        description: 'Analyze the current architecture and suggest improvements',
+        description:
+          'Analyze the current architecture and suggest improvements',
         content: {
           findings: [
             'Consider microservices for better scalability',
@@ -470,13 +527,18 @@ class ContextAwareSuggestionEngine {
     ];
   }
 
-  private generateTextSuggestions(provider: AIProvider, request: AIRequest, analysis: ContextAnalysis): AISuggestion[] {
+  private generateTextSuggestions(
+    provider: AIProvider,
+    request: AIRequest,
+    analysis: ContextAnalysis
+  ): AISuggestion[] {
     return [
       {
         id: `${provider.id}-text-1`,
         type: 'workflow',
         title: 'Project Documentation',
-        description: 'Generate comprehensive documentation for the current phase',
+        description:
+          'Generate comprehensive documentation for the current phase',
         content: {
           sections: [
             'Project Overview',
@@ -485,9 +547,10 @@ class ContextAwareSuggestionEngine {
             'Deployment Instructions',
           ],
         },
-        confidence: 0.90,
+        confidence: 0.9,
         provider: provider.id,
-        reasoning: 'Documentation is essential for the current development phase',
+        reasoning:
+          'Documentation is essential for the current development phase',
         context: ['current-phase', 'project-type'],
         estimatedCost: 0.012,
         estimatedTime: 2500,
@@ -495,22 +558,30 @@ class ContextAwareSuggestionEngine {
     ];
   }
 
-  private rankSuggestions(suggestions: AISuggestion[], analysis: ContextAnalysis): AISuggestion[] {
-    return suggestions.sort((a, b) => {
-      // Primary sort by confidence
-      const confidenceDiff = b.confidence - a.confidence;
-      if (Math.abs(confidenceDiff) > 0.1) {
-        return confidenceDiff;
-      }
+  private rankSuggestions(
+    suggestions: AISuggestion[],
+    analysis: ContextAnalysis
+  ): AISuggestion[] {
+    return suggestions
+      .sort((a, b) => {
+        // Primary sort by confidence
+        const confidenceDiff = b.confidence - a.confidence;
+        if (Math.abs(confidenceDiff) > 0.1) {
+          return confidenceDiff;
+        }
 
-      // Secondary sort by context relevance
-      const aRelevance = this.calculateContextRelevance(a, analysis);
-      const bRelevance = this.calculateContextRelevance(b, analysis);
-      return bRelevance - aRelevance;
-    }).slice(0, 10); // Top 10 suggestions
+        // Secondary sort by context relevance
+        const aRelevance = this.calculateContextRelevance(a, analysis);
+        const bRelevance = this.calculateContextRelevance(b, analysis);
+        return bRelevance - aRelevance;
+      })
+      .slice(0, 10); // Top 10 suggestions
   }
 
-  private calculateContextRelevance(suggestion: AISuggestion, analysis: ContextAnalysis): number {
+  private calculateContextRelevance(
+    suggestion: AISuggestion,
+    analysis: ContextAnalysis
+  ): number {
     let relevance = 0;
 
     // Check if suggestion type matches context needs
@@ -519,7 +590,7 @@ class ContextAwareSuggestionEngine {
     }
 
     // Check if suggestion context matches current context
-    const matchingContext = suggestion.context.filter(ctx => 
+    const matchingContext = suggestion.context.filter((ctx) =>
       analysis.currentContext.includes(ctx)
     );
     relevance += (matchingContext.length / suggestion.context.length) * 0.3;
@@ -581,15 +652,24 @@ class ContextAnalyzer {
 
   private extractSpecialties(context: AIContext): string[] {
     const specialties: string[] = [];
-    
+
     // From technologies
-    if (context.technologies.includes('react') || context.technologies.includes('typescript')) {
+    if (
+      context.technologies.includes('react') ||
+      context.technologies.includes('typescript')
+    ) {
       specialties.push('code', 'frontend');
     }
-    if (context.technologies.includes('node') || context.technologies.includes('express')) {
+    if (
+      context.technologies.includes('node') ||
+      context.technologies.includes('express')
+    ) {
       specialties.push('code', 'backend');
     }
-    if (context.technologies.includes('python') || context.technologies.includes('tensorflow')) {
+    if (
+      context.technologies.includes('python') ||
+      context.technologies.includes('tensorflow')
+    ) {
       specialties.push('ai', 'ml');
     }
 
@@ -606,17 +686,17 @@ class ContextAnalyzer {
 
   private estimateTokens(context: AIContext): number {
     let tokens = 100; // Base tokens
-    
+
     tokens += context.technologies.length * 10;
     tokens += context.recentInteractions.length * 20;
     tokens += JSON.stringify(context.userPreferences).length / 4;
-    
+
     return tokens;
   }
 
   private identifyNeeds(context: AIContext): string[] {
     const needs: string[] = [];
-    
+
     // Based on current phase
     if (context.currentPhase === 'INTENT') {
       needs.push('analysis', 'planning');
@@ -638,30 +718,30 @@ class ContextAnalyzer {
 
   private extractCurrentContext(context: AIContext): string[] {
     const currentContext: string[] = [];
-    
+
     if (context.projectType) currentContext.push('project-type');
     if (context.currentPhase) currentContext.push('current-phase');
     if (context.currentMode) currentContext.push('current-mode');
     if (context.userRole) currentContext.push('user-role');
     if (context.domain) currentContext.push('domain');
-    
+
     return currentContext;
   }
 
   private assessComplexity(context: AIContext): 'low' | 'medium' | 'high' {
     let complexityScore = 0;
-    
+
     // Technology stack complexity
     complexityScore += context.technologies.length * 0.1;
-    
+
     // Recent interactions complexity
     complexityScore += context.recentInteractions.length * 0.05;
-    
+
     // Domain complexity
     if (context.domain === 'healthcare' || context.domain === 'finance') {
       complexityScore += 0.3;
     }
-    
+
     if (complexityScore < 0.3) return 'low';
     if (complexityScore < 0.7) return 'medium';
     return 'high';
@@ -669,16 +749,25 @@ class ContextAnalyzer {
 
   private identifyDomain(context: AIContext): string {
     // Try to identify domain from technologies and context
-    if (context.technologies.includes('tensorflow') || context.technologies.includes('pytorch')) {
+    if (
+      context.technologies.includes('tensorflow') ||
+      context.technologies.includes('pytorch')
+    ) {
       return 'ai-ml';
     }
-    if (context.technologies.includes('react') || context.technologies.includes('vue')) {
+    if (
+      context.technologies.includes('react') ||
+      context.technologies.includes('vue')
+    ) {
       return 'web-development';
     }
-    if (context.technologies.includes('react-native') || context.technologies.includes('flutter')) {
+    if (
+      context.technologies.includes('react-native') ||
+      context.technologies.includes('flutter')
+    ) {
       return 'mobile-development';
     }
-    
+
     return context.domain || 'general';
   }
 }
@@ -693,14 +782,16 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
 
   constructor() {
     this.providerRegistry = new AIProviderRegistry();
-    this.suggestionEngine = new ContextAwareSuggestionEngine(this.providerRegistry);
+    this.suggestionEngine = new ContextAwareSuggestionEngine(
+      this.providerRegistry
+    );
   }
 
   selectProvider(request: AIRequest): AIProvider {
     const providers = this.providerRegistry.getAllProviders();
-    
+
     // Filter by capabilities
-    const capableProviders = providers.filter(provider => {
+    const capableProviders = providers.filter((provider) => {
       switch (request.type) {
         case 'code':
           return provider.capabilities.codeGeneration;
@@ -713,27 +804,30 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
 
     // Sort by performance metrics
     const metrics = this.providerRegistry.getMetrics();
-    
+
     return capableProviders.sort((a, b) => {
       const aMetrics = metrics[a.id];
       const bMetrics = metrics[b.id];
-      
+
       // Consider success rate, latency, and cost
-      const aScore = (aMetrics.successRate * 0.4) + 
-                    (1 / aMetrics.averageLatency * 0.3) + 
-                    (1 / aMetrics.averageCost * 0.3);
-      const bScore = (bMetrics.successRate * 0.4) + 
-                    (1 / bMetrics.averageLatency * 0.3) + 
-                    (1 / bMetrics.averageCost * 0.3);
-      
+      const aScore =
+        aMetrics.successRate * 0.4 +
+        (1 / aMetrics.averageLatency) * 0.3 +
+        (1 / aMetrics.averageCost) * 0.3;
+      const bScore =
+        bMetrics.successRate * 0.4 +
+        (1 / bMetrics.averageLatency) * 0.3 +
+        (1 / bMetrics.averageCost) * 0.3;
+
       return bScore - aScore;
     })[0];
   }
 
   async routeRequest(request: AIRequest): Promise<AISuggestion[]> {
     try {
-      const suggestions = await this.suggestionEngine.generateSuggestions(request);
-      
+      const suggestions =
+        await this.suggestionEngine.generateSuggestions(request);
+
       // Update provider metrics based on successful request
       const provider = this.selectProvider(request);
       this.providerRegistry.updateMetrics(provider.id, {
@@ -741,7 +835,7 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
         latency: 1000, // Would be actual latency
         cost: suggestions.reduce((total, s) => total + s.estimatedCost, 0),
       });
-      
+
       return suggestions;
     } catch (error) {
       // Update provider metrics based on failed request
@@ -752,7 +846,7 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
         cost: 0,
         error: error.message,
       });
-      
+
       throw error;
     }
   }
@@ -761,7 +855,10 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
     return this.providerRegistry.getMetrics();
   }
 
-  updateProviderPerformance(providerId: string, metrics: PerformanceMetrics): void {
+  updateProviderPerformance(
+    providerId: string,
+    metrics: PerformanceMetrics
+  ): void {
     this.providerRegistry.updateMetrics(providerId, metrics);
   }
 }
@@ -773,13 +870,18 @@ export class AdvancedMultiModelRouter implements MultiModelRouter {
 export class AdvancedAIService {
   private router: AdvancedMultiModelRouter;
   private requestHistory: Map<string, AIRequest> = new Map();
-  private userFeedback: Map<string, 'positive' | 'negative' | 'neutral'> = new Map();
+  private userFeedback: Map<string, 'positive' | 'negative' | 'neutral'> =
+    new Map();
 
   constructor() {
     this.router = new AdvancedMultiModelRouter();
   }
 
-  async generateContextAwareSuggestions(context: AIContext, prompt: string, type: AIRequest['type'] = 'text'): Promise<AISuggestion[]> {
+  async generateContextAwareSuggestions(
+    context: AIContext,
+    prompt: string,
+    type: AIRequest['type'] = 'text'
+  ): Promise<AISuggestion[]> {
     const request: AIRequest = {
       id: this.generateRequestId(),
       type,
@@ -790,7 +892,7 @@ export class AdvancedAIService {
     };
 
     this.requestHistory.set(request.id, request);
-    
+
     try {
       const suggestions = await this.router.routeRequest(request);
       return suggestions;
@@ -800,12 +902,15 @@ export class AdvancedAIService {
     }
   }
 
-  async generateMultiProviderSuggestions(context: AIContext, prompt: string): Promise<AISuggestion[]> {
+  async generateMultiProviderSuggestions(
+    context: AIContext,
+    prompt: string
+  ): Promise<AISuggestion[]> {
     // Generate suggestions from multiple providers and combine them
     const providers = this.router.getProviderMetrics();
-    
+
     const allSuggestions: AISuggestion[] = [];
-    
+
     for (const providerId of Object.keys(providers)) {
       try {
         const request: AIRequest = {
@@ -835,7 +940,11 @@ export class AdvancedAIService {
       .slice(0, 20);
   }
 
-  async generateStreamingSuggestions(context: AIContext, prompt: string, onChunk: (chunk: string) => void): Promise<void> {
+  async generateStreamingSuggestions(
+    context: AIContext,
+    prompt: string,
+    onChunk: (chunk: string) => void
+  ): Promise<void> {
     const request: AIRequest = {
       id: this.generateRequestId(),
       type: 'text',
@@ -848,7 +957,7 @@ export class AdvancedAIService {
     // This would implement actual streaming with the selected provider
     // For now, we'll simulate it
     const provider = this.router.selectProvider(request);
-    
+
     if (!provider.capabilities.streaming) {
       throw new Error(`Provider ${provider.name} does not support streaming`);
     }
@@ -857,13 +966,16 @@ export class AdvancedAIService {
     const chunks = prompt.split(' ');
     for (const chunk of chunks) {
       onChunk(chunk + ' ');
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
-  submitFeedback(suggestionId: string, feedback: 'positive' | 'negative' | 'neutral'): void {
+  submitFeedback(
+    suggestionId: string,
+    feedback: 'positive' | 'negative' | 'neutral'
+  ): void {
     this.userFeedback.set(suggestionId, feedback);
-    
+
     // Update provider metrics based on feedback
     // This would typically involve finding the provider for the suggestion
     // and updating their user satisfaction score
@@ -874,11 +986,13 @@ export class AdvancedAIService {
   }
 
   getAvailableProviders(): AIProvider[] {
-    return this.router.getProviderMetrics ? 
-      Object.keys(this.router.getProviderMetrics()).map(id => 
-        this.router.getProvider ? this.router.getProvider(id) : null
-      ).filter(Boolean) as AIProvider[] :
-      [];
+    return this.router.getProviderMetrics
+      ? (Object.keys(this.router.getProviderMetrics())
+          .map((id) =>
+            this.router.getProvider ? this.router.getProvider(id) : null
+          )
+          .filter(Boolean) as AIProvider[])
+      : [];
   }
 
   private generateRequestId(): string {

@@ -110,7 +110,10 @@ export const SprintColumn: React.FC<SprintColumnProps> = ({
       aria-label={`${title} column with ${storyCount} stories`}
     >
       {/* Column Header */}
-      <div className="column-header" style={{ borderBottomColor: colors.header }}>
+      <div
+        className="column-header"
+        style={{ borderBottomColor: colors.header }}
+      >
         <div className="column-title-row">
           <h3 className="column-title" style={{ color: colors.header }}>
             {title}

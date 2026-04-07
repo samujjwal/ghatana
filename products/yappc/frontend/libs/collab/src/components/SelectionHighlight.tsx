@@ -12,14 +12,17 @@ import { cn } from '@ghatana/design-system';
 
 import { type TextCursor } from '../DocumentCollaboration';
 
-
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface SelectionHighlightProps {
   cursors: TextCursor[];
-  getPositionFromOffset: (offset: number) => { top: number; left: number; height: number };
+  getPositionFromOffset: (offset: number) => {
+    top: number;
+    left: number;
+    height: number;
+  };
   className?: string;
 }
 
@@ -44,7 +47,10 @@ export const SelectionHighlight: React.FC<SelectionHighlightProps> = ({
   // Calculate selection ranges
   const selections = useMemo<SelectionRange[]>(() => {
     return cursors
-      .filter((cursor) => cursor.selection && cursor.selection.start !== cursor.selection.end)
+      .filter(
+        (cursor) =>
+          cursor.selection && cursor.selection.start !== cursor.selection.end
+      )
       .map((cursor) => {
         const start = getPositionFromOffset(cursor.selection!.start);
         const end = getPositionFromOffset(cursor.selection!.end);
@@ -92,7 +98,11 @@ export const SelectionHighlight: React.FC<SelectionHighlightProps> = ({
 
 export interface TextCursorIndicatorProps {
   cursors: TextCursor[];
-  getPositionFromOffset: (offset: number) => { top: number; left: number; height: number };
+  getPositionFromOffset: (offset: number) => {
+    top: number;
+    left: number;
+    height: number;
+  };
   showNames?: boolean;
   className?: string;
 }
@@ -135,7 +145,11 @@ export const TextCursorIndicator: React.FC<TextCursorIndicatorProps> = ({
             {/* Cursor animation (blinking) */}
             <motion.div
               animate={{ opacity: [1, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
+              transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                repeatType: 'reverse',
+              }}
               className="w-full h-full"
               style={{ backgroundColor: cursor.userColor }}
             />

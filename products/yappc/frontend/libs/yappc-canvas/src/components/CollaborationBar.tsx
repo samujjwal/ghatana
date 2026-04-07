@@ -1,9 +1,9 @@
 /**
  * Collaboration Bar Component
- * 
+ *
  * Displays active collaborators with avatars and connection status.
  * Shows who's currently viewing/editing the canvas.
- * 
+ *
  * @module canvas/components
  */
 
@@ -30,9 +30,9 @@ export interface CollaborationBarProps {
 
 /**
  * Collaboration Bar Component
- * 
+ *
  * Shows active users and connection status for canvas collaboration.
- * 
+ *
  * @example
  * ```tsx
  * <CollaborationBar
@@ -143,7 +143,7 @@ export const CollaborationBar: React.FC<CollaborationBarProps> = ({
               }}
             >
               {user.userName.charAt(0).toUpperCase()}
-              
+
               {/* Online indicator */}
               {user.isOnline && (
                 <div

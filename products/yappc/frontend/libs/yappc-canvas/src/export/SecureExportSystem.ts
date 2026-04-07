@@ -261,7 +261,7 @@ export class SandboxedRenderer {
 
     try {
       // Execute JSX in sandbox (simplified - in production you'd use a proper JSX transformer)
-       
+
       const result = await (this.sandbox as unknown).eval(`
         try {
           const container = document.getElementById('root');

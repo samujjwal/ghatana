@@ -1,10 +1,10 @@
 /**
  * Feature 2.16: Large Model Paging
- * 
+ *
  * Implements chunked loading, lazy hydration, and delta saving for large canvas documents.
  * Enables enterprise users to work with documents containing thousands of elements
  * without performance degradation.
- * 
+ *
  * Key Capabilities:
  * - Chunked loading: Large documents load incrementally
  * - Lazy hydration: Off-screen chunks hydrate on demand
@@ -12,7 +12,7 @@
  * - Spatial indexing: Fast chunk lookup based on viewport
  * - LRU caching: Automatic chunk eviction with configurable limits
  * - Stream loading: Progress reporting for large document loads
- * 
+ *
  * @module persistence/chunkStore
  */
 
@@ -247,7 +247,11 @@ export function getChunksInViewport(
     height: viewport.height + 2 * padding * chunkSize,
   };
 
-  const startCoords = getChunkCoords(expandedViewport.x, expandedViewport.y, chunkSize);
+  const startCoords = getChunkCoords(
+    expandedViewport.x,
+    expandedViewport.y,
+    chunkSize
+  );
   const endCoords = getChunkCoords(
     expandedViewport.x + expandedViewport.width,
     expandedViewport.y + expandedViewport.height,
@@ -292,7 +296,11 @@ export function addElement<T extends SpatialElement>(
   state: ChunkStoreState<T>,
   element: T
 ): ChunkStoreState<T> {
-  const { state: newState, chunk } = getOrCreateChunk(state, element.x, element.y);
+  const { state: newState, chunk } = getOrCreateChunk(
+    state,
+    element.x,
+    element.y
+  );
 
   // Remove element from old chunk if it exists
   newState.chunks.forEach((c) => {
@@ -441,7 +449,12 @@ export async function hydrateChunk<T = SpatialElement>(
     const cy = parseInt(match[2], 10);
 
     // Create or update chunk
-    const hydratedChunk = createChunk<T>(cx, cy, state.config.chunkSize, elements);
+    const hydratedChunk = createChunk<T>(
+      cx,
+      cy,
+      state.config.chunkSize,
+      elements
+    );
     state.chunks.set(chunkId, hydratedChunk);
     state.loadingChunks.delete(chunkId);
     state.stats.hydratedChunks++;
@@ -475,13 +488,13 @@ function updateLRU<T>(state: ChunkStoreState<T>, chunkId: string): void {
  */
 function evictOldChunks<T>(state: ChunkStoreState<T>): void {
   let attemptsRemaining = state.lruOrder.length;
-  
+
   while (
     state.lruOrder.length > state.config.maxCachedChunks &&
     attemptsRemaining > 0
   ) {
     attemptsRemaining--;
-    
+
     // Get LRU chunk (oldest)
     const lruChunkId = state.lruOrder[state.lruOrder.length - 1];
     if (!lruChunkId) break;
@@ -528,7 +541,9 @@ export async function preloadViewport<T = SpatialElement>(
   );
 
   // Load chunks in parallel
-  const loadPromises = chunkIds.map((chunkId) => hydrateChunk(state, chunkId, loader));
+  const loadPromises = chunkIds.map((chunkId) =>
+    hydrateChunk(state, chunkId, loader)
+  );
   await Promise.all(loadPromises);
 
   return state;

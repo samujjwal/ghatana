@@ -1,19 +1,19 @@
 /**
  * Data Exfiltration Controls
- * 
+ *
  * Provides security controls to prevent unauthorized data exfiltration:
  * - External URL validation with allowlist/blocklist
  * - Payload size limits for collaboration and exports
  * - Script injection detection and blocking
  * - Data loss prevention (DLP) rules
- * 
+ *
  * Security Features:
  * - Multi-tier URL validation (protocol, domain, path patterns)
  * - Configurable size limits per operation type
  * - Content sanitization with script stripping
  * - Violation logging and alerting
  * - Rate limiting for outbound requests
- * 
+ *
  * @module security/exfiltrationControl
  */
 
@@ -62,7 +62,7 @@ export interface ScriptDetectionResult {
 /**
  * Operation types with different size limits
  */
-export type OperationType = 
+export type OperationType =
   | 'collaboration'
   | 'export'
   | 'upload'
@@ -127,11 +127,11 @@ interface RateLimitState {
  * Default size limits (in bytes)
  */
 const DEFAULT_SIZE_LIMITS: Record<OperationType, number> = {
-  collaboration: 100 * 1024,        // 100KB for collab payloads
-  export: 50 * 1024 * 1024,         // 50MB for exports
-  upload: 10 * 1024 * 1024,         // 10MB for uploads
-  share: 5 * 1024 * 1024,           // 5MB for shares
-  embed: 1 * 1024 * 1024,           // 1MB for embeds
+  collaboration: 100 * 1024, // 100KB for collab payloads
+  export: 50 * 1024 * 1024, // 50MB for exports
+  upload: 10 * 1024 * 1024, // 10MB for uploads
+  share: 5 * 1024 * 1024, // 5MB for shares
+  embed: 1 * 1024 * 1024, // 1MB for embeds
 };
 
 /**
@@ -139,21 +139,21 @@ const DEFAULT_SIZE_LIMITS: Record<OperationType, number> = {
  */
 const SCRIPT_PATTERNS = [
   /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-  /on\w+\s*=\s*["'][^"']*["']/gi,        // Event handlers
-  /javascript:/gi,                        // JavaScript protocol
-  /data:text\/html/gi,                    // Data URI with HTML
-  /<iframe[\s\S]*?>/gi,                   // Iframes
-  /<object[\s\S]*?>/gi,                   // Objects
-  /<embed[\s\S]*?>/gi,                    // Embeds
-  /eval\s*\(/gi,                          // eval()
-  /Function\s*\(/gi,                      // Function constructor
-  /setTimeout\s*\(/gi,                    // setTimeout with string
-  /setInterval\s*\(/gi,                   // setInterval with string
+  /on\w+\s*=\s*["'][^"']*["']/gi, // Event handlers
+  /javascript:/gi, // JavaScript protocol
+  /data:text\/html/gi, // Data URI with HTML
+  /<iframe[\s\S]*?>/gi, // Iframes
+  /<object[\s\S]*?>/gi, // Objects
+  /<embed[\s\S]*?>/gi, // Embeds
+  /eval\s*\(/gi, // eval()
+  /Function\s*\(/gi, // Function constructor
+  /setTimeout\s*\(/gi, // setTimeout with string
+  /setInterval\s*\(/gi, // setInterval with string
 ];
 
 /**
  * ExfiltrationControl
- * 
+ *
  * Manages data exfiltration prevention controls
  */
 export class ExfiltrationControl {
@@ -302,7 +302,9 @@ export class ExfiltrationControl {
     userId?: string
   ): PayloadSizeResult {
     const size = this.calculateSize(payload);
-    const limit = this.config.sizeLimits[operationType] ?? DEFAULT_SIZE_LIMITS[operationType];
+    const limit =
+      this.config.sizeLimits[operationType] ??
+      DEFAULT_SIZE_LIMITS[operationType];
 
     if (size > limit) {
       this.logViolation({
@@ -416,7 +418,11 @@ export class ExfiltrationControl {
 
     // Check payload size if provided
     if (data.payload !== undefined) {
-      const sizeResult = this.checkPayloadSize(data.payload, data.operationType, userId);
+      const sizeResult = this.checkPayloadSize(
+        data.payload,
+        data.operationType,
+        userId
+      );
       if (!sizeResult.allowed) {
         violations.push(sizeResult.reason ?? 'Size limit exceeded');
       }
@@ -426,7 +432,9 @@ export class ExfiltrationControl {
     if (data.content) {
       const scriptResult = this.detectScripts(data.content, userId);
       if (!scriptResult.safe) {
-        violations.push(`Dangerous scripts detected: ${scriptResult.threats.length} threats`);
+        violations.push(
+          `Dangerous scripts detected: ${scriptResult.threats.length} threats`
+        );
       } else if (scriptResult.sanitized) {
         sanitized.content = scriptResult.sanitized;
       }
@@ -451,19 +459,19 @@ export class ExfiltrationControl {
     let logs = this.violations;
 
     if (filter?.userId) {
-      logs = logs.filter(v => v.userId === filter.userId);
+      logs = logs.filter((v) => v.userId === filter.userId);
     }
 
     if (filter?.type) {
-      logs = logs.filter(v => v.type === filter.type);
+      logs = logs.filter((v) => v.type === filter.type);
     }
 
     if (filter?.severity) {
-      logs = logs.filter(v => v.severity === filter.severity);
+      logs = logs.filter((v) => v.severity === filter.severity);
     }
 
     if (filter?.since !== undefined) {
-      logs = logs.filter(v => v.timestamp >= filter.since!);
+      logs = logs.filter((v) => v.timestamp >= filter.since!);
     }
 
     return logs;
@@ -537,10 +545,13 @@ export class ExfiltrationControl {
    *
    */
   private isAllowed(hostname: string): boolean {
-    return this.config.domainAllowlist.some(domain => {
+    return this.config.domainAllowlist.some((domain) => {
       if (domain.startsWith('*.')) {
         const baseDomain = domain.slice(2);
-        return hostname.endsWith(baseDomain) || hostname === baseDomain.replace(/^\./, '');
+        return (
+          hostname.endsWith(baseDomain) ||
+          hostname === baseDomain.replace(/^\./, '')
+        );
       }
       return hostname === domain;
     });
@@ -550,10 +561,13 @@ export class ExfiltrationControl {
    *
    */
   private isBlocked(hostname: string): boolean {
-    return this.config.domainBlocklist.some(domain => {
+    return this.config.domainBlocklist.some((domain) => {
       if (domain.startsWith('*.')) {
         const baseDomain = domain.slice(2);
-        return hostname.endsWith(baseDomain) || hostname === baseDomain.replace(/^\./, '');
+        return (
+          hostname.endsWith(baseDomain) ||
+          hostname === baseDomain.replace(/^\./, '')
+        );
       }
       return hostname === domain;
     });
@@ -608,8 +622,8 @@ export class ExfiltrationControl {
     const count = threats.length;
 
     // Check for high-risk patterns
-    const hasEval = threats.some(t => /eval|Function/.test(t));
-    const hasScriptTag = threats.some(t => /<script/i.test(t));
+    const hasEval = threats.some((t) => /eval|Function/.test(t));
+    const hasScriptTag = threats.some((t) => /<script/i.test(t));
 
     if (hasEval || count > 10) return 'critical';
     if (hasScriptTag || count > 5) return 'high';

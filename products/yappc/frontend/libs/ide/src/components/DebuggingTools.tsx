@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Advanced Debugging Tools
- * 
+ *
  * Comprehensive debugging system with breakpoints, variable inspection,
  * call stack analysis, and performance profiling.
- * 
+ *
  * @doc.type component
  * @doc.purpose Advanced debugging tools for IDE
  * @doc.layer product
@@ -157,7 +157,14 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   onStep,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<'breakpoints' | 'variables' | 'callstack' | 'watch' | 'console' | 'performance'>('breakpoints');
+  const [activeTab, setActiveTab] = useState<
+    | 'breakpoints'
+    | 'variables'
+    | 'callstack'
+    | 'watch'
+    | 'console'
+    | 'performance'
+  >('breakpoints');
   const [session, setSession] = useState<DebugSession | null>(null);
   const [isDebugging, setIsDebugging] = useState(false);
   const [selectedFrame, setSelectedFrame] = useState<string | null>(null);
@@ -198,29 +205,40 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   /**
    * Toggle breakpoint
    */
-  const toggleBreakpoint = useCallback((breakpoint: Breakpoint) => {
-    if (!session) return;
+  const toggleBreakpoint = useCallback(
+    (breakpoint: Breakpoint) => {
+      if (!session) return;
 
-    const updatedBreakpoints = session.breakpoints.map(bp =>
-      bp.id === breakpoint.id ? { ...bp, enabled: !bp.enabled } : bp
-    );
+      const updatedBreakpoints = session.breakpoints.map((bp) =>
+        bp.id === breakpoint.id ? { ...bp, enabled: !bp.enabled } : bp
+      );
 
-    setSession(prev => prev ? { ...prev, breakpoints: updatedBreakpoints } : null);
-    onBreakpointToggle(breakpoint);
-    info(`Breakpoint ${breakpoint.enabled ? 'disabled' : 'enabled'}`);
-  }, [session, onBreakpointToggle, info]);
-
+      setSession((prev) =>
+        prev ? { ...prev, breakpoints: updatedBreakpoints } : null
+      );
+      onBreakpointToggle(breakpoint);
+      info(`Breakpoint ${breakpoint.enabled ? 'disabled' : 'enabled'}`);
+    },
+    [session, onBreakpointToggle, info]
+  );
 
   /**
    * Remove breakpoint
    */
-  const removeBreakpoint = useCallback((breakpointId: string) => {
-    if (!session) return;
+  const removeBreakpoint = useCallback(
+    (breakpointId: string) => {
+      if (!session) return;
 
-    const updatedBreakpoints = session.breakpoints.filter(bp => bp.id !== breakpointId);
-    setSession(prev => prev ? { ...prev, breakpoints: updatedBreakpoints } : null);
-    info('Breakpoint removed');
-  }, [session, info]);
+      const updatedBreakpoints = session.breakpoints.filter(
+        (bp) => bp.id !== breakpointId
+      );
+      setSession((prev) =>
+        prev ? { ...prev, breakpoints: updatedBreakpoints } : null
+      );
+      info('Breakpoint removed');
+    },
+    [session, info]
+  );
 
   /**
    * Add watch expression
@@ -236,7 +254,9 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
     };
 
     const updatedExpressions = [...session.watchExpressions, expression];
-    setSession(prev => prev ? { ...prev, watchExpressions: updatedExpressions } : null);
+    setSession((prev) =>
+      prev ? { ...prev, watchExpressions: updatedExpressions } : null
+    );
     setNewWatchExpression('');
     success('Watch expression added');
   }, [session, newWatchExpression, success]);
@@ -244,13 +264,20 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   /**
    * Remove watch expression
    */
-  const removeWatchExpression = useCallback((expressionId: string) => {
-    if (!session) return;
+  const removeWatchExpression = useCallback(
+    (expressionId: string) => {
+      if (!session) return;
 
-    const updatedExpressions = session.watchExpressions.filter(expr => expr.id !== expressionId);
-    setSession(prev => prev ? { ...prev, watchExpressions: updatedExpressions } : null);
-    info('Watch expression removed');
-  }, [session, info]);
+      const updatedExpressions = session.watchExpressions.filter(
+        (expr) => expr.id !== expressionId
+      );
+      setSession((prev) =>
+        prev ? { ...prev, watchExpressions: updatedExpressions } : null
+      );
+      info('Watch expression removed');
+    },
+    [session, info]
+  );
 
   /**
    * Evaluate expression (mock implementation)
@@ -265,7 +292,8 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
       if (expression === 'undefined') return undefined;
       if (/^\d+$/.test(expression)) return parseInt(expression);
       if (/^\d+\.\d+$/.test(expression)) return parseFloat(expression);
-      if (expression.startsWith('"') && expression.endsWith('"')) return expression.slice(1, -1);
+      if (expression.startsWith('"') && expression.endsWith('"'))
+        return expression.slice(1, -1);
       return `[${expression}]`;
     } catch {
       return 'Error evaluating expression';
@@ -275,23 +303,33 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   /**
    * Toggle variable expansion
    */
-  const toggleVariableExpansion = useCallback((variablePath: string) => {
-    if (!session) return;
+  const toggleVariableExpansion = useCallback(
+    (variablePath: string) => {
+      if (!session) return;
 
-    const updateVariableExpansion = (variables: Variable[]): Variable[] => {
-      return variables.map(variable => {
-        if (variable.name === variablePath) {
-          return { ...variable, expanded: !variable.expanded };
-        }
-        if (variable.children) {
-          return { ...variable, children: updateVariableExpansion(variable.children) };
-        }
-        return variable;
-      });
-    };
+      const updateVariableExpansion = (variables: Variable[]): Variable[] => {
+        return variables.map((variable) => {
+          if (variable.name === variablePath) {
+            return { ...variable, expanded: !variable.expanded };
+          }
+          if (variable.children) {
+            return {
+              ...variable,
+              children: updateVariableExpansion(variable.children),
+            };
+          }
+          return variable;
+        });
+      };
 
-    setSession(prev => prev ? { ...prev, variables: updateVariableExpansion(prev.variables) } : null);
-  }, [session]);
+      setSession((prev) =>
+        prev
+          ? { ...prev, variables: updateVariableExpansion(prev.variables) }
+          : null
+      );
+    },
+    [session]
+  );
 
   /**
    * Start performance profiling
@@ -402,11 +440,15 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   useEffect(() => {
     if (isDebugging && session) {
       const timer = setTimeout(() => {
-        setSession(prev => prev ? {
-          ...prev,
-          variables: generateMockVariables(),
-          callStack: generateMockCallStack(),
-        } : null);
+        setSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                variables: generateMockVariables(),
+                callStack: generateMockCallStack(),
+              }
+            : null
+        );
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -415,7 +457,9 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed right-4 top-20 bottom-4 w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl flex flex-col ${className}`}>
+    <div
+      className={`fixed right-4 top-20 bottom-4 w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl flex flex-col ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center space-x-2">
@@ -424,10 +468,17 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
             Debug Tools
           </h3>
           {session && (
-            <div className={`w-2 h-2 rounded-full ${session.status === 'running' ? 'bg-green-500' :
-                session.status === 'paused' ? 'bg-yellow-500' :
-                  session.status === 'error' ? 'bg-red-500' : 'bg-gray-500'
-              }`} />
+            <div
+              className={`w-2 h-2 rounded-full ${
+                session.status === 'running'
+                  ? 'bg-green-500'
+                  : session.status === 'paused'
+                    ? 'bg-yellow-500'
+                    : session.status === 'error'
+                      ? 'bg-red-500'
+                      : 'bg-gray-500'
+              }`}
+            />
           )}
         </div>
         <div className="flex items-center space-x-2">
@@ -448,11 +499,7 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
               Start
             </InteractiveButton>
           )}
-          <InteractiveButton
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-          >
+          <InteractiveButton variant="ghost" size="sm" onClick={onClose}>
             ×
           </InteractiveButton>
         </div>
@@ -511,20 +558,51 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-gray-700">
         {[
-          { id: 'breakpoints', label: 'Breakpoints', count: session?.breakpoints.length || 0 },
-          { id: 'variables', label: 'Variables', count: session?.variables.length || 0 },
-          { id: 'callstack', label: 'Call Stack', count: session?.callStack.length || 0 },
-          { id: 'watch', label: 'Watch', count: session?.watchExpressions.length || 0 },
-          { id: 'performance', label: 'Performance', count: isProfiling ? 1 : 0 },
-        ].map(tab => (
+          {
+            id: 'breakpoints',
+            label: 'Breakpoints',
+            count: session?.breakpoints.length || 0,
+          },
+          {
+            id: 'variables',
+            label: 'Variables',
+            count: session?.variables.length || 0,
+          },
+          {
+            id: 'callstack',
+            label: 'Call Stack',
+            count: session?.callStack.length || 0,
+          },
+          {
+            id: 'watch',
+            label: 'Watch',
+            count: session?.watchExpressions.length || 0,
+          },
+          {
+            id: 'performance',
+            label: 'Performance',
+            count: isProfiling ? 1 : 0,
+          },
+        ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'breakpoints' | 'variables' | 'callstack' | 'watch' | 'console' | 'performance')}
+            onClick={() =>
+              setActiveTab(
+                tab.id as
+                  | 'breakpoints'
+                  | 'variables'
+                  | 'callstack'
+                  | 'watch'
+                  | 'console'
+                  | 'performance'
+              )
+            }
             className={`
               flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors
-              ${activeTab === tab.id
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }
             `}
           >
@@ -547,13 +625,15 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                 <div className="text-4xl mb-4">🎯</div>
                 <p>Start debugging to manage breakpoints</p>
               </div>
-            ) : (!session || session.breakpoints.length === 0) ? (
+            ) : !session || session.breakpoints.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 <p>No breakpoints set</p>
-                <p className="text-sm mt-1">Click on line numbers to add breakpoints</p>
+                <p className="text-sm mt-1">
+                  Click on line numbers to add breakpoints
+                </p>
               </div>
             ) : (
-              session.breakpoints.map(breakpoint => (
+              session.breakpoints.map((breakpoint) => (
                 <div
                   key={breakpoint.id}
                   className="flex items-center justify-between p-2 border border-gray-200 dark:border-gray-700 rounded"
@@ -601,7 +681,7 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                 <div className="text-4xl mb-4">📊</div>
                 <p>Start debugging to inspect variables</p>
               </div>
-            ) : (!session || session.variables.length === 0) ? (
+            ) : !session || session.variables.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 <p>No variables in current scope</p>
               </div>
@@ -621,16 +701,19 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                 <div className="text-4xl mb-4">📚</div>
                 <p>Start debugging to view call stack</p>
               </div>
-            ) : (!session || session.callStack.length === 0) ? (
+            ) : !session || session.callStack.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 <p>Call stack is empty</p>
               </div>
             ) : (
-              session.callStack.map(frame => (
+              session.callStack.map((frame) => (
                 <div
                   key={frame.id}
-                  className={`p-3 border border-gray-200 dark:border-gray-700 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${selectedFrame === frame.id ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500' : ''
-                    }`}
+                  className={`p-3 border border-gray-200 dark:border-gray-700 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    selectedFrame === frame.id
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                      : ''
+                  }`}
                   onClick={() => setSelectedFrame(frame.id)}
                 >
                   <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -665,7 +748,9 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                     onChange={(e) => setNewWatchExpression(e.target.value)}
                     placeholder="Enter expression to watch..."
                     className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
-                    onKeyPress={(e) => e.key === 'Enter' && addWatchExpression()}
+                    onKeyPress={(e) =>
+                      e.key === 'Enter' && addWatchExpression()
+                    }
                   />
                   <InteractiveButton
                     variant="primary"
@@ -684,7 +769,7 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                       <p>No watch expressions</p>
                     </div>
                   ) : (
-                    session.watchExpressions.map(expression => (
+                    session.watchExpressions.map((expression) => (
                       <div
                         key={expression.id}
                         className="p-3 border border-gray-200 dark:border-gray-700 rounded"
@@ -725,7 +810,9 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
         {activeTab === 'performance' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100">Performance Profiling</h4>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                Performance Profiling
+              </h4>
               <InteractiveButton
                 variant={isProfiling ? 'secondary' : 'primary'}
                 size="sm"
@@ -754,16 +841,28 @@ export const DebuggingTools: React.FC<DebuggingToolsProps> = ({
                 {/* Mock Performance Metrics */}
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">CPU Usage:</span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">45%</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      CPU Usage:
+                    </span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      45%
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Memory Usage:</span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">128 MB</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Memory Usage:
+                    </span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      128 MB
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Execution Time:</span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">2.3s</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Execution Time:
+                    </span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      2.3s
+                    </span>
                   </div>
                 </div>
               </div>
@@ -785,7 +884,7 @@ const VariableTree: React.FC<{
 }> = ({ variables, onToggleExpansion, level = 0 }) => {
   return (
     <div className={`space-y-1 ${level > 0 ? 'ml-4' : ''}`}>
-      {variables.map(variable => (
+      {variables.map((variable) => (
         <div key={variable.name}>
           <div
             className="flex items-center space-x-2 p-1 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
@@ -835,32 +934,38 @@ export const useDebuggingTools = () => {
     path: string;
   } | null>(null);
 
-  const openTools = useCallback((file?: {
-    name: string;
-    content: string;
-    language: string;
-    path: string;
-  }) => {
-    setCurrentFile(file ?? null);
-    setIsVisible(true);
-  }, []);
+  const openTools = useCallback(
+    (file?: {
+      name: string;
+      content: string;
+      language: string;
+      path: string;
+    }) => {
+      setCurrentFile(file ?? null);
+      setIsVisible(true);
+    },
+    []
+  );
 
   const closeTools = useCallback(() => {
     setIsVisible(false);
   }, []);
 
-  const toggleTools = useCallback((file?: {
-    name: string;
-    content: string;
-    language: string;
-    path: string;
-  }) => {
-    if (isVisible) {
-      closeTools();
-    } else {
-      openTools(file);
-    }
-  }, [isVisible, openTools, closeTools]);
+  const toggleTools = useCallback(
+    (file?: {
+      name: string;
+      content: string;
+      language: string;
+      path: string;
+    }) => {
+      if (isVisible) {
+        closeTools();
+      } else {
+        openTools(file);
+      }
+    },
+    [isVisible, openTools, closeTools]
+  );
 
   return {
     isVisible,

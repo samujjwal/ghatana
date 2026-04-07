@@ -36,9 +36,13 @@ export const LayerPriority = {
   OVERRIDE: 1000,
 } as const;
 
-const MultiLayerThemeContext = createContext<MultiLayerThemeContextValue | undefined>(undefined);
+const MultiLayerThemeContext = createContext<
+  MultiLayerThemeContextValue | undefined
+>(undefined);
 
-function deepMergeThemeOptions(...options: Partial<ThemeOptions>[]): ThemeOptions {
+function deepMergeThemeOptions(
+  ...options: Partial<ThemeOptions>[]
+): ThemeOptions {
   const result: Record<string, unknown> = {};
 
   for (const option of options) {
@@ -47,8 +51,15 @@ function deepMergeThemeOptions(...options: Partial<ThemeOptions>[]): ThemeOption
     for (const [key, value] of Object.entries(option)) {
       if (value === undefined) continue;
 
-      if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
-        result[key] = deepMergeThemeOptions(result[key] || {}, value as Partial<ThemeOptions>);
+      if (
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        value !== null
+      ) {
+        result[key] = deepMergeThemeOptions(
+          result[key] || {},
+          value as Partial<ThemeOptions>
+        );
       } else {
         result[key] = value;
       }
@@ -121,7 +132,11 @@ export function MultiLayerThemeProvider({
   });
 
   const addLayer = (layer: ThemeLayer) => {
-    setLayers((previous) => [...previous.filter((existing) => existing.id !== layer.id), layer].sort((left, right) => left.priority - right.priority));
+    setLayers((previous) =>
+      [...previous.filter((existing) => existing.id !== layer.id), layer].sort(
+        (left, right) => left.priority - right.priority
+      )
+    );
   };
 
   const removeLayer = (layerId: string) => {
@@ -131,7 +146,9 @@ export function MultiLayerThemeProvider({
   const updateLayer = (layerId: string, options: Partial<ThemeOptions>) => {
     setLayers((previous) =>
       previous.map((layer) =>
-        layer.id === layerId ? { ...layer, options: deepMergeThemeOptions(layer.options, options) } : layer
+        layer.id === layerId
+          ? { ...layer, options: deepMergeThemeOptions(layer.options, options) }
+          : layer
       )
     );
   };
@@ -149,7 +166,9 @@ export function MultiLayerThemeProvider({
   };
 
   const mergedThemeOptions = useMemo(() => {
-    const sortedLayers = [...layers].sort((left, right) => left.priority - right.priority);
+    const sortedLayers = [...layers].sort(
+      (left, right) => left.priority - right.priority
+    );
     const layerOptions = sortedLayers.map((layer) => layer.options);
     return deepMergeThemeOptions({ palette: { mode } }, ...layerOptions);
   }, [layers, mode]);
@@ -176,13 +195,19 @@ export function MultiLayerThemeProvider({
     setAppLayer,
   };
 
-  return <MultiLayerThemeContext.Provider value={value}>{children}</MultiLayerThemeContext.Provider>;
+  return (
+    <MultiLayerThemeContext.Provider value={value}>
+      {children}
+    </MultiLayerThemeContext.Provider>
+  );
 }
 
 export function useMultiLayerTheme(): MultiLayerThemeContextValue {
   const context = useContext(MultiLayerThemeContext);
   if (!context) {
-    throw new Error('useMultiLayerTheme must be used within MultiLayerThemeProvider');
+    throw new Error(
+      'useMultiLayerTheme must be used within MultiLayerThemeProvider'
+    );
   }
   return context;
 }

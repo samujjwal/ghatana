@@ -19,7 +19,8 @@ const MOBILE_NAMESPACE = 'mobile';
 /**
  * Helper to create namespaced mobile atom keys.
  */
-const createMobileKey = (suffix: string): string => `${MOBILE_NAMESPACE}:${suffix}`;
+const createMobileKey = (suffix: string): string =>
+  `${MOBILE_NAMESPACE}:${suffix}`;
 
 /**
  * Supported runtime platforms for the mobile shell.
@@ -77,33 +78,40 @@ const createDefaultMobileSettings = (): MobileSettings => ({
 /**
  * Persistent storage for mobile application settings.
  */
-export const mobileSettingsAtom = StateManager.createPersistentAtom<MobileSettings>(
-  createMobileKey('settings'),
-  createDefaultMobileSettings(),
-  {
-    description: 'Mobile application persistent settings',
-    storage: 'local',
-  }
-);
+export const mobileSettingsAtom =
+  StateManager.createPersistentAtom<MobileSettings>(
+    createMobileKey('settings'),
+    createDefaultMobileSettings(),
+    {
+      description: 'Mobile application persistent settings',
+      storage: 'local',
+    }
+  );
 
 /**
  * Read-only atom exposing the current mobile theme preference.
  */
-export const mobileThemePreferenceAtom = StateManager.createDerivedAtom<MobileThemePreference>(
-  createMobileKey('themePreference'),
-  (get) => get(mobileSettingsAtom).theme,
-  'Preferred theme mode selected by the user'
-);
+export const mobileThemePreferenceAtom =
+  StateManager.createDerivedAtom<MobileThemePreference>(
+    createMobileKey('themePreference'),
+    (get) => get(mobileSettingsAtom).theme,
+    'Preferred theme mode selected by the user'
+  );
 
 /**
  * Utility to resolve the system colour scheme.
  */
 export const resolveSystemTheme = (): 'light' | 'dark' => {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+  if (
+    typeof window === 'undefined' ||
+    typeof window.matchMedia !== 'function'
+  ) {
     return 'light';
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
 };
 
 /**
@@ -118,7 +126,9 @@ export const mobileSystemThemeAtom = StateManager.createAtom<'light' | 'dark'>(
 /**
  * Derived atom providing the effective theme taking "auto" into account.
  */
-export const resolvedMobileThemeAtom = StateManager.createDerivedAtom<'light' | 'dark'>(
+export const resolvedMobileThemeAtom = StateManager.createDerivedAtom<
+  'light' | 'dark'
+>(
   createMobileKey('resolvedTheme'),
   (get) => {
     const preference = get(mobileThemePreferenceAtom);

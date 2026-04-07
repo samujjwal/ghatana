@@ -4,14 +4,14 @@ import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 const TAB_LIST_BASE_CLASSES = 'flex gap-1 border-b border-grey-200';
 
 const flattenChildren = (children: React.ReactNode): React.ReactNode[] => {
   const result: React.ReactNode[] = [];
   React.Children.forEach(children, (child) => {
     if (React.isValidElement(child) && child.type === React.Fragment) {
-      const fragmentChildren = (child.props as { children?: React.ReactNode }).children;
+      const fragmentChildren = (child.props as { children?: React.ReactNode })
+        .children;
       if (fragmentChildren !== undefined) {
         result.push(...flattenChildren(fragmentChildren));
         return;
@@ -37,7 +37,8 @@ const getDisplayName = (type: React.ElementType): string => {
 };
 
 const isElementNamed = (element: React.ReactNode, name: string): boolean =>
-  React.isValidElement(element) && getDisplayName(element.type as unknown) === name;
+  React.isValidElement(element) &&
+  getDisplayName(element.type as unknown) === name;
 
 /**
  * Tabs variant types
@@ -120,7 +121,10 @@ export interface TabsListProps {
 /**
  * Props for Tab component
  */
-export interface TabProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
+export interface TabProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'value'
+> {
   /**
    * Tab value
    */
@@ -222,10 +226,11 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
   ) => {
     const normalizedChildren = React.useMemo(() => {
       const flattened = flattenChildren(children);
-      const hasExplicitList = flattened.some((child) =>
-        isElementNamed(child, 'TabsList') ||
-        isElementNamed(child, 'BaseTabsList') ||
-        isElementNamed(child, 'TabsListForwardRef')
+      const hasExplicitList = flattened.some(
+        (child) =>
+          isElementNamed(child, 'TabsList') ||
+          isElementNamed(child, 'BaseTabsList') ||
+          isElementNamed(child, 'TabsListForwardRef')
       );
 
       if (hasExplicitList) {
@@ -247,18 +252,16 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(
         return children;
       }
 
-      const normalizedOtherElements = otherElements.map((child, index) => (
+      const normalizedOtherElements = otherElements.map((child, index) =>
         React.isValidElement(child) && child.key == null
           ? React.cloneElement(child, { key: `auto-tabs-child-${index}` })
           : child
-      ));
+      );
 
       return [
-        (
-          <BaseTabs.List key="auto-tabs-list" className={TAB_LIST_BASE_CLASSES}>
-            {tabElements}
-          </BaseTabs.List>
-        ),
+        <BaseTabs.List key="auto-tabs-list" className={TAB_LIST_BASE_CLASSES}>
+          {tabElements}
+        </BaseTabs.List>,
         ...normalizedOtherElements,
       ];
     }, [children]);
@@ -300,10 +303,7 @@ Tabs.displayName = 'Tabs';
 export const TabsList = forwardRef<HTMLDivElement, TabsListProps>(
   ({ children, className }, ref) => {
     return (
-      <BaseTabs.List
-        ref={ref}
-        className={cn(TAB_LIST_BASE_CLASSES, className)}
-      >
+      <BaseTabs.List ref={ref} className={cn(TAB_LIST_BASE_CLASSES, className)}>
         {children}
       </BaseTabs.List>
     );
@@ -431,11 +431,7 @@ export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(
         ref={ref}
         value={value}
         keepMounted={keepMounted}
-        className={cn(
-          'p-6 outline-none',
-          'data-[hidden]:hidden',
-          className
-        )}
+        className={cn('p-6 outline-none', 'data-[hidden]:hidden', className)}
       >
         {children}
       </BaseTabs.Panel>

@@ -19,7 +19,11 @@ import { cn } from '@ghatana/design-system';
 // ============================================================================
 
 export type HealthStatus = 'healthy' | 'degraded' | 'critical' | 'unknown';
-export type ComponentStatus = 'operational' | 'degraded' | 'outage' | 'maintenance';
+export type ComponentStatus =
+  | 'operational'
+  | 'degraded'
+  | 'outage'
+  | 'maintenance';
 
 export interface HealthComponent {
   id: string;
@@ -43,11 +47,34 @@ export interface HealthStatusCardProps {
 // ============================================================================
 
 const getStatusConfig = (status: HealthStatus) => {
-  const configs: Record<HealthStatus, { icon: string; label: string; color: string; bg: string }> = {
-    healthy: { icon: '🟢', label: 'All Systems Operational', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    degraded: { icon: '🟡', label: 'Partial System Outage', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-    critical: { icon: '🔴', label: 'Major System Outage', color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)' },
-    unknown: { icon: '⚪', label: 'Status Unknown', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.1)' },
+  const configs: Record<
+    HealthStatus,
+    { icon: string; label: string; color: string; bg: string }
+  > = {
+    healthy: {
+      icon: '🟢',
+      label: 'All Systems Operational',
+      color: '#10B981',
+      bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    degraded: {
+      icon: '🟡',
+      label: 'Partial System Outage',
+      color: '#F59E0B',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    critical: {
+      icon: '🔴',
+      label: 'Major System Outage',
+      color: '#EF4444',
+      bg: 'rgba(239, 68, 68, 0.1)',
+    },
+    unknown: {
+      icon: '⚪',
+      label: 'Status Unknown',
+      color: '#6B7280',
+      bg: 'rgba(107, 114, 128, 0.1)',
+    },
   };
   return configs[status];
 };
@@ -76,7 +103,9 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
   const statusConfig = getStatusConfig(status);
 
   const componentStats = useMemo(() => {
-    const operational = components.filter(c => c.status === 'operational').length;
+    const operational = components.filter(
+      (c) => c.status === 'operational'
+    ).length;
     const total = components.length;
     return { operational, total };
   }, [components]);
@@ -90,7 +119,8 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
           <div className="status-text">
             <h3 className="status-label">{statusConfig.label}</h3>
             <span className="status-summary">
-              {componentStats.operational}/{componentStats.total} components operational
+              {componentStats.operational}/{componentStats.total} components
+              operational
             </span>
           </div>
         </div>
@@ -118,7 +148,9 @@ export const HealthStatusCard: React.FC<HealthStatusCardProps> = ({
                 <span className="component-latency">{component.latency}ms</span>
               )}
               {component.uptime !== undefined && (
-                <span className="component-uptime">{component.uptime.toFixed(2)}%</span>
+                <span className="component-uptime">
+                  {component.uptime.toFixed(2)}%
+                </span>
               )}
             </div>
           );

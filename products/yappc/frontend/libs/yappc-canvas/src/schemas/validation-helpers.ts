@@ -3,12 +3,13 @@
 
 import {
   componentSchemaRegistry,
-  validateComponent
+  validateComponent,
 } from './component-registry';
 import type {
   ValidationResult,
   CanvasComponent,
-  CanvasEdge} from './component-registry';
+  CanvasEdge,
+} from './component-registry';
 
 // Import validation utilities
 /**
@@ -236,9 +237,14 @@ export const validateNodeOperation = (
     ) {
       return patch;
     }
-    const out: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    const out: Record<string, unknown> = {
+      ...(base as Record<string, unknown>),
+    };
     for (const key of Object.keys(patch as Record<string, unknown>)) {
-      out[key] = mergeDeep((base as Record<string, unknown>)[key], (patch as Record<string, unknown>)[key]);
+      out[key] = mergeDeep(
+        (base as Record<string, unknown>)[key],
+        (patch as Record<string, unknown>)[key]
+      );
     }
     return out;
   };
@@ -337,7 +343,7 @@ export const migrateCanvas = (
   }
 
   // Migrate nodes
-  (canvas.nodes).forEach((node: unknown, index) => {
+  canvas.nodes.forEach((node: unknown, index) => {
     if (!node.type) {
       errors.push(`Node at index ${index} is missing type field`);
       return;

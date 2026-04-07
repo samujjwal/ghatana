@@ -25,7 +25,13 @@ import {
   X,
   AtSign,
 } from 'lucide-react';
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 
 import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
@@ -218,7 +224,9 @@ const CommentInput: React.FC<CommentInputProps> = ({
         <Textarea
           ref={textareaRef}
           value={value}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+            onChange(e.target.value)
+          }
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="min-h-[80px] resize-none pr-10"
@@ -269,9 +277,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-neutral-500">
-          ⌘+Enter to submit
-        </span>
+        <span className="text-xs text-neutral-500">⌘+Enter to submit</span>
         <div className="flex items-center gap-2">
           {showCancel && (
             <Button
@@ -378,7 +384,11 @@ const CommentItem: React.FC<CommentItemProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Avatar size="small" alt={comment.author.name} src={comment.author.avatar} />
+          <Avatar
+            size="small"
+            alt={comment.author.name}
+            src={comment.author.avatar}
+          />
           <div>
             <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {comment.author.name}
@@ -397,9 +407,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
         {/* Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {comment.pinned && (
-            <Pin className="h-4 w-4 text-amber-500" />
-          )}
+          {comment.pinned && <Pin className="h-4 w-4 text-amber-500" />}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700">
@@ -409,7 +417,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <DropdownMenuContent align="end">
               {!isReply && (
                 <>
-                  <DropdownMenuItem onClick={() => onResolve(comment.id, !comment.resolved)}>
+                  <DropdownMenuItem
+                    onClick={() => onResolve(comment.id, !comment.resolved)}
+                  >
                     {comment.resolved ? (
                       <>
                         <X className="mr-2 h-4 w-4" />
@@ -423,7 +433,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
                     )}
                   </DropdownMenuItem>
                   {onPin && (
-                    <DropdownMenuItem onClick={() => onPin(comment.id, !comment.pinned)}>
+                    <DropdownMenuItem
+                      onClick={() => onPin(comment.id, !comment.pinned)}
+                    >
                       <Pin className="mr-2 h-4 w-4" />
                       {comment.pinned ? 'Unpin' : 'Pin'}
                     </DropdownMenuItem>
@@ -456,11 +468,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <div className="mt-2">
           <Textarea
             value={editContent}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditContent(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+              setEditContent(e.target.value)
+            }
             className="min-h-[60px]"
           />
           <div className="mt-2 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(false)}
+            >
               Cancel
             </Button>
             <Button variant="solid" size="sm" onClick={handleEdit}>
@@ -566,7 +584,12 @@ export const NodeCommentThread: React.FC<NodeCommentThreadProps> = ({
   const totalCount = comments.length;
 
   return (
-    <div className={cn('rounded-lg border bg-white dark:border-neutral-700 dark:bg-neutral-900', className)}>
+    <div
+      className={cn(
+        'rounded-lg border bg-white dark:border-neutral-700 dark:bg-neutral-900',
+        className
+      )}
+    >
       {/* Header */}
       <button
         type="button"

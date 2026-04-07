@@ -50,7 +50,8 @@ export function autoResolveOperations(
           resolved: true,
           rule: 'same-position-insert',
           operations: orderedOperations,
-          description: 'Concurrent inserts at the same position are ordered deterministically by replica ID.',
+          description:
+            'Concurrent inserts at the same position are ordered deterministically by replica ID.',
         };
       }
 
@@ -58,32 +59,42 @@ export function autoResolveOperations(
         resolved: true,
         rule: 'distinct-position-insert',
         operations: orderedOperations,
-        description: 'Concurrent inserts at different positions are both retained and applied in positional order.',
+        description:
+          'Concurrent inserts at different positions are both retained and applied in positional order.',
       };
     }
   }
 
   if (isDeleteUpdatePair(operationA, operationB)) {
-    const deleteOperation = operationA.type === 'delete' ? operationA : operationB;
+    const deleteOperation =
+      operationA.type === 'delete' ? operationA : operationB;
     return {
       resolved: true,
       rule: 'delete-wins',
       operations: [deleteOperation],
-      description: 'Delete operations take precedence over concurrent updates on the same target.',
+      description:
+        'Delete operations take precedence over concurrent updates on the same target.',
     };
   }
 
   if (operationA.type === 'update' && operationB.type === 'update') {
     const fieldsA = extractFieldNames(operationA.data);
     const fieldsB = extractFieldNames(operationB.data);
-    const overlappingFields = [...fieldsA].filter((field) => fieldsB.has(field));
+    const overlappingFields = [...fieldsA].filter((field) =>
+      fieldsB.has(field)
+    );
 
-    if (fieldsA.size > 0 && fieldsB.size > 0 && overlappingFields.length === 0) {
+    if (
+      fieldsA.size > 0 &&
+      fieldsB.size > 0 &&
+      overlappingFields.length === 0
+    ) {
       return {
         resolved: true,
         rule: 'field-merge',
         operations: [operationA, operationB],
-        description: 'Concurrent updates touching different fields are both preserved.',
+        description:
+          'Concurrent updates touching different fields are both preserved.',
       };
     }
 
@@ -92,7 +103,8 @@ export function autoResolveOperations(
       resolved: true,
       rule: 'vector-clock-wins',
       operations: [winner],
-      description: 'Concurrent updates to the same field resolve deterministically using vector clocks and stable tie-breakers.',
+      description:
+        'Concurrent updates to the same field resolve deterministically using vector clocks and stable tie-breakers.',
     };
   }
 
@@ -101,17 +113,25 @@ export function autoResolveOperations(
     const pointB = extractPoint(operationB.data);
 
     if (pointA !== null && pointB !== null) {
-      const mergedOperation = buildMergedMoveOperation(operationA, operationB, pointA, pointB);
+      const mergedOperation = buildMergedMoveOperation(
+        operationA,
+        operationB,
+        pointA,
+        pointB
+      );
       return {
         resolved: true,
         rule: 'move-average',
         operations: [mergedOperation],
-        description: 'Concurrent move operations are averaged to keep the target centered between both edits.',
+        description:
+          'Concurrent move operations are averaged to keep the target centered between both edits.',
       };
     }
   }
 
-  return unresolved('No automatic resolution rule matched the conflicting operations.');
+  return unresolved(
+    'No automatic resolution rule matched the conflicting operations.'
+  );
 }
 
 function unresolved(description: string): AutoResolutionResult {
@@ -127,7 +147,10 @@ function compareVectorClocks(clockA: VectorClock, clockB: VectorClock): number {
   let aGreater = false;
   let bGreater = false;
 
-  const allReplicaIds = new Set([...clockA.values.keys(), ...clockB.values.keys()]);
+  const allReplicaIds = new Set([
+    ...clockA.values.keys(),
+    ...clockB.values.keys(),
+  ]);
 
   for (const replicaId of allReplicaIds) {
     const valueA = clockA.values.get(replicaId) ?? 0;
@@ -153,8 +176,14 @@ function compareVectorClocks(clockA: VectorClock, clockB: VectorClock): number {
   return 2;
 }
 
-function selectPreferredOperation(operationA: CRDTOperation, operationB: CRDTOperation): CRDTOperation {
-  const vectorComparison = compareVectorClocks(operationA.vectorClock, operationB.vectorClock);
+function selectPreferredOperation(
+  operationA: CRDTOperation,
+  operationB: CRDTOperation
+): CRDTOperation {
+  const vectorComparison = compareVectorClocks(
+    operationA.vectorClock,
+    operationB.vectorClock
+  );
 
   if (vectorComparison === 1) {
     return operationA;
@@ -163,13 +192,20 @@ function selectPreferredOperation(operationA: CRDTOperation, operationB: CRDTOpe
     return operationB;
   }
   if (operationA.timestamp !== operationB.timestamp) {
-    return operationA.timestamp > operationB.timestamp ? operationA : operationB;
+    return operationA.timestamp > operationB.timestamp
+      ? operationA
+      : operationB;
   }
 
-  return compareReplicaIds(operationA, operationB) <= 0 ? operationA : operationB;
+  return compareReplicaIds(operationA, operationB) <= 0
+    ? operationA
+    : operationB;
 }
 
-function compareReplicaIds(operationA: CRDTOperation, operationB: CRDTOperation): number {
+function compareReplicaIds(
+  operationA: CRDTOperation,
+  operationB: CRDTOperation
+): number {
   if (operationA.replicaId !== operationB.replicaId) {
     return operationA.replicaId.localeCompare(operationB.replicaId);
   }
@@ -177,7 +213,10 @@ function compareReplicaIds(operationA: CRDTOperation, operationB: CRDTOperation)
   return operationA.id.localeCompare(operationB.id);
 }
 
-function isDeleteUpdatePair(operationA: CRDTOperation, operationB: CRDTOperation): boolean {
+function isDeleteUpdatePair(
+  operationA: CRDTOperation,
+  operationB: CRDTOperation
+): boolean {
   return (
     (operationA.type === 'delete' && operationB.type === 'update') ||
     (operationA.type === 'update' && operationB.type === 'delete')
@@ -200,7 +239,9 @@ function extractFieldNames(data: unknown): Set<string> {
   }
 
   return new Set(
-    Object.keys(data).filter((key) => !['field', 'value', 'position', 'index', 'x', 'y'].includes(key))
+    Object.keys(data).filter(
+      (key) => !['field', 'value', 'position', 'index', 'x', 'y'].includes(key)
+    )
   );
 }
 
@@ -257,7 +298,9 @@ function buildMergedMoveOperation(
     y: (pointA.y + pointB.y) / 2,
   };
 
-  const baseData = isRecord(preferredOperation.data) ? preferredOperation.data : {};
+  const baseData = isRecord(preferredOperation.data)
+    ? preferredOperation.data
+    : {};
   const usesNestedPosition = isRecord(baseData['position']);
 
   return {

@@ -1,6 +1,6 @@
 /**
  * Plugin Manager Tests
- * 
+ *
  * Comprehensive test suite for the plugin architecture system.
  */
 
@@ -17,7 +17,7 @@ describe('PluginManager', () => {
     // Reset singleton for each test
     (PluginManager as unknown).instance = null;
     manager = PluginManager.getInstance();
-    
+
     // Clear localStorage
     localStorage.clear();
   });
@@ -53,19 +53,21 @@ describe('PluginManager', () => {
         capturedState = context.state;
       });
       const plugin = createTestPlugin({ onLoad });
-      
+
       await manager.register(plugin);
       expect(onLoad).toHaveBeenCalledTimes(1);
       expect(capturedState).toBe('initializing');
-      expect(onLoad).toHaveBeenCalledWith(expect.objectContaining({
-        manifest: plugin.manifest,
-      }));
+      expect(onLoad).toHaveBeenCalledWith(
+        expect.objectContaining({
+          manifest: plugin.manifest,
+        })
+      );
     });
 
     it('should auto-activate by default', async () => {
       const onActivate = vi.fn();
       const plugin = createTestPlugin({ onActivate });
-      
+
       await manager.register(plugin);
       expect(onActivate).toHaveBeenCalledTimes(1);
       expect(manager.getState('test.plugin')).toBe('active');
@@ -74,7 +76,7 @@ describe('PluginManager', () => {
     it('should not auto-activate when autoActivate is false', async () => {
       const onActivate = vi.fn();
       const plugin = createTestPlugin({ onActivate });
-      
+
       await manager.register(plugin, { autoActivate: false });
       expect(onActivate).not.toHaveBeenCalled();
       expect(manager.getState('test.plugin')).toBe('disabled');
@@ -100,16 +102,20 @@ describe('PluginManager', () => {
 
     it('should reject duplicate plugin registration', async () => {
       const plugin = createTestPlugin();
-      
+
       await manager.register(plugin);
-      await expect(manager.register(plugin)).rejects.toThrow('already registered');
+      await expect(manager.register(plugin)).rejects.toThrow(
+        'already registered'
+      );
     });
 
     it('should handle plugin load errors', async () => {
       const onLoad = vi.fn().mockRejectedValue(new Error('Load failed'));
       const plugin = createTestPlugin({ onLoad });
 
-      await expect(manager.register(plugin)).rejects.toThrow('Failed to load plugin');
+      await expect(manager.register(plugin)).rejects.toThrow(
+        'Failed to load plugin'
+      );
       expect(manager.getPlugins()).toHaveLength(0);
     });
   });
@@ -118,10 +124,10 @@ describe('PluginManager', () => {
     it('should activate a plugin', async () => {
       const onActivate = vi.fn();
       const plugin = createTestPlugin({ onActivate });
-      
+
       await manager.register(plugin, { autoActivate: false });
       await manager.activate('test.plugin');
-      
+
       expect(onActivate).toHaveBeenCalledTimes(1);
       expect(manager.getState('test.plugin')).toBe('active');
     });
@@ -129,10 +135,10 @@ describe('PluginManager', () => {
     it('should deactivate a plugin', async () => {
       const onDeactivate = vi.fn();
       const plugin = createTestPlugin({ onDeactivate });
-      
+
       await manager.register(plugin);
       await manager.deactivate('test.plugin');
-      
+
       expect(onDeactivate).toHaveBeenCalledTimes(1);
       expect(manager.getState('test.plugin')).toBe('disabled');
     });
@@ -141,15 +147,15 @@ describe('PluginManager', () => {
       const onPause = vi.fn();
       const onResume = vi.fn();
       const plugin = createTestPlugin({ onPause, onResume });
-      
+
       await manager.register(plugin);
       await manager.pause('test.plugin');
-      
+
       expect(onPause).toHaveBeenCalledTimes(1);
       expect(manager.getState('test.plugin')).toBe('paused');
-      
+
       await manager.resume('test.plugin');
-      
+
       expect(onResume).toHaveBeenCalledTimes(1);
       expect(manager.getState('test.plugin')).toBe('active');
     });
@@ -157,10 +163,10 @@ describe('PluginManager', () => {
     it('should unregister a plugin', async () => {
       const onUninstall = vi.fn();
       const plugin = createTestPlugin({ onUninstall });
-      
+
       await manager.register(plugin);
       await manager.unregister('test.plugin');
-      
+
       expect(onUninstall).toHaveBeenCalledTimes(1);
       expect(manager.getPlugins()).toHaveLength(0);
     });
@@ -169,20 +175,24 @@ describe('PluginManager', () => {
       const onDeactivate = vi.fn();
       const onUninstall = vi.fn();
       const plugin = createTestPlugin({ onDeactivate, onUninstall });
-      
+
       await manager.register(plugin);
       await manager.unregister('test.plugin');
-      
+
       expect(onDeactivate).toHaveBeenCalled();
       expect(onUninstall).toHaveBeenCalled();
     });
 
     it('should handle activation errors', async () => {
-      const onActivate = vi.fn().mockRejectedValue(new Error('Activation failed'));
+      const onActivate = vi
+        .fn()
+        .mockRejectedValue(new Error('Activation failed'));
       const plugin = createTestPlugin({ onActivate });
-      
+
       await manager.register(plugin, { autoActivate: false });
-      await expect(manager.activate('test.plugin')).rejects.toThrow('Failed to activate');
+      await expect(manager.activate('test.plugin')).rejects.toThrow(
+        'Failed to activate'
+      );
       expect(manager.getState('test.plugin')).toBe('error');
     });
   });
@@ -210,7 +220,9 @@ describe('PluginManager', () => {
         },
       });
 
-      await expect(manager.register(plugin)).rejects.toThrow('Missing required dependency');
+      await expect(manager.register(plugin)).rejects.toThrow(
+        'Missing required dependency'
+      );
     });
 
     it('should reject plugin when dependency is not active', async () => {
@@ -328,7 +340,7 @@ describe('PluginManager', () => {
       await context.storage.set('key1', 'value1');
       await context.storage.set('key2', 'value2');
       await context.storage.clear();
-      
+
       const value1 = await context.storage.get('key1');
       const value2 = await context.storage.get('key2');
       expect(value1).toBeUndefined();
@@ -338,7 +350,7 @@ describe('PluginManager', () => {
     it('should list all keys', async () => {
       await context.storage.set('key1', 'value1');
       await context.storage.set('key2', 'value2');
-      
+
       const keys = await context.storage.keys();
       expect(keys).toContain('key1');
       expect(keys).toContain('key2');
@@ -352,10 +364,10 @@ describe('PluginManager', () => {
           await ctx.storage.set('shared-key', 'plugin2-value');
         },
       });
-      
+
       await context.storage.set('shared-key', 'plugin1-value');
       await manager.register(plugin2);
-      
+
       const value1 = await context.storage.get('shared-key');
       expect(value1).toBe('plugin1-value');
     });
@@ -376,30 +388,30 @@ describe('PluginManager', () => {
     it('should subscribe to events', () => {
       const handler = vi.fn();
       const unsubscribe = context.events.on('element:created', handler);
-      
+
       manager.emitEvent('element:created', { id: 'test' });
       expect(handler).toHaveBeenCalledWith({ id: 'test' });
-      
+
       unsubscribe();
     });
 
     it('should unsubscribe from events', () => {
       const handler = vi.fn();
       const unsubscribe = context.events.on('element:created', handler);
-      
+
       unsubscribe();
       manager.emitEvent('element:created', { id: 'test' });
-      
+
       expect(handler).not.toHaveBeenCalled();
     });
 
     it('should subscribe once', () => {
       const handler = vi.fn();
       context.events.once('element:created', handler);
-      
+
       manager.emitEvent('element:created', { id: 'test1' });
       manager.emitEvent('element:created', { id: 'test2' });
-      
+
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith({ id: 'test1' });
     });
@@ -407,12 +419,12 @@ describe('PluginManager', () => {
     it('should handle multiple listeners for same event', () => {
       const handler1 = vi.fn();
       const handler2 = vi.fn();
-      
+
       context.events.on('element:created', handler1);
       context.events.on('element:created', handler2);
-      
+
       manager.emitEvent('element:created', { id: 'test' });
-      
+
       expect(handler1).toHaveBeenCalledWith({ id: 'test' });
       expect(handler2).toHaveBeenCalledWith({ id: 'test' });
     });
@@ -422,15 +434,15 @@ describe('PluginManager', () => {
         throw new Error('Handler error');
       });
       const successHandler = vi.fn();
-      
+
       context.events.on('element:created', errorHandler);
       context.events.on('element:created', successHandler);
-      
+
       // Should not throw and should call all handlers
       expect(() => {
         manager.emitEvent('element:created', { id: 'test' });
       }).not.toThrow();
-      
+
       expect(successHandler).toHaveBeenCalled();
     });
   });
@@ -439,10 +451,10 @@ describe('PluginManager', () => {
     it('should get all plugins', async () => {
       const plugin1 = createTestPlugin();
       const plugin2 = createTestPlugin({ manifest: { id: 'test.plugin2' } });
-      
+
       await manager.register(plugin1);
       await manager.register(plugin2);
-      
+
       const plugins = manager.getPlugins();
       expect(plugins).toHaveLength(2);
       expect(plugins.map((p) => p.id)).toContain('test.plugin');
@@ -452,10 +464,10 @@ describe('PluginManager', () => {
     it('should get only active plugins', async () => {
       const plugin1 = createTestPlugin();
       const plugin2 = createTestPlugin({ manifest: { id: 'test.plugin2' } });
-      
+
       await manager.register(plugin1);
       await manager.register(plugin2, { autoActivate: false });
-      
+
       const activePlugins = manager.getActivePlugins();
       expect(activePlugins).toHaveLength(1);
       expect(activePlugins[0].id).toBe('test.plugin');
@@ -464,7 +476,7 @@ describe('PluginManager', () => {
     it('should get plugin state', async () => {
       const plugin = createTestPlugin();
       await manager.register(plugin);
-      
+
       expect(manager.getState('test.plugin')).toBe('active');
     });
 
@@ -475,8 +487,12 @@ describe('PluginManager', () => {
 
   describe('PluginError', () => {
     it('should create error with correct properties', () => {
-      const error = new PluginError('Test error', 'test.plugin', 'RUNTIME_ERROR');
-      
+      const error = new PluginError(
+        'Test error',
+        'test.plugin',
+        'RUNTIME_ERROR'
+      );
+
       expect(error.message).toBe('Test error');
       expect(error.pluginId).toBe('test.plugin');
       expect(error.code).toBe('RUNTIME_ERROR');

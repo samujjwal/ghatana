@@ -157,7 +157,9 @@ export const Variants: Story = {
  */
 export const AutoResize: Story = {
   render: () => {
-    const [value, setValue] = useState('Type multiple lines to see auto-resize in action...');
+    const [value, setValue] = useState(
+      'Type multiple lines to see auto-resize in action...'
+    );
 
     return (
       <Textarea
@@ -366,7 +368,9 @@ export const Accessibility: Story = {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-          <h3 className="mb-2 font-semibold text-grey-900">Accessibility Features:</h3>
+          <h3 className="mb-2 font-semibold text-grey-900">
+            Accessibility Features:
+          </h3>
           <ul className="space-y-1 text-sm text-grey-700">
             <li>• Proper label association</li>
             <li>• Error announcements for screen readers</li>

@@ -22,7 +22,16 @@ const meta = {
   argTypes: {
     as: {
       control: 'select',
-      options: ['div', 'section', 'article', 'main', 'aside', 'header', 'footer', 'nav'],
+      options: [
+        'div',
+        'section',
+        'article',
+        'main',
+        'aside',
+        'header',
+        'footer',
+        'nav',
+      ],
       description: 'HTML element to render',
     },
     display: {
@@ -59,15 +68,15 @@ export const Padding: Story = {
       <Box p="p-2" bg="bg-primary-100" rounded="rounded">
         Small padding (p-2)
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-100" rounded="rounded">
         Medium padding (p-4)
       </Box>
-      
+
       <Box p="p-8" bg="bg-primary-100" rounded="rounded">
         Large padding (p-8)
       </Box>
-      
+
       <Box px="px-8" py="py-2" bg="bg-secondary-100" rounded="rounded">
         Horizontal padding (px-8, py-2)
       </Box>
@@ -81,27 +90,47 @@ export const Padding: Story = {
 export const BackgroundColors: Story = {
   render: () => (
     <div className="space-y-4">
-      <Box p="p-4" bg="bg-white" border="border border-grey-300" rounded="rounded-md">
+      <Box
+        p="p-4"
+        bg="bg-white"
+        border="border border-grey-300"
+        rounded="rounded-md"
+      >
         White background
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-50" rounded="rounded-md">
         Primary light background
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-500" color="text-white" rounded="rounded-md">
         Primary background with white text
       </Box>
-      
-      <Box p="p-4" bg="bg-success-100" color="text-success-800" rounded="rounded-md">
+
+      <Box
+        p="p-4"
+        bg="bg-success-100"
+        color="text-success-800"
+        rounded="rounded-md"
+      >
         Success background
       </Box>
-      
-      <Box p="p-4" bg="bg-error-100" color="text-error-800" rounded="rounded-md">
+
+      <Box
+        p="p-4"
+        bg="bg-error-100"
+        color="text-error-800"
+        rounded="rounded-md"
+      >
         Error background
       </Box>
-      
-      <Box p="p-4" bg="bg-warning-100" color="text-warning-800" rounded="rounded-md">
+
+      <Box
+        p="p-4"
+        bg="bg-warning-100"
+        color="text-warning-800"
+        rounded="rounded-md"
+      >
         Warning background
       </Box>
     </div>
@@ -117,19 +146,19 @@ export const BorderAndShadow: Story = {
       <Box p="p-4" border="border border-grey-300" rounded="rounded-md">
         With border
       </Box>
-      
+
       <Box p="p-4" border="border-2 border-primary-500" rounded="rounded-lg">
         Thick primary border
       </Box>
-      
+
       <Box p="p-4" bg="bg-white" shadow="shadow" rounded="rounded-md">
         Small shadow
       </Box>
-      
+
       <Box p="p-4" bg="bg-white" shadow="shadow-md" rounded="rounded-lg">
         Medium shadow
       </Box>
-      
+
       <Box p="p-4" bg="bg-white" shadow="shadow-lg" rounded="rounded-xl">
         Large shadow
       </Box>
@@ -146,19 +175,19 @@ export const BorderRadius: Story = {
       <Box p="p-4" bg="bg-primary-100" rounded="rounded">
         Small radius
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-100" rounded="rounded-md">
         Medium radius
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-100" rounded="rounded-lg">
         Large radius
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-100" rounded="rounded-xl">
         Extra large radius
       </Box>
-      
+
       <Box p="p-4" bg="bg-primary-100" rounded="rounded-full">
         Full radius (pill)
       </Box>
@@ -175,15 +204,15 @@ export const Dimensions: Story = {
       <Box p="p-4" w="w-full" bg="bg-primary-100" rounded="rounded-md">
         Full width
       </Box>
-      
+
       <Box p="p-4" w="w-1/2" bg="bg-secondary-100" rounded="rounded-md">
         Half width
       </Box>
-      
+
       <Box p="p-4" w="w-64" bg="bg-success-100" rounded="rounded-md">
         Fixed width (256px)
       </Box>
-      
+
       <Box p="p-4" w="w-full" h="h-32" bg="bg-warning-100" rounded="rounded-md">
         Full width, fixed height (128px)
       </Box>
@@ -197,7 +226,13 @@ export const Dimensions: Story = {
 export const FlexContainer: Story = {
   render: () => (
     <div className="space-y-4">
-      <Box display="flex" className="gap-4 items-center" p="p-4" bg="bg-grey-100" rounded="rounded-md">
+      <Box
+        display="flex"
+        className="gap-4 items-center"
+        p="p-4"
+        bg="bg-grey-100"
+        rounded="rounded-md"
+      >
         <Box p="p-3" bg="bg-primary-500" color="text-white" rounded="rounded">
           Item 1
         </Box>
@@ -208,8 +243,14 @@ export const FlexContainer: Story = {
           Item 3
         </Box>
       </Box>
-      
-      <Box display="flex" className="gap-4 justify-between" p="p-4" bg="bg-grey-100" rounded="rounded-md">
+
+      <Box
+        display="flex"
+        className="gap-4 justify-between"
+        p="p-4"
+        bg="bg-grey-100"
+        rounded="rounded-md"
+      >
         <Box p="p-3" bg="bg-primary-500" color="text-white" rounded="rounded">
           Left
         </Box>
@@ -229,7 +270,13 @@ export const FlexContainer: Story = {
  */
 export const Positioning: Story = {
   render: () => (
-    <Box position="relative" w="w-full" h="h-64" bg="bg-grey-100" rounded="rounded-md">
+    <Box
+      position="relative"
+      w="w-full"
+      h="h-64"
+      bg="bg-grey-100"
+      rounded="rounded-md"
+    >
       <Box
         position="absolute"
         top="top-4"
@@ -241,7 +288,7 @@ export const Positioning: Story = {
       >
         Top Left
       </Box>
-      
+
       <Box
         position="absolute"
         top="top-4"
@@ -253,7 +300,7 @@ export const Positioning: Story = {
       >
         Top Right
       </Box>
-      
+
       <Box
         position="absolute"
         bottom="bottom-4"
@@ -265,7 +312,7 @@ export const Positioning: Story = {
       >
         Bottom Left
       </Box>
-      
+
       <Box
         position="absolute"
         bottom="bottom-4"
@@ -294,14 +341,14 @@ export const CardExample: Story = {
       overflow="overflow-hidden"
     >
       <Box h="h-48" bg="bg-gradient-to-r from-primary-500 to-secondary-500" />
-      
+
       <Box p="p-6">
         <Box as="h3" className="text-xl font-bold text-grey-900 mb-2">
           Card Title
         </Box>
         <Box as="p" color="text-grey-600" className="mb-4">
-          This is a card component built entirely with the Box component.
-          It demonstrates how versatile Box can be for creating complex layouts.
+          This is a card component built entirely with the Box component. It
+          demonstrates how versatile Box can be for creating complex layouts.
         </Box>
         <Box display="flex" className="gap-2">
           <Box
@@ -336,19 +383,37 @@ export const CardExample: Story = {
 export const PolymorphicElements: Story = {
   render: () => (
     <div className="space-y-4">
-      <Box as="header" p="p-4" bg="bg-primary-600" color="text-white" rounded="rounded-md">
+      <Box
+        as="header"
+        p="p-4"
+        bg="bg-primary-600"
+        color="text-white"
+        rounded="rounded-md"
+      >
         This is a header element
       </Box>
-      
+
       <Box as="section" p="p-4" bg="bg-grey-100" rounded="rounded-md">
         This is a section element
       </Box>
-      
-      <Box as="article" p="p-4" bg="bg-white" border="border border-grey-300" rounded="rounded-md">
+
+      <Box
+        as="article"
+        p="p-4"
+        bg="bg-white"
+        border="border border-grey-300"
+        rounded="rounded-md"
+      >
         This is an article element
       </Box>
-      
-      <Box as="footer" p="p-4" bg="bg-grey-800" color="text-white" rounded="rounded-md">
+
+      <Box
+        as="footer"
+        p="p-4"
+        bg="bg-grey-800"
+        color="text-white"
+        rounded="rounded-md"
+      >
         This is a footer element
       </Box>
     </div>
@@ -374,17 +439,29 @@ export const ComplexLayout: Story = {
         <Box as="h3" className="text-lg font-bold mb-2">
           Sidebar
         </Box>
-        <Box p="p-2" rounded="rounded" className="hover:bg-grey-800 cursor-pointer">
+        <Box
+          p="p-2"
+          rounded="rounded"
+          className="hover:bg-grey-800 cursor-pointer"
+        >
           Menu Item 1
         </Box>
-        <Box p="p-2" rounded="rounded" className="hover:bg-grey-800 cursor-pointer">
+        <Box
+          p="p-2"
+          rounded="rounded"
+          className="hover:bg-grey-800 cursor-pointer"
+        >
           Menu Item 2
         </Box>
-        <Box p="p-2" rounded="rounded" className="hover:bg-grey-800 cursor-pointer">
+        <Box
+          p="p-2"
+          rounded="rounded"
+          className="hover:bg-grey-800 cursor-pointer"
+        >
           Menu Item 3
         </Box>
       </Box>
-      
+
       {/* Main content */}
       <Box display="flex" className="flex-1 flex-col gap-4">
         {/* Header */}
@@ -393,7 +470,7 @@ export const ComplexLayout: Story = {
             Main Content Header
           </Box>
         </Box>
-        
+
         {/* Content area */}
         <Box
           className="flex-1"
@@ -404,8 +481,9 @@ export const ComplexLayout: Story = {
           overflow="overflow-auto"
         >
           <Box as="p" color="text-grey-700">
-            This is the main content area. The Box component is used for the entire layout structure,
-            demonstrating its flexibility for building complex UIs.
+            This is the main content area. The Box component is used for the
+            entire layout structure, demonstrating its flexibility for building
+            complex UIs.
           </Box>
         </Box>
       </Box>

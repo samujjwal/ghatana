@@ -1,14 +1,14 @@
 /**
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC UI - Voice Command Handler
- * 
+ *
  * Integrates with audio-video speech services (STT/TTS) to provide
  * voice control capabilities for YAPPC without duplicating speech infrastructure.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
-export type VoiceIntent = 
+export type VoiceIntent =
   | 'create_project'
   | 'open_project'
   | 'advance_stage'
@@ -82,10 +82,7 @@ const INTENT_PATTERNS: Record<VoiceIntent, RegExp[]> = {
     /add task (.+)/i,
     /new task (.+)/i,
   ],
-  assign_task: [
-    /assign (?:task )?(.+?) to (.+)/i,
-    /give (.+?) to (.+)/i,
-  ],
+  assign_task: [/assign (?:task )?(.+?) to (.+)/i, /give (.+?) to (.+)/i],
   complete_task: [
     /complete task (.+)/i,
     /mark (?:task )?(.+?) as done/i,
@@ -109,19 +106,8 @@ const INTENT_PATTERNS: Record<VoiceIntent, RegExp[]> = {
     /voice commands/i,
     /what are (?:the )?commands/i,
   ],
-  cancel: [
-    /cancel/i,
-    /stop/i,
-    /nevermind/i,
-    /abort/i,
-  ],
-  confirm: [
-    /yes/i,
-    /confirm/i,
-    /proceed/i,
-    /ok/i,
-    /go ahead/i,
-  ],
+  cancel: [/cancel/i, /stop/i, /nevermind/i, /abort/i],
+  confirm: [/yes/i, /confirm/i, /proceed/i, /ok/i, /go ahead/i],
   unknown: [],
 };
 
@@ -130,13 +116,13 @@ const INTENT_PATTERNS: Record<VoiceIntent, RegExp[]> = {
  */
 function parseIntent(text: string): VoiceCommand {
   const normalizedText = text.toLowerCase().trim();
-  
+
   for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
     for (const pattern of patterns) {
       const match = normalizedText.match(pattern);
       if (match) {
         const entities: Record<string, string> = {};
-        
+
         // Extract entities based on intent
         if (intent === 'create_project' || intent === 'open_project') {
           entities.projectName = match[1]?.trim();
@@ -148,7 +134,7 @@ function parseIntent(text: string): VoiceCommand {
         } else if (intent === 'complete_task') {
           entities.taskName = match[1]?.trim();
         }
-        
+
         return {
           intent: intent as VoiceIntent,
           entities,
@@ -158,7 +144,7 @@ function parseIntent(text: string): VoiceCommand {
       }
     }
   }
-  
+
   return {
     intent: 'unknown',
     entities: {},
@@ -169,10 +155,10 @@ function parseIntent(text: string): VoiceCommand {
 
 /**
  * useVoiceCommands Hook
- * 
+ *
  * Provides voice command functionality using existing STT/TTS services.
  * No speech processing duplication - delegates to audio-video gRPC services.
- * 
+ *
  * @example
  * ```tsx
  * const {
@@ -193,12 +179,12 @@ export function useVoiceCommands(options: {
 }) {
   const { onCommand, onError, config = {} } = options;
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
-  
+
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [feedback, setFeedback] = useState<string>('');
   const [lastCommand, setLastCommand] = useState<VoiceCommand | null>(null);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -210,84 +196,96 @@ export function useVoiceCommands(options: {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       return stream;
     } catch (err) {
-      throw new Error('Microphone access denied');
+      throw new Error('Microphone access denied', { cause: err });
     }
   }, []);
 
   // Send audio to STT service
-  const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<string> => {
-    const formData = new FormData();
-    formData.append('audio', audioBlob, 'voice-command.wav');
-    formData.append('language', mergedConfig.language);
-    
-    const response = await fetch(mergedConfig.sttEndpoint, {
-      method: 'POST',
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      throw new Error('STT service error');
-    }
-    
-    const data = await response.json();
-    return data.text;
-  }, [mergedConfig.sttEndpoint, mergedConfig.language]);
+  const transcribeAudio = useCallback(
+    async (audioBlob: Blob): Promise<string> => {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice-command.wav');
+      formData.append('language', mergedConfig.language);
+
+      const response = await fetch(mergedConfig.sttEndpoint, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('STT service error');
+      }
+
+      const data = (await response.json()) as { text: string };
+      return data.text;
+    },
+    [mergedConfig.sttEndpoint, mergedConfig.language]
+  );
 
   // Speak feedback using TTS service
-  const speakFeedback = useCallback(async (text: string) => {
-    if (!mergedConfig.enableFeedback) return;
-    
-    setFeedback(text);
-    
-    try {
-      const response = await fetch(mergedConfig.ttsEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          language: mergedConfig.language,
-        }),
-      });
-      
-      if (!response.ok) return;
-      
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      await audio.play();
-      
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
+  const speakFeedback = useCallback(
+    async (text: string) => {
+      if (!mergedConfig.enableFeedback) return;
+
+      setFeedback(text);
+
+      try {
+        const response = await fetch(mergedConfig.ttsEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            language: mergedConfig.language,
+          }),
+        });
+
+        if (!response.ok) return;
+
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        await audio.play();
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          setFeedback('');
+        };
+      } catch {
+        // Silent fail - feedback is optional
         setFeedback('');
-      };
-    } catch {
-      // Silent fail - feedback is optional
-      setFeedback('');
-    }
-  }, [mergedConfig.ttsEndpoint, mergedConfig.language, mergedConfig.enableFeedback]);
+      }
+    },
+    [
+      mergedConfig.ttsEndpoint,
+      mergedConfig.language,
+      mergedConfig.enableFeedback,
+    ]
+  );
 
   // Process recorded audio
   const processAudio = useCallback(async () => {
     if (audioChunksRef.current.length === 0) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
       audioChunksRef.current = [];
-      
+
       const transcribedText = await transcribeAudio(audioBlob);
-      
+
       if (!transcribedText) {
         await speakFeedback("I didn't catch that. Could you try again?");
         return;
       }
-      
+
       const command = parseIntent(transcribedText);
       setLastCommand(command);
-      
+
       if (command.intent === 'unknown') {
-        await speakFeedback(`I heard: "${transcribedText}". I'm not sure what to do with that.`);
+        await speakFeedback(
+          `I heard: "${transcribedText}". I'm not sure what to do with that.`
+        );
       } else {
         await speakFeedback(`Processing: ${command.intent.replace('_', ' ')}`);
         onCommand(command);
@@ -299,58 +297,66 @@ export function useVoiceCommands(options: {
     }
   }, [transcribeAudio, speakFeedback, onCommand, onError]);
 
-  // Start listening for voice commands
-  const startListening = useCallback(async () => {
-    if (isListening) return;
-    
-    try {
-      const stream = await requestMicrophoneAccess();
-      
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-      
-      mediaRecorder.onstop = () => {
-        if (wakeWordDetectedRef.current) {
-          processAudio();
-        }
-        stream.getTracks().forEach(track => track.stop());
-      };
-      
-      mediaRecorder.start(100); // Collect data every 100ms
-      setIsListening(true);
-      wakeWordDetectedRef.current = false;
-      
-      // For now, auto-detect wake word in transcription
-      // In production, would use wake word detection before starting full transcription
-      wakeWordDetectedRef.current = true;
-      
-      // Auto-stop after silence threshold
-      silenceTimerRef.current = setTimeout(() => {
-        stopListening();
-      }, mergedConfig.silenceThreshold + 5000);
-      
-    } catch (err) {
-      onError?.(err instanceof Error ? err : new Error('Failed to start listening'));
-    }
-  }, [isListening, requestMicrophoneAccess, processAudio, mergedConfig.silenceThreshold, onError]);
-
   // Stop listening
   const stopListening = useCallback(() => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
-    
+
     mediaRecorderRef.current?.stop();
     setIsListening(false);
   }, []);
+
+  // Start listening for voice commands
+  const startListening = useCallback(async () => {
+    if (isListening) return;
+
+    try {
+      const stream = await requestMicrophoneAccess();
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        if (wakeWordDetectedRef.current) {
+          void processAudio();
+        }
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start(100); // Collect data every 100ms
+      setIsListening(true);
+      wakeWordDetectedRef.current = false;
+
+      // For now, auto-detect wake word in transcription
+      // In production, would use wake word detection before starting full transcription
+      wakeWordDetectedRef.current = true;
+
+      // Auto-stop after silence threshold
+      silenceTimerRef.current = setTimeout(() => {
+        void stopListening();
+      }, mergedConfig.silenceThreshold + 5000);
+    } catch (err) {
+      onError?.(
+        err instanceof Error ? err : new Error('Failed to start listening')
+      );
+    }
+  }, [
+    isListening,
+    requestMicrophoneAccess,
+    processAudio,
+    mergedConfig.silenceThreshold,
+    onError,
+    stopListening,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {

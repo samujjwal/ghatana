@@ -7,19 +7,34 @@
  * @module DevSecOps/FilterPanel
  */
 
-import { Accordion, AccordionDetails, AccordionSummary, FormGroup } from '@mui/material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  FormGroup,
+} from '@mui/material';
 import { XCircle as ClearIcon } from 'lucide-react';
 import { X as CloseIcon } from 'lucide-react';
 import { ChevronDown as ExpandMoreIcon } from 'lucide-react';
 import { Filter as FilterListIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { Box, Button, Checkbox, Chip, Drawer, FormControlLabel, IconButton, Surface as Paper, Stack, Typography } from '@ghatana/design-system';
+import {
+  Box,
+  Button,
+  Checkbox,
+  Chip,
+  Drawer,
+  FormControlLabel,
+  IconButton,
+  Surface as Paper,
+  Stack,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { ItemStatus, Priority } from '@yappc/core/types/devsecops';
 
 import type { FilterPanelProps } from './types';
-
 
 const STATUS_OPTIONS: ItemStatus[] = [
   'not-started',
@@ -127,7 +142,12 @@ export function FilterPanel({
   const content = (
     <Box className="p-4">
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
         <Box display="flex" alignItems="center" gap={1}>
           <FilterListIcon />
           <Typography as="h6" fontWeight={600}>
@@ -180,7 +200,9 @@ export function FilterPanel({
                     size="sm"
                   />
                 }
-                label={status.replace('-', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                label={status
+                  .replace('-', ' ')
+                  .replace(/\b\w/g, (l) => l.toUpperCase())}
               />
             ))}
           </FormGroup>
@@ -196,7 +218,8 @@ export function FilterPanel({
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography as="p" className="text-sm font-medium" fontWeight={600}>
-            Priority {filters.priority?.length ? `(${filters.priority.length})` : ''}
+            Priority{' '}
+            {filters.priority?.length ? `(${filters.priority.length})` : ''}
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
@@ -228,7 +251,8 @@ export function FilterPanel({
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography as="p" className="text-sm font-medium" fontWeight={600}>
-              Phases {filters.phaseIds?.length ? `(${filters.phaseIds.length})` : ''}
+              Phases{' '}
+              {filters.phaseIds?.length ? `(${filters.phaseIds.length})` : ''}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -288,7 +312,7 @@ export function FilterPanel({
       <Drawer anchor="right" open={open} onClose={onClose} className="w-80">
         {content}
         {onClose && (
-          <Box className="p-4 border-gray-200 dark:border-gray-700 border-t" >
+          <Box className="p-4 border-gray-200 dark:border-gray-700 border-t">
             <Button variant="solid" fullWidth onClick={onClose}>
               Apply
             </Button>

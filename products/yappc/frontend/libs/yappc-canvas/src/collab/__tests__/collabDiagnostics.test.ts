@@ -97,7 +97,13 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should get registered session', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       const session = manager.getSession('session-1');
 
       expect(session).toBeDefined();
@@ -110,7 +116,13 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should update session status', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.updateSessionStatus('session-1', 'reconnecting');
 
       const session = manager.getSession('session-1');
@@ -118,7 +130,13 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should increment reconnection count on reconnecting status', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.updateSessionStatus('session-1', 'reconnecting');
 
       const stats = manager.getStatistics();
@@ -136,7 +154,13 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should update session activity timestamp', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       const session1 = manager.getSession('session-1');
       const initialActivity = session1!.lastActivityAt;
 
@@ -159,7 +183,13 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should unregister session', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       const result = manager.unregisterSession('session-1');
 
       expect(result).toBe(true);
@@ -173,18 +203,39 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should get all active sessions', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.registerSession('session-2', 'user-2', 'bob', 'webrtc', 'room-1');
-      manager.registerSession('session-3', 'user-3', 'charlie', 'websocket', 'room-2');
+      manager.registerSession(
+        'session-3',
+        'user-3',
+        'charlie',
+        'websocket',
+        'room-2'
+      );
       manager.updateSessionStatus('session-3', 'disconnected');
 
       const active = manager.getActiveSessions();
       expect(active.length).toBe(2);
-      expect(active.map((s) => s.sessionId).sort()).toEqual(['session-1', 'session-2']);
+      expect(active.map((s) => s.sessionId).sort()).toEqual([
+        'session-1',
+        'session-2',
+      ]);
     });
 
     it('should include reconnecting sessions in active list', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.updateSessionStatus('session-1', 'reconnecting');
 
       const active = manager.getActiveSessions();
@@ -193,9 +244,27 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should get sessions by user', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
-      manager.registerSession('session-2', 'user-1', 'alice', 'webrtc', 'room-2');
-      manager.registerSession('session-3', 'user-2', 'bob', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
+      manager.registerSession(
+        'session-2',
+        'user-1',
+        'alice',
+        'webrtc',
+        'room-2'
+      );
+      manager.registerSession(
+        'session-3',
+        'user-2',
+        'bob',
+        'websocket',
+        'room-1'
+      );
 
       const userSessions = manager.getSessionsByUser('user-1');
       expect(userSessions.length).toBe(2);
@@ -203,9 +272,21 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should get sessions by room', () => {
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.registerSession('session-2', 'user-2', 'bob', 'webrtc', 'room-1');
-      manager.registerSession('session-3', 'user-3', 'charlie', 'websocket', 'room-2');
+      manager.registerSession(
+        'session-3',
+        'user-3',
+        'charlie',
+        'websocket',
+        'room-2'
+      );
 
       const roomSessions = manager.getSessionsByRoom('room-1');
       expect(roomSessions.length).toBe(2);
@@ -290,7 +371,9 @@ describe('CollabDiagnosticsManager', () => {
 
       const sessionErrors = manager.getErrorsBySession('session-1');
       expect(sessionErrors.length).toBe(2);
-      expect(sessionErrors.every((e) => e.sessionId === 'session-1')).toBe(true);
+      expect(sessionErrors.every((e) => e.sessionId === 'session-1')).toBe(
+        true
+      );
     });
 
     it('should get errors by time range', () => {
@@ -331,7 +414,9 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should enforce maximum error history', () => {
-      const smallHistoryManager = new CollabDiagnosticsManager({ maxErrorHistory: 3 });
+      const smallHistoryManager = new CollabDiagnosticsManager({
+        maxErrorHistory: 3,
+      });
 
       for (let i = 0; i < 5; i++) {
         smallHistoryManager.logError(`ERROR_${i}`, `Error ${i}`, 'low');
@@ -345,7 +430,9 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should detect error rate exceeded', () => {
-      const customManager = new CollabDiagnosticsManager({ errorRateThreshold: 2 });
+      const customManager = new CollabDiagnosticsManager({
+        errorRateThreshold: 2,
+      });
 
       // Log 3 errors (exceeds threshold of 2)
       customManager.logError('ERROR_1', 'Error 1', 'low');
@@ -356,7 +443,9 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should not detect error rate exceeded when below threshold', () => {
-      const customManager = new CollabDiagnosticsManager({ errorRateThreshold: 5 });
+      const customManager = new CollabDiagnosticsManager({
+        errorRateThreshold: 5,
+      });
 
       customManager.logError('ERROR_1', 'Error 1', 'low');
       customManager.logError('ERROR_2', 'Error 2', 'low');
@@ -376,9 +465,15 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should record metric with session and tags', () => {
-      const metric = manager.recordMetric('bandwidth', 1024, 'kbps', 'session-1', {
-        provider: 'websocket',
-      });
+      const metric = manager.recordMetric(
+        'bandwidth',
+        1024,
+        'kbps',
+        'session-1',
+        {
+          provider: 'websocket',
+        }
+      );
 
       expect(metric.sessionId).toBe('session-1');
       expect(metric.tags).toEqual({ provider: 'websocket' });
@@ -409,7 +504,9 @@ describe('CollabDiagnosticsManager', () => {
 
       const sessionMetrics = manager.getMetricsBySession('session-1');
       expect(sessionMetrics.length).toBe(2);
-      expect(sessionMetrics.every((m) => m.sessionId === 'session-1')).toBe(true);
+      expect(sessionMetrics.every((m) => m.sessionId === 'session-1')).toBe(
+        true
+      );
     });
 
     it('should calculate average metric value', () => {
@@ -438,7 +535,9 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should enforce maximum metric history', () => {
-      const smallHistoryManager = new CollabDiagnosticsManager({ maxMetricHistory: 3 });
+      const smallHistoryManager = new CollabDiagnosticsManager({
+        maxMetricHistory: 3,
+      });
 
       for (let i = 0; i < 5; i++) {
         smallHistoryManager.recordMetric('latency', 100 + i, 'ms');
@@ -454,7 +553,13 @@ describe('CollabDiagnosticsManager', () => {
 
   describe('connection quality', () => {
     it('should update connection quality metrics', () => {
-      const quality = manager.updateConnectionQuality('session-1', 80, 2, 5, 1024);
+      const quality = manager.updateConnectionQuality(
+        'session-1',
+        80,
+        2,
+        5,
+        1024
+      );
 
       expect(quality.sessionId).toBe('session-1');
       expect(quality.quality).toBe('good');
@@ -466,22 +571,46 @@ describe('CollabDiagnosticsManager', () => {
     });
 
     it('should rate connection as excellent', () => {
-      const quality = manager.updateConnectionQuality('session-1', 30, 0.5, 2, 2048);
+      const quality = manager.updateConnectionQuality(
+        'session-1',
+        30,
+        0.5,
+        2,
+        2048
+      );
       expect(quality.quality).toBe('excellent');
     });
 
     it('should rate connection as good', () => {
-      const quality = manager.updateConnectionQuality('session-1', 80, 2, 5, 1024);
+      const quality = manager.updateConnectionQuality(
+        'session-1',
+        80,
+        2,
+        5,
+        1024
+      );
       expect(quality.quality).toBe('good');
     });
 
     it('should rate connection as fair', () => {
-      const quality = manager.updateConnectionQuality('session-1', 150, 4, 10, 512);
+      const quality = manager.updateConnectionQuality(
+        'session-1',
+        150,
+        4,
+        10,
+        512
+      );
       expect(quality.quality).toBe('fair');
     });
 
     it('should rate connection as poor', () => {
-      const quality = manager.updateConnectionQuality('session-1', 300, 8, 20, 256);
+      const quality = manager.updateConnectionQuality(
+        'session-1',
+        300,
+        8,
+        20,
+        256
+      );
       expect(quality.quality).toBe('poor');
     });
 
@@ -574,14 +703,23 @@ describe('CollabDiagnosticsManager', () => {
 
       const unhealthy = manager.getUnhealthyServices();
       expect(unhealthy.length).toBe(2);
-      expect(unhealthy.map((s) => s.service).sort()).toEqual(['service-2', 'service-3']);
+      expect(unhealthy.map((s) => s.service).sort()).toEqual([
+        'service-2',
+        'service-3',
+      ]);
     });
   });
 
   describe('statistics', () => {
     it('should calculate diagnostic statistics', () => {
       // Setup sessions
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.registerSession('session-2', 'user-2', 'bob', 'webrtc', 'room-1');
       manager.updateSessionStatus('session-1', 'reconnecting');
 
@@ -678,7 +816,13 @@ describe('CollabDiagnosticsManager', () => {
   describe('reset', () => {
     it('should reset all diagnostics data', () => {
       // Setup various data
-      manager.registerSession('session-1', 'user-1', 'alice', 'websocket', 'room-1');
+      manager.registerSession(
+        'session-1',
+        'user-1',
+        'alice',
+        'websocket',
+        'room-1'
+      );
       manager.logError('ERROR_1', 'Error 1', 'low');
       manager.recordMetric('latency', 100, 'ms');
       manager.updateConnectionQuality('session-1', 80, 2, 5, 1024);

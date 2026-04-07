@@ -100,9 +100,35 @@ export interface ExportDocument {
  * Default sanitization policy
  */
 const DEFAULT_POLICY: SanitizationPolicy = {
-  allowedNodeProps: new Set(['id', 'type', 'position', 'data', 'style', 'metadata']),
-  allowedEdgeProps: new Set(['id', 'source', 'target', 'type', 'data', 'style']),
-  allowedHtmlTags: ['p', 'br', 'strong', 'em', 'u', 'a', 'ul', 'ol', 'li', 'code', 'pre'],
+  allowedNodeProps: new Set([
+    'id',
+    'type',
+    'position',
+    'data',
+    'style',
+    'metadata',
+  ]),
+  allowedEdgeProps: new Set([
+    'id',
+    'source',
+    'target',
+    'type',
+    'data',
+    'style',
+  ]),
+  allowedHtmlTags: [
+    'p',
+    'br',
+    'strong',
+    'em',
+    'u',
+    'a',
+    'ul',
+    'ol',
+    'li',
+    'code',
+    'pre',
+  ],
   allowedHtmlAttrs: ['href', 'title', 'class'],
   enableDomPurify: true,
   enableAuditLog: true,
@@ -156,7 +182,9 @@ export class ExportSanitizer {
 
     // Sanitize data fields with HTML content
     if (sanitized.data && typeof sanitized.data === 'object') {
-      const dataResult = this.sanitizeDataFields(sanitized.data as Record<string, unknown>);
+      const dataResult = this.sanitizeDataFields(
+        sanitized.data as Record<string, unknown>
+      );
       sanitized.data = dataResult.data;
       removed.push(...dataResult.removed);
       warnings.push(...dataResult.warnings);
@@ -192,7 +220,9 @@ export class ExportSanitizer {
 
     // Sanitize data fields with HTML content
     if (sanitized.data && typeof sanitized.data === 'object') {
-      const dataResult = this.sanitizeDataFields(sanitized.data as Record<string, unknown>);
+      const dataResult = this.sanitizeDataFields(
+        sanitized.data as Record<string, unknown>
+      );
       sanitized.data = dataResult.data;
       removed.push(...dataResult.removed);
       warnings.push(...dataResult.warnings);
@@ -271,7 +301,13 @@ export class ExportSanitizer {
     const wasSanitized = sanitized !== html;
 
     if (wasSanitized) {
-      this.audit('html', 'sanitize', 'html', 'HTML content sanitized with DOMPurify', html.slice(0, 100));
+      this.audit(
+        'html',
+        'sanitize',
+        'html',
+        'HTML content sanitized with DOMPurify',
+        html.slice(0, 100)
+      );
     }
 
     return {
@@ -322,7 +358,9 @@ export class ExportSanitizer {
   /**
    * Sanitize data fields (looking for HTML content)
    */
-  private sanitizeDataFields(data: Record<string, unknown>): SanitizationResult<Record<string, unknown>> {
+  private sanitizeDataFields(
+    data: Record<string, unknown>
+  ): SanitizationResult<Record<string, unknown>> {
     const removed: string[] = [];
     const warnings: string[] = [];
     const sanitized: Record<string, unknown> = {};
@@ -365,7 +403,10 @@ export class ExportSanitizer {
     let sanitized = html;
 
     // Remove script tags
-    sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    sanitized = sanitized.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      ''
+    );
 
     // Remove event handler attributes
     sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
@@ -410,7 +451,9 @@ export class ExportSanitizer {
 /**
  * Create export sanitizer instance
  */
-export function createSanitizer(policy?: Partial<SanitizationPolicy>): ExportSanitizer {
+export function createSanitizer(
+  policy?: Partial<SanitizationPolicy>
+): ExportSanitizer {
   return new ExportSanitizer(policy);
 }
 

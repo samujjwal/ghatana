@@ -15,7 +15,14 @@ import {
   canvasUIStateAtom,
   canvasPerformanceAtom,
 } from '../state';
-import type { CanvasDocument, CanvasSelection, CanvasViewport, CanvasHistoryEntry, CanvasUIState, CanvasPerformanceMetrics } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasSelection,
+  CanvasViewport,
+  CanvasHistoryEntry,
+  CanvasUIState,
+  CanvasPerformanceMetrics,
+} from '../types/canvas-document';
 
 /**
  *
@@ -54,7 +61,13 @@ export interface DevInspectorProps {
 /**
  *
  */
-type InspectorTab = 'document' | 'selection' | 'viewport' | 'history' | 'ui' | 'performance';
+type InspectorTab =
+  | 'document'
+  | 'selection'
+  | 'viewport'
+  | 'history'
+  | 'ui'
+  | 'performance';
 
 /**
  * DevInspector component for debugging canvas state
@@ -127,8 +140,16 @@ export function DevInspector({
   };
 
   const tabs: { id: InspectorTab; label: string; count?: number }[] = [
-    { id: 'document', label: 'Document', count: Object.keys(document?.elements || {}).length },
-    { id: 'selection', label: 'Selection', count: selection?.selectedIds.length || 0 },
+    {
+      id: 'document',
+      label: 'Document',
+      count: Object.keys(document?.elements || {}).length,
+    },
+    {
+      id: 'selection',
+      label: 'Selection',
+      count: selection?.selectedIds.length || 0,
+    },
     { id: 'viewport', label: 'Viewport' },
     { id: 'history', label: 'History', count: history?.entries.length || 0 },
     { id: 'ui', label: 'UI' },
@@ -150,7 +171,9 @@ export function DevInspector({
           borderTopRightRadius: '8px',
         }}
       >
-        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>🔍 Canvas DevTools</span>
+        <span style={{ fontWeight: 'bold', fontSize: '13px' }}>
+          🔍 Canvas DevTools
+        </span>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleToggleCollapse}
@@ -213,11 +236,16 @@ export function DevInspector({
                   padding: '8px 12px',
                   fontSize: '11px',
                   whiteSpace: 'nowrap',
-                  borderBottom: activeTab === tab.id ? '2px solid #007acc' : 'none',
+                  borderBottom:
+                    activeTab === tab.id ? '2px solid #007acc' : 'none',
                 }}
               >
                 {tab.label}
-                {tab.count !== undefined && <span style={{ marginLeft: '4px', opacity: 0.6 }}>({tab.count})</span>}
+                {tab.count !== undefined && (
+                  <span style={{ marginLeft: '4px', opacity: 0.6 }}>
+                    ({tab.count})
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -231,11 +259,15 @@ export function DevInspector({
             }}
           >
             {activeTab === 'document' && <DocumentPanel document={document} />}
-            {activeTab === 'selection' && <SelectionPanel selection={selection} document={document} />}
+            {activeTab === 'selection' && (
+              <SelectionPanel selection={selection} document={document} />
+            )}
             {activeTab === 'viewport' && <ViewportPanel viewport={viewport} />}
             {activeTab === 'history' && <HistoryPanel history={history} />}
             {activeTab === 'ui' && <UIPanel uiState={uiState} />}
-            {activeTab === 'performance' && <PerformancePanel performance={performance} />}
+            {activeTab === 'performance' && (
+              <PerformancePanel performance={performance} />
+            )}
           </div>
         </>
       )}
@@ -264,8 +296,14 @@ function DocumentPanel({ document }: { document: CanvasDocument | null }) {
         <KeyValue label="ID" value={document.id} />
         <KeyValue label="Title" value={document.title || '(untitled)'} />
         <KeyValue label="Version" value={document.version} />
-        <KeyValue label="Elements" value={`${elements.length} (${nodes.length}N, ${edges.length}E, ${groups.length}G)`} />
-        <KeyValue label="Modified" value={new Date(document.updatedAt).toLocaleString()} />
+        <KeyValue
+          label="Elements"
+          value={`${elements.length} (${nodes.length}N, ${edges.length}E, ${groups.length}G)`}
+        />
+        <KeyValue
+          label="Modified"
+          value={new Date(document.updatedAt).toLocaleString()}
+        />
       </Section>
 
       <Section title="Elements">
@@ -281,9 +319,15 @@ function DocumentPanel({ document }: { document: CanvasDocument | null }) {
                 fontSize: '10px',
               }}
             >
-              <div style={{ fontWeight: 'bold', color: '#4ec9b0' }}>{el.type.toUpperCase()}</div>
+              <div style={{ fontWeight: 'bold', color: '#4ec9b0' }}>
+                {el.type.toUpperCase()}
+              </div>
               <div style={{ color: '#9cdcfe' }}>{el.id}</div>
-              {el.type === 'node' && (el as unknown).data?.label && <div style={{ color: '#ce9178' }}>"{(el as unknown).data.label}"</div>}
+              {el.type === 'node' && (el as unknown).data?.label && (
+                <div style={{ color: '#ce9178' }}>
+                  "{(el as unknown).data.label}"
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -295,7 +339,13 @@ function DocumentPanel({ document }: { document: CanvasDocument | null }) {
 /**
  *
  */
-function SelectionPanel({ selection, document }: { selection: CanvasSelection | null; document: CanvasDocument | null }) {
+function SelectionPanel({
+  selection,
+  document,
+}: {
+  selection: CanvasSelection | null;
+  document: CanvasDocument | null;
+}) {
   if (!selection || selection.selectedIds.length === 0) {
     return <div style={{ color: '#888' }}>No selection</div>;
   }
@@ -324,7 +374,9 @@ function SelectionPanel({ selection, document }: { selection: CanvasSelection | 
               fontSize: '10px',
             }}
           >
-            <div style={{ fontWeight: 'bold', color: '#4ec9b0' }}>{el!.type.toUpperCase()}</div>
+            <div style={{ fontWeight: 'bold', color: '#4ec9b0' }}>
+              {el!.type.toUpperCase()}
+            </div>
             <div style={{ color: '#9cdcfe' }}>{el!.id}</div>
             <CodeBlock data={el} />
           </div>
@@ -366,7 +418,11 @@ function ViewportPanel({ viewport }: { viewport: CanvasViewport | null }) {
 /**
  *
  */
-function HistoryPanel({ history }: { history: { entries: CanvasHistoryEntry[]; currentIndex: number } | null }) {
+function HistoryPanel({
+  history,
+}: {
+  history: { entries: CanvasHistoryEntry[]; currentIndex: number } | null;
+}) {
   if (!history || history.entries.length === 0) {
     return <div style={{ color: '#888' }}>No history</div>;
   }
@@ -376,8 +432,16 @@ function HistoryPanel({ history }: { history: { entries: CanvasHistoryEntry[]; c
       <Section title="History">
         <KeyValue label="Entries" value={history.entries.length} />
         <KeyValue label="Current" value={history.currentIndex} />
-        <KeyValue label="Can Undo" value={history.currentIndex > 0 ? 'Yes' : 'No'} />
-        <KeyValue label="Can Redo" value={history.currentIndex < history.entries.length - 1 ? 'Yes' : 'No'} />
+        <KeyValue
+          label="Can Undo"
+          value={history.currentIndex > 0 ? 'Yes' : 'No'}
+        />
+        <KeyValue
+          label="Can Redo"
+          value={
+            history.currentIndex < history.entries.length - 1 ? 'Yes' : 'No'
+          }
+        />
       </Section>
 
       <Section title="Entries">
@@ -388,18 +452,23 @@ function HistoryPanel({ history }: { history: { entries: CanvasHistoryEntry[]; c
               style={{
                 padding: '6px',
                 marginBottom: '4px',
-                backgroundColor: index === history.currentIndex ? '#264f78' : '#2d2d30',
+                backgroundColor:
+                  index === history.currentIndex ? '#264f78' : '#2d2d30',
                 borderRadius: '4px',
                 fontSize: '10px',
-                borderLeft: index === history.currentIndex ? '3px solid #007acc' : 'none',
+                borderLeft:
+                  index === history.currentIndex ? '3px solid #007acc' : 'none',
               }}
             >
-              <div style={{ fontWeight: 'bold', color: '#dcdcaa' }}>{entry.action}</div>
+              <div style={{ fontWeight: 'bold', color: '#dcdcaa' }}>
+                {entry.action}
+              </div>
               <div style={{ color: '#888', fontSize: '9px' }}>
                 {new Date(entry.timestamp).toLocaleTimeString()}
               </div>
               <div style={{ color: '#569cd6', fontSize: '9px' }}>
-                {entry.elementIds.length} element{entry.elementIds.length !== 1 ? 's' : ''}
+                {entry.elementIds.length} element
+                {entry.elementIds.length !== 1 ? 's' : ''}
               </div>
             </div>
           ))}
@@ -425,14 +494,25 @@ function UIPanel({ uiState }: { uiState: CanvasUIState | null }) {
 
       <Section title="Interaction">
         <KeyValue label="Dragging" value={uiState.isDragging ? 'Yes' : 'No'} />
-        <KeyValue label="Selecting" value={uiState.isSelecting ? 'Yes' : 'No'} />
+        <KeyValue
+          label="Selecting"
+          value={uiState.isSelecting ? 'Yes' : 'No'}
+        />
         <KeyValue label="Panning" value={uiState.isPanning ? 'Yes' : 'No'} />
         <KeyValue label="Loading" value={uiState.isLoading ? 'Yes' : 'No'} />
       </Section>
 
       {uiState.error && (
         <Section title="Error">
-          <div style={{ color: '#f48771', padding: '8px', backgroundColor: '#3c1f1e', borderRadius: '4px', fontSize: '10px' }}>
+          <div
+            style={{
+              color: '#f48771',
+              padding: '8px',
+              backgroundColor: '#3c1f1e',
+              borderRadius: '4px',
+              fontSize: '10px',
+            }}
+          >
             {uiState.error}
           </div>
         </Section>
@@ -444,7 +524,11 @@ function UIPanel({ uiState }: { uiState: CanvasUIState | null }) {
 /**
  *
  */
-function PerformancePanel({ performance }: { performance: CanvasPerformanceMetrics | null }) {
+function PerformancePanel({
+  performance,
+}: {
+  performance: CanvasPerformanceMetrics | null;
+}) {
   if (!performance) {
     return <div style={{ color: '#888' }}>No performance data</div>;
   }
@@ -452,13 +536,22 @@ function PerformancePanel({ performance }: { performance: CanvasPerformanceMetri
   return (
     <div>
       <Section title="Render Performance">
-        <KeyValue label="Render Time" value={`${performance.renderTime.toFixed(2)}ms`} />
+        <KeyValue
+          label="Render Time"
+          value={`${performance.renderTime.toFixed(2)}ms`}
+        />
         <KeyValue label="FPS" value={performance.fps.toFixed(0)} />
       </Section>
 
       <Section title="Last Update">
-        <KeyValue label="Timestamp" value={new Date(performance.lastUpdate).toLocaleString()} />
-        <KeyValue label="Time Ago" value={`${Math.round((Date.now() - new Date(performance.lastUpdate).getTime()) / 1000)}s ago`} />
+        <KeyValue
+          label="Timestamp"
+          value={new Date(performance.lastUpdate).toLocaleString()}
+        />
+        <KeyValue
+          label="Time Ago"
+          value={`${Math.round((Date.now() - new Date(performance.lastUpdate).getTime()) / 1000)}s ago`}
+        />
       </Section>
     </div>
   );
@@ -469,10 +562,24 @@ function PerformancePanel({ performance }: { performance: CanvasPerformanceMetri
 /**
  *
  */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ marginBottom: '16px' }}>
-      <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#4ec9b0', fontSize: '11px', textTransform: 'uppercase' }}>
+      <div
+        style={{
+          fontWeight: 'bold',
+          marginBottom: '8px',
+          color: '#4ec9b0',
+          fontSize: '11px',
+          textTransform: 'uppercase',
+        }}
+      >
         {title}
       </div>
       <div style={{ paddingLeft: '8px' }}>{children}</div>

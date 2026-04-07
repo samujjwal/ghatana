@@ -14,7 +14,10 @@ export interface DateRange {
 /**
  * DateRangePicker component props
  */
-export interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface DateRangePickerProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onChange'
+> {
   /**
    * Current selected range
    */
@@ -69,7 +72,10 @@ export interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivE
 /**
  * DateRangePicker component - Select a date range
  */
-export const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerProps>((props, _ref) => {
+export const DateRangePicker = React.forwardRef<
+  HTMLDivElement,
+  DateRangePickerProps
+>((props, _ref) => {
   const {
     value = { start: null, end: null },
     onChange,
@@ -90,24 +96,24 @@ export const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerP
 
   const handleStartChange = (date: Date | null) => {
     const newRange: DateRange = { start: date, end: value.end };
-    
+
     // If end date is before start date, clear end date
     if (date && value.end && date > value.end) {
       newRange.end = null;
     }
-    
+
     onChange?.(newRange);
   };
 
   const handleEndChange = (date: Date | null) => {
     const newRange: DateRange = { start: value.start, end: date };
-    
+
     // If start date is after end date, swap them
     if (date && value.start && date < value.start) {
       newRange.start = date;
       newRange.end = value.start;
     }
-    
+
     onChange?.(newRange);
   };
 
@@ -137,9 +143,9 @@ export const DateRangePicker = React.forwardRef<HTMLDivElement, DateRangePickerP
         size={size}
         format={format}
       />
-      
+
       <span className="text-grey-400">→</span>
-      
+
       <DatePicker
         value={value.end}
         onChange={handleEndChange}

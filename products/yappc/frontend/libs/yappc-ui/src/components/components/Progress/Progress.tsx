@@ -8,7 +8,12 @@ export type ProgressVariant = 'linear' | 'circular';
 /**
  *
  */
-export type ProgressColor = 'primary' | 'success' | 'error' | 'warning' | 'info';
+export type ProgressColor =
+  | 'primary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info';
 
 /**
  *
@@ -18,27 +23,27 @@ export interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
    * Progress value (0-100)
    */
   value?: number;
-  
+
   /**
    * Progress variant
    */
   variant?: ProgressVariant;
-  
+
   /**
    * Progress color
    */
   color?: ProgressColor;
-  
+
   /**
    * Show label
    */
   showLabel?: boolean;
-  
+
   /**
    * Progress size
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Indeterminate state (loading)
    */
@@ -47,7 +52,7 @@ export interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * Progress component for showing completion status
- * 
+ *
  * @example
  * ```tsx
  * <Progress value={75} color="primary" showLabel />
@@ -109,7 +114,12 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
 
       const labelStyle: React.CSSProperties = {
         position: 'absolute',
-        fontSize: size === 'small' ? '0.625rem' : size === 'large' ? '0.875rem' : '0.75rem',
+        fontSize:
+          size === 'small'
+            ? '0.625rem'
+            : size === 'large'
+              ? '0.875rem'
+              : '0.75rem',
         fontWeight: 500,
         color: '#424242',
       };
@@ -176,7 +186,9 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
       backgroundColor: progressColor,
       width: indeterminate ? '30%' : `${clampedValue}%`,
       transition: 'width 0.3s ease',
-      animation: indeterminate ? 'progress-indeterminate 1.5s ease-in-out infinite' : 'none',
+      animation: indeterminate
+        ? 'progress-indeterminate 1.5s ease-in-out infinite'
+        : 'none',
     };
 
     const labelContainerStyle: React.CSSProperties = {
@@ -194,7 +206,12 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
     };
 
     return (
-      <div ref={ref} style={labelContainerStyle} className={className} {...props}>
+      <div
+        ref={ref}
+        style={labelContainerStyle}
+        className={className}
+        {...props}
+      >
         <div style={containerStyle}>
           <div style={barStyle} />
         </div>

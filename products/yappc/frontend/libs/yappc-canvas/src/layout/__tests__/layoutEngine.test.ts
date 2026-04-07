@@ -50,12 +50,12 @@ describe('layoutEngine', () => {
       expect(result.executionTime).toBeGreaterThanOrEqual(0);
 
       // Root node should be at top (y=0), others below
-      const root = result.nodes.find(n => n.id === 'node-0');
+      const root = result.nodes.find((n) => n.id === 'node-0');
       expect(root).toBeDefined();
       expect(root!.y).toBe(0);
 
       // Check that nodes are positioned vertically
-      const yValues = result.nodes.map(n => n.y);
+      const yValues = result.nodes.map((n) => n.y);
       const uniqueYValues = new Set(yValues);
       expect(uniqueYValues.size).toBeGreaterThan(1);
     });
@@ -73,11 +73,11 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(5);
 
       // Root should be at left (x=0)
-      const root = result.nodes.find(n => n.id === 'node-0');
+      const root = result.nodes.find((n) => n.id === 'node-0');
       expect(root!.x).toBe(0);
 
       // Check that nodes are positioned horizontally
-      const xValues = result.nodes.map(n => n.x);
+      const xValues = result.nodes.map((n) => n.x);
       const uniqueXValues = new Set(xValues);
       expect(uniqueXValues.size).toBeGreaterThan(1);
     });
@@ -101,12 +101,12 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(7);
 
       // Root at top level
-      const root = result.nodes.find(n => n.id === 'node-0');
+      const root = result.nodes.find((n) => n.id === 'node-0');
       expect(root!.y).toBe(0);
 
       // Children at same level
-      const child1 = result.nodes.find(n => n.id === 'node-1');
-      const child2 = result.nodes.find(n => n.id === 'node-2');
+      const child1 = result.nodes.find((n) => n.id === 'node-1');
+      const child2 = result.nodes.find((n) => n.id === 'node-2');
       expect(child1!.y).toBe(child2!.y);
       expect(child1!.y).toBeGreaterThan(root!.y);
     });
@@ -220,7 +220,7 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(4);
 
       // Check that nodes are not all at the same position
-      const positions = result.nodes.map(n => `${n.x},${n.y}`);
+      const positions = result.nodes.map((n) => `${n.x},${n.y}`);
       const uniquePositions = new Set(positions);
       expect(uniquePositions.size).toBeGreaterThan(1);
     });
@@ -292,8 +292,8 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(9);
 
       // Should form a 3x3 grid (auto-calculated)
-      const xValues = new Set(result.nodes.map(n => n.x));
-      const yValues = new Set(result.nodes.map(n => n.y));
+      const xValues = new Set(result.nodes.map((n) => n.x));
+      const yValues = new Set(result.nodes.map((n) => n.y));
 
       expect(xValues.size).toBe(3); // 3 columns
       expect(yValues.size).toBe(3); // 3 rows
@@ -310,7 +310,7 @@ describe('layoutEngine', () => {
 
       expect(result.nodes).toHaveLength(12);
 
-      const xValues = new Set(result.nodes.map(n => Math.round(n.x)));
+      const xValues = new Set(result.nodes.map((n) => Math.round(n.x)));
       expect(xValues.size).toBe(4); // 4 columns
     });
 
@@ -325,7 +325,7 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(10);
 
       // 5 columns, should have 2 rows
-      const yValues = new Set(result.nodes.map(n => Math.round(n.y)));
+      const yValues = new Set(result.nodes.map((n) => Math.round(n.y)));
       expect(yValues.size).toBe(2);
     });
 
@@ -340,7 +340,7 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(10);
 
       // 2 rows, should have 5 columns
-      const xValues = new Set(result.nodes.map(n => Math.round(n.x)));
+      const xValues = new Set(result.nodes.map((n) => Math.round(n.x)));
       expect(xValues.size).toBe(5);
     });
 
@@ -399,13 +399,13 @@ describe('layoutEngine', () => {
       expect(result.nodes).toHaveLength(10);
 
       // Calculate distances from center
-      const distances = result.nodes.map(n =>
+      const distances = result.nodes.map((n) =>
         Math.sqrt(n.x * n.x + n.y * n.y)
       );
 
       // Should have multiple distinct radii
       const uniqueDistances = new Set(
-        distances.map(d => Math.round(d / 10) * 10)
+        distances.map((d) => Math.round(d / 10) * 10)
       );
       expect(uniqueDistances.size).toBeGreaterThan(1);
     });
@@ -426,7 +426,7 @@ describe('layoutEngine', () => {
       });
 
       // node-0 should be closest to center
-      const node0 = result.nodes.find(n => n.id === 'node-0')!;
+      const node0 = result.nodes.find((n) => n.id === 'node-0')!;
       const distanceFromCenter = Math.sqrt(node0.x ** 2 + node0.y ** 2);
 
       // Should be at or very close to center
@@ -444,8 +444,10 @@ describe('layoutEngine', () => {
       });
 
       // Calculate average position (should be near center)
-      const avgX = result.nodes.reduce((sum, n) => sum + n.x, 0) / result.nodes.length;
-      const avgY = result.nodes.reduce((sum, n) => sum + n.y, 0) / result.nodes.length;
+      const avgX =
+        result.nodes.reduce((sum, n) => sum + n.x, 0) / result.nodes.length;
+      const avgY =
+        result.nodes.reduce((sum, n) => sum + n.y, 0) / result.nodes.length;
 
       expect(avgX).toBeCloseTo(100, 0);
       expect(avgY).toBeCloseTo(200, 0);
@@ -540,7 +542,9 @@ describe('layoutEngine', () => {
       const presets = getAllLayoutPresets();
 
       expect(presets.length).toBeGreaterThan(0);
-      expect(presets.every(p => p.name && p.description && p.config)).toBe(true);
+      expect(presets.every((p) => p.name && p.description && p.config)).toBe(
+        true
+      );
     });
 
     it('should apply preset configuration', () => {

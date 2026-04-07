@@ -1,9 +1,9 @@
 /**
  * LSP Client Foundation
- * 
+ *
  * Language Server Protocol client abstraction for Monaco editor integration.
  * Provides language server management, diagnostics, and code intelligence.
- * 
+ *
  * Features:
  * - 🔌 LSP server connection management
  * - 📊 Diagnostics and error highlighting
@@ -11,7 +11,7 @@
  * - 📍 Go-to-definition and references
  * - 🔄 Real-time workspace synchronization
  * - 📈 Performance monitoring
- * 
+ *
  * @doc.type module
  * @doc.purpose LSP client foundation
  * @doc.layer product
@@ -37,18 +37,10 @@ import type {
 } from 'vscode-languageserver-protocol';
 
 // Import types from types.ts and use internally
-import type {
-  LSPClientConfig,
-  LSPDiagnostic,
-  LSPClientMetrics,
-} from './types';
+import type { LSPClientConfig, LSPDiagnostic, LSPClientMetrics } from './types';
 
 // Re-export for external consumers
-export type {
-  LSPClientConfig,
-  LSPDiagnostic,
-  LSPClientMetrics,
-} from './types';
+export type { LSPClientConfig, LSPDiagnostic, LSPClientMetrics } from './types';
 
 /**
  * LSP server configuration
@@ -127,7 +119,7 @@ export class LSPClientManager {
    * Initialize all LSP servers
    */
   async initialize(): Promise<void> {
-    const initPromises = this.config.servers.map(serverConfig => 
+    const initPromises = this.config.servers.map((serverConfig) =>
       this.initializeServer(serverConfig)
     );
 
@@ -139,7 +131,10 @@ export class LSPClientManager {
    */
   private async initializeServer(serverConfig: LSPServerConfig): Promise<void> {
     try {
-      const server = new LSPServerInstance(serverConfig, this.config.workspaceRoot);
+      const server = new LSPServerInstance(
+        serverConfig,
+        this.config.workspaceRoot
+      );
       await server.initialize();
 
       this.servers.set(serverConfig.id, server);
@@ -158,7 +153,10 @@ export class LSPClientManager {
 
       console.log(`LSP server '${serverConfig.name}' initialized successfully`);
     } catch (error) {
-      console.error(`Failed to initialize LSP server '${serverConfig.name}':`, error);
+      console.error(
+        `Failed to initialize LSP server '${serverConfig.name}':`,
+        error
+      );
     }
   }
 
@@ -167,8 +165,8 @@ export class LSPClientManager {
    */
   private setupMonacoIntegration(): void {
     // Register language providers
-    this.config.servers.forEach(serverConfig => {
-      serverConfig.languages.forEach(languageId => {
+    this.config.servers.forEach((serverConfig) => {
+      serverConfig.languages.forEach((languageId) => {
         this.registerLanguageProvider(languageId, serverConfig);
       });
     });
@@ -177,42 +175,57 @@ export class LSPClientManager {
   /**
    * Register language provider for Monaco
    */
-  private registerLanguageProvider(languageId: string, serverConfig: LSPServerConfig): void {
+  private registerLanguageProvider(
+    languageId: string,
+    serverConfig: LSPServerConfig
+  ): void {
     const server = this.servers.get(serverConfig.id);
     if (!server) return;
 
     // Completion provider
-    if (serverConfig.capabilities?.completionProvider && this.config.enableCompletion) {
-      const completionProvider = monaco.languages.registerCompletionItemProvider(languageId, {
-        provideCompletionItems: async (model, position) => {
-          try {
-            const items = await server.provideCompletionItems(model, position);
-            return {
-              suggestions: items.map(item => this.convertCompletionItem(item)),
-            };
-          } catch (error) {
-            console.error('Completion error:', error);
-            return { suggestions: [] };
-          }
-        },
-      });
+    if (
+      serverConfig.capabilities?.completionProvider &&
+      this.config.enableCompletion
+    ) {
+      const completionProvider =
+        monaco.languages.registerCompletionItemProvider(languageId, {
+          provideCompletionItems: async (model, position) => {
+            try {
+              const items = await server.provideCompletionItems(
+                model,
+                position
+              );
+              return {
+                suggestions: items.map((item) =>
+                  this.convertCompletionItem(item)
+                ),
+              };
+            } catch (error) {
+              console.error('Completion error:', error);
+              return { suggestions: [] };
+            }
+          },
+        });
 
       this.disposables.push(completionProvider);
     }
 
     // Definition provider
     if (serverConfig.capabilities?.definitionProvider) {
-      const definitionProvider = monaco.languages.registerDefinitionProvider(languageId, {
-        provideDefinition: async (model, position) => {
-          try {
-            const locations = await server.provideDefinition(model, position);
-            return locations.map(loc => this.convertLocation(loc));
-          } catch (error) {
-            console.error('Definition error:', error);
-            return [];
-          }
-        },
-      });
+      const definitionProvider = monaco.languages.registerDefinitionProvider(
+        languageId,
+        {
+          provideDefinition: async (model, position) => {
+            try {
+              const locations = await server.provideDefinition(model, position);
+              return locations.map((loc) => this.convertLocation(loc));
+            } catch (error) {
+              console.error('Definition error:', error);
+              return [];
+            }
+          },
+        }
+      );
 
       this.disposables.push(definitionProvider);
     }
@@ -227,9 +240,7 @@ export class LSPClientManager {
 
             return {
               range: this.convertRange(hover.range),
-              contents: [
-                { value: '**' + (hover.contents as string) + '**' }
-              ],
+              contents: [{ value: '**' + (hover.contents as string) + '**' }],
             };
           } catch (error) {
             console.error('Hover error:', error);
@@ -245,7 +256,9 @@ export class LSPClientManager {
   /**
    * Convert LSP completion item to Monaco format
    */
-  private convertCompletionItem(item: LSPCompletionItem): monaco.languages.CompletionItem {
+  private convertCompletionItem(
+    item: LSPCompletionItem
+  ): monaco.languages.CompletionItem {
     return {
       label: item.label,
       kind: this.convertCompletionKind(item.kind),
@@ -260,26 +273,28 @@ export class LSPClientManager {
   /**
    * Convert LSP completion kind to Monaco format
    */
-  private convertCompletionKind(kind: string): monaco.languages.CompletionItemKind {
+  private convertCompletionKind(
+    kind: string
+  ): monaco.languages.CompletionItemKind {
     const kindMap: Record<string, monaco.languages.CompletionItemKind> = {
-      'text': monaco.languages.CompletionItemKind.Text,
-      'method': monaco.languages.CompletionItemKind.Method,
-      'function': monaco.languages.CompletionItemKind.Function,
-      'constructor': monaco.languages.CompletionItemKind.Constructor,
-      'field': monaco.languages.CompletionItemKind.Field,
-      'variable': monaco.languages.CompletionItemKind.Variable,
-      'class': monaco.languages.CompletionItemKind.Class,
-      'interface': monaco.languages.CompletionItemKind.Interface,
-      'module': monaco.languages.CompletionItemKind.Module,
-      'property': monaco.languages.CompletionItemKind.Property,
-      'unit': monaco.languages.CompletionItemKind.Unit,
-      'value': monaco.languages.CompletionItemKind.Value,
-      'enum': monaco.languages.CompletionItemKind.Enum,
-      'keyword': monaco.languages.CompletionItemKind.Keyword,
-      'snippet': monaco.languages.CompletionItemKind.Snippet,
-      'color': monaco.languages.CompletionItemKind.Color,
-      'file': monaco.languages.CompletionItemKind.File,
-      'reference': monaco.languages.CompletionItemKind.Reference,
+      text: monaco.languages.CompletionItemKind.Text,
+      method: monaco.languages.CompletionItemKind.Method,
+      function: monaco.languages.CompletionItemKind.Function,
+      constructor: monaco.languages.CompletionItemKind.Constructor,
+      field: monaco.languages.CompletionItemKind.Field,
+      variable: monaco.languages.CompletionItemKind.Variable,
+      class: monaco.languages.CompletionItemKind.Class,
+      interface: monaco.languages.CompletionItemKind.Interface,
+      module: monaco.languages.CompletionItemKind.Module,
+      property: monaco.languages.CompletionItemKind.Property,
+      unit: monaco.languages.CompletionItemKind.Unit,
+      value: monaco.languages.CompletionItemKind.Value,
+      enum: monaco.languages.CompletionItemKind.Enum,
+      keyword: monaco.languages.CompletionItemKind.Keyword,
+      snippet: monaco.languages.CompletionItemKind.Snippet,
+      color: monaco.languages.CompletionItemKind.Color,
+      file: monaco.languages.CompletionItemKind.File,
+      reference: monaco.languages.CompletionItemKind.Reference,
     };
 
     return kindMap[kind] || monaco.languages.CompletionItemKind.Text;
@@ -314,7 +329,7 @@ export class LSPClientManager {
     if (!this.config.enableDiagnostics) return;
 
     const uri = params.uri;
-    const diagnostics = params.diagnostics.map(diag => ({
+    const diagnostics = params.diagnostics.map((diag) => ({
       uri,
       severity: this.convertSeverity(diag.severity),
       message: diag.message,
@@ -349,30 +364,41 @@ export class LSPClientManager {
   /**
    * Convert LSP severity to Monaco format
    */
-  private convertSeverity(severity?: number): 'error' | 'warning' | 'info' | 'hint' {
+  private convertSeverity(
+    severity?: number
+  ): 'error' | 'warning' | 'info' | 'hint' {
     switch (severity) {
-      case 1: return 'error';
-      case 2: return 'warning';
-      case 3: return 'info';
-      case 4: return 'hint';
-      default: return 'error';
+      case 1:
+        return 'error';
+      case 2:
+        return 'warning';
+      case 3:
+        return 'info';
+      case 4:
+        return 'hint';
+      default:
+        return 'error';
     }
   }
 
   /**
    * Apply diagnostics to Monaco model
    */
-  private applyDiagnosticsToModel(uri: string, diagnostics: LSPDiagnostic[]): void {
+  private applyDiagnosticsToModel(
+    uri: string,
+    diagnostics: LSPDiagnostic[]
+  ): void {
     try {
       const model = monaco.editor.getModel(monaco.Uri.parse(uri));
       if (!model) return;
 
-      const monacoDiagnostics = diagnostics.map(diag => {
-        const severity = diag.severity === 'error' 
-          ? monaco.MarkerSeverity.Error 
-          : diag.severity === 'warning'
-          ? monaco.MarkerSeverity.Warning
-          : monaco.MarkerSeverity.Info;
+      const monacoDiagnostics = diagnostics.map((diag) => {
+        const severity =
+          diag.severity === 'error'
+            ? monaco.MarkerSeverity.Error
+            : diag.severity === 'warning'
+              ? monaco.MarkerSeverity.Warning
+              : monaco.MarkerSeverity.Info;
 
         return {
           severity,
@@ -396,7 +422,7 @@ export class LSPClientManager {
    */
   private handleServerError(serverId: string, error: Error): void {
     console.error(`LSP server ${serverId} error:`, error);
-    
+
     const metrics = this.metrics.get(serverId);
     if (metrics) {
       metrics.errorCount++;
@@ -408,13 +434,13 @@ export class LSPClientManager {
    */
   private getServerIdForUri(uri: string): string | null {
     const language = this.getLanguageFromUri(uri);
-    
+
     for (const [serverId, serverConfig] of this.servers.entries()) {
       if (serverConfig.languages.includes(language)) {
         return serverId;
       }
     }
-    
+
     return null;
   }
 
@@ -423,30 +449,30 @@ export class LSPClientManager {
    */
   private getLanguageFromUri(uri: string): string {
     const extension = uri.split('.').pop()?.toLowerCase();
-    
+
     const extensionMap: Record<string, string> = {
-      'ts': 'typescript',
-      'tsx': 'typescript',
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'py': 'python',
-      'java': 'java',
-      'cpp': 'cpp',
-      'c': 'c',
-      'cs': 'csharp',
-      'php': 'php',
-      'rb': 'ruby',
-      'go': 'go',
-      'rs': 'rust',
-      'sql': 'sql',
-      'json': 'json',
-      'xml': 'xml',
-      'html': 'html',
-      'css': 'css',
-      'scss': 'scss',
-      'less': 'less',
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      py: 'python',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'c',
+      cs: 'csharp',
+      php: 'php',
+      rb: 'ruby',
+      go: 'go',
+      rs: 'rust',
+      sql: 'sql',
+      json: 'json',
+      xml: 'xml',
+      html: 'html',
+      css: 'css',
+      scss: 'scss',
+      less: 'less',
     };
-    
+
     return extensionMap[extension || ''] || 'plaintext';
   }
 
@@ -482,7 +508,7 @@ export class LSPClientManager {
    * Restart server
    */
   async restartServer(serverId: string): Promise<void> {
-    const serverConfig = this.config.servers.find(s => s.id === serverId);
+    const serverConfig = this.config.servers.find((s) => s.id === serverId);
     if (!serverConfig) return;
 
     // Dispose existing server
@@ -501,11 +527,11 @@ export class LSPClientManager {
    */
   dispose(): void {
     // Dispose all language providers
-    this.disposables.forEach(d => d.dispose());
+    this.disposables.forEach((d) => d.dispose());
     this.disposables = [];
 
     // Dispose all servers
-    this.servers.forEach(server => server.dispose());
+    this.servers.forEach((server) => server.dispose());
     this.servers.clear();
 
     // Clear diagnostics
@@ -541,7 +567,10 @@ class LSPServerInstance {
   /**
    *
    */
-  async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position): Promise<LSPCompletionItem[]> {
+  async provideCompletionItems(
+    model: monaco.editor.ITextModel,
+    position: monaco.Position
+  ): Promise<LSPCompletionItem[]> {
     // Simplified completion - in real implementation would call LSP server
     return [];
   }
@@ -549,7 +578,10 @@ class LSPServerInstance {
   /**
    *
    */
-  async provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position): Promise<unknown[]> {
+  async provideDefinition(
+    model: monaco.editor.ITextModel,
+    position: monaco.Position
+  ): Promise<unknown[]> {
     // Simplified definition - in real implementation would call LSP server
     return [];
   }
@@ -557,7 +589,10 @@ class LSPServerInstance {
   /**
    *
    */
-  async provideHover(model: monaco.editor.ITextModel, position: monaco.Position): Promise<unknown> {
+  async provideHover(
+    model: monaco.editor.ITextModel,
+    position: monaco.Position
+  ): Promise<unknown> {
     // Simplified hover - in real implementation would call LSP server
     return null;
   }
@@ -587,7 +622,9 @@ class LSPServerInstance {
 /**
  * Create LSP client manager
  */
-export function createLSPClientManager(config: LSPClientConfig): LSPClientManager {
+export function createLSPClientManager(
+  config: LSPClientConfig
+): LSPClientManager {
   return new LSPClientManager(config);
 }
 

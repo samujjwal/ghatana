@@ -67,7 +67,10 @@ export class LocalStorageAdapter implements StorageAdapter {
     } catch (error) {
       console.error('[LocalStorageAdapter] Error writing:', error);
       // Handle quota exceeded
-      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      if (
+        error instanceof DOMException &&
+        error.name === 'QuotaExceededError'
+      ) {
         console.warn('[LocalStorageAdapter] Storage quota exceeded');
       }
     }
@@ -372,9 +375,10 @@ export class StatePersistence {
 
     try {
       // Add version if specified
-      const dataToSave = options.version !== undefined
-        ? { ...value, _version: options.version }
-        : value;
+      const dataToSave =
+        options.version !== undefined
+          ? { ...value, _version: options.version }
+          : value;
 
       const serialized = serialize(dataToSave);
       await adapter.setItem(options.key, serialized);
@@ -386,7 +390,9 @@ export class StatePersistence {
   /**
    * Remove state from storage
    */
-  static async remove(options: Pick<PersistenceOptions, 'storage' | 'key'>): Promise<void> {
+  static async remove(
+    options: Pick<PersistenceOptions, 'storage' | 'key'>
+  ): Promise<void> {
     const adapter = this.getAdapter(options.storage);
     try {
       await adapter.removeItem(options.key);
@@ -410,7 +416,9 @@ export class StatePersistence {
   /**
    * Check if storage is available
    */
-  static isStorageAvailable(type: 'localStorage' | 'sessionStorage' | 'indexedDB'): boolean {
+  static isStorageAvailable(
+    type: 'localStorage' | 'sessionStorage' | 'indexedDB'
+  ): boolean {
     try {
       if (type === 'localStorage' || type === 'sessionStorage') {
         const storage = type === 'localStorage' ? localStorage : sessionStorage;

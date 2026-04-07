@@ -1,5 +1,5 @@
 import { render, cleanup } from '@testing-library/react';
-import type { RenderOptions} from '@testing-library/react';
+import type { RenderOptions } from '@testing-library/react';
 import React from 'react';
 import type { ReactElement } from 'react';
 
@@ -7,7 +7,6 @@ import { lightTheme, darkTheme } from './theme';
 import { ThemeProvider } from './ThemeContext';
 import type { ThemeMode } from './ThemeContext';
 import MuiThemeProvider from './ThemeProvider';
-
 
 function hexToRgb(hex: string): [number, number, number] {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -40,9 +39,7 @@ export function renderWithTheme(
 ): ReturnType<typeof render> {
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <ThemeProvider defaultMode={themeMode}>
-      <MuiThemeProvider mode={themeMode}>
-        {children}
-      </MuiThemeProvider>
+      <MuiThemeProvider mode={themeMode}>{children}</MuiThemeProvider>
     </ThemeProvider>
   );
 
@@ -77,7 +74,7 @@ export function checkContrastRatio(
 ): boolean {
   // Calculate relative luminance
   const calculateLuminance = (rgb: number[]): number => {
-    const [r, g, b] = rgb.map(c => {
+    const [r, g, b] = rgb.map((c) => {
       const sRGB = c / 255;
       return sRGB <= 0.03928
         ? sRGB / 12.92
@@ -88,20 +85,19 @@ export function checkContrastRatio(
 
   const foregroundRgb = hexToRgb(foreground);
   const backgroundRgb = hexToRgb(background);
-  
+
   const foregroundLuminance = calculateLuminance(foregroundRgb);
   const backgroundLuminance = calculateLuminance(backgroundRgb);
-  
+
   // Calculate contrast ratio
-  const contrastRatio = 
+  const contrastRatio =
     (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
     (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
-  
+
   // WCAG 2.1 contrast requirements
-  const minimumRatio = level === 'AA'
-    ? (largeText ? 3 : 4.5)
-    : (largeText ? 4.5 : 7);
-  
+  const minimumRatio =
+    level === 'AA' ? (largeText ? 3 : 4.5) : largeText ? 4.5 : 7;
+
   return contrastRatio >= minimumRatio;
 }
 
@@ -117,19 +113,19 @@ export function testThemeAccessibility(
 ) {
   const theme = getTheme(mode);
   const results: Record<string, { pass: boolean; ratio: number }> = {};
-  
+
   // Test text colors against background colors
   const textColors = {
     primary: theme.palette.text.primary,
     secondary: theme.palette.text.secondary,
     disabled: theme.palette.text.disabled,
   };
-  
+
   const backgroundColors = {
     default: theme.palette.background.default,
     paper: theme.palette.background.paper,
   };
-  
+
   // Test primary button colors
   const buttonColors = {
     primary: theme.palette.primary.main,
@@ -139,7 +135,7 @@ export function testThemeAccessibility(
     info: theme.palette.info.main,
     success: theme.palette.success.main,
   };
-  
+
   // Test text against backgrounds
   Object.entries(textColors).forEach(([textKey, textColor]) => {
     Object.entries(backgroundColors).forEach(([bgKey, bgColor]) => {
@@ -151,7 +147,7 @@ export function testThemeAccessibility(
       };
     });
   });
-  
+
   // Test button text against button backgrounds
   Object.entries(buttonColors).forEach(([buttonKey, buttonColor]) => {
     const key = `text_on_${buttonKey}_button`;
@@ -161,7 +157,7 @@ export function testThemeAccessibility(
       ratio,
     };
   });
-  
+
   return results;
 }
 
@@ -174,7 +170,7 @@ export function testThemeAccessibility(
 export function calculateContrastRatio(color1: string, color2: string): number {
   // Calculate relative luminance
   const calculateLuminance = (rgb: number[]): number => {
-    const [r, g, b] = rgb.map(c => {
+    const [r, g, b] = rgb.map((c) => {
       const sRGB = c / 255;
       return sRGB <= 0.03928
         ? sRGB / 12.92
@@ -185,11 +181,13 @@ export function calculateContrastRatio(color1: string, color2: string): number {
 
   const color1Rgb = hexToRgb(color1);
   const color2Rgb = hexToRgb(color2);
-  
+
   const color1Luminance = calculateLuminance(color1Rgb);
   const color2Luminance = calculateLuminance(color2Rgb);
-  
+
   // Calculate contrast ratio
-  return (Math.max(color1Luminance, color2Luminance) + 0.05) /
-         (Math.min(color1Luminance, color2Luminance) + 0.05);
+  return (
+    (Math.max(color1Luminance, color2Luminance) + 0.05) /
+    (Math.min(color1Luminance, color2Luminance) + 0.05)
+  );
 }

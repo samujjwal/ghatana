@@ -1,11 +1,11 @@
 /**
  * IDE Shell Components - Migration Bridge
- * 
+ *
  * These components are being migrated from @ghatana/yappc-ide to @ghatana/yappc-canvas
  * as part of the library consolidation effort.
- * 
+ *
  * This file bridges IDE components to the new CanvasChromeLayout system.
- * 
+ *
  * @deprecated Import directly from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -51,21 +51,19 @@ export function useIDEDeprecationWarning(componentName: string): void {
   useEffect(() => {
     console.warn(
       `[MIGRATION] ${componentName} is deprecated. ` +
-      `Import ${componentName === 'IDEShell' ? 'CanvasChromeLayout' : 'CanvasChromeLayout with full config'} ` +
-      `from @ghatana/yappc-canvas. See LIBRARY_CONSOLIDATION_PLAN.md`
+        `Import ${componentName === 'IDEShell' ? 'CanvasChromeLayout' : 'CanvasChromeLayout with full config'} ` +
+        `from @ghatana/yappc-canvas. See LIBRARY_CONSOLIDATION_PLAN.md`
     );
   }, [componentName]);
 }
 
 /**
  * IDEShell - Bridge Component
- * 
+ *
  * Maps IDE shell features to Canvas chrome layout.
  * This is a bridge component during migration.
  */
-export const IDEShell: React.FC<IDEShellProps> = ({
-  children,
-}) => {
+export const IDEShell: React.FC<IDEShellProps> = ({ children }) => {
   useIDEDeprecationWarning('IDEShell');
   // Return fragment wrapper for type compatibility
   return React.createElement(React.Fragment, {}, children);
@@ -92,13 +90,13 @@ export interface IDEShellMigrationHelperProps {
 /**
  * Migration helper for gradual transition
  */
-export const IDEShellMigrationHelper: React.FC<IDEShellMigrationHelperProps> = ({
-  useNewLayout = false,
-  children,
-}) => {
+export const IDEShellMigrationHelper: React.FC<
+  IDEShellMigrationHelperProps
+> = ({ useNewLayout = false, children }) => {
   useEffect(() => {
     console.info(
-      '[MIGRATION] IDEShellMigrationHelper: ' + (useNewLayout ? 'Using new layout' : 'Using legacy layout')
+      '[MIGRATION] IDEShellMigrationHelper: ' +
+        (useNewLayout ? 'Using new layout' : 'Using legacy layout')
     );
   }, [useNewLayout]);
 

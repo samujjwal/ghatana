@@ -1,9 +1,9 @@
 /**
  * Canvas Portal Types
- * 
+ *
  * Shared type definitions for portal-based navigation between canvases.
  * Extracted to prevent circular dependencies between hooks and state.
- * 
+ *
  * @doc.type types
  * @doc.purpose Portal navigation type definitions
  * @doc.layer canvas/types

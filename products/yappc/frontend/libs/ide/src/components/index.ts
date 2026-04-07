@@ -29,9 +29,9 @@ export * from './KeyboardNavigation';
 
 /**
  * @ghatana/yappc-ide - Component Exports
- * 
+ *
  * Centralized exports for all IDE components
- * 
+ *
  * @doc.type module
  * @doc.purpose Component exports for IDE
  * @doc.layer product

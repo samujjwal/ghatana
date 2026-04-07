@@ -9,7 +9,13 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  status:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   stage: LifecycleStageId;
   assignedAgentId?: string;
@@ -45,10 +51,10 @@ export interface ProjectDashboardProps {
 
 /**
  * ProjectDashboard Component
- * 
+ *
  * Main project view showing lifecycle stage, task list, and key metrics.
  * Provides navigation between stages and task management.
- * 
+ *
  * @example
  * ```tsx
  * <ProjectDashboard
@@ -106,9 +112,12 @@ export function ProjectDashboard({
       <header className="project-dashboard__header">
         <div className="project-dashboard__title-section">
           <h1 className="project-dashboard__title">{projectName}</h1>
-          <span 
+          <span
             className="project-dashboard__status"
-            style={{ color: statusColors[status], borderColor: statusColors[status] }}
+            style={{
+              color: statusColors[status],
+              borderColor: statusColors[status],
+            }}
           >
             {status}
           </span>
@@ -124,7 +133,7 @@ export function ProjectDashboard({
       {/* Lifecycle Stage */}
       <section className="project-dashboard__lifecycle">
         <h2 className="project-dashboard__section-title">Lifecycle Stage</h2>
-        <LifecycleStage 
+        <LifecycleStage
           currentStage={currentStage}
           onStageClick={onStageChange}
         />
@@ -134,36 +143,38 @@ export function ProjectDashboard({
       <section className="project-dashboard__metrics">
         <h2 className="project-dashboard__section-title">Metrics</h2>
         <div className="project-dashboard__metrics-grid">
-          <MetricCard 
+          <MetricCard
             label="Total Tasks"
             value={metrics.totalTasks}
             icon="📋"
           />
-          <MetricCard 
+          <MetricCard
             label="Completed"
             value={metrics.completedTasks}
-            percentage={Math.round((metrics.completedTasks / metrics.totalTasks) * 100)}
+            percentage={Math.round(
+              (metrics.completedTasks / metrics.totalTasks) * 100
+            )}
             color="#22c55e"
             icon="✅"
           />
-          <MetricCard 
+          <MetricCard
             label="In Progress"
             value={metrics.inProgressTasks}
             color="#3b82f6"
             icon="🔨"
           />
-          <MetricCard 
+          <MetricCard
             label="Failed"
             value={metrics.failedTasks}
             color={metrics.failedTasks > 0 ? '#ef4444' : '#6b7280'}
             icon="❌"
           />
-          <MetricCard 
+          <MetricCard
             label="Avg Duration"
             value={formatDuration(metrics.averageTaskDuration)}
             icon="⏱️"
           />
-          <MetricCard 
+          <MetricCard
             label="Phase Transitions"
             value={metrics.phaseTransitionCount}
             icon="🔄"
@@ -175,19 +186,19 @@ export function ProjectDashboard({
       <section className="project-dashboard__tasks">
         <div className="project-dashboard__tasks-header">
           <h2 className="project-dashboard__section-title">Tasks</h2>
-          <button 
+          <button
             className="project-dashboard__create-btn"
             onClick={onCreateTask}
           >
             + New Task
           </button>
         </div>
-        
-        <TaskSummaryTable 
+
+        <TaskSummaryTable
           tasks={tasks.slice(0, 10)}
           onTaskClick={onTaskClick}
         />
-        
+
         {tasks.length > 10 && (
           <p className="project-dashboard__tasks-more">
             +{tasks.length - 10} more tasks
@@ -207,16 +218,24 @@ interface MetricCardProps {
   icon: string;
 }
 
-function MetricCard({ label, value, percentage, color, icon }: MetricCardProps) {
+function MetricCard({
+  label,
+  value,
+  percentage,
+  color,
+  icon,
+}: MetricCardProps) {
   return (
     <div className="metric-card">
       <div className="metric-card__icon">{icon}</div>
       <div className="metric-card__content">
-        <span className="metric-card__value" style={{ color }}>{value}</span>
+        <span className="metric-card__value" style={{ color }}>
+          {value}
+        </span>
         <span className="metric-card__label">{label}</span>
         {percentage !== undefined && (
           <div className="metric-card__bar">
-            <div 
+            <div
               className="metric-card__bar-fill"
               style={{ width: `${percentage}%`, background: color }}
             />
@@ -270,23 +289,21 @@ function TaskSummaryTable({ tasks, onTaskClick }: TaskSummaryTableProps) {
         </tr>
       </thead>
       <tbody>
-        {tasks.map(task => (
-          <tr 
+        {tasks.map((task) => (
+          <tr
             key={task.id}
             onClick={() => onTaskClick(task.id)}
             className="task-summary-table__row"
           >
             <td>
-              <span title={task.status}>
-                {statusIcons[task.status]}
-              </span>
+              <span title={task.status}>{statusIcons[task.status]}</span>
             </td>
             <td className="task-summary-table__title">{task.title}</td>
             <td>
               <span className="task-summary-table__stage">{task.stage}</span>
             </td>
             <td>
-              <span 
+              <span
                 className="task-summary-table__priority"
                 style={{ color: priorityColors[task.priority] }}
               >
@@ -294,8 +311,8 @@ function TaskSummaryTable({ tasks, onTaskClick }: TaskSummaryTableProps) {
               </span>
             </td>
             <td className="task-summary-table__agent">
-              {task.assignedAgentId 
-                ? task.assignedAgentId.split('.').pop() 
+              {task.assignedAgentId
+                ? task.assignedAgentId.split('.').pop()
                 : '—'}
             </td>
           </tr>

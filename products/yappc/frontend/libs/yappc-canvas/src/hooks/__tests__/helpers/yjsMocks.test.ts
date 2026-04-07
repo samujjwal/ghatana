@@ -1,4 +1,8 @@
-import { createMockYArray, createMockYMap, withMockYDoc } from '@yappc/testing/helpers';
+import {
+  createMockYArray,
+  createMockYMap,
+  withMockYDoc,
+} from '@yappc/testing/helpers';
 import { describe, it, expect, vi } from 'vitest';
 
 describe('yjsMocks helpers', () => {
@@ -27,7 +31,9 @@ describe('yjsMocks helpers', () => {
 
     expect(typeof ydoc.transact).toBe('function');
     let ran = false;
-    ydoc.transact(() => { ran = true; });
+    ydoc.transact(() => {
+      ran = true;
+    });
     expect(ran).toBe(true);
     expect((ydoc.transact as unknown).mock).toBeDefined();
 

@@ -1,6 +1,6 @@
 /**
  * Threat Model State Management
- * 
+ *
  * Functions for managing threat model state, elements, flows, and boundaries.
  */
 
@@ -67,18 +67,19 @@ export function addFlow(
   flow: ThreatFlow
 ): ThreatModelState {
   // Check if flow crosses trust boundaries
-  const sourceElement = state.elements.find(e => e.id === flow.sourceId);
-  const targetElement = state.elements.find(e => e.id === flow.targetId);
-  
-  const crossesBoundary = sourceElement && targetElement
-    ? sourceElement.trustZone !== targetElement.trustZone
-    : false;
-  
+  const sourceElement = state.elements.find((e) => e.id === flow.sourceId);
+  const targetElement = state.elements.find((e) => e.id === flow.targetId);
+
+  const crossesBoundary =
+    sourceElement && targetElement
+      ? sourceElement.trustZone !== targetElement.trustZone
+      : false;
+
   const enhancedFlow: ThreatFlow = {
     ...flow,
     crossesBoundary,
   };
-  
+
   return {
     ...state,
     flows: [...state.flows, enhancedFlow],
@@ -112,7 +113,7 @@ export function addThreat(
     discoveredAt: now,
     updatedAt: now,
   };
-  
+
   return {
     ...state,
     threats: [...state.threats, newThreat],
@@ -129,7 +130,7 @@ export function updateThreatStatus(
 ): ThreatModelState {
   return {
     ...state,
-    threats: state.threats.map(threat =>
+    threats: state.threats.map((threat) =>
       threat.id === threatId
         ? { ...threat, status, updatedAt: new Date() }
         : threat
@@ -149,10 +150,10 @@ export function addMitigation(
     ...mitigation,
     id: `mitigation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   };
-  
+
   return {
     ...state,
-    threats: state.threats.map(threat =>
+    threats: state.threats.map((threat) =>
       threat.id === threatId
         ? {
             ...threat,
@@ -175,11 +176,11 @@ export function updateMitigationStatus(
 ): ThreatModelState {
   return {
     ...state,
-    threats: state.threats.map(threat =>
+    threats: state.threats.map((threat) =>
       threat.id === threatId
         ? {
             ...threat,
-            mitigations: threat.mitigations.map(m =>
+            mitigations: threat.mitigations.map((m) =>
               m.id === mitigationId ? { ...m, status } : m
             ),
             updatedAt: new Date(),
@@ -196,7 +197,7 @@ export function getThreatsBySeverity(
   state: ThreatModelState,
   severity: Threat['severity']
 ): Threat[] {
-  return state.threats.filter(t => t.severity === severity);
+  return state.threats.filter((t) => t.severity === severity);
 }
 
 /**
@@ -206,7 +207,7 @@ export function getThreatsByStatus(
   state: ThreatModelState,
   status: ThreatStatus
 ): Threat[] {
-  return state.threats.filter(t => t.status === status);
+  return state.threats.filter((t) => t.status === status);
 }
 
 /**
@@ -216,7 +217,7 @@ export function getThreatsByCategory(
   state: ThreatModelState,
   category: Threat['category']
 ): Threat[] {
-  return state.threats.filter(t => t.category === category);
+  return state.threats.filter((t) => t.category === category);
 }
 
 /**
@@ -230,18 +231,19 @@ export function calculateThreatScore(threat: Threat): number {
     low: 2.5,
     info: 1,
   };
-  
+
   const baseScore = severityScores[threat.severity];
-  
+
   // Adjust based on mitigations
   const implementedMitigations = threat.mitigations.filter(
-    m => m.status === 'implemented'
+    (m) => m.status === 'implemented'
   ).length;
   const totalMitigations = threat.mitigations.length;
-  
-  const mitigationFactor = totalMitigations > 0
-    ? 1 - (implementedMitigations / totalMitigations) * 0.5
-    : 1;
-  
+
+  const mitigationFactor =
+    totalMitigations > 0
+      ? 1 - (implementedMitigations / totalMitigations) * 0.5
+      : 1;
+
   return Math.round(baseScore * mitigationFactor * 10) / 10;
 }

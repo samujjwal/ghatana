@@ -148,7 +148,7 @@ export const VALIDATION_REPORT_FRAGMENT = gql`
 export const GET_BOOTSTRAP_SESSION = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
   ${CANVAS_NODE_FRAGMENT}
-  
+
   query GetBootstrapSession($id: ID!) {
     bootstrapSession(id: $id) {
       ...BootstrapSessionFields
@@ -168,7 +168,7 @@ export const GET_BOOTSTRAP_SESSION = gql`
 
 export const LIST_BOOTSTRAP_SESSIONS = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
-  
+
   query ListBootstrapSessions(
     $filter: BootstrapSessionFilter
     $pagination: PaginationInput
@@ -194,11 +194,8 @@ export const LIST_BOOTSTRAP_SESSIONS = gql`
 
 export const GET_CONVERSATION_HISTORY = gql`
   ${CONVERSATION_TURN_FRAGMENT}
-  
-  query GetConversationHistory(
-    $sessionId: ID!
-    $pagination: PaginationInput
-  ) {
+
+  query GetConversationHistory($sessionId: ID!, $pagination: PaginationInput) {
     conversationHistory(sessionId: $sessionId, pagination: $pagination) {
       edges {
         cursor
@@ -219,7 +216,7 @@ export const GET_CONVERSATION_HISTORY = gql`
 
 export const GET_CANVAS_STATE = gql`
   ${CANVAS_NODE_FRAGMENT}
-  
+
   query GetCanvasState($sessionId: ID!) {
     canvasState(sessionId: $sessionId) {
       nodes {
@@ -255,7 +252,7 @@ export const GET_CANVAS_STATE = gql`
 
 export const GET_VALIDATION_REPORT = gql`
   ${VALIDATION_REPORT_FRAGMENT}
-  
+
   query GetValidationReport($sessionId: ID!) {
     validationReport(sessionId: $sessionId) {
       ...ValidationReportFields
@@ -309,7 +306,7 @@ export const GET_SESSION_TEMPLATES = gql`
 
 export const CREATE_BOOTSTRAP_SESSION = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
-  
+
   mutation CreateBootstrapSession($input: CreateBootstrapSessionInput!) {
     createBootstrapSession(input: $input) {
       session {
@@ -323,8 +320,11 @@ export const CREATE_BOOTSTRAP_SESSION = gql`
 
 export const UPDATE_BOOTSTRAP_SESSION = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
-  
-  mutation UpdateBootstrapSession($id: ID!, $input: UpdateBootstrapSessionInput!) {
+
+  mutation UpdateBootstrapSession(
+    $id: ID!
+    $input: UpdateBootstrapSessionInput!
+  ) {
     updateBootstrapSession(id: $id, input: $input) {
       ...BootstrapSessionFields
     }
@@ -342,7 +342,7 @@ export const DELETE_BOOTSTRAP_SESSION = gql`
 
 export const SEND_CONVERSATION_MESSAGE = gql`
   ${CONVERSATION_TURN_FRAGMENT}
-  
+
   mutation SendConversationMessage(
     $sessionId: ID!
     $input: ConversationMessageInput!
@@ -366,13 +366,17 @@ export const SEND_CONVERSATION_MESSAGE = gql`
 
 export const REGENERATE_AI_RESPONSE = gql`
   ${CONVERSATION_TURN_FRAGMENT}
-  
+
   mutation RegenerateAIResponse(
     $sessionId: ID!
     $messageId: ID!
     $options: RegenerateOptions
   ) {
-    regenerateAIResponse(sessionId: $sessionId, messageId: $messageId, options: $options) {
+    regenerateAIResponse(
+      sessionId: $sessionId
+      messageId: $messageId
+      options: $options
+    ) {
       newResponse {
         ...ConversationTurnFields
       }
@@ -387,7 +391,7 @@ export const REGENERATE_AI_RESPONSE = gql`
 
 export const ADD_CANVAS_NODE = gql`
   ${CANVAS_NODE_FRAGMENT}
-  
+
   mutation AddCanvasNode($sessionId: ID!, $input: AddCanvasNodeInput!) {
     addCanvasNode(sessionId: $sessionId, input: $input) {
       node {
@@ -404,7 +408,7 @@ export const ADD_CANVAS_NODE = gql`
 
 export const UPDATE_CANVAS_NODE = gql`
   ${CANVAS_NODE_FRAGMENT}
-  
+
   mutation UpdateCanvasNode(
     $sessionId: ID!
     $nodeId: ID!
@@ -489,7 +493,7 @@ export const REDO_CANVAS_ACTION = gql`
 
 export const VALIDATE_SESSION = gql`
   ${VALIDATION_REPORT_FRAGMENT}
-  
+
   mutation ValidateSession($sessionId: ID!, $options: ValidationOptions) {
     validateSession(sessionId: $sessionId, options: $options) {
       ...ValidationReportFields
@@ -515,7 +519,7 @@ export const AUTO_FIX_VALIDATION_ISSUES = gql`
 export const APPLY_SESSION_TEMPLATE = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
   ${CANVAS_NODE_FRAGMENT}
-  
+
   mutation ApplySessionTemplate($sessionId: ID!, $templateId: ID!) {
     applySessionTemplate(sessionId: $sessionId, templateId: $templateId) {
       session {
@@ -541,7 +545,7 @@ export const EXPORT_SESSION = gql`
 
 export const IMPORT_SESSION = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
-  
+
   mutation ImportSession($input: ImportSessionInput!) {
     importSession(input: $input) {
       session {
@@ -553,7 +557,10 @@ export const IMPORT_SESSION = gql`
 `;
 
 export const INVITE_COLLABORATOR = gql`
-  mutation InviteCollaborator($sessionId: ID!, $input: InviteCollaboratorInput!) {
+  mutation InviteCollaborator(
+    $sessionId: ID!
+    $input: InviteCollaboratorInput!
+  ) {
     inviteCollaborator(sessionId: $sessionId, input: $input) {
       collaborator {
         id
@@ -613,7 +620,7 @@ export const FINALIZE_BOOTSTRAP = gql`
 
 export const SUBSCRIBE_TO_SESSION_UPDATES = gql`
   ${BOOTSTRAP_SESSION_FRAGMENT}
-  
+
   subscription OnSessionUpdate($sessionId: ID!) {
     sessionUpdated(sessionId: $sessionId) {
       type
@@ -627,7 +634,7 @@ export const SUBSCRIBE_TO_SESSION_UPDATES = gql`
 
 export const SUBSCRIBE_TO_CONVERSATION = gql`
   ${CONVERSATION_TURN_FRAGMENT}
-  
+
   subscription OnConversationUpdate($sessionId: ID!) {
     conversationUpdated(sessionId: $sessionId) {
       type
@@ -642,7 +649,7 @@ export const SUBSCRIBE_TO_CONVERSATION = gql`
 
 export const SUBSCRIBE_TO_CANVAS_CHANGES = gql`
   ${CANVAS_NODE_FRAGMENT}
-  
+
   subscription OnCanvasChange($sessionId: ID!) {
     canvasChanged(sessionId: $sessionId) {
       type
@@ -697,7 +704,7 @@ export const SUBSCRIBE_TO_AI_THINKING = gql`
 
 export const SUBSCRIBE_TO_VALIDATION_UPDATES = gql`
   ${VALIDATION_REPORT_FRAGMENT}
-  
+
   subscription OnValidationUpdate($sessionId: ID!) {
     validationUpdated(sessionId: $sessionId) {
       ...ValidationReportFields

@@ -1,13 +1,13 @@
 /**
  * Tests for WebGL Renderer
- * 
+ *
  * Comprehensive test suite covering:
  * - WebGL context initialization
  * - Capability detection
  * - Rendering pipeline
  * - Performance statistics
  * - Error handling and fallbacks
- * 
+ *
  * @module rendering/__tests__/webglRenderer.test
  */
 
@@ -73,7 +73,7 @@ describe('WebGL Renderer', () => {
   describe('Initialization', () => {
     it('should create renderer with default config', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       expect(renderer).toBeDefined();
       expect(renderer.config.preferWebGL2).toBe(true);
       expect(renderer.config.antialias).toBe(true);
@@ -105,13 +105,13 @@ describe('WebGL Renderer', () => {
   describe('Capabilities', () => {
     it('should detect WebGL capabilities after initialization', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported()) {
         const initialized = renderer.initialize();
-        
+
         if (initialized) {
           const capabilities = renderer.getCapabilities();
-          
+
           expect(capabilities).toBeDefined();
           if (capabilities) {
             expect(capabilities.version).toMatch(/^[12]$/);
@@ -133,7 +133,7 @@ describe('WebGL Renderer', () => {
   describe('Viewport', () => {
     it('should set viewport bounds', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         renderer.setViewport({
           x: 100,
@@ -153,7 +153,7 @@ describe('WebGL Renderer', () => {
   describe('Rendering', () => {
     it('should render empty element array', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         renderer.render([]);
 
@@ -165,7 +165,7 @@ describe('WebGL Renderer', () => {
 
     it('should render single element', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const element = createTestElement('el1', 100, 100);
         renderer.render([element]);
@@ -178,7 +178,7 @@ describe('WebGL Renderer', () => {
 
     it('should render multiple elements', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const elements = [
           createTestElement('el1', 0, 0),
@@ -197,14 +197,14 @@ describe('WebGL Renderer', () => {
 
     it('should clear canvas', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const element = createTestElement('el1', 100, 100);
         renderer.render([element]);
-        
+
         // Clear should succeed
         renderer.clear();
-        
+
         const stats = renderer.getStats();
         expect(stats).toBeDefined();
       }
@@ -214,7 +214,7 @@ describe('WebGL Renderer', () => {
   describe('Performance Statistics', () => {
     it('should track draw calls', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const elements = Array.from({ length: 10 }, (_, i) =>
           createTestElement(`el${i}`, i * 100, 0)
@@ -229,7 +229,7 @@ describe('WebGL Renderer', () => {
 
     it('should track vertices and triangles', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const element = createTestElement('el1', 0, 0);
         renderer.render([element]);
@@ -242,7 +242,7 @@ describe('WebGL Renderer', () => {
 
     it('should measure frame time', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const element = createTestElement('el1', 0, 0);
         renderer.render([element]);
@@ -255,11 +255,11 @@ describe('WebGL Renderer', () => {
 
     it('should calculate FPS', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         // Render multiple frames
         const element = createTestElement('el1', 0, 0);
-        
+
         for (let i = 0; i < 5; i++) {
           renderer.render([element]);
         }
@@ -274,7 +274,7 @@ describe('WebGL Renderer', () => {
   describe('Resource Management', () => {
     it('should dispose resources', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const element = createTestElement('el1', 0, 0);
         renderer.render([element]);
@@ -286,7 +286,7 @@ describe('WebGL Renderer', () => {
 
     it('should handle operations after dispose gracefully', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         renderer.dispose();
 
@@ -309,10 +309,10 @@ describe('WebGL Renderer', () => {
 
     it('should return WebGL context after initialization', () => {
       const renderer = createWebGLRenderer(canvas);
-      
+
       if (renderer.isSupported() && renderer.initialize()) {
         const ctx = renderer.getContext();
-        
+
         if (ctx) {
           expect(ctx).toBeDefined();
           // Check it's actually a WebGL context
@@ -438,7 +438,7 @@ describe('Integration Tests', () => {
 
     // Render at different zoom levels
     const zooms = [0.5, 1.0, 2.0];
-    
+
     for (const zoom of zooms) {
       renderer.setViewport({
         x: 0,

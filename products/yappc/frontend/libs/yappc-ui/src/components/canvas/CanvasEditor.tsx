@@ -18,63 +18,65 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 
 // Lazy-load the heavy canvas to avoid blocking the initial bundle
 const CanvasLazy = React.lazy(() =>
-    import('@yappc/canvas').then((m) => ({ default: m.Canvas })),
+  import('@yappc/canvas').then((m) => ({ default: m.Canvas }))
 );
 
 export interface CanvasEditorProps {
-    /** The CanvasDocument to render. Pass `null` to show an empty state. */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    document?: any;
-    /** Custom theme applied to the canvas surface */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    theme?: any;
-    /** Height of the canvas container (default: 100%) */
-    height?: string | number;
-    /** Width of the canvas container (default: 100%) */
-    width?: string | number;
-    className?: string;
+  /** The CanvasDocument to render. Pass `null` to show an empty state. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  document?: any;
+  /** Custom theme applied to the canvas surface */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  theme?: any;
+  /** Height of the canvas container (default: 100%) */
+  height?: string | number;
+  /** Width of the canvas container (default: 100%) */
+  width?: string | number;
+  className?: string;
 }
 
 const CanvasLoadingFallback: React.FC = () => (
-    <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        height="100%"
-        flexDirection="column"
-        gap={1}
-    >
-        <CircularProgress size={28} />
-        <Typography variant="caption" color="text.secondary">
-            Loading canvas…
-        </Typography>
-    </Box>
+  <Box
+    display="flex"
+    alignItems="center"
+    justifyContent="center"
+    height="100%"
+    flexDirection="column"
+    gap={1}
+  >
+    <CircularProgress size={28} />
+    <Typography variant="caption" color="text.secondary">
+      Loading canvas…
+    </Typography>
+  </Box>
 );
 
 const CanvasErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
-    <Alert severity="error" sx={{ m: 2 }}>
-        Failed to load canvas: {error.message}
-    </Alert>
+  <Alert severity="error" sx={{ m: 2 }}>
+    Failed to load canvas: {error.message}
+  </Alert>
 );
 
 /**
  * Lazy-loaded canvas editor with integrated error boundary and loading state.
  */
 export const CanvasEditor: React.FC<CanvasEditorProps> = ({
-    document,
-    theme,
-    height = '100%',
-    width = '100%',
-    className,
+  document,
+  theme,
+  height = '100%',
+  width = '100%',
+  className,
 }) => (
-    <Box
-        className={className}
-        sx={{ height, width, position: 'relative', overflow: 'hidden' }}
+  <Box
+    className={className}
+    sx={{ height, width, position: 'relative', overflow: 'hidden' }}
+  >
+    <ErrorBoundary
+      fallback={(error: Error) => <CanvasErrorFallback error={error} />}
     >
-        <ErrorBoundary fallback={(error: Error) => <CanvasErrorFallback error={error} />}>
-            <Suspense fallback={<CanvasLoadingFallback />}>
-                <CanvasLazy document={document} theme={theme} />
-            </Suspense>
-        </ErrorBoundary>
-    </Box>
+      <Suspense fallback={<CanvasLoadingFallback />}>
+        <CanvasLazy document={document} theme={theme} />
+      </Suspense>
+    </ErrorBoundary>
+  </Box>
 );

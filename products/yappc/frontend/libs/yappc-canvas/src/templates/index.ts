@@ -12,19 +12,19 @@
 
 // Gallery template management
 export {
-    templateManager,
-    type GalleryTemplate,
-    type TemplateParameter,
-    type TemplateCategory,
+  templateManager,
+  type GalleryTemplate,
+  type TemplateParameter,
+  type TemplateCategory,
 } from './templateManager';
 
 // Journey templates for persona workflows
 export {
-    journeyTemplates,
-    pmBrainstormingTemplate,
-    architectDesignTemplate,
-    engineerImplementationTemplate,
-    type JourneyTemplate,
-    type JourneyNode,
-    type JourneyEdge,
+  journeyTemplates,
+  pmBrainstormingTemplate,
+  architectDesignTemplate,
+  engineerImplementationTemplate,
+  type JourneyTemplate,
+  type JourneyNode,
+  type JourneyEdge,
 } from './journeyTemplates';

@@ -58,11 +58,36 @@ describe('formatAdapters', () => {
     it('should support different node types', () => {
       const document: CanvasDocument = {
         nodes: [
-          { id: 'rect', type: 'rectangle', label: 'Rectangle', position: { x: 0, y: 0 } },
-          { id: 'ellipse', type: 'ellipse', label: 'Ellipse', position: { x: 0, y: 0 } },
-          { id: 'diamond', type: 'diamond', label: 'Diamond', position: { x: 0, y: 0 } },
-          { id: 'cylinder', type: 'cylinder', label: 'Database', position: { x: 0, y: 0 } },
-          { id: 'hexagon', type: 'hexagon', label: 'Hexagon', position: { x: 0, y: 0 } },
+          {
+            id: 'rect',
+            type: 'rectangle',
+            label: 'Rectangle',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'ellipse',
+            type: 'ellipse',
+            label: 'Ellipse',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'diamond',
+            type: 'diamond',
+            label: 'Diamond',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'cylinder',
+            type: 'cylinder',
+            label: 'Database',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'hexagon',
+            type: 'hexagon',
+            label: 'Hexagon',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
@@ -79,7 +104,12 @@ describe('formatAdapters', () => {
     it('should handle note types with warning', () => {
       const document: CanvasDocument = {
         nodes: [
-          { id: 'note1', type: 'note', label: 'Note', position: { x: 0, y: 0 } },
+          {
+            id: 'note1',
+            type: 'note',
+            label: 'Note',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
@@ -116,7 +146,12 @@ describe('formatAdapters', () => {
     it('should sanitize IDs', () => {
       const document: CanvasDocument = {
         nodes: [
-          { id: 'node-with-dashes', type: 'rectangle', label: 'Test', position: { x: 0, y: 0 } },
+          {
+            id: 'node-with-dashes',
+            type: 'rectangle',
+            label: 'Test',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
@@ -129,7 +164,12 @@ describe('formatAdapters', () => {
     it('should escape special characters in labels', () => {
       const document: CanvasDocument = {
         nodes: [
-          { id: 'node1', type: 'rectangle', label: 'Test "quotes"', position: { x: 0, y: 0 } },
+          {
+            id: 'node1',
+            type: 'rectangle',
+            label: 'Test "quotes"',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
@@ -167,7 +207,14 @@ describe('formatAdapters', () => {
 
     it('should support different diagram types', () => {
       const document: CanvasDocument = {
-        nodes: [{ id: 'node1', type: 'rectangle', label: 'State', position: { x: 0, y: 0 } }],
+        nodes: [
+          {
+            id: 'node1',
+            type: 'rectangle',
+            label: 'State',
+            position: { x: 0, y: 0 },
+          },
+        ],
         edges: [],
       };
 
@@ -178,7 +225,14 @@ describe('formatAdapters', () => {
 
     it('should support different directions', () => {
       const document: CanvasDocument = {
-        nodes: [{ id: 'node1', type: 'rectangle', label: 'Node', position: { x: 0, y: 0 } }],
+        nodes: [
+          {
+            id: 'node1',
+            type: 'rectangle',
+            label: 'Node',
+            position: { x: 0, y: 0 },
+          },
+        ],
         edges: [],
       };
 
@@ -216,10 +270,30 @@ describe('formatAdapters', () => {
     it('should achieve ≥90% coverage for typical diagrams', () => {
       const document: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'Node 1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'ellipse', label: 'Node 2', position: { x: 0, y: 0 } },
-          { id: 'n3', type: 'diamond', label: 'Node 3', position: { x: 0, y: 0 } },
-          { id: 'n4', type: 'cylinder', label: 'Node 4', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'Node 1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'ellipse',
+            label: 'Node 2',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n3',
+            type: 'diamond',
+            label: 'Node 3',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n4',
+            type: 'cylinder',
+            label: 'Node 4',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [
           { id: 'e1', source: 'n1', target: 'n2', type: 'solid' },
@@ -613,14 +687,31 @@ workspace {
     it('should detect node count differences', () => {
       const original: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'Node 1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'rectangle', label: 'Node 2', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'Node 1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'rectangle',
+            label: 'Node 2',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
 
       const reimported: CanvasDocument = {
-        nodes: [{ id: 'n1', type: 'rectangle', label: 'Node 1', position: { x: 0, y: 0 } }],
+        nodes: [
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'Node 1',
+            position: { x: 0, y: 0 },
+          },
+        ],
         edges: [],
       };
 
@@ -632,33 +723,69 @@ workspace {
 
     it('should detect missing labels', () => {
       const original: CanvasDocument = {
-        nodes: [{ id: 'n1', type: 'rectangle', label: 'Lost Label', position: { x: 0, y: 0 } }],
+        nodes: [
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'Lost Label',
+            position: { x: 0, y: 0 },
+          },
+        ],
         edges: [],
       };
 
       const reimported: CanvasDocument = {
-        nodes: [{ id: 'n1', type: 'rectangle', label: 'Different Label', position: { x: 0, y: 0 } }],
+        nodes: [
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'Different Label',
+            position: { x: 0, y: 0 },
+          },
+        ],
         edges: [],
       };
 
       const validation = validateC4RoundTrip(original, '', reimported);
 
-      expect(validation.differences).toContain('Missing node label: "Lost Label"');
+      expect(validation.differences).toContain(
+        'Missing node label: "Lost Label"'
+      );
     });
 
     it('should detect missing edges', () => {
       const original: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'N1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'rectangle', label: 'N2', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'N1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'rectangle',
+            label: 'N2',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [{ id: 'e1', source: 'n1', target: 'n2' }],
       };
 
       const reimported: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'N1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'rectangle', label: 'N2', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'N1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'rectangle',
+            label: 'N2',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };
@@ -671,16 +798,36 @@ workspace {
     it('should calculate fidelity score', () => {
       const original: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'N1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'rectangle', label: 'N2', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'N1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'rectangle',
+            label: 'N2',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [{ id: 'e1', source: 'n1', target: 'n2' }],
       };
 
       const reimported: CanvasDocument = {
         nodes: [
-          { id: 'n1', type: 'rectangle', label: 'N1', position: { x: 0, y: 0 } },
-          { id: 'n2', type: 'rectangle', label: 'N2', position: { x: 0, y: 0 } },
+          {
+            id: 'n1',
+            type: 'rectangle',
+            label: 'N1',
+            position: { x: 0, y: 0 },
+          },
+          {
+            id: 'n2',
+            type: 'rectangle',
+            label: 'N2',
+            position: { x: 0, y: 0 },
+          },
         ],
         edges: [],
       };

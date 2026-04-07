@@ -471,7 +471,10 @@ export class ComponentSchemaRegistry {
   /**
    *
    */
-  public safeParse(type: string, data: unknown): z.SafeParseReturnType<unknown, unknown> {
+  public safeParse(
+    type: string,
+    data: unknown
+  ): z.SafeParseReturnType<unknown, unknown> {
     const schema = this.getSchema(type);
     if (!schema) {
       return {
@@ -596,7 +599,10 @@ export const validateComponent = (
   return componentSchemaRegistry.validate(type, data);
 };
 
-export const safeParseComponent = (type: string, data: unknown): z.SafeParseReturnType<unknown, unknown> => {
+export const safeParseComponent = (
+  type: string,
+  data: unknown
+): z.SafeParseReturnType<unknown, unknown> => {
   return componentSchemaRegistry.safeParse(type, data);
 };
 
@@ -653,7 +659,9 @@ export const validateCanvas = (canvas: {
   edges: Array<ValidationResult<CanvasEdge>>;
 } => {
   return {
-    nodes: canvas.nodes.map((node: unknown) => validateComponent(node.type, node)),
+    nodes: canvas.nodes.map((node: unknown) =>
+      validateComponent(node.type, node)
+    ),
     edges: canvas.edges.map((edge: unknown) => {
       const result = EdgeSchema.safeParse(edge);
       return {

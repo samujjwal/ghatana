@@ -24,13 +24,17 @@ export function reportFrontendError(input: FrontendErrorInput): void {
     stack: input.stack,
     componentStack: input.componentStack,
     route: typeof window !== 'undefined' ? window.location.pathname : undefined,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+    userAgent:
+      typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
     timestamp: new Date().toISOString(),
   };
 
   // Fail-open telemetry: never throw in the UI path.
   try {
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof navigator.sendBeacon === 'function'
+    ) {
       const body = JSON.stringify(payload);
       const blob = new Blob([body], { type: 'application/json' });
       navigator.sendBeacon(FRONTEND_ERROR_ENDPOINT, blob);

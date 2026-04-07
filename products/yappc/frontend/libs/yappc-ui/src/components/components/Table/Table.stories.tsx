@@ -4,7 +4,6 @@ import { useState } from 'react';
 
 import { Table } from './Table';
 
-
 const meta: Meta<typeof Table> = {
   title: 'Components/Table',
   component: Table,
@@ -44,11 +43,46 @@ interface User {
 }
 
 const sampleUsers: User[] = [
-  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', role: 'Admin', status: 'active', joinDate: '2023-01-15' },
-  { id: 2, name: 'Bob Smith', email: 'bob@example.com', role: 'Editor', status: 'active', joinDate: '2023-03-22' },
-  { id: 3, name: 'Carol White', email: 'carol@example.com', role: 'Viewer', status: 'inactive', joinDate: '2023-05-10' },
-  { id: 4, name: 'David Brown', email: 'david@example.com', role: 'Editor', status: 'active', joinDate: '2023-07-05' },
-  { id: 5, name: 'Eve Davis', email: 'eve@example.com', role: 'Admin', status: 'active', joinDate: '2023-09-18' },
+  {
+    id: 1,
+    name: 'Alice Johnson',
+    email: 'alice@example.com',
+    role: 'Admin',
+    status: 'active',
+    joinDate: '2023-01-15',
+  },
+  {
+    id: 2,
+    name: 'Bob Smith',
+    email: 'bob@example.com',
+    role: 'Editor',
+    status: 'active',
+    joinDate: '2023-03-22',
+  },
+  {
+    id: 3,
+    name: 'Carol White',
+    email: 'carol@example.com',
+    role: 'Viewer',
+    status: 'inactive',
+    joinDate: '2023-05-10',
+  },
+  {
+    id: 4,
+    name: 'David Brown',
+    email: 'david@example.com',
+    role: 'Editor',
+    status: 'active',
+    joinDate: '2023-07-05',
+  },
+  {
+    id: 5,
+    name: 'Eve Davis',
+    email: 'eve@example.com',
+    role: 'Admin',
+    status: 'active',
+    joinDate: '2023-09-18',
+  },
 ];
 
 const basicColumns: TableColumn<User>[] = [
@@ -104,7 +138,12 @@ export const Sizes: Story = {
 
       <div>
         <h3 className="text-lg font-semibold mb-3">Compact Size</h3>
-        <Table data={sampleUsers} columns={basicColumns} variant="striped" size="compact" />
+        <Table
+          data={sampleUsers}
+          columns={basicColumns}
+          variant="striped"
+          size="compact"
+        />
       </div>
     </div>
   ),
@@ -183,7 +222,9 @@ export const CustomRendering: Story = {
             Viewer: 'bg-grey-100 text-grey-700',
           };
           return (
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${colors[value] || ''}`}>
+            <span
+              className={`px-2 py-1 rounded text-xs font-semibold ${colors[value] || ''}`}
+            >
               {value}
             </span>
           );
@@ -195,12 +236,16 @@ export const CustomRendering: Story = {
         accessor: 'status',
         align: 'center',
         render: (value) => (
-          <span className={`inline-block w-2 h-2 rounded-full ${value === 'active' ? 'bg-green-500' : 'bg-grey-400'}`} />
+          <span
+            className={`inline-block w-2 h-2 rounded-full ${value === 'active' ? 'bg-green-500' : 'bg-grey-400'}`}
+          />
         ),
       },
     ];
 
-    return <Table data={sampleUsers} columns={columns} hover variant="striped" />;
+    return (
+      <Table data={sampleUsers} columns={columns} hover variant="striped" />
+    );
   },
 };
 
@@ -217,7 +262,12 @@ export const Sortable: Story = {
       { id: 'name', label: 'Name', accessor: 'name', sortable: true },
       { id: 'email', label: 'Email', accessor: 'email', sortable: true },
       { id: 'role', label: 'Role', accessor: 'role', sortable: true },
-      { id: 'joinDate', label: 'Join Date', accessor: 'joinDate', sortable: true },
+      {
+        id: 'joinDate',
+        label: 'Join Date',
+        accessor: 'joinDate',
+        sortable: true,
+      },
     ];
 
     const handleSort = (columnId: string, direction: 'asc' | 'desc') => {
@@ -300,7 +350,9 @@ export const CustomRowStyling: Story = {
         data={sampleUsers}
         columns={basicColumns}
         rowClassName={(user) =>
-          user.status === 'inactive' ? 'opacity-50 bg-grey-100 dark:bg-grey-800' : ''
+          user.status === 'inactive'
+            ? 'opacity-50 bg-grey-100 dark:bg-grey-800'
+            : ''
         }
         hover
       />
@@ -349,7 +401,9 @@ export const WithActions: Story = {
             Viewer: 'bg-grey-100 text-grey-700',
           };
           return (
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${colors[value] || ''}`}>
+            <span
+              className={`px-2 py-1 rounded text-xs font-semibold ${colors[value] || ''}`}
+            >
               {value}
             </span>
           );
@@ -384,7 +438,9 @@ export const WithActions: Story = {
       },
     ];
 
-    return <Table data={sampleUsers} columns={columns} hover variant="striped" />;
+    return (
+      <Table data={sampleUsers} columns={columns} hover variant="striped" />
+    );
   },
 };
 
@@ -459,7 +515,8 @@ export const WithExpansion: Story = {
                 <span className="text-grey-600">Status:</span> {user.status}
               </div>
               <div>
-                <span className="text-grey-600">Join Date:</span> {user.joinDate}
+                <span className="text-grey-600">Join Date:</span>{' '}
+                {user.joinDate}
               </div>
               <div>
                 <span className="text-grey-600">Email:</span> {user.email}
@@ -607,10 +664,12 @@ export const FullFeatured: Story = {
                   <span className="text-grey-600">ID:</span> {user.id}
                 </div>
                 <div>
-                  <span className="text-grey-600">Join Date:</span> {user.joinDate}
+                  <span className="text-grey-600">Join Date:</span>{' '}
+                  {user.joinDate}
                 </div>
                 <div>
-                  <span className="text-grey-600">Full Email:</span> {user.email}
+                  <span className="text-grey-600">Full Email:</span>{' '}
+                  {user.email}
                 </div>
               </div>
             </div>

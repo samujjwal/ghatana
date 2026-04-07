@@ -1,6 +1,6 @@
 /**
  * IDE Utils - KeyboardShortcutsManager, LoadingStates Bridge
- * 
+ *
  * @deprecated Use ShortcutsManager, LoadingOverlay from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -38,7 +38,9 @@ export interface KeyboardShortcut {
 /**
  * KeyboardShortcutsManager - Bridge to Canvas Keyboard System
  */
-export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> = ({
+export const KeyboardShortcutsManager: React.FC<
+  KeyboardShortcutsManagerProps
+> = ({
   shortcuts,
   enabled = true,
   target,
@@ -51,32 +53,35 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
   useEffect(() => {
     console.warn(
       '[MIGRATION] KeyboardShortcutsManager from @ghatana/yappc-ide is deprecated. ' +
-      'Use ShortcutsManager or keyboard hooks from @ghatana/yappc-canvas.'
+        'Use ShortcutsManager or keyboard hooks from @ghatana/yappc-canvas.'
     );
   }, []);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!enabled) return;
 
-    shortcuts.forEach(shortcut => {
-      const hasCtrl = shortcut.modifiers?.includes('ctrl') ?? false;
-      const hasAlt = shortcut.modifiers?.includes('alt') ?? false;
-      const hasShift = shortcut.modifiers?.includes('shift') ?? false;
-      const hasMeta = shortcut.modifiers?.includes('meta') ?? false;
+      shortcuts.forEach((shortcut) => {
+        const hasCtrl = shortcut.modifiers?.includes('ctrl') ?? false;
+        const hasAlt = shortcut.modifiers?.includes('alt') ?? false;
+        const hasShift = shortcut.modifiers?.includes('shift') ?? false;
+        const hasMeta = shortcut.modifiers?.includes('meta') ?? false;
 
-      const matches = 
-        e.key.toLowerCase() === shortcut.key.toLowerCase() &&
-        e.ctrlKey === hasCtrl &&
-        e.altKey === hasAlt &&
-        e.shiftKey === hasShift &&
-        e.metaKey === hasMeta;
+        const matches =
+          e.key.toLowerCase() === shortcut.key.toLowerCase() &&
+          e.ctrlKey === hasCtrl &&
+          e.altKey === hasAlt &&
+          e.shiftKey === hasShift &&
+          e.metaKey === hasMeta;
 
-      if (matches) {
-        e.preventDefault();
-        shortcut.action();
-      }
-    });
-  }, [shortcuts, enabled]);
+        if (matches) {
+          e.preventDefault();
+          shortcut.action();
+        }
+      });
+    },
+    [shortcuts, enabled]
+  );
 
   useEffect(() => {
     const element = target || window;
@@ -88,10 +93,13 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
 
   return (
     <div className={`keyboard-shortcuts-manager ${className || ''}`}>
-      <button className="shortcuts-help-button" onClick={() => {
-        setHelpVisible(!helpVisible);
-        onToggleHelp?.();
-      }}>
+      <button
+        className="shortcuts-help-button"
+        onClick={() => {
+          setHelpVisible(!helpVisible);
+          onToggleHelp?.();
+        }}
+      >
         ⌨️ Shortcuts
       </button>
 
@@ -99,13 +107,15 @@ export const KeyboardShortcutsManager: React.FC<KeyboardShortcutsManagerProps> =
         <div className="shortcuts-help-dialog">
           <h3>Keyboard Shortcuts</h3>
           <div className="shortcuts-list">
-            {shortcuts.map(shortcut => (
+            {shortcuts.map((shortcut) => (
               <div key={shortcut.id} className="shortcut-item">
                 <span className="shortcut-keys">
-                  {shortcut.modifiers?.map(m => m + '+').join('')}
+                  {shortcut.modifiers?.map((m) => m + '+').join('')}
                   {shortcut.key}
                 </span>
-                <span className="shortcut-description">{shortcut.description}</span>
+                <span className="shortcut-description">
+                  {shortcut.description}
+                </span>
               </div>
             ))}
           </div>
@@ -154,7 +164,7 @@ export const LoadingStates: React.FC<LoadingStatesProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] LoadingStates from @ghatana/yappc-ide is deprecated. ' +
-      'Use LoadingOverlay or AutosaveIndicator from @ghatana/yappc-canvas.'
+        'Use LoadingOverlay or AutosaveIndicator from @ghatana/yappc-canvas.'
     );
   }, []);
 
@@ -180,9 +190,9 @@ export const LoadingStates: React.FC<LoadingStatesProps> = ({
         {type === 'progress' && showProgress && progress !== undefined && (
           <div className="loading-progress">
             <div className="progress-bar">
-              <div 
-                className="progress-fill" 
-                style={{ width: `${Math.min(100, Math.max(0, progress))}%`}}
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
               />
             </div>
             <span className="progress-text">{Math.round(progress)}%</span>

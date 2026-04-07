@@ -222,11 +222,7 @@ export * as DevSecOps from './components/DevSecOps';
 export { ThemeProvider, ThemeContext, useThemeContext } from './theme';
 export { ThemeProvider as defaultThemeProvider } from './theme';
 export { theme, lightTheme, darkTheme } from './theme';
-export type {
-  ThemeContextType,
-  ThemeMode,
-  ThemeProviderProps,
-} from './theme';
+export type { ThemeContextType, ThemeMode, ThemeProviderProps } from './theme';
 
 // Command Palette
 export {
@@ -524,7 +520,7 @@ export * from './config';
 // ============================================================================
 // DEPRECATION WARNING
 // ============================================================================
- 
+
 console.warn(
   '[DEPRECATED] @ghatana/yappc-ui is deprecated. Use @yappc/ui instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'

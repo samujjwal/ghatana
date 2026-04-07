@@ -7,7 +7,10 @@
 
 import * as Y from 'yjs';
 
-import { type CollaborationManager, type CollaborationUser } from './CollaborationManager';
+import {
+  type CollaborationManager,
+  type CollaborationUser,
+} from './CollaborationManager';
 
 // =============================================================================
 // Types
@@ -82,7 +85,10 @@ export class DocumentCollaboration {
   private versionsArray: Y.Array<unknown>;
   private metaMap: Y.Map<unknown>;
   private userId: string;
-  private listeners: Map<DocumentChangeType, Set<(event: DocumentChangeEvent) => void>>;
+  private listeners: Map<
+    DocumentChangeType,
+    Set<(event: DocumentChangeEvent) => void>
+  >;
   private cursors: Map<string, TextCursor>;
 
   /**
@@ -188,7 +194,11 @@ export class DocumentCollaboration {
   /**
    * Insert text at position
    */
-  insert(position: number, content: string, attributes?: Record<string, unknown>): void {
+  insert(
+    position: number,
+    content: string,
+    attributes?: Record<string, unknown>
+  ): void {
     this.collab.transact(() => {
       this.text.insert(position, content, attributes);
     });
@@ -225,7 +235,11 @@ export class DocumentCollaboration {
   /**
    * Format text at range
    */
-  format(start: number, length: number, attributes: Record<string, unknown>): void {
+  format(
+    start: number,
+    length: number,
+    attributes: Record<string, unknown>
+  ): void {
     this.collab.transact(() => {
       this.text.format(start, length, attributes);
     });
@@ -315,7 +329,10 @@ export class DocumentCollaboration {
   /**
    * Update a comment
    */
-  updateComment(id: string, updates: Partial<Pick<DocumentComment, 'content' | 'resolved'>>): void {
+  updateComment(
+    id: string,
+    updates: Partial<Pick<DocumentComment, 'content' | 'resolved'>>
+  ): void {
     this.collab.transact(() => {
       const index = this.findCommentIndex(id);
       if (index !== -1) {
@@ -370,10 +387,12 @@ export class DocumentCollaboration {
       if (index !== -1) {
         const comment = this.commentsArray.get(index);
         this.commentsArray.delete(index, 1);
-        this.commentsArray.insert(index, [{
-          ...comment,
-          replies: [...comment.replies, reply],
-        }]);
+        this.commentsArray.insert(index, [
+          {
+            ...comment,
+            replies: [...comment.replies, reply],
+          },
+        ]);
       }
     });
 

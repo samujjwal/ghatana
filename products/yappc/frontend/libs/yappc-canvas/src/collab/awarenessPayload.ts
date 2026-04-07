@@ -123,7 +123,9 @@ export class AwarenessManager {
   /**
    * Set local user presence
    */
-  setLocalPresence(presence: Partial<PresenceState> & { userId: string; username: string }): AwarenessPayload | null {
+  setLocalPresence(
+    presence: Partial<PresenceState> & { userId: string; username: string }
+  ): AwarenessPayload | null {
     const now = Date.now();
     const userId = presence.userId;
 
@@ -447,7 +449,9 @@ export class AwarenessManager {
 /**
  * Create awareness manager instance
  */
-export function createAwarenessManager(config?: Partial<AwarenessConfig>): AwarenessManager {
+export function createAwarenessManager(
+  config?: Partial<AwarenessConfig>
+): AwarenessManager {
   return new AwarenessManager(config);
 }
 

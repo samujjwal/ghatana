@@ -8,32 +8,32 @@ export interface PaginationProps {
    * Current page (1-indexed)
    */
   currentPage: number;
-  
+
   /**
    * Total number of pages
    */
   totalPages: number;
-  
+
   /**
    * Callback when page changes
    */
   onPageChange: (page: number) => void;
-  
+
   /**
    * Number of page buttons to show
    */
   siblingCount?: number;
-  
+
   /**
    * Show first/last buttons
    */
   showFirstLast?: boolean;
-  
+
   /**
    * Disabled state
    */
   disabled?: boolean;
-  
+
   /**
    * Additional class name
    */
@@ -42,7 +42,7 @@ export interface PaginationProps {
 
 /**
  * Pagination component for navigating through pages
- * 
+ *
  * @example
  * ```tsx
  * <Pagination

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Command Palette Component
- * 
+ *
  * Command palette for quick command execution with search.
  * Integrates with keyboard shortcuts hook.
- * 
+ *
  * @doc.type component
  * @doc.purpose Command palette for IDE
  * @doc.layer product
@@ -65,9 +65,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 key={command.id}
                 className={`
                   flex items-center gap-3 px-4 py-3 cursor-pointer
-                  ${index === selectedIndex
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                  ${
+                    index === selectedIndex
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }
                 `}
                 onClick={() => {
@@ -82,7 +83,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   </div>
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                  {[...command.modifiers, command.key.toUpperCase()].join(' + ')}
+                  {[...command.modifiers, command.key.toUpperCase()].join(
+                    ' + '
+                  )}
                 </div>
               </div>
             ))

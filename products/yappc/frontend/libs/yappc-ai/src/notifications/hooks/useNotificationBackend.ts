@@ -1,9 +1,9 @@
 /**
  * Notification Backend Integration Hook
- * 
+ *
  * Integrates notification functionality with backend NotificationHandler via WebSocket.
  * Handles real-time notification delivery, read status, and dismissal.
- * 
+ *
  * @module notifications/hooks
  * @doc.type integration
  * @doc.purpose Real-time notification system with backend
@@ -16,14 +16,14 @@ import { type WebSocketClient } from '@yappc/ai/realtime';
 /**
  * Notification types
  */
-export type NotificationType = 
-  | 'info' 
-  | 'success' 
-  | 'warning' 
-  | 'error' 
-  | 'mention' 
-  | 'assignment' 
-  | 'approval' 
+export type NotificationType =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'mention'
+  | 'assignment'
+  | 'approval'
   | 'system';
 
 /**
@@ -93,35 +93,35 @@ export interface NotificationState {
 export interface UseNotificationBackendConfig {
   /** WebSocket client instance */
   wsClient: WebSocketClient;
-  
+
   /** Current user ID */
   userId: string;
-  
+
   /** Maximum notifications to keep in memory */
   maxNotifications?: number;
-  
+
   /** Auto-dismiss after milliseconds (0 = never) */
   autoDismissAfter?: number;
-  
+
   /** Callback when notification received */
   onNotificationReceived?: (notification: Notification) => void;
-  
+
   /** Callback when notification read */
   onNotificationRead?: (notificationId: string) => void;
-  
+
   /** Callback when notification dismissed */
   onNotificationDismissed?: (notificationId: string) => void;
-  
+
   /** Enable debug logging */
   debug?: boolean;
 }
 
 /**
  * Notification Backend Integration Hook
- * 
+ *
  * Connects notification UI to backend NotificationHandler via WebSocket.
  * Handles all notification operations with proper state management.
- * 
+ *
  * Features:
  * - Real-time notification delivery
  * - Read/unread tracking
@@ -130,7 +130,7 @@ export interface UseNotificationBackendConfig {
  * - Priority-based sorting
  * - Unread count tracking
  * - Maximum notification limit
- * 
+ *
  * @example
  * ```tsx
  * const notifications = useNotificationBackend({
@@ -145,16 +145,16 @@ export interface UseNotificationBackendConfig {
  *     }
  *   },
  * });
- * 
+ *
  * // Mark as read
  * notifications.markAsRead(notificationId);
- * 
+ *
  * // Dismiss
  * notifications.dismiss(notificationId);
- * 
+ *
  * // Mark all as read
  * notifications.markAllAsRead();
- * 
+ *
  * // Clear all
  * notifications.clearAll();
  * ```
@@ -193,23 +193,27 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
   /**
    * Sort notifications by priority and timestamp
    */
-  const sortNotifications = useCallback((notifications: Notification[]): Notification[] => {
-    const priorityOrder: Record<NotificationPriority, number> = {
-      urgent: 0,
-      high: 1,
-      normal: 2,
-      low: 3,
-    };
+  const sortNotifications = useCallback(
+    (notifications: Notification[]): Notification[] => {
+      const priorityOrder: Record<NotificationPriority, number> = {
+        urgent: 0,
+        high: 1,
+        normal: 2,
+        low: 3,
+      };
 
-    return [...notifications].sort((a, b) => {
-      // First by priority
-      const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-      if (priorityDiff !== 0) return priorityDiff;
-      
-      // Then by timestamp (newest first)
-      return b.timestamp - a.timestamp;
-    });
-  }, []);
+      return [...notifications].sort((a, b) => {
+        // First by priority
+        const priorityDiff =
+          priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityDiff !== 0) return priorityDiff;
+
+        // Then by timestamp (newest first)
+        return b.timestamp - a.timestamp;
+      });
+    },
+    []
+  );
 
   /**
    * Update unread count
@@ -221,25 +225,28 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
   /**
    * Add notification to state
    */
-  const addNotification = useCallback((notification: Notification) => {
-    setState((prev) => {
-      let newNotifications = [notification, ...prev.notifications];
-      
-      // Limit to max notifications
-      if (newNotifications.length > maxNotifications) {
-        newNotifications = newNotifications.slice(0, maxNotifications);
-      }
-      
-      // Sort by priority
-      newNotifications = sortNotifications(newNotifications);
-      
-      return {
-        ...prev,
-        notifications: newNotifications,
-        unreadCount: updateUnreadCount(newNotifications),
-      };
-    });
-  }, [maxNotifications, sortNotifications, updateUnreadCount]);
+  const addNotification = useCallback(
+    (notification: Notification) => {
+      setState((prev) => {
+        let newNotifications = [notification, ...prev.notifications];
+
+        // Limit to max notifications
+        if (newNotifications.length > maxNotifications) {
+          newNotifications = newNotifications.slice(0, maxNotifications);
+        }
+
+        // Sort by priority
+        newNotifications = sortNotifications(newNotifications);
+
+        return {
+          ...prev,
+          notifications: newNotifications,
+          unreadCount: updateUnreadCount(newNotifications),
+        };
+      });
+    },
+    [maxNotifications, sortNotifications, updateUnreadCount]
+  );
 
   /**
    * Mark notification as read
@@ -310,7 +317,10 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
    */
   const markAllAsRead = useCallback(() => {
     setState((prev) => {
-      const newNotifications = prev.notifications.map((n) => ({ ...n, read: true }));
+      const newNotifications = prev.notifications.map((n) => ({
+        ...n,
+        read: true,
+      }));
       return {
         ...prev,
         notifications: newNotifications,
@@ -342,39 +352,53 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
    * Handle incoming notifications
    */
   useEffect(() => {
-    const unsubscribe = wsClient.on<Notification>('notification.send', (notification) => {
-      // Ignore if not for current user
-      if (notification.userId !== userId) {
-        return;
+    const unsubscribe = wsClient.on<Notification>(
+      'notification.send',
+      (notification) => {
+        // Ignore if not for current user
+        if (notification.userId !== userId) {
+          return;
+        }
+
+        log('Received notification:', notification);
+
+        // Add to state
+        addNotification(notification);
+
+        // Notify callback
+        onNotificationReceived?.(notification);
+
+        // Auto-dismiss if configured
+        if (autoDismissAfter > 0) {
+          setTimeout(() => {
+            dismiss(notification.id);
+          }, autoDismissAfter);
+        }
       }
-
-      log('Received notification:', notification);
-
-      // Add to state
-      addNotification(notification);
-
-      // Notify callback
-      onNotificationReceived?.(notification);
-
-      // Auto-dismiss if configured
-      if (autoDismissAfter > 0) {
-        setTimeout(() => {
-          dismiss(notification.id);
-        }, autoDismissAfter);
-      }
-    });
+    );
 
     return unsubscribe;
-  }, [wsClient, userId, addNotification, onNotificationReceived, autoDismissAfter, dismiss, log]);
+  }, [
+    wsClient,
+    userId,
+    addNotification,
+    onNotificationReceived,
+    autoDismissAfter,
+    dismiss,
+    log,
+  ]);
 
   /**
    * Handle read confirmations
    */
   useEffect(() => {
-    const unsubscribe = wsClient.on<NotificationReadPayload>('notification.read', (payload) => {
-      log('Notification read confirmed:', payload.notificationId);
-      onNotificationRead?.(payload.notificationId);
-    });
+    const unsubscribe = wsClient.on<NotificationReadPayload>(
+      'notification.read',
+      (payload) => {
+        log('Notification read confirmed:', payload.notificationId);
+        onNotificationRead?.(payload.notificationId);
+      }
+    );
 
     return unsubscribe;
   }, [wsClient, onNotificationRead, log]);
@@ -383,10 +407,13 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
    * Handle dismiss confirmations
    */
   useEffect(() => {
-    const unsubscribe = wsClient.on<NotificationDismissPayload>('notification.dismiss', (payload) => {
-      log('Notification dismiss confirmed:', payload.notificationId);
-      onNotificationDismissed?.(payload.notificationId);
-    });
+    const unsubscribe = wsClient.on<NotificationDismissPayload>(
+      'notification.dismiss',
+      (payload) => {
+        log('Notification dismiss confirmed:', payload.notificationId);
+        onNotificationDismissed?.(payload.notificationId);
+      }
+    );
 
     return unsubscribe;
   }, [wsClient, onNotificationDismissed, log]);
@@ -441,19 +468,22 @@ export function useNotificationBackend(config: UseNotificationBackendConfig) {
     notifications: state.notifications.filter((n) => !n.dismissed),
     unreadCount: state.unreadCount,
     isConnected: state.isConnected,
-    
+
     // Actions
     markAsRead,
     dismiss,
     markAllAsRead,
     clearAll,
-    
+
     // Helpers
-    getUnreadNotifications: () => state.notifications.filter((n) => !n.read && !n.dismissed),
-    getNotificationsByType: (type: NotificationType) => 
+    getUnreadNotifications: () =>
+      state.notifications.filter((n) => !n.read && !n.dismissed),
+    getNotificationsByType: (type: NotificationType) =>
       state.notifications.filter((n) => n.type === type && !n.dismissed),
-    getNotificationsByPriority: (priority: NotificationPriority) => 
-      state.notifications.filter((n) => n.priority === priority && !n.dismissed),
+    getNotificationsByPriority: (priority: NotificationPriority) =>
+      state.notifications.filter(
+        (n) => n.priority === priority && !n.dismissed
+      ),
   };
 }
 

@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  * Menu shape variants
  */
@@ -115,7 +114,7 @@ export interface MenuDividerProps {
 
 /**
  * Menu component for dropdown selections using Base UI primitives.
- * 
+ *
  * Features:
  * - 3 shape variants: rounded, soft, square
  * - 5 elevation levels (shadow depth)
@@ -123,7 +122,7 @@ export interface MenuDividerProps {
  * - Focus management and restoration
  * - Click-outside to close
  * - Accessible with proper ARIA attributes
- * 
+ *
  * @example
  * ```tsx
  * <Menu
@@ -153,18 +152,18 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(
   ) => {
     // Shape classes for border radius
     const shapeClasses: Record<MenuShape, string> = {
-      rounded: 'rounded-md',  // 6px
-      soft: 'rounded-lg',     // 8px
-      square: 'rounded-sm',   // 2px
+      rounded: 'rounded-md', // 6px
+      soft: 'rounded-lg', // 8px
+      square: 'rounded-sm', // 2px
     };
 
     // Elevation classes for box shadow
     const elevationClasses: Record<MenuElevation, string> = {
       0: 'shadow-none',
-      1: 'shadow-sm',    // 0 1px 2px
-      2: 'shadow',       // 0 1px 3px
-      4: 'shadow-md',    // 0 4px 6px
-      8: 'shadow-lg',    // 0 10px 15px
+      1: 'shadow-sm', // 0 1px 2px
+      2: 'shadow', // 0 1px 3px
+      4: 'shadow-md', // 0 4px 6px
+      8: 'shadow-lg', // 0 10px 15px
     };
 
     return (
@@ -204,18 +203,18 @@ Menu.displayName = 'Menu';
 
 /**
  * MenuItem component for menu options.
- * 
+ *
  * Features:
  * - Optional icon and secondary text
  * - Dense padding variant
  * - Hover and focus states
  * - Keyboard navigation support
  * - Disabled state
- * 
+ *
  * @example
  * ```tsx
- * <MenuItem 
- *   icon={<HomeIcon />} 
+ * <MenuItem
+ *   icon={<HomeIcon />}
  *   text="Home"
  *   secondaryText="Go to homepage"
  * />
@@ -280,14 +279,10 @@ export const MenuItem = forwardRef<HTMLDivElement, MenuItemProps>(
         )}
         <div className="flex-1">
           {text && (
-            <div className={dense ? 'text-sm' : 'text-base'}>
-              {text}
-            </div>
+            <div className={dense ? 'text-sm' : 'text-base'}>{text}</div>
           )}
           {secondaryText && (
-            <div className="text-xs text-grey-600 mt-0.5">
-              {secondaryText}
-            </div>
+            <div className="text-xs text-grey-600 mt-0.5">{secondaryText}</div>
           )}
         </div>
       </BaseMenu.Item>
@@ -299,7 +294,7 @@ MenuItem.displayName = 'MenuItem';
 
 /**
  * MenuDivider component for separating menu sections.
- * 
+ *
  * @example
  * ```tsx
  * <MenuItem text="Copy" />
@@ -313,10 +308,7 @@ export const MenuDivider = forwardRef<HTMLHRElement, MenuDividerProps>(
     return (
       <hr
         ref={ref}
-        className={cn(
-          'my-2 mx-2 border-t border-grey-200',
-          className
-        )}
+        className={cn('my-2 mx-2 border-t border-grey-200', className)}
       />
     );
   }

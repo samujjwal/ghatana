@@ -1,7 +1,15 @@
-import { useState } from 'react'
+import { useState } from 'react';
 
-import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/design-system';interface RegisterFormProps {
-  onSwitchToLogin?: () => void
+import {
+  TextField,
+  Button,
+  Box,
+  Alert,
+  Link,
+  Typography,
+} from '@ghatana/design-system';
+interface RegisterFormProps {
+  onSwitchToLogin?: () => void;
 }
 
 const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
@@ -10,41 +18,42 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
     password: '',
     confirmPassword: '',
     name: '',
-  })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: event.target.value
-    }))
-  }
+  const handleChange =
+    (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: event.target.value,
+      }));
+    };
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setError('')
-    setLoading(true)
+    event.preventDefault();
+    setError('');
+    setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
     }
 
     try {
       // NOTE: Implement actual registration logic with GraphQL mutation
-      console.log('Registering user:', formData)
+      console.log('Registering user:', formData);
       // Mock success
       if (onSwitchToLogin) {
-        onSwitchToLogin()
+        onSwitchToLogin();
       }
     } catch (err) {
-      setError('Registration failed. Please try again.')
+      setError('Registration failed. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Box component="form" onSubmit={handleSubmit} className="mt-2">
@@ -124,7 +133,7 @@ const RegisterForm = ({ onSwitchToLogin }: RegisterFormProps) => {
         </Box>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default RegisterForm
+export default RegisterForm;

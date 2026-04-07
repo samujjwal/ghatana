@@ -10,16 +10,16 @@ export {
   // Main components
   CanvasProvider,
   CanvasFlow,
-  
+
   // Hooks
   useCanvas,
-  
+
   // Types
   type CanvasProviderProps,
   type CanvasFlowProps,
   type CanvasContextValue,
   type CanvasAPI,
-  
+
   // Event types
   type CanvasChangeEvent,
   type CanvasChange,

@@ -20,7 +20,6 @@ import {
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
-
 import {
   sprintsAtom,
   activeSprintAtom,
@@ -123,7 +122,12 @@ export function useSprint(sprintId: string | undefined) {
   const runSprintQuery = useQuery as unknown as (
     query: unknown,
     options: unknown
-  ) => { data?: SprintData; loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  ) => {
+    data?: SprintData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
   const { data, loading, error, refetch } = runSprintQuery(GET_SPRINT, {
     variables: { id: sprintId },
     skip: !sprintId,
@@ -140,11 +144,21 @@ export function useSprint(sprintId: string | undefined) {
 /**
  * Hook for listing sprints
  */
-export function useSprints(projectId: string, status?: 'planned' | 'active' | 'completed') {
+export function useSprints(
+  projectId: string,
+  status?: 'planned' | 'active' | 'completed'
+) {
   type Sprint = { [key: string]: unknown };
   type SprintsQueryResult = { sprints?: Sprint[] };
-  type SprintsQueryState = { loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
-  const runSprintsQuery = useQuery as unknown as (query: unknown, options: unknown) => SprintsQueryState;
+  type SprintsQueryState = {
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  const runSprintsQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => SprintsQueryState;
   const [sprints, setSprints] = useAtom(sprintsAtom);
 
   const { loading, error, refetch } = runSprintsQuery(LIST_SPRINTS, {
@@ -172,11 +186,21 @@ export function useActiveSprint(projectId: string) {
   type Sprint = { id?: string; [key: string]: unknown };
   type ActiveSprintQueryResult = { activeSprint?: Sprint };
   type BoardColumn = { [key: string]: unknown };
-  type ActiveSprintQueryState = { loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  type ActiveSprintQueryState = {
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
   type SprintUpdatePayload = { sprintUpdated?: { sprint?: Sprint } };
   type SprintSubscriptionState = { data?: SprintUpdatePayload };
-  const runActiveSprintQuery = useQuery as unknown as (query: unknown, options: unknown) => ActiveSprintQueryState;
-  const runSprintSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => SprintSubscriptionState;
+  const runActiveSprintQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => ActiveSprintQueryState;
+  const runSprintSubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => SprintSubscriptionState;
 
   const [activeSprint, setActiveSprint] = useAtom(activeSprintAtom);
   const [boardColumns, setBoardColumns] = useAtom(boardColumnsAtom);
@@ -217,16 +241,33 @@ export function useActiveSprint(projectId: string) {
 export function useSprintMutations(projectId: string) {
   type SprintMutationResult = { [key: string]: unknown };
   type MutationState = { loading: boolean };
-  const runSprintMutation = useMutation as unknown as (mutation: unknown) => [(args: unknown) => Promise<{ data?: SprintMutationResult }>, MutationState];
+  const runSprintMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: unknown) => Promise<{ data?: SprintMutationResult }>,
+    MutationState,
+  ];
 
-  const [createMutationValue, { loading: creating }] = runSprintMutation(CREATE_SPRINT);
-  const createMutation = createMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
-  const [updateMutationValue, { loading: updating }] = runSprintMutation(UPDATE_SPRINT);
-  const updateMutation = updateMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
-  const [startMutationValue, { loading: starting }] = runSprintMutation(START_SPRINT);
-  const startMutation = startMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
-  const [completeMutationValue, { loading: completing }] = runSprintMutation(COMPLETE_SPRINT);
-  const completeMutation = completeMutationValue as (args: unknown) => Promise<{ data?: SprintMutationResult }>;
+  const [createMutationValue, { loading: creating }] =
+    runSprintMutation(CREATE_SPRINT);
+  const createMutation = createMutationValue as (
+    args: unknown
+  ) => Promise<{ data?: SprintMutationResult }>;
+  const [updateMutationValue, { loading: updating }] =
+    runSprintMutation(UPDATE_SPRINT);
+  const updateMutation = updateMutationValue as (
+    args: unknown
+  ) => Promise<{ data?: SprintMutationResult }>;
+  const [startMutationValue, { loading: starting }] =
+    runSprintMutation(START_SPRINT);
+  const startMutation = startMutationValue as (
+    args: unknown
+  ) => Promise<{ data?: SprintMutationResult }>;
+  const [completeMutationValue, { loading: completing }] =
+    runSprintMutation(COMPLETE_SPRINT);
+  const completeMutation = completeMutationValue as (
+    args: unknown
+  ) => Promise<{ data?: SprintMutationResult }>;
 
   const create = useCallback(
     async (input: CreateSprintInput) => {
@@ -427,11 +468,15 @@ export function useStoryMutations(projectId: string) {
   const [updateMutation, { loading: updating }] = useMutation(UPDATE_STORY);
   const [deleteMutation, { loading: deleting }] = useMutation(DELETE_STORY);
   const [moveMutation, { loading: moving }] = useMutation(MOVE_STORY);
-  const [updateStatusMutation, { loading: updatingStatus }] = useMutation(UPDATE_STORY_STATUS);
+  const [updateStatusMutation, { loading: updatingStatus }] =
+    useMutation(UPDATE_STORY_STATUS);
   const [assignMutation, { loading: assigning }] = useMutation(ASSIGN_STORY);
-  const [addCommentMutation, { loading: addingComment }] = useMutation(ADD_STORY_COMMENT);
-  const [logTimeMutation, { loading: loggingTime }] = useMutation(LOG_STORY_TIME);
-  const [createSubtaskMutation, { loading: creatingSubtask }] = useMutation(CREATE_SUBTASK);
+  const [addCommentMutation, { loading: addingComment }] =
+    useMutation(ADD_STORY_COMMENT);
+  const [logTimeMutation, { loading: loggingTime }] =
+    useMutation(LOG_STORY_TIME);
+  const [createSubtaskMutation, { loading: creatingSubtask }] =
+    useMutation(CREATE_SUBTASK);
   const [toggleSubtaskMutation] = useMutation(TOGGLE_SUBTASK);
 
   const create = useCallback(
@@ -513,7 +558,9 @@ export function useStoryMutations(projectId: string) {
 
   const addComment = useCallback(
     async (storyId: string, input: AddCommentInput) => {
-      const result = await addCommentMutation({ variables: { storyId, input } });
+      const result = await addCommentMutation({
+        variables: { storyId, input },
+      });
       return result.data?.addStoryComment;
     },
     [addCommentMutation]
@@ -529,7 +576,9 @@ export function useStoryMutations(projectId: string) {
 
   const createSubtask = useCallback(
     async (storyId: string, input: CreateSubtaskInput) => {
-      const result = await createSubtaskMutation({ variables: { storyId, input } });
+      const result = await createSubtaskMutation({
+        variables: { storyId, input },
+      });
       return result.data?.createSubtask;
     },
     [createSubtaskMutation]
@@ -606,18 +655,22 @@ export function usePullRequests(
   const { filter, pageSize = 20 } = options ?? {};
   const [pullRequests, setPullRequests] = useAtom(pullRequestsAtom);
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(LIST_PULL_REQUESTS, {
-    variables: {
-      projectId,
-      filter,
-      pagination: { first: pageSize },
-    },
-    skip: !projectId,
-    onCompleted: (data) => {
-      const prs = data?.pullRequests?.edges?.map((e: unknown) => e.node) ?? [];
-      setPullRequests(prs);
-    },
-  });
+  const { data, loading, error, fetchMore, refetch } = useQuery(
+    LIST_PULL_REQUESTS,
+    {
+      variables: {
+        projectId,
+        filter,
+        pagination: { first: pageSize },
+      },
+      skip: !projectId,
+      onCompleted: (data) => {
+        const prs =
+          data?.pullRequests?.edges?.map((e: unknown) => e.node) ?? [];
+        setPullRequests(prs);
+      },
+    }
+  );
 
   const loadMore = useCallback(() => {
     if (!data?.pullRequests?.pageInfo?.hasNextPage) return;
@@ -646,12 +699,16 @@ export function usePullRequests(
  * Hook for pull request mutations
  */
 export function usePullRequestMutations(projectId: string) {
-  const [createMutation, { loading: creating }] = useMutation(CREATE_PULL_REQUEST);
-  const [updateMutation, { loading: updating }] = useMutation(UPDATE_PULL_REQUEST);
+  const [createMutation, { loading: creating }] =
+    useMutation(CREATE_PULL_REQUEST);
+  const [updateMutation, { loading: updating }] =
+    useMutation(UPDATE_PULL_REQUEST);
   const [mergeMutation, { loading: merging }] = useMutation(MERGE_PULL_REQUEST);
   const [closeMutation, { loading: closing }] = useMutation(CLOSE_PULL_REQUEST);
-  const [requestReviewMutation, { loading: requestingReview }] = useMutation(REQUEST_PR_REVIEW);
-  const [submitReviewMutation, { loading: submittingReview }] = useMutation(SUBMIT_PR_REVIEW);
+  const [requestReviewMutation, { loading: requestingReview }] =
+    useMutation(REQUEST_PR_REVIEW);
+  const [submitReviewMutation, { loading: submittingReview }] =
+    useMutation(SUBMIT_PR_REVIEW);
 
   const create = useCallback(
     async (input: CreatePullRequestInput) => {
@@ -779,10 +836,14 @@ export function useFeatureFlags(projectId: string, filter?: FeatureFlagFilter) {
 export function useFeatureFlagMutations(projectId: string) {
   const toggleFlagAction = useSetAtom(toggleFeatureFlagAction);
 
-  const [createMutation, { loading: creating }] = useMutation(CREATE_FEATURE_FLAG);
-  const [updateMutation, { loading: updating }] = useMutation(UPDATE_FEATURE_FLAG);
-  const [toggleMutation, { loading: toggling }] = useMutation(TOGGLE_FEATURE_FLAG);
-  const [deleteMutation, { loading: deleting }] = useMutation(DELETE_FEATURE_FLAG);
+  const [createMutation, { loading: creating }] =
+    useMutation(CREATE_FEATURE_FLAG);
+  const [updateMutation, { loading: updating }] =
+    useMutation(UPDATE_FEATURE_FLAG);
+  const [toggleMutation, { loading: toggling }] =
+    useMutation(TOGGLE_FEATURE_FLAG);
+  const [deleteMutation, { loading: deleting }] =
+    useMutation(DELETE_FEATURE_FLAG);
 
   const create = useCallback(
     async (input: CreateFeatureFlagInput) => {
@@ -845,18 +906,22 @@ export function useDeployments(
   const { environment, pageSize = 20 } = options ?? {};
   const [deployments, setDeployments] = useAtom(deploymentsAtom);
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(LIST_DEPLOYMENTS, {
-    variables: {
-      projectId,
-      environment,
-      pagination: { first: pageSize },
-    },
-    skip: !projectId,
-    onCompleted: (data) => {
-      const deps = data?.deployments?.edges?.map((e: unknown) => e.node) ?? [];
-      setDeployments(deps);
-    },
-  });
+  const { data, loading, error, fetchMore, refetch } = useQuery(
+    LIST_DEPLOYMENTS,
+    {
+      variables: {
+        projectId,
+        environment,
+        pagination: { first: pageSize },
+      },
+      skip: !projectId,
+      onCompleted: (data) => {
+        const deps =
+          data?.deployments?.edges?.map((e: unknown) => e.node) ?? [];
+        setDeployments(deps);
+      },
+    }
+  );
 
   const loadMore = useCallback(() => {
     if (!data?.deployments?.pageInfo?.hasNextPage) return;
@@ -885,9 +950,12 @@ export function useDeployments(
  * Hook for deployment mutations
  */
 export function useDeploymentMutations(projectId: string) {
-  const [triggerMutation, { loading: triggering }] = useMutation(TRIGGER_DEPLOYMENT);
-  const [rollbackMutation, { loading: rollingBack }] = useMutation(ROLLBACK_DEPLOYMENT);
-  const [cancelMutation, { loading: canceling }] = useMutation(CANCEL_DEPLOYMENT);
+  const [triggerMutation, { loading: triggering }] =
+    useMutation(TRIGGER_DEPLOYMENT);
+  const [rollbackMutation, { loading: rollingBack }] =
+    useMutation(ROLLBACK_DEPLOYMENT);
+  const [cancelMutation, { loading: canceling }] =
+    useMutation(CANCEL_DEPLOYMENT);
 
   const trigger = useCallback(
     async (input: TriggerDeploymentInput) => {

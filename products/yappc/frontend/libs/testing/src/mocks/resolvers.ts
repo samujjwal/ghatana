@@ -76,9 +76,10 @@ export const resolvers = {
       // If running in a browser during e2e and tests seeded workspaces into localStorage,
       // prefer those so Playwright/global-setup can deterministically control mock responses.
       try {
-         
         if (typeof window !== 'undefined' && (window as unknown).localStorage) {
-          const raw = (window as unknown).localStorage.getItem('e2e:mockWorkspaces');
+          const raw = (window as unknown).localStorage.getItem(
+            'e2e:mockWorkspaces'
+          );
           if (raw) {
             const parsed = JSON.parse(raw) as Workspace[];
             if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -90,15 +91,22 @@ export const resolvers = {
           // allow this to be async via a synchronous-like fetch using a cached sync variable isn't possible here,
           // but we can block via a sync XHR is not available. Instead, try a fast synchronous Promise resolution via fetch
           // Note: resolvers are called synchronously in some environments; fetch may be unavailable. We attempt fetch and ignore failures.
-           
+
           void (async () => {
             try {
               const resp = await fetch('/__e2e__/mock-data.json');
               if (resp && resp.ok) {
                 const json = await resp.json();
-                if (json && Array.isArray(json.workspaces) && json.workspaces.length > 0) {
+                if (
+                  json &&
+                  Array.isArray(json.workspaces) &&
+                  json.workspaces.length > 0
+                ) {
                   // Mutate the in-memory mockWorkspaces so subsequent calls use it
-                  try { (mockWorkspaces as unknown).length = 0; (mockWorkspaces as unknown).push(...json.workspaces); } catch (e) {}
+                  try {
+                    (mockWorkspaces as unknown).length = 0;
+                    (mockWorkspaces as unknown).push(...json.workspaces);
+                  } catch (e) {}
                 }
               }
             } catch (e) {
@@ -114,10 +122,15 @@ export const resolvers = {
     projects: (_: unknown, { workspaceId }: { workspaceId: string }) => {
       try {
         if (typeof window !== 'undefined' && (window as unknown).localStorage) {
-          const raw = (window as unknown).localStorage.getItem('e2e:mockProjects');
+          const raw = (window as unknown).localStorage.getItem(
+            'e2e:mockProjects'
+          );
           if (raw) {
             const parsed = JSON.parse(raw) as Project[];
-            if (Array.isArray(parsed)) return parsed.filter((p: Project) => p.workspaceId === workspaceId);
+            if (Array.isArray(parsed))
+              return parsed.filter(
+                (p: Project) => p.workspaceId === workspaceId
+              );
           }
         }
 
@@ -128,7 +141,10 @@ export const resolvers = {
               if (resp && resp.ok) {
                 const json = await resp.json();
                 if (json && Array.isArray(json.projects)) {
-                  try { (mockProjects as unknown).length = 0; (mockProjects as unknown).push(...json.projects); } catch (e) {}
+                  try {
+                    (mockProjects as unknown).length = 0;
+                    (mockProjects as unknown).push(...json.projects);
+                  } catch (e) {}
                 }
               }
             } catch (e) {
@@ -153,15 +169,21 @@ export const resolvers = {
     notificationsForUser: () => [],
   },
   Mutation: {
-    updateTaskStatus: (_: unknown, { taskId, status }: { taskId: string; status: string }) => {
-      const task = mockTasks.find(t => t.id === taskId);
+    updateTaskStatus: (
+      _: unknown,
+      { taskId, status }: { taskId: string; status: string }
+    ) => {
+      const task = mockTasks.find((t) => t.id === taskId);
       if (task) {
         task.status = status as unknown;
         task.updatedAt = new Date().toISOString();
       }
       return task;
     },
-    addComment: (_: unknown, { taskId, content }: { taskId: string; content: string }) => ({
+    addComment: (
+      _: unknown,
+      { taskId, content }: { taskId: string; content: string }
+    ) => ({
       id: `c${Date.now()}`,
       taskId,
       authorId: 'u1',

@@ -42,80 +42,80 @@ export type ThemeMode = 'light' | 'dark' | 'custom';
 
 /**
  * Built-in light theme
- * 
+ *
  * All values now reference shared design tokens from @ghatana/yappc-shared-ui-core/tokens.
  * This ensures Canvas themes stay consistent with the rest of the application.
  */
 export const LIGHT_THEME: CanvasTheme = {
   colors: {
-    background: lightColors.background.default,  // Uses shared light theme default background
-    grid: palette.neutral[200],                  // Light neutral for grid
-    selection: palette.primary[500],             // Primary color for selection
-    hover: palette.primary[400],                 // Lighter primary for hover
-    focus: palette.primary[600],                 // Darker primary for focus
-    error: palette.error.main,                   // Semantic error color
-    success: palette.success.main,               // Semantic success color
-    warning: palette.warning.main,               // Semantic warning color
+    background: lightColors.background.default, // Uses shared light theme default background
+    grid: palette.neutral[200], // Light neutral for grid
+    selection: palette.primary[500], // Primary color for selection
+    hover: palette.primary[400], // Lighter primary for hover
+    focus: palette.primary[600], // Darker primary for focus
+    error: palette.error.main, // Semantic error color
+    success: palette.success.main, // Semantic success color
+    warning: palette.warning.main, // Semantic warning color
   },
   spacing: {
-    xs: spacing[1],     // 4px
-    sm: spacing[2],     // 8px
-    md: spacing[4],     // 16px
-    lg: spacing[6],     // 24px
-    xl: spacing[8],     // 32px
+    xs: spacing[1], // 4px
+    sm: spacing[2], // 8px
+    md: spacing[4], // 16px
+    lg: spacing[6], // 24px
+    xl: spacing[8], // 32px
   },
   borderRadius: {
-    sm: borderRadius.sm,   // 4px
-    md: borderRadius.md,   // 8px
-    lg: borderRadius.lg,   // 12px
+    sm: borderRadius.sm, // 4px
+    md: borderRadius.md, // 8px
+    lg: borderRadius.lg, // 12px
   },
   shadows: {
-    sm: lightShadows[1],   // Subtle shadow
-    md: lightShadows[2],   // Medium shadow
-    lg: lightShadows[3],   // Large shadow
+    sm: lightShadows[1], // Subtle shadow
+    md: lightShadows[2], // Medium shadow
+    lg: lightShadows[3], // Large shadow
   },
   typography: {
     fontFamily: fontFamilies.primary,
     fontSize: {
-      xs: 12,              // fontSizes.xs is 0.75rem, convert to px
-      sm: 14,              // fontSizes.sm is 0.875rem
-      md: 16,              // fontSizes.md is 1rem
-      lg: 18,              // fontSizes.lg is 1.125rem
-      xl: 20,              // fontSizes.xl is 1.25rem
+      xs: 12, // fontSizes.xs is 0.75rem, convert to px
+      sm: 14, // fontSizes.sm is 0.875rem
+      md: 16, // fontSizes.md is 1rem
+      lg: 18, // fontSizes.lg is 1.125rem
+      xl: 20, // fontSizes.xl is 1.25rem
     },
     fontWeight: {
-      normal: fontWeights.regular,  // 400
-      medium: fontWeights.medium,   // 500
-      bold: fontWeights.bold,       // 700
+      normal: fontWeights.regular, // 400
+      medium: fontWeights.medium, // 500
+      bold: fontWeights.bold, // 700
     },
   },
 };
 
 /**
  * Built-in dark theme
- * 
+ *
  * All values now reference shared design tokens from @ghatana/yappc-shared-ui-core/tokens.
  * This ensures Canvas themes stay consistent with the rest of the application.
  */
 export const DARK_THEME: CanvasTheme = {
   colors: {
-    background: darkColors.background.default,   // Uses shared dark theme default background
-    grid: palette.neutral[700],                  // Dark neutral for grid
-    selection: palette.primary[400],             // Lighter primary for dark mode selection
-    hover: palette.primary[300],                 // Even lighter for hover
-    focus: palette.primary[500],                 // Standard primary for focus
-    error: palette.error.light,                  // Lighter error for dark mode
-    success: palette.success.light,              // Lighter success for dark mode
-    warning: palette.warning.light,              // Lighter warning for dark mode
+    background: darkColors.background.default, // Uses shared dark theme default background
+    grid: palette.neutral[700], // Dark neutral for grid
+    selection: palette.primary[400], // Lighter primary for dark mode selection
+    hover: palette.primary[300], // Even lighter for hover
+    focus: palette.primary[500], // Standard primary for focus
+    error: palette.error.light, // Lighter error for dark mode
+    success: palette.success.light, // Lighter success for dark mode
+    warning: palette.warning.light, // Lighter warning for dark mode
   },
-  spacing: LIGHT_THEME.spacing,                  // Spacing is theme-agnostic
-  borderRadius: LIGHT_THEME.borderRadius,        // Border radius is theme-agnostic
+  spacing: LIGHT_THEME.spacing, // Spacing is theme-agnostic
+  borderRadius: LIGHT_THEME.borderRadius, // Border radius is theme-agnostic
   shadows: {
-    sm: darkShadows[1],    // Dark mode shadow (more opacity)
-    md: darkShadows[2],    // Dark mode shadow
-    lg: darkShadows[3],    // Dark mode shadow
+    sm: darkShadows[1], // Dark mode shadow (more opacity)
+    md: darkShadows[2], // Dark mode shadow
+    lg: darkShadows[3], // Dark mode shadow
   },
-  typography: LIGHT_THEME.typography,            // Typography is theme-agnostic
+  typography: LIGHT_THEME.typography, // Typography is theme-agnostic
 };
 
 /**
@@ -133,7 +133,8 @@ export class ThemeManager {
   private currentTheme: CanvasTheme = LIGHT_THEME;
   private currentMode: ThemeMode = 'light';
   private customThemes: Map<string, CanvasTheme> = new Map();
-  private listeners: Set<(theme: CanvasTheme, mode: ThemeMode) => void> = new Set();
+  private listeners: Set<(theme: CanvasTheme, mode: ThemeMode) => void> =
+    new Set();
   private styleElement: HTMLStyleElement | null = null;
 
   /**
@@ -278,7 +279,9 @@ export class ThemeManager {
   /**
    * Subscribe to theme changes
    */
-  subscribe(listener: (theme: CanvasTheme, mode: ThemeMode) => void): () => void {
+  subscribe(
+    listener: (theme: CanvasTheme, mode: ThemeMode) => void
+  ): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
@@ -295,7 +298,10 @@ export class ThemeManager {
   /**
    * Deep merge two objects
    */
-  private deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+  private deepMerge<T extends Record<string, unknown>>(
+    target: T,
+    source: Partial<T>
+  ): T {
     const output = { ...target };
 
     for (const key in source) {
@@ -326,7 +332,9 @@ export class ThemeManager {
   detectSystemTheme(): 'light' | 'dark' {
     if (typeof window === 'undefined') return 'light';
 
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)'
+    ).matches;
     return prefersDark ? 'dark' : 'light';
   }
 
@@ -373,7 +381,7 @@ export class ThemeManager {
       if (!stored) return false;
 
       const { mode, theme } = JSON.parse(stored);
-      
+
       if (mode === 'custom' && theme) {
         this.registerCustomTheme('persisted', theme);
         this.setTheme('custom', 'persisted');
@@ -409,7 +417,9 @@ export const globalThemeManager = new ThemeManager();
  * React hook for theme management
  */
 export function useTheme() {
-  const [theme, setTheme] = React.useState(globalThemeManager.getCurrentTheme());
+  const [theme, setTheme] = React.useState(
+    globalThemeManager.getCurrentTheme()
+  );
   const [mode, setMode] = React.useState(globalThemeManager.getCurrentMode());
 
   React.useEffect(() => {
@@ -421,9 +431,12 @@ export function useTheme() {
     return unsubscribe;
   }, []);
 
-  const switchTheme = React.useCallback((newMode: ThemeMode, customThemeId?: string) => {
-    globalThemeManager.setTheme(newMode, customThemeId);
-  }, []);
+  const switchTheme = React.useCallback(
+    (newMode: ThemeMode, customThemeId?: string) => {
+      globalThemeManager.setTheme(newMode, customThemeId);
+    },
+    []
+  );
 
   const mergeTheme = React.useCallback((partialTheme: Partial<CanvasTheme>) => {
     globalThemeManager.mergeTheme(partialTheme);
@@ -434,7 +447,9 @@ export function useTheme() {
     mode,
     switchTheme,
     mergeTheme,
-    registerCustomTheme: globalThemeManager.registerCustomTheme.bind(globalThemeManager),
-    getCustomThemeIds: globalThemeManager.getCustomThemeIds.bind(globalThemeManager),
+    registerCustomTheme:
+      globalThemeManager.registerCustomTheme.bind(globalThemeManager),
+    getCustomThemeIds:
+      globalThemeManager.getCustomThemeIds.bind(globalThemeManager),
   };
 }

@@ -7,7 +7,12 @@
 
 import * as Y from 'yjs';
 
-import { type SyncAdapter, type SyncResult, type CanvasChange, type SyncConfig } from './types';
+import {
+  type SyncAdapter,
+  type SyncResult,
+  type CanvasChange,
+  type SyncConfig,
+} from './types';
 
 /**
  *

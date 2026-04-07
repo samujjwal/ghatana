@@ -1,4 +1,10 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
 import { Form, useForm } from './Form';
@@ -6,9 +12,12 @@ import { FormInput } from './FormInput';
 
 // Mock the FormField component to simplify tests
 vi.mock('./FormField', () => ({
-  FormField: ({ name, children }: { 
-    name: string; 
-    children: (props: unknown) => React.ReactNode 
+  FormField: ({
+    name,
+    children,
+  }: {
+    name: string;
+    children: (props: unknown) => React.ReactNode;
   }) => {
     return children({
       value: '',
@@ -60,13 +69,13 @@ describe('Form', () => {
     );
 
     const submitButton = screen.getByRole('button', { name: /submit/i });
-    
+
     // Initial state - button should be enabled
     expect(submitButton).not.toBeDisabled();
-    
+
     // Click the button to submit the form
     fireEvent.click(submitButton);
-    
+
     // Button should be disabled during submission
     expect(submitButton).toBeDisabled();
     expect(submitButton).toHaveTextContent('Submitting...');

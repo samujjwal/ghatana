@@ -1,10 +1,10 @@
 /**
  * Performance Metrics Dashboard (Feature 2.29)
- * 
+ *
  * Provides in-app telemetry with FPS/memory monitoring, trace export,
  * OTLP (OpenTelemetry Protocol) threshold alerting, and dev mode toggle
  * for performance analysis and observability.
- * 
+ *
  * Features:
  * - Real-time FPS and memory monitoring
  * - Performance trace collection and export
@@ -12,7 +12,7 @@
  * - Threshold-based alerting
  * - Dev mode overlay toggle
  * - Web Vitals tracking (LCP, FID, CLS, TTFB, INP)
- * 
+ *
  * @module monitoring/telemetryDashboard
  */
 
@@ -37,11 +37,11 @@ export interface PerformanceMetrics {
  * Memory usage metrics
  */
 export interface MemoryMetrics {
-  usedJSHeapSize: number;      // bytes
-  totalJSHeapSize: number;     // bytes
-  jsHeapSizeLimit: number;     // bytes
-  percentUsed: number;         // 0-100
-  collections?: number;        // GC count
+  usedJSHeapSize: number; // bytes
+  totalJSHeapSize: number; // bytes
+  jsHeapSizeLimit: number; // bytes
+  percentUsed: number; // 0-100
+  collections?: number; // GC count
 }
 
 /**
@@ -50,22 +50,22 @@ export interface MemoryMetrics {
 export interface RenderingMetrics {
   elementCount: number;
   visibleElements: number;
-  renderTime: number;           // ms
-  paintTime: number;            // ms
-  layoutTime: number;           // ms
-  scriptTime: number;           // ms
-  idleTime: number;             // ms
+  renderTime: number; // ms
+  paintTime: number; // ms
+  layoutTime: number; // ms
+  scriptTime: number; // ms
+  idleTime: number; // ms
 }
 
 /**
  * Interaction metrics
  */
 export interface InteractionMetrics {
-  inputDelay: number;           // ms
-  eventLatency: number;         // ms
+  inputDelay: number; // ms
+  eventLatency: number; // ms
   interactionCount: number;
-  longTasks: number;            // tasks > 50ms
-  blockedTime: number;          // ms
+  longTasks: number; // tasks > 50ms
+  blockedTime: number; // ms
 }
 
 /**
@@ -73,9 +73,9 @@ export interface InteractionMetrics {
  */
 export interface NetworkMetrics {
   online: boolean;
-  effectiveType?: string;       // 'slow-2g', '2g', '3g', '4g'
-  downlink?: number;            // Mbps
-  rtt?: number;                 // ms - round trip time
+  effectiveType?: string; // 'slow-2g', '2g', '3g', '4g'
+  downlink?: number; // Mbps
+  rtt?: number; // ms - round trip time
   saveData?: boolean;
 }
 
@@ -83,12 +83,12 @@ export interface NetworkMetrics {
  * Web Vitals metrics (Core Web Vitals + additional)
  */
 export interface WebVitals {
-  lcp?: number;                 // Largest Contentful Paint (ms)
-  fid?: number;                 // First Input Delay (ms) - deprecated
-  inp?: number;                 // Interaction to Next Paint (ms)
-  cls?: number;                 // Cumulative Layout Shift (score)
-  ttfb?: number;                // Time to First Byte (ms)
-  fcp?: number;                 // First Contentful Paint (ms)
+  lcp?: number; // Largest Contentful Paint (ms)
+  fid?: number; // First Input Delay (ms) - deprecated
+  inp?: number; // Interaction to Next Paint (ms)
+  cls?: number; // Cumulative Layout Shift (score)
+  ttfb?: number; // Time to First Byte (ms)
+  fcp?: number; // First Contentful Paint (ms)
 }
 
 /**
@@ -129,14 +129,14 @@ export interface PerformanceSpan {
  */
 export interface AlertThreshold {
   id: string;
-  metric: string;               // e.g., 'fps', 'memory.percentUsed', 'vitals.lcp'
+  metric: string; // e.g., 'fps', 'memory.percentUsed', 'vitals.lcp'
   operator: 'gt' | 'lt' | 'gte' | 'lte' | 'eq';
   value: number;
-  duration?: number;            // ms - sustained breach duration
+  duration?: number; // ms - sustained breach duration
   severity: 'info' | 'warning' | 'error' | 'critical';
   enabled: boolean;
   lastTriggered?: number;
-  cooldownPeriod?: number;      // ms - minimum time between alerts
+  cooldownPeriod?: number; // ms - minimum time between alerts
 }
 
 /**
@@ -194,12 +194,12 @@ export interface OTLPExportPayload {
  */
 export interface TelemetryConfig {
   enabled: boolean;
-  sampleInterval: number;       // ms - how often to collect metrics
-  maxTraces: number;            // max traces to keep in memory
-  maxAlerts: number;            // max alerts to keep in memory
-  otlpEndpoint?: string;        // OTLP collector URL
-  otlpExportInterval?: number;  // ms - how often to export to OTLP
-  devModeEnabled: boolean;      // show dev overlay
+  sampleInterval: number; // ms - how often to collect metrics
+  maxTraces: number; // max traces to keep in memory
+  maxAlerts: number; // max alerts to keep in memory
+  otlpEndpoint?: string; // OTLP collector URL
+  otlpExportInterval?: number; // ms - how often to export to OTLP
+  devModeEnabled: boolean; // show dev overlay
   devModePosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   thresholds: AlertThreshold[];
 }
@@ -232,7 +232,7 @@ export interface TelemetryStatistics {
   totalLongTasks: number;
   averageRenderTime: number;
   alertsBySeverity: Record<string, number>;
-  uptime: number;               // ms
+  uptime: number; // ms
 }
 
 // ============================================================================
@@ -242,7 +242,9 @@ export interface TelemetryStatistics {
 /**
  * Create a new telemetry dashboard
  */
-export function createTelemetryDashboard(config?: Partial<TelemetryConfig>): TelemetryDashboard {
+export function createTelemetryDashboard(
+  config?: Partial<TelemetryConfig>
+): TelemetryDashboard {
   const defaultConfig: TelemetryConfig = {
     enabled: true,
     sampleInterval: 1000,
@@ -260,7 +262,7 @@ export function createTelemetryDashboard(config?: Partial<TelemetryConfig>): Tel
         duration: 5000,
         severity: 'warning',
         enabled: true,
-        cooldownPeriod: 10000
+        cooldownPeriod: 10000,
       },
       {
         id: 'memory-high',
@@ -270,7 +272,7 @@ export function createTelemetryDashboard(config?: Partial<TelemetryConfig>): Tel
         duration: 10000,
         severity: 'error',
         enabled: true,
-        cooldownPeriod: 30000
+        cooldownPeriod: 30000,
       },
       {
         id: 'lcp-poor',
@@ -279,10 +281,10 @@ export function createTelemetryDashboard(config?: Partial<TelemetryConfig>): Tel
         value: 2500,
         severity: 'warning',
         enabled: true,
-        cooldownPeriod: 60000
-      }
+        cooldownPeriod: 60000,
+      },
     ],
-    ...config
+    ...config,
   };
 
   return {
@@ -291,7 +293,7 @@ export function createTelemetryDashboard(config?: Partial<TelemetryConfig>): Tel
     traces: [],
     alerts: [],
     isMonitoring: false,
-    startTime: Date.now()
+    startTime: Date.now(),
   };
 }
 
@@ -367,7 +369,7 @@ export function collectMetrics(): PerformanceMetrics {
     rendering,
     interaction,
     network,
-    vitals
+    vitals,
   };
 }
 
@@ -385,7 +387,7 @@ export function startTrace(
     startTime: performance.now(),
     metadata: metadata || {},
     spans: [],
-    tags: []
+    tags: [],
   };
 
   dashboard.activeTrace = trace;
@@ -396,8 +398,9 @@ export function startTrace(
  * End a performance trace
  */
 export function endTrace(dashboard: TelemetryDashboard, traceId: string): void {
-  const trace = dashboard.traces.find(t => t.id === traceId) || dashboard.activeTrace;
-  
+  const trace =
+    dashboard.traces.find((t) => t.id === traceId) || dashboard.activeTrace;
+
   if (!trace || trace.id !== traceId) {
     return;
   }
@@ -406,7 +409,7 @@ export function endTrace(dashboard: TelemetryDashboard, traceId: string): void {
   trace.duration = trace.endTime - trace.startTime;
 
   // Add to traces array
-  if (!dashboard.traces.some(t => t.id === traceId)) {
+  if (!dashboard.traces.some((t) => t.id === traceId)) {
     dashboard.traces.push(trace);
 
     // Trim old traces
@@ -440,7 +443,7 @@ export function addSpan(
     duration: endTime - startTime,
     parentSpanId,
     attributes: attributes || {},
-    events: []
+    events: [],
   };
 
   trace.spans.push(span);
@@ -451,15 +454,19 @@ export function addSpan(
  * Export traces to JSON
  */
 export function exportTracesJSON(dashboard: TelemetryDashboard): string {
-  return JSON.stringify({
-    traces: dashboard.traces,
-    metadata: {
-      exportedAt: new Date().toISOString(),
-      totalTraces: dashboard.traces.length,
-      startTime: dashboard.startTime,
-      uptime: Date.now() - dashboard.startTime
-    }
-  }, null, 2);
+  return JSON.stringify(
+    {
+      traces: dashboard.traces,
+      metadata: {
+        exportedAt: new Date().toISOString(),
+        totalTraces: dashboard.traces.length,
+        startTime: dashboard.startTime,
+        uptime: Date.now() - dashboard.startTime,
+      },
+    },
+    null,
+    2
+  );
 }
 
 /**
@@ -479,8 +486,8 @@ export function exportToOTLP(dashboard: TelemetryDashboard): void {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload)
-  }).catch(error => {
+    body: JSON.stringify(payload),
+  }).catch((error) => {
     console.error('Failed to export to OTLP:', error);
   });
 }
@@ -488,7 +495,9 @@ export function exportToOTLP(dashboard: TelemetryDashboard): void {
 /**
  * Convert metrics to OTLP format
  */
-export function convertToOTLP(metrics: PerformanceMetrics[]): OTLPExportPayload {
+export function convertToOTLP(
+  metrics: PerformanceMetrics[]
+): OTLPExportPayload {
   const otlpMetrics: OTLPMetric[] = [];
 
   // FPS metric
@@ -497,10 +506,10 @@ export function convertToOTLP(metrics: PerformanceMetrics[]): OTLPExportPayload 
     description: 'Frames per second',
     unit: 'fps',
     type: 'gauge',
-    dataPoints: metrics.map(m => ({
+    dataPoints: metrics.map((m) => ({
       timestamp: m.timestamp,
-      value: m.fps
-    }))
+      value: m.fps,
+    })),
   });
 
   // Memory metric
@@ -509,10 +518,10 @@ export function convertToOTLP(metrics: PerformanceMetrics[]): OTLPExportPayload 
     description: 'Memory usage percentage',
     unit: '%',
     type: 'gauge',
-    dataPoints: metrics.map(m => ({
+    dataPoints: metrics.map((m) => ({
       timestamp: m.timestamp,
-      value: m.memory.percentUsed
-    }))
+      value: m.memory.percentUsed,
+    })),
   });
 
   // Render time metric
@@ -521,10 +530,10 @@ export function convertToOTLP(metrics: PerformanceMetrics[]): OTLPExportPayload 
     description: 'Rendering time',
     unit: 'ms',
     type: 'gauge',
-    dataPoints: metrics.map(m => ({
+    dataPoints: metrics.map((m) => ({
       timestamp: m.timestamp,
-      value: m.rendering.renderTime
-    }))
+      value: m.rendering.renderTime,
+    })),
   });
 
   // LCP metric
@@ -534,29 +543,33 @@ export function convertToOTLP(metrics: PerformanceMetrics[]): OTLPExportPayload 
     unit: 'ms',
     type: 'gauge',
     dataPoints: metrics
-      .filter(m => m.vitals.lcp)
-      .map(m => ({
+      .filter((m) => m.vitals.lcp)
+      .map((m) => ({
         timestamp: m.timestamp,
-        value: m.vitals.lcp!
-      }))
+        value: m.vitals.lcp!,
+      })),
   });
 
   return {
-    resourceMetrics: [{
-      resource: {
-        attributes: {
-          'service.name': 'canvas-app',
-          'service.version': '1.0.0'
-        }
-      },
-      scopeMetrics: [{
-        scope: {
-          name: 'canvas-telemetry',
-          version: '1.0.0'
+    resourceMetrics: [
+      {
+        resource: {
+          attributes: {
+            'service.name': 'canvas-app',
+            'service.version': '1.0.0',
+          },
         },
-        metrics: otlpMetrics
-      }]
-    }]
+        scopeMetrics: [
+          {
+            scope: {
+              name: 'canvas-telemetry',
+              version: '1.0.0',
+            },
+            metrics: otlpMetrics,
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -569,7 +582,7 @@ export function checkThresholds(
 ): void {
   const now = Date.now();
 
-  dashboard.config.thresholds.forEach(threshold => {
+  dashboard.config.thresholds.forEach((threshold) => {
     if (!threshold.enabled) {
       return;
     }
@@ -586,7 +599,11 @@ export function checkThresholds(
       return;
     }
 
-    const breached = checkThresholdBreach(value, threshold.operator, threshold.value);
+    const breached = checkThresholdBreach(
+      value,
+      threshold.operator,
+      threshold.value
+    );
 
     if (breached) {
       const alert: PerformanceAlert = {
@@ -598,7 +615,7 @@ export function checkThresholds(
         actualValue: value,
         thresholdValue: threshold.value,
         message: `${threshold.metric} ${threshold.operator} ${threshold.value} (actual: ${value.toFixed(2)})`,
-        acknowledged: false
+        acknowledged: false,
       };
 
       dashboard.alerts.push(alert);
@@ -611,7 +628,9 @@ export function checkThresholds(
 
       // Emit event (can be listened to by UI)
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('telemetry-alert', { detail: alert }));
+        window.dispatchEvent(
+          new CustomEvent('telemetry-alert', { detail: alert })
+        );
       }
     }
   });
@@ -625,7 +644,7 @@ export function acknowledgeAlert(
   alertId: string,
   acknowledgedBy?: string
 ): void {
-  const alert = dashboard.alerts.find(a => a.id === alertId);
+  const alert = dashboard.alerts.find((a) => a.id === alertId);
   if (alert) {
     alert.acknowledged = true;
     alert.acknowledgedAt = Date.now();
@@ -636,44 +655,51 @@ export function acknowledgeAlert(
 /**
  * Get telemetry statistics
  */
-export function getTelemetryStatistics(dashboard: TelemetryDashboard): TelemetryStatistics {
+export function getTelemetryStatistics(
+  dashboard: TelemetryDashboard
+): TelemetryStatistics {
   const metrics = dashboard.metrics;
-  
+
   const alertsBySeverity: Record<string, number> = {
     info: 0,
     warning: 0,
     error: 0,
-    critical: 0
+    critical: 0,
   };
 
-  dashboard.alerts.forEach(a => {
+  dashboard.alerts.forEach((a) => {
     alertsBySeverity[a.severity]++;
   });
 
-  const fpsSamples = metrics.map(m => m.fps);
-  const memorySamples = metrics.map(m => m.memory.percentUsed);
-  const renderTimeSamples = metrics.map(m => m.rendering.renderTime);
-  const longTasks = metrics.reduce((sum, m) => sum + m.interaction.longTasks, 0);
+  const fpsSamples = metrics.map((m) => m.fps);
+  const memorySamples = metrics.map((m) => m.memory.percentUsed);
+  const renderTimeSamples = metrics.map((m) => m.rendering.renderTime);
+  const longTasks = metrics.reduce(
+    (sum, m) => sum + m.interaction.longTasks,
+    0
+  );
 
   return {
     totalSamples: metrics.length,
     totalTraces: dashboard.traces.length,
     totalAlerts: dashboard.alerts.length,
-    averageFPS: fpsSamples.length > 0
-      ? fpsSamples.reduce((a, b) => a + b, 0) / fpsSamples.length
-      : 0,
-    averageMemoryUsage: memorySamples.length > 0
-      ? memorySamples.reduce((a, b) => a + b, 0) / memorySamples.length
-      : 0,
-    peakMemoryUsage: memorySamples.length > 0
-      ? Math.max(...memorySamples)
-      : 0,
+    averageFPS:
+      fpsSamples.length > 0
+        ? fpsSamples.reduce((a, b) => a + b, 0) / fpsSamples.length
+        : 0,
+    averageMemoryUsage:
+      memorySamples.length > 0
+        ? memorySamples.reduce((a, b) => a + b, 0) / memorySamples.length
+        : 0,
+    peakMemoryUsage: memorySamples.length > 0 ? Math.max(...memorySamples) : 0,
     totalLongTasks: longTasks,
-    averageRenderTime: renderTimeSamples.length > 0
-      ? renderTimeSamples.reduce((a, b) => a + b, 0) / renderTimeSamples.length
-      : 0,
+    averageRenderTime:
+      renderTimeSamples.length > 0
+        ? renderTimeSamples.reduce((a, b) => a + b, 0) /
+          renderTimeSamples.length
+        : 0,
     alertsBySeverity,
-    uptime: Date.now() - dashboard.startTime
+    uptime: Date.now() - dashboard.startTime,
   };
 }
 
@@ -708,9 +734,10 @@ function collectMemoryMetrics(): MemoryMetrics {
       usedJSHeapSize: mem.usedJSHeapSize || 0,
       totalJSHeapSize: mem.totalJSHeapSize || 0,
       jsHeapSizeLimit: mem.jsHeapSizeLimit || 0,
-      percentUsed: mem.jsHeapSizeLimit > 0
-        ? (mem.usedJSHeapSize / mem.jsHeapSizeLimit) * 100
-        : 0
+      percentUsed:
+        mem.jsHeapSizeLimit > 0
+          ? (mem.usedJSHeapSize / mem.jsHeapSizeLimit) * 100
+          : 0,
     };
   }
 
@@ -718,7 +745,7 @@ function collectMemoryMetrics(): MemoryMetrics {
     usedJSHeapSize: 0,
     totalJSHeapSize: 0,
     jsHeapSizeLimit: 0,
-    percentUsed: 0
+    percentUsed: 0,
   };
 }
 
@@ -727,12 +754,13 @@ function collectMemoryMetrics(): MemoryMetrics {
  */
 function collectRenderingMetrics(): RenderingMetrics {
   const elements = document.querySelectorAll('*').length;
-  
+
   // Get paint/layout timing from Performance API
   const paintEntries = performance.getEntriesByType('paint');
-  const paintTime = paintEntries.length > 0
-    ? Math.max(...paintEntries.map(e => e.startTime))
-    : 0;
+  const paintTime =
+    paintEntries.length > 0
+      ? Math.max(...paintEntries.map((e) => e.startTime))
+      : 0;
 
   return {
     elementCount: elements,
@@ -741,7 +769,7 @@ function collectRenderingMetrics(): RenderingMetrics {
     paintTime,
     layoutTime: 0,
     scriptTime: 0,
-    idleTime: 0
+    idleTime: 0,
   };
 }
 
@@ -755,7 +783,7 @@ function collectInteractionMetrics(): InteractionMetrics {
     eventLatency: 0,
     interactionCount: 0,
     longTasks: 0,
-    blockedTime: 0
+    blockedTime: 0,
   };
 }
 
@@ -763,14 +791,17 @@ function collectInteractionMetrics(): InteractionMetrics {
  *
  */
 function collectNetworkMetrics(): NetworkMetrics {
-  const connection = (navigator as unknown).connection || (navigator as unknown).mozConnection || (navigator as unknown).webkitConnection;
-  
+  const connection =
+    (navigator as unknown).connection ||
+    (navigator as unknown).mozConnection ||
+    (navigator as unknown).webkitConnection;
+
   return {
     online: navigator.onLine,
     effectiveType: connection?.effectiveType,
     downlink: connection?.downlink,
     rtt: connection?.rtt,
-    saveData: connection?.saveData
+    saveData: connection?.saveData,
   };
 }
 
@@ -787,8 +818,9 @@ function collectWebVitals(): WebVitals {
   }
 
   // FCP
-  const fcpEntries = performance.getEntriesByType('paint')
-    .filter(e => e.name === 'first-contentful-paint');
+  const fcpEntries = performance
+    .getEntriesByType('paint')
+    .filter((e) => e.name === 'first-contentful-paint');
   if (fcpEntries.length > 0) {
     vitals.fcp = fcpEntries[0].startTime;
   }
@@ -827,7 +859,10 @@ function calculateFPS(): number {
 /**
  *
  */
-function getMetricValue(metrics: PerformanceMetrics, path: string): number | undefined {
+function getMetricValue(
+  metrics: PerformanceMetrics,
+  path: string
+): number | undefined {
   const parts = path.split('.');
   let value: unknown = metrics;
 

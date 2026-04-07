@@ -34,7 +34,9 @@ function createMockFastify(): FastifyInstance {
   } as unknown as FastifyInstance;
 }
 
-function createMockRequest(overrides: Partial<FastifyRequest> = {}): FastifyRequest {
+function createMockRequest(
+  overrides: Partial<FastifyRequest> = {}
+): FastifyRequest {
   return {
     url: '/api/workspaces',
     method: 'GET',
@@ -65,7 +67,10 @@ describe('auditMiddleware Plugin Registration', () => {
 
     await auditMiddleware(fastifyMock);
 
-    expect(addHookMock).toHaveBeenCalledWith('onResponse', expect.any(Function));
+    expect(addHookMock).toHaveBeenCalledWith(
+      'onResponse',
+      expect.any(Function)
+    );
   });
 });
 
@@ -543,7 +548,15 @@ describe('All HTTP Methods Covered', () => {
   });
 
   it('logs all supported HTTP methods', async () => {
-    const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+    const methods = [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+      'HEAD',
+      'OPTIONS',
+    ];
 
     for (const method of methods) {
       jest.clearAllMocks();

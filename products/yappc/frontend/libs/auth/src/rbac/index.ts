@@ -9,44 +9,44 @@
 
 // Core RBAC types
 export type {
-    Permission,
-    Role,
-    UserRole,
-    AccessControlList,
-    AuthorizationContext,
-    AuthorizationDecision,
+  Permission,
+  Role,
+  UserRole,
+  AccessControlList,
+  AuthorizationContext,
+  AuthorizationDecision,
 } from './types';
 
 // Workspace-specific RBAC
 export {
-    WorkspaceRole,
-    ROLE_PERMISSIONS,
-    hasPermission,
-    getPermissions,
-    canManageRole,
-    // New persona types and utilities
-    PERSONA_HIERARCHY,
-    PERSONA_CATEGORIES,
-    PERSONA_DEFINITIONS,
-    PERSONA_CAPABILITIES,
-    getPersonasByCategory,
-    getPersonasAtLevel,
-    hasHigherAuthority,
-    hasCapability,
-    getCapabilities,
-    getPersonasWithCapability,
+  WorkspaceRole,
+  ROLE_PERMISSIONS,
+  hasPermission,
+  getPermissions,
+  canManageRole,
+  // New persona types and utilities
+  PERSONA_HIERARCHY,
+  PERSONA_CATEGORIES,
+  PERSONA_DEFINITIONS,
+  PERSONA_CAPABILITIES,
+  getPersonasByCategory,
+  getPersonasAtLevel,
+  hasHigherAuthority,
+  hasCapability,
+  getCapabilities,
+  getPersonasWithCapability,
 } from './workspace.types';
 
 export type {
-    WorkspaceMember,
-    WorkspaceInvitation,
-    Workspace,
-    WorkspaceSettings,
-    PersonaType,
-    PersonaCategory,
-    PersonaMetadata,
-    PersonaCapability,
-    Permission as WorkspacePermission,
+  WorkspaceMember,
+  WorkspaceInvitation,
+  Workspace,
+  WorkspaceSettings,
+  PersonaType,
+  PersonaCategory,
+  PersonaMetadata,
+  PersonaCapability,
+  Permission as WorkspacePermission,
 } from './workspace.types';
 
 // RBAC utilities

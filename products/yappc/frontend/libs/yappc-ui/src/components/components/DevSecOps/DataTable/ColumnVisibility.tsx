@@ -9,7 +9,16 @@
 import { Columns as ViewColumnIcon } from 'lucide-react';
 import { useState } from 'react';
 
-import { IconButton, Menu, MenuItem, Checkbox, FormControlLabel, Typography, Divider, Box } from '@ghatana/design-system';
+import {
+  IconButton,
+  Menu,
+  MenuItem,
+  Checkbox,
+  FormControlLabel,
+  Typography,
+  Divider,
+  Box,
+} from '@ghatana/design-system';
 
 import type { DataTableColumn } from './types';
 
@@ -103,7 +112,8 @@ export function ColumnVisibility<T = unknown>({
   };
 
   const allSelected = visibleColumns.length === columns.length;
-  const someSelected = visibleColumns.length > 0 && visibleColumns.length < columns.length;
+  const someSelected =
+    visibleColumns.length > 0 && visibleColumns.length < columns.length;
 
   return (
     <>
@@ -135,7 +145,11 @@ export function ColumnVisibility<T = unknown>({
         }}
       >
         <Box className="px-4 py-2">
-          <Typography as="p" className="text-sm font-medium" color="text.secondary">
+          <Typography
+            as="p"
+            className="text-sm font-medium"
+            color="text.secondary"
+          >
             {title}
           </Typography>
         </Box>

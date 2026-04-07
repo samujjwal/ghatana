@@ -1,5 +1,23 @@
 import type { Node, Edge } from '@xyflow/react';
-import { Layers as LayersIcon, Eye as VisibilityIcon, EyeOff as VisibilityOffIcon, Lock as LockIcon, LockOpen as LockOpenIcon, Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, GripVertical as DragIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Palette as PaletteIcon, Opacity as OpacityIcon, Users as GroupIcon, Filter as FilterIcon, Sort as SortIcon, MoreVertical as MoreVertIcon } from 'lucide-react';
+import {
+  Layers as LayersIcon,
+  Eye as VisibilityIcon,
+  EyeOff as VisibilityOffIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
+  Plus as AddIcon,
+  Trash2 as DeleteIcon,
+  Pencil as EditIcon,
+  GripVertical as DragIcon,
+  ChevronDown as ExpandMoreIcon,
+  ChevronUp as ExpandLessIcon,
+  Palette as PaletteIcon,
+  Opacity as OpacityIcon,
+  Users as GroupIcon,
+  Filter as FilterIcon,
+  Sort as SortIcon,
+  MoreVertical as MoreVertIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useRef } from 'react';
 
 import {
@@ -38,7 +56,6 @@ import {
   MenuItem,
   Collapse,
 } from '@ghatana/design-system';
-
 
 // Layer configuration interface
 /**
@@ -122,76 +139,92 @@ export const useCanvasLayers = (
       edgeIds: [],
       type: 'default',
       properties: {
-        blendMode: 'normal'
+        blendMode: 'normal',
       },
       metadata: {
         createdAt: new Date(),
         updatedAt: new Date(),
         author: userId,
-        tags: ['default']
-      }
-    }
+        tags: ['default'],
+      },
+    },
   ]);
 
-  const [activeLayer, setActiveLayerState] = useState<CanvasLayer | null>(layers[0]);
+  const [activeLayer, setActiveLayerState] = useState<CanvasLayer | null>(
+    layers[0]
+  );
 
-  const createLayer = useCallback((name: string, type: CanvasLayer['type'] = 'default'): string => {
-    const newLayer: CanvasLayer = {
-      id: `layer-${Date.now()}`,
-      name,
-      visible: true,
-      locked: false,
-      opacity: 1,
-      color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-      order: layers.length,
-      nodeIds: [],
-      edgeIds: [],
-      type,
-      properties: {
-        blendMode: 'normal'
-      },
-      metadata: {
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        author: userId,
-        tags: [type]
+  const createLayer = useCallback(
+    (name: string, type: CanvasLayer['type'] = 'default'): string => {
+      const newLayer: CanvasLayer = {
+        id: `layer-${Date.now()}`,
+        name,
+        visible: true,
+        locked: false,
+        opacity: 1,
+        color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+        order: layers.length,
+        nodeIds: [],
+        edgeIds: [],
+        type,
+        properties: {
+          blendMode: 'normal',
+        },
+        metadata: {
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          author: userId,
+          tags: [type],
+        },
+      };
+
+      setLayers((prev) => [...prev, newLayer]);
+      return newLayer.id;
+    },
+    [layers.length, userId]
+  );
+
+  const deleteLayer = useCallback(
+    (layerId: string) => {
+      setLayers((prev) => prev.filter((layer) => layer.id !== layerId));
+      if (activeLayer?.id === layerId) {
+        setActiveLayerState(layers.find((l) => l.id !== layerId) || null);
       }
-    };
+    },
+    [activeLayer, layers]
+  );
 
-    setLayers(prev => [...prev, newLayer]);
-    return newLayer.id;
-  }, [layers.length, userId]);
+  const updateLayer = useCallback(
+    (layerId: string, updates: Partial<CanvasLayer>) => {
+      setLayers((prev) =>
+        prev.map((layer) =>
+          layer.id === layerId
+            ? {
+                ...layer,
+                ...updates,
+                metadata: { ...layer.metadata, updatedAt: new Date() },
+              }
+            : layer
+        )
+      );
+    },
+    []
+  );
 
-  const deleteLayer = useCallback((layerId: string) => {
-    setLayers(prev => prev.filter(layer => layer.id !== layerId));
-    if (activeLayer?.id === layerId) {
-      setActiveLayerState(layers.find(l => l.id !== layerId) || null);
-    }
-  }, [activeLayer, layers]);
-
-  const updateLayer = useCallback((layerId: string, updates: Partial<CanvasLayer>) => {
-    setLayers(prev => prev.map(layer =>
-      layer.id === layerId
-        ? {
-          ...layer,
-          ...updates,
-          metadata: { ...layer.metadata, updatedAt: new Date() }
-        }
-        : layer
-    ));
-  }, []);
-
-  const setActiveLayer = useCallback((layerId: string) => {
-    const layer = layers.find(l => l.id === layerId);
-    setActiveLayerState(layer || null);
-  }, [layers]);
+  const setActiveLayer = useCallback(
+    (layerId: string) => {
+      const layer = layers.find((l) => l.id === layerId);
+      setActiveLayerState(layer || null);
+    },
+    [layers]
+  );
 
   const moveLayer = useCallback((layerId: string, newOrder: number) => {
-    setLayers(prev => {
-      const layer = prev.find(l => l.id === layerId);
+    setLayers((prev) => {
+      const layer = prev.find((l) => l.id === layerId);
       if (!layer) return prev;
 
-      const otherLayers = prev.filter(l => l.id !== layerId);
+      const otherLayers = prev.filter((l) => l.id !== layerId);
       const updatedLayers = [...otherLayers];
 
       updatedLayers.splice(newOrder, 0, { ...layer, order: newOrder });
@@ -201,134 +234,182 @@ export const useCanvasLayers = (
     });
   }, []);
 
-  const toggleLayerVisibility = useCallback((layerId: string) => {
-    updateLayer(layerId, { visible: !layers.find(l => l.id === layerId)?.visible });
-  }, [layers, updateLayer]);
+  const toggleLayerVisibility = useCallback(
+    (layerId: string) => {
+      updateLayer(layerId, {
+        visible: !layers.find((l) => l.id === layerId)?.visible,
+      });
+    },
+    [layers, updateLayer]
+  );
 
-  const toggleLayerLock = useCallback((layerId: string) => {
-    updateLayer(layerId, { locked: !layers.find(l => l.id === layerId)?.locked });
-  }, [layers, updateLayer]);
+  const toggleLayerLock = useCallback(
+    (layerId: string) => {
+      updateLayer(layerId, {
+        locked: !layers.find((l) => l.id === layerId)?.locked,
+      });
+    },
+    [layers, updateLayer]
+  );
 
-  const addNodesToLayer = useCallback((layerId: string, nodeIds: string[]) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (layer) {
-      const newNodeIds = [...new Set([...layer.nodeIds, ...nodeIds])];
-      updateLayer(layerId, { nodeIds: newNodeIds });
-    }
-  }, [layers, updateLayer]);
+  const addNodesToLayer = useCallback(
+    (layerId: string, nodeIds: string[]) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (layer) {
+        const newNodeIds = [...new Set([...layer.nodeIds, ...nodeIds])];
+        updateLayer(layerId, { nodeIds: newNodeIds });
+      }
+    },
+    [layers, updateLayer]
+  );
 
-  const removeNodesFromLayer = useCallback((layerId: string, nodeIds: string[]) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (layer) {
-      const newNodeIds = layer.nodeIds.filter(id => !nodeIds.includes(id));
-      updateLayer(layerId, { nodeIds: newNodeIds });
-    }
-  }, [layers, updateLayer]);
+  const removeNodesFromLayer = useCallback(
+    (layerId: string, nodeIds: string[]) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (layer) {
+        const newNodeIds = layer.nodeIds.filter((id) => !nodeIds.includes(id));
+        updateLayer(layerId, { nodeIds: newNodeIds });
+      }
+    },
+    [layers, updateLayer]
+  );
 
-  const addEdgesToLayer = useCallback((layerId: string, edgeIds: string[]) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (layer) {
-      const newEdgeIds = [...new Set([...layer.edgeIds, ...edgeIds])];
-      updateLayer(layerId, { edgeIds: newEdgeIds });
-    }
-  }, [layers, updateLayer]);
+  const addEdgesToLayer = useCallback(
+    (layerId: string, edgeIds: string[]) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (layer) {
+        const newEdgeIds = [...new Set([...layer.edgeIds, ...edgeIds])];
+        updateLayer(layerId, { edgeIds: newEdgeIds });
+      }
+    },
+    [layers, updateLayer]
+  );
 
-  const removeEdgesFromLayer = useCallback((layerId: string, edgeIds: string[]) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (layer) {
-      const newEdgeIds = layer.edgeIds.filter(id => !edgeIds.includes(id));
-      updateLayer(layerId, { edgeIds: newEdgeIds });
-    }
-  }, [layers, updateLayer]);
+  const removeEdgesFromLayer = useCallback(
+    (layerId: string, edgeIds: string[]) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (layer) {
+        const newEdgeIds = layer.edgeIds.filter((id) => !edgeIds.includes(id));
+        updateLayer(layerId, { edgeIds: newEdgeIds });
+      }
+    },
+    [layers, updateLayer]
+  );
 
-  const getLayerNodes = useCallback((layerId: string): Node[] => {
-    const layer = layers.find(l => l.id === layerId);
-    if (!layer) return [];
-    return nodes.filter(node => layer.nodeIds.includes(node.id));
-  }, [layers, nodes]);
+  const getLayerNodes = useCallback(
+    (layerId: string): Node[] => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer) return [];
+      return nodes.filter((node) => layer.nodeIds.includes(node.id));
+    },
+    [layers, nodes]
+  );
 
-  const getLayerEdges = useCallback((layerId: string): Edge[] => {
-    const layer = layers.find(l => l.id === layerId);
-    if (!layer) return [];
-    return edges.filter(edge => layer.edgeIds.includes(edge.id));
-  }, [layers, edges]);
+  const getLayerEdges = useCallback(
+    (layerId: string): Edge[] => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer) return [];
+      return edges.filter((edge) => layer.edgeIds.includes(edge.id));
+    },
+    [layers, edges]
+  );
 
   const getVisibleNodes = useCallback((): Node[] => {
-    const visibleLayers = layers.filter(layer => layer.visible);
-    const visibleNodeIds = new Set(visibleLayers.flatMap(layer => layer.nodeIds));
-    return nodes.filter(node => visibleNodeIds.has(node.id));
+    const visibleLayers = layers.filter((layer) => layer.visible);
+    const visibleNodeIds = new Set(
+      visibleLayers.flatMap((layer) => layer.nodeIds)
+    );
+    return nodes.filter((node) => visibleNodeIds.has(node.id));
   }, [layers, nodes]);
 
   const getVisibleEdges = useCallback((): Edge[] => {
-    const visibleLayers = layers.filter(layer => layer.visible);
-    const visibleEdgeIds = new Set(visibleLayers.flatMap(layer => layer.edgeIds));
-    return edges.filter(edge => visibleEdgeIds.has(edge.id));
+    const visibleLayers = layers.filter((layer) => layer.visible);
+    const visibleEdgeIds = new Set(
+      visibleLayers.flatMap((layer) => layer.edgeIds)
+    );
+    return edges.filter((edge) => visibleEdgeIds.has(edge.id));
   }, [layers, edges]);
 
-  const duplicateLayer = useCallback((layerId: string): string => {
-    const layer = layers.find(l => l.id === layerId);
-    if (!layer) return '';
+  const duplicateLayer = useCallback(
+    (layerId: string): string => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer) return '';
 
-    const duplicatedLayer: CanvasLayer = {
-      ...layer,
-      id: `layer-${Date.now()}`,
-      name: `${layer.name} Copy`,
-      order: layers.length,
-      metadata: {
-        ...layer.metadata,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      const duplicatedLayer: CanvasLayer = {
+        ...layer,
+        id: `layer-${Date.now()}`,
+        name: `${layer.name} Copy`,
+        order: layers.length,
+        metadata: {
+          ...layer.metadata,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
+
+      setLayers((prev) => [...prev, duplicatedLayer]);
+      return duplicatedLayer.id;
+    },
+    [layers]
+  );
+
+  const mergeLayer = useCallback(
+    (sourceLayerId: string, targetLayerId: string) => {
+      const sourceLayer = layers.find((l) => l.id === sourceLayerId);
+      const targetLayer = layers.find((l) => l.id === targetLayerId);
+
+      if (sourceLayer && targetLayer) {
+        const mergedNodeIds = [
+          ...new Set([...targetLayer.nodeIds, ...sourceLayer.nodeIds]),
+        ];
+        const mergedEdgeIds = [
+          ...new Set([...targetLayer.edgeIds, ...sourceLayer.edgeIds]),
+        ];
+
+        updateLayer(targetLayerId, {
+          nodeIds: mergedNodeIds,
+          edgeIds: mergedEdgeIds,
+        });
+
+        deleteLayer(sourceLayerId);
       }
-    };
+    },
+    [layers, updateLayer, deleteLayer]
+  );
 
-    setLayers(prev => [...prev, duplicatedLayer]);
-    return duplicatedLayer.id;
-  }, [layers]);
+  const exportLayer = useCallback(
+    (layerId: string) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer) return null;
 
-  const mergeLayer = useCallback((sourceLayerId: string, targetLayerId: string) => {
-    const sourceLayer = layers.find(l => l.id === sourceLayerId);
-    const targetLayer = layers.find(l => l.id === targetLayerId);
+      return {
+        layer,
+        nodes: getLayerNodes(layerId),
+        edges: getLayerEdges(layerId),
+      };
+    },
+    [layers, getLayerNodes, getLayerEdges]
+  );
 
-    if (sourceLayer && targetLayer) {
-      const mergedNodeIds = [...new Set([...targetLayer.nodeIds, ...sourceLayer.nodeIds])];
-      const mergedEdgeIds = [...new Set([...targetLayer.edgeIds, ...sourceLayer.edgeIds])];
+  const importLayer = useCallback(
+    (layerData: unknown): string => {
+      const importedLayer: CanvasLayer = {
+        ...layerData.layer,
+        id: `layer-${Date.now()}`,
+        order: layers.length,
+        metadata: {
+          ...layerData.layer.metadata,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          author: userId,
+        },
+      };
 
-      updateLayer(targetLayerId, {
-        nodeIds: mergedNodeIds,
-        edgeIds: mergedEdgeIds
-      });
-
-      deleteLayer(sourceLayerId);
-    }
-  }, [layers, updateLayer, deleteLayer]);
-
-  const exportLayer = useCallback((layerId: string) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (!layer) return null;
-
-    return {
-      layer,
-      nodes: getLayerNodes(layerId),
-      edges: getLayerEdges(layerId)
-    };
-  }, [layers, getLayerNodes, getLayerEdges]);
-
-  const importLayer = useCallback((layerData: unknown): string => {
-    const importedLayer: CanvasLayer = {
-      ...layerData.layer,
-      id: `layer-${Date.now()}`,
-      order: layers.length,
-      metadata: {
-        ...layerData.layer.metadata,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        author: userId
-      }
-    };
-
-    setLayers(prev => [...prev, importedLayer]);
-    return importedLayer.id;
-  }, [layers.length, userId]);
+      setLayers((prev) => [...prev, importedLayer]);
+      return importedLayer.id;
+    },
+    [layers.length, userId]
+  );
 
   return {
     layers,
@@ -351,7 +432,7 @@ export const useCanvasLayers = (
     duplicateLayer,
     mergeLayer,
     exportLayer,
-    importLayer
+    importLayer,
   };
 };
 
@@ -392,11 +473,12 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   onDuplicateLayer,
   onMergeLayer,
   totalNodes,
-  totalEdges
+  totalEdges,
 }) => {
   const [newLayerDialogOpen, setNewLayerDialogOpen] = useState(false);
   const [newLayerName, setNewLayerName] = useState('');
-  const [newLayerType, setNewLayerType] = useState<CanvasLayer['type']>('default');
+  const [newLayerType, setNewLayerType] =
+    useState<CanvasLayer['type']>('default');
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -417,7 +499,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     setContextMenu({
       mouseX: event.clientX + 2,
       mouseY: event.clientY - 6,
-      layerId
+      layerId,
     });
   };
 
@@ -426,7 +508,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   };
 
   const toggleLayerExpanded = (layerId: string) => {
-    setExpandedLayers(prev => {
+    setExpandedLayers((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(layerId)) {
         newSet.delete(layerId);
@@ -448,7 +530,12 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
         PaperProps={{ style: { width: 350, backgroundColor: '#fafafa' } }}
       >
         <Box className="p-4">
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            mb={2}
+          >
             <Typography variant="h6" display="flex" alignItems="center" gap={1}>
               <LayersIcon />
               Layers ({layers.length})
@@ -477,7 +564,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                 Edges: {totalEdges}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Visible: {layers.filter(l => l.visible).length}
+                Visible: {layers.filter((l) => l.visible).length}
               </Typography>
             </Box>
           </Paper>
@@ -487,7 +574,13 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
             {sortedLayers.map((layer, index) => (
               <Paper
                 key={layer.id}
-                className="mb-2" style={{ border: activeLayer?.id === layer.id ? 2 : 1, borderColor: activeLayer?.id === layer.id ? 'primary.main' : 'divider', backgroundColor: 'layer.color' }}
+                className="mb-2"
+                style={{
+                  border: activeLayer?.id === layer.id ? 2 : 1,
+                  borderColor:
+                    activeLayer?.id === layer.id ? 'primary.main' : 'divider',
+                  backgroundColor: 'layer.color',
+                }}
               >
                 <ListItem
                   button
@@ -498,8 +591,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                   <ListItemIcon>
                     <Box display="flex" alignItems="center" gap={0.5}>
                       <DragIcon className="cursor-grab text-base" />
-                      <Avatar
-                        className="text-xs w-[20px] h-[20px]" >
+                      <Avatar className="text-xs w-[20px] h-[20px]">
                         {layer.order}
                       </Avatar>
                     </Box>
@@ -521,11 +613,15 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     }
                     secondary={
                       <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-                        <Badge badgeContent={layer.nodeIds.length} color="primary">
+                        <Badge
+                          badgeContent={layer.nodeIds.length}
+                          color="primary"
+                        >
                           <GroupIcon className="text-sm" />
                         </Badge>
                         <Typography variant="caption" color="text.secondary">
-                          {layer.nodeIds.length} nodes, {layer.edgeIds.length} edges
+                          {layer.nodeIds.length} nodes, {layer.edgeIds.length}{' '}
+                          edges
                         </Typography>
                       </Box>
                     }
@@ -543,7 +639,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                           onToggleVisibility(layer.id);
                         }}
                       >
-                        {layer.visible ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                        {layer.visible ? (
+                          <VisibilityIcon />
+                        ) : (
+                          <VisibilityOffIcon />
+                        )}
                       </IconButton>
                       <IconButton
                         size="small"
@@ -558,7 +658,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                         size="small"
                         onClick={() => toggleLayerExpanded(layer.id)}
                       >
-                        {expandedLayers.has(layer.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        {expandedLayers.has(layer.id) ? (
+                          <ExpandLessIcon />
+                        ) : (
+                          <ExpandMoreIcon />
+                        )}
                       </IconButton>
                     </Box>
                   </ListItemSecondaryAction>
@@ -595,7 +699,8 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                         onClick={() => {
                           // Color picker would open here
                         }}
-                        className="text-white" style={{ backgroundColor: layer.color }}
+                        className="text-white"
+                        style={{ backgroundColor: layer.color }}
                       />
                       {layer.properties.blendMode !== 'normal' && (
                         <Chip
@@ -615,7 +720,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     </Box>
 
                     {/* Layer Info */}
-                    <Typography variant="caption" color="text.secondary" className="mt-2 block">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      className="mt-2 block"
+                    >
                       Created: {layer.metadata.createdAt.toLocaleDateString()}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -640,24 +749,35 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
             : undefined
         }
       >
-        <MenuItem onClick={() => {
-          if (contextMenu) onDuplicateLayer(contextMenu.layerId);
-          handleContextMenuClose();
-        }}>
-          <ListItemIcon><GroupIcon size={16} /></ListItemIcon>
+        <MenuItem
+          onClick={() => {
+            if (contextMenu) onDuplicateLayer(contextMenu.layerId);
+            handleContextMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <GroupIcon size={16} />
+          </ListItemIcon>
           <ListItemText>Duplicate Layer</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => {
-          if (contextMenu) onDeleteLayer(contextMenu.layerId);
-          handleContextMenuClose();
-        }}>
-          <ListItemIcon><DeleteIcon size={16} /></ListItemIcon>
+        <MenuItem
+          onClick={() => {
+            if (contextMenu) onDeleteLayer(contextMenu.layerId);
+            handleContextMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <DeleteIcon size={16} />
+          </ListItemIcon>
           <ListItemText>Delete Layer</ListItemText>
         </MenuItem>
       </Menu>
 
       {/* New Layer Dialog */}
-      <Dialog open={newLayerDialogOpen} onClose={() => setNewLayerDialogOpen(false)}>
+      <Dialog
+        open={newLayerDialogOpen}
+        onClose={() => setNewLayerDialogOpen(false)}
+      >
         <DialogTitle>Create New Layer</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -671,7 +791,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
             <TextField
               label="Layer Type"
               value={newLayerType}
-              onChange={(e) => setNewLayerType(e.target.value as CanvasLayer['type'])}
+              onChange={(e) =>
+                setNewLayerType(e.target.value as CanvasLayer['type'])
+              }
               fullWidth
               select
             >
@@ -685,7 +807,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNewLayerDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreateLayer} variant="contained">Create</Button>
+          <Button onClick={handleCreateLayer} variant="contained">
+            Create
+          </Button>
         </DialogActions>
       </Dialog>
     </>

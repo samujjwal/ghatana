@@ -12,7 +12,15 @@
  * - Error responses and status codes
  */
 
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from 'vitest';
 import type { FastifyInstance } from 'fastify';
 
 interface TestAPI {
@@ -70,7 +78,7 @@ async function createAPITestFixture(): Promise<TestAPI> {
     const method = options.method || 'GET';
     const headers = options.headers || {};
     const correlationId = headers['x-correlation-id'] || 'unknown';
-    
+
     // Parse payload - it might be a string or object
     let payload: any = {};
     if (options.payload) {
@@ -106,7 +114,11 @@ async function createAPITestFixture(): Promise<TestAPI> {
       const userRole = jwtPayload?.role || 'user';
 
       // Helper: Generate realistic resources
-      const createWorkspace = (id: string, ownerId: string, name: string = 'Test Workspace') => ({
+      const createWorkspace = (
+        id: string,
+        ownerId: string,
+        name: string = 'Test Workspace'
+      ) => ({
         id,
         name,
         ownerId,
@@ -131,435 +143,554 @@ async function createAPITestFixture(): Promise<TestAPI> {
         createdAt: new Date().toISOString(),
       });
 
-    // WORKSPACE CRUD
-    // GET /api/v1/workspaces - list workspaces
-    if (url === '/api/v1/workspaces' && method === 'GET') {
-      const result = prismaMock.workspace.findMany({ where: { tenantId } });
-      const workspaces = (result instanceof Promise ? await result : result) || [
-        createWorkspace('ws-1', userId, 'My Workspace'),
-      ];
-      prismaMock.auditLog.create({ event: 'WORKSPACES_LISTED', userId });
-      return {
-        statusCode: 200,
-        json: () => ({ data: workspaces, total: workspaces.length }),
-      };
-    }
-
-    // POST /api/v1/workspaces - create workspace
-    if (url === '/api/v1/workspaces' && method === 'POST') {
-      // Validate required fields
-      if (!payload.name || payload.name.trim() === '') {
+      // WORKSPACE CRUD
+      // GET /api/v1/workspaces - list workspaces
+      if (url === '/api/v1/workspaces' && method === 'GET') {
+        const result = prismaMock.workspace.findMany({ where: { tenantId } });
+        const workspaces = (result instanceof Promise
+          ? await result
+          : result) || [createWorkspace('ws-1', userId, 'My Workspace')];
+        prismaMock.auditLog.create({ event: 'WORKSPACES_LISTED', userId });
         return {
-          statusCode: 400,
-          json: () => ({ 
-            error: 'Workspace name is required',
-            details: { name: 'Name must not be empty' },
-          }),
+          statusCode: 200,
+          json: () => ({ data: workspaces, total: workspaces.length }),
         };
       }
 
-      const result = prismaMock.workspace.create({
-        data: {
-          name: payload.name,
-          ownerId: userId,
-          tenantId,
-          description: payload.description,
-        },
-      });
-      
-      // Handle both sync and async results
-      const createdWs = result instanceof Promise ? await result : result;
-      
-      prismaMock.auditLog.create({ event: 'WORKSPACE_CREATED', userId, workspaceId: createdWs?.id });
-      return {
-        statusCode: 201,
-        json: () => createdWs,
-      };
-    }
+      // POST /api/v1/workspaces - create workspace
+      if (url === '/api/v1/workspaces' && method === 'POST') {
+        // Validate required fields
+        if (!payload.name || payload.name.trim() === '') {
+          return {
+            statusCode: 400,
+            json: () => ({
+              error: 'Workspace name is required',
+              details: { name: 'Name must not be empty' },
+            }),
+          };
+        }
 
-    // GET /api/v1/workspaces/:id - get workspace
-    const wsIdMatch = url.match(/^\/api\/v1\/workspaces\/([^/]+)$/);
-    if (wsIdMatch && method === 'GET') {
-      const wsId = wsIdMatch[1];
-      const result = prismaMock.workspace.findUnique({ where: { id: wsId } });
-      const workspace = (result instanceof Promise ? await result : result);
-      
-      if (!workspace) {
-        return {
-          statusCode: 404,
-          json: () => ({ error: 'Workspace not found', correlationId }),
-        };
-      }
-      
-      return {
-        statusCode: 200,
-        json: () => workspace,
-      };
-    }
+        const result = prismaMock.workspace.create({
+          data: {
+            name: payload.name,
+            ownerId: userId,
+            tenantId,
+            description: payload.description,
+          },
+        });
 
-    // PATCH /api/v1/workspaces/:id - update workspace
-    if (url.match(/^\/api\/v1\/workspaces\/[^/]+$/) && method === 'PATCH') {
-      const wsId = url.split('/')[4];
-      const result = prismaMock.workspace.update({
-        where: { id: wsId },
-        data: { ...payload },
-      });
-      const updated = (result instanceof Promise ? await result : result) || createWorkspace(wsId, userId, payload.name);
-      prismaMock.auditLog.create({ event: 'WORKSPACE_UPDATED', userId, workspaceId: wsId });
-      return {
-        statusCode: 200,
-        json: () => updated,
-      };
-    }
+        // Handle both sync and async results
+        const createdWs = result instanceof Promise ? await result : result;
 
-    // DELETE /api/v1/workspaces/:id - delete workspace
-    if (url.match(/^\/api\/v1\/workspaces\/[^/]+$/) && method === 'DELETE') {
-      const wsId = url.split('/')[4];
-      
-      // First get the workspace to check ownership
-      const getResult = prismaMock.workspace.findUnique({ where: { id: wsId } });
-      const workspace = (getResult instanceof Promise ? await getResult : getResult);
-      
-      if (!workspace) {
-        return {
-          statusCode: 404,
-          json: () => ({ error: 'Workspace not found' }),
-        };
-      }
-      
-      // Check if user is owner
-      if (workspace.ownerId !== userId) {
-        return {
-          statusCode: 403,
-          json: () => ({ error: 'Only workspace owner can delete' }),
-        };
-      }
-      
-      const result = prismaMock.workspace.delete({ where: { id: wsId } });
-      await (result instanceof Promise ? result : Promise.resolve());
-      prismaMock.auditLog.create({ event: 'WORKSPACE_DELETED', userId, workspaceId: wsId });
-      return {
-        statusCode: 204,
-        json: () => ({}),
-      };
-    }
-
-    // PROJECT CRUD
-    // POST /api/v1/workspaces/:id/projects - create project
-    if (url.match(/^\/api\/v1\/workspaces\/[^/]+\/projects$/) && method === 'POST') {
-      const wsId = url.split('/')[4];
-      
-      // First verify workspace exists
-      const wsResult = prismaMock.workspace.findUnique({ where: { id: wsId } });
-      const workspace = (wsResult instanceof Promise ? await wsResult : wsResult);
-      
-      if (!workspace) {
-        return { statusCode: 404, json: () => ({ error: 'Workspace not found' }) };
-      }
-      
-      const projId = `proj-${Date.now()}`;
-      const result = prismaMock.project.create({
-        data: { name: payload.name || 'New Project', workspaceId: wsId, tenantId },
-      });
-      const created = (result instanceof Promise ? await result : result) || createProject(projId, wsId);
-      prismaMock.auditLog.create({ event: 'PROJECT_CREATED', userId, projectId: projId });
-      return {
-        statusCode: 201,
-        json: () => created,
-      };
-    }
-
-    // GET /api/v1/projects/:id - get project
-    const projMatch = url.match(/^\/api\/v1\/projects\/([^/]+)$/);
-    if (projMatch && method === 'GET') {
-      const projId = projMatch[1];
-      if (projId === 'proj-not-found') {
-        return { statusCode: 404, json: () => ({ error: 'Project not found' }) };
-      }
-      if (projId === 'proj-forbidden' && userRole === 'viewer') {
-        return { statusCode: 403, json: () => ({ error: 'Permission denied' }) };
-      }
-      const result = prismaMock.project.findUnique({ where: { id: projId } });
-      const project = (result instanceof Promise ? await result : result) || createProject(projId, 'ws-1');
-      return {
-        statusCode: 200,
-        json: () => project,
-      };
-    }
-
-    // GET /api/v1/workspaces/:id/projects - list projects in workspace
-    const projListMatch = url.match(/^\/api\/v1\/workspaces\/([^/]+)\/projects$/);
-    if (projListMatch && method === 'GET') {
-      const wsId = projListMatch[1];
-      const result = prismaMock.project.findMany({ where: { workspaceId: wsId } });
-      const projects = (result instanceof Promise ? await result : result) || [
-        createProject('proj-1', wsId),
-      ];
-      return {
-        statusCode: 200,
-        json: () => ({ data: projects, total: projects.length }),
-      };
-    }
-
-    // PATCH /api/v1/projects/:id - update project
-    const projUpdateMatch = url.match(/^\/api\/v1\/projects\/([^/]+)$/);
-    if (projUpdateMatch && method === 'PATCH') {
-      const projId = projUpdateMatch[1];
-      const getResult = prismaMock.project.findUnique({ where: { id: projId } });
-      const project = (getResult instanceof Promise ? await getResult : getResult);
-      
-      if (!project) {
-        return { statusCode: 404, json: () => ({ error: 'Project not found' }) };
-      }
-      
-      // Check if user is creator
-      if (project.creatorId && project.creatorId !== userId) {
-        return {
-          statusCode: 403,
-          json: () => ({ error: 'Only project creator can update' }),
-        };
-      }
-      
-      const result = prismaMock.project.update({
-        where: { id: projId },
-        data: { ...payload },
-      });
-      const updated = (result instanceof Promise ? await result : result) || project;
-      prismaMock.auditLog.create({ event: 'PROJECT_UPDATED', userId, projectId: projId });
-      return {
-        statusCode: 200,
-        json: () => updated,
-      };
-    }
-
-    // Canvas operations
-    // POST /api/v1/projects/:id/canvas - create canvas
-    const canvasCreateMatch = url.match(/^\/api\/v1\/projects\/([^/]+)\/canvas$/);
-    if (canvasCreateMatch && method === 'POST') {
-      const projId = canvasCreateMatch[1];
-      const projResult = prismaMock.project.findUnique({ where: { id: projId } });
-      const project = (projResult instanceof Promise ? await projResult : projResult);
-      
-      if (!project) {
-        return { statusCode: 404, json: () => ({ error: 'Project not found' }) };
-      }
-      
-      const canvasId = `canvas-${Date.now()}`;
-      const result = prismaMock.canvas.create({
-        data: {
-          projectId: projId,
-          content: JSON.stringify(payload.content || {}),
-          version: 1,
-        },
-      });
-      const created = (result instanceof Promise ? await result : result) || createCanvas(canvasId, projId, 1);
-      prismaMock.auditLog.create({ event: 'CANVAS_CREATED', userId, projectId: projId, canvasId });
-      return {
-        statusCode: 201,
-        json: () => created,
-      };
-    }
-
-    // PATCH /api/v1/canvas/:id - update canvas
-    const canvasUpdateMatch = url.match(/^\/api\/v1\/canvas\/([^/]+)$/);
-    if (canvasUpdateMatch && method === 'PATCH') {
-      const canvasId = canvasUpdateMatch[1];
-      
-      const getResult = prismaMock.canvas.findUnique({ where: { id: canvasId } });
-      const canvas = (getResult instanceof Promise ? await getResult : getResult);
-      
-      if (!canvas) {
-        return { statusCode: 404, json: () => ({ error: 'Canvas not found' }) };
-      }
-      
-      // Check for version conflicts
-      const currentVersion = canvas.version || 1;
-      const baseVersion = payload.baseVersion || currentVersion;
-      
-      if (baseVersion < currentVersion) {
-        prismaMock.auditLog.create({ 
-          event: 'VERSION_CONFLICT', 
-          userId, 
-          canvasId,
-          metadata: { baseVersion, currentVersion },
+        prismaMock.auditLog.create({
+          event: 'WORKSPACE_CREATED',
+          userId,
+          workspaceId: createdWs?.id,
         });
         return {
-          statusCode: 409,
-          json: () => ({
-            error: 'Version conflict detected',
-            currentVersion: currentVersion,
-          }),
+          statusCode: 201,
+          json: () => createdWs,
         };
       }
-      
-      const newVersion = currentVersion + 1;
-      const updateResult = prismaMock.canvas.update({
-        where: { id: canvasId },
-        data: { content: JSON.stringify(payload.content), version: newVersion },
-      });
-      const updated = (updateResult instanceof Promise ? await updateResult : updateResult) || {
-        ...canvas,
-        version: newVersion,
-        content: payload.content,
-      };
-      
-      prismaMock.auditLog.create({ 
-        event: 'CANVAS_MODIFIED', 
-        userId, 
-        canvasId,
-        metadata: { newVersion },
-      });
-      return {
-        statusCode: 200,
-        json: () => updated,
-      };
-    }
 
-    // GET /api/v1/canvas/:id/versions - retrieve version history
-    const historyMatch = url.match(/^\/api\/v1\/canvas\/([^/]+)\/versions$/);
-    if (historyMatch && method === 'GET') {
-      const canvasId = historyMatch[1];
-      const result = prismaMock.canvasVersion.findMany({ where: { canvasId } });
-      const versions = (result instanceof Promise ? await result : result) || [
-        { version: 1, canvasId, createdAt: new Date(), createdBy: userId },
-      ];
-      return {
-        statusCode: 200,
-        json: () => ({ data: versions, total: versions.length }),
-      };
-    }
-    // POST /api/v1/canvas/:id/versions - create version
-    if (url.match(/^\/api\/v1\/canvas\/[^/]+\/versions$/) && method === 'POST') {
-      const canvasId = url.split('/')[4];
-      const currentVersion = payload.baseVersion || 1;
-      const newVersion = currentVersion + 1;
+      // GET /api/v1/workspaces/:id - get workspace
+      const wsIdMatch = url.match(/^\/api\/v1\/workspaces\/([^/]+)$/);
+      if (wsIdMatch && method === 'GET') {
+        const wsId = wsIdMatch[1];
+        const result = prismaMock.workspace.findUnique({ where: { id: wsId } });
+        const workspace = result instanceof Promise ? await result : result;
 
-      // Simulate conflict detection
-      if (payload.baseVersion && payload.baseVersion < currentVersion) {
-        prismaMock.auditLog.create({ event: 'VERSION_CONFLICT', userId, canvasId });
+        if (!workspace) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Workspace not found', correlationId }),
+          };
+        }
+
         return {
-          statusCode: 409,
-          json: () => ({
-            error: 'Version conflict',
-            currentVersion: currentVersion + 1,
-          }),
+          statusCode: 200,
+          json: () => workspace,
         };
       }
 
-      const result = prismaMock.canvasVersion.create({
-        data: { canvasId, content: payload.content, version: newVersion },
-      });
-      const created = (result instanceof Promise ? await result : result) || createCanvas(canvasId, 'proj-1', newVersion);
-      prismaMock.auditLog.create({ event: 'VERSION_CREATED', userId, canvasId, version: newVersion });
-      return {
-        statusCode: 201,
-        json: () => created,
-      };
-    }
-
-    // MEMBER MANAGEMENT
-    // POST /api/v1/workspaces/:id/members - add member to workspace
-    const wsMemberAddMatch = url.match(/^\/api\/v1\/workspaces\/([^/]+)\/members$/);
-    if (wsMemberAddMatch && method === 'POST') {
-      const wsId = wsMemberAddMatch[1];
-      const wsResult = prismaMock.workspace.findUnique({ where: { id: wsId } });
-      const workspace = (wsResult instanceof Promise ? await wsResult : wsResult);
-      
-      if (!workspace) {
-        return { statusCode: 404, json: () => ({ error: 'Workspace not found' }) };
-      }
-      
-      // Check if user is owner
-      if (workspace.ownerId !== userId) {
+      // PATCH /api/v1/workspaces/:id - update workspace
+      if (url.match(/^\/api\/v1\/workspaces\/[^/]+$/) && method === 'PATCH') {
+        const wsId = url.split('/')[4];
+        const result = prismaMock.workspace.update({
+          where: { id: wsId },
+          data: { ...payload },
+        });
+        const updated =
+          (result instanceof Promise ? await result : result) ||
+          createWorkspace(wsId, userId, payload.name);
+        prismaMock.auditLog.create({
+          event: 'WORKSPACE_UPDATED',
+          userId,
+          workspaceId: wsId,
+        });
         return {
-          statusCode: 403,
-          json: () => ({ error: 'Only workspace owner can add members' }),
+          statusCode: 200,
+          json: () => updated,
         };
       }
-      
-      const result = prismaMock.member.create({
-        data: {
+
+      // DELETE /api/v1/workspaces/:id - delete workspace
+      if (url.match(/^\/api\/v1\/workspaces\/[^/]+$/) && method === 'DELETE') {
+        const wsId = url.split('/')[4];
+
+        // First get the workspace to check ownership
+        const getResult = prismaMock.workspace.findUnique({
+          where: { id: wsId },
+        });
+        const workspace =
+          getResult instanceof Promise ? await getResult : getResult;
+
+        if (!workspace) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Workspace not found' }),
+          };
+        }
+
+        // Check if user is owner
+        if (workspace.ownerId !== userId) {
+          return {
+            statusCode: 403,
+            json: () => ({ error: 'Only workspace owner can delete' }),
+          };
+        }
+
+        const result = prismaMock.workspace.delete({ where: { id: wsId } });
+        await (result instanceof Promise ? result : Promise.resolve());
+        prismaMock.auditLog.create({
+          event: 'WORKSPACE_DELETED',
+          userId,
+          workspaceId: wsId,
+        });
+        return {
+          statusCode: 204,
+          json: () => ({}),
+        };
+      }
+
+      // PROJECT CRUD
+      // POST /api/v1/workspaces/:id/projects - create project
+      if (
+        url.match(/^\/api\/v1\/workspaces\/[^/]+\/projects$/) &&
+        method === 'POST'
+      ) {
+        const wsId = url.split('/')[4];
+
+        // First verify workspace exists
+        const wsResult = prismaMock.workspace.findUnique({
+          where: { id: wsId },
+        });
+        const workspace =
+          wsResult instanceof Promise ? await wsResult : wsResult;
+
+        if (!workspace) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Workspace not found' }),
+          };
+        }
+
+        const projId = `proj-${Date.now()}`;
+        const result = prismaMock.project.create({
+          data: {
+            name: payload.name || 'New Project',
+            workspaceId: wsId,
+            tenantId,
+          },
+        });
+        const created =
+          (result instanceof Promise ? await result : result) ||
+          createProject(projId, wsId);
+        prismaMock.auditLog.create({
+          event: 'PROJECT_CREATED',
+          userId,
+          projectId: projId,
+        });
+        return {
+          statusCode: 201,
+          json: () => created,
+        };
+      }
+
+      // GET /api/v1/projects/:id - get project
+      const projMatch = url.match(/^\/api\/v1\/projects\/([^/]+)$/);
+      if (projMatch && method === 'GET') {
+        const projId = projMatch[1];
+        if (projId === 'proj-not-found') {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Project not found' }),
+          };
+        }
+        if (projId === 'proj-forbidden' && userRole === 'viewer') {
+          return {
+            statusCode: 403,
+            json: () => ({ error: 'Permission denied' }),
+          };
+        }
+        const result = prismaMock.project.findUnique({ where: { id: projId } });
+        const project =
+          (result instanceof Promise ? await result : result) ||
+          createProject(projId, 'ws-1');
+        return {
+          statusCode: 200,
+          json: () => project,
+        };
+      }
+
+      // GET /api/v1/workspaces/:id/projects - list projects in workspace
+      const projListMatch = url.match(
+        /^\/api\/v1\/workspaces\/([^/]+)\/projects$/
+      );
+      if (projListMatch && method === 'GET') {
+        const wsId = projListMatch[1];
+        const result = prismaMock.project.findMany({
+          where: { workspaceId: wsId },
+        });
+        const projects = (result instanceof Promise
+          ? await result
+          : result) || [createProject('proj-1', wsId)];
+        return {
+          statusCode: 200,
+          json: () => ({ data: projects, total: projects.length }),
+        };
+      }
+
+      // PATCH /api/v1/projects/:id - update project
+      const projUpdateMatch = url.match(/^\/api\/v1\/projects\/([^/]+)$/);
+      if (projUpdateMatch && method === 'PATCH') {
+        const projId = projUpdateMatch[1];
+        const getResult = prismaMock.project.findUnique({
+          where: { id: projId },
+        });
+        const project =
+          getResult instanceof Promise ? await getResult : getResult;
+
+        if (!project) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Project not found' }),
+          };
+        }
+
+        // Check if user is creator
+        if (project.creatorId && project.creatorId !== userId) {
+          return {
+            statusCode: 403,
+            json: () => ({ error: 'Only project creator can update' }),
+          };
+        }
+
+        const result = prismaMock.project.update({
+          where: { id: projId },
+          data: { ...payload },
+        });
+        const updated =
+          (result instanceof Promise ? await result : result) || project;
+        prismaMock.auditLog.create({
+          event: 'PROJECT_UPDATED',
+          userId,
+          projectId: projId,
+        });
+        return {
+          statusCode: 200,
+          json: () => updated,
+        };
+      }
+
+      // Canvas operations
+      // POST /api/v1/projects/:id/canvas - create canvas
+      const canvasCreateMatch = url.match(
+        /^\/api\/v1\/projects\/([^/]+)\/canvas$/
+      );
+      if (canvasCreateMatch && method === 'POST') {
+        const projId = canvasCreateMatch[1];
+        const projResult = prismaMock.project.findUnique({
+          where: { id: projId },
+        });
+        const project =
+          projResult instanceof Promise ? await projResult : projResult;
+
+        if (!project) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Project not found' }),
+          };
+        }
+
+        const canvasId = `canvas-${Date.now()}`;
+        const result = prismaMock.canvas.create({
+          data: {
+            projectId: projId,
+            content: JSON.stringify(payload.content || {}),
+            version: 1,
+          },
+        });
+        const created =
+          (result instanceof Promise ? await result : result) ||
+          createCanvas(canvasId, projId, 1);
+        prismaMock.auditLog.create({
+          event: 'CANVAS_CREATED',
+          userId,
+          projectId: projId,
+          canvasId,
+        });
+        return {
+          statusCode: 201,
+          json: () => created,
+        };
+      }
+
+      // PATCH /api/v1/canvas/:id - update canvas
+      const canvasUpdateMatch = url.match(/^\/api\/v1\/canvas\/([^/]+)$/);
+      if (canvasUpdateMatch && method === 'PATCH') {
+        const canvasId = canvasUpdateMatch[1];
+
+        const getResult = prismaMock.canvas.findUnique({
+          where: { id: canvasId },
+        });
+        const canvas =
+          getResult instanceof Promise ? await getResult : getResult;
+
+        if (!canvas) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Canvas not found' }),
+          };
+        }
+
+        // Check for version conflicts
+        const currentVersion = canvas.version || 1;
+        const baseVersion = payload.baseVersion || currentVersion;
+
+        if (baseVersion < currentVersion) {
+          prismaMock.auditLog.create({
+            event: 'VERSION_CONFLICT',
+            userId,
+            canvasId,
+            metadata: { baseVersion, currentVersion },
+          });
+          return {
+            statusCode: 409,
+            json: () => ({
+              error: 'Version conflict detected',
+              currentVersion: currentVersion,
+            }),
+          };
+        }
+
+        const newVersion = currentVersion + 1;
+        const updateResult = prismaMock.canvas.update({
+          where: { id: canvasId },
+          data: {
+            content: JSON.stringify(payload.content),
+            version: newVersion,
+          },
+        });
+        const updated = (updateResult instanceof Promise
+          ? await updateResult
+          : updateResult) || {
+          ...canvas,
+          version: newVersion,
+          content: payload.content,
+        };
+
+        prismaMock.auditLog.create({
+          event: 'CANVAS_MODIFIED',
+          userId,
+          canvasId,
+          metadata: { newVersion },
+        });
+        return {
+          statusCode: 200,
+          json: () => updated,
+        };
+      }
+
+      // GET /api/v1/canvas/:id/versions - retrieve version history
+      const historyMatch = url.match(/^\/api\/v1\/canvas\/([^/]+)\/versions$/);
+      if (historyMatch && method === 'GET') {
+        const canvasId = historyMatch[1];
+        const result = prismaMock.canvasVersion.findMany({
+          where: { canvasId },
+        });
+        const versions = (result instanceof Promise
+          ? await result
+          : result) || [
+          { version: 1, canvasId, createdAt: new Date(), createdBy: userId },
+        ];
+        return {
+          statusCode: 200,
+          json: () => ({ data: versions, total: versions.length }),
+        };
+      }
+      // POST /api/v1/canvas/:id/versions - create version
+      if (
+        url.match(/^\/api\/v1\/canvas\/[^/]+\/versions$/) &&
+        method === 'POST'
+      ) {
+        const canvasId = url.split('/')[4];
+        const currentVersion = payload.baseVersion || 1;
+        const newVersion = currentVersion + 1;
+
+        // Simulate conflict detection
+        if (payload.baseVersion && payload.baseVersion < currentVersion) {
+          prismaMock.auditLog.create({
+            event: 'VERSION_CONFLICT',
+            userId,
+            canvasId,
+          });
+          return {
+            statusCode: 409,
+            json: () => ({
+              error: 'Version conflict',
+              currentVersion: currentVersion + 1,
+            }),
+          };
+        }
+
+        const result = prismaMock.canvasVersion.create({
+          data: { canvasId, content: payload.content, version: newVersion },
+        });
+        const created =
+          (result instanceof Promise ? await result : result) ||
+          createCanvas(canvasId, 'proj-1', newVersion);
+        prismaMock.auditLog.create({
+          event: 'VERSION_CREATED',
+          userId,
+          canvasId,
+          version: newVersion,
+        });
+        return {
+          statusCode: 201,
+          json: () => created,
+        };
+      }
+
+      // MEMBER MANAGEMENT
+      // POST /api/v1/workspaces/:id/members - add member to workspace
+      const wsMemberAddMatch = url.match(
+        /^\/api\/v1\/workspaces\/([^/]+)\/members$/
+      );
+      if (wsMemberAddMatch && method === 'POST') {
+        const wsId = wsMemberAddMatch[1];
+        const wsResult = prismaMock.workspace.findUnique({
+          where: { id: wsId },
+        });
+        const workspace =
+          wsResult instanceof Promise ? await wsResult : wsResult;
+
+        if (!workspace) {
+          return {
+            statusCode: 404,
+            json: () => ({ error: 'Workspace not found' }),
+          };
+        }
+
+        // Check if user is owner
+        if (workspace.ownerId !== userId) {
+          return {
+            statusCode: 403,
+            json: () => ({ error: 'Only workspace owner can add members' }),
+          };
+        }
+
+        const result = prismaMock.member.create({
+          data: {
+            userId: payload.userId,
+            workspaceId: wsId,
+            role: payload.role || 'editor',
+          },
+        });
+        const created = (result instanceof Promise ? await result : result) || {
+          id: `mem-${Math.random().toString(36).substring(7)}`,
           userId: payload.userId,
           workspaceId: wsId,
           role: payload.role || 'editor',
-        },
-      });
-      const created = (result instanceof Promise ? await result : result) || {
-        id: `mem-${Math.random().toString(36).substring(7)}`,
-        userId: payload.userId,
-        workspaceId: wsId,
-        role: payload.role || 'editor',
-      };
-      prismaMock.auditLog.create({ 
-        event: 'MEMBER_ADDED', 
-        userId, 
-        workspaceId: wsId,
-        newMemberId: payload.userId,
-        role: payload.role,
-      });
-      return {
-        statusCode: 201,
-        json: () => created,
-      };
-    }
+        };
+        prismaMock.auditLog.create({
+          event: 'MEMBER_ADDED',
+          userId,
+          workspaceId: wsId,
+          newMemberId: payload.userId,
+          role: payload.role,
+        });
+        return {
+          statusCode: 201,
+          json: () => created,
+        };
+      }
 
-    // GET /api/v1/workspaces/:id/members - list workspace members
-    const wsMemberListMatch = url.match(/^\/api\/v1\/workspaces\/([^/]+)\/members$/);
-    if (wsMemberListMatch && method === 'GET') {
-      const wsId = wsMemberListMatch[1];
-      const result = prismaMock.member.findMany({ where: { workspaceId: wsId } });
-      const members = (result instanceof Promise ? await result : result) || [
-        { userId: userId, role: 'owner', workspaceId: wsId },
-      ];
-      return {
-        statusCode: 200,
-        json: () => ({ data: members, total: members.length }),
-      };
-    }
+      // GET /api/v1/workspaces/:id/members - list workspace members
+      const wsMemberListMatch = url.match(
+        /^\/api\/v1\/workspaces\/([^/]+)\/members$/
+      );
+      if (wsMemberListMatch && method === 'GET') {
+        const wsId = wsMemberListMatch[1];
+        const result = prismaMock.member.findMany({
+          where: { workspaceId: wsId },
+        });
+        const members = (result instanceof Promise ? await result : result) || [
+          { userId: userId, role: 'owner', workspaceId: wsId },
+        ];
+        return {
+          statusCode: 200,
+          json: () => ({ data: members, total: members.length }),
+        };
+      }
 
-    // PROJECT MEMBER ENDPOINTS (legacy, for backwards compatibility)
-    // POST /api/v1/projects/:id/members - add member to project
-    const projMemberMatch = url.match(/^\/api\/v1\/projects\/([^/]+)\/members$/);
-    if (projMemberMatch && method === 'POST') {
-      const projId = projMemberMatch[1];
-      const result = prismaMock.member.create({
-        data: {
+      // PROJECT MEMBER ENDPOINTS (legacy, for backwards compatibility)
+      // POST /api/v1/projects/:id/members - add member to project
+      const projMemberMatch = url.match(
+        /^\/api\/v1\/projects\/([^/]+)\/members$/
+      );
+      if (projMemberMatch && method === 'POST') {
+        const projId = projMemberMatch[1];
+        const result = prismaMock.member.create({
+          data: {
+            userId: payload.userId,
+            projectId: projId,
+            role: payload.role || 'editor',
+          },
+        });
+        const created = (result instanceof Promise ? await result : result) || {
+          id: `mem-${Math.random().toString(36).substring(7)}`,
           userId: payload.userId,
           projectId: projId,
           role: payload.role || 'editor',
-        },
-      });
-      const created = (result instanceof Promise ? await result : result) || {
-        id: `mem-${Math.random().toString(36).substring(7)}`,
-        userId: payload.userId,
-        projectId: projId,
-        role: payload.role || 'editor',
-      };
-      prismaMock.auditLog.create({ 
-        event: 'MEMBER_ADDED', 
-        userId, 
-        projectId: projId,
-        newMemberId: payload.userId,
-        role: payload.role,
-      });
-      return {
-        statusCode: 201,
-        json: () => created,
-      };
-    }
+        };
+        prismaMock.auditLog.create({
+          event: 'MEMBER_ADDED',
+          userId,
+          projectId: projId,
+          newMemberId: payload.userId,
+          role: payload.role,
+        });
+        return {
+          statusCode: 201,
+          json: () => created,
+        };
+      }
 
-    // GET /api/v1/projects/:id/members - list project members
-    if (projMemberMatch && method === 'GET') {
-      const projId = projMemberMatch[1];
-      const result = prismaMock.member.findMany({ where: { projectId: projId } });
-      const members = (result instanceof Promise ? await result : result) || [
-        { userId: userId, role: 'owner', projectId: projId },
-      ];
-      return {
-        statusCode: 200,
-        json: () => ({ data: members, total: members.length }),
-      };
-    }
+      // GET /api/v1/projects/:id/members - list project members
+      if (projMemberMatch && method === 'GET') {
+        const projId = projMemberMatch[1];
+        const result = prismaMock.member.findMany({
+          where: { projectId: projId },
+        });
+        const members = (result instanceof Promise ? await result : result) || [
+          { userId: userId, role: 'owner', projectId: projId },
+        ];
+        return {
+          statusCode: 200,
+          json: () => ({ data: members, total: members.length }),
+        };
+      }
 
       // PERMISSION CHECKS
       // Unauthorized access
@@ -588,8 +719,12 @@ async function createAPITestFixture(): Promise<TestAPI> {
   });
 
   const authToken = [
-    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64'),
-    Buffer.from(JSON.stringify({ sub: 'user-1', tenantId: 'tenant-1', role: 'admin' })).toString('base64'),
+    Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString(
+      'base64'
+    ),
+    Buffer.from(
+      JSON.stringify({ sub: 'user-1', tenantId: 'tenant-1', role: 'admin' })
+    ).toString('base64'),
     'signature-placeholder',
   ].join('.');
 

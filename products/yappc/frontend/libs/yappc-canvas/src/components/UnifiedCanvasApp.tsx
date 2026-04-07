@@ -24,8 +24,6 @@ import { MinimapPanel } from './MinimapPanel';
 import { OutlinePanel } from './OutlinePanel';
 import { ZoomHUD } from './ZoomHUD';
 
-
-
 /**
  * Unified Canvas Application
  *

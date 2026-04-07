@@ -6,7 +6,6 @@ import type { UseUnifiedSearchReturn, UnifiedSearchOptions } from './types';
 
 import { useWebSocketSearch } from './index';
 
-
 /**
  * Hook for unified search across multiple data types.
  *

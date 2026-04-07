@@ -88,7 +88,11 @@ describe.skip('ThemeApplicator', () => {
         fallbackValues: { color: '#000000' },
       };
 
-      const result = ThemeApplicator.applyTheme(props, tokens, contextWithFallback);
+      const result = ThemeApplicator.applyTheme(
+        props,
+        tokens,
+        contextWithFallback
+      );
 
       expect(result.props.color).toBe('#000000');
     });
@@ -96,19 +100,28 @@ describe.skip('ThemeApplicator', () => {
 
   describe('resolveToken', () => {
     it('should resolve token from base layer', () => {
-      const value = ThemeApplicator.resolveToken('$color.primary.500', mockContext);
+      const value = ThemeApplicator.resolveToken(
+        '$color.primary.500',
+        mockContext
+      );
 
       expect(value).toBe('#1976d2');
     });
 
     it('should resolve token without $ prefix', () => {
-      const value = ThemeApplicator.resolveToken('color.primary.500', mockContext);
+      const value = ThemeApplicator.resolveToken(
+        'color.primary.500',
+        mockContext
+      );
 
       expect(value).toBe('#1976d2');
     });
 
     it('should return undefined for non-existent token', () => {
-      const value = ThemeApplicator.resolveToken('$color.nonexistent', mockContext);
+      const value = ThemeApplicator.resolveToken(
+        '$color.nonexistent',
+        mockContext
+      );
 
       expect(value).toBeUndefined();
     });
@@ -119,7 +132,10 @@ describe.skip('ThemeApplicator', () => {
         activeLayer: 'brand',
       };
 
-      const value = ThemeApplicator.resolveToken('$color.primary.500', brandContext);
+      const value = ThemeApplicator.resolveToken(
+        '$color.primary.500',
+        brandContext
+      );
 
       expect(value).toBe('#ff5722'); // Brand color, not base
     });
@@ -130,7 +146,10 @@ describe.skip('ThemeApplicator', () => {
         activeLayer: 'workspace',
       };
 
-      const value = ThemeApplicator.resolveToken('$color.primary.500', workspaceContext);
+      const value = ThemeApplicator.resolveToken(
+        '$color.primary.500',
+        workspaceContext
+      );
 
       expect(value).toBe('#4caf50'); // Workspace color
     });
@@ -141,7 +160,10 @@ describe.skip('ThemeApplicator', () => {
         activeLayer: 'brand',
       };
 
-      const value = ThemeApplicator.resolveToken('$color.primary.600', brandContext);
+      const value = ThemeApplicator.resolveToken(
+        '$color.primary.600',
+        brandContext
+      );
 
       expect(value).toBe('#1565c0'); // Falls back to base
     });
@@ -207,7 +229,10 @@ describe.skip('ThemeApplicator', () => {
         fallbackValues: { backgroundColor: '#fff' },
       };
 
-      const merged = ThemeApplicator.mergeContexts(parentContext, childOverrides);
+      const merged = ThemeApplicator.mergeContexts(
+        parentContext,
+        childOverrides
+      );
 
       expect(merged.activeLayer).toBe('brand');
       expect(merged.tokens).toBe(mockTokens);

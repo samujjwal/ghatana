@@ -65,7 +65,9 @@ export const Default: Story = {
       <>
         <Button onClick={() => setOpen(true)}>Open Drawer</Button>
         <Drawer open={open} onOpenChange={setOpen} header="Drawer Title">
-          <p>This is the drawer content. It slides in from the right by default.</p>
+          <p>
+            This is the drawer content. It slides in from the right by default.
+          </p>
           <p className="mt-4">You can put any content here.</p>
         </Drawer>
       </>
@@ -90,19 +92,39 @@ export const Positions: Story = {
         <Button onClick={() => setOpenTop(true)}>Open Top</Button>
         <Button onClick={() => setOpenBottom(true)}>Open Bottom</Button>
 
-        <Drawer open={openLeft} onOpenChange={setOpenLeft} position="left" header="Left Drawer">
+        <Drawer
+          open={openLeft}
+          onOpenChange={setOpenLeft}
+          position="left"
+          header="Left Drawer"
+        >
           <p>This drawer slides in from the left.</p>
         </Drawer>
 
-        <Drawer open={openRight} onOpenChange={setOpenRight} position="right" header="Right Drawer">
+        <Drawer
+          open={openRight}
+          onOpenChange={setOpenRight}
+          position="right"
+          header="Right Drawer"
+        >
           <p>This drawer slides in from the right.</p>
         </Drawer>
 
-        <Drawer open={openTop} onOpenChange={setOpenTop} position="top" header="Top Drawer">
+        <Drawer
+          open={openTop}
+          onOpenChange={setOpenTop}
+          position="top"
+          header="Top Drawer"
+        >
           <p>This drawer slides in from the top.</p>
         </Drawer>
 
-        <Drawer open={openBottom} onOpenChange={setOpenBottom} position="bottom" header="Bottom Drawer">
+        <Drawer
+          open={openBottom}
+          onOpenChange={setOpenBottom}
+          position="bottom"
+          header="Bottom Drawer"
+        >
           <p>This drawer slides in from the bottom.</p>
         </Drawer>
       </div>
@@ -127,19 +149,39 @@ export const Sizes: Story = {
         <Button onClick={() => setOpenLg(true)}>Large (512px)</Button>
         <Button onClick={() => setOpenFull(true)}>Full Width</Button>
 
-        <Drawer open={openSm} onOpenChange={setOpenSm} size="sm" header="Small Drawer">
+        <Drawer
+          open={openSm}
+          onOpenChange={setOpenSm}
+          size="sm"
+          header="Small Drawer"
+        >
           <p>This is a small drawer (320px wide).</p>
         </Drawer>
 
-        <Drawer open={openMd} onOpenChange={setOpenMd} size="md" header="Medium Drawer">
+        <Drawer
+          open={openMd}
+          onOpenChange={setOpenMd}
+          size="md"
+          header="Medium Drawer"
+        >
           <p>This is a medium drawer (384px wide) - default size.</p>
         </Drawer>
 
-        <Drawer open={openLg} onOpenChange={setOpenLg} size="lg" header="Large Drawer">
+        <Drawer
+          open={openLg}
+          onOpenChange={setOpenLg}
+          size="lg"
+          header="Large Drawer"
+        >
           <p>This is a large drawer (512px wide).</p>
         </Drawer>
 
-        <Drawer open={openFull} onOpenChange={setOpenFull} size="full" header="Full Width Drawer">
+        <Drawer
+          open={openFull}
+          onOpenChange={setOpenFull}
+          size="full"
+          header="Full Width Drawer"
+        >
           <p>This drawer takes up the full screen width.</p>
         </Drawer>
       </div>
@@ -188,11 +230,25 @@ export const NavigationDrawer: Story = {
     return (
       <>
         <Button onClick={() => setOpen(true)}>Open Navigation</Button>
-        <Drawer open={open} onOpenChange={setOpen} position="left" size="sm" header="Navigation">
+        <Drawer
+          open={open}
+          onOpenChange={setOpen}
+          position="left"
+          size="sm"
+          header="Navigation"
+        >
           <nav className="flex flex-col gap-2">
-            <a href="#" className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors">
+            <a
+              href="#"
+              className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+            >
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -203,9 +259,17 @@ export const NavigationDrawer: Story = {
                 <span>Home</span>
               </div>
             </a>
-            <a href="#" className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors">
+            <a
+              href="#"
+              className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+            >
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -216,9 +280,17 @@ export const NavigationDrawer: Story = {
                 <span>Dashboard</span>
               </div>
             </a>
-            <a href="#" className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors">
+            <a
+              href="#"
+              className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+            >
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -229,16 +301,29 @@ export const NavigationDrawer: Story = {
                 <span>Projects</span>
               </div>
             </a>
-            <a href="#" className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors">
+            <a
+              href="#"
+              className="px-4 py-3 hover:bg-grey-100 dark:hover:bg-grey-800 rounded-lg transition-colors"
+            >
               <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
                     d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
                   />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
                 <span>Settings</span>
               </div>
@@ -264,7 +349,8 @@ export const ScrollableContent: Story = {
           <div className="space-y-4">
             {Array.from({ length: 30 }).map((_, i) => (
               <p key={i}>
-                This is paragraph {i + 1}. The drawer content is scrollable when it exceeds the viewport height.
+                This is paragraph {i + 1}. The drawer content is scrollable when
+                it exceeds the viewport height.
               </p>
             ))}
           </div>
@@ -299,7 +385,9 @@ export const FormDrawer: Story = {
         >
           <form className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">Name</label>
+              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">
+                Name
+              </label>
               <input
                 type="text"
                 className="w-full px-3 py-2 border border-grey-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -307,7 +395,9 @@ export const FormDrawer: Story = {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">
+                Description
+              </label>
               <textarea
                 className="w-full px-3 py-2 border border-grey-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 rows={4}
@@ -315,7 +405,9 @@ export const FormDrawer: Story = {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">Category</label>
+              <label className="block text-sm font-medium text-grey-700 dark:text-grey-300 mb-1">
+                Category
+              </label>
               <select className="w-full px-3 py-2 border border-grey-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                 <option>Option 1</option>
                 <option>Option 2</option>
@@ -345,12 +437,19 @@ export const NoCloseButton: Story = {
           header="No Close Button"
           showCloseButton={false}
           footer={
-            <Button variant="solid" onClick={() => setOpen(false)} className="w-full">
+            <Button
+              variant="solid"
+              onClick={() => setOpen(false)}
+              className="w-full"
+            >
               Done
             </Button>
           }
         >
-          <p>This drawer has no close button in the header. Close it using the button in the footer or backdrop.</p>
+          <p>
+            This drawer has no close button in the header. Close it using the
+            button in the footer or backdrop.
+          </p>
         </Drawer>
       </>
     );
@@ -367,8 +466,16 @@ export const NoBackdrop: Story = {
     return (
       <>
         <Button onClick={() => setOpen(true)}>Open (No Backdrop)</Button>
-        <Drawer open={open} onOpenChange={setOpen} header="No Backdrop" showBackdrop={false}>
-          <p>This drawer has no backdrop overlay. You can interact with the page behind it.</p>
+        <Drawer
+          open={open}
+          onOpenChange={setOpen}
+          header="No Backdrop"
+          showBackdrop={false}
+        >
+          <p>
+            This drawer has no backdrop overlay. You can interact with the page
+            behind it.
+          </p>
         </Drawer>
       </>
     );
@@ -391,12 +498,19 @@ export const NoBackdropClose: Story = {
           header="Cannot Close by Backdrop"
           closeOnBackdropClick={false}
           footer={
-            <Button variant="solid" onClick={() => setOpen(false)} className="w-full">
+            <Button
+              variant="solid"
+              onClick={() => setOpen(false)}
+              className="w-full"
+            >
               Close Drawer
             </Button>
           }
         >
-          <p>Clicking the backdrop will not close this drawer. You must use the close button or footer button.</p>
+          <p>
+            Clicking the backdrop will not close this drawer. You must use the
+            close button or footer button.
+          </p>
         </Drawer>
       </>
     );
@@ -442,7 +556,9 @@ export const DarkMode: Story = {
         <Button onClick={() => setOpen(true)}>Open Dark Drawer</Button>
         <Drawer open={open} onOpenChange={setOpen} header="Dark Mode Drawer">
           <p>This drawer adapts to dark mode automatically.</p>
-          <p className="mt-4">The background, text, and borders all adjust for dark theme.</p>
+          <p className="mt-4">
+            The background, text, and borders all adjust for dark theme.
+          </p>
         </Drawer>
       </div>
     );

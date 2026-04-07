@@ -74,7 +74,7 @@ export class ComplianceAutomationService {
    *
    * @param prisma - Prisma client for database access
    */
-  constructor(private prisma: PrismaClient) { }
+  constructor(private prisma: PrismaClient) {}
 
   /**
    * Generates a remediation plan for an assessment.
@@ -103,7 +103,9 @@ export class ComplianceAutomationService {
       }
 
       // Group findings by control and calculate priorities
-      const controlFindings = this.groupFindingsByControl(assessment.findings as unknown[]);
+      const controlFindings = this.groupFindingsByControl(
+        assessment.findings as unknown[]
+      );
 
       // Generate remediation steps with dependencies
       const steps = this.generateRemediationSteps(
@@ -151,7 +153,8 @@ export class ComplianceAutomationService {
       return plan;
     } catch (error) {
       throw new Error(
-        `Failed to generate remediation plan: ${error instanceof Error ? error.message : 'unknown error'
+        `Failed to generate remediation plan: ${
+          error instanceof Error ? error.message : 'unknown error'
         }`
       );
     }
@@ -197,9 +200,7 @@ export class ComplianceAutomationService {
     }
 
     // Sort by impact score descending
-    return recommendations.sort(
-      (a, b) => b.impactScore - a.impactScore
-    );
+    return recommendations.sort((a, b) => b.impactScore - a.impactScore);
   }
 
   /**
@@ -233,7 +234,9 @@ export class ComplianceAutomationService {
       where: { id: stepId },
       data: {
         status,
-        evidence: evidence ? [...(step.evidence || []), ...evidence] : undefined,
+        evidence: evidence
+          ? [...(step.evidence || []), ...evidence]
+          : undefined,
         updatedAt: new Date(),
       },
     });
@@ -284,9 +287,8 @@ export class ComplianceAutomationService {
     }
 
     const plan = assessment.remediationPlans?.[0];
-    const completedSteps = plan?.steps.filter(
-      (s: unknown) => s.status === 'completed'
-    ).length || 0;
+    const completedSteps =
+      plan?.steps.filter((s: unknown) => s.status === 'completed').length || 0;
     const totalSteps = plan?.steps.length || 0;
     const completionPercentage =
       totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
@@ -409,9 +411,7 @@ export class ComplianceAutomationService {
    *
    * @private
    */
-  private calculatePriority(
-    findings: unknown[]
-  ): RemediationStep['priority'] {
+  private calculatePriority(findings: unknown[]): RemediationStep['priority'] {
     const riskLevels = findings.map((f) => f.severity || 'medium');
     if (riskLevels.includes('critical')) return 'critical';
     if (riskLevels.includes('high')) return 'high';
@@ -442,9 +442,7 @@ export class ComplianceAutomationService {
       medium: 14,
       low: 30,
     };
-    const days =
-      daysMap[priority as keyof typeof daysMap] ||
-      daysMap['low'];
+    const days = daysMap[priority as keyof typeof daysMap] || daysMap['low'];
     now.setDate(now.getDate() + days);
     return now;
   }
@@ -458,12 +456,9 @@ export class ComplianceAutomationService {
     gap: unknown
   ): ComplianceRecommendation['type'] {
     const description = gap.description || '';
-    if (description.includes('process'))
-      return 'process';
-    if (description.includes('technology'))
-      return 'technology';
-    if (description.includes('training'))
-      return 'training';
+    if (description.includes('process')) return 'process';
+    if (description.includes('technology')) return 'technology';
+    if (description.includes('training')) return 'training';
     return 'control';
   }
 
@@ -518,4 +513,3 @@ export class ComplianceAutomationService {
     return true;
   }
 }
-

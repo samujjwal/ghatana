@@ -1,6 +1,6 @@
 /**
  * Card Component (Tailwind CSS)
- * 
+ *
  * A structured surface component with header, content, and actions sections.
  * Provides a consistent card layout pattern commonly used in UI design.
  */
@@ -19,7 +19,7 @@ export interface CardProps extends BoxProps {
    * @default 'elevation'
    */
   variant?: 'elevation' | 'outlined';
-  
+
   /**
    * Shadow elevation (only applies to elevation variant)
    * @default 1
@@ -47,17 +47,17 @@ export interface CardHeaderProps extends Omit<BoxProps, 'title'> {
    * Card title
    */
   title?: React.ReactNode;
-  
+
   /**
    * Card subtitle
    */
   subheader?: React.ReactNode;
-  
+
   /**
    * Action element (usually icon buttons)
    */
   action?: React.ReactNode;
-  
+
   /**
    * Avatar element
    */
@@ -88,17 +88,17 @@ export interface CardMediaProps extends BoxProps {
    * Image source
    */
   image?: string;
-  
+
   /**
    * Alt text for image
    */
   alt?: string;
-  
+
   /**
    * Component to render (defaults to 'img' if image provided, otherwise 'div')
    */
   component?: React.ElementType;
-  
+
   /**
    * Height of media
    */
@@ -146,12 +146,20 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         ref={ref}
         bg={bg}
         rounded={rounded}
-        shadow={variant === 'elevation' ? (shadow || elevationToShadow[elevation]) : shadow}
-        border={variant === 'outlined' ? (border || 'border border-grey-300') : border}
+        shadow={
+          variant === 'elevation'
+            ? shadow || elevationToShadow[elevation]
+            : shadow
+        }
+        border={
+          variant === 'outlined' ? border || 'border border-grey-300' : border
+        }
         className={cn(
           'overflow-hidden',
-          hover && 'transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg',
-          interactive && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+          hover &&
+            'transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg',
+          interactive &&
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
           className
         )}
         {...interactiveProps}
@@ -163,15 +171,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   (
-    {
-      title,
-      subheader,
-      action,
-      avatar,
-      className,
-      p = 'p-4',
-      ...props
-    },
+    { title, subheader, action, avatar, className, p = 'p-4', ...props },
     ref
   ) => {
     return (
@@ -182,20 +182,16 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
         {...props}
       >
         {avatar && <div className="flex-shrink-0">{avatar}</div>}
-        
+
         <div className="flex-grow min-w-0">
           {title && (
-            <div className="text-base font-semibold text-grey-900">
-              {title}
-            </div>
+            <div className="text-base font-semibold text-grey-900">{title}</div>
           )}
           {subheader && (
-            <div className="text-sm text-grey-600 mt-1">
-              {subheader}
-            </div>
+            <div className="text-sm text-grey-600 mt-1">{subheader}</div>
           )}
         </div>
-        
+
         {action && <div className="flex-shrink-0">{action}</div>}
       </Box>
     );
@@ -203,35 +199,13 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
 );
 
 export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
-  (
-    {
-      className,
-      p = 'p-4',
-      ...props
-    },
-    ref
-  ) => {
-    return (
-      <Box
-        ref={ref}
-        p={p}
-        className={className}
-        {...props}
-      />
-    );
+  ({ className, p = 'p-4', ...props }, ref) => {
+    return <Box ref={ref} p={p} className={className} {...props} />;
   }
 );
 
 export const CardActions = forwardRef<HTMLDivElement, CardActionsProps>(
-  (
-    {
-      disableSpacing = false,
-      className,
-      p = 'p-4',
-      ...props
-    },
-    ref
-  ) => {
+  ({ disableSpacing = false, className, p = 'p-4', ...props }, ref) => {
     return (
       <Box
         ref={ref}
@@ -249,18 +223,11 @@ export const CardActions = forwardRef<HTMLDivElement, CardActionsProps>(
 
 export const CardMedia = forwardRef<HTMLDivElement, CardMediaProps>(
   (
-    {
-      image,
-      alt = '',
-      component,
-      height = 'h-48',
-      className,
-      ...props
-    },
+    { image, alt = '', component, height = 'h-48', className, ...props },
     ref
   ) => {
     const Component = component || (image ? 'img' : 'div');
-    
+
     if (Component === 'img' && image) {
       return (
         <img
@@ -272,7 +239,7 @@ export const CardMedia = forwardRef<HTMLDivElement, CardMediaProps>(
         />
       );
     }
-    
+
     return (
       <Box
         ref={ref}

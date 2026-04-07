@@ -1,6 +1,6 @@
 /**
  * Storybook Smoke Tests - Test Suite
- * 
+ *
  * Comprehensive tests for Storybook smoke testing utilities.
  */
 
@@ -11,8 +11,8 @@ import {
   generateStoryUrl,
   type StorybookSmokeConfig,
   type StoryTestSpec,
-
-  StorybookSmokeManager} from '../storybookSmoke';
+  StorybookSmokeManager,
+} from '../storybookSmoke';
 
 describe('StorybookSmokeManager', () => {
   const defaultConfig: StorybookSmokeConfig = {
@@ -89,12 +89,8 @@ describe('StorybookSmokeManager', () => {
         component: 'Button',
         story: 'Primary',
         title: 'Components/Button',
-        actions: [
-          { type: 'click', selector: 'button' },
-        ],
-        assertions: [
-          { type: 'visible', selector: 'button' },
-        ],
+        actions: [{ type: 'click', selector: 'button' }],
+        assertions: [{ type: 'visible', selector: 'button' }],
       };
 
       manager.registerSpec(spec);
@@ -164,7 +160,9 @@ describe('StorybookSmokeManager', () => {
 
       const url = manager.generateStoryUrl(spec);
 
-      expect(url).toBe('http://localhost:6006/iframe.html?id=button--primary&viewMode=story');
+      expect(url).toBe(
+        'http://localhost:6006/iframe.html?id=button--primary&viewMode=story'
+      );
     });
 
     it('should handle component names with spaces', () => {
@@ -194,12 +192,8 @@ describe('StorybookSmokeManager', () => {
         component: 'Button',
         story: 'Primary',
         title: 'Components/Button',
-        actions: [
-          { type: 'click', selector: 'button' },
-        ],
-        assertions: [
-          { type: 'visible', selector: 'button' },
-        ],
+        actions: [{ type: 'click', selector: 'button' }],
+        assertions: [{ type: 'visible', selector: 'button' }],
       };
 
       manager.registerSpec(spec);
@@ -260,9 +254,7 @@ describe('StorybookSmokeManager', () => {
         component: 'Button',
         story: 'Primary',
         title: 'Components/Button',
-        actions: [
-          { type: 'screenshot', name: 'initial' },
-        ],
+        actions: [{ type: 'screenshot', name: 'initial' }],
         assertions: [],
       };
 
@@ -448,9 +440,7 @@ describe('StorybookSmokeManager', () => {
         component: 'Button',
         story: 'Primary',
         title: 'Components/Button',
-        actions: [
-          { type: 'screenshot', name: 'test' },
-        ],
+        actions: [{ type: 'screenshot', name: 'test' }],
         assertions: [],
       };
 
@@ -575,12 +565,8 @@ describe('StorybookSmokeManager', () => {
         component: 'Button',
         story: 'Primary',
         title: 'Components/Button',
-        actions: [
-          { type: 'click', selector: 'button' },
-        ],
-        assertions: [
-          { type: 'visible', selector: 'button' },
-        ],
+        actions: [{ type: 'click', selector: 'button' }],
+        assertions: [{ type: 'visible', selector: 'button' }],
       };
 
       manager.registerSpec(spec);
@@ -596,8 +582,12 @@ describe('StorybookSmokeManager', () => {
     });
 
     it('should throw if exporting without results', () => {
-      expect(() => manager.exportResultsJSON()).toThrow('No suite results available');
-      expect(() => manager.exportResultsMarkdown()).toThrow('No suite results available');
+      expect(() => manager.exportResultsJSON()).toThrow(
+        'No suite results available'
+      );
+      expect(() => manager.exportResultsMarkdown()).toThrow(
+        'No suite results available'
+      );
     });
   });
 
@@ -659,13 +649,23 @@ describe('StorybookSmokeManager', () => {
 
   describe('Helper Functions', () => {
     it('should generate story URL via helper', () => {
-      const url = generateStoryUrl('http://localhost:6006', 'Button', 'Primary');
+      const url = generateStoryUrl(
+        'http://localhost:6006',
+        'Button',
+        'Primary'
+      );
 
-      expect(url).toBe('http://localhost:6006/iframe.html?id=button--primary&viewMode=story');
+      expect(url).toBe(
+        'http://localhost:6006/iframe.html?id=button--primary&viewMode=story'
+      );
     });
 
     it('should handle spaces in helper function', () => {
-      const url = generateStoryUrl('http://localhost:6006', 'Custom Button', 'Large Size');
+      const url = generateStoryUrl(
+        'http://localhost:6006',
+        'Custom Button',
+        'Large Size'
+      );
 
       expect(url).toContain('custom-button--large-size');
     });

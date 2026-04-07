@@ -1,8 +1,8 @@
 /**
  * Password Reset Form Component
- * 
+ *
  * Two-step password reset: request reset link, then set new password.
- * 
+ *
  * @module ui/components/Auth
  * @doc.type component
  * @doc.purpose Password reset flow
@@ -21,13 +21,13 @@ import { useState, type FormEvent } from 'react';
 export interface PasswordResetRequestProps {
   /** Callback on successful request */
   onSuccess?: () => void;
-  
+
   /** Callback on error */
   onError?: (error: Error) => void;
-  
+
   /** API endpoint override */
   requestEndpoint?: string;
-  
+
   /** Show back to login link */
   showBackToLogin?: boolean;
 }
@@ -38,16 +38,16 @@ export interface PasswordResetRequestProps {
 export interface PasswordResetConfirmProps {
   /** Reset token from URL */
   token: string;
-  
+
   /** Callback on successful reset */
   onSuccess?: () => void;
-  
+
   /** Callback on error */
   onError?: (error: Error) => void;
-  
+
   /** API endpoint override */
   confirmEndpoint?: string;
-  
+
   /** Minimum password length */
   minPasswordLength?: number;
 }
@@ -59,7 +59,7 @@ export interface PasswordResetConfirmProps {
 /**
  * Password reset request form
  * First step: Enter email to receive reset link
- * 
+ *
  * @example
  * <PasswordResetRequest
  *   onSuccess={() => setStep('check-email')}
@@ -76,27 +76,27 @@ export function PasswordResetRequest({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
+
   /**
    * Handle form submission
    */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     // Validate email
     if (!email) {
       setError('Email is required');
       return;
     }
-    
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Invalid email format');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(requestEndpoint, {
         method: 'POST',
@@ -105,21 +105,22 @@ export function PasswordResetRequest({
         },
         body: JSON.stringify({ email }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to send reset email');
       }
-      
+
       setSuccess(true);
-      
+
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to send reset email');
+      const error =
+        err instanceof Error ? err : new Error('Failed to send reset email');
       setError(error.message);
-      
+
       if (onError) {
         onError(error);
       }
@@ -127,15 +128,15 @@ export function PasswordResetRequest({
       setIsLoading(false);
     }
   };
-  
+
   if (success) {
     return (
       <div className="reset-success" role="status">
         <div className="success-icon">✉️</div>
         <h2 className="success-title">Check your email</h2>
         <p className="success-message">
-          We've sent a password reset link to <strong>{email}</strong>.
-          Please check your inbox and follow the instructions.
+          We've sent a password reset link to <strong>{email}</strong>. Please
+          check your inbox and follow the instructions.
         </p>
         <p className="success-note">
           Didn't receive the email? Check your spam folder or{' '}
@@ -156,7 +157,7 @@ export function PasswordResetRequest({
       </div>
     );
   }
-  
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -166,9 +167,10 @@ export function PasswordResetRequest({
     >
       <h2 className="form-title">Reset your password</h2>
       <p className="form-description">
-        Enter your email address and we'll send you a link to reset your password.
+        Enter your email address and we'll send you a link to reset your
+        password.
       </p>
-      
+
       <div className="form-group">
         <label htmlFor="email" className="form-label">
           Email Address
@@ -186,13 +188,13 @@ export function PasswordResetRequest({
           placeholder="you@example.com"
         />
       </div>
-      
+
       {error && (
         <div className="alert alert-error" role="alert">
           {error}
         </div>
       )}
-      
+
       <button
         type="submit"
         disabled={isLoading}
@@ -201,7 +203,7 @@ export function PasswordResetRequest({
       >
         {isLoading ? 'Sending...' : 'Send Reset Link'}
       </button>
-      
+
       {showBackToLogin && (
         <p className="form-footer">
           <a href="/login" className="form-link">
@@ -220,7 +222,7 @@ export function PasswordResetRequest({
 /**
  * Password reset confirm form
  * Second step: Set new password with reset token
- * 
+ *
  * @example
  * <PasswordResetConfirm
  *   token={searchParams.get('token')}
@@ -239,43 +241,46 @@ export function PasswordResetConfirm({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-  
+  const [errors, setErrors] = useState<{
+    password?: string;
+    confirmPassword?: string;
+  }>({});
+
   /**
    * Validate form
    */
   const validate = (): boolean => {
     const newErrors: { password?: string; confirmPassword?: string } = {};
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < minPasswordLength) {
       newErrors.password = `Password must be at least ${minPasswordLength} characters`;
     }
-    
+
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   /**
    * Handle form submission
    */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!validate()) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(confirmEndpoint, {
         method: 'POST',
@@ -284,19 +289,20 @@ export function PasswordResetConfirm({
         },
         body: JSON.stringify({ token, password }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to reset password');
       }
-      
+
       if (onSuccess) {
         onSuccess();
       }
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to reset password');
+      const error =
+        err instanceof Error ? err : new Error('Failed to reset password');
       setError(error.message);
-      
+
       if (onError) {
         onError(error);
       }
@@ -304,7 +310,7 @@ export function PasswordResetConfirm({
       setIsLoading(false);
     }
   };
-  
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -316,7 +322,7 @@ export function PasswordResetConfirm({
       <p className="form-description">
         Choose a strong password for your account.
       </p>
-      
+
       <div className="form-group">
         <label htmlFor="password" className="form-label">
           New Password
@@ -352,7 +358,7 @@ export function PasswordResetConfirm({
           </p>
         )}
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="confirmPassword" className="form-label">
           Confirm Password
@@ -366,7 +372,9 @@ export function PasswordResetConfirm({
           required
           autoComplete="new-password"
           aria-invalid={!!errors.confirmPassword}
-          aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
+          aria-describedby={
+            errors.confirmPassword ? 'confirm-password-error' : undefined
+          }
           className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
           placeholder="Re-enter new password"
         />
@@ -376,13 +384,13 @@ export function PasswordResetConfirm({
           </p>
         )}
       </div>
-      
+
       {error && (
         <div className="alert alert-error" role="alert">
           {error}
         </div>
       )}
-      
+
       <button
         type="submit"
         disabled={isLoading}
@@ -391,7 +399,7 @@ export function PasswordResetConfirm({
       >
         {isLoading ? 'Resetting...' : 'Reset Password'}
       </button>
-      
+
       <p className="form-footer">
         <a href="/login" className="form-link">
           ← Back to Login

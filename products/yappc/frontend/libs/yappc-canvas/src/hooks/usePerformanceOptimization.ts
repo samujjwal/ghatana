@@ -1,7 +1,6 @@
 import type { Node, Edge } from '@xyflow/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-
 // Performance monitoring types
 /**
  *
@@ -97,7 +96,7 @@ export interface UsePerformanceOptimizationReturn {
 
 /**
  * Hook for canvas performance optimization with virtualization, caching, and lazy loading
- * 
+ *
  * Provides comprehensive performance features including:
  * - Viewport-based virtualization (only render visible nodes/edges)
  * - Intelligent caching with LRU eviction and hit rate tracking
@@ -107,21 +106,21 @@ export interface UsePerformanceOptimizationReturn {
  * - Real-time performance metrics (FPS, render time, memory usage)
  * - Performance profiling and operation measurement
  * - Configurable optimization settings
- * 
+ *
  * Optimizes canvas rendering for large graphs (1000+ nodes) with minimal performance impact.
  * Automatically manages memory and reduces unnecessary computations.
- * 
+ *
  * @param nodes - Array of canvas nodes to optimize
  * @param edges - Array of canvas edges to optimize
  * @param options - Partial optimization settings (merged with defaults)
  * @returns Performance optimization state and operations
- * 
+ *
  * @example
  * ```tsx
  * function OptimizedCanvas() {
  *   const [allNodes, setAllNodes] = useState<Node[]>([]);
  *   const [allEdges, setAllEdges] = useState<Edge[]>([]);
- *   
+ *
  *   const {
  *     metrics,
  *     cache,
@@ -144,7 +143,7 @@ export interface UsePerformanceOptimizationReturn {
  *     maxCacheSize: 50 * 1024 * 1024, // 50MB
  *     debounceMs: 100
  *   });
- *   
+ *
  *   const handleViewportChange = (viewport) => {
  *     updateViewport({
  *       x: viewport.x,
@@ -154,21 +153,21 @@ export interface UsePerformanceOptimizationReturn {
  *       zoom: viewport.zoom
  *     });
  *   };
- *   
+ *
  *   const performBulkUpdate = (updates) => {
  *     batchOperations(
  *       updates.map(update => () => updateNode(update.id, update.data))
  *     );
  *   };
- *   
+ *
  *   const expensiveCalculation = () => {
  *     return measureOperation('layout-calculation', () => {
  *       return calculateGraphLayout(visibleNodes);
  *     });
  *   };
- *   
+ *
  *   const stats = cacheStats();
- *   
+ *
  *   return (
  *     <div>
  *       <PerformanceMetrics
@@ -206,7 +205,7 @@ export const usePerformanceOptimization = (
     throttleMs: 16, // ~60fps
     enableBatching: true,
     batchSize: 50,
-    ...options
+    ...options,
   });
 
   // State
@@ -219,7 +218,7 @@ export const usePerformanceOptimization = (
     fps: 60,
     latency: 0,
     cacheHitRate: 0,
-    operationsPerSecond: 0
+    operationsPerSecond: 0,
   });
 
   const [visibleNodes, setVisibleNodes] = useState<Node[]>([]);
@@ -232,7 +231,13 @@ export const usePerformanceOptimization = (
   const performanceStartRef = useRef<number>(0);
   const fpsCounterRef = useRef({ frames: 0, lastTime: Date.now() });
   const operationCounterRef = useRef({ count: 0, lastTime: Date.now() });
-  const viewportRef = useRef<ViewportBounds>({ x: 0, y: 0, width: 1000, height: 800, zoom: 1 });
+  const viewportRef = useRef<ViewportBounds>({
+    x: 0,
+    y: 0,
+    width: 1000,
+    height: 800,
+    zoom: 1,
+  });
 
   // Cache management
   const cacheGet = useCallback(<T>(key: string): T | null => {
@@ -244,41 +249,47 @@ export const usePerformanceOptimization = (
     return null;
   }, []);
 
-  const cacheSet = useCallback(<T>(key: string, value: T, size: number = 1024): void => {
-    const cache = cacheRef.current;
+  const cacheSet = useCallback(
+    <T>(key: string, value: T, size: number = 1024): void => {
+      const cache = cacheRef.current;
 
-    // Check cache size limit
-    let totalSize = Array.from(cache.values()).reduce((sum, entry) => sum + entry.size, 0);
+      // Check cache size limit
+      let totalSize = Array.from(cache.values()).reduce(
+        (sum, entry) => sum + entry.size,
+        0
+      );
 
-    // Evict old entries if needed
-    while (totalSize + size > settings.maxCacheSize && cache.size > 0) {
-      // Find least recently used entry
-      let oldestKey = '';
-      let oldestTime = Date.now();
+      // Evict old entries if needed
+      while (totalSize + size > settings.maxCacheSize && cache.size > 0) {
+        // Find least recently used entry
+        let oldestKey = '';
+        let oldestTime = Date.now();
 
-      for (const [k, entry] of cache.entries()) {
-        if (entry.timestamp < oldestTime) {
-          oldestTime = entry.timestamp;
-          oldestKey = k;
+        for (const [k, entry] of cache.entries()) {
+          if (entry.timestamp < oldestTime) {
+            oldestTime = entry.timestamp;
+            oldestKey = k;
+          }
+        }
+
+        if (oldestKey) {
+          const removedEntry = cache.get(oldestKey);
+          cache.delete(oldestKey);
+          totalSize -= removedEntry?.size || 0;
+        } else {
+          break;
         }
       }
 
-      if (oldestKey) {
-        const removedEntry = cache.get(oldestKey);
-        cache.delete(oldestKey);
-        totalSize -= removedEntry?.size || 0;
-      } else {
-        break;
-      }
-    }
-
-    cache.set(key, {
-      data: value,
-      timestamp: Date.now(),
-      accessCount: 1,
-      size
-    });
-  }, [settings.maxCacheSize]);
+      cache.set(key, {
+        data: value,
+        timestamp: Date.now(),
+        accessCount: 1,
+        size,
+      });
+    },
+    [settings.maxCacheSize]
+  );
 
   const cacheClear = useCallback(() => {
     cacheRef.current.clear();
@@ -286,90 +297,102 @@ export const usePerformanceOptimization = (
 
   const cacheStats = useCallback(() => {
     const cache = cacheRef.current;
-    const totalHits = Array.from(cache.values()).reduce((sum, entry) => sum + entry.accessCount, 0);
+    const totalHits = Array.from(cache.values()).reduce(
+      (sum, entry) => sum + entry.accessCount,
+      0
+    );
     const totalRequests = totalHits + (metrics.nodeCount + metrics.edgeCount);
     const hitRate = totalRequests > 0 ? totalHits / totalRequests : 0;
-    const totalSize = Array.from(cache.values()).reduce((sum, entry) => sum + entry.size, 0);
+    const totalSize = Array.from(cache.values()).reduce(
+      (sum, entry) => sum + entry.size,
+      0
+    );
 
     return {
       size: cache.size,
       hitRate,
-      totalSize
+      totalSize,
     };
   }, [metrics.nodeCount, metrics.edgeCount]);
 
   // Virtualization - only render visible elements
-  const updateViewport = useCallback((bounds: ViewportBounds) => {
-    viewportRef.current = bounds;
+  const updateViewport = useCallback(
+    (bounds: ViewportBounds) => {
+      viewportRef.current = bounds;
 
-    if (!settings.enableVirtualization) {
-      setVisibleNodes(nodes);
-      setVisibleEdges(edges);
-      return;
-    }
+      if (!settings.enableVirtualization) {
+        setVisibleNodes(nodes);
+        setVisibleEdges(edges);
+        return;
+      }
 
-    const buffer = 200; // Buffer around viewport
-    const expandedBounds = {
-      x: bounds.x - buffer,
-      y: bounds.y - buffer,
-      width: bounds.width + 2 * buffer,
-      height: bounds.height + 2 * buffer
-    };
+      const buffer = 200; // Buffer around viewport
+      const expandedBounds = {
+        x: bounds.x - buffer,
+        y: bounds.y - buffer,
+        width: bounds.width + 2 * buffer,
+        height: bounds.height + 2 * buffer,
+      };
 
-    // Filter nodes within viewport
-    const visible = nodes.filter(node => {
-      if (!node.position) return true; // Always show nodes without position
+      // Filter nodes within viewport
+      const visible = nodes.filter((node) => {
+        if (!node.position) return true; // Always show nodes without position
 
-      return (
-        node.position.x >= expandedBounds.x &&
-        node.position.x <= expandedBounds.x + expandedBounds.width &&
-        node.position.y >= expandedBounds.y &&
-        node.position.y <= expandedBounds.y + expandedBounds.height
+        return (
+          node.position.x >= expandedBounds.x &&
+          node.position.x <= expandedBounds.x + expandedBounds.width &&
+          node.position.y >= expandedBounds.y &&
+          node.position.y <= expandedBounds.y + expandedBounds.height
+        );
+      });
+
+      // Limit to max visible nodes
+      const limitedNodes = visible.slice(0, settings.maxVisibleNodes);
+      setVisibleNodes(limitedNodes);
+
+      // Filter edges connected to visible nodes
+      const visibleNodeIds = new Set(limitedNodes.map((n) => n.id));
+      const visibleEdgesList = edges.filter(
+        (edge) =>
+          visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
       );
-    });
-
-    // Limit to max visible nodes
-    const limitedNodes = visible.slice(0, settings.maxVisibleNodes);
-    setVisibleNodes(limitedNodes);
-
-    // Filter edges connected to visible nodes
-    const visibleNodeIds = new Set(limitedNodes.map(n => n.id));
-    const visibleEdgesList = edges.filter(edge =>
-      visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target)
-    );
-    setVisibleEdges(visibleEdgesList);
-
-  }, [nodes, edges, settings.enableVirtualization, settings.maxVisibleNodes]);
+      setVisibleEdges(visibleEdgesList);
+    },
+    [nodes, edges, settings.enableVirtualization, settings.maxVisibleNodes]
+  );
 
   // Lazy loading
-  const loadNodesInRegion = useCallback(async (bounds: ViewportBounds): Promise<Node[]> => {
-    if (!settings.enableLazyLoading) return nodes;
+  const loadNodesInRegion = useCallback(
+    async (bounds: ViewportBounds): Promise<Node[]> => {
+      if (!settings.enableLazyLoading) return nodes;
 
-    const cacheKey = `nodes_${bounds.x}_${bounds.y}_${bounds.width}_${bounds.height}_${bounds.zoom}`;
-    const cached = cacheGet<Node[]>(cacheKey);
+      const cacheKey = `nodes_${bounds.x}_${bounds.y}_${bounds.width}_${bounds.height}_${bounds.zoom}`;
+      const cached = cacheGet<Node[]>(cacheKey);
 
-    if (cached) {
-      return cached;
-    }
+      if (cached) {
+        return cached;
+      }
 
-    // Simulate async loading
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const regionNodes = nodes.filter(node => {
-          if (!node.position) return false;
-          return (
-            node.position.x >= bounds.x &&
-            node.position.x <= bounds.x + bounds.width &&
-            node.position.y >= bounds.y &&
-            node.position.y <= bounds.y + bounds.height
-          );
-        });
+      // Simulate async loading
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const regionNodes = nodes.filter((node) => {
+            if (!node.position) return false;
+            return (
+              node.position.x >= bounds.x &&
+              node.position.x <= bounds.x + bounds.width &&
+              node.position.y >= bounds.y &&
+              node.position.y <= bounds.y + bounds.height
+            );
+          });
 
-        cacheSet(cacheKey, regionNodes, regionNodes.length * 1024);
-        resolve(regionNodes);
-      }, 10);
-    });
-  }, [nodes, settings.enableLazyLoading, cacheGet, cacheSet]);
+          cacheSet(cacheKey, regionNodes, regionNodes.length * 1024);
+          resolve(regionNodes);
+        }, 10);
+      });
+    },
+    [nodes, settings.enableLazyLoading, cacheGet, cacheSet]
+  );
 
   const unloadNodesOutsideRegion = useCallback((bounds: ViewportBounds) => {
     // Remove cached nodes outside region to free memory
@@ -384,7 +407,7 @@ export const usePerformanceOptimization = (
             x: parseFloat(parts[1]),
             y: parseFloat(parts[2]),
             width: parseFloat(parts[3]),
-            height: parseFloat(parts[4])
+            height: parseFloat(parts[4]),
           };
 
           // Check if cached region is outside current viewport
@@ -400,30 +423,33 @@ export const usePerformanceOptimization = (
       }
     }
 
-    keysToRemove.forEach(key => cache.delete(key));
+    keysToRemove.forEach((key) => cache.delete(key));
   }, []);
 
   // Batching operations
-  const batchOperations = useCallback((operations: (() => void)[]) => {
-    if (!settings.enableBatching) {
-      operations.forEach(op => op());
-      return;
-    }
+  const batchOperations = useCallback(
+    (operations: (() => void)[]) => {
+      if (!settings.enableBatching) {
+        operations.forEach((op) => op());
+        return;
+      }
 
-    batchQueueRef.current.push(...operations);
+      batchQueueRef.current.push(...operations);
 
-    // Auto-flush if batch is full
-    if (batchQueueRef.current.length >= settings.batchSize) {
-      flushBatch();
-    }
-  }, [settings.enableBatching, settings.batchSize]);
+      // Auto-flush if batch is full
+      if (batchQueueRef.current.length >= settings.batchSize) {
+        flushBatch();
+      }
+    },
+    [settings.enableBatching, settings.batchSize]
+  );
 
   const flushBatch = useCallback(() => {
     const batch = batchQueueRef.current;
     batchQueueRef.current = [];
 
     // Execute all batched operations
-    batch.forEach(operation => {
+    batch.forEach((operation) => {
       try {
         operation();
       } catch (error) {
@@ -464,11 +490,10 @@ export const usePerformanceOptimization = (
     }
 
     // Update memory usage estimate
-    const estimatedUsage = (
+    const estimatedUsage =
       visibleNodes.length * 1024 + // ~1KB per node
       visibleEdges.length * 512 + // ~512B per edge
-      cacheRef.current.size * 2048 // ~2KB per cache entry
-    );
+      cacheRef.current.size * 2048; // ~2KB per cache entry
     setMemoryUsage(estimatedUsage);
   }, [visibleNodes, visibleEdges, garbageCollect, settings.maxVisibleNodes]);
 
@@ -490,30 +515,36 @@ export const usePerformanceOptimization = (
       fps: fpsCounterRef.current.frames,
       latency: 0, // Would be measured from network operations
       cacheHitRate: cacheStats().hitRate,
-      operationsPerSecond: operationCounterRef.current.count
+      operationsPerSecond: operationCounterRef.current.count,
     };
 
     setMetrics(newMetrics);
     return newMetrics;
   }, [memoryUsage, nodes.length, edges.length, cacheStats]);
 
-  const measureOperation = useCallback(<T>(name: string, operation: () => T): T => {
-    const start = performance.now();
-    const result = operation();
-    const end = performance.now();
+  const measureOperation = useCallback(
+    <T>(name: string, operation: () => T): T => {
+      const start = performance.now();
+      const result = operation();
+      const end = performance.now();
 
-    console.log(`Operation "${name}" took ${end - start}ms`);
+      console.log(`Operation "${name}" took ${end - start}ms`);
 
-    // Update operation counter
-    operationCounterRef.current.count++;
+      // Update operation counter
+      operationCounterRef.current.count++;
 
-    return result;
-  }, []);
+      return result;
+    },
+    []
+  );
 
   // Settings update
-  const updateSettings = useCallback((newSettings: Partial<OptimizationSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, []);
+  const updateSettings = useCallback(
+    (newSettings: Partial<OptimizationSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    },
+    []
+  );
 
   // Performance monitoring loop
   useEffect(() => {
@@ -524,25 +555,29 @@ export const usePerformanceOptimization = (
       const now = Date.now();
       const deltaTime = now - lastTime;
 
-      if (deltaTime >= 1000) { // Update every second
+      if (deltaTime >= 1000) {
+        // Update every second
         // Calculate FPS
-        const fps = Math.round(fpsCounterRef.current.frames * 1000 / deltaTime);
+        const fps = Math.round(
+          (fpsCounterRef.current.frames * 1000) / deltaTime
+        );
         fpsCounterRef.current.frames = 0;
         fpsCounterRef.current.lastTime = now;
 
         // Calculate operations per second
-        const opsPerSecond = operationCounterRef.current.count * 1000 / deltaTime;
+        const opsPerSecond =
+          (operationCounterRef.current.count * 1000) / deltaTime;
         operationCounterRef.current.count = 0;
         operationCounterRef.current.lastTime = now;
 
-        setMetrics(prev => ({
+        setMetrics((prev) => ({
           ...prev,
           fps,
           operationsPerSecond: opsPerSecond,
           nodeCount: nodes.length,
           edgeCount: edges.length,
           cacheHitRate: cacheStats().hitRate,
-          memoryUsage
+          memoryUsage,
         }));
 
         lastTime = now;
@@ -597,6 +632,6 @@ export const usePerformanceOptimization = (
     stopProfiling,
     measureOperation,
     settings,
-    updateSettings
+    updateSettings,
   };
 };

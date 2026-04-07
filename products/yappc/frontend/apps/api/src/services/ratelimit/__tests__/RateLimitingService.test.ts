@@ -72,7 +72,9 @@ describe('RateLimitingService', () => {
 
       // THEN: Should allow request
       expect(result.allowed).toBe(true);
-      expect(result.remaining).toBeLessThan(RATE_LIMIT_TIERS.free.requestsPerHour);
+      expect(result.remaining).toBeLessThan(
+        RATE_LIMIT_TIERS.free.requestsPerHour
+      );
       expect(mockRedis.incr).toHaveBeenCalled();
     });
 
@@ -189,10 +191,7 @@ describe('RateLimitingService', () => {
       await service.allowRequest(identifier);
 
       // THEN: Should set TTL to 1 hour
-      expect(mockRedis.expire).toHaveBeenCalledWith(
-        expect.any(String),
-        3600
-      );
+      expect(mockRedis.expire).toHaveBeenCalledWith(expect.any(String), 3600);
     });
   });
 
@@ -339,9 +338,9 @@ describe('RateLimitingService', () => {
 
       // WHEN: Attempt upgrade
       // THEN: Should throw error
-      await expect(
-        service.upgradeTier(userId, invalidTier)
-      ).rejects.toThrow('Invalid tier');
+      await expect(service.upgradeTier(userId, invalidTier)).rejects.toThrow(
+        'Invalid tier'
+      );
     });
   });
 
@@ -389,9 +388,10 @@ describe('RateLimitingService', () => {
       };
 
       // Mock Redis to simulate usage
-      mockRedis.get = jest.fn()
+      mockRedis.get = jest
+        .fn()
         .mockResolvedValueOnce('150') // user 1 exceeded (free limit 100)
-        .mockResolvedValueOnce('50')  // user 2 ok
+        .mockResolvedValueOnce('50') // user 2 ok
         .mockResolvedValueOnce('5000') // user 3 ok (pro limit 10k)
         .mockResolvedValueOnce('100000'); // user 4 ok (enterprise unlimited)
 
@@ -482,4 +482,3 @@ describe('RateLimitingService', () => {
     });
   });
 });
-

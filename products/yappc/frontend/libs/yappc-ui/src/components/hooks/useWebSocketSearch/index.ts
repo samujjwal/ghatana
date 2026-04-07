@@ -12,7 +12,6 @@ import type {
 } from './types';
 import { WebSocketSearchUtils } from './utils';
 
-
 /**
  * WebSocket-integrated search hook for real-time search capabilities.
  *
@@ -41,7 +40,7 @@ import { WebSocketSearchUtils } from './utils';
  *   />
  * );
  */
- 
+
 export function useWebSocketSearch(
   projectId: string,
   options: WebSocketSearchOptions = {}

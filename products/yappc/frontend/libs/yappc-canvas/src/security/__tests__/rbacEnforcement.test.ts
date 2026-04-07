@@ -99,7 +99,9 @@ describe('RBACEnforcer', () => {
 
     it('should allow redefining custom role', () => {
       enforcer.defineRole('custom', 'Custom', 'desc', ['read']);
-      const updated = enforcer.defineRole('custom', 'Custom2', 'desc2', ['write']);
+      const updated = enforcer.defineRole('custom', 'Custom2', 'desc2', [
+        'write',
+      ]);
 
       expect(updated.displayName).toBe('Custom2');
       expect(updated.permissions).toEqual(['write']);
@@ -219,7 +221,10 @@ describe('RBACEnforcer', () => {
     });
 
     it('should grant permissions to role', () => {
-      enforcer.grantPermissions('canvas', 'canvas-1', 'editor', ['read', 'write']);
+      enforcer.grantPermissions('canvas', 'canvas-1', 'editor', [
+        'read',
+        'write',
+      ]);
 
       const policy = enforcer.getPolicy('canvas', 'canvas-1');
       expect(policy?.rolePermissions.get('editor')).toEqual(['read', 'write']);
@@ -234,13 +239,22 @@ describe('RBACEnforcer', () => {
 
     it('should throw error when granting to non-existent role', () => {
       expect(() => {
-        enforcer.grantPermissions('canvas', 'canvas-1', 'non-existent', ['read']);
+        enforcer.grantPermissions('canvas', 'canvas-1', 'non-existent', [
+          'read',
+        ]);
       }).toThrow('Role not found: non-existent');
     });
 
     it('should revoke permissions from role', () => {
-      enforcer.grantPermissions('canvas', 'canvas-1', 'editor', ['read', 'write']);
-      const revoked = enforcer.revokePermissions('canvas', 'canvas-1', 'editor');
+      enforcer.grantPermissions('canvas', 'canvas-1', 'editor', [
+        'read',
+        'write',
+      ]);
+      const revoked = enforcer.revokePermissions(
+        'canvas',
+        'canvas-1',
+        'editor'
+      );
 
       expect(revoked).toBe(true);
       const policy = enforcer.getPolicy('canvas', 'canvas-1');
@@ -438,7 +452,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'Canvas', password: 'secret123' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.name).toBe('Canvas');
       expect(redacted.password).toBeUndefined();
@@ -454,7 +473,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'User', email: 'user@example.com' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.email).toBe('[REDACTED]');
     });
@@ -470,7 +494,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'User', phone: '555-123-4567' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.phone).toBe('***-***-****');
     });
@@ -485,7 +514,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'User', ssn: '123-45-6789' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.ssn).toMatch(/^\[HASH:[A-F0-9]+\]$/);
     });
@@ -500,7 +534,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'Employee', salary: 75000 };
-      const redacted = enforcer.applyRedaction(data, 'admin', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'admin',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.salary).toBe(75000);
     });
@@ -515,7 +554,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { user: { name: 'Alice', email: 'alice@example.com' } };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect((redacted.user as unknown).email).toBe('[REDACTED]');
       expect((redacted.user as unknown).name).toBe('Alice');
@@ -530,7 +574,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', rules);
 
       const data = { name: 'User', email: 'user@test.com', phone: '555-1234' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.email).toBe('[REDACTED]');
       expect(redacted.phone).toBeUndefined();
@@ -539,7 +588,12 @@ describe('RBACEnforcer', () => {
 
     it('should return original data when no policy exists', () => {
       const data = { name: 'User', email: 'user@test.com' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted).toEqual(data);
     });
@@ -556,7 +610,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { email: 'user@test.com' };
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted.email).toBe('user@test.com');
     });
@@ -571,7 +630,12 @@ describe('RBACEnforcer', () => {
       enforcer.createPolicy('canvas', 'canvas-1', [rule]);
 
       const data = { name: 'User' }; // No nested path exists
-      const redacted = enforcer.applyRedaction(data, 'viewer', 'canvas', 'canvas-1');
+      const redacted = enforcer.applyRedaction(
+        data,
+        'viewer',
+        'canvas',
+        'canvas-1'
+      );
 
       expect(redacted).toEqual(data);
     });
@@ -627,14 +691,24 @@ describe('RBACEnforcer', () => {
 
     it('should get audit log by user', () => {
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
       try {
-        enforcer.enforcePermission('user-2', 'viewer', 'delete', 'canvas', 'c2', [
+        enforcer.enforcePermission(
+          'user-2',
+          'viewer',
           'delete',
-        ]);
+          'canvas',
+          'c2',
+          ['delete']
+        );
       } catch {}
 
       const userLog = enforcer.getAuditLogByUser('user-1');
@@ -644,14 +718,24 @@ describe('RBACEnforcer', () => {
 
     it('should get audit log by resource', () => {
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
       try {
-        enforcer.enforcePermission('user-2', 'viewer', 'delete', 'canvas', 'c2', [
+        enforcer.enforcePermission(
+          'user-2',
+          'viewer',
           'delete',
-        ]);
+          'canvas',
+          'c2',
+          ['delete']
+        );
       } catch {}
 
       const resourceLog = enforcer.getAuditLogByResource('canvas', 'c1');
@@ -661,19 +745,34 @@ describe('RBACEnforcer', () => {
 
     it('should get audit log by action', () => {
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
       try {
-        enforcer.enforcePermission('user-2', 'viewer', 'write', 'canvas', 'c2', [
+        enforcer.enforcePermission(
+          'user-2',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c2',
+          ['write']
+        );
       } catch {}
       try {
-        enforcer.enforcePermission('user-3', 'viewer', 'delete', 'canvas', 'c3', [
+        enforcer.enforcePermission(
+          'user-3',
+          'viewer',
           'delete',
-        ]);
+          'canvas',
+          'c3',
+          ['delete']
+        );
       } catch {}
 
       const actionLog = enforcer.getAuditLogByAction('write');
@@ -683,9 +782,14 @@ describe('RBACEnforcer', () => {
 
     it('should clear audit log', () => {
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
 
       const cleared = enforcer.clearAuditLog();
@@ -722,9 +826,14 @@ describe('RBACEnforcer', () => {
       enforcer.updateConfig({ auditEnabled: false });
 
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
 
       const log = enforcer.getAuditLog();
@@ -765,9 +874,14 @@ describe('RBACEnforcer', () => {
       enforcer.defineRole('custom', 'Custom', 'desc', ['read']);
       enforcer.createPolicy('canvas', 'canvas-1');
       try {
-        enforcer.enforcePermission('user-1', 'viewer', 'write', 'canvas', 'c1', [
+        enforcer.enforcePermission(
+          'user-1',
+          'viewer',
           'write',
-        ]);
+          'canvas',
+          'c1',
+          ['write']
+        );
       } catch {}
 
       enforcer.reset();

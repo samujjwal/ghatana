@@ -1,13 +1,23 @@
 import { Plus as AddIcon } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom';
 
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } from '@ghatana/design-system';const ProjectPage = () => {
-  const { projectId } = useParams<{ projectId: string }>()
-  const navigate = useNavigate()
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+} from '@ghatana/design-system';
+const ProjectPage = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
 
   const handleCreateRequirement = () => {
-    navigate(`/projects/${projectId}/requirements/new`)
-  }
+    navigate(`/projects/${projectId}/requirements/new`);
+  };
 
   return (
     <Box className="grow p-6">
@@ -31,8 +41,14 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } f
               <Typography as="h6" component="h2">
                 User Authentication
               </Typography>
-              <Typography as="p" className="text-sm" color="text.secondary" className="mb-2">
-                The system shall allow users to authenticate using email and password
+              <Typography
+                as="p"
+                className="text-sm"
+                color="text.secondary"
+                className="mb-2"
+              >
+                The system shall allow users to authenticate using email and
+                password
               </Typography>
               <Box className="flex gap-2">
                 <Chip label="Functional" size="sm" tone="primary" />
@@ -52,7 +68,12 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } f
               <Typography as="h6" component="h2">
                 Data Export
               </Typography>
-              <Typography as="p" className="text-sm" color="text.secondary" className="mb-2">
+              <Typography
+                as="p"
+                className="text-sm"
+                color="text.secondary"
+                className="mb-2"
+              >
                 Users shall be able to export requirements in multiple formats
               </Typography>
               <Box className="flex gap-2">
@@ -68,7 +89,7 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions, Chip } f
         </Grid>
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default ProjectPage
+export default ProjectPage;

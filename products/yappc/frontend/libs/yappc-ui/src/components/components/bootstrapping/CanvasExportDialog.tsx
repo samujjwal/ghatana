@@ -51,7 +51,12 @@ export type ExportFormat = 'png' | 'svg' | 'json' | 'pdf';
 
 export type ExportQuality = 'low' | 'medium' | 'high' | 'maximum';
 
-export type ExportStatus = 'idle' | 'preparing' | 'exporting' | 'success' | 'error';
+export type ExportStatus =
+  | 'idle'
+  | 'preparing'
+  | 'exporting'
+  | 'success'
+  | 'error';
 
 export interface ExportOptions {
   /** Export format */
@@ -144,7 +149,11 @@ const QUALITY_CONFIG: Record<
   low: { label: 'Low', multiplier: 0.5, description: '50% - Smaller file' },
   medium: { label: 'Medium', multiplier: 1, description: '100% - Balanced' },
   high: { label: 'High', multiplier: 2, description: '200% - Sharp' },
-  maximum: { label: 'Maximum', multiplier: 4, description: '400% - Print quality' },
+  maximum: {
+    label: 'Maximum',
+    multiplier: 4,
+    description: '400% - Print quality',
+  },
 };
 
 const SCALE_OPTIONS = [0.5, 0.75, 1, 1.5, 2, 3, 4];
@@ -183,7 +192,9 @@ const FormatCard: React.FC<{
       <span
         className={cn(
           'text-sm font-medium',
-          selected ? 'text-primary-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300'
+          selected
+            ? 'text-primary-700 dark:text-primary-300'
+            : 'text-neutral-700 dark:text-neutral-300'
         )}
       >
         {config.label}
@@ -271,7 +282,8 @@ const PreviewPanel: React.FC<{
             Original: {dimensions.width} × {dimensions.height}px
           </span>
           <span>
-            Export: {Math.round(dimensions.width * scale)} × {Math.round(dimensions.height * scale)}px
+            Export: {Math.round(dimensions.width * scale)} ×{' '}
+            {Math.round(dimensions.height * scale)}px
           </span>
         </div>
       )}
@@ -310,12 +322,12 @@ export const CanvasExportDialog: React.FC<CanvasExportDialogProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Update option
-  const updateOption = useCallback(<K extends keyof ExportOptions>(
-    key: K,
-    value: ExportOptions[K]
-  ) => {
-    setOptions((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const updateOption = useCallback(
+    <K extends keyof ExportOptions>(key: K, value: ExportOptions[K]) => {
+      setOptions((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   // Handle export
   const handleExport = useCallback(async () => {
@@ -450,7 +462,9 @@ export const CanvasExportDialog: React.FC<CanvasExportDialogProps> = ({
               <div className="flex flex-col gap-2 rounded-lg bg-primary-50 p-4 dark:bg-primary-900/20">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
-                    {status === 'preparing' ? 'Preparing export...' : 'Generating file...'}
+                    {status === 'preparing'
+                      ? 'Preparing export...'
+                      : 'Generating file...'}
                   </span>
                   <span className="text-sm text-primary-600">{progress}%</span>
                 </div>
@@ -510,11 +524,15 @@ export const CanvasExportDialog: React.FC<CanvasExportDialogProps> = ({
           <div className="flex items-center gap-2">
             <Input
               value={options.fileName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateOption('fileName', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                updateOption('fileName', e.target.value)
+              }
               placeholder="Enter file name"
               className="flex-1"
             />
-            <Badge variant="outline">{FORMAT_CONFIG[options.format].extension}</Badge>
+            <Badge variant="outline">
+              {FORMAT_CONFIG[options.format].extension}
+            </Badge>
           </div>
         </div>
 
@@ -537,8 +555,12 @@ export const CanvasExportDialog: React.FC<CanvasExportDialogProps> = ({
                       : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700'
                   )}
                 >
-                  <span className="block text-sm font-medium">{config.label}</span>
-                  <span className="block text-xs text-neutral-500">{config.description}</span>
+                  <span className="block text-sm font-medium">
+                    {config.label}
+                  </span>
+                  <span className="block text-xs text-neutral-500">
+                    {config.description}
+                  </span>
                 </button>
               ))}
             </div>
@@ -603,21 +625,27 @@ export const CanvasExportDialog: React.FC<CanvasExportDialogProps> = ({
                     label="Include Background"
                     description="Export with canvas background"
                     checked={options.includeBackground}
-                    onChange={(checked) => updateOption('includeBackground', checked)}
+                    onChange={(checked) =>
+                      updateOption('includeBackground', checked)
+                    }
                   />
 
                   <ToggleOption
                     label="Include Metadata"
                     description="Add export date, dimensions, etc."
                     checked={options.includeMetadata}
-                    onChange={(checked) => updateOption('includeMetadata', checked)}
+                    onChange={(checked) =>
+                      updateOption('includeMetadata', checked)
+                    }
                   />
 
                   <ToggleOption
                     label="Preserve Aspect Ratio"
                     description="Maintain original proportions"
                     checked={options.preserveAspectRatio}
-                    onChange={(checked) => updateOption('preserveAspectRatio', checked)}
+                    onChange={(checked) =>
+                      updateOption('preserveAspectRatio', checked)
+                    }
                   />
                 </div>
               </motion.div>

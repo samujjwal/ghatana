@@ -198,7 +198,7 @@ describe('AuditLoggingMiddleware', () => {
     it('should redact tokens from headers', async () => {
       // GIVEN: Request with authorization token
       mockRequest.headers = {
-        'authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
       };
 
       // WHEN: Middleware processes request
@@ -412,4 +412,3 @@ describe('AuditLoggingMiddleware', () => {
     });
   });
 });
-

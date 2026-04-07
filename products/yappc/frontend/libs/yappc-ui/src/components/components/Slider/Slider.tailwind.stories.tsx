@@ -435,7 +435,9 @@ export const FormExample: Story = {
           max={100}
           step={10}
           showValue
-          formatValue={(val) => (val === 0 ? 'Center' : val > 0 ? `R+${val}` : `L${val}`)}
+          formatValue={(val) =>
+            val === 0 ? 'Center' : val > 0 ? `R+${val}` : `L${val}`
+          }
           colorScheme="grey"
           marks={[
             { value: -100, label: 'L' },
@@ -479,9 +481,13 @@ export const Accessibility: Story = {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-          <h3 className="mb-2 font-semibold text-grey-900">Accessibility Features:</h3>
+          <h3 className="mb-2 font-semibold text-grey-900">
+            Accessibility Features:
+          </h3>
           <ul className="space-y-1 text-sm text-grey-700">
-            <li>• Keyboard navigation (Arrow keys to adjust, Home/End for min/max)</li>
+            <li>
+              • Keyboard navigation (Arrow keys to adjust, Home/End for min/max)
+            </li>
             <li>• ARIA attributes for screen readers</li>
             <li>• Proper labeling and value announcements</li>
             <li>• Focus indicators</li>
@@ -526,7 +532,9 @@ export const Playground: Story = {
     const [value, setValue] = useState(50);
 
     return (
-      <div className={args.orientation === 'vertical' ? 'h-64' : 'w-full max-w-md'}>
+      <div
+        className={args.orientation === 'vertical' ? 'h-64' : 'w-full max-w-md'}
+      >
         <Slider {...args} value={value} onChange={setValue} />
       </div>
     );

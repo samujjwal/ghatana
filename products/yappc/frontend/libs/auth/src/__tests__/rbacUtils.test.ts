@@ -112,7 +112,7 @@ describe('RBACUtils.authorize()', () => {
 describe('RBACUtils.getPermissionsFromRoles()', () => {
   it('flattens permissions from multiple roles', () => {
     const perms = RBACUtils.getPermissionsFromRoles([ADMIN_ROLE, VIEWER_ROLE]);
-    const ids = perms.map(p => p.id);
+    const ids = perms.map((p) => p.id);
     expect(ids).toContain('perm-read');
     expect(ids).toContain('perm-write');
   });
@@ -120,7 +120,7 @@ describe('RBACUtils.getPermissionsFromRoles()', () => {
   it('deduplicates overlapping permissions', () => {
     // Both roles have READ_PERMISSION — should appear once
     const perms = RBACUtils.getPermissionsFromRoles([ADMIN_ROLE, VIEWER_ROLE]);
-    const readPerms = perms.filter(p => p.id === 'perm-read');
+    const readPerms = perms.filter((p) => p.id === 'perm-read');
     expect(readPerms).toHaveLength(1);
   });
 
@@ -135,7 +135,9 @@ describe('RBACUtils.getPermissionsFromRoles()', () => {
 
 describe('RBACUtils.hasRole()', () => {
   it('returns true when role is present', () => {
-    expect(RBACUtils.hasRole([ADMIN_ROLE, VIEWER_ROLE], 'role-admin')).toBe(true);
+    expect(RBACUtils.hasRole([ADMIN_ROLE, VIEWER_ROLE], 'role-admin')).toBe(
+      true
+    );
   });
 
   it('returns false when role is absent', () => {
@@ -149,11 +151,15 @@ describe('RBACUtils.hasRole()', () => {
 
 describe('RBACUtils.hasAnyRole()', () => {
   it('returns true when at least one matching role exists', () => {
-    expect(RBACUtils.hasAnyRole([VIEWER_ROLE], ['role-admin', 'role-viewer'])).toBe(true);
+    expect(
+      RBACUtils.hasAnyRole([VIEWER_ROLE], ['role-admin', 'role-viewer'])
+    ).toBe(true);
   });
 
   it('returns false when none of the roles match', () => {
-    expect(RBACUtils.hasAnyRole([VIEWER_ROLE], ['role-admin', 'role-superuser'])).toBe(false);
+    expect(
+      RBACUtils.hasAnyRole([VIEWER_ROLE], ['role-admin', 'role-superuser'])
+    ).toBe(false);
   });
 });
 
@@ -163,11 +169,18 @@ describe('RBACUtils.hasAnyRole()', () => {
 
 describe('RBACUtils.hasAllRoles()', () => {
   it('returns true when user has all required roles', () => {
-    expect(RBACUtils.hasAllRoles([ADMIN_ROLE, VIEWER_ROLE], ['role-admin', 'role-viewer'])).toBe(true);
+    expect(
+      RBACUtils.hasAllRoles(
+        [ADMIN_ROLE, VIEWER_ROLE],
+        ['role-admin', 'role-viewer']
+      )
+    ).toBe(true);
   });
 
   it('returns false when any required role is missing', () => {
-    expect(RBACUtils.hasAllRoles([VIEWER_ROLE], ['role-admin', 'role-viewer'])).toBe(false);
+    expect(
+      RBACUtils.hasAllRoles([VIEWER_ROLE], ['role-admin', 'role-viewer'])
+    ).toBe(false);
   });
 });
 
@@ -198,9 +211,12 @@ describe('RBACUtils.createRole()', () => {
 
 describe('RBACUtils.addPermissionToRole()', () => {
   it('adds a new permission to the role', () => {
-    const updated = RBACUtils.addPermissionToRole(VIEWER_ROLE, WRITE_PERMISSION);
+    const updated = RBACUtils.addPermissionToRole(
+      VIEWER_ROLE,
+      WRITE_PERMISSION
+    );
     expect(updated.permissions).toHaveLength(2);
-    expect(updated.permissions.some(p => p.id === 'perm-write')).toBe(true);
+    expect(updated.permissions.some((p) => p.id === 'perm-write')).toBe(true);
   });
 
   it('does not duplicate an existing permission', () => {
@@ -209,7 +225,10 @@ describe('RBACUtils.addPermissionToRole()', () => {
   });
 
   it('returns a new object (immutable)', () => {
-    const updated = RBACUtils.addPermissionToRole(VIEWER_ROLE, WRITE_PERMISSION);
+    const updated = RBACUtils.addPermissionToRole(
+      VIEWER_ROLE,
+      WRITE_PERMISSION
+    );
     expect(updated).not.toBe(VIEWER_ROLE);
   });
 });
@@ -220,13 +239,19 @@ describe('RBACUtils.addPermissionToRole()', () => {
 
 describe('RBACUtils.removePermissionFromRole()', () => {
   it('removes the specified permission', () => {
-    const updated = RBACUtils.removePermissionFromRole(ADMIN_ROLE, 'perm-write');
-    expect(updated.permissions.some(p => p.id === 'perm-write')).toBe(false);
-    expect(updated.permissions.some(p => p.id === 'perm-read')).toBe(true);
+    const updated = RBACUtils.removePermissionFromRole(
+      ADMIN_ROLE,
+      'perm-write'
+    );
+    expect(updated.permissions.some((p) => p.id === 'perm-write')).toBe(false);
+    expect(updated.permissions.some((p) => p.id === 'perm-read')).toBe(true);
   });
 
   it('returns role unchanged when permission not found', () => {
-    const updated = RBACUtils.removePermissionFromRole(VIEWER_ROLE, 'nonexistent');
+    const updated = RBACUtils.removePermissionFromRole(
+      VIEWER_ROLE,
+      'nonexistent'
+    );
     expect(updated.permissions).toHaveLength(1);
   });
 });
@@ -237,7 +262,9 @@ describe('RBACUtils.removePermissionFromRole()', () => {
 
 describe('RBACUtils.checkACLAccess()', () => {
   it('grants access to the owner regardless of action', () => {
-    expect(RBACUtils.checkACLAccess(BASE_ACL, 'owner-user', 'delete')).toBe(true);
+    expect(RBACUtils.checkACLAccess(BASE_ACL, 'owner-user', 'delete')).toBe(
+      true
+    );
   });
 
   it('grants access to user with explicit permission in ACL', () => {
@@ -273,7 +300,9 @@ describe('RBACUtils.checkACLAccess()', () => {
   });
 
   it('denies access when publicAccess="none" and user unknown', () => {
-    expect(RBACUtils.checkACLAccess(BASE_ACL, 'unknown-user', 'read')).toBe(false);
+    expect(RBACUtils.checkACLAccess(BASE_ACL, 'unknown-user', 'read')).toBe(
+      false
+    );
   });
 });
 
@@ -293,7 +322,9 @@ describe('RBACUtils.grantAccess()', () => {
       userPermissions: { 'user-3': ['read'] },
     };
     const updated = RBACUtils.grantAccess(acl, 'user-3', 'read');
-    expect(updated.userPermissions['user-3']!.filter(a => a === 'read')).toHaveLength(1);
+    expect(
+      updated.userPermissions['user-3']!.filter((a) => a === 'read')
+    ).toHaveLength(1);
   });
 
   it('returns a new ACL object (immutable)', () => {

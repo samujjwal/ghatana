@@ -2,14 +2,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 import type { UserRole, PermissionScope } from '../schemas/permission-schemas';
 
-import {
-  mockCollaborationServer,
-} from './server';
+import { mockCollaborationServer } from './server';
 import type {
   CanvasPermission,
   ExtendedShareToken,
   CreatePermissionRequest,
-  CollaborationServer} from './server';
+  CollaborationServer,
+} from './server';
 
 // Permission management hook
 /**
@@ -30,16 +29,21 @@ export interface UsePermissionsReturn {
   canvasPermissions: CanvasPermission[];
   loading: boolean;
   error: string | null;
-  
+
   // Permission checks
   checkPermission: (action: string) => boolean;
   hasRole: (role: UserRole) => boolean;
-  
+
   // Permission management
-  createPermission: (request: Omit<CreatePermissionRequest, 'canvasId'>) => Promise<CanvasPermission>;
-  updatePermission: (permissionId: string, updates: Partial<CanvasPermission>) => Promise<void>;
+  createPermission: (
+    request: Omit<CreatePermissionRequest, 'canvasId'>
+  ) => Promise<CanvasPermission>;
+  updatePermission: (
+    permissionId: string,
+    updates: Partial<CanvasPermission>
+  ) => Promise<void>;
   deletePermission: (permissionId: string) => Promise<void>;
-  
+
   // Utilities
   refresh: () => Promise<void>;
 }
@@ -49,18 +53,23 @@ export const usePermissions = ({
   userId,
   server = mockCollaborationServer,
 }: UsePermissionsConfig): UsePermissionsReturn => {
-  const [userPermissions, setUserPermissions] = useState<CanvasPermission[]>([]);
-  const [canvasPermissions, setCanvasPermissions] = useState<CanvasPermission[]>([]);
+  const [userPermissions, setUserPermissions] = useState<CanvasPermission[]>(
+    []
+  );
+  const [canvasPermissions, setCanvasPermissions] = useState<
+    CanvasPermission[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const currentUserId = useRef(userId || 'anonymous');
 
   const checkPermission = useCallback(
     (action: string): boolean => {
       if (!currentUserId.current || !canvasId) return false;
-      return server.checkPermission(currentUserId.current, canvasId, action)
-        .then(allowed => allowed)
+      return server
+        .checkPermission(currentUserId.current, canvasId, action)
+        .then((allowed) => allowed)
         .catch(() => false) as unknown; // Simplified for synchronous usage
     },
     [canvasId, server]
@@ -68,7 +77,9 @@ export const usePermissions = ({
 
   const hasRole = useCallback(
     (role: UserRole): boolean => {
-      return userPermissions.some(p => p.canvasId === canvasId && p.role === role);
+      return userPermissions.some(
+        (p) => p.canvasId === canvasId && p.role === role
+      );
     },
     [userPermissions, canvasId]
   );
@@ -78,7 +89,11 @@ export const usePermissions = ({
     async (action: string): Promise<boolean> => {
       if (!currentUserId.current || !canvasId) return false;
       try {
-        return await server.checkPermission(currentUserId.current, canvasId, action);
+        return await server.checkPermission(
+          currentUserId.current,
+          canvasId,
+          action
+        );
       } catch (err) {
         console.error('Permission check failed:', err);
         return false;
@@ -88,16 +103,19 @@ export const usePermissions = ({
   );
 
   const createPermission = useCallback(
-    async (request: Omit<CreatePermissionRequest, 'canvasId'>): Promise<CanvasPermission> => {
+    async (
+      request: Omit<CreatePermissionRequest, 'canvasId'>
+    ): Promise<CanvasPermission> => {
       try {
         const permission = await server.createPermission({
           ...request,
           canvasId,
         });
-        setCanvasPermissions(prev => [...prev, permission]);
+        setCanvasPermissions((prev) => [...prev, permission]);
         return permission;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create permission';
+        const message =
+          err instanceof Error ? err.message : 'Failed to create permission';
         setError(message);
         throw err;
       }
@@ -106,19 +124,23 @@ export const usePermissions = ({
   );
 
   const updatePermission = useCallback(
-    async (permissionId: string, updates: Partial<CanvasPermission>): Promise<void> => {
+    async (
+      permissionId: string,
+      updates: Partial<CanvasPermission>
+    ): Promise<void> => {
       try {
         const updated = await server.updatePermission(permissionId, updates);
-        setCanvasPermissions(prev =>
-          prev.map(p => (p.id === permissionId ? updated : p))
+        setCanvasPermissions((prev) =>
+          prev.map((p) => (p.id === permissionId ? updated : p))
         );
         if (updated.userId === currentUserId.current) {
-          setUserPermissions(prev =>
-            prev.map(p => (p.id === permissionId ? updated : p))
+          setUserPermissions((prev) =>
+            prev.map((p) => (p.id === permissionId ? updated : p))
           );
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to update permission';
+        const message =
+          err instanceof Error ? err.message : 'Failed to update permission';
         setError(message);
         throw err;
       }
@@ -130,10 +152,13 @@ export const usePermissions = ({
     async (permissionId: string): Promise<void> => {
       try {
         await server.deletePermission(permissionId);
-        setCanvasPermissions(prev => prev.filter(p => p.id !== permissionId));
-        setUserPermissions(prev => prev.filter(p => p.id !== permissionId));
+        setCanvasPermissions((prev) =>
+          prev.filter((p) => p.id !== permissionId)
+        );
+        setUserPermissions((prev) => prev.filter((p) => p.id !== permissionId));
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete permission';
+        const message =
+          err instanceof Error ? err.message : 'Failed to delete permission';
         setError(message);
         throw err;
       }
@@ -143,10 +168,10 @@ export const usePermissions = ({
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!canvasId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const [canvasPerms, userPerms] = await Promise.all([
         server.getCanvasPermissions(canvasId),
@@ -154,11 +179,12 @@ export const usePermissions = ({
           ? server.getUserPermissions(currentUserId.current)
           : Promise.resolve([]),
       ]);
-      
+
       setCanvasPermissions(canvasPerms);
-      setUserPermissions(userPerms.filter(p => p.canvasId === canvasId));
+      setUserPermissions(userPerms.filter((p) => p.canvasId === canvasId));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load permissions';
+      const message =
+        err instanceof Error ? err.message : 'Failed to load permissions';
       setError(message);
     } finally {
       setLoading(false);
@@ -205,8 +231,11 @@ export interface UseShareTokensReturn {
   tokens: ExtendedShareToken[];
   loading: boolean;
   error: string | null;
-  
-  createShareToken: (permissions: PermissionScope, expiresAt?: Date) => Promise<ExtendedShareToken>;
+
+  createShareToken: (
+    permissions: PermissionScope,
+    expiresAt?: Date
+  ) => Promise<ExtendedShareToken>;
   validateToken: (token: string) => Promise<ExtendedShareToken | null>;
   deleteToken: (tokenId: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -221,14 +250,22 @@ export const useShareTokens = ({
   const [error, setError] = useState<string | null>(null);
 
   const createShareToken = useCallback(
-    async (permissions: PermissionScope, expiresAt?: Date): Promise<ExtendedShareToken> => {
+    async (
+      permissions: PermissionScope,
+      expiresAt?: Date
+    ): Promise<ExtendedShareToken> => {
       try {
         setError(null);
-        const token = await server.createShareToken(canvasId, permissions, expiresAt);
-        setTokens(prev => [...prev, token]);
+        const token = await server.createShareToken(
+          canvasId,
+          permissions,
+          expiresAt
+        );
+        setTokens((prev) => [...prev, token]);
         return token;
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to create share token';
+        const message =
+          err instanceof Error ? err.message : 'Failed to create share token';
         setError(message);
         throw err;
       }
@@ -242,7 +279,8 @@ export const useShareTokens = ({
         setError(null);
         return await server.validateShareToken(token);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to validate token';
+        const message =
+          err instanceof Error ? err.message : 'Failed to validate token';
         setError(message);
         return null;
       }
@@ -255,9 +293,10 @@ export const useShareTokens = ({
       try {
         setError(null);
         await server.deleteShareToken(tokenId);
-        setTokens(prev => prev.filter(t => t.id !== tokenId));
+        setTokens((prev) => prev.filter((t) => t.id !== tokenId));
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to delete token';
+        const message =
+          err instanceof Error ? err.message : 'Failed to delete token';
         setError(message);
         throw err;
       }
@@ -282,7 +321,7 @@ export const useShareTokens = ({
   };
 };
 
-// User presence hook  
+// User presence hook
 /**
  *
  */
@@ -310,7 +349,7 @@ export interface UseUserPresenceReturn {
   userPresence: Map<string, UserPresence>;
   loading: boolean;
   error: string | null;
-  
+
   setUserStatus: (status: 'online' | 'offline' | 'away') => void;
   refresh: () => Promise<void>;
 }
@@ -322,24 +361,26 @@ export const useUserPresence = ({
   updateInterval = 30000, // 30 seconds
 }: UseUserPresenceConfig): UseUserPresenceReturn => {
   const [activeUsers, setActiveUsers] = useState<string[]>([]);
-  const [userPresence, setUserPresence] = useState<Map<string, UserPresence>>(new Map());
+  const [userPresence, setUserPresence] = useState<Map<string, UserPresence>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const intervalRef = useRef<NodeJS.Timeout>();
   const currentUserId = useRef(userId || 'anonymous');
 
   const setUserStatus = useCallback(
     (status: 'online' | 'offline' | 'away') => {
       if (!currentUserId.current) return;
-      
+
       // Update mock server if available
       if ('setUserStatus' in server) {
         (server as unknown).setUserStatus(currentUserId.current, status);
       }
-      
+
       // Update local state
-      setUserPresence(prev => {
+      setUserPresence((prev) => {
         const updated = new Map(prev);
         updated.set(currentUserId.current, {
           userId: currentUserId.current,
@@ -354,28 +395,29 @@ export const useUserPresence = ({
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!canvasId) return;
-    
+
     try {
       setError(null);
       const users = await server.getActiveUsers(canvasId);
       setActiveUsers(users);
-      
+
       // Get presence for each user
       const presencePromises = users.map(async (uid) => {
         const presence = await server.getUserPresence(uid);
         return { uid, presence: { ...presence, userId: uid } };
       });
-      
+
       const presenceResults = await Promise.all(presencePromises);
       const presenceMap = new Map<string, UserPresence>();
-      
+
       presenceResults.forEach(({ uid, presence }) => {
         presenceMap.set(uid, presence);
       });
-      
+
       setUserPresence(presenceMap);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to load user presence';
+      const message =
+        err instanceof Error ? err.message : 'Failed to load user presence';
       setError(message);
     } finally {
       setLoading(false);
@@ -385,9 +427,9 @@ export const useUserPresence = ({
   // Set up periodic refresh
   useEffect(() => {
     refresh();
-    
+
     intervalRef.current = setInterval(refresh, updateInterval);
-    
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -398,12 +440,12 @@ export const useUserPresence = ({
   // Update userId reference and mark as active
   useEffect(() => {
     currentUserId.current = userId || 'anonymous';
-    
+
     if (userId && canvasId && 'addActiveUser' in server) {
       (server as unknown).addActiveUser(canvasId, userId);
       setUserStatus('online');
     }
-    
+
     return () => {
       if (userId && canvasId && 'removeActiveUser' in server) {
         (server as unknown).removeActiveUser(canvasId, userId);

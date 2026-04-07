@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Collaborative Editing Hook
- * 
+ *
  * Real-time collaborative editing with cursor tracking,
  * presence awareness, and conflict resolution.
- * 
+ *
  * @doc.type module
  * @doc.purpose Collaborative editing hook for IDE
  * @doc.layer product
@@ -27,7 +27,10 @@ export interface UserPresence {
   cursor: {
     fileId: string | null;
     position: { line: number; column: number };
-    selection?: { start: { line: number; column: number }; end: { line: number; column: number } };
+    selection?: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    };
   };
   activity: 'idle' | 'typing' | 'selecting';
   lastSeen: number;
@@ -39,7 +42,13 @@ export interface UserPresence {
  * Collaboration event types
  */
 export interface CollaborationEvent {
-  type: 'cursor-move' | 'selection-change' | 'text-edit' | 'user-join' | 'user-leave' | 'presence-update';
+  type:
+    | 'cursor-move'
+    | 'selection-change'
+    | 'text-edit'
+    | 'user-join'
+    | 'user-leave'
+    | 'presence-update';
   userId: string;
   data: unknown;
   timestamp: number;
@@ -107,206 +116,257 @@ export function useCollaborativeEditing(fileId?: string) {
   }, [fileId, activeFileId]);
 
   // Broadcast cursor position
-  const broadcastCursor = useCallback((position: { line: number; column: number }) => {
-    const currentFileId = activeFileRef.current;
-    if (!currentFileId) return;
+  const broadcastCursor = useCallback(
+    (position: { line: number; column: number }) => {
+      const currentFileId = activeFileRef.current;
+      if (!currentFileId) return;
 
-    const event: CollaborationEvent = {
-      type: 'cursor-move',
-      userId: 'current-user', // Will be replaced with actual user ID
-      data: { position, fileId: currentFileId },
-      timestamp: Date.now(),
-      fileId: currentFileId,
-    };
+      const event: CollaborationEvent = {
+        type: 'cursor-move',
+        userId: 'current-user', // Will be replaced with actual user ID
+        data: { position, fileId: currentFileId },
+        timestamp: Date.now(),
+        fileId: currentFileId,
+      };
 
-    sendMessage('collaboration', event);
-    lastActivityRef.current = Date.now();
-  }, [sendMessage]);
+      sendMessage('collaboration', event);
+      lastActivityRef.current = Date.now();
+    },
+    [sendMessage]
+  );
 
   // Broadcast selection change
-  const broadcastSelection = useCallback((
-    selection: { start: { line: number; column: number }; end: { line: number; column: number } }
-  ) => {
-    const currentFileId = activeFileRef.current;
-    if (!currentFileId) return;
+  const broadcastSelection = useCallback(
+    (selection: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    }) => {
+      const currentFileId = activeFileRef.current;
+      if (!currentFileId) return;
 
-    const event: CollaborationEvent = {
-      type: 'selection-change',
-      userId: 'current-user', // Will be replaced with actual user ID
-      data: { selection, fileId: currentFileId },
-      timestamp: Date.now(),
-      fileId: currentFileId,
-    };
+      const event: CollaborationEvent = {
+        type: 'selection-change',
+        userId: 'current-user', // Will be replaced with actual user ID
+        data: { selection, fileId: currentFileId },
+        timestamp: Date.now(),
+        fileId: currentFileId,
+      };
 
-    sendMessage('collaboration', event);
-    lastActivityRef.current = Date.now();
-  }, [sendMessage]);
+      sendMessage('collaboration', event);
+      lastActivityRef.current = Date.now();
+    },
+    [sendMessage]
+  );
 
   // Update user presence
-  const updatePresence = useCallback((activity: UserPresence['activity']) => {
-    const currentFileId = activeFileRef.current;
-    if (!currentFileId) return;
+  const updatePresence = useCallback(
+    (activity: UserPresence['activity']) => {
+      const currentFileId = activeFileRef.current;
+      if (!currentFileId) return;
 
-    const presence: UserPresence = {
-      userId: 'current-user', // Will be replaced with actual user ID
-      userName: 'Current User',
-      userColor: '#3B82F6',
-      cursor: {
+      const presence: UserPresence = {
+        userId: 'current-user', // Will be replaced with actual user ID
+        userName: 'Current User',
+        userColor: '#3B82F6',
+        cursor: {
+          fileId: currentFileId,
+          position: { line: 0, column: 0 },
+        },
+        activity,
+        lastSeen: Date.now(),
+        isOnline: true,
+      };
+
+      const event: CollaborationEvent = {
+        type: 'presence-update',
+        userId: 'current-user',
+        data: presence,
+        timestamp: Date.now(),
         fileId: currentFileId,
-        position: { line: 0, column: 0 },
-      },
-      activity,
-      lastSeen: Date.now(),
-      isOnline: true,
-    };
+      };
 
-    const event: CollaborationEvent = {
-      type: 'presence-update',
-      userId: 'current-user',
-      data: presence,
-      timestamp: Date.now(),
-      fileId: currentFileId,
-    };
-
-    sendMessage('collaboration', event);
-  }, [sendMessage]);
+      sendMessage('collaboration', event);
+    },
+    [sendMessage]
+  );
 
   // Broadcast text edit
-  const broadcastTextEdit = useCallback((
-    operation: { type: 'insert' | 'delete'; position: { line: number; column: number }; text?: string; length?: number }
-  ) => {
-    const currentFileId = activeFileRef.current;
-    if (!currentFileId) return;
+  const broadcastTextEdit = useCallback(
+    (operation: {
+      type: 'insert' | 'delete';
+      position: { line: number; column: number };
+      text?: string;
+      length?: number;
+    }) => {
+      const currentFileId = activeFileRef.current;
+      if (!currentFileId) return;
 
-    const event: CollaborationEvent = {
-      type: 'text-edit',
-      userId: 'current-user', // Will be replaced with actual user ID
-      data: { ...operation, fileId: currentFileId },
-      timestamp: Date.now(),
-      fileId: currentFileId,
-    };
+      const event: CollaborationEvent = {
+        type: 'text-edit',
+        userId: 'current-user', // Will be replaced with actual user ID
+        data: { ...operation, fileId: currentFileId },
+        timestamp: Date.now(),
+        fileId: currentFileId,
+      };
 
-    sendMessage('collaboration', event);
-    lastActivityRef.current = Date.now();
+      sendMessage('collaboration', event);
+      lastActivityRef.current = Date.now();
 
-    // Clear typing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
 
-    // Set typing indicator
-    updatePresence('typing');
+      // Set typing indicator
+      updatePresence('typing');
 
-    // Clear typing indicator after 2 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
-      updatePresence('idle');
-    }, 2000);
-  }, [sendMessage, updatePresence]);
+      // Clear typing indicator after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        updatePresence('idle');
+      }, 2000);
+    },
+    [sendMessage, updatePresence]
+  );
 
   // Handle incoming collaboration events
   const handleCollaborationEvent = useCallback((event: CollaborationEvent) => {
     switch (event.type) {
       case 'cursor-move':
-        setActiveUsers(prev => prev.map(user =>
-          user.userId === event.userId
-            ? { ...user, cursor: event.data as UserPresence['cursor'], lastSeen: Date.now() }
-            : user
-        ));
+        setActiveUsers((prev) =>
+          prev.map((user) =>
+            user.userId === event.userId
+              ? {
+                  ...user,
+                  cursor: event.data as UserPresence['cursor'],
+                  lastSeen: Date.now(),
+                }
+              : user
+          )
+        );
         break;
 
       case 'selection-change':
-        setActiveUsers(prev => prev.map(user =>
-          user.userId === event.userId
-            ? { ...user, cursor: { ...user.cursor, selection: event.data as UserPresence['cursor']['selection'] }, lastSeen: Date.now() }
-            : user
-        ));
+        setActiveUsers((prev) =>
+          prev.map((user) =>
+            user.userId === event.userId
+              ? {
+                  ...user,
+                  cursor: {
+                    ...user.cursor,
+                    selection:
+                      event.data as UserPresence['cursor']['selection'],
+                  },
+                  lastSeen: Date.now(),
+                }
+              : user
+          )
+        );
         break;
 
       case 'text-edit':
-        setActiveUsers(prev => prev.map(user =>
-          user.userId === event.userId
-            ? { ...user, activity: 'typing', lastSeen: Date.now() }
-            : user
-        ));
+        setActiveUsers((prev) =>
+          prev.map((user) =>
+            user.userId === event.userId
+              ? { ...user, activity: 'typing', lastSeen: Date.now() }
+              : user
+          )
+        );
         break;
 
       case 'user-join': {
         const newUser = event.data as UserPresence;
-        setActiveUsers(prev => [...prev.filter(u => u.userId !== newUser.userId), newUser]);
+        setActiveUsers((prev) => [
+          ...prev.filter((u) => u.userId !== newUser.userId),
+          newUser,
+        ]);
         break;
       }
 
       case 'user-leave':
-        setActiveUsers(prev => prev.filter(u => u.userId !== event.userId));
+        setActiveUsers((prev) => prev.filter((u) => u.userId !== event.userId));
         break;
 
       case 'presence-update':
-        setActiveUsers(prev => prev.map(user =>
-          user.userId === event.userId
-            ? { ...user, ...(event.data as Partial<UserPresence>) }
-            : user
-        ));
+        setActiveUsers((prev) =>
+          prev.map((user) =>
+            user.userId === event.userId
+              ? { ...user, ...(event.data as Partial<UserPresence>) }
+              : user
+          )
+        );
         break;
     }
   }, []);
 
   // Handle conflict events
   const handleConflictEvent = useCallback((conflict: Conflict) => {
-    setConflicts(prev => {
-      const existing = prev.find(c => c.id === conflict.id);
+    setConflicts((prev) => {
+      const existing = prev.find((c) => c.id === conflict.id);
       if (existing) {
-        return prev.map(c => c.id === conflict.id ? conflict : c);
+        return prev.map((c) => (c.id === conflict.id ? conflict : c));
       }
       return [...prev, conflict];
     });
   }, []);
 
   // Resolve conflict
-  const resolveConflict = useCallback(async (conflictId: string, resolution: 'accept' | 'reject' | 'merge') => {
-    const conflict = conflicts.find(c => c.id === conflictId);
-    if (!conflict) return;
+  const resolveConflict = useCallback(
+    async (conflictId: string, resolution: 'accept' | 'reject' | 'merge') => {
+      const conflict = conflicts.find((c) => c.id === conflictId);
+      if (!conflict) return;
 
-    try {
-      // Send resolution to server
-      sendMessage('conflict-resolution', {
-        conflictId,
-        resolution,
-        timestamp: Date.now(),
-      });
+      try {
+        // Send resolution to server
+        sendMessage('conflict-resolution', {
+          conflictId,
+          resolution,
+          timestamp: Date.now(),
+        });
 
-      // Update local state
-      setConflicts(prev => prev.map(c =>
-        c.id === conflictId ? { ...c, resolved: true } : c
-      ));
-    } catch (error) {
-      console.error('Failed to resolve conflict:', error);
-    }
-  }, [conflicts, sendMessage]);
+        // Update local state
+        setConflicts((prev) =>
+          prev.map((c) => (c.id === conflictId ? { ...c, resolved: true } : c))
+        );
+      } catch (error) {
+        console.error('Failed to resolve conflict:', error);
+      }
+    },
+    [conflicts, sendMessage]
+  );
 
   // Get users in current file
-  const getUsersInFile = useCallback((targetFileId?: string) => {
-    const fileId = targetFileId || activeFileRef.current;
-    if (!fileId) return [];
+  const getUsersInFile = useCallback(
+    (targetFileId?: string) => {
+      const fileId = targetFileId || activeFileRef.current;
+      if (!fileId) return [];
 
-    return activeUsers.filter(user =>
-      user.cursor.fileId === fileId && user.isOnline
-    );
-  }, [activeUsers]);
+      return activeUsers.filter(
+        (user) => user.cursor.fileId === fileId && user.isOnline
+      );
+    },
+    [activeUsers]
+  );
 
   // Get conflicts for current file
-  const getConflictsInFile = useCallback((targetFileId?: string) => {
-    const fileId = targetFileId || activeFileRef.current;
-    if (!fileId) return [];
+  const getConflictsInFile = useCallback(
+    (targetFileId?: string) => {
+      const fileId = targetFileId || activeFileRef.current;
+      if (!fileId) return [];
 
-    return conflicts.filter(conflict =>
-      conflict.fileId === fileId && !conflict.resolved
-    );
-  }, [conflicts]);
+      return conflicts.filter(
+        (conflict) => conflict.fileId === fileId && !conflict.resolved
+      );
+    },
+    [conflicts]
+  );
 
   // Update settings
-  const updateSettings = useCallback((newSettings: Partial<CollaborationSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, []);
+  const updateSettings = useCallback(
+    (newSettings: Partial<CollaborationSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    },
+    []
+  );
 
   // Cleanup inactive users
   useEffect(() => {
@@ -314,17 +374,26 @@ export function useCollaborativeEditing(fileId?: string) {
       const now = Date.now();
       const timeout = 30000; // 30 seconds
 
-      setActiveUsers(prev => prev.filter(user =>
-        now - user.lastSeen < timeout || user.userId === 'current-user'
-      ));
+      setActiveUsers((prev) =>
+        prev.filter(
+          (user) =>
+            now - user.lastSeen < timeout || user.userId === 'current-user'
+        )
+      );
     }, 10000);
 
     return () => clearInterval(cleanup);
   }, []);
 
   // Setup event listeners
-  const handleCollaborationWrapper = useCallback((data: unknown) => handleCollaborationEvent(data as CollaborationEvent), [handleCollaborationEvent]);
-  const handleConflictWrapper = useCallback((data: unknown) => handleConflictEvent(data as Conflict), [handleConflictEvent]);
+  const handleCollaborationWrapper = useCallback(
+    (data: unknown) => handleCollaborationEvent(data as CollaborationEvent),
+    [handleCollaborationEvent]
+  );
+  const handleConflictWrapper = useCallback(
+    (data: unknown) => handleConflictEvent(data as Conflict),
+    [handleConflictEvent]
+  );
 
   useEffect(() => {
     addEventListener('collaboration', handleCollaborationWrapper);
@@ -334,7 +403,12 @@ export function useCollaborativeEditing(fileId?: string) {
       removeEventListener('collaboration', handleCollaborationWrapper);
       removeEventListener('conflict', handleConflictWrapper);
     };
-  }, [addEventListener, removeEventListener, handleCollaborationWrapper, handleConflictWrapper]);
+  }, [
+    addEventListener,
+    removeEventListener,
+    handleCollaborationWrapper,
+    handleConflictWrapper,
+  ]);
 
   // Cleanup typing timeout
   useEffect(() => {
@@ -367,7 +441,7 @@ export function useCollaborativeEditing(fileId?: string) {
     activeFileId: activeFileRef.current,
     isCollaborating: activeUsers.length > 1,
     userCount: activeUsers.length,
-    conflictCount: conflicts.filter(c => !c.resolved).length,
+    conflictCount: conflicts.filter((c) => !c.resolved).length,
   };
 }
 
@@ -397,10 +471,13 @@ export function generateUserColor(userId: string): string {
 /**
  * Generate user avatar URL
  */
-export function generateUserAvatar(userName: string, userColor: string): string {
+export function generateUserAvatar(
+  userName: string,
+  userColor: string
+): string {
   const initials = userName
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase())
+    .map((word) => word.charAt(0).toUpperCase())
     .slice(0, 2)
     .join('');
 

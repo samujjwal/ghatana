@@ -12,7 +12,11 @@ describe.skip('Button Snapshots', () => {
     return render(<ThemeProvider mode="light">{ui}</ThemeProvider>);
   };
 
-  const checkButton = (container: HTMLElement, expectedLabel: string, opts?: { disabled?: boolean; fullWidth?: boolean }) => {
+  const checkButton = (
+    container: HTMLElement,
+    expectedLabel: string,
+    opts?: { disabled?: boolean; fullWidth?: boolean }
+  ) => {
     const button = container.querySelector('button');
     expect(button).toBeTruthy();
     if (!button) return;
@@ -29,43 +33,83 @@ describe.skip('Button Snapshots', () => {
 
   it('renders various button variants and attributes correctly', () => {
     // primary
-    let res = renderWithTheme(<Button variant="contained" color="primary">Primary Button</Button>);
+    let res = renderWithTheme(
+      <Button variant="contained" color="primary">
+        Primary Button
+      </Button>
+    );
     checkButton(res.container, 'Primary Button');
 
     // secondary
-    res = renderWithTheme(<Button variant="contained" color="secondary">Secondary Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="secondary">
+        Secondary Button
+      </Button>
+    );
     checkButton(res.container, 'Secondary Button');
 
     // outlined
-    res = renderWithTheme(<Button variant="outlined" color="primary">Outlined Button</Button>);
+    res = renderWithTheme(
+      <Button variant="outlined" color="primary">
+        Outlined Button
+      </Button>
+    );
     checkButton(res.container, 'Outlined Button');
 
     // text
-    res = renderWithTheme(<Button variant="text" color="primary">Text Button</Button>);
+    res = renderWithTheme(
+      <Button variant="text" color="primary">
+        Text Button
+      </Button>
+    );
     checkButton(res.container, 'Text Button');
 
     // disabled
-    res = renderWithTheme(<Button variant="contained" color="primary" disabled>Disabled Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" disabled>
+        Disabled Button
+      </Button>
+    );
     checkButton(res.container, 'Disabled Button', { disabled: true });
 
     // sizes
-    res = renderWithTheme(<Button variant="contained" color="primary" size="small">Small Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" size="small">
+        Small Button
+      </Button>
+    );
     checkButton(res.container, 'Small Button');
-    res = renderWithTheme(<Button variant="contained" color="primary" size="large">Large Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" size="large">
+        Large Button
+      </Button>
+    );
     checkButton(res.container, 'Large Button');
 
     // fullWidth
-    res = renderWithTheme(<Button variant="contained" color="primary" fullWidth>Full Width Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" fullWidth>
+        Full Width Button
+      </Button>
+    );
     checkButton(res.container, 'Full Width Button', { fullWidth: true });
 
     // tooltip wrapper
-    res = renderWithTheme(<Button variant="contained" color="primary" tooltip="Button tooltip">Button with Tooltip</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" tooltip="Button tooltip">
+        Button with Tooltip
+      </Button>
+    );
     // when tooltip is used we wrap in a span
     expect(res.container.querySelector('span')).toBeTruthy();
     checkButton(res.container, 'Button with Tooltip');
 
     // custom elevation
-    res = renderWithTheme(<Button variant="contained" color="primary" elevation={8}>Elevated Button</Button>);
+    res = renderWithTheme(
+      <Button variant="contained" color="primary" elevation={8}>
+        Elevated Button
+      </Button>
+    );
     checkButton(res.container, 'Elevated Button');
   });
 });

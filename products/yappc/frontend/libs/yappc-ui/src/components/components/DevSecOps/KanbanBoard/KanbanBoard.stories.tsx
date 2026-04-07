@@ -13,8 +13,6 @@ import type { KanbanColumn, KanbanItemMoveEvent } from './types';
 import type { Meta, StoryObj } from '@storybook/react';
 import type { Item } from '@yappc/core/types/devsecops';
 
-
-
 // Mock data
 const mockItems: Item[] = [
   {
@@ -26,10 +24,22 @@ const mockItems: Item[] = [
     status: 'in-progress',
     phaseId: 'phase-1',
     owners: [
-      { id: 'user-1', name: 'Alice Smith', email: 'alice@example.com', avatar: '' },
+      {
+        id: 'user-1',
+        name: 'Alice Smith',
+        email: 'alice@example.com',
+        avatar: '',
+      },
     ],
     artifacts: [
-      { id: 'art-1', type: 'document', title: 'Tech Spec', url: '#', itemId: 'item-1', createdAt: new Date() },
+      {
+        id: 'art-1',
+        type: 'document',
+        title: 'Tech Spec',
+        url: '#',
+        itemId: 'item-1',
+        createdAt: new Date(),
+      },
     ],
     progress: 60,
     tags: ['security', 'backend'],
@@ -45,7 +55,12 @@ const mockItems: Item[] = [
     status: 'in-review',
     phaseId: 'phase-1',
     owners: [
-      { id: 'user-2', name: 'Bob Johnson', email: 'bob@example.com', avatar: '' },
+      {
+        id: 'user-2',
+        name: 'Bob Johnson',
+        email: 'bob@example.com',
+        avatar: '',
+      },
     ],
     artifacts: [],
     progress: 90,
@@ -77,7 +92,12 @@ const mockItems: Item[] = [
     status: 'blocked',
     phaseId: 'phase-1',
     owners: [
-      { id: 'user-3', name: 'Carol Davis', email: 'carol@example.com', avatar: '' },
+      {
+        id: 'user-3',
+        name: 'Carol Davis',
+        email: 'carol@example.com',
+        avatar: '',
+      },
     ],
     artifacts: [],
     progress: 50,
@@ -94,10 +114,22 @@ const mockItems: Item[] = [
     status: 'completed',
     phaseId: 'phase-1',
     owners: [
-      { id: 'user-4', name: 'Dave Wilson', email: 'dave@example.com', avatar: '' },
+      {
+        id: 'user-4',
+        name: 'Dave Wilson',
+        email: 'dave@example.com',
+        avatar: '',
+      },
     ],
     artifacts: [
-      { id: 'art-2', type: 'document', title: 'User Guide', url: '#', itemId: 'item-5', createdAt: new Date() },
+      {
+        id: 'art-2',
+        type: 'document',
+        title: 'User Guide',
+        url: '#',
+        itemId: 'item-5',
+        createdAt: new Date(),
+      },
     ],
     progress: 100,
     tags: ['documentation'],
@@ -113,7 +145,12 @@ const mockItems: Item[] = [
     status: 'in-progress',
     phaseId: 'phase-2',
     owners: [
-      { id: 'user-1', name: 'Alice Smith', email: 'alice@example.com', avatar: '' },
+      {
+        id: 'user-1',
+        name: 'Alice Smith',
+        email: 'alice@example.com',
+        avatar: '',
+      },
     ],
     artifacts: [],
     progress: 30,
@@ -166,7 +203,9 @@ export const Default: Story = {
       // Update item status in local state
       setItems((prev) =>
         prev.map((item) =>
-          item.id === event.item.id ? { ...item, status: event.targetStatus } : item
+          item.id === event.item.id
+            ? { ...item, status: event.targetStatus }
+            : item
         )
       );
     };
@@ -184,8 +223,8 @@ export const Default: Story = {
         {lastMove && (
           <Paper className="p-4 mt-4 bg-gray-100 dark:bg-gray-800">
             <Typography as="p" className="text-sm">
-              <strong>Last Move:</strong> {lastMove.item.title} from {lastMove.sourceStatus} to{' '}
-              {lastMove.targetStatus}
+              <strong>Last Move:</strong> {lastMove.item.title} from{' '}
+              {lastMove.sourceStatus} to {lastMove.targetStatus}
             </Typography>
           </Paper>
         )}
@@ -340,14 +379,18 @@ export const InteractiveDemo: Story = {
       setMoveHistory((prev) => [...prev, event]);
       setItems((prev) =>
         prev.map((item) =>
-          item.id === event.item.id ? { ...item, status: event.targetStatus } : item
+          item.id === event.item.id
+            ? { ...item, status: event.targetStatus }
+            : item
         )
       );
     };
 
     const handleItemClick = (item: Item) => {
       console.log('Item clicked:', item);
-      alert(`Clicked: ${item.title}\nStatus: ${item.status}\nProgress: ${item.progress}%`);
+      alert(
+        `Clicked: ${item.title}\nStatus: ${item.status}\nProgress: ${item.progress}%`
+      );
     };
 
     return (
@@ -356,7 +399,8 @@ export const InteractiveDemo: Story = {
           Interactive Kanban Board
         </Typography>
         <Typography as="p" color="text.secondary" className="mb-4">
-          Drag items between columns to update their status. Click on items for details.
+          Drag items between columns to update their status. Click on items for
+          details.
         </Typography>
 
         <KanbanBoard
@@ -373,7 +417,12 @@ export const InteractiveDemo: Story = {
             </Typography>
             <Box className="overflow-y-auto max-h-[200px]">
               {moveHistory.reverse().map((move, idx) => (
-                <Typography key={idx} as="p" className="text-sm" className="py-1">
+                <Typography
+                  key={idx}
+                  as="p"
+                  className="text-sm"
+                  className="py-1"
+                >
                   • {move.item.title}: {move.sourceStatus} → {move.targetStatus}
                 </Typography>
               ))}

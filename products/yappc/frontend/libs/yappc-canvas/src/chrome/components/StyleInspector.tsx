@@ -6,13 +6,31 @@
  */
 
 import type { Node } from '@xyflow/react';
-import { Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon, PaintBucket as FillIcon, PenLine as BorderIcon } from 'lucide-react';
+import {
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  Underline as UnderlineIcon,
+  PaintBucket as FillIcon,
+  PenLine as BorderIcon,
+} from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
-import { Box, Typography, Slider, Button, Tooltip, TextField, Select, MenuItem, FormControl, InputLabel, Divider, IconButton } from '@ghatana/design-system';
+import {
+  Box,
+  Typography,
+  Slider,
+  Button,
+  Tooltip,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider,
+  IconButton,
+} from '@ghatana/design-system';
 
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
-
 
 /**
  *
@@ -20,10 +38,10 @@ import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 export interface StyleInspectorProps {
   /** Selected nodes */
   selectedNodes: Node[];
-  
+
   /** Callback when style changes */
   onStyleChange: (nodeIds: string[], style: Partial<NodeStyle>) => void;
-  
+
   /** Whether the panel is visible */
   visible?: boolean;
 }
@@ -63,7 +81,12 @@ function ColorPreset({
     <Tooltip title={label}>
       <Box
         onClick={onClick}
-        className="w-[32px] h-[32px] rounded cursor-pointer border-[2px_solid]" style={{ transition: 'border-color 200ms', backgroundColor: color, borderColor: selected ? '#1976d2' : 'transparent' }}
+        className="w-[32px] h-[32px] rounded cursor-pointer border-[2px_solid]"
+        style={{
+          transition: 'border-color 200ms',
+          backgroundColor: color,
+          borderColor: selected ? '#1976d2' : 'transparent',
+        }}
       />
     </Tooltip>
   );
@@ -71,10 +94,10 @@ function ColorPreset({
 
 /**
  * StyleInspector - Quick style panel for selected objects
- * 
+ *
  * Provides rapid access to common styling options without requiring
  * users to open full property panels or use complex menus.
- * 
+ *
  * @example
  * ```tsx
  * <StyleInspector
@@ -91,14 +114,17 @@ export function StyleInspector({
   visible = true,
 }: StyleInspectorProps) {
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  
+
   // Extract common styles from selection
   const commonStyles = useMemo(() => {
     if (selectedNodes.length === 0) return {};
-    
+
     const first = selectedNodes[0].data as unknown;
     return {
-      backgroundColor: first?.backgroundColor || first?.color || CANVAS_TOKENS.COLORS.STICKY_YELLOW,
+      backgroundColor:
+        first?.backgroundColor ||
+        first?.color ||
+        CANVAS_TOKENS.COLORS.STICKY_YELLOW,
       borderColor: first?.borderColor || CANVAS_TOKENS.COLORS.BORDER,
       color: first?.textColor || CANVAS_TOKENS.COLORS.TEXT_PRIMARY,
       fontSize: first?.fontSize || CANVAS_TOKENS.TYPOGRAPHY.SIZE.MD,
@@ -106,73 +132,116 @@ export function StyleInspector({
       borderRadius: first?.borderRadius ?? 8,
     };
   }, [selectedNodes]);
-  
+
   if (!visible || selectedNodes.length === 0) {
     return null;
   }
-  
+
   const handleStyleChange = (style: Partial<NodeStyle>) => {
     const nodeIds = selectedNodes.map((n) => n.id);
     onStyleChange(nodeIds, style);
   };
-  
+
   return (
-    <Box
-      className="h-full overflow-y-auto" >
+    <Box className="h-full overflow-y-auto">
       {/* Header */}
       <Box className="mb-6">
         <Typography as="h6" className="mb-1">
           Style
         </Typography>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+        >
           {selectedNodes.length === 1
             ? '1 object selected'
             : `${selectedNodes.length} objects selected`}
         </Typography>
       </Box>
-      
+
       {/* Color presets */}
       <Box className="mb-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Quick Colors
         </Typography>
         <Box className="flex gap-2 flex-wrap">
           <ColorPreset
             color={CANVAS_TOKENS.COLORS.STICKY_YELLOW}
             label="Yellow"
-            selected={commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_YELLOW}
-            onClick={() => handleStyleChange({ backgroundColor: CANVAS_TOKENS.COLORS.STICKY_YELLOW })}
+            selected={
+              commonStyles.backgroundColor ===
+              CANVAS_TOKENS.COLORS.STICKY_YELLOW
+            }
+            onClick={() =>
+              handleStyleChange({
+                backgroundColor: CANVAS_TOKENS.COLORS.STICKY_YELLOW,
+              })
+            }
           />
           <ColorPreset
             color={CANVAS_TOKENS.COLORS.STICKY_PINK}
             label="Pink"
-            selected={commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_PINK}
-            onClick={() => handleStyleChange({ backgroundColor: CANVAS_TOKENS.COLORS.STICKY_PINK })}
+            selected={
+              commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_PINK
+            }
+            onClick={() =>
+              handleStyleChange({
+                backgroundColor: CANVAS_TOKENS.COLORS.STICKY_PINK,
+              })
+            }
           />
           <ColorPreset
             color={CANVAS_TOKENS.COLORS.STICKY_BLUE}
             label="Blue"
-            selected={commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_BLUE}
-            onClick={() => handleStyleChange({ backgroundColor: CANVAS_TOKENS.COLORS.STICKY_BLUE })}
+            selected={
+              commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_BLUE
+            }
+            onClick={() =>
+              handleStyleChange({
+                backgroundColor: CANVAS_TOKENS.COLORS.STICKY_BLUE,
+              })
+            }
           />
           <ColorPreset
             color={CANVAS_TOKENS.COLORS.STICKY_GREEN}
             label="Green"
-            selected={commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_GREEN}
-            onClick={() => handleStyleChange({ backgroundColor: CANVAS_TOKENS.COLORS.STICKY_GREEN })}
+            selected={
+              commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_GREEN
+            }
+            onClick={() =>
+              handleStyleChange({
+                backgroundColor: CANVAS_TOKENS.COLORS.STICKY_GREEN,
+              })
+            }
           />
           <ColorPreset
             color={CANVAS_TOKENS.COLORS.STICKY_ORANGE}
             label="Orange"
-            selected={commonStyles.backgroundColor === CANVAS_TOKENS.COLORS.STICKY_ORANGE}
-            onClick={() => handleStyleChange({ backgroundColor: CANVAS_TOKENS.COLORS.STICKY_ORANGE })}
+            selected={
+              commonStyles.backgroundColor ===
+              CANVAS_TOKENS.COLORS.STICKY_ORANGE
+            }
+            onClick={() =>
+              handleStyleChange({
+                backgroundColor: CANVAS_TOKENS.COLORS.STICKY_ORANGE,
+              })
+            }
           />
         </Box>
       </Box>
-      
+
       {/* Lifecycle phase colors */}
       <Box className="mb-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Lifecycle Phases
         </Typography>
         <Box className="flex gap-2 flex-wrap">
@@ -182,35 +251,49 @@ export function StyleInspector({
               color={phase.color}
               label={phase.title}
               selected={commonStyles.backgroundColor === phase.color}
-              onClick={() => handleStyleChange({ backgroundColor: phase.color })}
+              onClick={() =>
+                handleStyleChange({ backgroundColor: phase.color })
+              }
             />
           ))}
         </Box>
       </Box>
-      
+
       <Divider className="my-4" />
-      
+
       {/* Background color with input */}
       <Box className="mb-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Background
         </Typography>
         <Box className="flex gap-2 items-center">
           <Box
-            className="rounded cursor-pointer w-[40px] h-[40px] border border-solid border-gray-200 dark:border-gray-700" style={{ backgroundColor: 'commonStyles.backgroundColor' }} onClick={() => setColorPickerOpen(!colorPickerOpen)}
+            className="rounded cursor-pointer w-[40px] h-[40px] border border-solid border-gray-200 dark:border-gray-700"
+            style={{ backgroundColor: 'commonStyles.backgroundColor' }}
+            onClick={() => setColorPickerOpen(!colorPickerOpen)}
           />
           <TextField
             size="sm"
             value={commonStyles.backgroundColor}
-            onChange={(e) => handleStyleChange({ backgroundColor: e.target.value })}
+            onChange={(e) =>
+              handleStyleChange({ backgroundColor: e.target.value })
+            }
             className="flex-1"
           />
         </Box>
       </Box>
-      
+
       {/* Opacity */}
       <Box className="mb-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Opacity
         </Typography>
         <Box className="flex gap-4 items-center">
@@ -223,15 +306,23 @@ export function StyleInspector({
             }
             className="flex-1"
           />
-          <Typography as="span" className="text-xs text-gray-500" className="min-w-[40px]">
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            className="min-w-[40px]"
+          >
             {Math.round(commonStyles.opacity * 100)}%
           </Typography>
         </Box>
       </Box>
-      
+
       {/* Border radius */}
       <Box className="mb-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Corner Radius
         </Typography>
         <Box className="flex gap-4 items-center">
@@ -244,21 +335,31 @@ export function StyleInspector({
             }
             className="flex-1"
           />
-          <Typography as="span" className="text-xs text-gray-500" className="min-w-[40px]">
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            className="min-w-[40px]"
+          >
             {commonStyles.borderRadius}px
           </Typography>
         </Box>
       </Box>
-      
+
       <Divider className="my-4" />
-      
+
       {/* Typography (if text node) */}
-      {selectedNodes.some((n) => n.type === 'text' || n.type === 'sticky-note') && (
+      {selectedNodes.some(
+        (n) => n.type === 'text' || n.type === 'sticky-note'
+      ) && (
         <>
-          <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            className="mb-2 block"
+          >
             Text Style
           </Typography>
-          
+
           <Box className="flex gap-2 mb-4">
             <IconButton size="sm">
               <BoldIcon size={16} />
@@ -270,7 +371,7 @@ export function StyleInspector({
               <UnderlineIcon size={16} />
             </IconButton>
           </Box>
-          
+
           <FormControl fullWidth size="sm" className="mb-4">
             <InputLabel>Font Size</InputLabel>
             <Select
@@ -290,10 +391,14 @@ export function StyleInspector({
           </FormControl>
         </>
       )}
-      
+
       {/* Quick actions */}
       <Box className="mt-6">
-        <Typography as="span" className="text-xs text-gray-500" className="mb-2 block">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          className="mb-2 block"
+        >
           Quick Actions
         </Typography>
         <Box className="flex gap-2 flex-col">

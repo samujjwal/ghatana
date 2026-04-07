@@ -157,7 +157,9 @@ export class LockManager {
     this.config = {
       ...DEFAULT_CONFIG,
       ...config,
-      adminUserIds: config.adminUserIds ? new Set(config.adminUserIds) : DEFAULT_CONFIG.adminUserIds,
+      adminUserIds: config.adminUserIds
+        ? new Set(config.adminUserIds)
+        : DEFAULT_CONFIG.adminUserIds,
     };
     this.startCleanupTimer();
   }
@@ -477,13 +479,19 @@ export class LockManager {
    * Get locks held by a user
    */
   getLocksByUser(userId: string): Lock[] {
-    return Array.from(this.locks.values()).filter((lock) => lock.holder?.userId === userId);
+    return Array.from(this.locks.values()).filter(
+      (lock) => lock.holder?.userId === userId
+    );
   }
 
   /**
    * Extend lock timeout
    */
-  extend(resourceId: string, userId: string, additionalTime: number): LockResult {
+  extend(
+    resourceId: string,
+    userId: string,
+    additionalTime: number
+  ): LockResult {
     const lock = this.locks.get(resourceId);
 
     if (!lock || lock.status !== 'locked') {
@@ -501,7 +509,10 @@ export class LockManager {
     }
 
     const now = Date.now();
-    const newExpiresAt = Math.min(lock.holder!.expiresAt + additionalTime, now + this.config.maxTimeout);
+    const newExpiresAt = Math.min(
+      lock.holder!.expiresAt + additionalTime,
+      now + this.config.maxTimeout
+    );
 
     lock.holder!.expiresAt = newExpiresAt;
     this.locks.set(resourceId, lock);
@@ -578,7 +589,10 @@ export class LockManager {
   /**
    * Force release a lock
    */
-  private forceRelease(resourceId: string, reason: 'timeout' | 'cleanup'): void {
+  private forceRelease(
+    resourceId: string,
+    reason: 'timeout' | 'cleanup'
+  ): void {
     const lock = this.locks.get(resourceId);
     if (!lock) {
       return;
@@ -685,7 +699,10 @@ export function validateLockRequest(request: unknown): request is LockRequest {
   if (typeof req.username !== 'string' || !req.username) {
     return false;
   }
-  if (req.timeout !== undefined && (typeof req.timeout !== 'number' || req.timeout <= 0)) {
+  if (
+    req.timeout !== undefined &&
+    (typeof req.timeout !== 'number' || req.timeout <= 0)
+  ) {
     return false;
   }
   if (req.reason !== undefined && typeof req.reason !== 'string') {

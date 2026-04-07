@@ -1,4 +1,7 @@
-import { StorybookProvider, storybookWorkspacesAtom } from '@yappc/state/storybook';
+import {
+  StorybookProvider,
+  storybookWorkspacesAtom,
+} from '@yappc/state/storybook';
 import { useAtom } from 'jotai';
 import React from 'react';
 import { action } from 'storybook/actions';
@@ -79,7 +82,8 @@ export const LongName: Story = {
 export const LongDescription: Story = {
   args: {
     ...Basic.args,
-    description: 'This is a very long description that should wrap to multiple lines. It contains a lot of text to demonstrate how the card handles overflow.',
+    description:
+      'This is a very long description that should wrap to multiple lines. It contains a lot of text to demonstrate how the card handles overflow.',
   },
 };
 
@@ -132,7 +136,14 @@ const MultipleWorkspaceCards = () => {
   const [workspaces] = useAtom<unknown[]>(storybookWorkspacesAtom as unknown);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '350px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        width: '350px',
+      }}
+    >
       {workspaces.map((workspace: unknown) => (
         <WorkspaceCard
           key={workspace.id}

@@ -33,23 +33,23 @@ import { Header, type HeaderUser } from './Header';
 import { Sidebar, type NavItem } from './Sidebar';
 
 export interface AppShellProps {
-    children: React.ReactNode;
-    workspaces?: Workspace[];
-    currentWorkspace?: Workspace | null;
-    projects?: Project[];
-    projectsLoading?: boolean;
-    activeProjectId?: string | null;
-    currentUser?: HeaderUser | null;
-    activePath?: string;
-    drawerWidth?: number;
-    onWorkspaceSelect?: (workspace: Workspace) => void;
-    onCreateWorkspace?: () => void;
-    onProjectSelect?: (project: Project) => void;
-    onNavItemClick?: (item: NavItem) => void;
-    onUserMenuOpen?: (event: React.MouseEvent<HTMLElement>) => void;
-    onNotificationsOpen?: (event: React.MouseEvent<HTMLElement>) => void;
-    /** Optional slot for extra header action buttons */
-    headerActionsSlot?: React.ReactNode;
+  children: React.ReactNode;
+  workspaces?: Workspace[];
+  currentWorkspace?: Workspace | null;
+  projects?: Project[];
+  projectsLoading?: boolean;
+  activeProjectId?: string | null;
+  currentUser?: HeaderUser | null;
+  activePath?: string;
+  drawerWidth?: number;
+  onWorkspaceSelect?: (workspace: Workspace) => void;
+  onCreateWorkspace?: () => void;
+  onProjectSelect?: (project: Project) => void;
+  onNavItemClick?: (item: NavItem) => void;
+  onUserMenuOpen?: (event: React.MouseEvent<HTMLElement>) => void;
+  onNotificationsOpen?: (event: React.MouseEvent<HTMLElement>) => void;
+  /** Optional slot for extra header action buttons */
+  headerActionsSlot?: React.ReactNode;
 }
 
 /**
@@ -59,72 +59,72 @@ export interface AppShellProps {
  * as a temporary overlay on mobile (toggleable via the Header).
  */
 export const AppShell: React.FC<AppShellProps> = ({
-    children,
-    workspaces = [],
-    currentWorkspace,
-    projects = [],
-    projectsLoading = false,
-    activeProjectId,
-    currentUser,
-    activePath,
-    drawerWidth = 240,
-    onWorkspaceSelect,
-    onCreateWorkspace,
-    onProjectSelect,
-    onNavItemClick,
-    onUserMenuOpen,
-    onNotificationsOpen,
-    headerActionsSlot,
+  children,
+  workspaces = [],
+  currentWorkspace,
+  projects = [],
+  projectsLoading = false,
+  activeProjectId,
+  currentUser,
+  activePath,
+  drawerWidth = 240,
+  onWorkspaceSelect,
+  onCreateWorkspace,
+  onProjectSelect,
+  onNavItemClick,
+  onUserMenuOpen,
+  onNotificationsOpen,
+  headerActionsSlot,
 }) => {
-    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-    const handleWorkspaceSelect = (ws: Workspace) => {
-        onWorkspaceSelect?.(ws);
-    };
+  const handleWorkspaceSelect = (ws: Workspace) => {
+    onWorkspaceSelect?.(ws);
+  };
 
-    return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-            <CssBaseline />
+  return (
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <CssBaseline />
 
-            <Header
-                workspaces={workspaces}
-                currentWorkspace={currentWorkspace}
-                currentUser={currentUser}
-                onWorkspaceSelect={handleWorkspaceSelect}
-                onCreateWorkspace={onCreateWorkspace}
-                onUserMenuOpen={onUserMenuOpen}
-                onNotificationsOpen={onNotificationsOpen}
-                actionsSlot={headerActionsSlot}
-                drawerWidth={drawerWidth}
-            />
+      <Header
+        workspaces={workspaces}
+        currentWorkspace={currentWorkspace}
+        currentUser={currentUser}
+        onWorkspaceSelect={handleWorkspaceSelect}
+        onCreateWorkspace={onCreateWorkspace}
+        onUserMenuOpen={onUserMenuOpen}
+        onNotificationsOpen={onNotificationsOpen}
+        actionsSlot={headerActionsSlot}
+        drawerWidth={drawerWidth}
+      />
 
-            <Sidebar
-                open={mobileDrawerOpen}
-                onClose={() => setMobileDrawerOpen(false)}
-                drawerWidth={drawerWidth}
-                projects={projects}
-                projectsLoading={projectsLoading}
-                activeProjectId={activeProjectId}
-                activePath={activePath}
-                onProjectSelect={onProjectSelect}
-                onNavItemClick={onNavItemClick}
-            />
+      <Sidebar
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        drawerWidth={drawerWidth}
+        projects={projects}
+        projectsLoading={projectsLoading}
+        activeProjectId={activeProjectId}
+        activePath={activePath}
+        onProjectSelect={onProjectSelect}
+        onNavItemClick={onNavItemClick}
+      />
 
-            <Box
-                component="main"
-                sx={{
-                    flexGrow: 1,
-                    width: { sm: `calc(100% - ${drawerWidth}px)` },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: '100vh',
-                    bgcolor: 'background.default',
-                }}
-            >
-                {/* Offset for fixed AppBar */}
-                <Toolbar variant="dense" sx={{ minHeight: 48 }} />
-                {children}
-            </Box>
-        </Box>
-    );
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+        }}
+      >
+        {/* Offset for fixed AppBar */}
+        <Toolbar variant="dense" sx={{ minHeight: 48 }} />
+        {children}
+      </Box>
+    </Box>
+  );
 };

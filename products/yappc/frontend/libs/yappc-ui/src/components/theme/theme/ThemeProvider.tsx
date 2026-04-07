@@ -1,6 +1,16 @@
 import { CssBaseline } from '@mui/material';
-import { ThemeProvider as MuiThemeProvider, useMediaQuery } from '@mui/material';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  ThemeProvider as MuiThemeProvider,
+  useMediaQuery,
+} from '@mui/material';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { lightTheme, darkTheme } from './theme';
 
@@ -13,7 +23,9 @@ export interface ThemeContextType {
   toggleMode: () => void;
 }
 
-export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(
+  undefined
+);
 
 const THEME_STORAGE_KEY = 'app-theme-mode';
 

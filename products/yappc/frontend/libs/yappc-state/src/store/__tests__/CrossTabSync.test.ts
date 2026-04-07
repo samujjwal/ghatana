@@ -22,7 +22,7 @@ function createStorageMock(): Storage {
       values.clear();
     },
     getItem(key: string) {
-      return values.has(key) ? values.get(key) ?? null : null;
+      return values.has(key) ? (values.get(key) ?? null) : null;
     },
     key(index: number) {
       return Array.from(values.keys())[index] ?? null;
@@ -100,7 +100,7 @@ describe('cross-tab-sync', () => {
         value: 2,
         tabId: expect.any(String),
         timestamp: expect.any(Number),
-      }),
+      })
     );
     expect(getSyncStatistics().pendingWrites).toBe(0);
   });
@@ -120,7 +120,7 @@ describe('cross-tab-sync', () => {
           timestamp: 123,
           tabId: 'other-tab',
         }),
-      }),
+      })
     );
 
     expect(listener).toHaveBeenCalledWith({
@@ -149,7 +149,7 @@ describe('cross-tab-sync', () => {
           timestamp: 123,
           tabId: 'current-tab',
         }),
-      }),
+      })
     );
 
     expect(listener).not.toHaveBeenCalled();
@@ -171,7 +171,7 @@ describe('cross-tab-sync', () => {
           timestamp: 456,
           tabId: 'other-tab',
         }),
-      }),
+      })
     );
 
     expect(listener).not.toHaveBeenCalled();

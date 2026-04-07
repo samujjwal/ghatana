@@ -1,9 +1,9 @@
 /**
  * Error Boundary Component
- * 
+ *
  * Production-grade error boundary with fallback UI,
  * error reporting, and recovery mechanisms.
- * 
+ *
  * @module ui/error
  * @doc.type component
  * @doc.purpose Error boundary for React component trees
@@ -22,28 +22,30 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 export interface ErrorBoundaryProps {
   /** Child components to protect */
   children: ReactNode;
-  
+
   /** Custom fallback UI component */
-  fallback?: ReactNode | ((error: Error, errorInfo: ErrorInfo, retry: () => void) => ReactNode);
-  
+  fallback?:
+    | ReactNode
+    | ((error: Error, errorInfo: ErrorInfo, retry: () => void) => ReactNode);
+
   /** Error callback for logging/reporting */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
-  
+
   /** Error reset callback */
   onReset?: () => void;
-  
+
   /** Whether to show error details (dev mode) */
   showDetails?: boolean;
-  
+
   /** Boundary name for identification */
   boundaryName?: string;
-  
+
   /** Automatic reset after specified milliseconds */
   resetAfter?: number;
-  
+
   /** Reset on navigation (requires location prop) */
   resetOnPropsChange?: boolean;
-  
+
   /** Props to watch for changes (triggers reset) */
   resetKeys?: unknown[];
 }
@@ -54,16 +56,16 @@ export interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   /** Has error occurred */
   hasError: boolean;
-  
+
   /** Error object */
   error: Error | null;
-  
+
   /** Error info with component stack */
   errorInfo: ErrorInfo | null;
-  
+
   /** Error count (for retry limiting) */
   errorCount: number;
-  
+
   /** Timestamp of last error */
   lastErrorTime: number;
 }
@@ -75,7 +77,7 @@ interface ErrorBoundaryState {
 /**
  * Error boundary component
  * Catches errors in child component tree and displays fallback UI
- * 
+ *
  * @example
  * <ErrorBoundary
  *   fallback={<ErrorFallback />}
@@ -84,9 +86,12 @@ interface ErrorBoundaryState {
  *   <App />
  * </ErrorBoundary>
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   private resetTimeoutId: NodeJS.Timeout | null = null;
-  
+
   /**
    *
    */
@@ -100,7 +105,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       lastErrorTime: 0,
     };
   }
-  
+
   /**
    * Derive state from error
    * Called when error is thrown
@@ -113,28 +118,28 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       lastErrorTime: Date.now(),
     };
   }
-  
+
   /**
    * Component did catch
    * Called after error is caught
    */
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Update state with error info
-    this.setState(prevState => ({
+    this.setState((prevState) => ({
       errorInfo,
       errorCount: prevState.errorCount + 1,
     }));
-    
+
     // Call error callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-    
+
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('Error Boundary caught error:', error, errorInfo);
     }
-    
+
     // Set automatic reset timer if specified
     if (this.props.resetAfter && this.props.resetAfter > 0) {
       this.resetTimeoutId = setTimeout(() => {
@@ -142,7 +147,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       }, this.props.resetAfter);
     }
   }
-  
+
   /**
    * Component did update
    * Reset error boundary when resetKeys change
@@ -156,13 +161,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       const hasChanges = this.props.resetKeys.some(
         (key, index) => key !== prevProps.resetKeys?.[index]
       );
-      
+
       if (hasChanges && this.state.hasError) {
         this.resetErrorBoundary();
       }
     }
   }
-  
+
   /**
    * Component will unmount
    * Clear timer
@@ -172,7 +177,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       clearTimeout(this.resetTimeoutId);
     }
   }
-  
+
   /**
    * Reset error boundary
    * Clears error state and allows re-rendering
@@ -182,12 +187,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       clearTimeout(this.resetTimeoutId);
       this.resetTimeoutId = null;
     }
-    
+
     // Call reset callback if provided
     if (this.props.onReset) {
       this.props.onReset();
     }
-    
+
     // Reset state
     this.setState({
       hasError: false,
@@ -197,14 +202,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       lastErrorTime: 0,
     });
   };
-  
+
   /**
    * Render
    */
   render(): ReactNode {
     const { hasError, error, errorInfo, errorCount } = this.state;
     const { children, fallback, showDetails, boundaryName } = this.props;
-    
+
     if (hasError && error) {
       // Render custom fallback if provided
       if (fallback) {
@@ -213,7 +218,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         }
         return fallback;
       }
-      
+
       // Render default fallback
       return (
         <DefaultErrorFallback
@@ -226,7 +231,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         />
       );
     }
-    
+
     return children;
   }
 }
@@ -283,12 +288,18 @@ function DefaultErrorFallback({
           ⚠️ Something went wrong
         </h2>
         {boundaryName && (
-          <p style={{ margin: '0.5rem 0 0 0', color: '#7f1d1d', fontSize: '0.875rem' }}>
+          <p
+            style={{
+              margin: '0.5rem 0 0 0',
+              color: '#7f1d1d',
+              fontSize: '0.875rem',
+            }}
+          >
             Error Boundary: {boundaryName}
           </p>
         )}
       </div>
-      
+
       {/* Error message */}
       <div
         style={{
@@ -302,7 +313,7 @@ function DefaultErrorFallback({
           {error.message || 'An unexpected error occurred'}
         </p>
       </div>
-      
+
       {/* Error details (development only) */}
       {showDetails && (
         <>
@@ -332,7 +343,7 @@ function DefaultErrorFallback({
               {error.stack}
             </pre>
           </details>
-          
+
           {errorInfo?.componentStack && (
             <details style={{ marginBottom: '1rem' }}>
               <summary
@@ -363,7 +374,7 @@ function DefaultErrorFallback({
           )}
         </>
       )}
-      
+
       {/* Actions */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
         <button
@@ -387,7 +398,7 @@ function DefaultErrorFallback({
         >
           Try Again
         </button>
-        
+
         <button
           onClick={() => window.location.reload()}
           style={{
@@ -409,7 +420,7 @@ function DefaultErrorFallback({
         >
           Reload Page
         </button>
-        
+
         {errorCount > 1 && (
           <span style={{ color: '#7f1d1d', fontSize: '0.875rem' }}>
             Error occurred {errorCount} times

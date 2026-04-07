@@ -7,7 +7,7 @@ import clsx from 'clsx';
 import React, { useState, useEffect } from 'react';
 
 import { onboardingTourManager } from './OnboardingTour';
-import type { Tour} from './OnboardingTour';
+import type { Tour } from './OnboardingTour';
 
 /**
  *
@@ -23,16 +23,16 @@ const categoryIcons: Record<string, string> = {
   'getting-started': '🚀',
   'canvas-basics': '🎨',
   'advanced-features': '⚡',
-  'collaboration': '👥',
-  'shortcuts': '⌨️',
+  collaboration: '👥',
+  shortcuts: '⌨️',
 };
 
 const categoryNames: Record<string, string> = {
   'getting-started': 'Getting Started',
   'canvas-basics': 'Canvas Basics',
   'advanced-features': 'Advanced Features',
-  'collaboration': 'Collaboration',
-  'shortcuts': 'Keyboard Shortcuts',
+  collaboration: 'Collaboration',
+  shortcuts: 'Keyboard Shortcuts',
 };
 
 export const TourSelection: React.FC<TourSelectionProps> = ({
@@ -54,9 +54,11 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
 
   if (!isOpen) return null;
 
-  const categories = Array.from(new Set(availableTours.map(tour => tour.category)));
-  const filteredTours = selectedCategory 
-    ? availableTours.filter(tour => tour.category === selectedCategory)
+  const categories = Array.from(
+    new Set(availableTours.map((tour) => tour.category))
+  );
+  const filteredTours = selectedCategory
+    ? availableTours.filter((tour) => tour.category === selectedCategory)
     : availableTours;
 
   const handleTourStart = (tour: Tour) => {
@@ -65,9 +67,14 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
   };
 
   return (
-    <div className={clsx('fixed inset-0 z-50 flex items-center justify-center', className)}>
+    <div
+      className={clsx(
+        'fixed inset-0 z-50 flex items-center justify-center',
+        className
+      )}
+    >
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
@@ -78,7 +85,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Choose a Tour</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Choose a Tour
+              </h2>
               <p className="text-sm text-gray-600 mt-1">
                 Learn how to use the platform with guided interactive tours
               </p>
@@ -88,8 +97,18 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
               className="text-gray-400 hover:text-gray-600 transition-colors"
               data-testid="close-tour-selection"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -98,7 +117,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
         <div className="flex h-[calc(80vh-80px)]">
           {/* Sidebar - Categories */}
           <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Categories</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-3">
+              Categories
+            </h3>
             <div className="space-y-1">
               <button
                 onClick={() => setSelectedCategory(null)}
@@ -112,9 +133,11 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
               >
                 All Tours ({availableTours.length})
               </button>
-              
-              {categories.map(category => {
-                const count = availableTours.filter(tour => tour.category === category).length;
+
+              {categories.map((category) => {
+                const count = availableTours.filter(
+                  (tour) => tour.category === category
+                ).length;
                 return (
                   <button
                     key={category}
@@ -129,7 +152,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                   >
                     <span className="mr-2">{categoryIcons[category]}</span>
                     <span className="flex-1">{categoryNames[category]}</span>
-                    <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">{count}</span>
+                    <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -145,8 +170,18 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                   onClick={() => setSelectedTour(null)}
                   className="flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
                 >
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                   Back to tours
                 </button>
@@ -155,7 +190,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                   <div className="flex items-center mb-4">
                     <span className="text-3xl mr-3">{selectedTour.icon}</span>
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{selectedTour.name}</h3>
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        {selectedTour.name}
+                      </h3>
                       <div className="flex items-center text-sm text-gray-600 mt-1">
                         <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium mr-3">
                           {categoryNames[selectedTour.category]}
@@ -164,24 +201,29 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                       </div>
                     </div>
                   </div>
-                  
-                  <p className="text-gray-700 mb-6">{selectedTour.description}</p>
 
-                  {selectedTour.prerequisites && selectedTour.prerequisites.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Prerequisites:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedTour.prerequisites.map(prereq => (
-                          <span
-                            key={prereq}
-                            className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
-                          >
-                            {prereq}
-                          </span>
-                        ))}
+                  <p className="text-gray-700 mb-6">
+                    {selectedTour.description}
+                  </p>
+
+                  {selectedTour.prerequisites &&
+                    selectedTour.prerequisites.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Prerequisites:
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedTour.prerequisites.map((prereq) => (
+                            <span
+                              key={prereq}
+                              className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                            >
+                              {prereq}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <div className="mb-6">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
@@ -197,8 +239,12 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                             {index + 1}
                           </div>
                           <div>
-                            <h5 className="text-sm font-medium text-gray-900">{step.title}</h5>
-                            <p className="text-sm text-gray-600 mt-1">{step.content}</p>
+                            <h5 className="text-sm font-medium text-gray-900">
+                              {step.title}
+                            </h5>
+                            <p className="text-sm text-gray-600 mt-1">
+                              {step.content}
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -218,7 +264,7 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
               /* Tour list */
               <div className="p-6">
                 <div className="grid gap-4 md:grid-cols-2">
-                  {filteredTours.map(tour => (
+                  {filteredTours.map((tour) => (
                     <div
                       key={tour.id}
                       className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer"
@@ -229,7 +275,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                         <div className="flex items-center">
                           <span className="text-2xl mr-3">{tour.icon}</span>
                           <div>
-                            <h3 className="font-medium text-gray-900">{tour.name}</h3>
+                            <h3 className="font-medium text-gray-900">
+                              {tour.name}
+                            </h3>
                             <div className="flex items-center text-sm text-gray-600 mt-1">
                               <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs mr-2">
                                 {categoryNames[tour.category]}
@@ -249,14 +297,17 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                           Start
                         </button>
                       </div>
-                      
-                      <p className="text-gray-600 text-sm mb-3">{tour.description}</p>
-                      
+
+                      <p className="text-gray-600 text-sm mb-3">
+                        {tour.description}
+                      </p>
+
                       <div className="flex items-center justify-between text-xs text-gray-500">
                         <span>{tour.steps.length} steps</span>
-                        {tour.prerequisites && tour.prerequisites.length > 0 && (
-                          <span>Prerequisites required</span>
-                        )}
+                        {tour.prerequisites &&
+                          tour.prerequisites.length > 0 && (
+                            <span>Prerequisites required</span>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -265,7 +316,9 @@ export const TourSelection: React.FC<TourSelectionProps> = ({
                 {filteredTours.length === 0 && (
                   <div className="text-center py-12">
                     <div className="text-6xl mb-4">🎉</div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      All caught up!
+                    </h3>
                     <p className="text-gray-600">
                       You've completed all available tours in this category.
                     </p>

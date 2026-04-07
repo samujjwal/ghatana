@@ -1,4 +1,4 @@
- /**
+/**
  * Grid Component (Tailwind CSS)
  *
  * A layout component that arranges children in a CSS Grid layout
@@ -9,7 +9,6 @@ import React, { forwardRef } from 'react';
 import type { ElementType } from 'react';
 
 import { cn } from '../../utils/cn';
-
 
 /**
  *
@@ -217,7 +216,12 @@ export const Grid = forwardRef<HTMLElement, GridProps>(
     );
 
     return (
-      <Component ref={ref as unknown} className={classes} style={gridStyle} {...filteredRest}>
+      <Component
+        ref={ref as unknown}
+        className={classes}
+        style={gridStyle}
+        {...filteredRest}
+      >
         {children}
       </Component>
     );

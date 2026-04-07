@@ -23,7 +23,10 @@ export class OAuthUtils {
    * @param state - CSRF protection state parameter
    * @returns Authorization URL
    */
-  static generateAuthorizationUrl(provider: OAuthProvider, state: string): string {
+  static generateAuthorizationUrl(
+    provider: OAuthProvider,
+    state: string
+  ): string {
     const params = new URLSearchParams({
       client_id: provider.clientId,
       redirect_uri: provider.redirectUri,
@@ -42,7 +45,9 @@ export class OAuthUtils {
   static generateState(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+      ''
+    );
   }
 
   /**
@@ -67,7 +72,10 @@ export class OAuthUtils {
    * @param code - Authorization code
    * @returns OAuth token
    */
-  static async exchangeCodeForToken(provider: OAuthProvider, code: string): Promise<OAuthToken> {
+  static async exchangeCodeForToken(
+    provider: OAuthProvider,
+    code: string
+  ): Promise<OAuthToken> {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
@@ -104,7 +112,10 @@ export class OAuthUtils {
    * @param refreshToken - Refresh token
    * @returns New OAuth token
    */
-  static async refreshAccessToken(provider: OAuthProvider, refreshToken: string): Promise<OAuthToken> {
+  static async refreshAccessToken(
+    provider: OAuthProvider,
+    refreshToken: string
+  ): Promise<OAuthToken> {
     const params = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
@@ -140,7 +151,10 @@ export class OAuthUtils {
    * @param token - OAuth token
    * @returns User info
    */
-  static async fetchUserInfo(provider: OAuthProvider, token: OAuthToken): Promise<OAuthUser> {
+  static async fetchUserInfo(
+    provider: OAuthProvider,
+    token: OAuthToken
+  ): Promise<OAuthUser> {
     const response = await fetch(provider.userInfoUrl, {
       headers: {
         Authorization: `${token.tokenType} ${token.accessToken}`,

@@ -12,7 +12,6 @@ import { cn } from '@ghatana/design-system';
 
 import { type PresenceUser, type PresenceState } from '../PresenceManager';
 
-
 // =============================================================================
 // Types
 // =============================================================================

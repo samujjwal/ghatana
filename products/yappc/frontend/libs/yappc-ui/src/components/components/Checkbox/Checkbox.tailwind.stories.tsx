@@ -165,31 +165,40 @@ export const FormExample: Story = {
     return (
       <div className="w-96 p-6 bg-grey-50 rounded-lg">
         <h2 className="text-xl font-bold mb-4">Sign Up Preferences</h2>
-        
+
         <div className="flex flex-col gap-4">
           <Checkbox
             label="Send me newsletter and updates"
             checked={formData.newsletter}
             onChange={(e) =>
-              setFormData({ ...formData, newsletter: (e.target as HTMLInputElement).checked })
+              setFormData({
+                ...formData,
+                newsletter: (e.target as HTMLInputElement).checked,
+              })
             }
           />
-          
+
           <Checkbox
             label="I accept the terms and conditions"
             colorScheme="error"
             checked={formData.terms}
             onChange={(e) =>
-              setFormData({ ...formData, terms: (e.target as HTMLInputElement).checked })
+              setFormData({
+                ...formData,
+                terms: (e.target as HTMLInputElement).checked,
+              })
             }
           />
-          
+
           <Checkbox
             label="I agree to the privacy policy"
             colorScheme="error"
             checked={formData.privacy}
             onChange={(e) =>
-              setFormData({ ...formData, privacy: (e.target as HTMLInputElement).checked })
+              setFormData({
+                ...formData,
+                privacy: (e.target as HTMLInputElement).checked,
+              })
             }
           />
         </div>

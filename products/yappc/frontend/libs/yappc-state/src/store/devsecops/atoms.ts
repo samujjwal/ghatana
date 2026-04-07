@@ -20,7 +20,6 @@ import type {
   ViewMode,
 } from '@yappc/core/types/devsecops';
 
-
 // ============================================================================
 // Configuration Atoms
 // ============================================================================
@@ -28,12 +27,18 @@ import type {
 /**
  * Current view mode (canvas, kanban, timeline, table)
  */
-export const viewModeAtom = atomWithStorage<ViewMode>('devsecops-view-mode', 'canvas');
+export const viewModeAtom = atomWithStorage<ViewMode>(
+  'devsecops-view-mode',
+  'canvas'
+);
 
 /**
  * Active phase ID
  */
-export const activePhaseIdAtom = atomWithStorage<string>('devsecops-active-phase', 'phase-3');
+export const activePhaseIdAtom = atomWithStorage<string>(
+  'devsecops-active-phase',
+  'phase-3'
+);
 
 /**
  * Internal refresh token used to force item refetches after mutations.
@@ -61,13 +66,11 @@ export const sortConfigAtom = atom<SortConfig>({
 /**
  * View configuration (combines mode, filter, sort)
  */
-export const viewConfigAtom = atom<ViewConfig>(
-  (get) => ({
-    mode: get(viewModeAtom),
-    filter: get(filterConfigAtom),
-    sort: get(sortConfigAtom),
-  })
-);
+export const viewConfigAtom = atom<ViewConfig>((get) => ({
+  mode: get(viewModeAtom),
+  filter: get(filterConfigAtom),
+  sort: get(sortConfigAtom),
+}));
 
 // ============================================================================
 // Data Atoms (with async loaders)
@@ -121,7 +124,9 @@ export const activePhaseItemsAtom = atom(async (get) => {
 export const selectedItemAtom = atom(async (get) => {
   const items = await get(itemsAtom);
   const selectedId = get(selectedItemIdAtom);
-  return selectedId ? items.find((item) => item.id === selectedId) || null : null;
+  return selectedId
+    ? items.find((item) => item.id === selectedId) || null
+    : null;
 });
 
 /**
@@ -314,7 +319,10 @@ export const updateItemAtom = atom(
       set(itemsRefreshAtom, (prev) => prev + 1);
       return response.data;
     } finally {
-      set(loadingStatesAtom, (prev) => ({ ...prev, [`updateItem-${id}`]: false }));
+      set(loadingStatesAtom, (prev) => ({
+        ...prev,
+        [`updateItem-${id}`]: false,
+      }));
     }
   }
 );
@@ -322,27 +330,34 @@ export const updateItemAtom = atom(
 /**
  * Delete item atom
  */
-export const deleteItemAtom = atom(
-  null,
-  async (_get, set, itemId: string) => {
-    set(loadingStatesAtom, (prev) => ({ ...prev, [`deleteItem-${itemId}`]: true }));
+export const deleteItemAtom = atom(null, async (_get, set, itemId: string) => {
+  set(loadingStatesAtom, (prev) => ({
+    ...prev,
+    [`deleteItem-${itemId}`]: true,
+  }));
 
-    try {
-      await devsecopsClient.deleteItem(itemId);
-      // Invalidate items cache so views refetch from API
-      set(itemsRefreshAtom, (prev) => prev + 1);
-    } finally {
-      set(loadingStatesAtom, (prev) => ({ ...prev, [`deleteItem-${itemId}`]: false }));
-    }
+  try {
+    await devsecopsClient.deleteItem(itemId);
+    // Invalidate items cache so views refetch from API
+    set(itemsRefreshAtom, (prev) => prev + 1);
+  } finally {
+    set(loadingStatesAtom, (prev) => ({
+      ...prev,
+      [`deleteItem-${itemId}`]: false,
+    }));
   }
-);
+});
 
 /**
  * Bulk update items atom
  */
 export const bulkUpdateItemsAtom = atom(
   null,
-  async (_get, set, { itemIds, data }: { itemIds: string[]; data: Partial<Item> }) => {
+  async (
+    _get,
+    set,
+    { itemIds, data }: { itemIds: string[]; data: Partial<Item> }
+  ) => {
     set(loadingStatesAtom, (prev) => ({ ...prev, bulkUpdate: true }));
 
     try {

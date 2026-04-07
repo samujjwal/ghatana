@@ -10,13 +10,13 @@ interface WindowSize {
 
 /**
  * Hook that tracks window size
- * 
+ *
  * @returns Object with width and height
- * 
+ *
  * @example
  * ```tsx
  * const { width, height } = useWindowSize();
- * 
+ *
  * return <div>Window is {width}x{height}</div>;
  * ```
  */
@@ -35,7 +35,7 @@ export function useWindowSize(): WindowSize {
     };
 
     window.addEventListener('resize', handleResize);
-    
+
     // Call handler right away so state gets updated with initial window size
     handleResize();
 

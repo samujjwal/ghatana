@@ -55,7 +55,7 @@ export const Variants: Story = {
           <p>Content below</p>
         </div>
       </div>
-      
+
       <div>
         <p className="text-sm font-semibold mb-2">Inset:</p>
         <div className="border p-4">
@@ -64,7 +64,7 @@ export const Variants: Story = {
           <p>Content below</p>
         </div>
       </div>
-      
+
       <div>
         <p className="text-sm font-semibold mb-2">Middle:</p>
         <div className="border p-4">
@@ -86,7 +86,7 @@ export const WithText: Story = {
         <Divider>OR</Divider>
         <p>Content below</p>
       </div>
-      
+
       <div>
         <p>Section 1</p>
         <Divider>SECTION 2</Divider>
@@ -104,12 +104,12 @@ export const TextAlignment: Story = {
         <p className="text-sm font-semibold mb-2">Left aligned:</p>
         <Divider textAlign="left">Left</Divider>
       </div>
-      
+
       <div>
         <p className="text-sm font-semibold mb-2">Center aligned (default):</p>
         <Divider textAlign="center">Center</Divider>
       </div>
-      
+
       <div>
         <p className="text-sm font-semibold mb-2">Right aligned:</p>
         <Divider textAlign="right">Right</Divider>
@@ -173,15 +173,28 @@ export const FormSections: Story = {
     <div className="border rounded-lg p-6 space-y-6 max-w-md">
       <div>
         <h3 className="font-semibold mb-2">Personal Information</h3>
-        <input className="border rounded px-3 py-2 w-full mb-2" placeholder="Name" />
-        <input className="border rounded px-3 py-2 w-full" placeholder="Email" />
+        <input
+          className="border rounded px-3 py-2 w-full mb-2"
+          placeholder="Name"
+        />
+        <input
+          className="border rounded px-3 py-2 w-full"
+          placeholder="Email"
+        />
       </div>
-      
+
       <Divider>Account Details</Divider>
-      
+
       <div>
-        <input className="border rounded px-3 py-2 w-full mb-2" placeholder="Username" />
-        <input className="border rounded px-3 py-2 w-full" type="password" placeholder="Password" />
+        <input
+          className="border rounded px-3 py-2 w-full mb-2"
+          placeholder="Username"
+        />
+        <input
+          className="border rounded px-3 py-2 w-full"
+          type="password"
+          placeholder="Password"
+        />
       </div>
     </div>
   ),

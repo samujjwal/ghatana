@@ -1,16 +1,16 @@
 /**
  * Editor Lifecycle Manager
- * 
+ *
  * Manages Monaco editor instances with pooling, lazy loading,
  * and performance optimizations for large-scale IDE usage.
- * 
+ *
  * Features:
  * - 🏊 Editor instance pooling for performance
  * - 🔄 Lazy loading and unloading of editors
  * - 💾 Memory management for 100K+ line files
  * - 📊 Performance monitoring and metrics
  * - 🎯 CRDT binding lifecycle management
- * 
+ *
  * @doc.type class
  * @doc.purpose Editor lifecycle and performance management
  * @doc.layer product
@@ -21,7 +21,10 @@ import type { Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import * as Y from 'yjs';
 
-import type { EditorInstance, EditorMetrics } from '../components/EnhancedCodeEditor';
+import type {
+  EditorInstance,
+  EditorMetrics,
+} from '../components/EnhancedCodeEditor';
 
 /**
  * Editor pool configuration
@@ -84,7 +87,7 @@ export class EditorLifecycleManager {
   ): EditorInstance {
     // Check if editor exists in pool
     let instance = this.pool.get(fileId);
-    
+
     if (instance && instance.isMounted) {
       // Update last activity
       instance.lastActivity = Date.now();
@@ -100,7 +103,7 @@ export class EditorLifecycleManager {
     const editor = this.factory(container, options);
     const ymap = ydoc.getMap('files');
     let ytext = ymap.get(fileId) as Y.Text;
-    
+
     if (!ytext) {
       ytext = new Y.Text();
       ymap.set(fileId, ytext);
@@ -152,7 +155,7 @@ export class EditorLifecycleManager {
     // Full cleanup
     this.cleanupEditor(instance);
     instance.editor.dispose();
-    
+
     // Remove from pool and metrics
     this.pool.delete(fileId);
     this.metrics.delete(fileId);
@@ -189,14 +192,14 @@ export class EditorLifecycleManager {
 
     for (const [fileId, instance] of this.pool) {
       const idleTime = now - instance.lastActivity;
-      
+
       if (!instance.isMounted && idleTime > this.config.maxIdleTime) {
         toRemove.push(fileId);
       }
     }
 
     // Remove idle editors
-    toRemove.forEach(fileId => {
+    toRemove.forEach((fileId) => {
       this.removeEditor(fileId);
     });
     if (toRemove.length > 0) {
@@ -210,11 +213,15 @@ export class EditorLifecycleManager {
   checkMemoryUsage(): void {
     if (!this.config.enableMetrics) return;
 
-    const memoryUsage = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
-    
+    const memoryUsage =
+      (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
+        ?.usedJSHeapSize || 0;
+
     if (memoryUsage > this.config.memoryThreshold) {
-      console.warn(`Memory usage (${memoryUsage} bytes) exceeds threshold, forcing cleanup`);
-      
+      console.warn(
+        `Memory usage (${memoryUsage} bytes) exceeds threshold, forcing cleanup`
+      );
+
       // Force cleanup of all unmounted editors
       const toRemove: string[] = [];
       for (const [fileId, instance] of this.pool) {
@@ -222,16 +229,18 @@ export class EditorLifecycleManager {
           toRemove.push(fileId);
         }
       }
-      
-      toRemove.forEach(fileId => this.removeEditor(fileId));
-      
+
+      toRemove.forEach((fileId) => this.removeEditor(fileId));
+
       // If still over threshold, remove oldest mounted editors
-      const currentMemory = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0;
+      const currentMemory =
+        (performance as unknown as { memory?: { usedJSHeapSize: number } })
+          .memory?.usedJSHeapSize ?? 0;
       if (currentMemory > this.config.memoryThreshold) {
         const mountedEditors = Array.from(this.pool.entries())
           .filter(([, instance]) => instance.isMounted)
           .sort(([, a], [, b]) => a.lastActivity - b.lastActivity);
-        
+
         // Remove oldest 25% of mounted editors
         const toRemoveCount = Math.ceil(mountedEditors.length * 0.25);
         for (let i = 0; i < toRemoveCount; i++) {
@@ -254,7 +263,9 @@ export class EditorLifecycleManager {
       const metrics: EditorMetrics = {
         renderTime: performance.now(),
         lineCount,
-        memoryUsage: (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0,
+        memoryUsage:
+          (performance as unknown as { memory?: { usedJSHeapSize: number } })
+            .memory?.usedJSHeapSize || 0,
         cursorCount: 0, // Would be populated by collaborative cursors
         isLargeFile,
       };
@@ -269,7 +280,9 @@ export class EditorLifecycleManager {
     updateMetrics();
 
     // Store disposable for cleanup
-    (instance as unknown as { metricsDisposable?: { dispose(): void } }).metricsDisposable = disposable;
+    (
+      instance as unknown as { metricsDisposable?: { dispose(): void } }
+    ).metricsDisposable = disposable;
   }
 
   /**
@@ -278,15 +291,24 @@ export class EditorLifecycleManager {
   private cleanupEditor(instance: EditorInstance): void {
     // Clear decorations
     instance.editor.deltaDecorations([], []);
-    
+
     // Dispose metrics tracking
-    if ((instance as unknown as { metricsDisposable?: { dispose(): void } }).metricsDisposable) {
-      (instance as unknown as { metricsDisposable: { dispose(): void } }).metricsDisposable.dispose();
+    if (
+      (instance as unknown as { metricsDisposable?: { dispose(): void } })
+        .metricsDisposable
+    ) {
+      (
+        instance as unknown as { metricsDisposable: { dispose(): void } }
+      ).metricsDisposable.dispose();
     }
-    
+
     // Clear Yjs bindings if they exist
-    if ((instance as unknown as { yjsBinding?: { dispose(): void } }).yjsBinding) {
-      (instance as unknown as { yjsBinding: { dispose(): void } }).yjsBinding.dispose();
+    if (
+      (instance as unknown as { yjsBinding?: { dispose(): void } }).yjsBinding
+    ) {
+      (
+        instance as unknown as { yjsBinding: { dispose(): void } }
+      ).yjsBinding.dispose();
     }
   }
 
@@ -296,7 +318,7 @@ export class EditorLifecycleManager {
   private startCleanupInterval(): void {
     this.cleanupInterval = setInterval(() => {
       const now = Date.now();
-      
+
       // Run cleanup every 5 minutes
       if (now - this.lastCleanup > 300000) {
         this.cleanupIdleEditors();
@@ -322,13 +344,13 @@ export class EditorLifecycleManager {
   dispose(): void {
     // Stop cleanup interval
     this.stopCleanupInterval();
-    
+
     // Dispose all editors
     for (const [, instance] of this.pool) {
       this.cleanupEditor(instance);
       instance.editor.dispose();
     }
-    
+
     // Clear pools and metrics
     this.pool.clear();
     this.metrics.clear();
@@ -347,14 +369,14 @@ export class EditorLifecycleManager {
     let mounted = 0;
     let idle = 0;
     let largeFiles = 0;
-    
+
     for (const instance of this.pool.values()) {
       if (instance.isMounted) {
         mounted++;
       } else {
         idle++;
       }
-      
+
       const metrics = this.metrics.get(instance.fileId);
       if (metrics?.isLargeFile) {
         largeFiles++;
@@ -365,7 +387,9 @@ export class EditorLifecycleManager {
       totalEditors: this.pool.size,
       mountedEditors: mounted,
       idleEditors: idle,
-      memoryUsage: (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0,
+      memoryUsage:
+        (performance as unknown as { memory?: { usedJSHeapSize: number } })
+          .memory?.usedJSHeapSize || 0,
       largeFileEditors: largeFiles,
     };
   }
@@ -388,13 +412,13 @@ export function getEditorLifecycleManager(
       // This would be replaced with actual Monaco editor creation
       throw new Error('Editor factory not provided');
     };
-    
+
     globalEditorManager = new EditorLifecycleManager(
       factory || defaultFactory,
       config
     );
   }
-  
+
   return globalEditorManager;
 }
 

@@ -1,8 +1,8 @@
 /**
  * Error Boundary Hooks
- * 
+ *
  * React hooks for error boundary functionality
- * 
+ *
  * @module ui/error
  * @doc.type hook
  * @doc.purpose Programmatic error handling
@@ -21,7 +21,7 @@ import { useCallback, useState } from 'react';
 interface ErrorState {
   /** Has error */
   hasError: boolean;
-  
+
   /** Error object */
   error: Error | null;
 }
@@ -32,19 +32,19 @@ interface ErrorState {
 interface ErrorHandler {
   /** Current error state */
   error: Error | null;
-  
+
   /** Whether there is an error */
   hasError: boolean;
-  
+
   /** Set error */
   setError: (error: Error | null) => void;
-  
+
   /** Clear error */
   clearError: () => void;
-  
+
   /** Try/catch wrapper */
   tryCatch: <T>(fn: () => T) => T | null;
-  
+
   /** Async try/catch wrapper */
   tryCatchAsync: <T>(fn: () => Promise<T>) => Promise<T | null>;
 }
@@ -56,21 +56,21 @@ interface ErrorHandler {
 /**
  * Use error handler
  * Provides programmatic error handling within components
- * 
+ *
  * @example
  * function MyComponent() {
  *   const { error, setError, clearError, tryCatch } = useErrorHandler();
- *   
+ *
  *   const handleClick = () => {
  *     tryCatch(() => {
  *       riskyOperation();
  *     });
  *   };
- *   
+ *
  *   if (error) {
  *     return <ErrorDisplay error={error} onDismiss={clearError} />;
  *   }
- *   
+ *
  *   return <button onClick={handleClick}>Do Something</button>;
  * }
  */
@@ -79,7 +79,7 @@ export function useErrorHandler(): ErrorHandler {
     hasError: false,
     error: null,
   });
-  
+
   /**
    * Set error
    */
@@ -89,7 +89,7 @@ export function useErrorHandler(): ErrorHandler {
       error,
     });
   }, []);
-  
+
   /**
    * Clear error
    */
@@ -99,33 +99,39 @@ export function useErrorHandler(): ErrorHandler {
       error: null,
     });
   }, []);
-  
+
   /**
    * Try/catch wrapper
    * Executes function and catches errors
    */
-  const tryCatch = useCallback(<T,>(fn: () => T): T | null => {
-    try {
-      return fn();
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error(String(error)));
-      return null;
-    }
-  }, [setError]);
-  
+  const tryCatch = useCallback(
+    <T>(fn: () => T): T | null => {
+      try {
+        return fn();
+      } catch (error) {
+        setError(error instanceof Error ? error : new Error(String(error)));
+        return null;
+      }
+    },
+    [setError]
+  );
+
   /**
    * Async try/catch wrapper
    * Executes async function and catches errors
    */
-  const tryCatchAsync = useCallback(async <T,>(fn: () => Promise<T>): Promise<T | null> => {
-    try {
-      return await fn();
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error(String(error)));
-      return null;
-    }
-  }, [setError]);
-  
+  const tryCatchAsync = useCallback(
+    async <T>(fn: () => Promise<T>): Promise<T | null> => {
+      try {
+        return await fn();
+      } catch (error) {
+        setError(error instanceof Error ? error : new Error(String(error)));
+        return null;
+      }
+    },
+    [setError]
+  );
+
   return {
     error: errorState.error,
     hasError: errorState.hasError,
@@ -146,7 +152,7 @@ export function useErrorHandler(): ErrorHandler {
 interface ErrorReset {
   /** Reset key */
   resetKey: number;
-  
+
   /** Reset error boundary */
   reset: () => void;
 }
@@ -155,11 +161,11 @@ interface ErrorReset {
  * Use error reset
  * Provides error boundary reset mechanism
  * Use with ErrorBoundary's resetKeys prop
- * 
+ *
  * @example
  * function ParentComponent() {
  *   const { resetKey, reset } = useErrorReset();
- *   
+ *
  *   return (
  *     <ErrorBoundary resetKeys={[resetKey]}>
  *       <ChildComponent onError={reset} />
@@ -169,11 +175,11 @@ interface ErrorReset {
  */
 export function useErrorReset(): ErrorReset {
   const [resetKey, setResetKey] = useState(0);
-  
+
   const reset = useCallback(() => {
-    setResetKey(prev => prev + 1);
+    setResetKey((prev) => prev + 1);
   }, []);
-  
+
   return {
     resetKey,
     reset,
@@ -188,11 +194,11 @@ export function useErrorReset(): ErrorReset {
  * Use async error
  * Throws async errors to nearest error boundary
  * Useful for error boundaries to catch async errors
- * 
+ *
  * @example
  * function MyComponent() {
  *   const throwError = useAsyncError();
- *   
+ *
  *   const loadData = async () => {
  *     try {
  *       await fetchData();
@@ -204,7 +210,7 @@ export function useErrorReset(): ErrorReset {
  */
 export function useAsyncError(): (error: Error) => void {
   const [, setError] = useState<Error | null>(null);
-  
+
   return useCallback((error: Error) => {
     setError(() => {
       throw error;

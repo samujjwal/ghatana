@@ -14,23 +14,23 @@ export interface CacheEntry<T> {
 
 /**
  * In-memory cache manager with TTL support
- * 
+ *
  * Provides fast caching with automatic expiration.
  * Use for temporary data that doesn't need persistence across sessions.
- * 
+ *
  * @example
  * ```ts
  * const cache = new CacheManager();
- * 
+ *
  * // Set with default TTL (5 minutes)
  * cache.set('user-123', userData);
- * 
+ *
  * // Set with custom TTL (1 hour)
  * cache.set('config', configData, 60 * 60 * 1000);
- * 
+ *
  * // Get cached data
  * const user = cache.get<User>('user-123');
- * 
+ *
  * // Invalidate by pattern
  * cache.invalidatePattern('^user-');
  * ```
@@ -41,7 +41,7 @@ export class CacheManager {
 
   /**
    * Get a cached value by key
-   * 
+   *
    * @template T - Type of cached data
    * @param key - Cache key
    * @returns Cached data or null if not found or expired
@@ -64,7 +64,7 @@ export class CacheManager {
 
   /**
    * Set a cached value with optional TTL
-   * 
+   *
    * @template T - Type of data to cache
    * @param key - Cache key
    * @param data - Data to cache
@@ -80,7 +80,7 @@ export class CacheManager {
 
   /**
    * Delete a cached value by key
-   * 
+   *
    * @param key - Cache key to delete
    */
   delete(key: string): void {
@@ -96,7 +96,7 @@ export class CacheManager {
 
   /**
    * Get the number of cached entries
-   * 
+   *
    * @returns Cache size
    */
   size(): number {
@@ -105,7 +105,7 @@ export class CacheManager {
 
   /**
    * Get all cache keys
-   * 
+   *
    * @returns Array of cache keys
    */
   keys(): string[] {
@@ -114,13 +114,13 @@ export class CacheManager {
 
   /**
    * Invalidate cache entries matching a pattern
-   * 
+   *
    * @param pattern - RegEx pattern to match keys
    * @example
    * ```ts
    * // Invalidate all user-related cache
    * cache.invalidatePattern('^user-');
-   * 
+   *
    * // Invalidate all cache ending with '-temp'
    * cache.invalidatePattern('-temp$');
    * ```
@@ -135,26 +135,26 @@ export class CacheManager {
       }
     });
 
-    keysToDelete.forEach(key => this.cache.delete(key));
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 }
 
 /**
  * Persistent cache using localStorage
- * 
+ *
  * Provides caching with localStorage persistence across sessions.
  * Use for data that should survive page reloads.
- * 
+ *
  * @example
  * ```ts
  * const persistentCache = new PersistentCache();
- * 
+ *
  * // Set with 1 hour TTL
  * persistentCache.set('user-prefs', preferences, 60 * 60 * 1000);
- * 
+ *
  * // Get persisted data (survives page reload)
  * const prefs = persistentCache.get<UserPreferences>('user-prefs');
- * 
+ *
  * // Clear all persisted cache
  * persistentCache.clear();
  * ```
@@ -164,7 +164,7 @@ export class PersistentCache {
 
   /**
    * Get a persisted value by key
-   * 
+   *
    * @template T - Type of persisted data
    * @param key - Cache key
    * @returns Persisted data or null if not found or expired
@@ -193,7 +193,7 @@ export class PersistentCache {
 
   /**
    * Set a persisted value with optional TTL
-   * 
+   *
    * @template T - Type of data to persist
    * @param key - Cache key
    * @param data - Data to persist
@@ -214,7 +214,7 @@ export class PersistentCache {
 
   /**
    * Delete a persisted value by key
-   * 
+   *
    * @param key - Cache key to delete
    */
   delete(key: string): void {
@@ -232,7 +232,7 @@ export class PersistentCache {
         keys.push(key);
       }
     }
-    keys.forEach(key => localStorage.removeItem(key));
+    keys.forEach((key) => localStorage.removeItem(key));
   }
 }
 

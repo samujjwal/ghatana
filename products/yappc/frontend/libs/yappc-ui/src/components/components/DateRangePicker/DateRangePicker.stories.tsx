@@ -24,7 +24,10 @@ type Story = StoryObj<typeof DateRangePicker>;
  */
 export const Default: Story = {
   render: () => {
-    const [value, setValue] = React.useState<DateRange>({ start: null, end: null });
+    const [value, setValue] = React.useState<DateRange>({
+      start: null,
+      end: null,
+    });
     return <DateRangePicker value={value} onChange={setValue} />;
   },
 };
@@ -67,7 +70,10 @@ export const Sizes: Story = {
  */
 export const VacationBooking: Story = {
   render: () => {
-    const [value, setValue] = React.useState<DateRange>({ start: null, end: null });
+    const [value, setValue] = React.useState<DateRange>({
+      start: null,
+      end: null,
+    });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -85,7 +91,12 @@ export const VacationBooking: Story = {
         />
         {value.start && value.end && (
           <div className="mt-2 text-sm text-grey-600">
-            Duration: {Math.ceil((value.end.getTime() - value.start.getTime()) / (1000 * 60 * 60 * 24))} days
+            Duration:{' '}
+            {Math.ceil(
+              (value.end.getTime() - value.start.getTime()) /
+                (1000 * 60 * 60 * 24)
+            )}{' '}
+            days
           </div>
         )}
       </div>
@@ -98,13 +109,22 @@ export const VacationBooking: Story = {
  */
 export const ReportDateRange: Story = {
   render: () => {
-    const thisMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const thisMonthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
     const today = new Date();
-    const [value, setValue] = React.useState<DateRange>({ start: thisMonthStart, end: today });
+    const [value, setValue] = React.useState<DateRange>({
+      start: thisMonthStart,
+      end: today,
+    });
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Report Period</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Report Period
+        </label>
         <DateRangePicker
           value={value}
           onChange={setValue}

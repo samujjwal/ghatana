@@ -33,7 +33,9 @@ describe.skip('Accessibility Tests', () => {
 
     it('should have accessible name', () => {
       renderWithTheme(<Button>Submit</Button>);
-      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Submit' })
+      ).toBeInTheDocument();
     });
 
     it('should have proper button role', () => {
@@ -95,7 +97,9 @@ describe.skip('Accessibility Tests', () => {
     });
 
     it('should associate helper text with input', () => {
-      renderWithTheme(<TextField label="Password" helperText="At least 8 characters" />);
+      renderWithTheme(
+        <TextField label="Password" helperText="At least 8 characters" />
+      );
       const input = screen.getByLabelText('Password');
       const helperTextId = input.getAttribute('aria-describedby');
       expect(helperTextId).toBeTruthy();
@@ -184,7 +188,9 @@ describe.skip('Accessibility Tests', () => {
     });
 
     it('should indicate required fields', () => {
-      renderWithTheme(<Select label="Required Select" options={options} required />);
+      renderWithTheme(
+        <Select label="Required Select" options={options} required />
+      );
       expect(screen.getByLabelText(/Required Select/)).toBeInTheDocument();
     });
 
@@ -354,7 +360,10 @@ describe.skip('Accessibility Tests', () => {
         <>
           <Button>Button 1</Button>
           <TextField label="Input 1" />
-          <Select label="Select 1" options={[{ value: '1', label: 'Option' }]} />
+          <Select
+            label="Select 1"
+            options={[{ value: '1', label: 'Option' }]}
+          />
         </>
       );
 

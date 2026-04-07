@@ -1,16 +1,22 @@
 /**
  * @ghatana/yappc-ide - Performance Optimized Virtual Scroll Component
- * 
+ *
  * High-performance virtual scrolling with lazy loading, memory management,
  * and optimization for large datasets.
- * 
+ *
  * @doc.type component
  * @doc.purpose Performance-optimized virtual scrolling for IDE
  * @doc.layer product
  * @doc.pattern React Component
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 
 // Extend Performance interface for memory API
 declare global {
@@ -86,7 +92,8 @@ class ItemCache {
   /**
    *
    */
-  constructor(maxSize = 1000, ttl = 300000) { // 5 minutes TTL
+  constructor(maxSize = 1000, ttl = 300000) {
+    // 5 minutes TTL
     this.maxSize = maxSize;
     this.ttl = ttl;
   }
@@ -169,7 +176,9 @@ class PerformanceMonitor {
 /**
  * Performance optimized virtual scroll component
  */
-export const PerformanceOptimizedVirtualScroll: React.FC<PerformanceOptimizedVirtualScrollProps> = ({
+export const PerformanceOptimizedVirtualScroll: React.FC<
+  PerformanceOptimizedVirtualScrollProps
+> = ({
   items,
   config,
   renderItem,
@@ -183,20 +192,25 @@ export const PerformanceOptimizedVirtualScroll: React.FC<PerformanceOptimizedVir
   const [isScrolling, setIsScrolling] = useState(false);
 
   // Performance optimization instances
-  const itemCache = useMemo(() => new ItemCache(config.cacheSize), [config.cacheSize]);
+  const itemCache = useMemo(
+    () => new ItemCache(config.cacheSize),
+    [config.cacheSize]
+  );
   const performanceMonitor = useMemo(() => new PerformanceMonitor(), []);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const renderStartTimeRef = useRef<number>(0);
 
   // Calculate item positions and heights
   const itemPositions = useMemo(() => {
-    const positions: Array<{ top: number; height: number; bottom: number }> = [];
+    const positions: Array<{ top: number; height: number; bottom: number }> =
+      [];
     let currentTop = 0;
 
     for (let i = 0; i < items.length; i++) {
-      const height = typeof config.itemHeight === 'function'
-        ? config.itemHeight(i)
-        : config.itemHeight;
+      const height =
+        typeof config.itemHeight === 'function'
+          ? config.itemHeight(i)
+          : config.itemHeight;
 
       positions.push({
         top: currentTop,
@@ -319,7 +333,13 @@ export const PerformanceOptimizedVirtualScroll: React.FC<PerformanceOptimizedVir
     };
 
     onPerformanceUpdate(metrics);
-  }, [items.length, visibleRange, itemCache, performanceMonitor, onPerformanceUpdate]);
+  }, [
+    items.length,
+    visibleRange,
+    itemCache,
+    performanceMonitor,
+    onPerformanceUpdate,
+  ]);
 
   // Render visible items
   const visibleItems = useMemo(() => {
@@ -360,7 +380,14 @@ export const PerformanceOptimizedVirtualScroll: React.FC<PerformanceOptimizedVir
     }
 
     return renderItems;
-  }, [visibleRange, items, itemPositions, renderItem, itemCache, config.enableMemoryOptimization]);
+  }, [
+    visibleRange,
+    items,
+    itemPositions,
+    renderItem,
+    itemCache,
+    config.enableMemoryOptimization,
+  ]);
 
   // Calculate total height
   const totalHeight = useMemo(() => {
@@ -397,11 +424,19 @@ export const PerformanceOptimizedVirtualScroll: React.FC<PerformanceOptimizedVir
       {enableDebugMode && (
         <div className="fixed top-4 left-4 bg-black/80 text-white p-3 rounded text-xs font-mono z-50">
           <div>Items: {items.length}</div>
-          <div>Visible: {visibleRange.endIndex - visibleRange.startIndex + 1}</div>
+          <div>
+            Visible: {visibleRange.endIndex - visibleRange.startIndex + 1}
+          </div>
           <div>Cached: {itemCache.size()}</div>
           <div>FPS: {performanceMonitor.getFPS()}</div>
           <div>Scrolling: {isScrolling ? 'Yes' : 'No'}</div>
-          <div>Memory: {Math.round((performance.memory?.usedJSHeapSize || 0) / 1024 / 1024)}MB</div>
+          <div>
+            Memory:{' '}
+            {Math.round(
+              (performance.memory?.usedJSHeapSize || 0) / 1024 / 1024
+            )}
+            MB
+          </div>
         </div>
       )}
 

@@ -16,7 +16,6 @@ import { useDataSource } from '../../hooks/useDataSource';
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
 
-
 // ============================================================================
 // Mock Data & Server Setup
 // ============================================================================
@@ -65,9 +64,14 @@ const server = setupServer(
 
     // Simulate email uniqueness check
     if (body.email && body.email !== mockUsers[userIndex].email) {
-      const emailExists = mockUsers.some((u) => u.id !== id && u.email === body.email);
+      const emailExists = mockUsers.some(
+        (u) => u.id !== id && u.email === body.email
+      );
       if (emailExists) {
-        return res(ctx.status(400), ctx.json({ message: 'Email already in use', field: 'email' }));
+        return res(
+          ctx.status(400),
+          ctx.json({ message: 'Email already in use', field: 'email' })
+        );
       }
     }
 
@@ -90,7 +94,7 @@ const server = setupServer(
     const body = await req.json();
     mockSettings = { ...mockSettings, ...body };
     return res(ctx.json(mockSettings));
-  }),
+  })
 );
 
 beforeAll(() => server.listen());
@@ -118,9 +122,15 @@ describe.skip('End-to-End Workflows', () => {
       const eventLog: string[] = [];
 
       // Set up event listeners
-      eventBus.on('user:profile-editing', () => eventLog.push('editing-started'));
-      eventBus.on('user:profile-updated', () => eventLog.push('profile-updated'));
-      eventBus.on('ui:notification', (payload: unknown) => eventLog.push(`notification:${payload.type}`));
+      eventBus.on('user:profile-editing', () =>
+        eventLog.push('editing-started')
+      );
+      eventBus.on('user:profile-updated', () =>
+        eventLog.push('profile-updated')
+      );
+      eventBus.on('ui:notification', (payload: unknown) =>
+        eventLog.push(`notification:${payload.type}`)
+      );
 
       const { result } = renderHook(() => {
         const userDataSource = useDataSource<User>({
@@ -185,7 +195,9 @@ describe.skip('End-to-End Workflows', () => {
       });
 
       // Wait for data load
-      await waitFor(() => expect(result.current.userDataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.userDataSource.isLoading).toBe(false)
+      );
       expect(result.current.userForm.values.name).toBe('Admin User');
 
       // Start editing
@@ -198,7 +210,10 @@ describe.skip('End-to-End Workflows', () => {
       // Edit form
       act(() => {
         result.current.userForm.setFieldValue('name', 'Updated Admin');
-        result.current.userForm.setFieldValue('email', 'updated.admin@example.com');
+        result.current.userForm.setFieldValue(
+          'email',
+          'updated.admin@example.com'
+        );
       });
 
       // Validate
@@ -214,13 +229,17 @@ describe.skip('End-to-End Workflows', () => {
       await waitFor(() => expect(eventLog).toContain('profile-updated'));
       expect(eventLog).toContain('notification:success');
       expect(result.current.userDataSource.data?.name).toBe('Updated Admin');
-      expect(result.current.userDataSource.data?.email).toBe('updated.admin@example.com');
+      expect(result.current.userDataSource.data?.email).toBe(
+        'updated.admin@example.com'
+      );
     });
 
     it('should handle validation error and show notification', async () => {
       const notifications: unknown[] = [];
 
-      eventBus.on('ui:notification', (payload: unknown) => notifications.push(payload));
+      eventBus.on('ui:notification', (payload: unknown) =>
+        notifications.push(payload)
+      );
 
       const { result } = renderHook(() => {
         const form = useForm({
@@ -289,7 +308,11 @@ describe.skip('End-to-End Workflows', () => {
         });
 
         const settingsForm = useForm({
-          initialValues: { notifications: true, theme: 'light' as const, language: 'en' },
+          initialValues: {
+            notifications: true,
+            theme: 'light' as const,
+            language: 'en',
+          },
           validationRules: {},
           onSubmit: async (values) => {
             // Optimistic update
@@ -321,16 +344,24 @@ describe.skip('End-to-End Workflows', () => {
 
         // Load settings
         if (settingsDataSource.data && settingsForm.values.theme === 'light') {
-          settingsForm.setFieldValue('notifications', settingsDataSource.data.notifications);
+          settingsForm.setFieldValue(
+            'notifications',
+            settingsDataSource.data.notifications
+          );
           settingsForm.setFieldValue('theme', settingsDataSource.data.theme);
-          settingsForm.setFieldValue('language', settingsDataSource.data.language);
+          settingsForm.setFieldValue(
+            'language',
+            settingsDataSource.data.language
+          );
         }
 
         return { settingsDataSource, settingsForm };
       });
 
       // Wait for settings load
-      await waitFor(() => expect(result.current.settingsDataSource.isLoading).toBe(false));
+      await waitFor(() =>
+        expect(result.current.settingsDataSource.isLoading).toBe(false)
+      );
 
       // Change theme
       act(() => {
@@ -603,7 +634,9 @@ describe.skip('End-to-End Workflows', () => {
         return listUser?.name === 'Cache Invalidated User';
       });
 
-      expect(userDetail.current.dataSource.data?.name).toBe('Cache Invalidated User');
+      expect(userDetail.current.dataSource.data?.name).toBe(
+        'Cache Invalidated User'
+      );
     });
   });
 });

@@ -1,37 +1,45 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { TextField, Button, Box, Alert, Link, Typography } from '@ghatana/design-system';interface LoginFormProps {
-  onSwitchToRegister?: () => void
+import {
+  TextField,
+  Button,
+  Box,
+  Alert,
+  Link,
+  Typography,
+} from '@ghatana/design-system';
+interface LoginFormProps {
+  onSwitchToRegister?: () => void;
 }
 
 const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setError('')
-    setLoading(true)
+    event.preventDefault();
+    setError('');
+    setLoading(true);
 
     try {
       // NOTE: Implement actual login logic with GraphQL mutation
       if (email && password) {
         // Mock login for now
-        localStorage.setItem('authToken', 'mock-token')
-        navigate('/')
+        localStorage.setItem('authToken', 'mock-token');
+        navigate('/');
       } else {
-        setError('Please fill in all fields')
+        setError('Please fill in all fields');
       }
     } catch (err) {
-      setError('Login failed. Please try again.')
+      setError('Login failed. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Box component="form" onSubmit={handleSubmit} className="mt-2">
@@ -91,7 +99,7 @@ const LoginForm = ({ onSwitchToRegister }: LoginFormProps) => {
         </Box>
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default LoginForm
+export default LoginForm;

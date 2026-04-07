@@ -67,8 +67,16 @@ export interface TraceViewerProps {
 
 const getServiceColor = (serviceName: string, index: number): string => {
   const colors = [
-    '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444',
-    '#06B6D4', '#EC4899', '#84CC16', '#F97316', '#6366F1',
+    '#3B82F6',
+    '#10B981',
+    '#8B5CF6',
+    '#F59E0B',
+    '#EF4444',
+    '#06B6D4',
+    '#EC4899',
+    '#84CC16',
+    '#F97316',
+    '#6366F1',
   ];
   return colors[index % colors.length];
 };
@@ -155,7 +163,8 @@ const SpanRow: React.FC<SpanRowProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const offsetPercent = ((span.startTime - traceStartTime) / traceDuration) * 100;
+  const offsetPercent =
+    ((span.startTime - traceStartTime) / traceDuration) * 100;
   const widthPercent = Math.max((span.duration / traceDuration) * 100, 0.5);
   const serviceColor = serviceColors.get(span.serviceName) || '#6B7280';
 
@@ -178,7 +187,10 @@ const SpanRow: React.FC<SpanRowProps> = ({
         tabIndex={0}
       >
         {/* Info Column */}
-        <div className="span-info" style={{ paddingLeft: `${span.depth * 16 + 8}px` }}>
+        <div
+          className="span-info"
+          style={{ paddingLeft: `${span.depth * 16 + 8}px` }}
+        >
           {/* Expand Button */}
           {(span.tags.length > 0 || span.logs.length > 0) && (
             <button
@@ -217,10 +229,13 @@ const SpanRow: React.FC<SpanRowProps> = ({
               style={{
                 left: `${offsetPercent}%`,
                 width: `${widthPercent}%`,
-                backgroundColor: span.status === 'error' ? '#EF4444' : serviceColor,
+                backgroundColor:
+                  span.status === 'error' ? '#EF4444' : serviceColor,
               }}
             >
-              <span className="duration-label">{formatDuration(span.duration)}</span>
+              <span className="duration-label">
+                {formatDuration(span.duration)}
+              </span>
             </div>
           </div>
         </div>
@@ -252,9 +267,14 @@ const SpanRow: React.FC<SpanRowProps> = ({
                 {span.logs.map((log, i) => (
                   <div
                     key={i}
-                    className={cn('log-item', log.level && `log-item--${log.level}`)}
+                    className={cn(
+                      'log-item',
+                      log.level && `log-item--${log.level}`
+                    )}
                   >
-                    <span className="log-time">{formatTime(new Date(log.timestamp).getTime() * 1000)}</span>
+                    <span className="log-time">
+                      {formatTime(new Date(log.timestamp).getTime() * 1000)}
+                    </span>
                     <span className="log-message">{log.message}</span>
                   </div>
                 ))}
@@ -278,7 +298,10 @@ export const TraceViewer: React.FC<TraceViewerProps> = ({
   className,
 }) => {
   // Build span tree
-  const flattenedSpans = useMemo(() => buildSpanTree(trace.spans), [trace.spans]);
+  const flattenedSpans = useMemo(
+    () => buildSpanTree(trace.spans),
+    [trace.spans]
+  );
 
   // Assign colors to services
   const serviceColors = useMemo(() => {
@@ -296,7 +319,10 @@ export const TraceViewer: React.FC<TraceViewerProps> = ({
     for (let i = 0; i <= tickCount; i++) {
       const percentage = (i / tickCount) * 100;
       const time = trace.startTime + (trace.duration * i) / tickCount;
-      ticks.push({ percentage, label: formatDuration((trace.duration * i) / tickCount) });
+      ticks.push({
+        percentage,
+        label: formatDuration((trace.duration * i) / tickCount),
+      });
     }
     return ticks;
   }, [trace.startTime, trace.duration]);
@@ -310,7 +336,9 @@ export const TraceViewer: React.FC<TraceViewerProps> = ({
           <div className="trace-meta">
             <span className="meta-item">
               <span className="meta-label">Duration:</span>
-              <span className="meta-value">{formatDuration(trace.duration)}</span>
+              <span className="meta-value">
+                {formatDuration(trace.duration)}
+              </span>
             </span>
             <span className="meta-item">
               <span className="meta-label">Spans:</span>

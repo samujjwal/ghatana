@@ -555,12 +555,10 @@ export function calculateSpacingDistribution(
     const next = sorted[i + 1];
 
     if (direction === 'horizontal') {
-      const gap =
-        next.bounds.x - (current.bounds.x + current.bounds.width);
+      const gap = next.bounds.x - (current.bounds.x + current.bounds.width);
       spacings.push(gap);
     } else {
-      const gap =
-        next.bounds.y - (current.bounds.y + current.bounds.height);
+      const gap = next.bounds.y - (current.bounds.y + current.bounds.height);
       spacings.push(gap);
     }
   }
@@ -580,8 +578,7 @@ export function calculateSpacingDistribution(
     );
   }, 0);
 
-  const avgSpacing =
-    spacings.reduce((sum, s) => sum + s, 0) / spacings.length;
+  const avgSpacing = spacings.reduce((sum, s) => sum + s, 0) / spacings.length;
 
   return {
     totalSpan,

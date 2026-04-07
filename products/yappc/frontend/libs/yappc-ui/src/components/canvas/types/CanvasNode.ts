@@ -123,7 +123,11 @@ export interface EventNode extends BaseCanvasNode {
 /**
  * Union type for all node types
  */
-export type CanvasNodeType = ComponentNode | DataSourceNode | EventNode | BaseCanvasNode;
+export type CanvasNodeType =
+  | ComponentNode
+  | DataSourceNode
+  | EventNode
+  | BaseCanvasNode;
 
 /**
  * Type guards

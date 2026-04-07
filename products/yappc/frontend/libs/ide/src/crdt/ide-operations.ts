@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - IDE CRDT Operations
- * 
+ *
  * CRDT operations specific to IDE functionality including file operations,
  * editor state, and presence tracking.
- * 
+ *
  * @doc.type module
  * @doc.purpose IDE-specific CRDT operations
  * @doc.layer product
@@ -129,7 +129,7 @@ export interface IDEMoveTabData {
 
 /**
  * Create IDE CRDT operation
- * 
+ *
  * @doc.param type - Operation type
  * @doc.param data - Operation data
  * @doc.param replicaId - Replica ID
@@ -139,20 +139,33 @@ export interface IDEMoveTabData {
  */
 export function createIDECRDTOperation<T extends IDECRDTOperationType>(
   type: T,
-  data: T extends 'ide:createFile' ? IDECreateFileData :
-    T extends 'ide:updateFileContent' ? IDEUpdateFileContentData :
-    T extends 'ide:deleteFile' ? IDEDeleteFileData :
-    T extends 'ide:renameFile' ? IDERenameFileData :
-    T extends 'ide:createFolder' ? IDECreateFolderData :
-    T extends 'ide:deleteFolder' ? IDEDeleteFolderData :
-    T extends 'ide:renameFolder' ? IIDERenameFolderData :
-    T extends 'ide:updateEditorState' ? IDEUpdateEditorStateData :
-    T extends 'ide:updatePresence' ? IDEUpdatePresenceData :
-    T extends 'ide:createTab' ? IDECreateTabData :
-    T extends 'ide:closeTab' ? IDECloseTabData :
-    T extends 'ide:updateTab' ? IDEUpdateTabData :
-    T extends 'ide:moveTab' ? IDEMoveTabData :
-    never,
+  data: T extends 'ide:createFile'
+    ? IDECreateFileData
+    : T extends 'ide:updateFileContent'
+      ? IDEUpdateFileContentData
+      : T extends 'ide:deleteFile'
+        ? IDEDeleteFileData
+        : T extends 'ide:renameFile'
+          ? IDERenameFileData
+          : T extends 'ide:createFolder'
+            ? IDECreateFolderData
+            : T extends 'ide:deleteFolder'
+              ? IDEDeleteFolderData
+              : T extends 'ide:renameFolder'
+                ? IIDERenameFolderData
+                : T extends 'ide:updateEditorState'
+                  ? IDEUpdateEditorStateData
+                  : T extends 'ide:updatePresence'
+                    ? IDEUpdatePresenceData
+                    : T extends 'ide:createTab'
+                      ? IDECreateTabData
+                      : T extends 'ide:closeTab'
+                        ? IDECloseTabData
+                        : T extends 'ide:updateTab'
+                          ? IDEUpdateTabData
+                          : T extends 'ide:moveTab'
+                            ? IDEMoveTabData
+                            : never,
   replicaId: string,
   vectorClock: VectorClock,
   parents: string[] = []
@@ -171,7 +184,7 @@ export function createIDECRDTOperation<T extends IDECRDTOperationType>(
 
 /**
  * Create file operation
- * 
+ *
  * @doc.param file - File to create
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -200,7 +213,7 @@ export function createFileOperation(
 
 /**
  * Update file content operation
- * 
+ *
  * @doc.param fileId - File ID
  * @doc.param changes - Text changes
  * @doc.param replicaId - Replica ID
@@ -223,7 +236,7 @@ export function updateFileContentOperation(
 
 /**
  * Delete file operation
- * 
+ *
  * @doc.param fileId - File ID
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -244,7 +257,7 @@ export function deleteFileOperation(
 
 /**
  * Rename file operation
- * 
+ *
  * @doc.param fileId - File ID
  * @doc.param newPath - New file path
  * @doc.param replicaId - Replica ID
@@ -267,7 +280,7 @@ export function renameFileOperation(
 
 /**
  * Create folder operation
- * 
+ *
  * @doc.param folder - Folder to create
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -293,7 +306,7 @@ export function createFolderOperation(
 
 /**
  * Delete folder operation
- * 
+ *
  * @doc.param folderId - Folder ID
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -314,7 +327,7 @@ export function deleteFolderOperation(
 
 /**
  * Rename folder operation
- * 
+ *
  * @doc.param folderId - Folder ID
  * @doc.param newPath - New folder path
  * @doc.param replicaId - Replica ID
@@ -337,7 +350,7 @@ export function renameFolderOperation(
 
 /**
  * Update editor state operation
- * 
+ *
  * @doc.param editorState - Editor state to update
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -358,7 +371,7 @@ export function updateEditorStateOperation(
 
 /**
  * Update presence operation
- * 
+ *
  * @doc.param presence - Presence data
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -379,7 +392,7 @@ export function updatePresenceOperation(
 
 /**
  * Create tab operation
- * 
+ *
  * @doc.param tab - Tab to create
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -405,7 +418,7 @@ export function createTabOperation(
 
 /**
  * Close tab operation
- * 
+ *
  * @doc.param tabId - Tab ID
  * @doc.param replicaId - Replica ID
  * @doc.param vectorClock - Vector clock
@@ -426,7 +439,7 @@ export function closeTabOperation(
 
 /**
  * Update tab operation
- * 
+ *
  * @doc.param tabId - Tab ID
  * @doc.param updates - Tab updates
  * @doc.param replicaId - Replica ID
@@ -449,7 +462,7 @@ export function updateTabOperation(
 
 /**
  * Move tab operation
- * 
+ *
  * @doc.param tabId - Tab ID
  * @doc.param newIndex - New index
  * @doc.param replicaId - Replica ID
@@ -472,7 +485,7 @@ export function moveTabOperation(
 
 /**
  * Validate IDE CRDT operation
- * 
+ *
  * @doc.param operation - Operation to validate
  * @doc.returns Validation result
  */
@@ -503,7 +516,9 @@ export function validateIDECRDTOperation(operation: CRDTOperation): {
 
     case 'ide:deleteFile':
     case 'ide:deleteFolder':
-      const deleteData = operation.data as IDEDeleteFileData | IDEDeleteFolderData;
+      const deleteData = operation.data as
+        | IDEDeleteFileData
+        | IDEDeleteFolderData;
       if (!('fileId' in deleteData) && !('folderId' in deleteData)) {
         return { valid: false, error: 'Missing file or folder ID' };
       }
@@ -539,7 +554,7 @@ export function validateIDECRDTOperation(operation: CRDTOperation): {
 
 /**
  * Get operation priority for conflict resolution
- * 
+ *
  * @doc.param operation - CRDT operation
  * @doc.returns Operation priority
  */

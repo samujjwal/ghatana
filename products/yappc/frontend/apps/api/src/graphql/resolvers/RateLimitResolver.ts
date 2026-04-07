@@ -18,7 +18,10 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { RateLimitingService, RATE_LIMIT_TIERS } from '../../services/ratelimit/RateLimitingService';
+import {
+  RateLimitingService,
+  RATE_LIMIT_TIERS,
+} from '../../services/ratelimit/RateLimitingService';
 
 /**
  * RateLimitResolver handles rate limit GraphQL operations
@@ -33,7 +36,7 @@ export class RateLimitResolver {
   constructor(
     private rateLimitService: RateLimitingService,
     private prisma: PrismaClient
-  ) { }
+  ) {}
 
   /**
    * Query resolvers object
@@ -42,34 +45,42 @@ export class RateLimitResolver {
     /**
      * Get current user's rate limit status
      */
-    myRateLimitStatus: async (
-      _: unknown,
-      __: unknown,
-      context: unknown
-    ) => {
+    myRateLimitStatus: async (_: unknown, __: unknown, context: unknown) => {
       try {
         const userId = context.userId || context.user?.id;
         if (!userId) {
           throw new Error('User not authenticated');
         }
 
-        const status = await this.rateLimitService.getRateLimitStatus(`user:${userId}`);
+        const status = await this.rateLimitService.getRateLimitStatus(
+          `user:${userId}`
+        );
         return {
           identifier: status.identifier,
           tier: status.tier,
           used: status.totalRequests - status.remainingRequests,
           limit: status.totalRequests,
           remaining: status.remainingRequests,
-          percentage: ((status.totalRequests - status.remainingRequests) / status.totalRequests) * 100,
+          percentage:
+            ((status.totalRequests - status.remainingRequests) /
+              status.totalRequests) *
+            100,
           resetTime: status.resetTime,
           isLimited: status.isLimited,
           lastRequestAt: status.lastRequestAt,
-          statusColor: this.getStatusColor((status.totalRequests - status.remainingRequests) / status.totalRequests),
-          statusLabel: this.getStatusLabel((status.totalRequests - status.remainingRequests) / status.totalRequests),
+          statusColor: this.getStatusColor(
+            (status.totalRequests - status.remainingRequests) /
+              status.totalRequests
+          ),
+          statusLabel: this.getStatusLabel(
+            (status.totalRequests - status.remainingRequests) /
+              status.totalRequests
+          ),
         };
       } catch (error) {
         throw new Error(
-          `Failed to fetch rate limit status: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to fetch rate limit status: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -78,10 +89,7 @@ export class RateLimitResolver {
     /**
      * Get rate limit configuration for a user
      */
-    rateLimitConfig: async (
-      _: unknown,
-      { userId }: { userId: string }
-    ) => {
+    rateLimitConfig: async (_: unknown, { userId }: { userId: string }) => {
       try {
         const config = await this.prisma.rateLimitConfig.findUnique({
           where: { userId },
@@ -91,7 +99,8 @@ export class RateLimitResolver {
           return null;
         }
 
-        const tierConfig = RATE_LIMIT_TIERS[config.tier] || RATE_LIMIT_TIERS['free'];
+        const tierConfig =
+          RATE_LIMIT_TIERS[config.tier] || RATE_LIMIT_TIERS['free'];
 
         return {
           userId: config.userId,
@@ -105,7 +114,8 @@ export class RateLimitResolver {
         };
       } catch (error) {
         throw new Error(
-          `Failed to fetch rate limit config: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to fetch rate limit config: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -119,23 +129,34 @@ export class RateLimitResolver {
       { identifier }: { identifier: string }
     ) => {
       try {
-        const status = await this.rateLimitService.getRateLimitStatus(identifier);
+        const status =
+          await this.rateLimitService.getRateLimitStatus(identifier);
         return {
           identifier: status.identifier,
           tier: status.tier,
           used: status.totalRequests - status.remainingRequests,
           limit: status.totalRequests,
           remaining: status.remainingRequests,
-          percentage: ((status.totalRequests - status.remainingRequests) / status.totalRequests) * 100,
+          percentage:
+            ((status.totalRequests - status.remainingRequests) /
+              status.totalRequests) *
+            100,
           resetTime: status.resetTime,
           isLimited: status.isLimited,
           lastRequestAt: status.lastRequestAt,
-          statusColor: this.getStatusColor((status.totalRequests - status.remainingRequests) / status.totalRequests),
-          statusLabel: this.getStatusLabel((status.totalRequests - status.remainingRequests) / status.totalRequests),
+          statusColor: this.getStatusColor(
+            (status.totalRequests - status.remainingRequests) /
+              status.totalRequests
+          ),
+          statusLabel: this.getStatusLabel(
+            (status.totalRequests - status.remainingRequests) /
+              status.totalRequests
+          ),
         };
       } catch (error) {
         throw new Error(
-          `Failed to fetch rate limit status: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to fetch rate limit status: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -159,10 +180,7 @@ export class RateLimitResolver {
     /**
      * Get tier info by name
      */
-    rateLimitTier: async (
-      _: unknown,
-      { name }: { name: string }
-    ) => {
+    rateLimitTier: async (_: unknown, { name }: { name: string }) => {
       const tierKey = name.toLowerCase();
       const tier = RATE_LIMIT_TIERS[tierKey];
 
@@ -191,13 +209,16 @@ export class RateLimitResolver {
           totalActiveUsers: (metrics as unknown).totalUsers || 0,
           totalRequests: (metrics as unknown).totalRequests || 0,
           limitedUsers: (metrics as unknown).limitedUsers || 0,
-          limitPercentage: parseFloat((metrics as unknown).limitPercentage || '0'),
+          limitPercentage: parseFloat(
+            (metrics as unknown).limitPercentage || '0'
+          ),
           averageRequestsPerUser: 0,
           peakRequestsPerSecond: 0,
         };
       } catch (error) {
         throw new Error(
-          `Failed to fetch metrics: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to fetch metrics: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -231,7 +252,8 @@ export class RateLimitResolver {
         }));
       } catch (error) {
         throw new Error(
-          `Failed to fetch upgrade requests: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to fetch upgrade requests: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -275,7 +297,8 @@ export class RateLimitResolver {
         return request;
       } catch (error) {
         throw new Error(
-          `Failed to request upgrade: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to request upgrade: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -298,7 +321,10 @@ export class RateLimitResolver {
         }
 
         // Upgrade user
-        await this.rateLimitService.upgradeTier(request.userId, request.requestedTier);
+        await this.rateLimitService.upgradeTier(
+          request.userId,
+          request.requestedTier
+        );
 
         // Mark request as approved
         await this.prisma.upgradeRequest.update({
@@ -313,7 +339,8 @@ export class RateLimitResolver {
           where: { userId: request.userId },
         });
 
-        const tierConfig = RATE_LIMIT_TIERS[config?.tier || 'free'] || RATE_LIMIT_TIERS['free'];
+        const tierConfig =
+          RATE_LIMIT_TIERS[config?.tier || 'free'] || RATE_LIMIT_TIERS['free'];
 
         return {
           userId: config?.userId,
@@ -327,7 +354,8 @@ export class RateLimitResolver {
         };
       } catch (error) {
         throw new Error(
-          `Failed to approve upgrade: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to approve upgrade: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -352,7 +380,8 @@ export class RateLimitResolver {
         return request;
       } catch (error) {
         throw new Error(
-          `Failed to reject upgrade: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to reject upgrade: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -372,7 +401,8 @@ export class RateLimitResolver {
           where: { userId },
         });
 
-        const tierConfig = RATE_LIMIT_TIERS[config?.tier || tier] || RATE_LIMIT_TIERS['free'];
+        const tierConfig =
+          RATE_LIMIT_TIERS[config?.tier || tier] || RATE_LIMIT_TIERS['free'];
 
         return {
           userId: config?.userId,
@@ -386,7 +416,8 @@ export class RateLimitResolver {
         };
       } catch (error) {
         throw new Error(
-          `Failed to upgrade user tier: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to upgrade user tier: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -395,14 +426,13 @@ export class RateLimitResolver {
     /**
      * Reset user rate limit
      */
-    resetRateLimit: async (
-      _: unknown,
-      { userId }: { userId: string }
-    ) => {
+    resetRateLimit: async (_: unknown, { userId }: { userId: string }) => {
       try {
         await this.rateLimitService.resetLimit(`user:${userId}`);
 
-        const status = await this.rateLimitService.getRateLimitStatus(`user:${userId}`);
+        const status = await this.rateLimitService.getRateLimitStatus(
+          `user:${userId}`
+        );
         return {
           identifier: status.identifier,
           tier: status.tier,
@@ -418,7 +448,8 @@ export class RateLimitResolver {
         };
       } catch (error) {
         throw new Error(
-          `Failed to reset rate limit: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to reset rate limit: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -427,11 +458,7 @@ export class RateLimitResolver {
     /**
      * Downgrade to free tier
      */
-    downgradeToFree: async (
-      _: unknown,
-      __: unknown,
-      context: unknown
-    ) => {
+    downgradeToFree: async (_: unknown, __: unknown, context: unknown) => {
       try {
         const userId = context.userId || context.user?.id;
         if (!userId) {
@@ -458,7 +485,8 @@ export class RateLimitResolver {
         };
       } catch (error) {
         throw new Error(
-          `Failed to downgrade tier: ${error instanceof Error ? error.message : 'unknown error'
+          `Failed to downgrade tier: ${
+            error instanceof Error ? error.message : 'unknown error'
           }`
         );
       }
@@ -486,11 +514,7 @@ export class RateLimitResolver {
    */
   private getTierFeatures(tier: string): string[] {
     const features: { [key: string]: string[] } = {
-      free: [
-        '100 requests/hour',
-        '500 requests/day',
-        'Basic support',
-      ],
+      free: ['100 requests/hour', '500 requests/day', 'Basic support'],
       pro: [
         '10,000 requests/hour',
         '100,000 requests/day',
@@ -532,4 +556,3 @@ export class RateLimitResolver {
     return 'Low';
   }
 }
-

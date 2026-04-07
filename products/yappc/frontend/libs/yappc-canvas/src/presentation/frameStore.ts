@@ -1,6 +1,6 @@
 /**
  * Frame Store - Presentation Mode with Frame Sequencing
- * 
+ *
  * Provides presentation capabilities:
  * - Frame-based slide sequencing
  * - Speaker notes (presenter-only)
@@ -8,7 +8,7 @@
  * - Navigation controls (next/previous/jump)
  * - Presentation state management
  * - Transitions and animations
- * 
+ *
  * @module frameStore
  */
 
@@ -35,12 +35,7 @@ export interface Frame {
 /**
  * Transition types between frames
  */
-export type TransitionType = 
-  | 'none'
-  | 'fade'
-  | 'slide'
-  | 'zoom'
-  | 'crossfade';
+export type TransitionType = 'none' | 'fade' | 'slide' | 'zoom' | 'crossfade';
 
 /**
  * Presentation state
@@ -109,7 +104,7 @@ export function createFrame(
 ): PresentationState {
   const order = state.frameOrder.length;
   const newFrame: Frame = { ...frame, order };
-  
+
   return {
     ...state,
     frames: new Map([...state.frames, [frame.id, newFrame]]),
@@ -132,7 +127,7 @@ export function getFrame(
  */
 export function getAllFrames(state: PresentationState): Frame[] {
   return state.frameOrder
-    .map(id => state.frames.get(id))
+    .map((id) => state.frames.get(id))
     .filter((f): f is Frame => f !== undefined);
 }
 
@@ -148,7 +143,7 @@ export function updateFrame(
   if (!frame) {
     return state;
   }
-  
+
   const updatedFrame = { ...frame, ...updates };
   return {
     ...state,
@@ -165,9 +160,9 @@ export function deleteFrame(
 ): PresentationState {
   const newFrames = new Map(state.frames);
   newFrames.delete(frameId);
-  
-  const newOrder = state.frameOrder.filter(id => id !== frameId);
-  
+
+  const newOrder = state.frameOrder.filter((id) => id !== frameId);
+
   // Recompute orders
   const reorderedFrames = new Map<string, Frame>();
   newOrder.forEach((id, index) => {
@@ -176,7 +171,7 @@ export function deleteFrame(
       reorderedFrames.set(id, { ...frame, order: index });
     }
   });
-  
+
   return {
     ...state,
     frames: reorderedFrames,
@@ -193,17 +188,17 @@ export function reorderFrames(
   newOrder: string[]
 ): PresentationState {
   // Validate all frame IDs exist
-  if (newOrder.some(id => !state.frames.has(id))) {
+  if (newOrder.some((id) => !state.frames.has(id))) {
     return state;
   }
-  
+
   // Update order properties
   const reorderedFrames = new Map<string, Frame>();
   newOrder.forEach((id, index) => {
     const frame = state.frames.get(id)!;
     reorderedFrames.set(id, { ...frame, order: index });
   });
-  
+
   return {
     ...state,
     frames: reorderedFrames,
@@ -221,11 +216,14 @@ export function startPresentation(
   if (state.frameOrder.length === 0) {
     return state;
   }
-  
+
   return {
     ...state,
     isPresenting: true,
-    currentFrameIndex: Math.max(0, Math.min(startIndex, state.frameOrder.length - 1)),
+    currentFrameIndex: Math.max(
+      0,
+      Math.min(startIndex, state.frameOrder.length - 1)
+    ),
   };
 }
 
@@ -251,7 +249,7 @@ export function nextFrame(state: PresentationState): NavigationResult {
       error: 'Presentation not active',
     };
   }
-  
+
   if (state.currentFrameIndex >= state.frameOrder.length - 1) {
     return {
       success: false,
@@ -260,11 +258,11 @@ export function nextFrame(state: PresentationState): NavigationResult {
       error: 'Already at last frame',
     };
   }
-  
+
   const newIndex = state.currentFrameIndex + 1;
   const frameId = state.frameOrder[newIndex];
   const frame = state.frames.get(frameId);
-  
+
   return {
     success: true,
     previousIndex: state.currentFrameIndex,
@@ -285,7 +283,7 @@ export function previousFrame(state: PresentationState): NavigationResult {
       error: 'Presentation not active',
     };
   }
-  
+
   if (state.currentFrameIndex <= 0) {
     return {
       success: false,
@@ -294,11 +292,11 @@ export function previousFrame(state: PresentationState): NavigationResult {
       error: 'Already at first frame',
     };
   }
-  
+
   const newIndex = state.currentFrameIndex - 1;
   const frameId = state.frameOrder[newIndex];
   const frame = state.frames.get(frameId);
-  
+
   return {
     success: true,
     previousIndex: state.currentFrameIndex,
@@ -322,7 +320,7 @@ export function jumpToFrame(
       error: 'Presentation not active',
     };
   }
-  
+
   const index = state.frameOrder.indexOf(frameId);
   if (index === -1) {
     return {
@@ -332,9 +330,9 @@ export function jumpToFrame(
       error: 'Frame not found',
     };
   }
-  
+
   const frame = state.frames.get(frameId);
-  
+
   return {
     success: true,
     previousIndex: state.currentFrameIndex,
@@ -353,7 +351,7 @@ export function applyNavigation(
   if (!result.success) {
     return state;
   }
-  
+
   return {
     ...state,
     currentFrameIndex: result.currentIndex,
@@ -364,10 +362,13 @@ export function applyNavigation(
  * Get current frame
  */
 export function getCurrentFrame(state: PresentationState): Frame | undefined {
-  if (state.currentFrameIndex < 0 || state.currentFrameIndex >= state.frameOrder.length) {
+  if (
+    state.currentFrameIndex < 0 ||
+    state.currentFrameIndex >= state.frameOrder.length
+  ) {
     return undefined;
   }
-  
+
   const frameId = state.frameOrder[state.currentFrameIndex];
   return state.frames.get(frameId);
 }
@@ -377,8 +378,7 @@ export function getCurrentFrame(state: PresentationState): Frame | undefined {
  */
 export function canGoForward(state: PresentationState): boolean {
   return (
-    state.isPresenting &&
-    state.currentFrameIndex < state.frameOrder.length - 1
+    state.isPresenting && state.currentFrameIndex < state.frameOrder.length - 1
   );
 }
 
@@ -406,7 +406,9 @@ export function getCurrentFrameNumber(state: PresentationState): number {
 /**
  * Toggle presenter mode
  */
-export function togglePresenterMode(state: PresentationState): PresentationState {
+export function togglePresenterMode(
+  state: PresentationState
+): PresentationState {
   return {
     ...state,
     presenterMode: !state.presenterMode,
@@ -443,7 +445,9 @@ export function generateShareLink(
 /**
  * Filter speaker notes from frame (for audience view)
  */
-export function sanitizeFrameForAudience(frame: Frame): Omit<Frame, 'speakerNotes'> {
+export function sanitizeFrameForAudience(
+  frame: Frame
+): Omit<Frame, 'speakerNotes'> {
   const { speakerNotes, ...audienceFrame } = frame;
   return audienceFrame;
 }
@@ -451,7 +455,9 @@ export function sanitizeFrameForAudience(frame: Frame): Omit<Frame, 'speakerNote
 /**
  * Get frames for audience (without speaker notes)
  */
-export function getAudienceFrames(state: PresentationState): Array<Omit<Frame, 'speakerNotes'>> {
+export function getAudienceFrames(
+  state: PresentationState
+): Array<Omit<Frame, 'speakerNotes'>> {
   return getAllFrames(state).map(sanitizeFrameForAudience);
 }
 
@@ -467,7 +473,7 @@ export function duplicateFrame(
   if (!frame) {
     return state;
   }
-  
+
   const newFrameId = `${frameId}_copy_${Date.now()}`;
   const newFrame: Frame = {
     ...frame,
@@ -475,7 +481,7 @@ export function duplicateFrame(
     name: newName || `${frame.name} (Copy)`,
     order: state.frameOrder.length,
   };
-  
+
   return {
     ...state,
     frames: new Map([...state.frames, [newFrameId, newFrame]]),
@@ -486,14 +492,12 @@ export function duplicateFrame(
 /**
  * Search frames by name or speaker notes
  */
-export function searchFrames(
-  state: PresentationState,
-  query: string
-): Frame[] {
+export function searchFrames(state: PresentationState, query: string): Frame[] {
   const lowerQuery = query.toLowerCase();
-  return getAllFrames(state).filter(frame =>
-    frame.name.toLowerCase().includes(lowerQuery) ||
-    frame.speakerNotes?.toLowerCase().includes(lowerQuery)
+  return getAllFrames(state).filter(
+    (frame) =>
+      frame.name.toLowerCase().includes(lowerQuery) ||
+      frame.speakerNotes?.toLowerCase().includes(lowerQuery)
   );
 }
 
@@ -519,10 +523,13 @@ export function getPresentationStats(state: PresentationState): {
   estimatedDuration: number; // Total ms if all durations set
 } {
   const frames = getAllFrames(state);
-  const framesWithNotes = frames.filter(f => f.speakerNotes).length;
-  const framesWithDuration = frames.filter(f => f.duration).length;
-  const estimatedDuration = frames.reduce((sum, f) => sum + (f.duration || 0), 0);
-  
+  const framesWithNotes = frames.filter((f) => f.speakerNotes).length;
+  const framesWithDuration = frames.filter((f) => f.duration).length;
+  const estimatedDuration = frames.reduce(
+    (sum, f) => sum + (f.duration || 0),
+    0
+  );
+
   return {
     totalFrames: frames.length,
     currentFrame: state.currentFrameIndex + 1,
@@ -555,22 +562,24 @@ export function importPresentation(
   try {
     const data = JSON.parse(json);
     const state = createPresentationState(options);
-    
+
     let newState = state;
     for (const frame of data.frames || []) {
       newState = createFrame(newState, frame);
     }
-    
+
     if (data.audienceConfig) {
       newState = updateAudienceConfig(newState, data.audienceConfig);
     }
-    
+
     if (data.metadata) {
       newState = { ...newState, metadata: data.metadata };
     }
-    
+
     return newState;
   } catch (error) {
-    throw new Error(`Failed to import presentation: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to import presentation: ${(error as Error).message}`
+    );
   }
 }

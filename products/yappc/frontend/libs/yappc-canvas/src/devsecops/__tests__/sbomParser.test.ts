@@ -80,7 +80,7 @@ describe.skip('SBOM - CycloneDX Parsing', () => {
     expect(sbom.version).toBe('1.4');
     expect(sbom.components).toHaveLength(2);
 
-    const lodash = sbom.components.find(c => c.name === 'lodash');
+    const lodash = sbom.components.find((c) => c.name === 'lodash');
     expect(lodash?.version).toBe('4.17.21');
     expect(lodash?.type).toBe('library');
     expect(lodash?.purl).toBe('pkg:npm/lodash@4.17.21');
@@ -118,7 +118,7 @@ describe.skip('SBOM - CycloneDX Parsing', () => {
     expect(sbom.dependencies[0].from).toBe('express');
     expect(sbom.dependencies[0].to).toBe('body-parser');
 
-    const express = sbom.components.find(c => c.name === 'express');
+    const express = sbom.components.find((c) => c.name === 'express');
     expect(express?.dependencies).toContain('body-parser');
   });
 
@@ -283,7 +283,7 @@ describe.skip('SBOM - SPDX Parsing', () => {
     expect(sbom.version).toBe('SPDX-2.3');
     expect(sbom.components).toHaveLength(2);
 
-    const lodash = sbom.components.find(c => c.name === 'lodash');
+    const lodash = sbom.components.find((c) => c.name === 'lodash');
     expect(lodash?.version).toBe('4.17.21');
     expect(lodash?.licenses[0].id).toBe('MIT');
   });
@@ -554,7 +554,8 @@ describe.skip('SBOM - Canvas Conversion', () => {
     expect(edge.type).toBe('edge');
 
     if (edge.type === 'edge') {
-      const canvasEdge = edge as import('../../types/canvas-document').CanvasEdge;
+      const canvasEdge =
+        edge as import('../../types/canvas-document').CanvasEdge;
       expect(canvasEdge.sourceId).toBe('a');
       expect(canvasEdge.targetId).toBe('b');
     }
@@ -666,7 +667,8 @@ describe.skip('SBOM - Canvas Conversion', () => {
 
     const node = doc.elements['comp'];
     if (node.type === 'node') {
-      const canvasNode = node as import('../../types/canvas-document').CanvasNode;
+      const canvasNode =
+        node as import('../../types/canvas-document').CanvasNode;
       expect(canvasNode.data.vulnCount).toBe(3);
       expect(canvasNode.data.criticalVulns).toBe(1);
       expect(canvasNode.data.highVulns).toBe(1);
@@ -841,9 +843,11 @@ describe.skip('SBOM - License Compliance', () => {
 
     expect(result.compliant).toBe(true); // No prohibited licenses
     expect(result.issues).toHaveLength(2); // GPL not in allowed list + copyleft warning
-    
+
     // Find the "not in allowed list" issue
-    const notAllowedIssue = result.issues.find(i => i.reason.includes('not in allowed list'));
+    const notAllowedIssue = result.issues.find((i) =>
+      i.reason.includes('not in allowed list')
+    );
     expect(notAllowedIssue?.license).toBe('GPL-3.0');
     expect(notAllowedIssue?.severity).toBe('medium');
   });
@@ -895,7 +899,7 @@ describe.skip('SBOM - License Compliance', () => {
 
     const result = checkLicenseCompliance(sbom, [], []);
 
-    const copyleftIssue = result.issues.find(i =>
+    const copyleftIssue = result.issues.find((i) =>
       i.reason.includes('copyleft')
     );
     expect(copyleftIssue).toBeDefined();
@@ -968,7 +972,9 @@ describe.skip('SBOM - License Compliance', () => {
 
     const result = checkLicenseCompliance(sbom, [], []);
 
-    const unknownIssue = result.issues.find(i => i.reason.includes('Unknown'));
+    const unknownIssue = result.issues.find((i) =>
+      i.reason.includes('Unknown')
+    );
     expect(unknownIssue).toBeDefined();
     expect(unknownIssue?.severity).toBe('low');
   });
@@ -1084,7 +1090,9 @@ describe.skip('SBOM - Component Styling', () => {
       licenses: [],
       dependencies: [],
       metadata: {
-        vulnerabilities: [{ id: 'CVE-1', severity: 'critical', cvssScore: 9.8 }],
+        vulnerabilities: [
+          { id: 'CVE-1', severity: 'critical', cvssScore: 9.8 },
+        ],
       },
     };
 

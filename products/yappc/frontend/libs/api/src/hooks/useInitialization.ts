@@ -12,7 +12,12 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import {
+  useQuery,
+  useMutation,
+  useSubscription,
+  useLazyQuery,
+} from '@apollo/client';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useMemo, useEffect } from 'react';
 
@@ -169,11 +174,16 @@ export function useWizard(sessionId?: string) {
  */
 export function useInfrastructure(sessionId?: string) {
   const [infraState, setInfraState] = useAtom(infrastructureStateAtom);
-  const [provisioningStatus, setProvisioningStatus] = useAtom(provisioningStatusAtom);
+  const [provisioningStatus, setProvisioningStatus] = useAtom(
+    provisioningStatusAtom
+  );
 
-  const { data: optionsData, loading: optionsLoading } = useQuery(GET_INFRASTRUCTURE_OPTIONS, {
-    skip: !sessionId,
-  });
+  const { data: optionsData, loading: optionsLoading } = useQuery(
+    GET_INFRASTRUCTURE_OPTIONS,
+    {
+      skip: !sessionId,
+    }
+  );
 
   const [saveConfig] = useMutation(SAVE_INFRASTRUCTURE_CONFIG);
   const [provision] = useMutation(PROVISION_INFRASTRUCTURE);
@@ -210,7 +220,11 @@ export function useInfrastructure(sessionId?: string) {
 
   const startProvisioning = useCallback(async () => {
     if (!sessionId) return;
-    setProvisioningStatus((prev) => ({ ...prev, status: 'provisioning', progress: 0 }));
+    setProvisioningStatus((prev) => ({
+      ...prev,
+      status: 'provisioning',
+      progress: 0,
+    }));
     const result = await provision({ variables: { sessionId } });
     return result.data?.provisionInfrastructure;
   }, [sessionId, setProvisioningStatus, provision]);

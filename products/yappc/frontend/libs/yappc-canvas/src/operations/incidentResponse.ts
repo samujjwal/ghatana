@@ -1,6 +1,6 @@
 /**
  * Canvas Incident Response System
- * 
+ *
  * Provides incident management capabilities for canvas-based applications:
  * - Incident tracking and lifecycle management
  * - Pager duty integration
@@ -8,7 +8,7 @@
  * - Postmortem templates and workflows
  * - Escalation policies
  * - Runbook management for incident resolution
- * 
+ *
  * @module operations/incidentResponse
  */
 
@@ -202,7 +202,7 @@ export interface IncidentResponseConfig {
 
 /**
  * Incident Response Manager
- * 
+ *
  * Manages the complete incident response lifecycle including:
  * - Incident creation and tracking
  * - On-call rotation management
@@ -295,7 +295,9 @@ export class IncidentResponseManager {
    * Get incidents by status
    */
   getIncidentsByStatus(status: IncidentStatus): Incident[] {
-    return Array.from(this.incidents.values()).filter((i) => i.status === status);
+    return Array.from(this.incidents.values()).filter(
+      (i) => i.status === status
+    );
   }
 
   /**
@@ -413,7 +415,9 @@ export class IncidentResponseManager {
 
     const policy = this.escalationPolicies.get(incident.escalationPolicyId);
     if (!policy) {
-      throw new Error(`Escalation policy ${incident.escalationPolicyId} not found`);
+      throw new Error(
+        `Escalation policy ${incident.escalationPolicyId} not found`
+      );
     }
 
     incident.currentEscalationLevel++;
@@ -768,7 +772,8 @@ export class IncidentResponseManager {
     };
 
     const byStatus = {
-      investigating: incidents.filter((i) => i.status === 'investigating').length,
+      investigating: incidents.filter((i) => i.status === 'investigating')
+        .length,
       identified: incidents.filter((i) => i.status === 'identified').length,
       monitoring: incidents.filter((i) => i.status === 'monitoring').length,
       resolved: incidents.filter((i) => i.status === 'resolved').length,
@@ -794,7 +799,8 @@ export class IncidentResponseManager {
     const avgTimeToResolve =
       resolvedIncidents.length > 0
         ? resolvedIncidents.reduce(
-            (sum, i) => sum + (i.resolvedTime!.getTime() - i.startTime.getTime()),
+            (sum, i) =>
+              sum + (i.resolvedTime!.getTime() - i.startTime.getTime()),
             0
           ) / resolvedIncidents.length
         : 0;
@@ -840,7 +846,11 @@ export class IncidentResponseManager {
     );
 
     if (rotation) {
-      this.sendPagerNotification(incidentId, rotation.currentShift.userId, 'push');
+      this.sendPagerNotification(
+        incidentId,
+        rotation.currentShift.userId,
+        'push'
+      );
     }
   }
 
@@ -934,9 +944,7 @@ export class IncidentResponseManager {
  * Calculate mean time to recovery (MTTR)
  */
 export function calculateMTTR(incidents: Incident[]): number {
-  const resolved = incidents.filter(
-    (i) => i.resolvedTime && i.startTime
-  );
+  const resolved = incidents.filter((i) => i.resolvedTime && i.startTime);
 
   if (resolved.length === 0) return 0;
 
@@ -990,9 +998,10 @@ export function formatIncidentDuration(durationMs: number): string {
 /**
  * Validate escalation policy
  */
-export function validateEscalationPolicy(
-  policy: EscalationPolicy
-): { valid: boolean; errors: string[] } {
+export function validateEscalationPolicy(policy: EscalationPolicy): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (policy.levels.length === 0) {
@@ -1013,10 +1022,7 @@ export function validateEscalationPolicy(
 
   // Check each level has contacts
   policy.levels.forEach((level, index) => {
-    if (
-      level.notifyUsers.length === 0 &&
-      level.notifyChannels.length === 0
-    ) {
+    if (level.notifyUsers.length === 0 && level.notifyChannels.length === 0) {
       errors.push(`Level ${level.level} has no notification contacts`);
     }
 
@@ -1049,10 +1055,7 @@ export function calculateSeverity(impact: {
   }
 
   // SEV2: High - significant degradation
-  if (
-    impact.usersAffected > 1000 ||
-    impact.revenueImpact > 10000
-  ) {
+  if (impact.usersAffected > 1000 || impact.revenueImpact > 10000) {
     return 'sev2';
   }
 

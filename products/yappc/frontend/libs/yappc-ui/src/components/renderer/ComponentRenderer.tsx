@@ -182,7 +182,10 @@ export interface ComponentRendererProps {
 /**
  * Evaluate a condition expression
  */
-function evaluateCondition(condition: string, context: RendererContext): boolean {
+function evaluateCondition(
+  condition: string,
+  context: RendererContext
+): boolean {
   try {
     // Simple condition evaluation (can be enhanced with a proper expression parser)
     // For now, support simple property checks
@@ -252,7 +255,9 @@ function resolveDataBinding(
  * - Converts boolean values to strings for HTML attributes that support boolean strings
  * - Removes or converts problematic attributes
  */
-function sanitizeProps(props: Record<string, unknown>): Record<string, unknown> {
+function sanitizeProps(
+  props: Record<string, unknown>
+): Record<string, unknown> {
   const sanitized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(props)) {
@@ -372,7 +377,11 @@ function renderComponent(
     );
   }
 
-  return <Component key={key} {...props}>{children}</Component>;
+  return (
+    <Component key={key} {...props}>
+      {children}
+    </Component>
+  );
 }
 
 /**
@@ -486,7 +495,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
 
     return (
       <Alert severity="error">
-        Failed to render component: {error instanceof Error ? error.message : 'Unknown error'}
+        Failed to render component:{' '}
+        {error instanceof Error ? error.message : 'Unknown error'}
       </Alert>
     );
   }
@@ -499,25 +509,36 @@ export default ComponentRenderer;
 /**
  * Hook for managing renderer state
  */
-export function useRenderer(initialSchema: ComponentSchema | ComponentSchema[]) {
+export function useRenderer(
+  initialSchema: ComponentSchema | ComponentSchema[]
+) {
   const [schema, setSchema] = React.useState(initialSchema);
   const [context, setContext] = React.useState<RendererContext>({});
 
-  const updateSchema = React.useCallback((newSchema: ComponentSchema | ComponentSchema[]) => {
-    setSchema(newSchema);
-  }, []);
+  const updateSchema = React.useCallback(
+    (newSchema: ComponentSchema | ComponentSchema[]) => {
+      setSchema(newSchema);
+    },
+    []
+  );
 
-  const updateContext = React.useCallback((newContext: Partial<RendererContext>) => {
-    setContext((prev) => ({ ...prev, ...newContext }));
-  }, []);
+  const updateContext = React.useCallback(
+    (newContext: Partial<RendererContext>) => {
+      setContext((prev) => ({ ...prev, ...newContext }));
+    },
+    []
+  );
 
   const setData = React.useCallback((data: Record<string, unknown>) => {
     setContext((prev) => ({ ...prev, data }));
   }, []);
 
-  const setHandlers = React.useCallback((handlers: Record<string, (...args: unknown[]) => void>) => {
-    setContext((prev) => ({ ...prev, handlers }));
-  }, []);
+  const setHandlers = React.useCallback(
+    (handlers: Record<string, (...args: unknown[]) => void>) => {
+      setContext((prev) => ({ ...prev, handlers }));
+    },
+    []
+  );
 
   return {
     schema,

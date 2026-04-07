@@ -1,40 +1,35 @@
 /**
  * Semantic Diff - Intelligent Canvas Document Diffing
- * 
+ *
  * Provides semantic differentiation between canvas states:
  * - Structural vs styling change classification
  * - Element-level diffing (added/removed/modified)
  * - Property-level change tracking
  * - JSON Patch (RFC 6902) export
  * - Diff statistics and summary
- * 
+ *
  * Benefits:
  * - Understand what changed and why
  * - Smart merge conflict resolution
  * - Efficient synchronization
  * - Version control integration
- * 
+ *
  * @module semanticDiff
  */
 
 /**
  * Change type classification
  */
-export type ChangeType = 
-  | 'structural'  // Affects document structure (add/remove/reorder elements)
-  | 'styling'     // Affects visual appearance (color, size, position)
-  | 'content'     // Affects text or data content
-  | 'metadata';   // Affects metadata (name, description, tags)
+export type ChangeType =
+  | 'structural' // Affects document structure (add/remove/reorder elements)
+  | 'styling' // Affects visual appearance (color, size, position)
+  | 'content' // Affects text or data content
+  | 'metadata'; // Affects metadata (name, description, tags)
 
 /**
  * Operation type for changes
  */
-export type OperationType = 
-  | 'add'
-  | 'remove'
-  | 'replace'
-  | 'move'
-  | 'copy';
+export type OperationType = 'add' | 'remove' | 'replace' | 'move' | 'copy';
 
 /**
  * JSON Patch operation (RFC 6902)
@@ -102,12 +97,12 @@ export interface DiffStatistics {
  * Diff options
  */
 export interface DiffOptions {
-  ignoreProperties?: string[];    // Properties to ignore in diff
+  ignoreProperties?: string[]; // Properties to ignore in diff
   structuralProperties?: string[]; // Properties considered structural
-  stylingProperties?: string[];    // Properties considered styling
-  contentProperties?: string[];    // Properties considered content
-  detectMoves?: boolean;           // Detect element moves
-  generatePatches?: boolean;       // Generate JSON Patch operations
+  stylingProperties?: string[]; // Properties considered styling
+  contentProperties?: string[]; // Properties considered content
+  detectMoves?: boolean; // Detect element moves
+  generatePatches?: boolean; // Generate JSON Patch operations
 }
 
 /**
@@ -123,17 +118,30 @@ export interface CanvasDocument {
  * Default property classifications
  */
 const DEFAULT_STRUCTURAL_PROPS = [
-  'type', 'parent', 'children', 'source', 'target', 'connections'
+  'type',
+  'parent',
+  'children',
+  'source',
+  'target',
+  'connections',
 ];
 
 const DEFAULT_STYLING_PROPS = [
-  'x', 'y', 'width', 'height', 'color', 'backgroundColor', 'borderColor',
-  'fontSize', 'fontFamily', 'opacity', 'rotation', 'zIndex'
+  'x',
+  'y',
+  'width',
+  'height',
+  'color',
+  'backgroundColor',
+  'borderColor',
+  'fontSize',
+  'fontFamily',
+  'opacity',
+  'rotation',
+  'zIndex',
 ];
 
-const DEFAULT_CONTENT_PROPS = [
-  'text', 'label', 'data', 'value', 'content'
-];
+const DEFAULT_CONTENT_PROPS = ['text', 'label', 'data', 'value', 'content'];
 
 /**
  * Classify a property change
@@ -145,7 +153,7 @@ function classifyPropertyChange(
   const structural = options.structuralProperties || DEFAULT_STRUCTURAL_PROPS;
   const styling = options.stylingProperties || DEFAULT_STYLING_PROPS;
   const content = options.contentProperties || DEFAULT_CONTENT_PROPS;
-  
+
   if (structural.includes(property)) {
     return 'structural';
   }
@@ -165,11 +173,11 @@ function valuesEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a == null || b == null) return false;
   if (typeof a !== typeof b) return false;
-  
+
   if (typeof a === 'object') {
     return JSON.stringify(a) === JSON.stringify(b);
   }
-  
+
   return false;
 }
 
@@ -184,13 +192,13 @@ function getPropertyChanges(
   const changes: PropertyChange[] = [];
   const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
   const ignoreProps = options.ignoreProperties || [];
-  
+
   for (const key of allKeys) {
     if (ignoreProps.includes(key)) continue;
-    
+
     const oldValue = oldObj[key];
     const newValue = newObj[key];
-    
+
     if (!valuesEqual(oldValue, newValue)) {
       changes.push({
         property: key,
@@ -200,7 +208,7 @@ function getPropertyChanges(
       });
     }
   }
-  
+
   return changes;
 }
 
@@ -209,8 +217,8 @@ function getPropertyChanges(
  */
 function determineElementChangeType(properties: PropertyChange[]): ChangeType {
   // Priority: structural > content > styling > metadata
-  const types = properties.map(p => p.changeType);
-  
+  const types = properties.map((p) => p.changeType);
+
   if (types.includes('structural')) return 'structural';
   if (types.includes('content')) return 'content';
   if (types.includes('styling')) return 'styling';
@@ -230,24 +238,48 @@ export function diff(
   const modified: ElementChange[] = [];
   const moved: ElementChange[] = [];
   const patches: JSONPatchOperation[] = [];
-  
+
   // Create element maps for efficient lookup
-  const oldNodes = new Map((oldDoc.nodes || []).map(n => [n.id, n]));
-  const newNodes = new Map((newDoc.nodes || []).map(n => [n.id, n]));
-  const oldEdges = new Map((oldDoc.edges || []).map(e => [e.id, e]));
-  const newEdges = new Map((newDoc.edges || []).map(e => [e.id, e]));
-  
+  const oldNodes = new Map((oldDoc.nodes || []).map((n) => [n.id, n]));
+  const newNodes = new Map((newDoc.nodes || []).map((n) => [n.id, n]));
+  const oldEdges = new Map((oldDoc.edges || []).map((e) => [e.id, e]));
+  const newEdges = new Map((newDoc.edges || []).map((e) => [e.id, e]));
+
   // Process nodes
-  processElements(oldNodes, newNodes, 'node', added, removed, modified, moved, patches, options);
-  
+  processElements(
+    oldNodes,
+    newNodes,
+    'node',
+    added,
+    removed,
+    modified,
+    moved,
+    patches,
+    options
+  );
+
   // Process edges
-  processElements(oldEdges, newEdges, 'edge', added, removed, modified, moved, patches, options);
-  
+  processElements(
+    oldEdges,
+    newEdges,
+    'edge',
+    added,
+    removed,
+    modified,
+    moved,
+    patches,
+    options
+  );
+
   // Calculate statistics
   const statistics = calculateStatistics(added, removed, modified, moved);
-  
+
   return {
-    hasChanges: added.length > 0 || removed.length > 0 || modified.length > 0 || moved.length > 0,
+    hasChanges:
+      added.length > 0 ||
+      removed.length > 0 ||
+      modified.length > 0 ||
+      moved.length > 0,
     added,
     removed,
     modified,
@@ -284,7 +316,7 @@ function processElements(
         newData: newElement,
       };
       added.push(change);
-      
+
       if (options.generatePatches !== false) {
         patches.push({
           op: 'add',
@@ -294,7 +326,7 @@ function processElements(
       }
     }
   }
-  
+
   // Find removed and modified elements
   for (const [id, oldElement] of oldElements) {
     if (!newElements.has(id)) {
@@ -307,7 +339,7 @@ function processElements(
         oldData: oldElement,
       };
       removed.push(change);
-      
+
       if (options.generatePatches !== false) {
         const index = Array.from(oldElements.keys()).indexOf(id);
         patches.push({
@@ -317,16 +349,28 @@ function processElements(
       }
     } else {
       const newElement = newElements.get(id)!;
-      const propertyChanges = getPropertyChanges(oldElement, newElement, options);
-      
+      const propertyChanges = getPropertyChanges(
+        oldElement,
+        newElement,
+        options
+      );
+
       if (propertyChanges.length > 0) {
         // Check if it's a move operation
-        const isMove = options.detectMoves !== false &&
-          propertyChanges.some(p => (p.property === 'x' || p.property === 'y') && 
-                                    p.changeType === 'styling') &&
-          propertyChanges.every(p => p.property === 'x' || p.property === 'y' || 
-                                     p.changeType === 'metadata');
-        
+        const isMove =
+          options.detectMoves !== false &&
+          propertyChanges.some(
+            (p) =>
+              (p.property === 'x' || p.property === 'y') &&
+              p.changeType === 'styling'
+          ) &&
+          propertyChanges.every(
+            (p) =>
+              p.property === 'x' ||
+              p.property === 'y' ||
+              p.changeType === 'metadata'
+          );
+
         const change: ElementChange = {
           elementId: id,
           elementType,
@@ -336,13 +380,13 @@ function processElements(
           oldData: oldElement,
           newData: newElement,
         };
-        
+
         if (isMove) {
           moved.push(change);
         } else {
           modified.push(change);
         }
-        
+
         if (options.generatePatches !== false) {
           const index = Array.from(oldElements.keys()).indexOf(id);
           for (const propChange of propertyChanges) {
@@ -369,12 +413,12 @@ function calculateStatistics(
   filterTypes?: ChangeType[]
 ): DiffStatistics {
   const allChanges = [...added, ...removed, ...modified, ...moved];
-  
+
   let structuralChanges = 0;
   let stylingChanges = 0;
   let contentChanges = 0;
   let metadataChanges = 0;
-  
+
   for (const change of allChanges) {
     // For added/removed, count the element itself
     if (change.operation === 'add' || change.operation === 'remove') {
@@ -383,7 +427,7 @@ function calculateStatistics(
       }
       continue;
     }
-    
+
     // For modified/moved, count each property change
     if (change.properties) {
       for (const prop of change.properties) {
@@ -401,7 +445,7 @@ function calculateStatistics(
       }
     }
   }
-  
+
   return {
     totalChanges: allChanges.length,
     structuralChanges,
@@ -423,27 +467,24 @@ export function applyPatch(
   patches: JSONPatchOperation[]
 ): CanvasDocument {
   let result = JSON.parse(JSON.stringify(doc)); // Deep clone
-  
+
   for (const patch of patches) {
     result = applySinglePatch(result, patch);
   }
-  
+
   return result;
 }
 
 /**
  * Apply a single JSON Patch operation
  */
-function applySinglePatch(
-  doc: unknown,
-  patch: JSONPatchOperation
-): unknown {
-  const pathParts = patch.path.split('/').filter(p => p.length > 0);
-  
+function applySinglePatch(doc: unknown, patch: JSONPatchOperation): unknown {
+  const pathParts = patch.path.split('/').filter((p) => p.length > 0);
+
   if (pathParts.length === 0) {
     throw new Error('Invalid patch path');
   }
-  
+
   switch (patch.op) {
     case 'add':
       return applyAdd(doc, pathParts, patch.value);
@@ -462,13 +503,15 @@ function applySinglePatch(
 function applyAdd(doc: unknown, pathParts: string[], value: unknown): unknown {
   const result = { ...doc };
   let current = result;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
-    current[part] = Array.isArray(current[part]) ? [...current[part]] : { ...current[part] };
+    current[part] = Array.isArray(current[part])
+      ? [...current[part]]
+      : { ...current[part] };
     current = current[part];
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   if (lastPart === '-' && Array.isArray(current)) {
     current.push(value);
@@ -478,7 +521,7 @@ function applyAdd(doc: unknown, pathParts: string[], value: unknown): unknown {
   } else {
     current[lastPart] = value;
   }
-  
+
   return result;
 }
 
@@ -488,13 +531,15 @@ function applyAdd(doc: unknown, pathParts: string[], value: unknown): unknown {
 function applyRemove(doc: unknown, pathParts: string[]): unknown {
   const result = { ...doc };
   let current = result;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
-    current[part] = Array.isArray(current[part]) ? [...current[part]] : { ...current[part] };
+    current[part] = Array.isArray(current[part])
+      ? [...current[part]]
+      : { ...current[part] };
     current = current[part];
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   if (Array.isArray(current)) {
     const index = parseInt(lastPart, 10);
@@ -502,26 +547,32 @@ function applyRemove(doc: unknown, pathParts: string[]): unknown {
   } else {
     delete current[lastPart];
   }
-  
+
   return result;
 }
 
 /**
  * Apply replace operation
  */
-function applyReplace(doc: unknown, pathParts: string[], value: unknown): unknown {
+function applyReplace(
+  doc: unknown,
+  pathParts: string[],
+  value: unknown
+): unknown {
   const result = { ...doc };
   let current = result;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
-    current[part] = Array.isArray(current[part]) ? [...current[part]] : { ...current[part] };
+    current[part] = Array.isArray(current[part])
+      ? [...current[part]]
+      : { ...current[part] };
     current = current[part];
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   current[lastPart] = value;
-  
+
   return result;
 }
 
@@ -530,14 +581,14 @@ function applyReplace(doc: unknown, pathParts: string[], value: unknown): unknow
  */
 export function generateDiffSummary(diff: DiffResult): string {
   const lines: string[] = [];
-  
+
   if (!diff.hasChanges) {
     return 'No changes detected';
   }
-  
+
   lines.push('Changes Summary:');
   lines.push(`  Total: ${diff.statistics.totalChanges} changes`);
-  
+
   if (diff.statistics.elementsAdded > 0) {
     lines.push(`  Added: ${diff.statistics.elementsAdded} elements`);
   }
@@ -550,14 +601,14 @@ export function generateDiffSummary(diff: DiffResult): string {
   if (diff.statistics.elementsMoved > 0) {
     lines.push(`  Moved: ${diff.statistics.elementsMoved} elements`);
   }
-  
+
   lines.push('');
   lines.push('Change Types:');
   lines.push(`  Structural: ${diff.statistics.structuralChanges}`);
   lines.push(`  Content: ${diff.statistics.contentChanges}`);
   lines.push(`  Styling: ${diff.statistics.stylingChanges}`);
   lines.push(`  Metadata: ${diff.statistics.metadataChanges}`);
-  
+
   return lines.join('\n');
 }
 
@@ -579,7 +630,9 @@ export function importPatchesJSON(json: string): JSONPatchOperation[] {
     }
     return parsed as JSONPatchOperation[];
   } catch (error) {
-    throw new Error(`Failed to parse patches JSON: ${(error as Error).message}`);
+    throw new Error(
+      `Failed to parse patches JSON: ${(error as Error).message}`
+    );
   }
 }
 
@@ -592,7 +645,7 @@ export function mergeDiffs(diffs: DiffResult[]): DiffResult {
   const allModified: ElementChange[] = [];
   const allMoved: ElementChange[] = [];
   const allPatches: JSONPatchOperation[] = [];
-  
+
   for (const diff of diffs) {
     allAdded.push(...diff.added);
     allRemoved.push(...diff.removed);
@@ -600,9 +653,14 @@ export function mergeDiffs(diffs: DiffResult[]): DiffResult {
     allMoved.push(...diff.moved);
     allPatches.push(...diff.patches);
   }
-  
-  const statistics = calculateStatistics(allAdded, allRemoved, allModified, allMoved);
-  
+
+  const statistics = calculateStatistics(
+    allAdded,
+    allRemoved,
+    allModified,
+    allMoved
+  );
+
   return {
     hasChanges: statistics.totalChanges > 0,
     added: allAdded,
@@ -623,13 +681,16 @@ export function filterDiffByType(
   changeTypes: ChangeType[]
 ): DiffResult {
   const filterChanges = (changes: ElementChange[]) =>
-    changes.filter(c => {
+    changes.filter((c) => {
       // Check if element's primary change type matches
       if (changeTypes.includes(c.changeType)) return true;
       // Also check if any property change types match
-      return c.properties && c.properties.some(p => changeTypes.includes(p.changeType));
+      return (
+        c.properties &&
+        c.properties.some((p) => changeTypes.includes(p.changeType))
+      );
     });
-  
+
   const filtered = {
     ...diff,
     added: filterChanges(diff.added),
@@ -637,7 +698,7 @@ export function filterDiffByType(
     modified: filterChanges(diff.modified),
     moved: filterChanges(diff.moved),
   };
-  
+
   filtered.statistics = calculateStatistics(
     filtered.added,
     filtered.removed,
@@ -645,8 +706,8 @@ export function filterDiffByType(
     filtered.moved,
     changeTypes
   );
-  
+
   filtered.hasChanges = filtered.statistics.totalChanges > 0;
-  
+
   return filtered;
 }

@@ -1,6 +1,13 @@
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { ExternalLink as Launch, SubdirectoryArrowRight, SubdirectoryArrowLeft, Eye as Visibility, Settings, Image as ImageIcon } from 'lucide-react';
+import {
+  ExternalLink as Launch,
+  SubdirectoryArrowRight,
+  SubdirectoryArrowLeft,
+  Eye as Visibility,
+  Settings,
+  Image as ImageIcon,
+} from 'lucide-react';
 import React, { memo, useState } from 'react';
 
 import {
@@ -16,7 +23,6 @@ import {
 } from '@ghatana/design-system';
 
 import { alpha, useTheme, resolveMuiColor } from '@yappc/ui';
-
 
 /**
  *
@@ -73,7 +79,8 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
     <Box
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative transition-all duration-300" style={{ transform: isHovered ? 'scale(1.02)' : 'scale(1)' }}
+      className="relative transition-all duration-300"
+      style={{ transform: isHovered ? 'scale(1.02)' : 'scale(1)' }}
     >
       {/* Connection handles */}
       <Handle
@@ -97,13 +104,19 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
 
       {/* Main portal card */}
       <Card
-        className="min-w-[200px] max-w-[280px]" style={{ borderWidth: selected ? 2 : 1, borderStyle: 'solid', borderColor: portalColor }}
+        className="min-w-[200px] max-w-[280px]"
+        style={{
+          borderWidth: selected ? 2 : 1,
+          borderStyle: 'solid',
+          borderColor: portalColor,
+        }}
       >
         <CardContent className="p-4 last:pb-4">
           {/* Header with icon and type */}
           <Stack direction="row" alignItems="center" spacing={1} mb={1}>
             <Avatar
-              className="w-[32px] h-[32px]" style={{ backgroundColor: portalColor }}
+              className="w-[32px] h-[32px]"
+              style={{ backgroundColor: portalColor }}
             >
               {React.createElement(portalIcon, { fontSize: 'small' })}
             </Avatar>
@@ -155,7 +168,8 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
           {/* Thumbnail preview */}
           {data.thumbnail && (
             <Box
-              className="w-full h-[80px] bg-gray-100 dark:bg-gray-800 rounded mb-2" style={{ backgroundImage: `url(${data.thumbnail})`}}
+              className="w-full h-[80px] bg-gray-100 dark:bg-gray-800 rounded mb-2"
+              style={{ backgroundImage: `url(${data.thumbnail})` }}
             >
               {!data.thumbnail && <ImageIcon color="disabled" />}
             </Box>
@@ -163,13 +177,20 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
 
           {/* Action buttons */}
           <Stack direction="row" spacing={1} justifyContent="space-between">
-            <Tooltip title={isEntry ? 'Drill down into canvas' : 'Return to parent canvas'}>
+            <Tooltip
+              title={
+                isEntry ? 'Drill down into canvas' : 'Return to parent canvas'
+              }
+            >
               <IconButton
                 size="small"
                 color={resolveMuiColor(theme, portalColor, 'default')}
                 onClick={handleDrillDown}
                 style={{
-                  backgroundColor: alpha(portalColor === 'primary' ? '#2196f3' : '#9c27b0', 0.1),
+                  backgroundColor: alpha(
+                    portalColor === 'primary' ? '#2196f3' : '#9c27b0',
+                    0.1
+                  ),
                 }}
               >
                 <Launch size={16} />
@@ -181,7 +202,11 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
                 <IconButton
                   size="small"
                   onClick={handlePreviewToggle}
-                  color={resolveMuiColor(theme, showPreview ? 'primary' : 'default', 'default')}
+                  color={resolveMuiColor(
+                    theme,
+                    showPreview ? 'primary' : 'default',
+                    'default'
+                  )}
                 >
                   <Visibility size={16} />
                 </IconButton>
@@ -199,9 +224,7 @@ export function PortalNode({ id, data, selected }: NodeProps<PortalNodeData>) {
 
       {/* Hover overlay with quick actions */}
       {isHovered && (
-        <Box
-          className="absolute top-[-8px] right-[-8px] z-[1000]"
-        >
+        <Box className="absolute top-[-8px] right-[-8px] z-[1000]">
           <Tooltip title={`Target: ${data.targetCanvasId}`}>
             <Chip
               label={data.targetCanvasId}

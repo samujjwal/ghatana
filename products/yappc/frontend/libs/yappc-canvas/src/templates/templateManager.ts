@@ -13,7 +13,11 @@
 import type { DocumentTemplate } from '../history/historyManager';
 
 // Re-export Feature 1.4 functions for convenience
-export { createTemplate, updateTemplate, filterTemplates } from '../history/historyManager';
+export {
+  createTemplate,
+  updateTemplate,
+  filterTemplates,
+} from '../history/historyManager';
 
 /**
  * Template parameter definition for user prompts
@@ -37,7 +41,9 @@ export interface TemplateParameter {
 /**
  * Template with parameter support
  */
-export interface ParameterizedTemplate<T = unknown> extends DocumentTemplate<T> {
+export interface ParameterizedTemplate<
+  T = unknown,
+> extends DocumentTemplate<T> {
   parameters?: TemplateParameter[];
   parameterValues?: Record<string, string | number | boolean>;
 }
@@ -340,13 +346,19 @@ export function applyParameters<T>(
 
         // Range validation
         if (param.type === 'number' && typeof value === 'number') {
-          if (param.validation?.min !== undefined && value < param.validation.min) {
+          if (
+            param.validation?.min !== undefined &&
+            value < param.validation.min
+          ) {
             errors.push(
               param.validation.message ||
                 `Parameter "${param.name}" must be at least ${param.validation.min}`
             );
           }
-          if (param.validation?.max !== undefined && value > param.validation.max) {
+          if (
+            param.validation?.max !== undefined &&
+            value > param.validation.max
+          ) {
             errors.push(
               param.validation.message ||
                 `Parameter "${param.name}" must be at most ${param.validation.max}`
@@ -363,13 +375,18 @@ export function applyParameters<T>(
           const regex = new RegExp(param.validation.pattern);
           if (!regex.test(value)) {
             errors.push(
-              param.validation.message || `Parameter "${param.name}" has invalid format`
+              param.validation.message ||
+                `Parameter "${param.name}" has invalid format`
             );
           }
         }
 
         // Select options validation
-        if (param.type === 'select' && param.options && !param.options.includes(String(value))) {
+        if (
+          param.type === 'select' &&
+          param.options &&
+          !param.options.includes(String(value))
+        ) {
           errors.push(
             `Parameter "${param.name}" must be one of: ${param.options.join(', ')}`
           );
@@ -421,8 +438,10 @@ export function checkForUpdates<T>(
     if (!local) continue;
 
     // Compare versions (assumes semantic versioning in tags)
-    const localVersion = local.tags?.find((t) => t.startsWith('v'))?.slice(1) || '0.0.0';
-    const remoteVersion = remote.tags?.find((t) => t.startsWith('v'))?.slice(1) || '0.0.0';
+    const localVersion =
+      local.tags?.find((t) => t.startsWith('v'))?.slice(1) || '0.0.0';
+    const remoteVersion =
+      remote.tags?.find((t) => t.startsWith('v'))?.slice(1) || '0.0.0';
 
     if (remoteVersion > localVersion) {
       updates.set(remote.id, {
@@ -504,7 +523,9 @@ export function searchTemplates<T>(
 
   // Tags filter (AND logic)
   if (query.tags && query.tags.length > 0) {
-    results = results.filter((t) => query.tags!.every((tag) => t.tags?.includes(tag)));
+    results = results.filter((t) =>
+      query.tags!.every((tag) => t.tags?.includes(tag))
+    );
   }
 
   // Author filter
@@ -529,13 +550,17 @@ export function searchTemplates<T>(
       results.sort((a, b) => sortOrder * a.name.localeCompare(b.name));
       break;
     case 'usage':
-      results.sort((a, b) => sortOrder * ((a.usageCount ?? 0) - (b.usageCount ?? 0)));
+      results.sort(
+        (a, b) => sortOrder * ((a.usageCount ?? 0) - (b.usageCount ?? 0))
+      );
       break;
     case 'rating':
       results.sort((a, b) => sortOrder * ((a.rating ?? 0) - (b.rating ?? 0)));
       break;
     case 'recent':
-      results.sort((a, b) => sortOrder * ((a.lastUsed ?? 0) - (b.lastUsed ?? 0)));
+      results.sort(
+        (a, b) => sortOrder * ((a.lastUsed ?? 0) - (b.lastUsed ?? 0))
+      );
       break;
     case 'updated':
       results.sort((a, b) => sortOrder * (a.updatedAt - b.updatedAt));
@@ -587,7 +612,9 @@ export function getGalleryStats<T>(state: TemplateGalleryState<T>) {
     featuredCount: state.featured.length,
     totalUsage: templates.reduce((sum, t) => sum + (t.usageCount ?? 0), 0),
     averageRating:
-      templates.filter((t) => t.rating).reduce((sum, t) => sum + (t.rating ?? 0), 0) /
+      templates
+        .filter((t) => t.rating)
+        .reduce((sum, t) => sum + (t.rating ?? 0), 0) /
         templates.filter((t) => t.rating).length || 0,
     availableUpdates: state.updates.size,
     categoryCounts: Array.from(state.categories.values()).map((cat) => ({

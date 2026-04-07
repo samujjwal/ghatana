@@ -1,6 +1,6 @@
 /**
  * Consolidated Canvas Full-Stack Hook
- * 
+ *
  * Replaces: useFullStackMode + full-stack features
  * Provides: Full-stack development mode
  */
@@ -24,12 +24,12 @@ export interface UseCanvasFullStackOptions {
 export interface UseCanvasFullStackReturn {
   mode: FullStackMode;
   setMode: (mode: FullStackMode) => void;
-  
+
   layers: Layer[];
   activeLayer: Layer | null;
   setActiveLayer: (layerId: string) => void;
   toggleLayerVisibility: (layerId: string) => void;
-  
+
   isSplitView: boolean;
   splitRatio: number;
   setSplitRatio: (ratio: number) => void;
@@ -53,7 +53,7 @@ export function useCanvasFullStack(
 
   const setActiveLayer = useCallback(
     (layerId: string) => {
-      const layer = layers.find(l => l.id === layerId);
+      const layer = layers.find((l) => l.id === layerId);
       if (layer) setActiveLayerState(layer);
     },
     [layers]

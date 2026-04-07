@@ -65,7 +65,10 @@ export class CollaborationManager {
   private provider: WebsocketProvider | null = null;
   private persistence: IndexeddbPersistence | null = null;
   private config: CollaborationConfig;
-  private listeners: Map<CollaborationEventType, Set<(event: CollaborationEvent) => void>>;
+  private listeners: Map<
+    CollaborationEventType,
+    Set<(event: CollaborationEvent) => void>
+  >;
   private state: CollaborationState;
 
   /**
@@ -200,15 +203,17 @@ export class CollaborationManager {
     if (!this.provider) return [];
 
     const users: CollaborationUser[] = [];
-    this.provider.awareness.getStates().forEach((state: unknown, clientId: number) => {
-      if (state.user && clientId !== this.doc.clientID) {
-        users.push({
-          ...state.user,
-          cursor: state.cursor,
-          selection: state.selection,
-        });
-      }
-    });
+    this.provider.awareness
+      .getStates()
+      .forEach((state: unknown, clientId: number) => {
+        if (state.user && clientId !== this.doc.clientID) {
+          users.push({
+            ...state.user,
+            cursor: state.cursor,
+            selection: state.selection,
+          });
+        }
+      });
     return users;
   }
 
@@ -301,7 +306,9 @@ export class CollaborationManager {
 
 let collaborationInstance: CollaborationManager | null = null;
 
-export function getCollaboration(config?: CollaborationConfig): CollaborationManager | null {
+export function getCollaboration(
+  config?: CollaborationConfig
+): CollaborationManager | null {
   if (config) {
     collaborationInstance = new CollaborationManager(config);
   }

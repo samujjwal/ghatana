@@ -11,120 +11,125 @@
  */
 
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    TextField,
-    Button,
-    Box,
-    Typography,
-    CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  CircularProgress,
 } from '@mui/material';
 import React, { useState } from 'react';
 
 export interface WorkspaceCreateDialogProps {
-    open: boolean;
-    onClose: () => void;
-    onCreate: (data: { name: string; description?: string }) => Promise<void>;
-    isLoading?: boolean;
+  open: boolean;
+  onClose: () => void;
+  onCreate: (data: { name: string; description?: string }) => Promise<void>;
+  isLoading?: boolean;
 }
 
 /**
  * Dialog for creating a new workspace.
  */
 export const WorkspaceCreateDialog: React.FC<WorkspaceCreateDialogProps> = ({
-    open,
-    onClose,
-    onCreate,
-    isLoading = false,
+  open,
+  onClose,
+  onCreate,
+  isLoading = false,
 }) => {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [nameError, setNameError] = useState('');
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [nameError, setNameError] = useState('');
 
-    const submitForm = async (): Promise<void> => {
-        if (!name.trim()) {
-            setNameError('Workspace name is required.');
-            return;
-        }
-        if (name.trim().length < 2) {
-            setNameError('Name must be at least 2 characters.');
-            return;
-        }
-        try {
-            await onCreate({ name: name.trim(), description: description.trim() || undefined });
-            handleClose();
-        } catch (err) {
-            setNameError(err instanceof Error ? err.message : 'Failed to create workspace.');
-        }
-    };
+  const submitForm = async (): Promise<void> => {
+    if (!name.trim()) {
+      setNameError('Workspace name is required.');
+      return;
+    }
+    if (name.trim().length < 2) {
+      setNameError('Name must be at least 2 characters.');
+      return;
+    }
+    try {
+      await onCreate({
+        name: name.trim(),
+        description: description.trim() || undefined,
+      });
+      handleClose();
+    } catch (err) {
+      setNameError(
+        err instanceof Error ? err.message : 'Failed to create workspace.'
+      );
+    }
+  };
 
-    const handleSubmit = (e: React.FormEvent): void => {
-        e.preventDefault();
-        void submitForm();
-    };
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    void submitForm();
+  };
 
-    const handleClose = () => {
-        setName('');
-        setDescription('');
-        setNameError('');
-        onClose();
-    };
+  const handleClose = () => {
+    setName('');
+    setDescription('');
+    setNameError('');
+    onClose();
+  };
 
-    return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-            <form onSubmit={handleSubmit}>
-                <DialogTitle>Create workspace</DialogTitle>
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>Create workspace</DialogTitle>
 
-                <DialogContent>
-                    <Box display="flex" flexDirection="column" gap={2} pt={1}>
-                        <Typography variant="body2" color="text.secondary">
-                            A workspace groups projects and allows you to collaborate with team
-                            members.
-                        </Typography>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" gap={2} pt={1}>
+            <Typography variant="body2" color="text.secondary">
+              A workspace groups projects and allows you to collaborate with
+              team members.
+            </Typography>
 
-                        <TextField
-                            label="Workspace name"
-                            value={name}
-                            onChange={(e) => {
-                                setName(e.target.value);
-                                if (nameError) setNameError('');
-                            }}
-                            error={Boolean(nameError)}
-                            helperText={nameError}
-                            required
-                            autoFocus
-                            fullWidth
-                            inputProps={{ maxLength: 80 }}
-                        />
+            <TextField
+              label="Workspace name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (nameError) setNameError('');
+              }}
+              error={Boolean(nameError)}
+              helperText={nameError}
+              required
+              autoFocus
+              fullWidth
+              inputProps={{ maxLength: 80 }}
+            />
 
-                        <TextField
-                            label="Description (optional)"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            multiline
-                            rows={3}
-                            fullWidth
-                            inputProps={{ maxLength: 500 }}
-                        />
-                    </Box>
-                </DialogContent>
+            <TextField
+              label="Description (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              multiline
+              rows={3}
+              fullWidth
+              inputProps={{ maxLength: 500 }}
+            />
+          </Box>
+        </DialogContent>
 
-                <DialogActions>
-                    <Button onClick={handleClose} disabled={isLoading}>
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={isLoading || !name.trim()}
-                        startIcon={isLoading ? <CircularProgress size={16} /> : undefined}
-                    >
-                        Create
-                    </Button>
-                </DialogActions>
-            </form>
-        </Dialog>
-    );
+        <DialogActions>
+          <Button onClick={handleClose} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isLoading || !name.trim()}
+            startIcon={isLoading ? <CircularProgress size={16} /> : undefined}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
 };

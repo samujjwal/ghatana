@@ -28,8 +28,16 @@ export interface UsageMetrics {
   totalElements: number;
   totalConnections: number;
   averageElementsPerCanvas: number;
-  mostUsedElementTypes: Array<{ type: string; count: number; percentage: number }>;
-  canvasInteractionFrequency: Array<{ canvasId: string; interactions: number; lastAccessed: number }>;
+  mostUsedElementTypes: Array<{
+    type: string;
+    count: number;
+    percentage: number;
+  }>;
+  canvasInteractionFrequency: Array<{
+    canvasId: string;
+    interactions: number;
+    lastAccessed: number;
+  }>;
   userActivityPattern: Array<{ hour: number; interactions: number }>;
   featureUsage: Record<string, number>;
   performanceMetrics: {
@@ -75,7 +83,11 @@ export class UsageAnalyticsService {
   /**
    * Track a canvas action
    */
-  trackCanvasAction(action: string, canvasId: string, metadata?: Record<string, unknown>): void {
+  trackCanvasAction(
+    action: string,
+    canvasId: string,
+    metadata?: Record<string, unknown>
+  ): void {
     if (!this.isEnabled) return;
 
     this.trackEvent({
@@ -90,7 +102,12 @@ export class UsageAnalyticsService {
   /**
    * Track user interaction
    */
-  trackUserInteraction(category: string, action: string, label?: string, value?: number): void {
+  trackUserInteraction(
+    category: string,
+    action: string,
+    label?: string,
+    value?: number
+  ): void {
     if (!this.isEnabled) return;
 
     this.trackEvent({
@@ -105,7 +122,12 @@ export class UsageAnalyticsService {
   /**
    * Track performance metrics
    */
-  trackPerformance(metrics: { fps: number; renderTime: number; memoryUsage: number; elementCount: number }): void {
+  trackPerformance(metrics: {
+    fps: number;
+    renderTime: number;
+    memoryUsage: number;
+    elementCount: number;
+  }): void {
     if (!this.isEnabled) return;
 
     this.trackEvent({
@@ -191,7 +213,7 @@ export class UsageAnalyticsService {
         actionable: true,
         actions: [
           { label: 'Optimize Canvas', action: 'optimize_canvas' },
-          { label: 'Reduce Elements', action: 'reduce_elements' }
+          { label: 'Reduce Elements', action: 'reduce_elements' },
         ],
       });
     }
@@ -207,7 +229,7 @@ export class UsageAnalyticsService {
         actionable: true,
         actions: [
           { label: 'Create Sub-Canvases', action: 'create_sub_canvases' },
-          { label: 'Use Portal Elements', action: 'use_portals' }
+          { label: 'Use Portal Elements', action: 'use_portals' },
         ],
       });
     }
@@ -227,14 +249,14 @@ export class UsageAnalyticsService {
         actionable: true,
         actions: [
           { label: 'Feature Tour', action: 'start_feature_tour' },
-          { label: 'Help Center', action: 'open_help' }
+          { label: 'Help Center', action: 'open_help' },
         ],
         data: { features: underusedFeatures },
       });
     }
 
     // Activity pattern insights
-    const peakHour = metrics.userActivityPattern.reduce((peak, current) => 
+    const peakHour = metrics.userActivityPattern.reduce((peak, current) =>
       current.interactions > peak.interactions ? current : peak
     );
 
@@ -255,8 +277,8 @@ export class UsageAnalyticsService {
    * Get events for a specific time range
    */
   getEventsByTimeRange(startTime: number, endTime: number): AnalyticsEvent[] {
-    return this.events.filter(event => 
-      event.timestamp >= startTime && event.timestamp <= endTime
+    return this.events.filter(
+      (event) => event.timestamp >= startTime && event.timestamp <= endTime
     );
   }
 
@@ -264,14 +286,14 @@ export class UsageAnalyticsService {
    * Get events by type
    */
   getEventsByType(type: AnalyticsEvent['type']): AnalyticsEvent[] {
-    return this.events.filter(event => event.type === type);
+    return this.events.filter((event) => event.type === type);
   }
 
   /**
    * Get canvas-specific events
    */
   getCanvasEvents(canvasId: string): AnalyticsEvent[] {
-    return this.events.filter(event => event.canvasId === canvasId);
+    return this.events.filter((event) => event.canvasId === canvasId);
   }
 
   /**
@@ -279,8 +301,17 @@ export class UsageAnalyticsService {
    */
   exportData(format: 'json' | 'csv' = 'json'): string {
     if (format === 'csv') {
-      const headers = ['id', 'type', 'category', 'action', 'label', 'value', 'canvasId', 'timestamp'];
-      const rows = this.events.map(event => [
+      const headers = [
+        'id',
+        'type',
+        'category',
+        'action',
+        'label',
+        'value',
+        'canvasId',
+        'timestamp',
+      ];
+      const rows = this.events.map((event) => [
         event.id,
         event.type,
         event.category,
@@ -290,17 +321,21 @@ export class UsageAnalyticsService {
         event.canvasId || '',
         new Date(event.timestamp).toISOString(),
       ]);
-      
-      return [headers, ...rows].map(row => row.join(',')).join('\n');
+
+      return [headers, ...rows].map((row) => row.join(',')).join('\n');
     }
 
-    return JSON.stringify({
-      sessionId: this.sessionId,
-      exportTime: new Date().toISOString(),
-      events: this.events,
-      metrics: this.getUsageMetrics(),
-      insights: this.generateInsights(),
-    }, null, 2);
+    return JSON.stringify(
+      {
+        sessionId: this.sessionId,
+        exportTime: new Date().toISOString(),
+        events: this.events,
+        metrics: this.getUsageMetrics(),
+        insights: this.generateInsights(),
+      },
+      null,
+      2
+    );
   }
 
   /**
@@ -331,15 +366,17 @@ export class UsageAnalyticsService {
    *
    */
   private calculateMetrics(): UsageMetrics {
-    const canvasEvents = this.events.filter(e => e.type === 'canvas_action');
-    const canvases = new Set(canvasEvents.map(e => e.canvasId).filter(Boolean));
-    
+    const canvasEvents = this.events.filter((e) => e.type === 'canvas_action');
+    const canvases = new Set(
+      canvasEvents.map((e) => e.canvasId).filter(Boolean)
+    );
+
     // Element type tracking
     const elementTypeCount = new Map<string, number>();
     let totalElements = 0;
     let totalConnections = 0;
 
-    canvasEvents.forEach(event => {
+    canvasEvents.forEach((event) => {
       if (event.action === 'element_added' && event.metadata?.elementType) {
         const type = event.metadata.elementType;
         elementTypeCount.set(type, (elementTypeCount.get(type) || 0) + 1);
@@ -351,20 +388,25 @@ export class UsageAnalyticsService {
 
     // Feature usage tracking
     const featureUsage: Record<string, number> = {};
-    this.events.forEach(event => {
+    this.events.forEach((event) => {
       const feature = `${event.category}.${event.action}`;
       featureUsage[feature] = (featureUsage[feature] || 0) + 1;
     });
 
     // Activity pattern (by hour)
-    const hourlyActivity = Array.from({ length: 24 }, (_, hour) => ({ hour, interactions: 0 }));
-    this.events.forEach(event => {
+    const hourlyActivity = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      interactions: 0,
+    }));
+    this.events.forEach((event) => {
       const hour = new Date(event.timestamp).getHours();
       hourlyActivity[hour].interactions++;
     });
 
     // Performance metrics
-    const perfEvents = this.events.filter(e => e.type === 'performance' && e.metadata);
+    const perfEvents = this.events.filter(
+      (e) => e.type === 'performance' && e.metadata
+    );
     const avgPerf = perfEvents.reduce(
       (acc, event) => {
         const metadata = event.metadata!;
@@ -378,21 +420,25 @@ export class UsageAnalyticsService {
       { fps: 0, renderTime: 0, memoryUsage: 0, count: 0 }
     );
 
-    const performanceMetrics = avgPerf.count > 0 ? {
-      averageFPS: avgPerf.fps / avgPerf.count,
-      averageRenderTime: avgPerf.renderTime / avgPerf.count,
-      memoryUsage: avgPerf.memoryUsage / avgPerf.count,
-    } : {
-      averageFPS: 0,
-      averageRenderTime: 0,
-      memoryUsage: 0,
-    };
+    const performanceMetrics =
+      avgPerf.count > 0
+        ? {
+            averageFPS: avgPerf.fps / avgPerf.count,
+            averageRenderTime: avgPerf.renderTime / avgPerf.count,
+            memoryUsage: avgPerf.memoryUsage / avgPerf.count,
+          }
+        : {
+            averageFPS: 0,
+            averageRenderTime: 0,
+            memoryUsage: 0,
+          };
 
     return {
       totalCanvases: canvases.size,
       totalElements,
       totalConnections,
-      averageElementsPerCanvas: canvases.size > 0 ? totalElements / canvases.size : 0,
+      averageElementsPerCanvas:
+        canvases.size > 0 ? totalElements / canvases.size : 0,
       mostUsedElementTypes: Array.from(elementTypeCount.entries())
         .map(([type, count]) => ({
           type,
@@ -401,14 +447,18 @@ export class UsageAnalyticsService {
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10),
-      canvasInteractionFrequency: Array.from(canvases).map(canvasId => {
-        const canvasEvents = this.events.filter(e => e.canvasId === canvasId);
-        return {
-          canvasId: canvasId!,
-          interactions: canvasEvents.length,
-          lastAccessed: Math.max(...canvasEvents.map(e => e.timestamp)),
-        };
-      }).sort((a, b) => b.interactions - a.interactions),
+      canvasInteractionFrequency: Array.from(canvases)
+        .map((canvasId) => {
+          const canvasEvents = this.events.filter(
+            (e) => e.canvasId === canvasId
+          );
+          return {
+            canvasId: canvasId!,
+            interactions: canvasEvents.length,
+            lastAccessed: Math.max(...canvasEvents.map((e) => e.timestamp)),
+          };
+        })
+        .sort((a, b) => b.interactions - a.interactions),
       userActivityPattern: hourlyActivity,
       featureUsage,
       performanceMetrics,
@@ -421,12 +471,18 @@ export class UsageAnalyticsService {
   private initializeTracking(): void {
     // Track page visibility changes
     document.addEventListener('visibilitychange', () => {
-      this.trackUserInteraction('system', document.hidden ? 'page_hidden' : 'page_visible');
+      this.trackUserInteraction(
+        'system',
+        document.hidden ? 'page_hidden' : 'page_visible'
+      );
     });
 
     // Track errors
     window.addEventListener('error', (event) => {
-      this.trackError(event.error, { filename: event.filename, lineno: event.lineno });
+      this.trackError(event.error, {
+        filename: event.filename,
+        lineno: event.lineno,
+      });
     });
 
     // Track unhandled promise rejections
@@ -461,7 +517,7 @@ export class UsageAnalyticsService {
    *
    */
   private notifyListeners(event: AnalyticsEvent): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(event);
       } catch (error) {

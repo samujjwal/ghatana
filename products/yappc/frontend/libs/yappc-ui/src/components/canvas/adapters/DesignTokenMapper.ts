@@ -153,9 +153,10 @@ export class DesignTokenMapper {
           : tokenPath; // Keep as reference if no values provided
 
         // Apply transformation if defined
-        const transformedValue = mapping.transform && value !== tokenPath
-          ? mapping.transform(value)
-          : value;
+        const transformedValue =
+          mapping.transform && value !== tokenPath
+            ? mapping.transform(value)
+            : value;
 
         // Set CSS property
         styles[mapping.cssProperty] = transformedValue;
@@ -174,7 +175,9 @@ export class DesignTokenMapper {
   /**
    * Extract token references from styles
    */
-  static stylesToTokens(styles: Record<string, unknown>): Record<string, string> {
+  static stylesToTokens(
+    styles: Record<string, unknown>
+  ): Record<string, string> {
     const tokens: Record<string, string> = {};
 
     for (const [cssProperty, value] of Object.entries(styles)) {
@@ -293,7 +296,10 @@ export class DesignTokenMapper {
   /**
    * Validate token path format
    */
-  static validateTokenPath(tokenPath: string): { valid: boolean; error?: string } {
+  static validateTokenPath(tokenPath: string): {
+    valid: boolean;
+    error?: string;
+  } {
     if (!tokenPath.startsWith('$')) {
       return { valid: false, error: 'Token path must start with $' };
     }

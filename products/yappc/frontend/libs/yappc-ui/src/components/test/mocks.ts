@@ -1,6 +1,6 @@
 /**
  * Test Doubles (Mocks/Stubs)
- * 
+ *
  * This file provides mock implementations for common dependencies
  * used throughout the YAPPC UI library tests.
  */
@@ -126,12 +126,16 @@ export const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
 /**
  * Mock image file
  */
-export const mockImageFile = new File(['test'], 'image.png', { type: 'image/png' });
+export const mockImageFile = new File(['test'], 'image.png', {
+  type: 'image/png',
+});
 
 /**
  * Mock document file
  */
-export const mockDocumentFile = new File(['test'], 'document.pdf', { type: 'application/pdf' });
+export const mockDocumentFile = new File(['test'], 'document.pdf', {
+  type: 'application/pdf',
+});
 
 /**
  * Mock user data

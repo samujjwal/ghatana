@@ -1,4 +1,14 @@
-import { Send as SendIcon, MoreVertical as MoreVertIcon, Reply as ReplyIcon, Pencil as EditIcon, Trash2 as DeleteIcon, EmojiEmotions as EmojiIcon, Paperclip as AttachFileIcon, X as CloseIcon, User as PersonIcon } from 'lucide-react';
+import {
+  Send as SendIcon,
+  MoreVertical as MoreVertIcon,
+  Reply as ReplyIcon,
+  Pencil as EditIcon,
+  Trash2 as DeleteIcon,
+  EmojiEmotions as EmojiIcon,
+  Paperclip as AttachFileIcon,
+  X as CloseIcon,
+  User as PersonIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {
@@ -24,10 +34,11 @@ import {
   CreateCommentRequest,
   UpdateCommentRequest,
 } from '../schemas/comment-schemas';
-import type { 
+import type {
   Comment,
   CommentThread,
-  CommentMention} from '../schemas/comment-schemas';
+  CommentMention,
+} from '../schemas/comment-schemas';
 
 // Comment input component
 /**
@@ -59,7 +70,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
 
   const handleSubmit = useCallback(async () => {
     if (!content.trim() || loading) return;
-    
+
     setLoading(true);
     try {
       await onSubmit(content.trim(), mentions);
@@ -72,42 +83,48 @@ export const CommentInput: React.FC<CommentInputProps> = ({
     }
   }, [content, mentions, onSubmit, loading]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      handleSubmit();
-    }
-    if (event.key === 'Escape' && onCancel) {
-      onCancel();
-    }
-  }, [handleSubmit, onCancel]);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        handleSubmit();
+      }
+      if (event.key === 'Escape' && onCancel) {
+        onCancel();
+      }
+    },
+    [handleSubmit, onCancel]
+  );
 
   // Simple mention detection (@ symbol)
-  const handleContentChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = event.target.value;
-    if (newContent.length <= maxLength) {
-      setContent(newContent);
-      
-      // Extract mentions (simplified)
-      const mentionRegex = /@(\w+)/g;
-      const foundMentions: CommentMention[] = [];
-      let match;
-      
-      while ((match = mentionRegex.exec(newContent)) !== null) {
-        foundMentions.push({
-          userId: match[1],
-          username: match[1],
-          displayName: match[1],
-          position: {
-            start: match.index,
-            end: match.index + match[0].length,
-          },
-        });
+  const handleContentChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newContent = event.target.value;
+      if (newContent.length <= maxLength) {
+        setContent(newContent);
+
+        // Extract mentions (simplified)
+        const mentionRegex = /@(\w+)/g;
+        const foundMentions: CommentMention[] = [];
+        let match;
+
+        while ((match = mentionRegex.exec(newContent)) !== null) {
+          foundMentions.push({
+            userId: match[1],
+            username: match[1],
+            displayName: match[1],
+            position: {
+              start: match.index,
+              end: match.index + match[0].length,
+            },
+          });
+        }
+
+        setMentions(foundMentions);
       }
-      
-      setMentions(foundMentions);
-    }
-  }, [maxLength]);
+    },
+    [maxLength]
+  );
 
   return (
     <Box className="p-4">
@@ -143,7 +160,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
           ),
         }}
       />
-      
+
       {mentions.length > 0 && (
         <Box className="mt-2 flex gap-2 flex-wrap">
           {mentions.map((mention, index) => (
@@ -157,7 +174,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
           ))}
         </Box>
       )}
-      
+
       <Box className="mt-4 flex gap-2 justify-end">
         {onCancel && (
           <Button
@@ -224,16 +241,19 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     setMenuAnchor(null);
   }, []);
 
-  const handleEdit = useCallback(async (content: string) => {
-    if (onEdit) {
-      try {
-        await onEdit(comment.id, content);
-        setIsEditing(false);
-      } catch (error) {
-        console.error('Failed to edit comment:', error);
+  const handleEdit = useCallback(
+    async (content: string) => {
+      if (onEdit) {
+        try {
+          await onEdit(comment.id, content);
+          setIsEditing(false);
+        } catch (error) {
+          console.error('Failed to edit comment:', error);
+        }
       }
-    }
-  }, [comment.id, onEdit]);
+    },
+    [comment.id, onEdit]
+  );
 
   const handleDelete = useCallback(async () => {
     if (onDelete) {
@@ -246,23 +266,29 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     }
   }, [comment.id, onDelete]);
 
-  const handleReact = useCallback(async (reaction: string) => {
-    if (onReact) {
-      try {
-        await onReact(comment.id, reaction);
-      } catch (error) {
-        console.error('Failed to add reaction:', error);
+  const handleReact = useCallback(
+    async (reaction: string) => {
+      if (onReact) {
+        try {
+          await onReact(comment.id, reaction);
+        } catch (error) {
+          console.error('Failed to add reaction:', error);
+        }
       }
-    }
-  }, [comment.id, onReact]);
+    },
+    [comment.id, onReact]
+  );
 
   const formatTimestamp = useCallback((timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     }
     return date.toLocaleDateString();
   }, []);
@@ -273,7 +299,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         <Avatar className="w-[32px] h-[32px]">
           {comment.authorId.charAt(0).toUpperCase()}
         </Avatar>
-        
+
         <Box className="flex-1">
           <Box className="flex items-center justify-between mb-2">
             <Box className="flex items-center gap-2">
@@ -289,14 +315,14 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 </Typography>
               )}
             </Box>
-            
+
             {(canEditComment || canDeleteComment) && (
               <IconButton size="small" onClick={handleMenuOpen}>
                 <MoreVertIcon size={16} />
               </IconButton>
             )}
           </Box>
-          
+
           {isEditing ? (
             <CommentInput
               initialValue={comment.content}
@@ -310,7 +336,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
               <Typography variant="body2" className="mb-2">
                 {comment.content}
               </Typography>
-              
+
               {comment.attachments && comment.attachments.length > 0 && (
                 <Box className="mb-2">
                   {comment.attachments.map((attachment, index) => (
@@ -325,7 +351,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                   ))}
                 </Box>
               )}
-              
+
               {comment.reactions && comment.reactions.length > 0 && (
                 <Box className="mb-2 flex gap-2 flex-wrap">
                   {comment.reactions.map((reaction, index) => (
@@ -340,7 +366,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                   ))}
                 </Box>
               )}
-              
+
               <Box className="flex gap-2">
                 {onReply && (
                   <Button
@@ -351,7 +377,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                     Reply
                   </Button>
                 )}
-                
+
                 <Button
                   size="small"
                   startIcon={<EmojiIcon />}
@@ -364,7 +390,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           )}
         </Box>
       </Box>
-      
+
       {/* Action menu */}
       <Menu
         anchorEl={menuAnchor}
@@ -394,19 +420,21 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           </MenuItem>
         )}
       </Menu>
-      
+
       {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Comment</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this comment? This action cannot be undone.
+            Are you sure you want to delete this comment? This action cannot be
+            undone.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>
-            Cancel
-          </Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleDelete} color="error" autoFocus>
             Delete
           </Button>
@@ -444,16 +472,19 @@ export const CommentThreadComponent: React.FC<CommentThreadProps> = ({
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
 
-  const handleReply = useCallback(async (content: string, mentions: CommentMention[]) => {
-    if (onAddComment && replyingTo) {
-      try {
-        await onAddComment(content, replyingTo);
-        setReplyingTo(null);
-      } catch (error) {
-        console.error('Failed to add reply:', error);
+  const handleReply = useCallback(
+    async (content: string, mentions: CommentMention[]) => {
+      if (onAddComment && replyingTo) {
+        try {
+          await onAddComment(content, replyingTo);
+          setReplyingTo(null);
+        } catch (error) {
+          console.error('Failed to add reply:', error);
+        }
       }
-    }
-  }, [onAddComment, replyingTo]);
+    },
+    [onAddComment, replyingTo]
+  );
 
   const rootComment = thread.rootComment;
   const replies = thread.replies;
@@ -472,7 +503,7 @@ export const CommentThreadComponent: React.FC<CommentThreadProps> = ({
         onReply={(parentId) => setReplyingTo(parentId)}
         onReact={onReactToComment}
       />
-      
+
       {/* Replies */}
       {replies.length > 0 && (
         <Box className="ml-12 mt-2">
@@ -489,7 +520,7 @@ export const CommentThreadComponent: React.FC<CommentThreadProps> = ({
               onReact={onReactToComment}
             />
           ))}
-          
+
           {replies.length > 3 && !showAllReplies && (
             <Button
               size="small"
@@ -499,7 +530,7 @@ export const CommentThreadComponent: React.FC<CommentThreadProps> = ({
               Show {replies.length - 3} more replies
             </Button>
           )}
-          
+
           {showAllReplies && replies.length > 3 && (
             <Button
               size="small"
@@ -511,7 +542,7 @@ export const CommentThreadComponent: React.FC<CommentThreadProps> = ({
           )}
         </Box>
       )}
-      
+
       {/* Reply input */}
       {replyingTo && (
         <Box className="ml-12 mt-2">

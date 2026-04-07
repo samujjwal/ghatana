@@ -1,6 +1,6 @@
 /**
  * @ghatana/yappc-ide - CRDT Integration Tests
- * 
+ *
  * Comprehensive integration tests for IDE CRDT operations,
  * handler processing, and IDE-canvas synchronization.
  */
@@ -43,7 +43,8 @@ describe('IDE CRDT Integration Tests', () => {
     mockCanvasState = {
       nodes: new Map(),
       listeners: new Map(),
-      addListener: (id: string, listener: unknown) => mockCanvasState.listeners.set(id, listener),
+      addListener: (id: string, listener: unknown) =>
+        mockCanvasState.listeners.set(id, listener),
       removeListener: (id: string) => mockCanvasState.listeners.delete(id),
       updateNode: (node: unknown) => mockCanvasState.nodes.set(node.id, node),
     };
@@ -120,7 +121,9 @@ describe('IDE CRDT Integration Tests', () => {
         const result = ideHandler.applyOperation(updateOp);
 
         expect(result.success).toBe(true);
-        const content = ideHandler.getFileContent(Array.from(ideHandler.getState().files.keys())[0]);
+        const content = ideHandler.getFileContent(
+          Array.from(ideHandler.getState().files.keys())[0]
+        );
         expect(content).toBe('updated content');
       });
 
@@ -142,7 +145,11 @@ describe('IDE CRDT Integration Tests', () => {
         const fileId = Array.from(ideHandler.getState().files.keys())[0];
 
         // Delete file
-        const deleteOp = deleteFileOperation(fileId, 'test-replica', mockVectorClock);
+        const deleteOp = deleteFileOperation(
+          fileId,
+          'test-replica',
+          mockVectorClock
+        );
         const result = ideHandler.applyOperation(deleteOp);
 
         expect(result.success).toBe(true);
@@ -233,7 +240,11 @@ describe('IDE CRDT Integration Tests', () => {
         const folderId = Array.from(ideHandler.getState().folders.keys())[0];
 
         // Delete empty folder
-        const deleteOp = deleteFolderOperation(folderId, 'test-replica', mockVectorClock);
+        const deleteOp = deleteFolderOperation(
+          folderId,
+          'test-replica',
+          mockVectorClock
+        );
         const result = ideHandler.applyOperation(deleteOp);
 
         expect(result.success).toBe(true);
@@ -262,7 +273,11 @@ describe('IDE CRDT Integration Tests', () => {
         }
 
         // Try to delete non-empty folder
-        const deleteOp = deleteFolderOperation(folderId, 'test-replica', mockVectorClock);
+        const deleteOp = deleteFolderOperation(
+          folderId,
+          'test-replica',
+          mockVectorClock
+        );
         const result = ideHandler.applyOperation(deleteOp);
 
         expect(result.success).toBe(false);
@@ -382,12 +397,18 @@ describe('IDE CRDT Integration Tests', () => {
         ideHandler.applyOperation(createTab2);
 
         // Close first tab
-        const closeOp = closeTabOperation('tab-1', 'test-replica', mockVectorClock);
+        const closeOp = closeTabOperation(
+          'tab-1',
+          'test-replica',
+          mockVectorClock
+        );
         const result = ideHandler.applyOperation(closeOp);
 
         expect(result.success).toBe(true);
 
-        const editorState = ideHandler.getState().editorState.get('test-replica');
+        const editorState = ideHandler
+          .getState()
+          .editorState.get('test-replica');
         expect(editorState?.openTabs).not.toContain('tab-1');
         expect(editorState?.openTabs).toContain('tab-2');
         expect(editorState?.activeFileId).toBe('file-2');
@@ -408,15 +429,22 @@ describe('IDE CRDT Integration Tests', () => {
           )
         );
 
-        tabs.forEach(op => ideHandler.applyOperation(op));
+        tabs.forEach((op) => ideHandler.applyOperation(op));
 
         // Move tab-3 to position 0
-        const moveOp = moveTabOperation('tab-3', 0, 'test-replica', mockVectorClock);
+        const moveOp = moveTabOperation(
+          'tab-3',
+          0,
+          'test-replica',
+          mockVectorClock
+        );
         const result = ideHandler.applyOperation(moveOp);
 
         expect(result.success).toBe(true);
 
-        const editorState = ideHandler.getState().editorState.get('test-replica');
+        const editorState = ideHandler
+          .getState()
+          .editorState.get('test-replica');
         expect(editorState?.openTabs[0]).toBe('tab-3');
         expect(editorState?.openTabs[1]).toBe('tab-1');
         expect(editorState?.openTabs[2]).toBe('tab-2');
@@ -480,7 +508,10 @@ describe('IDE CRDT Integration Tests', () => {
       } as CRDTOperation;
 
       // Test conflict resolution (IDE should win due to later timestamp)
-      const conflict = canvasBridge['handleConflict'](ideOperation, canvasOperation);
+      const conflict = canvasBridge['handleConflict'](
+        ideOperation,
+        canvasOperation
+      );
 
       expect(conflict.resolved).toBe(true);
       expect(conflict.winner).toBe('ide');
@@ -627,10 +658,10 @@ describe('IDE CRDT Integration Tests', () => {
       ];
 
       // Apply operations concurrently
-      const results = operations.map(op => ideHandler.applyOperation(op));
+      const results = operations.map((op) => ideHandler.applyOperation(op));
 
       // All should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
       });
 
@@ -638,7 +669,7 @@ describe('IDE CRDT Integration Tests', () => {
       const state = ideHandler.getState();
       expect(state.files.size).toBe(3);
 
-      const paths = Array.from(state.files.values()).map(f => f.path);
+      const paths = Array.from(state.files.values()).map((f) => f.path);
       expect(paths).toContain('/src/concurrent1.ts');
       expect(paths).toContain('/src/concurrent2.ts');
       expect(paths).toContain('/src/concurrent3.ts');
@@ -665,7 +696,11 @@ describe('IDE CRDT Integration Tests', () => {
     });
 
     it('should handle missing file operations', () => {
-      const deleteOp = deleteFileOperation('non-existent-file', 'test-replica', mockVectorClock);
+      const deleteOp = deleteFileOperation(
+        'non-existent-file',
+        'test-replica',
+        mockVectorClock
+      );
       const result = ideHandler.applyOperation(deleteOp);
 
       expect(result.success).toBe(false);
@@ -673,7 +708,11 @@ describe('IDE CRDT Integration Tests', () => {
     });
 
     it('should handle missing folder operations', () => {
-      const deleteOp = deleteFolderOperation('non-existent-folder', 'test-replica', mockVectorClock);
+      const deleteOp = deleteFolderOperation(
+        'non-existent-folder',
+        'test-replica',
+        mockVectorClock
+      );
       const result = ideHandler.applyOperation(deleteOp);
 
       expect(result.success).toBe(false);
@@ -704,7 +743,9 @@ describe('IDE CRDT Integration Tests', () => {
       expect(result.success).toBe(true);
       expect(endTime - startTime).toBeLessThan(100); // Should complete in <100ms
 
-      const content = ideHandler.getFileContent(Array.from(ideHandler.getState().files.keys())[0]);
+      const content = ideHandler.getFileContent(
+        Array.from(ideHandler.getState().files.keys())[0]
+      );
       expect(content).toBe(largeContent);
     });
 

@@ -79,7 +79,7 @@ export const ObservabilitySystemProvider = {
       };
     };
   `,
-  
+
   // Debug console integration
   debugIntegration: `
     import { useDebug } from '@your-org/canvas/observability';
@@ -117,7 +117,7 @@ export const ObservabilitySystemProvider = {
       };
     };
   `,
-  
+
   // Performance dashboard integration
   dashboardIntegration: `
     import { PerformanceDashboard } from '@your-org/canvas/observability';
@@ -136,7 +136,7 @@ export const ObservabilitySystemProvider = {
       );
     };
   `,
-  
+
   // Debug console integration
   debugConsoleIntegration: `
     import { DebugConsole } from '@your-org/canvas/observability';
@@ -161,7 +161,7 @@ export const ObservabilitySystemProvider = {
       );
     };
   `,
-  
+
   // Performance monitoring setup
   monitoringSetup: `
     import { performanceMonitor } from '@your-org/canvas/observability';
@@ -182,7 +182,7 @@ export const ObservabilitySystemProvider = {
     
     // Call during app initialization
     initializeMonitoring();
-  `
+  `,
 };
 
 // Production-ready feature flags
@@ -192,25 +192,25 @@ export const OBSERVABILITY_FEATURES = {
   USER_ACTION_TRACKING: true,
   ERROR_TRACKING: true,
   REAL_TIME_MONITORING: true,
-  
+
   // Debug features
   DEBUG_CONSOLE: true,
   CANVAS_INSPECTION: true,
   CANVAS_VALIDATION: true,
   LOG_EXPORT: true,
-  
+
   // Monitoring features
   SYSTEM_HEALTH_CHECK: true,
   ALERT_SYSTEM: true,
   METRIC_AGGREGATION: true,
   PERFORMANCE_OBSERVER: true,
-  
+
   // Dashboard features
   PERFORMANCE_DASHBOARD: true,
   REAL_TIME_UPDATES: true,
   METRIC_FILTERING: true,
   EXPORT_CAPABILITIES: true,
-  
+
   // Enterprise features
   ADVANCED_ANALYTICS: true,
   CUSTOM_METRICS: true,
@@ -223,20 +223,23 @@ export const validateObservabilitySystem = () => {
   const checks = {
     hooksAvailable: true,
     componentsLoaded: true,
-    monitoringActive: typeof window !== 'undefined' && 'PerformanceObserver' in window,
+    monitoringActive:
+      typeof window !== 'undefined' && 'PerformanceObserver' in window,
     schemasValid: true,
-    performanceAPIAvailable: typeof window !== 'undefined' && 'performance' in window,
+    performanceAPIAvailable:
+      typeof window !== 'undefined' && 'performance' in window,
   };
-  
+
   const healthy = Object.values(checks).every(Boolean);
-  
+
   return {
     healthy,
     checks,
     capabilities: {
       realTimeMetrics: checks.performanceAPIAvailable,
       performanceObserver: checks.monitoringActive,
-      memoryMonitoring: typeof window !== 'undefined' && 'memory' in (window.performance || {}),
+      memoryMonitoring:
+        typeof window !== 'undefined' && 'memory' in (window.performance || {}),
       debugConsole: true,
       canvasInspection: true,
     },
@@ -254,7 +257,10 @@ export const createAnalyticsProvider = (config: {
   return {
     config,
     start: () => {
-      console.log('[Observability] Analytics provider started with config:', config);
+      console.log(
+        '[Observability] Analytics provider started with config:',
+        config
+      );
       return performanceMonitor.startMonitoring();
     },
     stop: () => {
@@ -286,13 +292,13 @@ export const withAnalytics = <T extends Record<string, unknown>>(
 ) => {
   const AnalyticsWrappedComponent = (props: T) => {
     const analytics = useAnalytics(analyticsConfig);
-    
+
     return React.createElement(Component, {
       ...props,
       analytics,
     });
   };
-  
+
   AnalyticsWrappedComponent.displayName = `withAnalytics(${Component.displayName || Component.name})`;
   return AnalyticsWrappedComponent;
 };
@@ -303,13 +309,13 @@ export const withDebug = <T extends Record<string, unknown>>(
 ) => {
   const DebugWrappedComponent = (props: T) => {
     const debug = useDebug(debugConfig);
-    
+
     return React.createElement(Component, {
       ...props,
       debug,
     });
   };
-  
+
   DebugWrappedComponent.displayName = `withDebug(${Component.displayName || Component.name})`;
   return DebugWrappedComponent;
 };

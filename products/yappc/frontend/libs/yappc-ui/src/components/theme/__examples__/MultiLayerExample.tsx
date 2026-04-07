@@ -5,7 +5,17 @@
  * to customize themes at different levels.
  */
 
-import { Button, Container, Typography, Box, TextField, Stack, Card, CardContent, Divider } from '@ghatana/design-system';
+import {
+  Button,
+  Container,
+  Typography,
+  Box,
+  TextField,
+  Stack,
+  Card,
+  CardContent,
+  Divider,
+} from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import {
@@ -71,8 +81,8 @@ function ThemeControls() {
       </Typography>
 
       <Typography as="p" paragraph>
-        This example shows how to customize themes at different layers:
-        Brand, Workspace, and App levels.
+        This example shows how to customize themes at different layers: Brand,
+        Workspace, and App levels.
       </Typography>
 
       <Box className="flex gap-4 mb-8">
@@ -91,7 +101,12 @@ function ThemeControls() {
             <Typography as="h5" gutterBottom>
               Brand Layer (Priority: 100)
             </Typography>
-            <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+            <Typography
+              as="p"
+              className="text-sm"
+              color="text.secondary"
+              paragraph
+            >
               Brand identity - affects all workspaces and apps
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">
@@ -115,7 +130,12 @@ function ThemeControls() {
             <Typography as="h5" gutterBottom>
               Workspace Layer (Priority: 200)
             </Typography>
-            <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+            <Typography
+              as="p"
+              className="text-sm"
+              color="text.secondary"
+              paragraph
+            >
               Team/user preferences - can vary between workspaces
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">
@@ -139,7 +159,12 @@ function ThemeControls() {
             <Typography as="h5" gutterBottom>
               App Layer (Priority: 300)
             </Typography>
-            <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+            <Typography
+              as="p"
+              className="text-sm"
+              color="text.secondary"
+              paragraph
+            >
               App-specific overrides - highest priority
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">

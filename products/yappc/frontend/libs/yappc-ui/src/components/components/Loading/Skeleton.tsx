@@ -1,8 +1,8 @@
 /**
  * Skeleton Component
- * 
+ *
  * Production-grade skeleton loading placeholders
- * 
+ *
  * @module ui/components/Loading/Skeleton
  * @doc.type component
  * @doc.purpose Content loading placeholder
@@ -33,17 +33,17 @@ export interface SkeletonProps {
 
 /**
  * Skeleton loading placeholder component
- * 
+ *
  * @example Basic text skeleton
  * ```tsx
  * <Skeleton variant="text" width="200px" />
  * ```
- * 
+ *
  * @example Circular avatar skeleton
  * ```tsx
  * <Skeleton variant="circular" width={48} height={48} />
  * ```
- * 
+ *
  * @example Multiple text lines
  * ```tsx
  * <Skeleton variant="text" count={3} />

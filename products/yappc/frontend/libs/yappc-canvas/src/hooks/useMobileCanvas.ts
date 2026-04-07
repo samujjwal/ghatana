@@ -1,16 +1,16 @@
 /**
  * useMobileCanvas Hook
- * 
+ *
  * React hook for managing mobile app screen design state.
  * Supports component management, platform switching, and code generation.
- * 
+ *
  * Features:
  * - Component CRUD operations
  * - Platform-specific rendering (iOS/Android)
  * - React Native code generation with Platform.select
  * - Device frame management
  * - Component property editing
- * 
+ *
  * @doc.type hook
  * @doc.purpose Mobile app screen design state management
  * @doc.layer product
@@ -93,7 +93,10 @@ export interface UseMobileCanvasResult {
   // Actions
   setPlatform: (platform: MobilePlatform) => void;
   setDevice: (device: string) => void;
-  addComponent: (type: MobileComponentType, props?: Record<string, unknown>) => void;
+  addComponent: (
+    type: MobileComponentType,
+    props?: Record<string, unknown>
+  ) => void;
   updateComponent: (id: string, updates: Partial<MobileComponent>) => void;
   deleteComponent: (id: string) => void;
   selectComponent: (id: string | null) => void;
@@ -142,7 +145,10 @@ const DEVICE_FRAMES: Record<string, DeviceFrame> = {
 };
 
 // Component defaults
-const COMPONENT_DEFAULTS: Record<MobileComponentType, { props: Record<string, unknown>; size: { width: number; height: number } }> = {
+const COMPONENT_DEFAULTS: Record<
+  MobileComponentType,
+  { props: Record<string, unknown>; size: { width: number; height: number } }
+> = {
   'navigation-bar': {
     props: { title: 'Screen Title' },
     size: { width: 360, height: 64 },
@@ -151,15 +157,15 @@ const COMPONENT_DEFAULTS: Record<MobileComponentType, { props: Record<string, un
     props: { label: 'Enable Notifications', value: false },
     size: { width: 300, height: 48 },
   },
-  'slider': {
+  slider: {
     props: { label: 'Frequency', min: 0, max: 100, value: 50 },
     size: { width: 300, height: 64 },
   },
-  'list': {
+  list: {
     props: { items: ['Item 1', 'Item 2', 'Item 3'] },
     size: { width: 360, height: 200 },
   },
-  'button': {
+  button: {
     props: { title: 'Submit', variant: 'contained' },
     size: { width: 200, height: 48 },
   },
@@ -167,11 +173,11 @@ const COMPONENT_DEFAULTS: Record<MobileComponentType, { props: Record<string, un
     props: { placeholder: 'Enter text...', value: '' },
     size: { width: 300, height: 48 },
   },
-  'image': {
+  image: {
     props: { source: 'https://via.placeholder.com/150', alt: 'Placeholder' },
     size: { width: 150, height: 150 },
   },
-  'card': {
+  card: {
     props: { title: 'Card Title', content: 'Card content' },
     size: { width: 340, height: 120 },
   },
@@ -184,14 +190,23 @@ const COMPONENT_DEFAULTS: Record<MobileComponentType, { props: Record<string, un
 /**
  * Hook for managing mobile canvas state
  */
-export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobileCanvasResult {
-  const { initialPlatform = 'ios', initialDevice = 'iphone-14', node } = options;
+export function useMobileCanvas(
+  options: UseMobileCanvasOptions = {}
+): UseMobileCanvasResult {
+  const {
+    initialPlatform = 'ios',
+    initialDevice = 'iphone-14',
+    node,
+  } = options;
 
   // State
-  const [platform, setPlatformState] = useState<MobilePlatform>(initialPlatform);
+  const [platform, setPlatformState] =
+    useState<MobilePlatform>(initialPlatform);
   const [device, setDevice] = useState<string>(initialDevice);
   const [components, setComponents] = useState<MobileComponent[]>([]);
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<string | null>(
+    null
+  );
 
   // Get device frame
   const deviceFrame = useMemo(() => {
@@ -201,56 +216,74 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
   /**
    * Set platform and auto-switch device
    */
-  const setPlatform = useCallback((newPlatform: MobilePlatform) => {
-    setPlatformState(newPlatform);
-    // Auto-switch device based on platform
-    if (newPlatform === 'android' && (device.startsWith('iphone') || !DEVICE_FRAMES[device])) {
-      setDevice('pixel-7');
-    } else if (newPlatform === 'ios' && !device.startsWith('iphone')) {
-      setDevice('iphone-14');
-    }
-  }, [device]);
+  const setPlatform = useCallback(
+    (newPlatform: MobilePlatform) => {
+      setPlatformState(newPlatform);
+      // Auto-switch device based on platform
+      if (
+        newPlatform === 'android' &&
+        (device.startsWith('iphone') || !DEVICE_FRAMES[device])
+      ) {
+        setDevice('pixel-7');
+      } else if (newPlatform === 'ios' && !device.startsWith('iphone')) {
+        setDevice('iphone-14');
+      }
+    },
+    [device]
+  );
 
   /**
    * Add component to canvas
    */
-  const addComponent = useCallback((type: MobileComponentType, customProps?: Record<string, unknown>) => {
-    const defaults = COMPONENT_DEFAULTS[type];
-    if (!defaults) return;
+  const addComponent = useCallback(
+    (type: MobileComponentType, customProps?: Record<string, unknown>) => {
+      const defaults = COMPONENT_DEFAULTS[type];
+      if (!defaults) return;
 
-    const newComponent: MobileComponent = {
-      id: `${type}-${Date.now()}`,
-      type,
-      label: type.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-      props: { ...defaults.props, ...customProps },
-      x: 20,
-      y: 100 + components.length * 80,
-      width: defaults.size.width,
-      height: defaults.size.height,
-    };
+      const newComponent: MobileComponent = {
+        id: `${type}-${Date.now()}`,
+        type,
+        label: type
+          .split('-')
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(' '),
+        props: { ...defaults.props, ...customProps },
+        x: 20,
+        y: 100 + components.length * 80,
+        width: defaults.size.width,
+        height: defaults.size.height,
+      };
 
-    setComponents((prev) => [...prev, newComponent]);
-    setSelectedComponent(newComponent.id);
-  }, [components.length]);
+      setComponents((prev) => [...prev, newComponent]);
+      setSelectedComponent(newComponent.id);
+    },
+    [components.length]
+  );
 
   /**
    * Update component
    */
-  const updateComponent = useCallback((id: string, updates: Partial<MobileComponent>) => {
-    setComponents((prev) =>
-      prev.map((comp) => (comp.id === id ? { ...comp, ...updates } : comp))
-    );
-  }, []);
+  const updateComponent = useCallback(
+    (id: string, updates: Partial<MobileComponent>) => {
+      setComponents((prev) =>
+        prev.map((comp) => (comp.id === id ? { ...comp, ...updates } : comp))
+      );
+    },
+    []
+  );
 
   /**
    * Delete component
    */
-  const deleteComponent = useCallback((id: string) => {
-    setComponents((prev) => prev.filter((c) => c.id !== id));
-    if (selectedComponent === id) {
-      setSelectedComponent(null);
-    }
-  }, [selectedComponent]);
+  const deleteComponent = useCallback(
+    (id: string) => {
+      setComponents((prev) => prev.filter((c) => c.id !== id));
+      if (selectedComponent === id) {
+        setSelectedComponent(null);
+      }
+    },
+    [selectedComponent]
+  );
 
   /**
    * Select component
@@ -289,7 +322,9 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
           break;
 
         case 'toggle-switch':
-          stateDeclarations.push(`  const [${comp.id}Value, set${comp.id}Value] = useState(${comp.props.value});`);
+          stateDeclarations.push(
+            `  const [${comp.id}Value, set${comp.id}Value] = useState(${comp.props.value});`
+          );
           componentCode.push(`      <View style={styles.switchContainer}>
         <Text style={styles.label}>${comp.props.label}</Text>
         <Switch
@@ -300,7 +335,9 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
           break;
 
         case 'slider':
-          stateDeclarations.push(`  const [${comp.id}Value, set${comp.id}Value] = useState(${comp.props.value});`);
+          stateDeclarations.push(
+            `  const [${comp.id}Value, set${comp.id}Value] = useState(${comp.props.value});`
+          );
           componentCode.push(`      <View style={styles.sliderContainer}>
         <Text style={styles.label}>${comp.props.label}: {${comp.id}Value}</Text>
         <Slider
@@ -314,7 +351,9 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
           break;
 
         case 'list':
-          stateDeclarations.push(`  const ${comp.id}Data = ${JSON.stringify(comp.props.items)};`);
+          stateDeclarations.push(
+            `  const ${comp.id}Data = ${JSON.stringify(comp.props.items)};`
+          );
           componentCode.push(`      <FlatList
         data={${comp.id}Data}
         renderItem={({ item }) => (
@@ -332,7 +371,9 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
           break;
 
         case 'text-input':
-          stateDeclarations.push(`  const [${comp.id}Value, set${comp.id}Value] = useState('${comp.props.value}');`);
+          stateDeclarations.push(
+            `  const [${comp.id}Value, set${comp.id}Value] = useState('${comp.props.value}');`
+          );
           componentCode.push(`      <TextInput
         style={styles.textInput}
         placeholder="${comp.props.placeholder}"
@@ -357,7 +398,8 @@ export function useMobileCanvas(options: UseMobileCanvasOptions = {}): UseMobile
       }
     });
 
-    const screenName = (node?.data as { label?: string })?.label || 'MobileScreen';
+    const screenName =
+      (node?.data as { label?: string })?.label || 'MobileScreen';
 
     return `${imports.join('\n')}
 
@@ -468,19 +510,25 @@ export default ${screenName};`;
   /**
    * Get component count
    */
-  const getComponentCount = useCallback((type?: MobileComponentType): number => {
-    if (type) {
-      return components.filter((c) => c.type === type).length;
-    }
-    return components.length;
-  }, [components]);
+  const getComponentCount = useCallback(
+    (type?: MobileComponentType): number => {
+      if (type) {
+        return components.filter((c) => c.type === type).length;
+      }
+      return components.length;
+    },
+    [components]
+  );
 
   /**
    * Get component by ID
    */
-  const getComponentById = useCallback((id: string): MobileComponent | undefined => {
-    return components.find((c) => c.id === id);
-  }, [components]);
+  const getComponentById = useCallback(
+    (id: string): MobileComponent | undefined => {
+      return components.find((c) => c.id === id);
+    },
+    [components]
+  );
 
   return {
     // State

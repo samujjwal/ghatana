@@ -38,7 +38,13 @@ export type ItemStatus =
 /**
  * User roles in the system
  */
-export type UserRole = 'Executive' | 'PM' | 'Developer' | 'Security' | 'DevOps' | 'QA';
+export type UserRole =
+  | 'Executive'
+  | 'PM'
+  | 'Developer'
+  | 'Security'
+  | 'DevOps'
+  | 'QA';
 
 /**
  * Persona types for dashboard personalization
@@ -75,7 +81,13 @@ export type ArtifactType =
 /**
  * Integration provider types
  */
-export type IntegrationProvider = 'jira' | 'github' | 'gitlab' | 'sonarqube' | 'jenkins' | 'custom';
+export type IntegrationProvider =
+  | 'jira'
+  | 'github'
+  | 'gitlab'
+  | 'sonarqube'
+  | 'jenkins'
+  | 'custom';
 
 /**
  * View modes for displaying items
@@ -191,7 +203,13 @@ export interface Artifact {
  */
 export interface DiagramArtifact extends Artifact {
   type: 'diagram';
-  diagramType: 'architecture' | 'sequence' | 'infrastructure' | 'network' | 'flow' | 'erd';
+  diagramType:
+    | 'architecture'
+    | 'sequence'
+    | 'infrastructure'
+    | 'network'
+    | 'flow'
+    | 'erd';
   format: 'svg' | 'mermaid' | 'plantuml' | 'drawio' | 'json';
   layers?: DiagramLayer[];
   nodes?: DiagramNode[];

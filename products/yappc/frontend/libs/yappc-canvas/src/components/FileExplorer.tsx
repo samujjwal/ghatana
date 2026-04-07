@@ -1,8 +1,8 @@
 /**
  * File Explorer - IDE to Canvas Bridge
- * 
+ *
  * Maps IDE FileExplorer to CanvasFileExplorer
- * 
+ *
  * @deprecated Use CanvasFileExplorer or FileTree from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -53,12 +53,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] FileExplorer from @ghatana/yappc-ide is deprecated. ' +
-      'Use CanvasFileExplorer or FileTree from @ghatana/yappc-canvas.'
+        'Use CanvasFileExplorer or FileTree from @ghatana/yappc-canvas.'
     );
   }, []);
 
   return (
-    <div 
+    <div
       className={`file-explorer-bridge ${className || ''}`}
       data-root={rootPath}
     >
@@ -66,7 +66,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         {files.length === 0 ? (
           <div className="empty-state">No files to display</div>
         ) : (
-          <FileTree 
+          <FileTree
             items={files}
             onSelect={onFileSelect}
             onOpen={onFileOpen}
@@ -105,19 +105,21 @@ export const FileTree: React.FC<FileTreeProps> = ({
   return (
     <ul className="file-tree" style={{ paddingLeft: level * 16 }}>
       {items
-        .filter(item => showHidden || !item.name.startsWith('.'))
-        .map(item => (
-          <li 
+        .filter((item) => showHidden || !item.name.startsWith('.'))
+        .map((item) => (
+          <li
             key={item.path}
             className={`file-tree-item ${item.type} ${selectedPath === item.path ? 'selected' : ''}`}
             onClick={() => onSelect?.(item.path)}
             onDoubleClick={() => item.type === 'file' && onOpen?.(item.path)}
             onContextMenu={(e) => onContextMenu?.(item.path, e)}
           >
-            <span className="file-icon">{item.icon || (item.type === 'directory' ? '📁' : '📄')}</span>
+            <span className="file-icon">
+              {item.icon || (item.type === 'directory' ? '📁' : '📄')}
+            </span>
             <span className="file-name">{item.name}</span>
             {item.type === 'directory' && item.children && item.isExpanded && (
-              <FileTree 
+              <FileTree
                 items={item.children}
                 onSelect={onSelect}
                 onOpen={onOpen}

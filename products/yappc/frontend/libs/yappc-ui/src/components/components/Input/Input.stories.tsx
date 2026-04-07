@@ -42,7 +42,8 @@ const meta: Meta<typeof Input> = {
     },
     showPasswordToggle: {
       control: 'boolean',
-      description: 'If true, shows a toggle to show/hide password (only for password inputs)',
+      description:
+        'If true, shows a toggle to show/hide password (only for password inputs)',
     },
     loading: {
       control: 'boolean',
@@ -58,12 +59,23 @@ const meta: Meta<typeof Input> = {
     },
     format: {
       control: 'select',
-      options: [undefined, 'uppercase', 'lowercase', 'capitalize', 'number', 'percent', 'email', 'trim', 'custom'],
+      options: [
+        undefined,
+        'uppercase',
+        'lowercase',
+        'capitalize',
+        'number',
+        'percent',
+        'email',
+        'trim',
+        'custom',
+      ],
       description: 'Type of formatting to apply',
     },
     formatOnBlur: {
       control: 'boolean',
-      description: 'If true, formatting is applied on blur instead of on every change',
+      description:
+        'If true, formatting is applied on blur instead of on every change',
     },
     debounced: {
       control: 'boolean',
@@ -245,7 +257,14 @@ export const WithStartIcon: Story = {
     label: 'Search',
     placeholder: 'Search...',
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -259,7 +278,14 @@ export const WithEndIcon: Story = {
     type: 'email',
     placeholder: 'Enter your email',
     endIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
         <polyline points="22 4 12 14.01 9 11.01" />
       </svg>
@@ -283,7 +309,14 @@ export const ClearableWithIcon: Story = {
     clearable: true,
     defaultValue: 'Search term',
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -313,7 +346,14 @@ export const LoadingWithIcon: Story = {
     placeholder: 'Loading with icon...',
     loading: true,
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -370,7 +410,14 @@ export const AutocompleteWithIcon: Story = {
     placeholder: 'Search...',
     autocomplete: true,
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -518,7 +565,8 @@ export const DebouncedInput: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Input with debounced value changes. The onDebouncedChange callback will be called 500ms after the user stops typing.',
+        story:
+          'Input with debounced value changes. The onDebouncedChange callback will be called 500ms after the user stops typing.',
       },
     },
   },
@@ -543,7 +591,14 @@ export const DebouncedWithIcon: Story = {
     debounced: true,
     debounceDelay: 300,
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -562,7 +617,8 @@ export const KeyboardNavigation: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Input with keyboard navigation. Callbacks are triggered when specific keys are pressed.',
+        story:
+          'Input with keyboard navigation. Callbacks are triggered when specific keys are pressed.',
       },
     },
   },
@@ -594,7 +650,14 @@ export const FullFeatured: Story = {
     keyboardNavigation: true,
     autocomplete: true,
     startIcon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -631,7 +694,8 @@ export const WithAriaDescription: Story = {
     label: 'Password',
     type: 'password',
     placeholder: 'Enter your password',
-    ariaDescription: 'Password must contain at least 8 characters, including uppercase, lowercase, and numbers',
+    ariaDescription:
+      'Password must contain at least 8 characters, including uppercase, lowercase, and numbers',
     helperText: 'Password must be secure',
   },
   parameters: {
@@ -676,7 +740,8 @@ export const FullyAccessible: Story = {
       { value: 'desktop', label: 'Desktop' },
       { value: 'accessories', label: 'Accessories' },
     ],
-    helperText: 'Fully accessible input with all accessibility features enabled',
+    helperText:
+      'Fully accessible input with all accessibility features enabled',
   },
 };
 
@@ -689,8 +754,8 @@ export const LightTheme: Story = {
   },
   globals: {
     backgrounds: {
-      value: "light"
-    }
+      value: 'light',
+    },
   },
 };
 
@@ -703,8 +768,8 @@ export const DarkTheme: Story = {
   },
   globals: {
     backgrounds: {
-      value: "dark"
-    }
+      value: 'dark',
+    },
   },
 };
 
@@ -726,8 +791,8 @@ export const DarkThemeWithError: Story = {
   },
   globals: {
     backgrounds: {
-      value: "dark"
-    }
+      value: 'dark',
+    },
   },
 };
 
@@ -748,8 +813,8 @@ export const DarkThemeWithAutocomplete: Story = {
   },
   globals: {
     backgrounds: {
-      value: "dark"
-    }
+      value: 'dark',
+    },
   },
 };
 
@@ -764,7 +829,8 @@ export const MobileOptimized: Story = {
     viewport: { defaultViewport: 'mobile1' },
     docs: {
       description: {
-        story: 'Input optimized for mobile devices with larger touch targets and improved mobile UX.',
+        story:
+          'Input optimized for mobile devices with larger touch targets and improved mobile UX.',
       },
     },
   },
@@ -871,8 +937,8 @@ export const ErrorWithDarkTheme: Story = {
   },
   globals: {
     backgrounds: {
-      value: "dark"
-    }
+      value: 'dark',
+    },
   },
 };
 

@@ -8,7 +8,6 @@ import type { User } from '@yappc/core/types';
 
 import { createUser, createAdminUser } from '../factories/user.factory';
 
-
 /**
  * Mock authentication service for testing
  */

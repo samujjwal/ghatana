@@ -30,8 +30,10 @@ export const createMockYArray = () => {
 
   const _notify = (event: unknown) => {
     // deliver each event to observers
-    observers.forEach(cb => {
-      try { cb(event); } catch {}
+    observers.forEach((cb) => {
+      try {
+        cb(event);
+      } catch {}
     });
   };
 
@@ -39,7 +41,7 @@ export const createMockYArray = () => {
     if (queuedEvents.length === 0) return;
     const events = queuedEvents.splice(0, queuedEvents.length);
     // deliver events one-by-one to observers in order
-    events.forEach(e => _notify(e));
+    events.forEach((e) => _notify(e));
   };
 
   // allow attaching with a collection name: _attachDoc(ydoc, 'nodes')
@@ -65,14 +67,16 @@ export const createMockYArray = () => {
         clientId: attachedDoc?.clientId ?? null,
         timestamp: Date.now(),
         txnId: attachedDoc?._currentTxnId ?? null,
-        opSeq: attachedDoc ? (++attachedDoc._opCounter) : null,
-  collection: attachedCollection ?? null,
-      }
+        opSeq: attachedDoc ? ++attachedDoc._opCounter : null,
+        collection: attachedCollection ?? null,
+      },
     };
     if (attachedDoc && attachedDoc.__inTransaction) queuedEvents.push(ev);
     else _notify(ev);
     // record into ydoc history when attached
-    try { attachedDoc?._history?.push(ev); } catch {}
+    try {
+      attachedDoc?._history?.push(ev);
+    } catch {}
   });
 
   const _insert = vi.fn((index: number, values: unknown[]) => {
@@ -92,13 +96,15 @@ export const createMockYArray = () => {
         clientId: attachedDoc?.clientId ?? null,
         timestamp: Date.now(),
         txnId: attachedDoc?._currentTxnId ?? null,
-        opSeq: attachedDoc ? (++attachedDoc._opCounter) : null,
-  collection: attachedCollection ?? null,
-      }
+        opSeq: attachedDoc ? ++attachedDoc._opCounter : null,
+        collection: attachedCollection ?? null,
+      },
     };
     if (attachedDoc && attachedDoc.__inTransaction) queuedEvents.push(ev);
     else _notify(ev);
-    try { attachedDoc?._history?.push(ev); } catch {}
+    try {
+      attachedDoc?._history?.push(ev);
+    } catch {}
   });
 
   return {
@@ -112,7 +118,9 @@ export const createMockYArray = () => {
     _flushQueued,
     // debug helpers for tests
     _getQueuedEvents: () => [...queuedEvents],
-    _clearQueued: () => { queuedEvents.splice(0, queuedEvents.length); },
+    _clearQueued: () => {
+      queuedEvents.splice(0, queuedEvents.length);
+    },
   };
 };
 
@@ -135,17 +143,24 @@ export const createMockYMap = () => {
   });
 
   const _notify = (ev: unknown) => {
-    observers.forEach(cb => { try { cb(ev); } catch {} });
+    observers.forEach((cb) => {
+      try {
+        cb(ev);
+      } catch {}
+    });
   };
 
   const _flushQueued = () => {
     if (queuedEvents.length === 0) return;
     const events = queuedEvents.splice(0, queuedEvents.length);
-    events.forEach(e => _notify(e));
+    events.forEach((e) => _notify(e));
   };
 
   // allow attaching with an optional collection name to mirror arrays
-  const _attachDoc = (doc: unknown, collectionName?: string) => { attachedDoc = doc as MockYDoc; attachedCollection = collectionName ?? null; };
+  const _attachDoc = (doc: unknown, collectionName?: string) => {
+    attachedDoc = doc as MockYDoc;
+    attachedCollection = collectionName ?? null;
+  };
 
   const set = vi.fn((key: string, value: unknown) => {
     store[key] = value;
@@ -159,22 +174,37 @@ export const createMockYMap = () => {
         clientId: attachedDoc?.clientId ?? null,
         timestamp: Date.now(),
         txnId: attachedDoc?._currentTxnId ?? null,
-        opSeq: attachedDoc ? (++attachedDoc._opCounter) : null,
-  collection: attachedCollection ?? null,
-      }
+        opSeq: attachedDoc ? ++attachedDoc._opCounter : null,
+        collection: attachedCollection ?? null,
+      },
     };
     if (attachedDoc && attachedDoc.__inTransaction) queuedEvents.push(ev);
     else _notify(ev);
-    try { attachedDoc?._history?.push(ev); } catch {}
+    try {
+      attachedDoc?._history?.push(ev);
+    } catch {}
   });
 
   const get = vi.fn((key: string) => store[key]);
 
   const forEach = vi.fn((fn: (value: unknown, key: string) => void) => {
-    Object.keys(store).forEach(k => fn(store[k], k));
+    Object.keys(store).forEach((k) => fn(store[k], k));
   });
 
-  return { set, get, forEach, observe, unobserve, toJSON, _attachDoc, _flushQueued, _getQueuedEvents: () => [...queuedEvents], _clearQueued: () => { queuedEvents.splice(0, queuedEvents.length); } };
+  return {
+    set,
+    get,
+    forEach,
+    observe,
+    unobserve,
+    toJSON,
+    _attachDoc,
+    _flushQueued,
+    _getQueuedEvents: () => [...queuedEvents],
+    _clearQueued: () => {
+      queuedEvents.splice(0, queuedEvents.length);
+    },
+  };
 };
 
 // Note: createMockYMap above is the stateful implementation. No duplicate exports.
@@ -182,12 +212,15 @@ export const createMockYMap = () => {
 /**
  *
  */
-export function withMockYDoc(result: unknown, opts?: {
-  nodesArray?: unknown,
-  edgesArray?: unknown,
-  map?: unknown,
-  clientId?: string,
-}) {
+export function withMockYDoc(
+  result: unknown,
+  opts?: {
+    nodesArray?: unknown;
+    edgesArray?: unknown;
+    map?: unknown;
+    clientId?: string;
+  }
+) {
   const nodesArray = opts?.nodesArray ?? createMockYArray();
   const edgesArray = opts?.edgesArray ?? createMockYArray();
   const map = opts?.map ?? createMockYMap();
@@ -201,7 +234,8 @@ export function withMockYDoc(result: unknown, opts?: {
   ydoc._opCounter = 0;
   // record of flushed events for tests
   ydoc._history = [];
-  ydoc.clientId = opts?.clientId ?? `client-${Math.floor(Math.random()*10000)}`;
+  ydoc.clientId =
+    opts?.clientId ?? `client-${Math.floor(Math.random() * 10000)}`;
 
   ydoc.transact = vi.fn((fn: unknown) => {
     // mark transaction active for mocks that check it
@@ -215,21 +249,34 @@ export function withMockYDoc(result: unknown, opts?: {
     } finally {
       ydoc.__inTransaction = false;
       // flush queued events on arrays attached to the doc
-      try { nodesArray._flushQueued?.(); } catch {}
-      try { edgesArray._flushQueued?.(); } catch {}
-      try { map._flushQueued?.(); } catch {}
+      try {
+        nodesArray._flushQueued?.();
+      } catch {}
+      try {
+        edgesArray._flushQueued?.();
+      } catch {}
+      try {
+        map._flushQueued?.();
+      } catch {}
       // clear current txn id after flushing
       delete ydoc._currentTxnId;
     }
   });
 
   // attach doc so arrays/maps can check for transaction state and include metadata
-  try { nodesArray._attachDoc?.(ydoc); } catch {}
-  try { edgesArray._attachDoc?.(ydoc); } catch {}
-  try { map._attachDoc?.(ydoc); } catch {}
+  try {
+    nodesArray._attachDoc?.(ydoc);
+  } catch {}
+  try {
+    edgesArray._attachDoc?.(ydoc);
+  } catch {}
+  try {
+    map._attachDoc?.(ydoc);
+  } catch {}
 
   // getArray called for nodes then edges in many tests
-  ydoc.getArray = vi.fn()
+  ydoc.getArray = vi
+    .fn()
     .mockReturnValueOnce(nodesArray)
     .mockReturnValueOnce(edgesArray);
 

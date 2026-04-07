@@ -1,15 +1,15 @@
 /**
  * Level of Detail (LOD) System
- * 
+ *
  * Implements zoom-based rendering optimizations where distant/zoomed-out
  * elements are simplified or replaced with glyphs to maintain 60fps performance.
- * 
+ *
  * Features:
  * - Zoom threshold-based detail levels
  * - Glyph rendering for simplified elements
  * - Progressive rendering strategies
  * - Memory-efficient LOD switching
- * 
+ *
  * @module rendering/lodSystem
  */
 
@@ -110,23 +110,23 @@ export const QUALITY_LOD_CONFIG: LODConfig = {
 
 /**
  * Create an LOD system manager
- * 
+ *
  * @example
  * ```ts
  * const lod = createLODSystem({
  *   fullDetailThreshold: 0.8,
  * });
- * 
+ *
  * // Get rendering instructions for current zoom
  * const instructions = lod.getLODInstructions(elements, 0.5);
- * 
+ *
  * // Determine LOD level for specific zoom
  * const level = lod.getLODLevel(0.3); // => LODLevel.LOW
  * ```
  */
 export function createLODSystem(config: Partial<LODConfig> = {}) {
   const cfg = { ...DEFAULT_LOD_CONFIG, ...config };
-  
+
   // Type-specific configs
   const typeConfigs = new Map<string, ElementTypeLODConfig>();
 
@@ -156,19 +156,22 @@ export function createLODSystem(config: Partial<LODConfig> = {}) {
     elements: CanvasElement[],
     zoom: number
   ): LODRenderInstruction[] {
-    return elements.map(element => {
+    return elements.map((element) => {
       const typeConfig = typeConfigs.get(element.type);
       const elementConfig = typeConfig?.config || cfg;
-      
+
       const level = getLODLevelForElement(element, zoom, elementConfig);
-      
+
       return {
         elementId: element.id,
         level,
         showLabels: shouldShowLabels(level, zoom),
         showEffects: shouldShowEffects(level),
         showContent: shouldShowContent(level),
-        glyphSize: level === LODLevel.GLYPH ? calculateGlyphSize(element, zoom) : undefined,
+        glyphSize:
+          level === LODLevel.GLYPH
+            ? calculateGlyphSize(element, zoom)
+            : undefined,
       };
     });
   }
@@ -240,8 +243,8 @@ export function createLODSystem(config: Partial<LODConfig> = {}) {
     minLevel: LODLevel = LODLevel.GLYPH
   ): CanvasElement[] {
     const minLevelValue = getLODLevelValue(minLevel);
-    
-    return elements.filter(element => {
+
+    return elements.filter((element) => {
       const level = getLODLevelForElement(element, zoom);
       return getLODLevelValue(level) >= minLevelValue;
     });
@@ -252,12 +255,18 @@ export function createLODSystem(config: Partial<LODConfig> = {}) {
    */
   function getLODLevelValue(level: LODLevel): number {
     switch (level) {
-      case LODLevel.HIDDEN: return 0;
-      case LODLevel.GLYPH: return 1;
-      case LODLevel.LOW: return 2;
-      case LODLevel.MEDIUM: return 3;
-      case LODLevel.FULL: return 4;
-      default: return 0;
+      case LODLevel.HIDDEN:
+        return 0;
+      case LODLevel.GLYPH:
+        return 1;
+      case LODLevel.LOW:
+        return 2;
+      case LODLevel.MEDIUM:
+        return 3;
+      case LODLevel.FULL:
+        return 4;
+      default:
+        return 0;
     }
   }
 
@@ -277,7 +286,7 @@ export function createLODSystem(config: Partial<LODConfig> = {}) {
     level: LODLevel
   ): unknown {
     if (level === LODLevel.FULL) return null; // Use original geometry
-    
+
     // Return simplified representations
     switch (level) {
       case LODLevel.GLYPH:
@@ -363,7 +372,7 @@ export const ProgressiveRendering = {
     batchSize: number = 50
   ): CanvasElement[][] {
     const lod = createLODSystem();
-    
+
     // Sort by LOD priority (full detail first, then medium, etc.)
     const levelPriority: Record<LODLevel, number> = {
       [LODLevel.FULL]: 4,
@@ -427,9 +436,9 @@ export const LODTransitions = {
   ): number {
     const transitionZone = 0.05; // 5% transition zone
     const distance = Math.abs(zoom - threshold);
-    
+
     if (distance > transitionZone) return 1.0;
-    
+
     return distance / transitionZone;
   },
 
@@ -438,18 +447,22 @@ export const LODTransitions = {
    */
   isInTransitionZone(zoom: number, thresholds: number[]): boolean {
     const transitionZone = 0.05;
-    return thresholds.some(threshold =>
-      Math.abs(zoom - threshold) < transitionZone
+    return thresholds.some(
+      (threshold) => Math.abs(zoom - threshold) < transitionZone
     );
   },
 
   /**
    * Get blend factor between two LOD levels
    */
-  getBlendFactor(zoom: number, lowerThreshold: number, upperThreshold: number): number {
+  getBlendFactor(
+    zoom: number,
+    lowerThreshold: number,
+    upperThreshold: number
+  ): number {
     if (zoom <= lowerThreshold) return 0;
     if (zoom >= upperThreshold) return 1;
-    
+
     const range = upperThreshold - lowerThreshold;
     return (zoom - lowerThreshold) / range;
   },
@@ -477,7 +490,7 @@ export interface LODPerformanceMetrics {
 export function createLODPerformanceMonitor() {
   const frameTimes: number[] = [];
   const maxSamples = 60;
-  
+
   let lastFrameTime = performance.now();
   let metrics: LODPerformanceMetrics = {
     avgRenderTime: 0,
@@ -496,7 +509,10 @@ export function createLODPerformanceMonitor() {
   /**
    *
    */
-  function recordFrame(renderTime: number, instructions: LODRenderInstruction[]): void {
+  function recordFrame(
+    renderTime: number,
+    instructions: LODRenderInstruction[]
+  ): void {
     frameTimes.push(renderTime);
     if (frameTimes.length > maxSamples) {
       frameTimes.shift();
@@ -506,10 +522,15 @@ export function createLODPerformanceMonitor() {
     const deltaTime = now - lastFrameTime;
     lastFrameTime = now;
 
-    metrics.avgRenderTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    metrics.avgRenderTime =
+      frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
     metrics.fps = 1000 / deltaTime;
-    metrics.renderedCount = instructions.filter(i => i.level !== LODLevel.HIDDEN).length;
-    metrics.culledCount = instructions.filter(i => i.level === LODLevel.HIDDEN).length;
+    metrics.renderedCount = instructions.filter(
+      (i) => i.level !== LODLevel.HIDDEN
+    ).length;
+    metrics.culledCount = instructions.filter(
+      (i) => i.level === LODLevel.HIDDEN
+    ).length;
 
     // Calculate distribution
     const distribution: Record<LODLevel, number> = {
@@ -569,4 +590,6 @@ export type LODSystemInstance = ReturnType<typeof createLODSystem>;
 /**
  *
  */
-export type LODPerformanceMonitor = ReturnType<typeof createLODPerformanceMonitor>;
+export type LODPerformanceMonitor = ReturnType<
+  typeof createLODPerformanceMonitor
+>;

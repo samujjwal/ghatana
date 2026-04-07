@@ -45,7 +45,11 @@ export class DataTableUtils {
    * @param direction - Sort direction
    * @returns Comparison result
    */
-  static compareValues(a: unknown, b: unknown, direction: 'asc' | 'desc'): number {
+  static compareValues(
+    a: unknown,
+    b: unknown,
+    direction: 'asc' | 'desc'
+  ): number {
     // Handle null/undefined
     if (a == null && b == null) return 0;
     if (a == null) return direction === 'asc' ? 1 : -1;
@@ -212,7 +216,11 @@ export class DataTableUtils {
    * @param maxPages - Maximum pages to show
    * @returns Array of page numbers to display
    */
-  static getPageRange(currentPage: number, totalPages: number, maxPages = 5): number[] {
+  static getPageRange(
+    currentPage: number,
+    totalPages: number,
+    maxPages = 5
+  ): number[] {
     if (totalPages <= maxPages) {
       return Array.from({ length: totalPages }, (_, i) => i);
     }
@@ -250,9 +258,10 @@ export class DataTableUtils {
    * @returns Row ID
    */
   static getRowId<T>(row: T, idField: keyof T | string = 'id'): string {
-    const value = typeof idField === 'string' && idField.includes('.')
-      ? this.getNestedValue(row, idField)
-      : (row as Record<string, unknown>)[idField as string];
+    const value =
+      typeof idField === 'string' && idField.includes('.')
+        ? this.getNestedValue(row, idField)
+        : (row as Record<string, unknown>)[idField as string];
 
     return String(value ?? '');
   }

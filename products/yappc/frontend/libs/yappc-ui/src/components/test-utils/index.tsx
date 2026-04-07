@@ -6,7 +6,6 @@ import { ThemeProvider } from '../theme/ThemeContext';
 
 import type { ReactElement } from 'react';
 
-
 /**
  * Test utilities for component testing
  */
@@ -24,9 +23,7 @@ interface AllTheProvidersProps {
 function AllTheProviders({ children }: AllTheProvidersProps) {
   return (
     <ThemeProvider>
-      <ToastProvider>
-        {children}
-      </ToastProvider>
+      <ToastProvider>{children}</ToastProvider>
     </ThemeProvider>
   );
 }
@@ -65,7 +62,8 @@ export const mockEvent = (overrides = {}) => ({
 /**
  * Wait utilities
  */
-export const waitFor = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export const waitFor = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Mock intersection observer
@@ -75,15 +73,15 @@ export const mockIntersectionObserver = () => {
     /**
      *
      */
-    constructor() { }
+    constructor() {}
     /**
      *
      */
-    disconnect() { }
+    disconnect() {}
     /**
      *
      */
-    observe() { }
+    observe() {}
     /**
      *
      */
@@ -93,7 +91,7 @@ export const mockIntersectionObserver = () => {
     /**
      *
      */
-    unobserve() { }
+    unobserve() {}
   } as unknown;
 };
 
@@ -105,19 +103,19 @@ export const mockResizeObserver = () => {
     /**
      *
      */
-    constructor() { }
+    constructor() {}
     /**
      *
      */
-    disconnect() { }
+    disconnect() {}
     /**
      *
      */
-    observe() { }
+    observe() {}
     /**
      *
      */
-    unobserve() { }
+    unobserve() {}
   } as unknown;
 };
 
@@ -155,7 +153,7 @@ export const mockLocalStorage = () => {
       delete store[key];
     }),
     clear: vi.fn(() => {
-      Object.keys(store).forEach(key => delete store[key]);
+      Object.keys(store).forEach((key) => delete store[key]);
     }),
   };
 
@@ -169,7 +167,11 @@ export const mockLocalStorage = () => {
 /**
  * Create mock file
  */
-export const createMockFile = (name = 'test.txt', size = 1024, type = 'text/plain') => {
+export const createMockFile = (
+  name = 'test.txt',
+  size = 1024,
+  type = 'text/plain'
+) => {
   const file = new File(['test content'], name, { type });
   Object.defineProperty(file, 'size', { value: size });
   return file;

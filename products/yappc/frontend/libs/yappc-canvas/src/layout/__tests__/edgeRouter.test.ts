@@ -153,7 +153,9 @@ describe('edgeRouter', () => {
       });
 
       // Larger padding typically requires longer path
-      expect(routeLargePadding.length).toBeGreaterThanOrEqual(routeSmallPadding.length);
+      expect(routeLargePadding.length).toBeGreaterThanOrEqual(
+        routeSmallPadding.length
+      );
     });
 
     it('should fallback to simple routing if pathfinding fails', () => {
@@ -252,7 +254,9 @@ describe('edgeRouter', () => {
     it('should throw error for less than 2 waypoints', () => {
       const waypoints: Waypoint[] = [{ id: 'w1', x: 0, y: 0 }];
 
-      expect(() => routeWithWaypoints(waypoints)).toThrow('At least 2 waypoints required');
+      expect(() => routeWithWaypoints(waypoints)).toThrow(
+        'At least 2 waypoints required'
+      );
     });
 
     it('should support bezier routing through waypoints', () => {
@@ -303,11 +307,10 @@ describe('edgeRouter', () => {
         { id: 'w3', x: 200, y: 0 },
       ];
 
-      const { waypoints: updated, route } = updateWaypoint(
-        waypoints,
-        'w2',
-        { x: 150, y: 75 }
-      );
+      const { waypoints: updated, route } = updateWaypoint(waypoints, 'w2', {
+        x: 150,
+        y: 75,
+      });
 
       expect(updated).toHaveLength(3);
       expect(updated[1]).toEqual({ id: 'w2', x: 150, y: 75 });
@@ -321,11 +324,10 @@ describe('edgeRouter', () => {
         { id: 'w3', x: 200, y: 0 },
       ];
 
-      const { waypoints: updated } = updateWaypoint(
-        waypoints,
-        'w2',
-        { x: 150, y: 75 }
-      );
+      const { waypoints: updated } = updateWaypoint(waypoints, 'w2', {
+        x: 150,
+        y: 75,
+      });
 
       expect(updated[0]).toEqual(waypoints[0]);
       expect(updated[2]).toEqual(waypoints[2]);
@@ -338,8 +340,14 @@ describe('edgeRouter', () => {
         { id: 'w3', x: 200, y: 0 },
       ];
 
-      const { route: route1 } = updateWaypoint(waypoints, 'w2', { x: 100, y: 0 });
-      const { route: route2 } = updateWaypoint(waypoints, 'w2', { x: 100, y: 100 });
+      const { route: route1 } = updateWaypoint(waypoints, 'w2', {
+        x: 100,
+        y: 0,
+      });
+      const { route: route2 } = updateWaypoint(waypoints, 'w2', {
+        x: 100,
+        y: 100,
+      });
 
       // Moving waypoint should change route length
       expect(route2.length).toBeGreaterThan(route1.length);
@@ -352,7 +360,10 @@ describe('edgeRouter', () => {
         { id: 'w3', x: 200, y: 0, draggable: true },
       ];
 
-      const { waypoints: updated } = updateWaypoint(waypoints, 'w2', { x: 150, y: 75 });
+      const { waypoints: updated } = updateWaypoint(waypoints, 'w2', {
+        x: 150,
+        y: 75,
+      });
 
       expect(updated[1].draggable).toBe(false);
     });
@@ -388,9 +399,7 @@ describe('edgeRouter', () => {
     });
 
     it('should generate unique waypoint ID', () => {
-      const waypoints: Waypoint[] = [
-        { id: 'w1', x: 0, y: 0 },
-      ];
+      const waypoints: Waypoint[] = [{ id: 'w1', x: 0, y: 0 }];
 
       const updated1 = addWaypoint(waypoints, { x: 50, y: 50 });
       const updated2 = addWaypoint(waypoints, { x: 100, y: 100 });
@@ -399,9 +408,7 @@ describe('edgeRouter', () => {
     });
 
     it('should add at beginning', () => {
-      const waypoints: Waypoint[] = [
-        { id: 'w1', x: 100, y: 100 },
-      ];
+      const waypoints: Waypoint[] = [{ id: 'w1', x: 100, y: 100 }];
 
       const updated = addWaypoint(waypoints, { x: 0, y: 0 }, 0);
 

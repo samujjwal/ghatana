@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - IDE Collaboration Hook
- * 
+ *
  * React hook for managing IDE collaboration features including
  * real-time synchronization, presence tracking, and conflict resolution.
- * 
+ *
  * @doc.type hook
  * @doc.purpose IDE collaboration management
  * @doc.layer product
@@ -67,7 +67,11 @@ export interface UseIDECollaborationReturn {
   /** Apply local operation */
   applyOperation: (operation: CRDTOperation) => Promise<boolean>;
   /** Create file */
-  createFile: (path: string, content: string, language: string) => Promise<boolean>;
+  createFile: (
+    path: string,
+    content: string,
+    language: string
+  ) => Promise<boolean>;
   /** Update file content */
   updateFileContent: (fileId: string, content: string) => Promise<boolean>;
   /** Delete file */
@@ -89,8 +93,16 @@ export interface UseIDECollaborationReturn {
  */
 function generateUserColor(): string {
   const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#FFD93D', '#6BCB77', '#FF6B9D',
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FFEAA7',
+    '#DDA0DD',
+    '#98D8C8',
+    '#FFD93D',
+    '#6BCB77',
+    '#FF6B9D',
   ];
   return colors[Math.floor(Math.random() * colors.length)];
 }
@@ -108,7 +120,7 @@ function createVectorClock(replicaId: string, timestamp: number): VectorClock {
 
 /**
  * IDE Collaboration Hook
- * 
+ *
  * @doc.param config - Hook configuration
  * @doc.returns Collaboration utilities and state
  */
@@ -150,7 +162,11 @@ export function useIDECollaboration(
         yDocRef.current = new Y.Doc();
 
         // Initialize WebSocket provider
-        providerRef.current = new WebsocketProvider(websocketUrl, roomId, yDocRef.current);
+        providerRef.current = new WebsocketProvider(
+          websocketUrl,
+          roomId,
+          yDocRef.current
+        );
 
         // Initialize IDE state
         const initialState = createInitialIDEState();
@@ -192,7 +208,8 @@ export function useIDECollaboration(
           });
 
           providerRef.current.awareness.on('change', () => {
-            const states = providerRef.current?.awareness.getStates() || new Map();
+            const states =
+              providerRef.current?.awareness.getStates() || new Map();
             const presenceMap: Record<string, IDEPresence> = {};
 
             for (const [key, state] of states) {
@@ -215,7 +232,6 @@ export function useIDECollaboration(
 
         // Load initial state
         await loadState();
-
       } catch (error) {
         console.error('Failed to initialize collaboration:', error);
       }
@@ -264,132 +280,147 @@ export function useIDECollaboration(
   }, [activeFile, userId, userName, userColor, enablePresence]);
 
   // Apply operation
-  const applyOperation = useCallback(async (operation: CRDTOperation): Promise<boolean> => {
-    if (!ideHandlerRef.current) return false;
+  const applyOperation = useCallback(
+    async (operation: CRDTOperation): Promise<boolean> => {
+      if (!ideHandlerRef.current) return false;
 
-    try {
-      const result = ideHandlerRef.current.applyOperation(operation);
+      try {
+        const result = ideHandlerRef.current.applyOperation(operation);
 
-      if (result.success) {
-        // Update local state
-        const newState = ideHandlerRef.current.getState();
-        setIDEState(newState as unknown as IDEState);
+        if (result.success) {
+          // Update local state
+          const newState = ideHandlerRef.current.getState();
+          setIDEState(newState as unknown as IDEState);
 
-        // Broadcast to other clients
-        if (enableRealTime && providerRef.current) {
-          const yMap = yDocRef.current?.getMap('operations');
-          if (yMap) {
-            yMap.set(operation.id, operation);
+          // Broadcast to other clients
+          if (enableRealTime && providerRef.current) {
+            const yMap = yDocRef.current?.getMap('operations');
+            if (yMap) {
+              yMap.set(operation.id, operation);
+            }
           }
-        }
 
-        return true;
-      } else {
-        console.error('Operation failed:', result.error);
+          return true;
+        } else {
+          console.error('Operation failed:', result.error);
+          return false;
+        }
+      } catch (error) {
+        console.error('Error applying operation:', error);
         return false;
       }
-    } catch (error) {
-      console.error('Error applying operation:', error);
-      return false;
-    }
-  }, [enableRealTime, setIDEState]);
+    },
+    [enableRealTime, setIDEState]
+  );
 
   // Create file
-  const createFile = useCallback(async (
-    path: string,
-    content: string,
-    language: string
-  ): Promise<boolean> => {
-    const operation = {
-      id: `file-${Date.now()}-${Math.random()}`,
-      replicaId: userId,
-      type: 'insert' as const,
-      targetId: 'ide-workspace',
-      vectorClock: createVectorClock(userId, Date.now()),
-      data: {
-        path,
-        content,
-        language,
-        metadata: {
-          createdAt: Date.now(),
-          size: content.length,
+  const createFile = useCallback(
+    async (
+      path: string,
+      content: string,
+      language: string
+    ): Promise<boolean> => {
+      const operation = {
+        id: `file-${Date.now()}-${Math.random()}`,
+        replicaId: userId,
+        type: 'insert' as const,
+        targetId: 'ide-workspace',
+        vectorClock: createVectorClock(userId, Date.now()),
+        data: {
+          path,
+          content,
+          language,
+          metadata: {
+            createdAt: Date.now(),
+            size: content.length,
+          },
         },
-      },
-      timestamp: Date.now(),
-      parents: [],
-    };
+        timestamp: Date.now(),
+        parents: [],
+      };
 
-    return applyOperation(operation);
-  }, [userId, applyOperation]);
+      return applyOperation(operation);
+    },
+    [userId, applyOperation]
+  );
 
   // Update file content
-  const updateFileContent = useCallback(async (
-    fileId: string,
-    content: string
-  ): Promise<boolean> => {
-    const operation = {
-      id: `update-${Date.now()}-${Math.random()}`,
-      replicaId: userId,
-      type: 'update' as const,
-      targetId: 'ide-workspace',
-      vectorClock: createVectorClock(userId, Date.now()),
-      data: {
-        fileId,
-        changes: [
-          { index: 0, delete: 999999 }, // Delete all existing content
-          { index: 0, insert: content }, // Insert new content
-        ],
-      },
-      timestamp: Date.now(),
-      parents: [],
-    };
+  const updateFileContent = useCallback(
+    async (fileId: string, content: string): Promise<boolean> => {
+      const operation = {
+        id: `update-${Date.now()}-${Math.random()}`,
+        replicaId: userId,
+        type: 'update' as const,
+        targetId: 'ide-workspace',
+        vectorClock: createVectorClock(userId, Date.now()),
+        data: {
+          fileId,
+          changes: [
+            { index: 0, delete: 999999 }, // Delete all existing content
+            { index: 0, insert: content }, // Insert new content
+          ],
+        },
+        timestamp: Date.now(),
+        parents: [],
+      };
 
-    return applyOperation(operation);
-  }, [userId, applyOperation]);
+      return applyOperation(operation);
+    },
+    [userId, applyOperation]
+  );
 
   // Delete file
-  const deleteFile = useCallback(async (fileId: string): Promise<boolean> => {
-    const operation = {
-      id: `delete-${Date.now()}-${Math.random()}`,
-      replicaId: userId,
-      type: 'delete' as const,
-      targetId: 'ide-workspace',
-      vectorClock: createVectorClock(userId, Date.now()),
-      data: { fileId },
-      timestamp: Date.now(),
-      parents: [],
-    };
+  const deleteFile = useCallback(
+    async (fileId: string): Promise<boolean> => {
+      const operation = {
+        id: `delete-${Date.now()}-${Math.random()}`,
+        replicaId: userId,
+        type: 'delete' as const,
+        targetId: 'ide-workspace',
+        vectorClock: createVectorClock(userId, Date.now()),
+        data: { fileId },
+        timestamp: Date.now(),
+        parents: [],
+      };
 
-    return applyOperation(operation);
-  }, [userId, applyOperation]);
+      return applyOperation(operation);
+    },
+    [userId, applyOperation]
+  );
 
   // Update cursor position
-  const updateCursorPosition = useCallback((line: number, column: number) => {
-    if (!enablePresence || !providerRef.current?.awareness) return;
+  const updateCursorPosition = useCallback(
+    (line: number, column: number) => {
+      if (!enablePresence || !providerRef.current?.awareness) return;
 
-    providerRef.current.awareness.setLocalStateField('user', {
-      userId,
-      userName,
-      userColor,
-      activeFileId: activeFile?.id || null,
-      cursorPosition: { line, column },
-      lastActivity: Date.now(),
-    });
-  }, [userId, userName, userColor, activeFile, enablePresence]);
+      providerRef.current.awareness.setLocalStateField('user', {
+        userId,
+        userName,
+        userColor,
+        activeFileId: activeFile?.id || null,
+        cursorPosition: { line, column },
+        lastActivity: Date.now(),
+      });
+    },
+    [userId, userName, userColor, activeFile, enablePresence]
+  );
 
   // Update active file
-  const updateActiveFile = useCallback((fileId: string | null) => {
-    if (!enablePresence || !providerRef.current?.awareness) return;
+  const updateActiveFile = useCallback(
+    (fileId: string | null) => {
+      if (!enablePresence || !providerRef.current?.awareness) return;
 
-    providerRef.current.awareness.setLocalStateField('user', {
-      userId,
-      userName,
-      userColor,
-      activeFileId: fileId,
-      cursorPosition: null,
-      lastActivity: Date.now(),
-    });
-  }, [userId, userName, userColor, enablePresence]);
+      providerRef.current.awareness.setLocalStateField('user', {
+        userId,
+        userName,
+        userColor,
+        activeFileId: fileId,
+        cursorPosition: null,
+        lastActivity: Date.now(),
+      });
+    },
+    [userId, userName, userColor, enablePresence]
+  );
 
   // Get file content
   const getFileContent = useCallback((fileId: string): string => {
@@ -405,12 +436,15 @@ export function useIDECollaboration(
       const state = ideHandlerRef.current.getState();
 
       // Save to localStorage as backup
-      localStorage.setItem('ide-state-backup', JSON.stringify({
-        files: Array.from(state.files.entries()),
-        folders: Array.from(state.folders.entries()),
-        settings: state.settings,
-        timestamp: Date.now(),
-      }));
+      localStorage.setItem(
+        'ide-state-backup',
+        JSON.stringify({
+          files: Array.from(state.files.entries()),
+          folders: Array.from(state.folders.entries()),
+          settings: state.settings,
+          timestamp: Date.now(),
+        })
+      );
 
       // Save to server if connected
       if (enableRealTime && providerRef.current) {
@@ -471,33 +505,36 @@ export function useIDECollaboration(
   }, [enableRealTime, loadState]);
 
   // Memoized return value
-  return useMemo(() => ({
-    state: ideState,
-    presence,
-    userId,
-    isConnected: isConnectedRef.current,
-    isSyncing: isSyncingRef.current,
-    applyOperation,
-    createFile,
-    updateFileContent,
-    deleteFile,
-    updateCursorPosition,
-    updateActiveFile,
-    getFileContent,
-    saveState,
-    forceSync,
-  }), [
-    ideState,
-    presence,
-    userId,
-    applyOperation,
-    createFile,
-    updateFileContent,
-    deleteFile,
-    updateCursorPosition,
-    updateActiveFile,
-    getFileContent,
-    saveState,
-    forceSync,
-  ]);
+  return useMemo(
+    () => ({
+      state: ideState,
+      presence,
+      userId,
+      isConnected: isConnectedRef.current,
+      isSyncing: isSyncingRef.current,
+      applyOperation,
+      createFile,
+      updateFileContent,
+      deleteFile,
+      updateCursorPosition,
+      updateActiveFile,
+      getFileContent,
+      saveState,
+      forceSync,
+    }),
+    [
+      ideState,
+      presence,
+      userId,
+      applyOperation,
+      createFile,
+      updateFileContent,
+      deleteFile,
+      updateCursorPosition,
+      updateActiveFile,
+      getFileContent,
+      saveState,
+      forceSync,
+    ]
+  );
 }

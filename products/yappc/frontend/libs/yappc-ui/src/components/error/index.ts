@@ -1,9 +1,9 @@
 /**
  * Error Boundary Module
- * 
+ *
  * Comprehensive error handling framework with boundaries,
  * fallback components, reporting, and hooks.
- * 
+ *
  * @module ui/error
  * @doc.type module
  * @doc.purpose Error handling infrastructure
@@ -15,7 +15,10 @@ export { ErrorBoundary } from './ErrorBoundary';
 export type { ErrorBoundaryProps } from './ErrorBoundary';
 
 // Auth-Aware Error Boundary
-export { AuthErrorBoundary, AuthErrorBoundaryWithContext } from './AuthErrorBoundary';
+export {
+  AuthErrorBoundary,
+  AuthErrorBoundaryWithContext,
+} from './AuthErrorBoundary';
 export type { AuthErrorBoundaryProps } from './AuthErrorBoundary';
 
 // Error Fallback Components
@@ -45,18 +48,10 @@ export {
   getErrorReporter,
   reportError,
 } from './errorReporter';
-export type {
-  ErrorContext,
-  ErrorReport,
-  ErrorReporter,
-} from './errorReporter';
+export type { ErrorContext, ErrorReport, ErrorReporter } from './errorReporter';
 
 // Error Hooks
-export {
-  useErrorHandler,
-  useErrorReset,
-  useAsyncError,
-} from './hooks';
+export { useErrorHandler, useErrorReset, useAsyncError } from './hooks';
 
 // ============================================================================
 // Usage Examples
@@ -101,27 +96,27 @@ import { reportError } from '@yappc/ui';
 
 /**
  * @example Programmatic Error Handling
- * 
+ *
  * import { useErrorHandler } from '@yappc/ui';
- * 
+ *
  * function MyComponent() {
  *   const { error, clearError, tryCatchAsync } = useErrorHandler();
- *   
+ *
  *   const loadData = async () => {
  *     const result = await tryCatchAsync(async () => {
  *       const response = await fetch('/api/data');
  *       return response.json();
  *     });
- *     
+ *
  *     if (result) {
  *       // Handle success
  *     }
  *   };
- *   
+ *
  *   if (error) {
  *     return <ErrorDisplay error={error} onDismiss={clearError} />;
  *   }
- *   
+ *
  *   return <button onClick={loadData}>Load Data</button>;
  * }
  */
@@ -174,16 +169,16 @@ import { useErrorReset } from '@yappc/ui';
 
 /**
  * @example Async Error in Error Boundary
- * 
+ *
  * import { useAsyncError } from '@yappc/ui';
- * 
+ *
  * function MyComponent() {
  *   const throwError = useAsyncError();
- *   
+ *
  *   useEffect(() => {
  *     fetchData().catch(throwError);
  *   }, []);
- *   
+ *
  *   return <div>My Component</div>;
  * }
  */

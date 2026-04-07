@@ -32,7 +32,10 @@ import { BaseRepository } from '../repository.base';
  * @doc.layer product
  * @doc.pattern Repository
  */
-export class CanvasRepository extends BaseRepository<CanvasDocument, 'canvasDocument'> {
+export class CanvasRepository extends BaseRepository<
+  CanvasDocument,
+  'canvasDocument'
+> {
   /**
    * Creates a new CanvasRepository instance.
    *

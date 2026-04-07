@@ -1,6 +1,6 @@
 /**
  * Shape tokens for the design system
- * 
+ *
  * These tokens define the border radius and other shape-related
  * properties for consistent component styling.
  */

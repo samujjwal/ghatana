@@ -346,7 +346,10 @@ export class RBACEnforcer {
   /**
    * Get policy for resource
    */
-  getPolicy(resourceType: ResourceType, resourceId: string): AccessPolicy | undefined {
+  getPolicy(
+    resourceType: ResourceType,
+    resourceId: string
+  ): AccessPolicy | undefined {
     const policyKey = `${resourceType}:${resourceId}`;
     return this.state.policies.get(policyKey);
   }

@@ -20,7 +20,10 @@ export default meta;
 type Story = StoryObj<typeof Stepper>;
 
 const steps = [
-  { label: 'Select campaign settings', description: 'Choose your campaign type' },
+  {
+    label: 'Select campaign settings',
+    description: 'Choose your campaign type',
+  },
   { label: 'Create an ad group', description: 'Set up your ad group' },
   { label: 'Create an ad', description: 'Design your advertisement' },
 ];
@@ -187,9 +190,16 @@ export const FormWizard: Story = {
     const [completed, setCompleted] = React.useState<number[]>([]);
 
     const formSteps = [
-      { label: 'Account Information', description: 'Enter your account details' },
+      {
+        label: 'Account Information',
+        description: 'Enter your account details',
+      },
       { label: 'Personal Details', description: 'Tell us about yourself' },
-      { label: 'Preferences', description: 'Customize your experience', optional: true },
+      {
+        label: 'Preferences',
+        description: 'Customize your experience',
+        optional: true,
+      },
       { label: 'Review & Submit', description: 'Confirm your information' },
     ];
 
@@ -220,8 +230,12 @@ export const FormWizard: Story = {
         <div className="mt-8 p-6 bg-grey-50 rounded-lg min-h-[200px]">
           {activeStep < formSteps.length ? (
             <>
-              <h3 className="text-lg font-semibold mb-2">{formSteps[activeStep].label}</h3>
-              <p className="text-sm text-grey-600 mb-4">{formSteps[activeStep].description}</p>
+              <h3 className="text-lg font-semibold mb-2">
+                {formSteps[activeStep].label}
+              </h3>
+              <p className="text-sm text-grey-600 mb-4">
+                {formSteps[activeStep].description}
+              </p>
               <div className="text-sm text-grey-500">
                 Form content for step {activeStep + 1} would go here...
               </div>
@@ -229,8 +243,12 @@ export const FormWizard: Story = {
           ) : (
             <div className="text-center py-8">
               <div className="text-5xl mb-4">✅</div>
-              <h3 className="text-lg font-semibold mb-2">All steps completed!</h3>
-              <p className="text-sm text-grey-600">Your account has been created successfully.</p>
+              <h3 className="text-lg font-semibold mb-2">
+                All steps completed!
+              </h3>
+              <p className="text-sm text-grey-600">
+                Your account has been created successfully.
+              </p>
             </div>
           )}
         </div>
@@ -316,11 +334,7 @@ export const DarkMode: Story = {
     <div className="bg-grey-900 p-8 rounded-lg">
       <div className="mb-8">
         <p className="text-white text-sm mb-4">Horizontal</p>
-        <Stepper
-          steps={steps}
-          activeStep={1}
-          completed={[0]}
-        />
+        <Stepper steps={steps} activeStep={1} completed={[0]} />
       </div>
       <div>
         <p className="text-white text-sm mb-4">Vertical</p>

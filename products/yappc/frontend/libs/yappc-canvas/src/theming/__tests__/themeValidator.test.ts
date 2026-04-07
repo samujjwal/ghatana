@@ -5,13 +5,18 @@
 import { describe, it, expect } from 'vitest';
 
 import { LIGHT_THEME, DARK_THEME } from '../themeManager';
-import { validateTheme, validateThemeJSON, checkContrast, CanvasThemeSchema } from '../themeValidator';
+import {
+  validateTheme,
+  validateThemeJSON,
+  checkContrast,
+  CanvasThemeSchema,
+} from '../themeValidator';
 
 describe.skip('Theme Validator', () => {
   describe('validateTheme', () => {
     it('should validate valid light theme', () => {
       const result = validateTheme(LIGHT_THEME);
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
       expect(result.theme).toEqual(LIGHT_THEME);
@@ -19,7 +24,7 @@ describe.skip('Theme Validator', () => {
 
     it('should validate valid dark theme', () => {
       const result = validateTheme(DARK_THEME);
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -32,9 +37,9 @@ describe.skip('Theme Validator', () => {
           background: 'invalid-color',
         },
       };
-      
+
       const result = validateTheme(invalidTheme);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
       expect(result.errors[0]).toContain('colors.background');
@@ -48,9 +53,9 @@ describe.skip('Theme Validator', () => {
           xs: 150, // Max is 100
         },
       };
-      
+
       const result = validateTheme(invalidTheme);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain('spacing.xs');
     });
@@ -66,9 +71,9 @@ describe.skip('Theme Validator', () => {
           },
         },
       };
-      
+
       const result = validateTheme(invalidTheme);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain('typography.fontSize.md');
     });
@@ -80,9 +85,9 @@ describe.skip('Theme Validator', () => {
           // Missing required color fields
         },
       };
-      
+
       const result = validateTheme(incomplete);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -92,14 +97,14 @@ describe.skip('Theme Validator', () => {
     it('should validate valid JSON theme string', () => {
       const json = JSON.stringify(LIGHT_THEME);
       const result = validateThemeJSON(json);
-      
+
       expect(result.valid).toBe(true);
       expect(result.theme).toEqual(LIGHT_THEME);
     });
 
     it('should reject invalid JSON', () => {
       const result = validateThemeJSON('{ invalid json }');
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors[0]).toContain('Invalid JSON');
     });
@@ -110,10 +115,10 @@ describe.skip('Theme Validator', () => {
           background: 'not-a-hex-color',
         },
       };
-      
+
       const json = JSON.stringify(invalidTheme);
       const result = validateThemeJSON(json);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -122,7 +127,7 @@ describe.skip('Theme Validator', () => {
   describe('checkContrast', () => {
     it('should pass contrast check for light theme', () => {
       const result = checkContrast(LIGHT_THEME);
-      
+
       // Light theme should have good contrast
       expect(result.sufficient).toBe(true);
       expect(result.warnings).toHaveLength(0);
@@ -130,7 +135,7 @@ describe.skip('Theme Validator', () => {
 
     it('should pass contrast check for dark theme', () => {
       const result = checkContrast(DARK_THEME);
-      
+
       expect(result.sufficient).toBe(true);
       expect(result.warnings).toHaveLength(0);
     });
@@ -144,9 +149,9 @@ describe.skip('Theme Validator', () => {
           selection: '#f0f0f0', // Very low contrast with white
         },
       };
-      
+
       const result = checkContrast(lowContrastTheme);
-      
+
       expect(result.sufficient).toBe(false);
       expect(result.warnings.length).toBeGreaterThan(0);
       expect(result.warnings[0]).toContain('Selection color contrast');
@@ -161,9 +166,9 @@ describe.skip('Theme Validator', () => {
           selection: '#ffffff', // White - maximum contrast
         },
       };
-      
+
       const result = checkContrast(theme);
-      
+
       // Black and white should have excellent contrast (21:1)
       expect(result.sufficient).toBe(true);
     });
@@ -172,7 +177,7 @@ describe.skip('Theme Validator', () => {
   describe('Zod Schema', () => {
     it('should parse valid theme with Zod', () => {
       const result = CanvasThemeSchema.safeParse(LIGHT_THEME);
-      
+
       expect(result.success).toBe(true);
     });
 
@@ -184,9 +189,9 @@ describe.skip('Theme Validator', () => {
           background: '#fff', // Should be 6 digits
         },
       };
-      
+
       const result = CanvasThemeSchema.safeParse(invalid);
-      
+
       expect(result.success).toBe(false);
     });
 
@@ -198,9 +203,9 @@ describe.skip('Theme Validator', () => {
           xs: -5,
         },
       };
-      
+
       const result = CanvasThemeSchema.safeParse(invalid);
-      
+
       expect(result.success).toBe(false);
     });
   });

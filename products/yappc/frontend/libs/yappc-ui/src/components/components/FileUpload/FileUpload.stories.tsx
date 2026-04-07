@@ -162,7 +162,9 @@ export const AvatarUpload: Story = {
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Profile Picture</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Profile Picture
+        </label>
         <FileUpload
           accept="image/jpeg,image/png,image/webp"
           maxSize={2 * 1024 * 1024}
@@ -186,7 +188,9 @@ export const DocumentUpload: Story = {
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Upload Documents</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Upload Documents
+        </label>
         <FileUpload
           accept=".pdf,.doc,.docx,.txt"
           multiple
@@ -216,7 +220,9 @@ export const GalleryUpload: Story = {
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Photo Gallery</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Photo Gallery
+        </label>
         <FileUpload
           accept="image/*"
           multiple

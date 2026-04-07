@@ -10,7 +10,6 @@ import type {
 } from './types';
 import { DEFAULT_SHORTCUTS, ShortcutUtils } from './utils';
 
-
 /**
  * Keyboard shortcut registry with full management capabilities
  *

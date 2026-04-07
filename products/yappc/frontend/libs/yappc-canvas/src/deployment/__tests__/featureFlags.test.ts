@@ -28,7 +28,7 @@ describe('Feature Flags System', () => {
   describe('Manager Creation', () => {
     it('should create feature flags manager with default config', () => {
       const manager = createFeatureFlagsManager();
-      
+
       expect(manager).toBeDefined();
       expect(manager.flags).toBeInstanceOf(Map);
       expect(manager.flags.size).toBe(0);
@@ -44,7 +44,7 @@ describe('Feature Flags System', () => {
         environment: 'development',
         defaultContext: { userId: 'test-user' },
       });
-      
+
       expect(manager.config.enableAnalytics).toBe(false);
       expect(manager.config.environment).toBe('development');
       expect(manager.config.defaultContext).toEqual({ userId: 'test-user' });
@@ -54,7 +54,7 @@ describe('Feature Flags System', () => {
       const manager = createFeatureFlagsManager({
         environment: 'staging',
       });
-      
+
       expect(manager.config.environment).toBe('staging');
       expect(manager.config.enableAnalytics).toBe(true); // default preserved
     });
@@ -77,7 +77,7 @@ describe('Feature Flags System', () => {
       };
 
       registerFlag(manager, flag);
-      
+
       expect(manager.flags.has('test_feature')).toBe(true);
       expect(manager.flags.get('test_feature')).toEqual(flag);
     });
@@ -91,7 +91,7 @@ describe('Feature Flags System', () => {
       };
 
       registerFlag(manager, flag);
-      
+
       const registered = manager.flags.get('api_endpoint');
       expect(registered?.type).toBe('string');
       expect(registered?.defaultValue).toBe('https://api.example.com');
@@ -106,7 +106,7 @@ describe('Feature Flags System', () => {
       };
 
       registerFlag(manager, flag);
-      
+
       const registered = manager.flags.get('max_retries');
       expect(registered?.type).toBe('number');
       expect(registered?.defaultValue).toBe(3);
@@ -114,13 +114,23 @@ describe('Feature Flags System', () => {
 
     it('should register multiple flags at once', () => {
       const flags: FeatureFlag[] = [
-        { key: 'feature1', type: 'boolean', defaultValue: false, enabled: true },
+        {
+          key: 'feature1',
+          type: 'boolean',
+          defaultValue: false,
+          enabled: true,
+        },
         { key: 'feature2', type: 'boolean', defaultValue: true, enabled: true },
-        { key: 'feature3', type: 'string', defaultValue: 'test', enabled: true },
+        {
+          key: 'feature3',
+          type: 'string',
+          defaultValue: 'test',
+          enabled: true,
+        },
       ];
 
       registerFlags(manager, flags);
-      
+
       expect(manager.flags.size).toBe(3);
       expect(manager.flags.has('feature1')).toBe(true);
       expect(manager.flags.has('feature2')).toBe(true);
@@ -134,7 +144,7 @@ describe('Feature Flags System', () => {
         defaultValue: false,
         enabled: true,
       };
-      
+
       const flag2: FeatureFlag = {
         key: 'test',
         type: 'boolean',
@@ -145,7 +155,7 @@ describe('Feature Flags System', () => {
 
       registerFlag(manager, flag1);
       registerFlag(manager, flag2);
-      
+
       expect(manager.flags.size).toBe(1);
       expect(manager.flags.get('test')?.defaultValue).toBe(true);
       expect(manager.flags.get('test')?.description).toBe('Updated');
@@ -165,7 +175,7 @@ describe('Feature Flags System', () => {
 
     it('should get flag by key', () => {
       const flag = getFlag(manager, 'flag1');
-      
+
       expect(flag).toBeDefined();
       expect(flag?.key).toBe('flag1');
     });
@@ -177,10 +187,10 @@ describe('Feature Flags System', () => {
 
     it('should get all flags', () => {
       const flags = getAllFlags(manager);
-      
+
       expect(flags.length).toBe(2);
-      expect(flags.find(f => f.key === 'flag1')).toBeDefined();
-      expect(flags.find(f => f.key === 'flag2')).toBeDefined();
+      expect(flags.find((f) => f.key === 'flag1')).toBeDefined();
+      expect(flags.find((f) => f.key === 'flag2')).toBeDefined();
     });
   });
 
@@ -199,9 +209,9 @@ describe('Feature Flags System', () => {
 
     it('should unregister flag', () => {
       expect(manager.flags.has('test')).toBe(true);
-      
+
       const result = unregisterFlag(manager, 'test');
-      
+
       expect(result).toBe(true);
       expect(manager.flags.has('test')).toBe(false);
     });
@@ -221,7 +231,7 @@ describe('Feature Flags System', () => {
 
     it('should return default false for non-existent flag', () => {
       const result = evaluateFlag(manager, 'non_existent', {});
-      
+
       expect(result.key).toBe('non_existent');
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
@@ -236,7 +246,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'simple_flag', {});
-      
+
       expect(result.key).toBe('simple_flag');
       expect(result.value).toBe(true);
       expect(result.reason).toBe('default');
@@ -251,7 +261,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'disabled_flag', {});
-      
+
       expect(result.value).toBe(true); // Returns default value when disabled
       expect(result.reason).toBe('default');
     });
@@ -265,7 +275,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'api_url', {});
-      
+
       expect(result.value).toBe('https://api.com');
     });
 
@@ -278,7 +288,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'timeout', {});
-      
+
       expect(result.value).toBe(5000);
     });
   });
@@ -301,8 +311,10 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'user_targeted', { userId: 'user-123' });
-      
+      const result = evaluateFlag(manager, 'user_targeted', {
+        userId: 'user-123',
+      });
+
       expect(result.value).toBe(true);
       expect(result.reason).toBe('targeting');
     });
@@ -318,8 +330,10 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'user_targeted', { userId: 'user-789' });
-      
+      const result = evaluateFlag(manager, 'user_targeted', {
+        userId: 'user-789',
+      });
+
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
     });
@@ -336,7 +350,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'user_targeted', {});
-      
+
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
     });
@@ -364,8 +378,10 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      
+      const result = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+
       expect(result.value).toBe(true);
       expect(result.reason).toBe('rollout');
     });
@@ -385,8 +401,10 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      
+      const result = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
     });
@@ -406,10 +424,16 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result1 = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      const result2 = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      const result3 = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      
+      const result1 = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+      const result2 = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+      const result3 = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+
       expect(result1.value).toBe(result2.value);
       expect(result2.value).toBe(result3.value);
     });
@@ -430,7 +454,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'rollout_flag', {});
-      
+
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
     });
@@ -450,8 +474,10 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rollout_flag', { userId: 'user-123' });
-      
+      const result = evaluateFlag(manager, 'rollout_flag', {
+        userId: 'user-123',
+      });
+
       expect(result.value).toBe(false);
       expect(result.reason).toBe('default');
     });
@@ -530,10 +556,14 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rule_flag', { email: 'user@company.com' });
+      const result = evaluateFlag(manager, 'rule_flag', {
+        email: 'user@company.com',
+      });
       expect(result.value).toBe(true);
 
-      const result2 = evaluateFlag(manager, 'rule_flag', { email: 'user@other.com' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        email: 'user@other.com',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -554,10 +584,14 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rule_flag', { region: 'us-east-1' });
+      const result = evaluateFlag(manager, 'rule_flag', {
+        region: 'us-east-1',
+      });
       expect(result.value).toBe(true);
 
-      const result2 = evaluateFlag(manager, 'rule_flag', { region: 'eu-west-1' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        region: 'eu-west-1',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -578,10 +612,14 @@ describe('Feature Flags System', () => {
         },
       });
 
-      const result = evaluateFlag(manager, 'rule_flag', { domain: 'example.com' });
+      const result = evaluateFlag(manager, 'rule_flag', {
+        domain: 'example.com',
+      });
       expect(result.value).toBe(true);
 
-      const result2 = evaluateFlag(manager, 'rule_flag', { domain: 'example.org' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        domain: 'example.org',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -701,7 +739,9 @@ describe('Feature Flags System', () => {
       const result = evaluateFlag(manager, 'rule_flag', { status: 'active' });
       expect(result.value).toBe(true);
 
-      const result2 = evaluateFlag(manager, 'rule_flag', { status: 'inactive' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        status: 'inactive',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -725,7 +765,9 @@ describe('Feature Flags System', () => {
       const result = evaluateFlag(manager, 'rule_flag', { status: 'active' });
       expect(result.value).toBe(true);
 
-      const result2 = evaluateFlag(manager, 'rule_flag', { status: 'inactive' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        status: 'inactive',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -737,18 +779,28 @@ describe('Feature Flags System', () => {
         enabled: true,
         targeting: {
           rules: [
-            { attribute: 'plan', operator: 'in', values: ['pro', 'enterprise'] },
+            {
+              attribute: 'plan',
+              operator: 'in',
+              values: ['pro', 'enterprise'],
+            },
             { attribute: 'region', operator: 'eq', values: ['us-east-1'] },
           ],
         },
       });
 
       // Both rules match
-      const result1 = evaluateFlag(manager, 'rule_flag', { plan: 'pro', region: 'us-east-1' });
+      const result1 = evaluateFlag(manager, 'rule_flag', {
+        plan: 'pro',
+        region: 'us-east-1',
+      });
       expect(result1.value).toBe(true);
 
       // Only one rule matches
-      const result2 = evaluateFlag(manager, 'rule_flag', { plan: 'pro', region: 'eu-west-1' });
+      const result2 = evaluateFlag(manager, 'rule_flag', {
+        plan: 'pro',
+        region: 'eu-west-1',
+      });
       expect(result2.value).toBe(false);
     });
 
@@ -759,9 +811,7 @@ describe('Feature Flags System', () => {
         defaultValue: false,
         enabled: true,
         targeting: {
-          rules: [
-            { attribute: 'plan', operator: 'eq', values: ['pro'] },
-          ],
+          rules: [{ attribute: 'plan', operator: 'eq', values: ['pro'] }],
         },
       });
 
@@ -790,7 +840,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'ab_test', { userId: 'user-123' });
-      
+
       expect(['control', 'variant_a']).toContain(result.value);
       expect(result.reason).toBe('variant');
       expect(result.variant).toBeDefined();
@@ -811,7 +861,7 @@ describe('Feature Flags System', () => {
       const result1 = evaluateFlag(manager, 'ab_test', { userId: 'user-123' });
       const result2 = evaluateFlag(manager, 'ab_test', { userId: 'user-123' });
       const result3 = evaluateFlag(manager, 'ab_test', { userId: 'user-123' });
-      
+
       expect(result1.value).toBe(result2.value);
       expect(result2.value).toBe(result3.value);
       expect(result1.variant).toBe(result2.variant);
@@ -833,7 +883,7 @@ describe('Feature Flags System', () => {
       });
 
       const result = evaluateFlag(manager, 'ab_test', { userId: 'user-123' });
-      
+
       expect(['control', 'variant_a']).toContain(result.value);
       expect(result.reason).toBe('targeting');
       expect(result.variant).toBeDefined();
@@ -918,7 +968,9 @@ describe('Feature Flags System', () => {
     });
 
     it('should return null when updating non-existent flag', () => {
-      const result = updateFlag(manager, 'non_existent', { defaultValue: true });
+      const result = updateFlag(manager, 'non_existent', {
+        defaultValue: true,
+      });
       expect(result).toBeNull();
     });
 
@@ -1045,7 +1097,7 @@ describe('Feature Flags System', () => {
 
     it('should not emit analytics when disabled in config', () => {
       manager = createFeatureFlagsManager({ enableAnalytics: false });
-      
+
       registerFlag(manager, {
         key: 'test',
         type: 'boolean',
@@ -1062,8 +1114,10 @@ describe('Feature Flags System', () => {
     });
 
     it('should handle listener errors gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       registerFlag(manager, {
         key: 'test',
         type: 'boolean',
@@ -1112,16 +1166,26 @@ describe('Feature Flags System', () => {
       const exported = exportFlags(manager);
 
       expect(exported.length).toBe(3);
-      expect(exported.find(f => f.key === 'flag1')).toBeDefined();
-      expect(exported.find(f => f.key === 'flag2')).toBeDefined();
-      expect(exported.find(f => f.key === 'flag3')).toBeDefined();
+      expect(exported.find((f) => f.key === 'flag1')).toBeDefined();
+      expect(exported.find((f) => f.key === 'flag2')).toBeDefined();
+      expect(exported.find((f) => f.key === 'flag3')).toBeDefined();
     });
 
     it('should import flags', () => {
       const newManager = createFeatureFlagsManager();
       const flags: FeatureFlag[] = [
-        { key: 'imported1', type: 'boolean', defaultValue: false, enabled: true },
-        { key: 'imported2', type: 'string', defaultValue: 'test', enabled: true },
+        {
+          key: 'imported1',
+          type: 'boolean',
+          defaultValue: false,
+          enabled: true,
+        },
+        {
+          key: 'imported2',
+          type: 'string',
+          defaultValue: 'test',
+          enabled: true,
+        },
       ];
 
       importFlags(newManager, flags);
@@ -1181,7 +1245,11 @@ describe('Feature Flags System', () => {
         enabled: true,
         targeting: {
           rules: [
-            { attribute: 'environment', operator: 'eq', values: ['production'] },
+            {
+              attribute: 'environment',
+              operator: 'eq',
+              values: ['production'],
+            },
           ],
         },
       });
@@ -1297,9 +1365,7 @@ describe('Feature Flags System', () => {
         type: 'string',
         defaultValue: 'control',
         enabled: true,
-        variants: [
-          { name: 'control', value: 'control', weight: 10 },
-        ],
+        variants: [{ name: 'control', value: 'control', weight: 10 }],
       });
 
       const result = evaluateFlag(manager, 'ab_test', { userId: 'user-999' });
@@ -1308,11 +1374,13 @@ describe('Feature Flags System', () => {
 
     it('should handle multiple subscriptions of same listener', () => {
       const listener = vi.fn();
-      
+
       subscribeToFlagChanges(manager, listener);
       subscribeToFlagChanges(manager, listener);
 
-      expect(manager.changeListeners.filter(l => l === listener).length).toBe(2);
+      expect(manager.changeListeners.filter((l) => l === listener).length).toBe(
+        2
+      );
     });
   });
 
@@ -1343,12 +1411,16 @@ describe('Feature Flags System', () => {
       });
 
       // VIP user should be enabled (takes priority)
-      const result1 = evaluateFlag(manager, 'premium_feature', { userId: 'vip-user-1' });
+      const result1 = evaluateFlag(manager, 'premium_feature', {
+        userId: 'vip-user-1',
+      });
       expect(result1.value).toBe(true);
       expect(result1.reason).toBe('targeting');
 
       // Non-VIP user depends on rollout
-      const result2 = evaluateFlag(manager, 'premium_feature', { userId: 'regular-user-123' });
+      const result2 = evaluateFlag(manager, 'premium_feature', {
+        userId: 'regular-user-123',
+      });
       expect(result2.value).toBeTypeOf('boolean');
     });
 
@@ -1378,7 +1450,9 @@ describe('Feature Flags System', () => {
       importFlags(newManager, exported);
 
       expect(newManager.flags.size).toBe(2);
-      expect(getFlag(newManager, 'feature1')?.targeting?.userList).toEqual(['user-1']);
+      expect(getFlag(newManager, 'feature1')?.targeting?.userList).toEqual([
+        'user-1',
+      ]);
       expect(getFlag(newManager, 'feature2')?.variants?.length).toBe(2);
     });
 
@@ -1405,8 +1479,10 @@ describe('Feature Flags System', () => {
       evaluateFlag(manager, 'tracked_feature', { userId: 'user-123' });
 
       expect(analyticsEvents.length).toBeGreaterThan(0);
-      expect(analyticsEvents.some(e => e.type === 'flag_evaluated')).toBe(true);
-      expect(analyticsEvents.some(e => e.type === 'flag_changed')).toBe(true);
+      expect(analyticsEvents.some((e) => e.type === 'flag_evaluated')).toBe(
+        true
+      );
+      expect(analyticsEvents.some((e) => e.type === 'flag_changed')).toBe(true);
     });
   });
 });

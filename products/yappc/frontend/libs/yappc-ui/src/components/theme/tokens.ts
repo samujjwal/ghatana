@@ -18,7 +18,7 @@ export const colors = {
     800: '#1565c0',
     900: '#0d47a1',
   },
-  
+
   // Secondary colors
   secondary: {
     50: '#f3e5f5',
@@ -32,7 +32,7 @@ export const colors = {
     800: '#6a1b9a',
     900: '#4a148c',
   },
-  
+
   // Success colors
   success: {
     50: '#e8f5e9',
@@ -46,7 +46,7 @@ export const colors = {
     800: '#2e7d32',
     900: '#1b5e20',
   },
-  
+
   // Error colors
   error: {
     50: '#ffebee',
@@ -60,7 +60,7 @@ export const colors = {
     800: '#c62828',
     900: '#b71c1c',
   },
-  
+
   // Warning colors
   warning: {
     50: '#fff3e0',
@@ -74,7 +74,7 @@ export const colors = {
     800: '#ef6c00',
     900: '#e65100',
   },
-  
+
   // Info colors
   info: {
     50: '#e1f5fe',
@@ -88,7 +88,7 @@ export const colors = {
     800: '#0277bd',
     900: '#01579b',
   },
-  
+
   // Neutral colors
   neutral: {
     50: '#fafafa',
@@ -110,20 +110,20 @@ export const typography = {
     sans: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     mono: '"Fira Code", "Courier New", monospace',
   },
-  
+
   fontSize: {
-    xs: '0.75rem',      // 12px
-    sm: '0.875rem',     // 14px
-    base: '1rem',       // 16px
-    lg: '1.125rem',     // 18px
-    xl: '1.25rem',      // 20px
-    '2xl': '1.5rem',    // 24px
-    '3xl': '1.875rem',  // 30px
-    '4xl': '2.25rem',   // 36px
-    '5xl': '3rem',      // 48px
-    '6xl': '3.75rem',   // 60px
+    xs: '0.75rem', // 12px
+    sm: '0.875rem', // 14px
+    base: '1rem', // 16px
+    lg: '1.125rem', // 18px
+    xl: '1.25rem', // 20px
+    '2xl': '1.5rem', // 24px
+    '3xl': '1.875rem', // 30px
+    '4xl': '2.25rem', // 36px
+    '5xl': '3rem', // 48px
+    '6xl': '3.75rem', // 60px
   },
-  
+
   fontWeight: {
     light: 300,
     normal: 400,
@@ -131,13 +131,13 @@ export const typography = {
     semibold: 600,
     bold: 700,
   },
-  
+
   lineHeight: {
     tight: 1.25,
     normal: 1.5,
     relaxed: 1.75,
   },
-  
+
   letterSpacing: {
     tight: '-0.025em',
     normal: '0',
@@ -148,19 +148,19 @@ export const typography = {
 // Spacing
 export const spacing = {
   0: '0',
-  1: '0.25rem',   // 4px
-  2: '0.5rem',    // 8px
-  3: '0.75rem',   // 12px
-  4: '1rem',      // 16px
-  5: '1.25rem',   // 20px
-  6: '1.5rem',    // 24px
-  8: '2rem',      // 32px
-  10: '2.5rem',   // 40px
-  12: '3rem',     // 48px
-  16: '4rem',     // 64px
-  20: '5rem',     // 80px
-  24: '6rem',     // 96px
-  32: '8rem',     // 128px
+  1: '0.25rem', // 4px
+  2: '0.5rem', // 8px
+  3: '0.75rem', // 12px
+  4: '1rem', // 16px
+  5: '1.25rem', // 20px
+  6: '1.5rem', // 24px
+  8: '2rem', // 32px
+  10: '2.5rem', // 40px
+  12: '3rem', // 48px
+  16: '4rem', // 64px
+  20: '5rem', // 80px
+  24: '6rem', // 96px
+  32: '8rem', // 128px
 };
 
 // Breakpoints
@@ -175,13 +175,13 @@ export const breakpoints = {
 // Border Radius
 export const borderRadius = {
   none: '0',
-  sm: '0.125rem',   // 2px
-  base: '0.25rem',  // 4px
-  md: '0.375rem',   // 6px
-  lg: '0.5rem',     // 8px
-  xl: '0.75rem',    // 12px
-  '2xl': '1rem',    // 16px
-  '3xl': '1.5rem',  // 24px
+  sm: '0.125rem', // 2px
+  base: '0.25rem', // 4px
+  md: '0.375rem', // 6px
+  lg: '0.5rem', // 8px
+  xl: '0.75rem', // 12px
+  '2xl': '1rem', // 16px
+  '3xl': '1.5rem', // 24px
   full: '9999px',
 };
 
@@ -218,7 +218,7 @@ export const animation = {
     slow: '300ms',
     slower: '500ms',
   },
-  
+
   easing: {
     linear: 'linear',
     easeIn: 'cubic-bezier(0.4, 0, 1, 1)',

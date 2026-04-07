@@ -12,7 +12,6 @@ import { ViewModeSwitcher } from './ViewModeSwitcher';
 import type { Meta, StoryObj } from '@storybook/react';
 import type { ViewMode } from '@yappc/core/types/devsecops';
 
-
 const meta: Meta<typeof ViewModeSwitcher> = {
   title: 'DevSecOps/ViewModeSwitcher',
   component: ViewModeSwitcher,
@@ -49,7 +48,9 @@ type Story = StoryObj<typeof ViewModeSwitcher>;
 /**
  * Interactive wrapper for stories
  */
-function InteractiveWrapper(props: Omit<React.ComponentProps<typeof ViewModeSwitcher>, 'onChange'>) {
+function InteractiveWrapper(
+  props: Omit<React.ComponentProps<typeof ViewModeSwitcher>, 'onChange'>
+) {
   const [value, setValue] = useState<ViewMode>(props.value);
 
   return (
@@ -180,14 +181,24 @@ export const AllVariants: Story = {
           <Typography as="h6" gutterBottom>
             Full Variant - Medium Size
           </Typography>
-          <ViewModeSwitcher value={mode1} onChange={setMode1} variant="full" size="md" />
+          <ViewModeSwitcher
+            value={mode1}
+            onChange={setMode1}
+            variant="full"
+            size="md"
+          />
         </Box>
 
         <Box>
           <Typography as="h6" gutterBottom>
             Compact Variant - Small Size
           </Typography>
-          <ViewModeSwitcher value={mode2} onChange={setMode2} variant="compact" size="sm" />
+          <ViewModeSwitcher
+            value={mode2}
+            onChange={setMode2}
+            variant="compact"
+            size="sm"
+          />
         </Box>
 
         <Box>

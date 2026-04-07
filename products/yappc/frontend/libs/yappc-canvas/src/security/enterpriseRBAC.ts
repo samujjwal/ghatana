@@ -1,15 +1,15 @@
 /**
  * Enterprise RBAC & SCIM Integration
- * 
+ *
  * Provides SSO role mapping, SCIM user provisioning/deprovisioning,
  * and live RBAC enforcement for enterprise environments.
- * 
+ *
  * Features:
  * - SAML/OIDC role assertion parsing and mapping
  * - SCIM 2.0 user/group provisioning
  * - Live role propagation without session restart
  * - Audit logging for all role changes
- * 
+ *
  * @module security/enterpriseRBAC
  */
 
@@ -205,7 +205,12 @@ export interface RoleAuditEntry {
   /** User affected */
   userId: string;
   /** Action performed */
-  action: 'sso_login' | 'scim_provision' | 'scim_update' | 'scim_deprovision' | 'role_change';
+  action:
+    | 'sso_login'
+    | 'scim_provision'
+    | 'scim_update'
+    | 'scim_deprovision'
+    | 'role_change';
   /** Previous state */
   before?: {
     roles: UserRole[];
@@ -370,9 +375,17 @@ export function mapRoles(
   }
 
   // Deduplicate and sort by hierarchy (viewer < commenter < editor < admin < owner)
-  const roleHierarchy: UserRole[] = ['viewer', 'commenter', 'editor', 'admin', 'owner'];
+  const roleHierarchy: UserRole[] = [
+    'viewer',
+    'commenter',
+    'editor',
+    'admin',
+    'owner',
+  ];
   const uniqueRoles = [...new Set(mappedRoles)];
-  uniqueRoles.sort((a, b) => roleHierarchy.indexOf(a) - roleHierarchy.indexOf(b));
+  uniqueRoles.sort(
+    (a, b) => roleHierarchy.indexOf(a) - roleHierarchy.indexOf(b)
+  );
 
   return uniqueRoles.length > 0 ? uniqueRoles : state.config.defaultRoles;
 }
@@ -671,7 +684,10 @@ export function subscribeToRoleChanges(
 /**
  * Notify all listeners of role change
  */
-function notifyRoleChange(state: EnterpriseRBACState, event: RoleChangeEvent): void {
+function notifyRoleChange(
+  state: EnterpriseRBACState,
+  event: RoleChangeEvent
+): void {
   for (const listener of state.roleChangeListeners) {
     try {
       listener(event);
@@ -775,7 +791,10 @@ export function updateRoleMapping(
 /**
  * Delete role mapping rule
  */
-export function deleteRoleMapping(state: EnterpriseRBACState, id: string): boolean {
+export function deleteRoleMapping(
+  state: EnterpriseRBACState,
+  id: string
+): boolean {
   return state.roleMappings.delete(id);
 }
 
@@ -822,7 +841,10 @@ export function userHasRole(
 /**
  * Invalidate user session (force re-authentication)
  */
-export function invalidateSession(state: EnterpriseRBACState, userId: string): boolean {
+export function invalidateSession(
+  state: EnterpriseRBACState,
+  userId: string
+): boolean {
   return state.userSessions.delete(userId);
 }
 
@@ -833,7 +855,10 @@ export function invalidateSession(state: EnterpriseRBACState, userId: string): b
 /**
  * Add audit entry
  */
-function addAuditEntry(state: EnterpriseRBACState, entry: RoleAuditEntry): void {
+function addAuditEntry(
+  state: EnterpriseRBACState,
+  entry: RoleAuditEntry
+): void {
   state.auditLog.push(entry);
 
   // Enforce max entries

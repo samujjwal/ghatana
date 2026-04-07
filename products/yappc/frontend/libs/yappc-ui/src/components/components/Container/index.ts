@@ -21,27 +21,28 @@ const widthMap: Record<string, GlobalContainerProps['maxWidth']> = {
   full: 'full',
 };
 
-export const Container = React.forwardRef<HTMLElement, GlobalContainerProps & {
-  paddingClass?: string;
-}>(
-  ({ paddingClass, padding = true, ...rest }, ref) => {
-    const paddingValue = paddingClass && !paddingClass.includes(' ')
-      ? paddingClass
-      : undefined;
+export const Container = React.forwardRef<
+  HTMLElement,
+  GlobalContainerProps & {
+    paddingClass?: string;
+  }
+>(({ paddingClass, padding = true, ...rest }, ref) => {
+  const paddingValue =
+    paddingClass && !paddingClass.includes(' ') ? paddingClass : undefined;
 
-    const maxWidth = rest.maxWidth && typeof rest.maxWidth === 'string'
-      ? widthMap[rest.maxWidth] ?? rest.maxWidth
+  const maxWidth =
+    rest.maxWidth && typeof rest.maxWidth === 'string'
+      ? (widthMap[rest.maxWidth] ?? rest.maxWidth)
       : rest.maxWidth;
 
-    return React.createElement(GlobalContainer, {
-      ref,
-      padding,
-      paddingValue,
-      maxWidth,
-      ...rest,
-    });
-  }
-);
+  return React.createElement(GlobalContainer, {
+    ref,
+    padding,
+    paddingValue,
+    maxWidth,
+    ...rest,
+  });
+});
 
 Container.displayName = 'Container';
 

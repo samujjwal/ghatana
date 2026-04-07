@@ -1,6 +1,6 @@
 /**
  * Consolidated Canvas Security Hook
- * 
+ *
  * Replaces: useCISODashboard, useCompliance, useThreatModeling, useZeroTrustArchitecture
  * Provides: Security & compliance features
  */
@@ -120,16 +120,16 @@ export interface UseCanvasSecurityOptions {
 export interface UseCanvasSecurityReturn {
   securityPosture: SecurityPosture;
   vulnerabilities: Vulnerability[];
-  
+
   complianceStatus: ComplianceStatus[];
   auditTrail: AuditEvent[];
-  
+
   threats: Threat[];
   generateThreatModel: (architecture: Architecture) => Promise<ThreatModel>;
-  
+
   zeroTrustPolicies: Policy[];
   validateAccess: (request: AccessRequest) => Promise<AccessDecision>;
-  
+
   isLoading: boolean;
   error: Error | null;
 }
@@ -146,7 +146,7 @@ export function useCanvasSecurity(
   });
   const [vulnerabilities] = useState<Vulnerability[]>([]);
   const [complianceStatus] = useState<ComplianceStatus[]>(
-    complianceFrameworks.map(framework => ({
+    complianceFrameworks.map((framework) => ({
       framework,
       compliant: true,
       controls: [],

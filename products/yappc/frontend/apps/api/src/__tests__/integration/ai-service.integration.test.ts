@@ -47,7 +47,9 @@ function makeRequest(overrides: Partial<AIRequest> = {}): AIRequest {
   };
 }
 
-function makeCircuitBreakerConfig(overrides: Partial<CircuitBreakerConfig> = {}): CircuitBreakerConfig {
+function makeCircuitBreakerConfig(
+  overrides: Partial<CircuitBreakerConfig> = {}
+): CircuitBreakerConfig {
   return {
     failureThreshold: 3,
     recoveryTimeout: 10_000,
@@ -62,7 +64,9 @@ function openAIResponseBody(content: string, model = 'gpt-4'): string {
   return JSON.stringify({
     id: 'chatcmpl-abc',
     model,
-    choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
+    choices: [
+      { message: { role: 'assistant', content }, finish_reason: 'stop' },
+    ],
     usage: { prompt_tokens: 10, completion_tokens: 20, total_tokens: 30 },
   });
 }
@@ -95,14 +99,20 @@ describe('FallbackProvider — provider routing', () => {
   });
 
   it('routes an OpenAI request and returns a normalised AIResponse', async () => {
-    const responseContent = 'Async/await lets you write asynchronous code that looks synchronous.';
+    const responseContent =
+      'Async/await lets you write asynchronous code that looks synchronous.';
     fetchMock.mockResolvedValueOnce(
       new Response(openAIResponseBody(responseContent), { status: 200 })
     );
 
     const provider = makeProvider({ name: 'openai' });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
-    const response = await fallback.executeRequest(makeRequest({ provider: 'openai' }));
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
+    const response = await fallback.executeRequest(
+      makeRequest({ provider: 'openai' })
+    );
 
     expect(response.provider).toBe('openai');
     expect(response.content).toBe(responseContent);
@@ -123,8 +133,13 @@ describe('FallbackProvider — provider routing', () => {
       name: 'anthropic',
       endpoint: 'https://api.anthropic.com/v1/messages',
     });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
-    const response = await fallback.executeRequest(makeRequest({ provider: 'anthropic' }));
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
+    const response = await fallback.executeRequest(
+      makeRequest({ provider: 'anthropic' })
+    );
 
     expect(response.provider).toBe('anthropic');
     expect(response.content).toBe(responseText);
@@ -134,9 +149,12 @@ describe('FallbackProvider — provider routing', () => {
   });
 
   it('routes a local (Java-backend) request using OpenAI-compatible format', async () => {
-    const localContent = 'Local LLM response: async/await simplifies promise chaining.';
+    const localContent =
+      'Local LLM response: async/await simplifies promise chaining.';
     fetchMock.mockResolvedValueOnce(
-      new Response(openAIResponseBody(localContent, 'local-llm'), { status: 200 })
+      new Response(openAIResponseBody(localContent, 'local-llm'), {
+        status: 200,
+      })
     );
 
     const provider = makeProvider({
@@ -144,8 +162,13 @@ describe('FallbackProvider — provider routing', () => {
       endpoint: 'http://localhost:8080/api/v1/chat/completions',
       apiKey: 'local-no-key',
     });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
-    const response = await fallback.executeRequest(makeRequest({ provider: 'local' }));
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
+    const response = await fallback.executeRequest(
+      makeRequest({ provider: 'local' })
+    );
 
     expect(response.provider).toBe('local');
     expect(response.content).toBe(localContent);
@@ -158,11 +181,16 @@ describe('FallbackProvider — provider routing', () => {
     );
 
     const provider = makeProvider({ apiKey: 'sk-secret-456' });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     await fallback.executeRequest(makeRequest());
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer sk-secret-456');
+    expect((init.headers as Record<string, string>)['Authorization']).toBe(
+      'Bearer sk-secret-456'
+    );
   });
 
   it('adds the anthropic-version header for Anthropic requests', async () => {
@@ -171,11 +199,16 @@ describe('FallbackProvider — provider routing', () => {
     );
 
     const provider = makeProvider({ name: 'anthropic' });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     await fallback.executeRequest(makeRequest({ provider: 'anthropic' }));
 
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>)['anthropic-version']).toBe('2023-06-01');
+    expect((init.headers as Record<string, string>)['anthropic-version']).toBe(
+      '2023-06-01'
+    );
   });
 });
 
@@ -201,7 +234,10 @@ describe('FallbackProvider — error handling', () => {
     );
 
     const provider = makeProvider();
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
 
     await expect(fallback.executeRequest(makeRequest())).rejects.toThrow(/401/);
   });
@@ -210,7 +246,10 @@ describe('FallbackProvider — error handling', () => {
     fetchMock.mockRejectedValue(new Error('Network error'));
 
     const provider = makeProvider();
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     const response = await fallback.executeRequestWithFallback(makeRequest());
 
     expect(response.fromFallback).toBe(true);
@@ -223,15 +262,22 @@ describe('FallbackProvider — error handling', () => {
     const anthropicContent = 'Fallback: async/await wraps a Promise.';
     fetchMock
       .mockRejectedValueOnce(new Error('OpenAI down'))
-      .mockResolvedValueOnce(new Response(anthropicResponseBody(anthropicContent), { status: 200 }));
+      .mockResolvedValueOnce(
+        new Response(anthropicResponseBody(anthropicContent), { status: 200 })
+      );
 
     const openai = makeProvider({ name: 'openai' });
     const anthropic = makeProvider({
       name: 'anthropic',
       endpoint: 'https://api.anthropic.com/v1/messages',
     });
-    const fallback = new FallbackProvider([openai, anthropic], makeCircuitBreakerConfig());
-    const response = await fallback.executeRequestWithFallback(makeRequest({ provider: 'openai' }));
+    const fallback = new FallbackProvider(
+      [openai, anthropic],
+      makeCircuitBreakerConfig()
+    );
+    const response = await fallback.executeRequestWithFallback(
+      makeRequest({ provider: 'openai' })
+    );
 
     expect(response.fromFallback).toBe(true);
     expect(response.content).toBe(anthropicContent);
@@ -239,7 +285,10 @@ describe('FallbackProvider — error handling', () => {
 
   it('throws for unrecognised provider name in executeRequest', async () => {
     const provider = makeProvider({ name: 'openai' });
-    const fallback = new FallbackProvider([provider], makeCircuitBreakerConfig());
+    const fallback = new FallbackProvider(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
 
     // Requesting 'anthropic' but only 'openai' is registered
     await expect(
@@ -254,12 +303,18 @@ describe('FallbackProvider — error handling', () => {
 
 describe('CircuitBreaker — state machine', () => {
   it('starts in CLOSED state', () => {
-    const breaker = new CircuitBreaker(makeProvider(), makeCircuitBreakerConfig({ failureThreshold: 2 }));
+    const breaker = new CircuitBreaker(
+      makeProvider(),
+      makeCircuitBreakerConfig({ failureThreshold: 2 })
+    );
     expect(breaker.getState().state).toBe('CLOSED');
   });
 
   it('transitions to OPEN after failureThreshold consecutive failures', async () => {
-    const breaker = new CircuitBreaker(makeProvider(), makeCircuitBreakerConfig({ failureThreshold: 2 }));
+    const breaker = new CircuitBreaker(
+      makeProvider(),
+      makeCircuitBreakerConfig({ failureThreshold: 2 })
+    );
 
     const failOp = () => Promise.reject(new Error('fail'));
     await breaker.execute(failOp).catch(() => undefined);
@@ -274,7 +329,9 @@ describe('CircuitBreaker — state machine', () => {
       makeCircuitBreakerConfig({ failureThreshold: 1, recoveryTimeout: 60_000 })
     );
 
-    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => undefined);
+    await breaker
+      .execute(() => Promise.reject(new Error('fail')))
+      .catch(() => undefined);
     expect(breaker.getState().state).toBe('OPEN');
 
     const spy = vi.fn(() => Promise.resolve('ok'));
@@ -283,8 +340,13 @@ describe('CircuitBreaker — state machine', () => {
   });
 
   it('resets to CLOSED state when reset() is called', async () => {
-    const breaker = new CircuitBreaker(makeProvider(), makeCircuitBreakerConfig({ failureThreshold: 1 }));
-    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => undefined);
+    const breaker = new CircuitBreaker(
+      makeProvider(),
+      makeCircuitBreakerConfig({ failureThreshold: 1 })
+    );
+    await breaker
+      .execute(() => Promise.reject(new Error('fail')))
+      .catch(() => undefined);
     expect(breaker.getState().state).toBe('OPEN');
 
     breaker.reset();
@@ -330,7 +392,7 @@ describe('AICache', () => {
     const cache = new AICache(100, 1); // 1 ms TTL
     cache.set(request, baseResponse);
 
-    await new Promise(resolve => setTimeout(resolve, 5));
+    await new Promise((resolve) => setTimeout(resolve, 5));
     expect(cache.get(request)).toBeNull();
   });
 
@@ -339,7 +401,11 @@ describe('AICache', () => {
     const req1 = makeRequest({ id: 'r1', prompt: 'one' });
     const req2 = makeRequest({ id: 'r2', prompt: 'two' });
     const req3 = makeRequest({ id: 'r3', prompt: 'three' });
-    const resp = (id: string): AIResponse => ({ ...baseResponse, id, requestId: id });
+    const resp = (id: string): AIResponse => ({
+      ...baseResponse,
+      id,
+      requestId: id,
+    });
 
     cache.set(req1, resp('r1'));
     cache.set(req2, resp('r2'));
@@ -441,7 +507,10 @@ describe('StreamingAIService — cache integration', () => {
     );
 
     const provider = makeProvider();
-    const service = new StreamingAIService([provider], makeCircuitBreakerConfig());
+    const service = new StreamingAIService(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     const request = makeRequest();
 
     // First call primes the cache
@@ -459,7 +528,10 @@ describe('StreamingAIService — cache integration', () => {
     fetchMock.mockRejectedValue(new Error('provider down'));
 
     const provider = makeProvider();
-    const service = new StreamingAIService([provider], makeCircuitBreakerConfig());
+    const service = new StreamingAIService(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     const request = makeRequest();
 
     // First call → fallback response (not cached)
@@ -477,7 +549,10 @@ describe('StreamingAIService — cache integration', () => {
     );
 
     const provider = makeProvider();
-    const service = new StreamingAIService([provider], makeCircuitBreakerConfig());
+    const service = new StreamingAIService(
+      [provider],
+      makeCircuitBreakerConfig()
+    );
     const response = await service.executeRequest(makeRequest());
 
     expect(response.latency).toBeGreaterThanOrEqual(0);

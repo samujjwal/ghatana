@@ -9,8 +9,8 @@ import {
   validateLockRequest,
   type LockRequest,
   type LockEvent,
-
-  LockManager} from '../lockManager';
+  LockManager,
+} from '../lockManager';
 
 describe('LockManager', () => {
   describe('Lock Acquisition', () => {
@@ -42,7 +42,10 @@ describe('LockManager', () => {
     it('should fail to acquire already locked resource', () => {
       manager.acquire('node1', { userId: 'user1', username: 'Alice' });
 
-      const result = manager.acquire('node1', { userId: 'user2', username: 'Bob' });
+      const result = manager.acquire('node1', {
+        userId: 'user2',
+        username: 'Bob',
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('locked by Alice');
@@ -58,7 +61,9 @@ describe('LockManager', () => {
       const result = manager.acquire('node1', request);
 
       expect(result.success).toBe(true);
-      expect(result.lock?.holder?.expiresAt).toBeGreaterThan(Date.now() + 50000);
+      expect(result.lock?.holder?.expiresAt).toBeGreaterThan(
+        Date.now() + 50000
+      );
     });
 
     it('should reject timeout exceeding maximum', () => {
@@ -87,7 +92,10 @@ describe('LockManager', () => {
     });
 
     it('should set lock expiration', () => {
-      const result = manager.acquire('node1', { userId: 'user1', username: 'Alice' });
+      const result = manager.acquire('node1', {
+        userId: 'user1',
+        username: 'Alice',
+      });
 
       expect(result.lock?.holder?.acquiredAt).toBeDefined();
       expect(result.lock?.holder?.expiresAt).toBeGreaterThan(Date.now());
@@ -183,7 +191,10 @@ describe('LockManager', () => {
       // Wait for timeout
       await new Promise((resolve) => setTimeout(resolve, 150));
 
-      const result = manager.acquire('node1', { userId: 'user2', username: 'Bob' });
+      const result = manager.acquire('node1', {
+        userId: 'user2',
+        username: 'Bob',
+      });
       expect(result.success).toBe(true);
     });
   });
@@ -279,7 +290,10 @@ describe('LockManager', () => {
 
       mgr.acquire('node1', { userId: 'user1', username: 'Alice' });
 
-      const result = mgr.requestOverride('node1', { userId: 'admin1', username: 'Admin' });
+      const result = mgr.requestOverride('node1', {
+        userId: 'admin1',
+        username: 'Admin',
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('not enabled');
@@ -560,7 +574,9 @@ describe('LockManager', () => {
       expect(validateLockRequest(null)).toBe(false);
       expect(validateLockRequest({})).toBe(false);
       expect(validateLockRequest({ userId: 'user1' })).toBe(false);
-      expect(validateLockRequest({ userId: 'user1', username: 'Alice', timeout: -1 })).toBe(false);
+      expect(
+        validateLockRequest({ userId: 'user1', username: 'Alice', timeout: -1 })
+      ).toBe(false);
     });
   });
 
@@ -597,8 +613,14 @@ describe('LockManager', () => {
     });
 
     it('should handle concurrent lock attempts', () => {
-      const result1 = manager.acquire('node1', { userId: 'user1', username: 'Alice' });
-      const result2 = manager.acquire('node1', { userId: 'user2', username: 'Bob' });
+      const result1 = manager.acquire('node1', {
+        userId: 'user1',
+        username: 'Alice',
+      });
+      const result2 = manager.acquire('node1', {
+        userId: 'user2',
+        username: 'Bob',
+      });
 
       expect(result1.success).toBe(true);
       expect(result2.success).toBe(false);

@@ -17,10 +17,10 @@ describe('Input', () => {
   it('handles value changes', () => {
     const handleChange = vi.fn();
     render(<Input onChange={handleChange} />);
-    
+
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'test@example.com' } });
-    
+
     expect(handleChange).toHaveBeenCalled();
   });
 
@@ -35,12 +35,7 @@ describe('Input', () => {
   });
 
   it('error message overrides helper text', () => {
-    render(
-      <Input 
-        helperText="This is helper text"
-        error="This is an error"
-      />
-    );
+    render(<Input helperText="This is helper text" error="This is an error" />);
     expect(screen.getByRole('alert')).toHaveTextContent('This is an error');
     expect(screen.queryByText('This is helper text')).not.toBeInTheDocument();
   });
@@ -57,10 +52,10 @@ describe('Input', () => {
 
   it('updates character counter on input', () => {
     render(<Input showCounter maxLength={50} />);
-    
+
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'Hello World' } });
-    
+
     expect(screen.getByText('11 / 50')).toBeInTheDocument();
   });
 
@@ -107,7 +102,7 @@ describe('Input', () => {
   it('has proper accessibility attributes', () => {
     render(<Input label="Email" helperText="Enter your email" />);
     const input = screen.getByRole('textbox');
-    
+
     expect(input).toHaveAccessibleName('Email');
     expect(input).toHaveAccessibleDescription('Enter your email');
   });
@@ -137,20 +132,24 @@ describe('Input', () => {
   // Tests for clear button functionality
   it('renders clear button when clearable is true and input has value', () => {
     render(<Input clearable defaultValue="test" />);
-    expect(screen.getByRole('button', { name: 'Clear input' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Clear input' })
+    ).toBeInTheDocument();
   });
 
   it('does not render clear button when clearable is true but input has no value', () => {
     render(<Input clearable />);
-    expect(screen.queryByRole('button', { name: 'Clear input' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Clear input' })
+    ).not.toBeInTheDocument();
   });
 
   it('clears input value when clear button is clicked', () => {
     const handleChange = vi.fn();
     render(<Input clearable defaultValue="test" onChange={handleChange} />);
-    
+
     fireEvent.click(screen.getByRole('button', { name: 'Clear input' }));
-    
+
     expect(handleChange).toHaveBeenCalled();
     expect(screen.getByRole('textbox')).toHaveValue('');
   });
@@ -158,32 +157,36 @@ describe('Input', () => {
   it('calls onClear callback when clear button is clicked', () => {
     const handleClear = vi.fn();
     render(<Input clearable defaultValue="test" onClear={handleClear} />);
-    
+
     fireEvent.click(screen.getByRole('button', { name: 'Clear input' }));
-    
+
     expect(handleClear).toHaveBeenCalled();
   });
 
   // Tests for password visibility toggle
   it('renders password visibility toggle when showPasswordToggle is true and type is password', () => {
     render(<Input type="password" showPasswordToggle />);
-    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show password' })
+    ).toBeInTheDocument();
   });
 
   it('does not render password visibility toggle when type is not password', () => {
     render(<Input type="text" showPasswordToggle />);
-    expect(screen.queryByRole('button', { name: 'Show password' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Show password' })
+    ).not.toBeInTheDocument();
   });
 
   it('toggles password visibility when toggle button is clicked', () => {
     render(<Input type="password" showPasswordToggle />);
-    
+
     const passwordInput = screen.getByRole('textbox') as HTMLInputElement;
     expect(passwordInput.type).toBe('password');
-    
+
     fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
     expect(passwordInput.type).toBe('text');
-    
+
     fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
     expect(passwordInput.type).toBe('password');
   });
@@ -192,7 +195,9 @@ describe('Input', () => {
   it('renders loading spinner when loading is true', () => {
     render(<Input loading />);
     // Look for SVG path that's part of the loading spinner
-    expect(document.querySelector('svg path[d="M12 2a10 10 0 0 1 10 10"]')).toBeInTheDocument();
+    expect(
+      document.querySelector('svg path[d="M12 2a10 10 0 0 1 10 10"]')
+    ).toBeInTheDocument();
   });
 
   it('disables input when loading is true', () => {

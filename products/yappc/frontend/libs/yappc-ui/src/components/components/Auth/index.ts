@@ -1,8 +1,8 @@
 /**
  * Authentication Components
- * 
+ *
  * Production-grade authentication UI components
- * 
+ *
  * @module ui/components/Auth
  * @doc.type module
  * @doc.purpose Authentication forms and UI
@@ -18,20 +18,31 @@ export { RegisterForm } from './RegisterForm';
 export type { RegisterFormProps, RegisterFormData } from './RegisterForm';
 
 // Password Reset
-export { PasswordResetRequest, PasswordResetConfirm } from './PasswordResetForm';
+export {
+  PasswordResetRequest,
+  PasswordResetConfirm,
+} from './PasswordResetForm';
 export type {
   PasswordResetRequestProps,
   PasswordResetConfirmProps,
 } from './PasswordResetForm';
 
 // Protected Routes
-export { ProtectedRoute, withProtectedRoute, useRouteAccess } from './ProtectedRoute';
+export {
+  ProtectedRoute,
+  withProtectedRoute,
+  useRouteAccess,
+} from './ProtectedRoute';
 export type { ProtectedRouteProps } from './ProtectedRoute';
 
 // Examples (for development and documentation)
 export * as AuthExamples from './examples';
 export { LoginPage, RegisterPage, DashboardPage } from './examples';
-export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './examples';
+export type {
+  LoginPageProps,
+  RegisterPageProps,
+  DashboardPageProps,
+} from './examples';
 
 // ============================================================================
 // Usage Examples
@@ -39,12 +50,12 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 
 /**
  * @example Login Page
- * 
+ *
  * import { LoginForm } from '@yappc/ui';
- * 
+ *
  * function LoginPage() {
  *   const navigate = useNavigate();
- *   
+ *
  *   return (
  *     <div className="auth-page">
  *       <LoginForm
@@ -59,12 +70,12 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 
 /**
  * @example Register Page
- * 
+ *
  * import { RegisterForm } from '@yappc/ui';
- * 
+ *
  * function RegisterPage() {
  *   const navigate = useNavigate();
- *   
+ *
  *   return (
  *     <div className="auth-page">
  *       <RegisterForm
@@ -79,13 +90,13 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
 
 /**
  * @example Password Reset Flow
- * 
+ *
  * import { PasswordResetRequest, PasswordResetConfirm } from '@yappc/ui';
- * 
+ *
  * function ResetPasswordPage() {
  *   const [searchParams] = useSearchParams();
  *   const token = searchParams.get('token');
- *   
+ *
  *   if (token) {
  *     return (
  *       <PasswordResetConfirm
@@ -94,7 +105,7 @@ export type { LoginPageProps, RegisterPageProps, DashboardPageProps } from './ex
  *       />
  *     );
  *   }
- *   
+ *
  *   return (
  *     <PasswordResetRequest
  *       onSuccess={() => setStep('check-email')}

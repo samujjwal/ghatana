@@ -4,7 +4,19 @@
  * Interactive theme switching demonstration
  */
 
-import { Box, Button, Card, CardContent, Typography, Stack, TextField, Switch, FormControlLabel, Chip, Surface as Paper } from '@ghatana/design-system';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  TextField,
+  Switch,
+  FormControlLabel,
+  Chip,
+  Surface as Paper,
+} from '@ghatana/design-system';
 import React, { useState } from 'react';
 
 import {
@@ -62,7 +74,9 @@ function ThemeSwitcherDemo() {
                 control={
                   <Switch
                     checked={mode === 'dark'}
-                    onChange={() => setMode(mode === 'light' ? 'dark' : 'light')}
+                    onChange={() =>
+                      setMode(mode === 'light' ? 'dark' : 'light')
+                    }
                   />
                 }
                 label={mode === 'light' ? 'Light Mode' : 'Dark Mode'}
@@ -185,7 +199,11 @@ function ThemeSwitcherDemo() {
             <Typography as="p" className="text-sm">
               Body 2: The quick brown fox jumps over the lazy dog
             </Typography>
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+            >
               Caption: The quick brown fox jumps over the lazy dog
             </Typography>
           </Stack>

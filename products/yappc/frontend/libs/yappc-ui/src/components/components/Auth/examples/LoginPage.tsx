@@ -1,9 +1,9 @@
 /**
  * Login Page Example
- * 
+ *
  * Production-ready login page demonstrating complete authentication flow
  * with routing, state management, and user experience best practices.
- * 
+ *
  * @doc.type example
  * @doc.purpose Authentication page example
  * @doc.layer ui
@@ -28,36 +28,36 @@ export interface LoginPageProps {
    * @default '/dashboard'
    */
   redirectTo?: string;
-  
+
   /**
    * Show remember me option
    * @default true
    */
   showRememberMe?: boolean;
-  
+
   /**
    * Show forgot password link
    * @default true
    */
   showForgotPassword?: boolean;
-  
+
   /**
    * Show sign up link
    * @default true
    */
   showSignUp?: boolean;
-  
+
   /**
    * Custom logo component
    */
   logo?: React.ReactNode;
-  
+
   /**
    * Page title
    * @default 'Welcome Back'
    */
   title?: string;
-  
+
   /**
    * Page subtitle
    * @default 'Sign in to your account to continue'
@@ -67,15 +67,15 @@ export interface LoginPageProps {
 
 /**
  * Login Page Component
- * 
+ *
  * Complete login page with form, navigation, and state management.
  * Demonstrates production-ready authentication patterns.
- * 
+ *
  * @example Basic Usage
  * ```tsx
  * <LoginPage />
  * ```
- * 
+ *
  * @example Custom Configuration
  * ```tsx
  * <LoginPage
@@ -85,7 +85,7 @@ export interface LoginPageProps {
  *   logo={<CompanyLogo />}
  * />
  * ```
- * 
+ *
  * @example With Router
  * ```tsx
  * <Route path="/login" element={<LoginPage />} />
@@ -104,17 +104,17 @@ export function LoginPage({
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
   const toast = useToast();
-  
+
   // Get the return path from location state or use default
   const from = (location.state as unknown)?.from?.pathname || redirectTo;
-  
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, from]);
-  
+
   /**
    * Handle successful login
    */
@@ -123,11 +123,11 @@ export function LoginPage({
       title: 'Login Successful',
       duration: 3000,
     });
-    
+
     // Navigate to return path or dashboard
     navigate(from, { replace: true });
   };
-  
+
   /**
    * Handle login error
    */
@@ -137,20 +137,23 @@ export function LoginPage({
       duration: 5000,
     });
   };
-  
+
   return (
     <Page
       maxWidth="sm"
       container
       padding={4}
-      className="flex items-center justify-center min-h-screen" >
+      className="flex items-center justify-center min-h-screen"
+    >
       <div
-        style={{ width: '100%',
+        style={{
+          width: '100%',
           maxWidth: '440px',
           padding: '48px',
           background: 'white',
           borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)' }}
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+        }}
       >
         {/* Logo */}
         {logo && (
@@ -164,7 +167,7 @@ export function LoginPage({
             {logo}
           </div>
         )}
-        
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1
@@ -187,7 +190,7 @@ export function LoginPage({
             {subtitle}
           </p>
         </div>
-        
+
         {/* Login Form */}
         <LoginForm
           onSuccess={handleSuccess}
@@ -196,7 +199,7 @@ export function LoginPage({
           showForgotPassword={showForgotPassword}
           showSignUp={showSignUp}
         />
-        
+
         {/* Additional Links */}
         <div
           style={{
@@ -222,7 +225,7 @@ export function LoginPage({
             </p>
           )}
         </div>
-        
+
         {/* Terms & Privacy */}
         <div
           style={{

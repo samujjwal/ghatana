@@ -7,4 +7,3 @@ export {
   type SelectOptionProps,
   type SelectGroupProps,
 } from './Select.tailwind';
-

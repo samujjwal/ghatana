@@ -35,7 +35,10 @@ export interface TransferListItem {
 /**
  * TransferList component props
  */
-export interface TransferListProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface TransferListProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onChange'
+> {
   /**
    * Items in the left list
    */
@@ -49,7 +52,10 @@ export interface TransferListProps extends Omit<React.HTMLAttributes<HTMLDivElem
   /**
    * Called when items are transferred
    */
-  onChange?: (leftItems: TransferListItem[], rightItems: TransferListItem[]) => void;
+  onChange?: (
+    leftItems: TransferListItem[],
+    rightItems: TransferListItem[]
+  ) => void;
 
   /**
    * Left list title
@@ -98,7 +104,11 @@ const SearchIcon: React.FC<{ className?: string }> = ({ className }) => (
     stroke="currentColor"
     strokeWidth={2}
   >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+    />
   </svg>
 );
 
@@ -106,13 +116,25 @@ const SearchIcon: React.FC<{ className?: string }> = ({ className }) => (
  * Arrow icons for transfer buttons
  */
 const ArrowRightIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
   </svg>
 );
 
 const ArrowLeftIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
   </svg>
 );
@@ -152,8 +174,12 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
     },
     ref
   ) => {
-    const [leftChecked, setLeftChecked] = React.useState<Set<string | number>>(new Set());
-    const [rightChecked, setRightChecked] = React.useState<Set<string | number>>(new Set());
+    const [leftChecked, setLeftChecked] = React.useState<Set<string | number>>(
+      new Set()
+    );
+    const [rightChecked, setRightChecked] = React.useState<
+      Set<string | number>
+    >(new Set());
     const [leftSearch, setLeftSearch] = React.useState('');
     const [rightSearch, setRightSearch] = React.useState('');
 
@@ -203,7 +229,9 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
       const checkedSet = isLeft ? leftChecked : rightChecked;
       const setChecked = isLeft ? setLeftChecked : setRightChecked;
 
-      const enabledIds = items.filter((item) => !item.disabled).map((item) => item.id);
+      const enabledIds = items
+        .filter((item) => !item.disabled)
+        .map((item) => item.id);
 
       if (enabledIds.every((id) => checkedSet.has(id))) {
         // Deselect all
@@ -218,7 +246,9 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
     const handleTransferRight = () => {
       if (disabled) return;
 
-      const itemsToTransfer = leftItems.filter((item) => leftChecked.has(item.id));
+      const itemsToTransfer = leftItems.filter((item) =>
+        leftChecked.has(item.id)
+      );
       const newLeft = leftItems.filter((item) => !leftChecked.has(item.id));
       const newRight = [...rightItems, ...itemsToTransfer];
 
@@ -229,7 +259,9 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
     const handleTransferLeft = () => {
       if (disabled) return;
 
-      const itemsToTransfer = rightItems.filter((item) => rightChecked.has(item.id));
+      const itemsToTransfer = rightItems.filter((item) =>
+        rightChecked.has(item.id)
+      );
       const newRight = rightItems.filter((item) => !rightChecked.has(item.id));
       const newLeft = [...leftItems, ...itemsToTransfer];
 
@@ -247,7 +279,9 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
       search: string,
       setSearch: (value: string) => void
     ) => {
-      const allChecked = filteredItems.length > 0 && filteredItems.every((item) => item.disabled || checkedSet.has(item.id));
+      const allChecked =
+        filteredItems.length > 0 &&
+        filteredItems.every((item) => item.disabled || checkedSet.has(item.id));
       const someChecked = filteredItems.some((item) => checkedSet.has(item.id));
 
       return (
@@ -285,17 +319,16 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
                 onChange={() => handleToggleAll(isLeft)}
                 disabled={disabled || filteredItems.length === 0}
                 className="w-4 h-4 text-primary-500 border-grey-300 rounded focus:ring-primary-500 disabled:cursor-not-allowed"
-                {...(someChecked && !allChecked && { 'data-indeterminate': 'true' } as unknown)}
+                {...(someChecked &&
+                  !allChecked &&
+                  ({ 'data-indeterminate': 'true' } as unknown))}
               />
               <span className="text-sm text-grey-700">Select all</span>
             </label>
           </div>
 
           {/* Items List */}
-          <div
-            className="flex-1 overflow-y-auto"
-            style={{ height }}
-          >
+          <div className="flex-1 overflow-y-auto" style={{ height }}>
             {filteredItems.length === 0 ? (
               <div className="flex items-center justify-center h-full text-sm text-grey-500">
                 {search ? 'No items found' : 'No items'}
@@ -348,7 +381,11 @@ export const TransferList = React.forwardRef<HTMLDivElement, TransferListProps>(
     };
 
     return (
-      <div ref={ref} className={cn('flex gap-4 items-center', className)} {...props}>
+      <div
+        ref={ref}
+        className={cn('flex gap-4 items-center', className)}
+        {...props}
+      >
         {/* Left List */}
         {renderList(
           leftItems,

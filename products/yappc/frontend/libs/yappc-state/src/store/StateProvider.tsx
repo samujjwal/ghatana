@@ -12,11 +12,10 @@ import { Provider, createStore } from 'jotai';
 import type { WritableAtom } from 'jotai';
 import React, { useEffect, useMemo } from 'react';
 
-
 import {
   syncStateAcrossTabs,
   subscribeToSync,
-  type StorageEvent
+  type StorageEvent,
 } from './cross-tab-sync';
 import { StateManager } from './StateManager';
 // import 'jotai-devtools/styles.css';
@@ -101,7 +100,10 @@ export const StateProvider: React.FC<StateProviderProps> = ({
             store.set(atom as WritableAtom<unknown, [unknown], unknown>, value);
           } catch (error) {
             if (process.env.NODE_ENV === 'development') {
-              console.warn(`[StateProvider] Failed to initialize atom "${key}":`, error);
+              console.warn(
+                `[StateProvider] Failed to initialize atom "${key}":`,
+                error
+              );
             }
           }
         }
@@ -119,7 +121,7 @@ export const StateProvider: React.FC<StateProviderProps> = ({
         'temp-ui-state',
         'devtools-state',
         'session-only',
-        ...(syncConfig.excludeKeys ?? [])
+        ...(syncConfig.excludeKeys ?? []),
       ],
       debounceDelay: syncConfig.debounceDelay ?? 50,
     });
@@ -130,10 +132,16 @@ export const StateProvider: React.FC<StateProviderProps> = ({
       if (atom) {
         // Only update if atom is writable
         try {
-          store.set(atom as WritableAtom<unknown, [unknown], unknown>, event.value);
+          store.set(
+            atom as WritableAtom<unknown, [unknown], unknown>,
+            event.value
+          );
         } catch (error) {
           if (syncConfig.debug || process.env.NODE_ENV === 'development') {
-            console.warn(`[StateProvider] Failed to sync atom "${event.key}":`, error);
+            console.warn(
+              `[StateProvider] Failed to sync atom "${event.key}":`,
+              error
+            );
           }
         }
       }

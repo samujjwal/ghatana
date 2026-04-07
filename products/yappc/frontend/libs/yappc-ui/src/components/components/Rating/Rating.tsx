@@ -3,7 +3,6 @@ import type { HTMLAttributes } from 'react';
 
 import { cn } from '../../utils/cn';
 
-
 /**
  *
  */
@@ -12,74 +11,77 @@ export type RatingSize = 'small' | 'medium' | 'large';
 /**
  * Rating component props
  */
-export interface RatingProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
+export interface RatingProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'onChange'
+> {
   /**
    * Current rating value
    */
   value?: number;
-  
+
   /**
    * Default value
    */
   defaultValue?: number;
-  
+
   /**
    * Maximum rating
    */
   max?: number;
-  
+
   /**
    * Allow half ratings
    */
   precision?: 0.5 | 1;
-  
+
   /**
    * Rating size
    */
   size?: RatingSize;
-  
+
   /**
    * Read-only mode
    */
   readOnly?: boolean;
-  
+
   /**
    * Disabled state
    */
   disabled?: boolean;
-  
+
   /**
    * Change handler
    */
   onChange?: (value: number) => void;
-  
+
   /**
    * Show value label
    */
   showValue?: boolean;
-  
+
   /**
    * Show empty stars
    * @default true
    */
   showEmpty?: boolean;
-  
+
   /**
    * Custom icon for filled state
    */
   icon?: React.ReactNode;
-  
+
   /**
    * Custom icon for empty state
    */
   emptyIcon?: React.ReactNode;
-  
+
   /**
    * Highlight selected star on hover
    * @default true
    */
   highlightSelectedOnly?: boolean;
-  
+
   /**
    * Name attribute for form integration
    */
@@ -144,7 +146,9 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
     },
     ref
   ) => {
-    const [internalValue, setInternalValue] = React.useState(defaultValue ?? value);
+    const [internalValue, setInternalValue] = React.useState(
+      defaultValue ?? value
+    );
     const [hoverValue, setHoverValue] = React.useState<number | null>(null);
 
     const currentValue = value !== undefined ? value : internalValue;
@@ -233,10 +237,15 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
     const renderStar = (index: number) => {
       const starValue = index + 1;
       const isFilled = displayValue >= starValue;
-      const isHalfFilled = precision === 0.5 && displayValue >= starValue - 0.5 && displayValue < starValue;
+      const isHalfFilled =
+        precision === 0.5 &&
+        displayValue >= starValue - 0.5 &&
+        displayValue < starValue;
 
       const showHover = isInteractive && !highlightSelectedOnly;
-      const isHovered = hoverValue !== null && hoverValue >= starValue - (precision === 0.5 ? 0.5 : 0);
+      const isHovered =
+        hoverValue !== null &&
+        hoverValue >= starValue - (precision === 0.5 ? 0.5 : 0);
 
       return (
         <div
@@ -266,11 +275,13 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
         >
           {/* Empty star (background) */}
           {showEmpty && (
-            <div className={cn(
-              'absolute inset-0',
-              disabled ? 'text-grey-300' : 'text-grey-400',
-              sizeClasses[size]
-            )}>
+            <div
+              className={cn(
+                'absolute inset-0',
+                disabled ? 'text-grey-300' : 'text-grey-400',
+                sizeClasses[size]
+              )}
+            >
               {emptyIcon || <StarBorderIcon className={sizeClasses[size]} />}
             </div>
           )}
@@ -316,25 +327,21 @@ export const Rating = React.forwardRef<HTMLDivElement, RatingProps>(
 
         {/* Show value label */}
         {showValue && (
-          <span className={cn(
-            'ml-2 font-medium',
-            size === 'small' && 'text-sm',
-            size === 'medium' && 'text-base',
-            size === 'large' && 'text-lg',
-            disabled ? 'text-grey-400' : 'text-grey-700'
-          )}>
+          <span
+            className={cn(
+              'ml-2 font-medium',
+              size === 'small' && 'text-sm',
+              size === 'medium' && 'text-base',
+              size === 'large' && 'text-lg',
+              disabled ? 'text-grey-400' : 'text-grey-700'
+            )}
+          >
             {currentValue.toFixed(precision === 0.5 ? 1 : 0)}
           </span>
         )}
 
         {/* Hidden input for form integration */}
-        {name && (
-          <input
-            type="hidden"
-            name={name}
-            value={currentValue}
-          />
-        )}
+        {name && <input type="hidden" name={name} value={currentValue} />}
       </div>
     );
   }

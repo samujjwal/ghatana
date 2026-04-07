@@ -1,21 +1,30 @@
 import { Plus as AddIcon } from 'lucide-react';
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';const DashboardPage = () => {
-  const navigate = useNavigate()
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+} from '@ghatana/design-system';
+const DashboardPage = () => {
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user is authenticated
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('authToken');
     if (!token) {
-      navigate('/login')
+      navigate('/login');
     }
-  }, [navigate])
+  }, [navigate]);
 
   const handleCreateWorkspace = () => {
-    navigate('/workspaces/new')
-  }
+    navigate('/workspaces/new');
+  };
 
   return (
     <Box className="grow p-6">
@@ -82,7 +91,7 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@
         </Grid>
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default DashboardPage
+export default DashboardPage;

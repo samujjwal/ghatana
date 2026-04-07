@@ -90,8 +90,12 @@ describe('Feature 1.1: Viewport Store', () => {
       });
 
       // Cursor should point to same world coordinates
-      expect(Math.abs(worldPointBefore.x - worldPointAfter.x)).toBeLessThan(0.1);
-      expect(Math.abs(worldPointBefore.y - worldPointAfter.y)).toBeLessThan(0.1);
+      expect(Math.abs(worldPointBefore.x - worldPointAfter.x)).toBeLessThan(
+        0.1
+      );
+      expect(Math.abs(worldPointBefore.y - worldPointAfter.y)).toBeLessThan(
+        0.1
+      );
     });
 
     it('handles multiple zoom steps smoothly', () => {
@@ -177,7 +181,12 @@ describe('Feature 1.1: Viewport Store', () => {
     });
 
     it('handles empty element array', () => {
-      const elements: Array<{ x: number; y: number; width: number; height: number }> = [];
+      const elements: Array<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      }> = [];
       const viewport = { width: 1000, height: 800 };
 
       const result = fitElementsInView(elements, viewport);

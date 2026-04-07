@@ -9,42 +9,42 @@ export interface ModalProps {
    * Whether the modal is open
    */
   open: boolean;
-  
+
   /**
    * Callback when modal should close
    */
   onClose: () => void;
-  
+
   /**
    * Modal title
    */
   title?: string;
-  
+
   /**
    * Modal content
    */
   children: ReactNode;
-  
+
   /**
    * Modal size
    */
   size?: 'small' | 'medium' | 'large' | 'fullscreen';
-  
+
   /**
    * Whether clicking backdrop closes modal
    */
   closeOnBackdropClick?: boolean;
-  
+
   /**
    * Whether pressing Escape closes modal
    */
   closeOnEscape?: boolean;
-  
+
   /**
    * Footer content
    */
   footer?: ReactNode;
-  
+
   /**
    * Additional class name
    */
@@ -53,7 +53,7 @@ export interface ModalProps {
 
 /**
  * Modal component for displaying content in an overlay
- * 
+ *
  * @example
  * ```tsx
  * <Modal
@@ -135,7 +135,8 @@ export function Modal({
   const modalStyle: React.CSSProperties = {
     backgroundColor: 'var(--color-background-paper, #ffffff)',
     borderRadius: size === 'fullscreen' ? 0 : '0.5rem',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    boxShadow:
+      '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
     maxWidth: sizeMap[size],
     width: '100%',
     maxHeight: size === 'fullscreen' ? '100vh' : 'calc(100vh - 2rem)',
@@ -197,11 +198,7 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <div
-        ref={modalRef}
-        style={modalStyle}
-        className={className}
-      >
+      <div ref={modalRef} style={modalStyle} className={className}>
         {title && (
           <div style={headerStyle}>
             <h2 id="modal-title" style={titleStyle}>
@@ -216,16 +213,10 @@ export function Modal({
             </button>
           </div>
         )}
-        
-        <div style={contentStyle}>
-          {children}
-        </div>
-        
-        {footer && (
-          <div style={footerStyle}>
-            {footer}
-          </div>
-        )}
+
+        <div style={contentStyle}>{children}</div>
+
+        {footer && <div style={footerStyle}>{footer}</div>}
       </div>
     </div>
   );

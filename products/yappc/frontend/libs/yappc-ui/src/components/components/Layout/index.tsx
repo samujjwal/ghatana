@@ -18,7 +18,13 @@ export interface PageHeaderProps {
  * Standardized page header component
  * Eliminates duplication between projects.tsx, workspaces.tsx, and other routes
  */
-export function PageHeader({ title, subtitle, backLink, backLabel, actions }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  subtitle,
+  backLink,
+  backLabel,
+  actions,
+}: PageHeaderProps) {
   return (
     <header style={{ marginBottom: '1.5rem' }}>
       {backLink && (
@@ -31,18 +37,30 @@ export function PageHeader({ title, subtitle, backLink, backLabel, actions }: Pa
               fontSize: '0.875rem',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.25rem'
+              gap: '0.25rem',
             }}
           >
             ← {backLabel || 'Back'}
           </Link>
         </nav>
       )}
-      <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 600, color: 'var(--color-text-primary, #111)' }}>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: '2rem',
+          fontWeight: 600,
+          color: 'var(--color-text-primary, #111)',
+        }}
+      >
         {title}
       </h1>
       {subtitle && (
-        <p style={{ margin: '0.5rem 0 0 0', color: 'var(--color-text-secondary, #666)' }}>
+        <p
+          style={{
+            margin: '0.5rem 0 0 0',
+            color: 'var(--color-text-secondary, #666)',
+          }}
+        >
           {subtitle}
         </p>
       )}
@@ -66,7 +84,12 @@ export interface LayoutCardProps {
  * Standardized card component for consistent layout
  * Eliminates duplication in project/overview.tsx and other route components
  */
-export function LayoutCard({ children, title, action, style }: LayoutCardProps) {
+export function LayoutCard({
+  children,
+  title,
+  action,
+  style,
+}: LayoutCardProps) {
   return (
     <div
       style={{
@@ -74,7 +97,7 @@ export function LayoutCard({ children, title, action, style }: LayoutCardProps) 
         backgroundColor: 'white',
         borderRadius: '8px',
         border: '1px solid var(--color-border, #e0e0e0)',
-        ...style
+        ...style,
       }}
     >
       {(title || action) && (
@@ -83,10 +106,14 @@ export function LayoutCard({ children, title, action, style }: LayoutCardProps) 
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '1rem'
+            marginBottom: '1rem',
           }}
         >
-          {title && <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>{title}</h3>}
+          {title && (
+            <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600 }}>
+              {title}
+            </h3>
+          )}
           {action}
         </div>
       )}
@@ -107,7 +134,13 @@ export interface EntityCardProps {
  * Entity card for displaying items in a grid/list
  * Used for projects, workspaces, and other entities
  */
-export function EntityCard({ name, description, meta, linkTo, badges }: EntityCardProps) {
+export function EntityCard({
+  name,
+  description,
+  meta,
+  linkTo,
+  badges,
+}: EntityCardProps) {
   return (
     <Link
       to={linkTo}
@@ -119,26 +152,39 @@ export function EntityCard({ name, description, meta, linkTo, badges }: EntityCa
         border: '1px solid var(--color-border, #e0e0e0)',
         textDecoration: 'none',
         color: 'inherit',
-        transition: 'box-shadow 0.2s, border-color 0.2s'
+        transition: 'box-shadow 0.2s, border-color 0.2s',
       }}
     >
-      <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 600 }}>{name}</h3>
+      <h3
+        style={{ margin: '0 0 0.5rem 0', fontSize: '1.25rem', fontWeight: 600 }}
+      >
+        {name}
+      </h3>
       {description && (
-        <p style={{ margin: '0 0 0.75rem 0', color: 'var(--color-text-secondary, #666)', fontSize: '0.875rem' }}>
+        <p
+          style={{
+            margin: '0 0 0.75rem 0',
+            color: 'var(--color-text-secondary, #666)',
+            fontSize: '0.875rem',
+          }}
+        >
           {description}
         </p>
       )}
       {badges && badges.length > 0 && (
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <div
+          style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}
+        >
           {badges.map((badge, i) => (
             <span
               key={i}
               style={{
                 padding: '0.25rem 0.5rem',
-                backgroundColor: badge.color || 'var(--color-surface-secondary, #f5f5f5)',
+                backgroundColor:
+                  badge.color || 'var(--color-surface-secondary, #f5f5f5)',
                 borderRadius: '4px',
                 fontSize: '0.75rem',
-                color: 'var(--color-text-secondary, #666)'
+                color: 'var(--color-text-secondary, #666)',
               }}
             >
               {badge.label}
@@ -147,7 +193,15 @@ export function EntityCard({ name, description, meta, linkTo, badges }: EntityCa
         </div>
       )}
       {meta && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--color-text-secondary, #666)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.875rem',
+            color: 'var(--color-text-secondary, #666)',
+          }}
+        >
           {meta}
         </div>
       )}

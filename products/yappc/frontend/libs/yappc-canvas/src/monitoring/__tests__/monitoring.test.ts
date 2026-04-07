@@ -83,7 +83,13 @@ describe('Monitoring Manager', () => {
     });
 
     it('should record counter metric', () => {
-      const metric = recordCounter(manager, 'test_counter', 5, [], 'Test counter');
+      const metric = recordCounter(
+        manager,
+        'test_counter',
+        5,
+        [],
+        'Test counter'
+      );
 
       expect(metric.name).toBe('test_counter');
       expect(metric.type).toBe('counter');
@@ -351,7 +357,14 @@ describe('Monitoring Manager', () => {
     });
 
     it('should export histogram in Prometheus format', () => {
-      recordHistogram(manager, 'test_histogram', 0.5, [0.1, 0.5, 1], [], 'Test histogram');
+      recordHistogram(
+        manager,
+        'test_histogram',
+        0.5,
+        [0.1, 0.5, 1],
+        [],
+        'Test histogram'
+      );
 
       const output = exportPrometheusMetrics(manager);
 
@@ -831,7 +844,9 @@ describe('Monitoring Manager', () => {
       expect(dashboard.title).toBe('Canvas Collaboration');
       expect(dashboard.tags).toContain('collaboration');
 
-      const latencyPanel = dashboard.panels.find((p) => p.id === 'message-latency');
+      const latencyPanel = dashboard.panels.find(
+        (p) => p.id === 'message-latency'
+      );
       expect(latencyPanel).toBeDefined();
       expect(latencyPanel?.metrics).toContain('collab_message_latency_ms');
     });
@@ -843,7 +858,9 @@ describe('Monitoring Manager', () => {
       expect(dashboard.title).toBe('Canvas Export Operations');
       expect(dashboard.tags).toContain('exports');
 
-      const successPanel = dashboard.panels.find((p) => p.id === 'export-success');
+      const successPanel = dashboard.panels.find(
+        (p) => p.id === 'export-success'
+      );
       expect(successPanel).toBeDefined();
       expect(successPanel?.metrics).toContain('export_success_total');
     });

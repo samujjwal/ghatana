@@ -76,11 +76,7 @@ describe('ComplianceQueryResolver', () => {
       };
 
       // WHEN: Query with framework filter
-      await resolver.Query.assessments(
-        {},
-        { framework: 'SOC2' },
-        mockContext
-      );
+      await resolver.Query.assessments({}, { framework: 'SOC2' }, mockContext);
 
       // THEN: Should apply framework filter
       expect(mockPrisma.complianceAssessment.findMany).toHaveBeenCalledWith({
@@ -122,11 +118,7 @@ describe('ComplianceQueryResolver', () => {
       };
 
       // WHEN: Query with pagination
-      await resolver.Query.assessments(
-        {},
-        { skip: 10, take: 5 },
-        mockContext
-      );
+      await resolver.Query.assessments({}, { skip: 10, take: 5 }, mockContext);
 
       // THEN: Should apply pagination
       expect(mockPrisma.complianceAssessment.findMany).toHaveBeenCalledWith(
@@ -184,7 +176,12 @@ describe('ComplianceQueryResolver', () => {
     it('should retrieve controls for framework', async () => {
       // GIVEN: Framework with controls
       const controls = [
-        { id: '1', framework: 'SOC2', title: 'Access Control', severity: 'critical' },
+        {
+          id: '1',
+          framework: 'SOC2',
+          title: 'Access Control',
+          severity: 'critical',
+        },
         { id: '2', framework: 'SOC2', title: 'Encryption', severity: 'high' },
       ];
 
@@ -406,10 +403,7 @@ describe('ComplianceQueryResolver', () => {
           { status: 'implemented' },
           { status: 'not_implemented' },
         ],
-        findings: [
-          { severity: 'critical' },
-          { severity: 'high' },
-        ],
+        findings: [{ severity: 'critical' }, { severity: 'high' }],
       };
 
       (mockPrisma.complianceAssessment as unknown) = {
@@ -475,11 +469,7 @@ describe('ComplianceQueryResolver', () => {
       };
 
       // WHEN: Query with pagination
-      await resolver.Query.assessments(
-        {},
-        { skip: 0, take: 20 },
-        mockContext
-      );
+      await resolver.Query.assessments({}, { skip: 0, take: 20 }, mockContext);
 
       // THEN: Should apply pagination
       expect(mockPrisma.complianceAssessment.findMany).toHaveBeenCalledWith(
@@ -507,4 +497,3 @@ describe('ComplianceQueryResolver', () => {
     });
   });
 });
-

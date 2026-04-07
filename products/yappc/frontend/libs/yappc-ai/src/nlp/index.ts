@@ -1,6 +1,6 @@
 /**
  * NLP Module
- * 
+ *
  * Natural language processing capabilities.
  */
 

@@ -1,14 +1,13 @@
-import {
-  createDefaultSanitizationConfig,
-} from '../schemas/export-schemas';
+import { createDefaultSanitizationConfig } from '../schemas/export-schemas';
 import type {
   SanitizationConfig,
   SanitizeRequest,
-  SanitizeResult} from '../schemas/export-schemas';
+  SanitizeResult,
+} from '../schemas/export-schemas';
 
 // We'll attempt to load the shared test DOMPurify mock only when running tests.
 // In production or when the test helper isn't available, a local fallback is used.
- 
+
 /**
  *
  */
@@ -26,9 +25,15 @@ interface LocalPurify {
  * inject a deterministic mock via the ContentSanitizer constructor when needed.
  */
 const createFallbackPurify = (): LocalPurify => {
-  const hooks = new Map<string, Array<(node: unknown, data?: unknown) => void>>();
+  const hooks = new Map<
+    string,
+    Array<(node: unknown, data?: unknown) => void>
+  >();
   return {
-    addHook: (hookName: string, callback: (node: unknown, data?: unknown) => void) => {
+    addHook: (
+      hookName: string,
+      callback: (node: unknown, data?: unknown) => void
+    ) => {
       if (!hooks.has(hookName)) hooks.set(hookName, []);
       hooks.get(hookName)!.push(callback);
     },
@@ -56,8 +61,6 @@ const createFallbackPurify = (): LocalPurify => {
     },
   };
 };
-
- 
 
 // Content Security Policy utilities
 /**
@@ -190,10 +193,8 @@ export class ContentSanitizer {
           if (data?.forceKeepAttr) return;
 
           const tagName = node?.tagName?.toLowerCase() || '*';
-          const allowedForTag =
-            (this.config.allowedAttributes[tagName]) || [];
-          const allowedGlobal =
-            (this.config.allowedAttributes['*']) || [];
+          const allowedForTag = this.config.allowedAttributes[tagName] || [];
+          const allowedGlobal = this.config.allowedAttributes['*'] || [];
           const allowed = [...allowedForTag, ...allowedGlobal];
 
           if (data?.attrName && !allowed.includes(data.attrName)) {
@@ -369,7 +370,7 @@ export class ContentSanitizer {
     const allAttributes = new Set<string>();
     Object.values(this.config.allowedAttributes).forEach((attrs) => {
       if (Array.isArray(attrs)) {
-        (attrs).forEach((attr) => allAttributes.add(attr));
+        attrs.forEach((attr) => allAttributes.add(attr));
       }
     });
     return Array.from(allAttributes);

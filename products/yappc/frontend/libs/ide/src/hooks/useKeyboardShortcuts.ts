@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Keyboard Shortcuts Hook
- * 
+ *
  * Comprehensive keyboard shortcut management for IDE.
  * Supports customizable key bindings and command palette.
- * 
+ *
  * @doc.type module
  * @doc.purpose Keyboard shortcuts management for IDE
  * @doc.layer product
@@ -65,62 +65,70 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []) {
   }, []);
 
   // Check if shortcut matches event
-  const matchesShortcut = useCallback((
-    event: KeyboardEvent,
-    shortcut: KeyboardShortcut
-  ): boolean => {
-    const eventKey = normalizeKeyEvent(event);
-    const shortcutKey = [...shortcut.modifiers, shortcut.key.toLowerCase()].join('+');
+  const matchesShortcut = useCallback(
+    (event: KeyboardEvent, shortcut: KeyboardShortcut): boolean => {
+      const eventKey = normalizeKeyEvent(event);
+      const shortcutKey = [
+        ...shortcut.modifiers,
+        shortcut.key.toLowerCase(),
+      ].join('+');
 
-    return eventKey === shortcutKey;
-  }, [normalizeKeyEvent]);
+      return eventKey === shortcutKey;
+    },
+    [normalizeKeyEvent]
+  );
 
   // Handle keyboard events
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Don't handle shortcuts when typing in input fields
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.contentEditable === 'true'
-    ) {
-      // Allow certain shortcuts even in inputs
-      const allowedInInput = ['escape', 'tab', 'enter'];
-      if (!allowedInInput.includes(event.key.toLowerCase())) {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Don't handle shortcuts when typing in input fields
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.contentEditable === 'true'
+      ) {
+        // Allow certain shortcuts even in inputs
+        const allowedInInput = ['escape', 'tab', 'enter'];
+        if (!allowedInInput.includes(event.key.toLowerCase())) {
+          return;
+        }
+      }
+
+      // Check for command palette shortcut (Ctrl/Cmd + P)
+      if (
+        matchesShortcut(event, {
+          id: 'command-palette',
+          key: 'p',
+          modifiers: [event.ctrlKey ? 'ctrl' : 'meta'],
+          action: () => {},
+          description: '',
+          category: 'tools',
+        })
+      ) {
+        event.preventDefault();
+        setIsCommandPaletteOpen(true);
         return;
       }
-    }
 
-    // Check for command palette shortcut (Ctrl/Cmd + P)
-    if (matchesShortcut(event, {
-      id: 'command-palette',
-      key: 'p',
-      modifiers: [event.ctrlKey ? 'ctrl' : 'meta'],
-      action: () => { },
-      description: '',
-      category: 'tools'
-    })) {
-      event.preventDefault();
-      setIsCommandPaletteOpen(true);
-      return;
-    }
+      // Check other shortcuts
+      for (const shortcut of shortcutsRef.current) {
+        if (matchesShortcut(event, shortcut)) {
+          event.preventDefault();
+          event.stopPropagation();
 
-    // Check other shortcuts
-    for (const shortcut of shortcutsRef.current) {
-      if (matchesShortcut(event, shortcut)) {
-        event.preventDefault();
-        event.stopPropagation();
+          // Check if shortcut should be active in current context
+          if (shortcut.when && !eval(shortcut.when)) {
+            continue;
+          }
 
-        // Check if shortcut should be active in current context
-        if (shortcut.when && !eval(shortcut.when)) {
-          continue;
+          shortcut.action();
+          break;
         }
-
-        shortcut.action();
-        break;
       }
-    }
-  }, [matchesShortcut]);
+    },
+    [matchesShortcut]
+  );
 
   // Setup global keyboard listener
   useEffect(() => {
@@ -129,55 +137,64 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []) {
   }, [handleKeyDown]);
 
   // Filter commands for command palette
-  const filteredCommands = shortcuts.filter(shortcut =>
-    shortcut.description.toLowerCase().includes(commandPaletteQuery.toLowerCase()) ||
-    shortcut.id.toLowerCase().includes(commandPaletteQuery.toLowerCase())
+  const filteredCommands = shortcuts.filter(
+    (shortcut) =>
+      shortcut.description
+        .toLowerCase()
+        .includes(commandPaletteQuery.toLowerCase()) ||
+      shortcut.id.toLowerCase().includes(commandPaletteQuery.toLowerCase())
   );
 
   // Handle command palette navigation
-  const handleCommandPaletteKeyDown = useCallback((event: React.KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        setActiveCommandIndex(prev =>
-          prev < filteredCommands.length - 1 ? prev + 1 : 0
-        );
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        setActiveCommandIndex(prev =>
-          prev > 0 ? prev - 1 : filteredCommands.length - 1
-        );
-        break;
-      case 'Enter':
-        event.preventDefault();
-        if (filteredCommands[activeCommandIndex]) {
-          filteredCommands[activeCommandIndex].action();
+  const handleCommandPaletteKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          setActiveCommandIndex((prev) =>
+            prev < filteredCommands.length - 1 ? prev + 1 : 0
+          );
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setActiveCommandIndex((prev) =>
+            prev > 0 ? prev - 1 : filteredCommands.length - 1
+          );
+          break;
+        case 'Enter':
+          event.preventDefault();
+          if (filteredCommands[activeCommandIndex]) {
+            filteredCommands[activeCommandIndex].action();
+            setIsCommandPaletteOpen(false);
+            setCommandPaletteQuery('');
+            setActiveCommandIndex(0);
+          }
+          break;
+        case 'Escape':
+          event.preventDefault();
           setIsCommandPaletteOpen(false);
           setCommandPaletteQuery('');
           setActiveCommandIndex(0);
-        }
-        break;
-      case 'Escape':
-        event.preventDefault();
-        setIsCommandPaletteOpen(false);
-        setCommandPaletteQuery('');
-        setActiveCommandIndex(0);
-        break;
-    }
-  }, [filteredCommands, activeCommandIndex]);
+          break;
+      }
+    },
+    [filteredCommands, activeCommandIndex]
+  );
 
   // Execute command
-  const executeCommand = useCallback((commandId: string) => {
-    const shortcut = shortcuts.find(s => s.id === commandId);
-    if (shortcut) {
-      shortcut.action();
-    }
-  }, [shortcuts]);
+  const executeCommand = useCallback(
+    (commandId: string) => {
+      const shortcut = shortcuts.find((s) => s.id === commandId);
+      if (shortcut) {
+        shortcut.action();
+      }
+    },
+    [shortcuts]
+  );
 
   // Get help text
   const getHelpText = useCallback((): ShortcutHelpItem[] => {
-    return shortcuts.map(shortcut => ({
+    return shortcuts.map((shortcut) => ({
       id: shortcut.id,
       key: [...shortcut.modifiers, shortcut.key].join(' + ').toUpperCase(),
       description: shortcut.description,
@@ -192,7 +209,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []) {
 
   // Unregister shortcut
   const unregisterShortcut = useCallback((id: string) => {
-    shortcutsRef.current = shortcutsRef.current.filter(s => s.id !== id);
+    shortcutsRef.current = shortcutsRef.current.filter((s) => s.id !== id);
   }, []);
 
   return {
@@ -255,7 +272,9 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
       input.onchange = () => {
         const file = input.files?.[0];
         if (file) {
-          document.dispatchEvent(new CustomEvent('ide:openFile', { detail: { file } }));
+          document.dispatchEvent(
+            new CustomEvent('ide:openFile', { detail: { file } })
+          );
         }
         document.body.removeChild(input);
       };
@@ -330,9 +349,14 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     action: () => {
       // Prefer the async Clipboard API; fall back to execCommand for older envs
       if (navigator.clipboard?.readText) {
-        navigator.clipboard.readText().then((text) => {
-          document.dispatchEvent(new CustomEvent('ide:paste', { detail: { text } }));
-        }).catch(() => document.execCommand('paste'));
+        navigator.clipboard
+          .readText()
+          .then((text) => {
+            document.dispatchEvent(
+              new CustomEvent('ide:paste', { detail: { text } })
+            );
+          })
+          .catch(() => document.execCommand('paste'));
       } else {
         document.execCommand('paste');
       }
@@ -401,7 +425,9 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
       if (lineStr !== null) {
         const line = parseInt(lineStr, 10);
         if (!isNaN(line)) {
-          document.dispatchEvent(new CustomEvent('ide:gotoLine', { detail: { line } }));
+          document.dispatchEvent(
+            new CustomEvent('ide:gotoLine', { detail: { line } })
+          );
         }
       }
     },
@@ -430,7 +456,7 @@ export const DEFAULT_IDE_SHORTCUTS: KeyboardShortcut[] = [
     id: 'command-palette',
     key: 'p',
     modifiers: ['ctrl'],
-    action: () => { }, // Handled specially
+    action: () => {}, // Handled specially
     description: 'Command Palette',
     category: 'tools',
   },

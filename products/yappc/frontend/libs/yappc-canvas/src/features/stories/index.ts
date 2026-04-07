@@ -4,7 +4,10 @@ import {
 } from './canvas-feature-stories.generated';
 import type { CanvasFeatureStory, CanvasFeatureStoryCategory } from './types';
 
-export { canvasFeatureStoryCategories, canvasFeatureStoryCount } from './canvas-feature-stories.generated';
+export {
+  canvasFeatureStoryCategories,
+  canvasFeatureStoryCount,
+} from './canvas-feature-stories.generated';
 
 export type {
   CanvasAcceptanceCriterion,
@@ -14,31 +17,34 @@ export type {
   CanvasStoryTestReference,
 } from './types';
 
-const flattenedStories: CanvasFeatureStory[] = canvasFeatureStoryCategories.flatMap(
-  (category) => category.stories,
-);
+const flattenedStories: CanvasFeatureStory[] =
+  canvasFeatureStoryCategories.flatMap((category) => category.stories);
 
 const storyMap: ReadonlyMap<string, CanvasFeatureStory> = new Map(
-  flattenedStories.map((story) => [story.id, story]),
+  flattenedStories.map((story) => [story.id, story])
 );
 if (storyMap.size !== flattenedStories.length) {
-  throw new Error('Duplicate canvas feature story ids detected during module init.');
+  throw new Error(
+    'Duplicate canvas feature story ids detected during module init.'
+  );
 }
 
 const slugMap: ReadonlyMap<string, CanvasFeatureStory> = new Map(
-  flattenedStories.map((story) => [story.slug, story]),
+  flattenedStories.map((story) => [story.slug, story])
 );
 if (slugMap.size !== flattenedStories.length) {
-  throw new Error('Duplicate canvas feature story slugs detected during module init.');
+  throw new Error(
+    'Duplicate canvas feature story slugs detected during module init.'
+  );
 }
 
 const categoryMap: ReadonlyMap<string, CanvasFeatureStoryCategory> = new Map(
-  canvasFeatureStoryCategories.map(
-    (category) => [category.id, category],
-  ),
+  canvasFeatureStoryCategories.map((category) => [category.id, category])
 );
 if (categoryMap.size !== canvasFeatureStoryCategories.length) {
-  throw new Error('Duplicate canvas feature story category ids detected during module init.');
+  throw new Error(
+    'Duplicate canvas feature story category ids detected during module init.'
+  );
 }
 
 export const allCanvasFeatureStoryCategories = canvasFeatureStoryCategories;
@@ -56,17 +62,19 @@ export const canvasFeatureStoriesByCategoryId = (categoryId: string) => {
   return category ? category.stories : [];
 };
 
-export const canvasFeatureStoryCategoryById = (categoryId: string) => categoryMap.get(categoryId);
+export const canvasFeatureStoryCategoryById = (categoryId: string) =>
+  categoryMap.get(categoryId);
 
-export const canvasFeatureStoryCategoriesMetadata = canvasFeatureStoryCategories.map(
-  ({ id, title, blueprintReference, order }) => ({
-    id,
-    title,
-    blueprintReference,
-    order,
-    storyCount: categoryMap.get(id)?.stories.length ?? 0,
-  }),
-);
+export const canvasFeatureStoryCategoriesMetadata =
+  canvasFeatureStoryCategories.map(
+    ({ id, title, blueprintReference, order }) => ({
+      id,
+      title,
+      blueprintReference,
+      order,
+      storyCount: categoryMap.get(id)?.stories.length ?? 0,
+    })
+  );
 
 export const canvasFeatureStoryMap = storyMap;
 

@@ -54,13 +54,13 @@ import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 // Types
 // =============================================================================
 
-export type ArtifactType = 
-  | 'document' 
-  | 'code' 
-  | 'diagram' 
-  | 'config' 
-  | 'data' 
-  | 'image' 
+export type ArtifactType =
+  | 'document'
+  | 'code'
+  | 'diagram'
+  | 'config'
+  | 'data'
+  | 'image'
   | 'archive'
   | 'other';
 
@@ -113,11 +113,14 @@ export interface ArtifactsListProps {
 // Constants
 // =============================================================================
 
-const TYPE_CONFIG: Record<ArtifactType, {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  color: string;
-}> = {
+const TYPE_CONFIG: Record<
+  ArtifactType,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+  }
+> = {
   document: {
     icon: FileText,
     label: 'Document',
@@ -160,11 +163,14 @@ const TYPE_CONFIG: Record<ArtifactType, {
   },
 };
 
-const STATUS_CONFIG: Record<ArtifactStatus, {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  color: string;
-}> = {
+const STATUS_CONFIG: Record<
+  ArtifactStatus,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+  }
+> = {
   generating: {
     icon: RefreshCw,
     label: 'Generating',
@@ -221,7 +227,7 @@ const formatDate = (date: string): string => {
   const diff = now.getTime() - d.getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
-  
+
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -262,7 +268,8 @@ const ArtifactItem: React.FC<ArtifactItemProps> = ({
         'group flex items-center gap-3 rounded-lg border p-3 transition-all',
         'hover:border-primary-300 hover:bg-primary-50/50',
         'dark:hover:border-primary-700 dark:hover:bg-primary-950/20',
-        hasError && 'border-error-200 bg-error-50/30 dark:border-error-800 dark:bg-error-950/20',
+        hasError &&
+          'border-error-200 bg-error-50/30 dark:border-error-800 dark:bg-error-950/20',
         'dark:border-neutral-700'
       )}
     >
@@ -288,9 +295,7 @@ const ArtifactItem: React.FC<ArtifactItemProps> = ({
           </Badge>
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-neutral-500">
-          {artifact.size && (
-            <span>{formatFileSize(artifact.size)}</span>
-          )}
+          {artifact.size && <span>{formatFileSize(artifact.size)}</span>}
           <span>•</span>
           <span>{formatDate(artifact.createdAt)}</span>
           <span>•</span>
@@ -337,16 +342,17 @@ const ArtifactItem: React.FC<ArtifactItemProps> = ({
             <TooltipContent>Open</TooltipContent>
           </Tooltip>
         )}
-        {onRegenerate && (artifact.status === 'error' || artifact.status === 'outdated') && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={onRegenerate}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Regenerate</TooltipContent>
-          </Tooltip>
-        )}
+        {onRegenerate &&
+          (artifact.status === 'error' || artifact.status === 'outdated') && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" onClick={onRegenerate}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Regenerate</TooltipContent>
+            </Tooltip>
+          )}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -423,8 +429,12 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({
                 artifact={artifact}
                 onDownload={() => onDownload(artifact)}
                 onPreview={onPreview ? () => onPreview(artifact) : undefined}
-                onOpenExternal={onOpenExternal ? () => onOpenExternal(artifact) : undefined}
-                onRegenerate={onRegenerate ? () => onRegenerate(artifact) : undefined}
+                onOpenExternal={
+                  onOpenExternal ? () => onOpenExternal(artifact) : undefined
+                }
+                onRegenerate={
+                  onRegenerate ? () => onRegenerate(artifact) : undefined
+                }
               />
             ))}
           </motion.div>
@@ -476,7 +486,10 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
       }
 
       // Status filter
-      if (statusFilters.length > 0 && !statusFilters.includes(artifact.status)) {
+      if (
+        statusFilters.length > 0 &&
+        !statusFilters.includes(artifact.status)
+      ) {
         return false;
       }
 
@@ -500,7 +513,9 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
   // Stats
   const stats = useMemo(() => {
     const ready = artifacts.filter((a) => a.status === 'ready').length;
-    const generating = artifacts.filter((a) => a.status === 'generating').length;
+    const generating = artifacts.filter(
+      (a) => a.status === 'generating'
+    ).length;
     const errors = artifacts.filter((a) => a.status === 'error').length;
     return { ready, generating, errors, total: artifacts.length };
   }, [artifacts]);
@@ -513,7 +528,9 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
 
   const toggleStatusFilter = (status: ArtifactStatus) => {
     setStatusFilters((prev) =>
-      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status]
     );
   };
 
@@ -541,7 +558,9 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
               {stats.generating > 0 && (
                 <>
                   <span>•</span>
-                  <span className="text-blue-500">{stats.generating} generating</span>
+                  <span className="text-blue-500">
+                    {stats.generating} generating
+                  </span>
                 </>
               )}
               {stats.errors > 0 && (
@@ -596,7 +615,9 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
                         type="text"
                         placeholder="Search artifacts..."
                         value={searchQuery}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setSearchQuery(e.target.value)
+                        }
                         className="pl-9"
                       />
                     </div>
@@ -607,8 +628,12 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
                         <Button variant="outline" size="sm">
                           <Filter className="mr-1 h-4 w-4" />
                           Filter
-                          {(typeFilters.length > 0 || statusFilters.length > 0) && (
-                            <Badge variant="solid" className="ml-1 h-5 w-5 p-0 text-xs">
+                          {(typeFilters.length > 0 ||
+                            statusFilters.length > 0) && (
+                            <Badge
+                              variant="solid"
+                              className="ml-1 h-5 w-5 p-0 text-xs"
+                            >
                               {typeFilters.length + statusFilters.length}
                             </Badge>
                           )}
@@ -622,7 +647,9 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
                           <DropdownMenuCheckboxItem
                             key={type}
                             checked={typeFilters.includes(type as ArtifactType)}
-                            onCheckedChange={() => toggleTypeFilter(type as ArtifactType)}
+                            onCheckedChange={() =>
+                              toggleTypeFilter(type as ArtifactType)
+                            }
                           >
                             {config.label}
                           </DropdownMenuCheckboxItem>
@@ -631,15 +658,21 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
                         <div className="px-2 py-1.5 text-xs font-medium text-neutral-500">
                           Status
                         </div>
-                        {Object.entries(STATUS_CONFIG).map(([status, config]) => (
-                          <DropdownMenuCheckboxItem
-                            key={status}
-                            checked={statusFilters.includes(status as ArtifactStatus)}
-                            onCheckedChange={() => toggleStatusFilter(status as ArtifactStatus)}
-                          >
-                            {config.label}
-                          </DropdownMenuCheckboxItem>
-                        ))}
+                        {Object.entries(STATUS_CONFIG).map(
+                          ([status, config]) => (
+                            <DropdownMenuCheckboxItem
+                              key={status}
+                              checked={statusFilters.includes(
+                                status as ArtifactStatus
+                              )}
+                              onCheckedChange={() =>
+                                toggleStatusFilter(status as ArtifactStatus)
+                              }
+                            >
+                              {config.label}
+                            </DropdownMenuCheckboxItem>
+                          )
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -653,38 +686,52 @@ export const ArtifactsList: React.FC<ArtifactsListProps> = ({
                 animate="visible"
                 className="space-y-2"
               >
-                {groupedArtifacts ? (
-                  // Grouped view
-                  Object.entries(groupedArtifacts).map(([category, items]) => (
-                    <CategoryGroup
-                      key={category}
-                      category={category}
-                      artifacts={items}
-                      onDownload={onDownload}
-                      onPreview={onPreview}
-                      onOpenExternal={onOpenExternal}
-                      onRegenerate={onRegenerate ? (a) => onRegenerate(a) : undefined}
-                    />
-                  ))
-                ) : (
-                  // Flat view
-                  filteredArtifacts.map((artifact) => (
-                    <ArtifactItem
-                      key={artifact.id}
-                      artifact={artifact}
-                      onDownload={() => onDownload(artifact)}
-                      onPreview={onPreview ? () => onPreview(artifact) : undefined}
-                      onOpenExternal={onOpenExternal ? () => onOpenExternal(artifact) : undefined}
-                      onRegenerate={onRegenerate ? () => onRegenerate(artifact) : undefined}
-                    />
-                  ))
-                )}
+                {groupedArtifacts
+                  ? // Grouped view
+                    Object.entries(groupedArtifacts).map(
+                      ([category, items]) => (
+                        <CategoryGroup
+                          key={category}
+                          category={category}
+                          artifacts={items}
+                          onDownload={onDownload}
+                          onPreview={onPreview}
+                          onOpenExternal={onOpenExternal}
+                          onRegenerate={
+                            onRegenerate ? (a) => onRegenerate(a) : undefined
+                          }
+                        />
+                      )
+                    )
+                  : // Flat view
+                    filteredArtifacts.map((artifact) => (
+                      <ArtifactItem
+                        key={artifact.id}
+                        artifact={artifact}
+                        onDownload={() => onDownload(artifact)}
+                        onPreview={
+                          onPreview ? () => onPreview(artifact) : undefined
+                        }
+                        onOpenExternal={
+                          onOpenExternal
+                            ? () => onOpenExternal(artifact)
+                            : undefined
+                        }
+                        onRegenerate={
+                          onRegenerate
+                            ? () => onRegenerate(artifact)
+                            : undefined
+                        }
+                      />
+                    ))}
 
                 {filteredArtifacts.length === 0 && (
                   <div className="py-8 text-center text-neutral-500">
                     <Package className="mx-auto h-8 w-8 opacity-50" />
                     <p className="mt-2 text-sm">
-                      {searchQuery || typeFilters.length > 0 || statusFilters.length > 0
+                      {searchQuery ||
+                      typeFilters.length > 0 ||
+                      statusFilters.length > 0
                         ? 'No artifacts match your filters'
                         : 'No artifacts generated yet'}
                     </p>

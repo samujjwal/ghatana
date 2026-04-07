@@ -136,7 +136,7 @@ describe('layerStore', () => {
       const layer3 = createLayer(store, { name: 'Top' });
 
       const layers = getLayersInRenderOrder(store);
-      
+
       expect(layers[0].id).toBe(layer1.id);
       expect(layers[1].id).toBe(layer2.id);
       expect(layers[2].id).toBe(layer3.id);
@@ -298,7 +298,7 @@ describe('layerStore', () => {
     it('should return undefined for unassigned element', () => {
       createLayer(store, { name: 'Layer 1' });
       const found = getLayerForElement(store, 'unassigned');
-      
+
       expect(found).toBeUndefined();
     });
   });
@@ -306,7 +306,7 @@ describe('layerStore', () => {
   describe('Layer Visibility & Locking', () => {
     it('should toggle layer visibility', () => {
       const layer = createLayer(store, { name: 'Layer 1' });
-      
+
       toggleLayerVisibility(store, layer.id);
       expect(getLayer(store, layer.id)!.visible).toBe(false);
 
@@ -316,7 +316,7 @@ describe('layerStore', () => {
 
     it('should toggle layer lock', () => {
       const layer = createLayer(store, { name: 'Layer 1' });
-      
+
       toggleLayerLock(store, layer.id);
       expect(getLayer(store, layer.id)!.locked).toBe(true);
 
@@ -418,14 +418,14 @@ describe('layerStore', () => {
     it('should get tags for element', () => {
       const tag1 = createTag(store, 'Tag 1', '#ff0000');
       const tag2 = createTag(store, 'Tag 2', '#00ff00');
-      
+
       addTagToElement(store, 'element-1', tag1.id);
       addTagToElement(store, 'element-1', tag2.id);
 
       const tags = getTagsForElement(store, 'element-1');
       expect(tags.length).toBe(2);
-      expect(tags.map(t => t.id)).toContain(tag1.id);
-      expect(tags.map(t => t.id)).toContain(tag2.id);
+      expect(tags.map((t) => t.id)).toContain(tag1.id);
+      expect(tags.map((t) => t.id)).toContain(tag2.id);
     });
 
     it('should get elements by tag', () => {
@@ -451,7 +451,7 @@ describe('layerStore', () => {
 
     it('should search tags case-insensitively', () => {
       createTag(store, 'Important', '#ff0000');
-      
+
       const results = searchTags(store, 'IMPORT');
       expect(results.length).toBe(1);
     });
@@ -551,7 +551,7 @@ describe('layerStore', () => {
     it('should apply viewpoint', () => {
       const layer1 = createLayer(store, { name: 'Layer 1' });
       const layer2 = createLayer(store, { name: 'Layer 2' });
-      
+
       const viewpoint = createViewpoint(store, {
         name: 'Test View',
         viewport: { x: 100, y: 200, zoom: 1.5 },
@@ -564,9 +564,15 @@ describe('layerStore', () => {
       let appliedSelection: string[] | null = null;
 
       const applied = applyViewpoint(store, viewpoint.id, {
-        setViewport: (vp) => { appliedViewport = vp; },
-        setLayerVisibility: (id, visible) => { visibilityChanges[id] = visible; },
-        setSelection: (ids) => { appliedSelection = ids; },
+        setViewport: (vp) => {
+          appliedViewport = vp;
+        },
+        setLayerVisibility: (id, visible) => {
+          visibilityChanges[id] = visible;
+        },
+        setSelection: (ids) => {
+          appliedSelection = ids;
+        },
       });
 
       expect(applied).toBe(true);
@@ -596,7 +602,7 @@ describe('layerStore', () => {
     it('should default to edit permission', () => {
       const layer = createLayer(store, { name: 'Layer 1' });
       const perm = getLayerPermission(store, layer.id, 'user-unknown');
-      
+
       expect(perm).toBe('edit');
     });
 
@@ -647,9 +653,9 @@ describe('layerStore', () => {
 
       const visible = getVisibleLayersForUser(store, 'user-1');
       expect(visible.length).toBe(2);
-      expect(visible.map(l => l.id)).toContain(layer1.id);
-      expect(visible.map(l => l.id)).toContain(layer2.id);
-      expect(visible.map(l => l.id)).not.toContain(layer3.id);
+      expect(visible.map((l) => l.id)).toContain(layer1.id);
+      expect(visible.map((l) => l.id)).toContain(layer2.id);
+      expect(visible.map((l) => l.id)).not.toContain(layer3.id);
     });
 
     it('should remove layer permissions', () => {
@@ -661,7 +667,7 @@ describe('layerStore', () => {
 
       const perm1 = store.permissions.get(`${layer.id}:user-1`);
       const perm2 = store.permissions.get(`${layer.id}:user-2`);
-      
+
       expect(perm1).toBeUndefined();
       expect(perm2).toBeUndefined();
     });

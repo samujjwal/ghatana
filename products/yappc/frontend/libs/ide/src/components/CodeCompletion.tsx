@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Advanced Code Completion System
- * 
+ *
  * Intelligent code completion with AI-powered suggestions,
  * context-aware recommendations, and multi-language support.
- * 
+ *
  * @doc.type component
  * @doc.purpose Advanced code completion for IDE
  * @doc.layer product
@@ -15,7 +15,15 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 /**
  * Code completion item types
  */
-export type CompletionItemType = 'function' | 'variable' | 'class' | 'method' | 'property' | 'keyword' | 'snippet' | 'ai-suggestion';
+export type CompletionItemType =
+  | 'function'
+  | 'variable'
+  | 'class'
+  | 'method'
+  | 'property'
+  | 'keyword'
+  | 'snippet'
+  | 'ai-suggestion';
 
 /**
  * Code completion item interface
@@ -188,7 +196,8 @@ export class CodeCompletionProvider {
         id: 'react-component',
         label: 'React Component',
         type: 'snippet',
-        insertText: 'const ${1:ComponentName} = () => {\n  return (\n    <div>\n      <h2>${1:ComponentName}</h2>\n      ${2:// Component content}\n    </div>\n  );\n};\n\nexport default ${1:ComponentName};',
+        insertText:
+          'const ${1:ComponentName} = () => {\n  return (\n    <div>\n      <h2>${1:ComponentName}</h2>\n      ${2:// Component content}\n    </div>\n  );\n};\n\nexport default ${1:ComponentName};',
         documentation: 'React functional component',
         source: 'snippet',
         language: 'typescript',
@@ -198,7 +207,8 @@ export class CodeCompletionProvider {
         id: 'api-endpoint',
         label: 'API Endpoint',
         type: 'snippet',
-        insertText: 'app.${1:get}(\'${2:/endpoint}\', async (req: unknown, res: unknown) => {\n  try {\n    ${3:// Implementation}\n    res.json({ success: true });\n  } catch (error: unknown) {\n    res.status(500).json({ error: error instanceof Error ? error.message : \'Unknown error\' });\n  }\n});',
+        insertText:
+          "app.${1:get}('${2:/endpoint}', async (req: unknown, res: unknown) => {\n  try {\n    ${3:// Implementation}\n    res.json({ success: true });\n  } catch (error: unknown) {\n    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });\n  }\n});",
         documentation: 'Express.js API endpoint',
         source: 'snippet',
         language: 'typescript',
@@ -211,17 +221,22 @@ export class CodeCompletionProvider {
    * Get completions for current context
    */
   async getCompletions(context: CompletionContext): Promise<CompletionItem[]> {
-    const allItems = [...this.builtinItems, ...this.workspaceItems, ...this.snippetItems];
-    
+    const allItems = [
+      ...this.builtinItems,
+      ...this.workspaceItems,
+      ...this.snippetItems,
+    ];
+
     // Filter by language
-    const languageFiltered = allItems.filter(item => 
-      !item.language || item.language === context.language
+    const languageFiltered = allItems.filter(
+      (item) => !item.language || item.language === context.language
     );
 
     // Filter by prefix
-    const prefixFiltered = languageFiltered.filter(item =>
-      item.label.toLowerCase().startsWith(context.prefix.toLowerCase()) ||
-      item.filterText?.toLowerCase().startsWith(context.prefix.toLowerCase())
+    const prefixFiltered = languageFiltered.filter(
+      (item) =>
+        item.label.toLowerCase().startsWith(context.prefix.toLowerCase()) ||
+        item.filterText?.toLowerCase().startsWith(context.prefix.toLowerCase())
     );
 
     // Sort by priority and relevance
@@ -231,12 +246,12 @@ export class CodeCompletionProvider {
       const bExact = b.label.toLowerCase() === context.prefix.toLowerCase();
       if (aExact && !bExact) return -1;
       if (!aExact && bExact) return 1;
-      
+
       // Then by priority
       if (a.priority !== b.priority) {
         return b.priority - a.priority;
       }
-      
+
       // Then alphabetically
       return a.label.localeCompare(b.label);
     });
@@ -253,12 +268,14 @@ export class CodeCompletionProvider {
   /**
    * Get AI-powered suggestions
    */
-  private async getAISuggestions(context: CompletionContext): Promise<CompletionItem[]> {
+  private async getAISuggestions(
+    context: CompletionContext
+  ): Promise<CompletionItem[]> {
     // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const suggestions: CompletionItem[] = [];
-    
+
     if (context.prefix.length > 2) {
       suggestions.push({
         id: 'ai-suggestion-1',
@@ -292,20 +309,26 @@ export const useCodeCompletion = (provider: CodeCompletionProvider) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [context, setContext] = useState<CompletionContext | null>(null);
 
-  const showCompletion = useCallback(async (ctx: CompletionContext, editorPosition: { x: number; y: number }) => {
-    setContext(ctx);
-    setPosition(editorPosition);
-    setIsVisible(true);
+  const showCompletion = useCallback(
+    async (
+      ctx: CompletionContext,
+      editorPosition: { x: number; y: number }
+    ) => {
+      setContext(ctx);
+      setPosition(editorPosition);
+      setIsVisible(true);
 
-    try {
-      const completions = await provider.getCompletions(ctx);
-      setItems(completions);
-      setSelectedIndex(0);
-    } catch (error) {
-      console.error('Failed to get completions:', error);
-      setItems([]);
-    }
-  }, [provider]);
+      try {
+        const completions = await provider.getCompletions(ctx);
+        setItems(completions);
+        setSelectedIndex(0);
+      } catch (error) {
+        console.error('Failed to get completions:', error);
+        setItems([]);
+      }
+    },
+    [provider]
+  );
 
   const hideCompletion = useCallback(() => {
     setIsVisible(false);
@@ -313,17 +336,20 @@ export const useCodeCompletion = (provider: CodeCompletionProvider) => {
     setSelectedIndex(0);
   }, []);
 
-  const selectItem = useCallback((item: CompletionItem) => {
-    hideCompletion();
-    return item;
-  }, [hideCompletion]);
+  const selectItem = useCallback(
+    (item: CompletionItem) => {
+      hideCompletion();
+      return item;
+    },
+    [hideCompletion]
+  );
 
   const selectNext = useCallback(() => {
-    setSelectedIndex(prev => (prev + 1) % items.length);
+    setSelectedIndex((prev) => (prev + 1) % items.length);
   }, [items.length]);
 
   const selectPrevious = useCallback(() => {
-    setSelectedIndex(prev => (prev - 1 + items.length) % items.length);
+    setSelectedIndex((prev) => (prev - 1 + items.length) % items.length);
   }, [items.length]);
 
   return {
@@ -359,45 +385,52 @@ export const CodeCompletion: React.FC<CodeCompletionProps> = ({
   /**
    * Filter items based on filter text
    */
-  const filteredItems = items.filter(item =>
-    item.label.toLowerCase().includes(filter.toLowerCase()) ||
-    item.description?.toLowerCase().includes(filter.toLowerCase())
+  const filteredItems = items.filter(
+    (item) =>
+      item.label.toLowerCase().includes(filter.toLowerCase()) ||
+      item.description?.toLowerCase().includes(filter.toLowerCase())
   );
 
   /**
    * Handle keyboard navigation
    */
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        break;
-      case 'Enter':
-        e.preventDefault();
-        e.stopPropagation();
-        if (filteredItems[selectedIndex]) {
-          onSelect(filteredItems[selectedIndex]);
-        }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-        break;
-    }
-  }, [filteredItems, selectedIndex, onSelect, onClose]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          e.stopPropagation();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          e.stopPropagation();
+          break;
+        case 'Enter':
+          e.preventDefault();
+          e.stopPropagation();
+          if (filteredItems[selectedIndex]) {
+            onSelect(filteredItems[selectedIndex]);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+          break;
+      }
+    },
+    [filteredItems, selectedIndex, onSelect, onClose]
+  );
 
   /**
    * Handle item click
    */
-  const handleItemClick = useCallback((item: CompletionItem) => {
-    onSelect(item);
-  }, [onSelect]);
+  const handleItemClick = useCallback(
+    (item: CompletionItem) => {
+      onSelect(item);
+    },
+    [onSelect]
+  );
 
   /**
    * Get item type icon
@@ -438,7 +471,9 @@ export const CodeCompletion: React.FC<CodeCompletionProps> = ({
    */
   useEffect(() => {
     if (listRef.current && filteredItems[selectedIndex]) {
-      const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+      const selectedElement = listRef.current.children[
+        selectedIndex
+      ] as HTMLElement;
       if (selectedElement) {
         selectedElement.scrollIntoView({ block: 'nearest' });
       }
@@ -474,10 +509,7 @@ export const CodeCompletion: React.FC<CodeCompletionProps> = ({
       </div>
 
       {/* Items list */}
-      <div
-        ref={listRef}
-        className="max-h-64 overflow-y-auto"
-      >
+      <div ref={listRef} className="max-h-64 overflow-y-auto">
         {filteredItems.length === 0 ? (
           <div className="p-4 text-center text-gray-500 dark:text-gray-400">
             No completions found

@@ -139,8 +139,7 @@ const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 'var(--ds-radius-md)',
           padding: '8px 16px',
-          transition:
-            'all var(--ds-duration-base) var(--ds-ease-in-out)',
+          transition: 'all var(--ds-duration-base) var(--ds-ease-in-out)',
         },
       },
     },
@@ -149,8 +148,7 @@ const themeOptions: ThemeOptions = {
         root: {
           borderRadius: 'var(--ds-radius-lg)',
           boxShadow: 'var(--ds-shadow-sm)',
-          transition:
-            'all var(--ds-duration-base) var(--ds-ease-in-out)',
+          transition: 'all var(--ds-duration-base) var(--ds-ease-in-out)',
         },
       },
     },

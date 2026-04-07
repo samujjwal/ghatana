@@ -100,7 +100,10 @@ const formatDuration = (ms: number): string => {
   return `${minutes}m ${seconds}s`;
 };
 
-const getStatusIcon = (status: StepStatus, stepNumber: number): React.ReactNode => {
+const getStatusIcon = (
+  status: StepStatus,
+  stepNumber: number
+): React.ReactNode => {
   switch (status) {
     case 'complete':
       return (
@@ -168,7 +171,13 @@ const getStatusIcon = (status: StepStatus, stepNumber: number): React.ReactNode 
             stroke="currentColor"
             strokeWidth="2"
           >
-            <circle cx="12" cy="12" r="10" strokeDasharray="31.4" strokeDashoffset="10" />
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              strokeDasharray="31.4"
+              strokeDashoffset="10"
+            />
           </svg>
         </span>
       );
@@ -296,7 +305,9 @@ const StepItem: React.FC<StepItemProps> = ({
         )}
 
         {showDuration && step.status === 'complete' && step.durationMs && (
-          <span className="step-duration">{formatDuration(step.durationMs)}</span>
+          <span className="step-duration">
+            {formatDuration(step.durationMs)}
+          </span>
         )}
       </div>
     </div>
@@ -313,7 +324,11 @@ interface StepConnectorProps {
   variant: 'horizontal' | 'vertical' | 'compact';
 }
 
-const StepConnector: React.FC<StepConnectorProps> = ({ fromStatus, toStatus, variant }) => {
+const StepConnector: React.FC<StepConnectorProps> = ({
+  fromStatus,
+  toStatus,
+  variant,
+}) => {
   const isComplete = fromStatus === 'complete';
   const hasError = fromStatus === 'error' || toStatus === 'error';
 
@@ -375,14 +390,16 @@ export const StepProgress: React.FC<StepProgressProps> = ({
     >
       {/* Progress summary for screen readers */}
       <div className="sr-only" aria-live="polite">
-        Step {currentIndex + 1} of {steps.length}: {steps[currentIndex]?.label || 'Unknown'}
+        Step {currentIndex + 1} of {steps.length}:{' '}
+        {steps[currentIndex]?.label || 'Unknown'}
       </div>
 
       {/* Steps */}
       <div className="step-progress-track">
         {steps.map((step, index) => {
           const isCurrent = step.id === currentStepId || index === currentIndex;
-          const isClickable = allowNavigation && step.status === 'complete' && !!onStepClick;
+          const isClickable =
+            allowNavigation && step.status === 'complete' && !!onStepClick;
           const isLast = index === steps.length - 1;
 
           return (

@@ -241,14 +241,10 @@ export const RetroItem: React.FC<RetroItemProps> = ({
       {isActionItem && (
         <div className="action-item-meta">
           {item.assignee && (
-            <span className="assignee">
-              👤 {item.assignee.name}
-            </span>
+            <span className="assignee">👤 {item.assignee.name}</span>
           )}
           {item.dueDate && (
-            <span className="due-date">
-              📅 {formatDueDate(item.dueDate)}
-            </span>
+            <span className="due-date">📅 {formatDueDate(item.dueDate)}</span>
           )}
           {!readOnly && (
             <button

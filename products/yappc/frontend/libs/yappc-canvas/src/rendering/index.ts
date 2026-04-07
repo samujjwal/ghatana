@@ -1,9 +1,9 @@
 /**
  * Rendering Optimizations Module
- * 
+ *
  * Exports virtual viewport, LOD (Level of Detail) system, and WebGL renderer
  * for high-performance rendering.
- * 
+ *
  * @module rendering
  */
 

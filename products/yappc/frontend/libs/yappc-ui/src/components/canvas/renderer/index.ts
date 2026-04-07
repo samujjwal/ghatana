@@ -7,7 +7,11 @@
  */
 
 // Core renderer
-export { NodeRenderer, EditModeWrapper, BatchNodeRenderer } from './NodeRenderer';
+export {
+  NodeRenderer,
+  EditModeWrapper,
+  BatchNodeRenderer,
+} from './NodeRenderer';
 export type {
   NodeRendererProps,
   EditModeWrapperProps,
@@ -24,7 +28,10 @@ export type {
 } from './ThemeApplicator';
 
 // Component registry
-export { RendererComponentRegistry, useRegisteredComponent } from './ComponentRegistry';
+export {
+  RendererComponentRegistry,
+  useRegisteredComponent,
+} from './ComponentRegistry';
 export type { ComponentType, RegisteredComponent } from './ComponentRegistry';
 
 // Component registration

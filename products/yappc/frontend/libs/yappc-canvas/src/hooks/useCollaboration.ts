@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { YjsSyncAdapter } from '../integration/yjsSync';
 import { canvasStateAtom } from '../state/canvas-atoms';
 
-
 /**
  *
  */
@@ -100,7 +99,6 @@ export function useCollaboration(
   userId: string,
   userName: string
 ) {
-   
   console.log('[useCollaboration] hook invoked', { roomId, userId });
   // Resolve useReactFlow at runtime so tests can mock/override it and so the
   // hook doesn't throw when React Flow's provider (zustand) is not present.
@@ -139,7 +137,9 @@ export function useCollaboration(
   // Ref to hold the collaboration state setter so synchronous provider
   // listener registration (which happens before hooks' effects run) can
   // attach handlers that will call the real setter later when invoked.
-  const collaborationSetterRef = useRef<((updater: unknown) => void) | null>(null);
+  const collaborationSetterRef = useRef<((updater: unknown) => void) | null>(
+    null
+  );
 
   // Create the Yjs document lazily so test-time vi.mock calls are honored.
   // This ensures tests that mock 'yjs' will have their mock used when the
@@ -153,7 +153,7 @@ export function useCollaboration(
       // Debug: log shape of the required module in test runs to diagnose mocking
       // issues. Tests may hoist vi.mock, so this log will show whether the mock
       // is present at invocation time. Use console.log so vitest prints it.
-       
+
       console.log('[useCollaboration] require(yjs) ->', {
         hasDoc: !!(Y && (Y.Doc ?? Y.default?.Doc ?? Y)),
         docType: typeof (Y && (Y.Doc ?? Y.default?.Doc ?? Y)),
@@ -211,13 +211,11 @@ export function useCollaboration(
 
       // Connect (fire and forget, error logged)
       adapter.connect().catch((e) => {
-         
         console.error('[useCollaboration] Failed to connect adapter', e);
       });
 
       return adapter;
     } catch (err) {
-       
       console.error('[useCollaboration] Failed to init adapter', err);
       return null;
     }
@@ -249,7 +247,10 @@ export function useCollaboration(
   // Helpers to retrieve Yjs shared types on-demand so tests can override
   // `mockYDoc.getArray` / `mockYDoc.getMap` per-call using vi.fn().mockReturnValueOnce
   // and have the hook pick up the replacement.
-  const _ydoc: { getArray: (name: string) => unknown; getMap: (name: string) => unknown } = ydoc;
+  const _ydoc: {
+    getArray: (name: string) => unknown;
+    getMap: (name: string) => unknown;
+  } = ydoc;
   // Helpers to retrieve Yjs shared types on-demand so tests can override
   // `mockYDoc.getArray` / `mockYDoc.getMap` per-call using vi.fn().mockReturnValueOnce
   // and have the hook pick up the replacement.

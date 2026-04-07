@@ -13,37 +13,40 @@ export type SliderSize = 'small' | 'medium' | 'large';
 /**
  *
  */
-export interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'type'> {
+export interface SliderProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'type'
+> {
   /**
    * Slider label
    */
   label?: string;
-  
+
   /**
    * Slider color
    */
   color?: SliderColor;
-  
+
   /**
    * Slider size
    */
   size?: SliderSize;
-  
+
   /**
    * Show value label
    */
   showValue?: boolean;
-  
+
   /**
    * Value formatter
    */
   formatValue?: (value: number) => string;
-  
+
   /**
    * Show marks
    */
   marks?: boolean | { value: number; label: string }[];
-  
+
   /**
    * Helper text
    */
@@ -57,7 +60,7 @@ export interface SliderProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 
 /**
  * Slider component for selecting values from a range
- * 
+ *
  * @example
  * ```tsx
  * <Slider
@@ -98,7 +101,8 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     const sliderId = id || generatedId;
     const [internalValue, setInternalValue] = useState(defaultValue || min);
     const currentValue = value !== undefined ? value : internalValue;
-    const shouldDisplayValue = showValue || valueLabelDisplay === 'auto' || valueLabelDisplay === 'on';
+    const shouldDisplayValue =
+      showValue || valueLabelDisplay === 'auto' || valueLabelDisplay === 'on';
 
     const colorMap = {
       primary: 'var(--ds-primary-500)',
@@ -115,7 +119,9 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
 
     const sliderColor = colorMap[color];
     const dimensions = sizeMap[size];
-    const percentage = ((Number(currentValue) - Number(min)) / (Number(max) - Number(min))) * 100;
+    const percentage =
+      ((Number(currentValue) - Number(min)) / (Number(max) - Number(min))) *
+      100;
 
     const containerStyle: React.CSSProperties = {
       display: 'flex',
@@ -206,8 +212,16 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       <div style={containerStyle} className={className}>
         {(label || shouldDisplayValue) && (
           <div style={headerStyle}>
-            {label && <label htmlFor={sliderId} style={labelStyle}>{label}</label>}
-            {shouldDisplayValue && <span style={valueStyle}>{formatValue(Number(currentValue))}</span>}
+            {label && (
+              <label htmlFor={sliderId} style={labelStyle}>
+                {label}
+              </label>
+            )}
+            {shouldDisplayValue && (
+              <span style={valueStyle}>
+                {formatValue(Number(currentValue))}
+              </span>
+            )}
           </div>
         )}
 

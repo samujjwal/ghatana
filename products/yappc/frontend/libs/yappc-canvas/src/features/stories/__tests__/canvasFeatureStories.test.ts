@@ -41,10 +41,14 @@ describe('canvas feature stories dataset', () => {
 
   it('keeps category metadata aligned with story lists', () => {
     for (const metadata of canvasFeatureStoryCategoriesMetadata) {
-      const category = canvasFeatureStoryCategories.find((item) => item.id === metadata.id);
+      const category = canvasFeatureStoryCategories.find(
+        (item) => item.id === metadata.id
+      );
       expect(category).toBeTruthy();
       expect(category?.stories.length ?? 0).toBe(metadata.storyCount);
-      const expectedOrder = canvasFeatureStoryCategories.findIndex((item) => item.id === metadata.id);
+      const expectedOrder = canvasFeatureStoryCategories.findIndex(
+        (item) => item.id === metadata.id
+      );
       expect(metadata.order).toBe(expectedOrder);
     }
   });

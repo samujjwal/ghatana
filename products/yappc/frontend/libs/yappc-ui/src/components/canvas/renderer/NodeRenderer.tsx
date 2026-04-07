@@ -11,9 +11,12 @@ import React, { useMemo, useCallback } from 'react';
 
 import type { ComponentNodeData } from '../types/CanvasNode';
 
-import { RendererComponentRegistry, useRegisteredComponent } from './ComponentRegistry';
+import {
+  RendererComponentRegistry,
+  useRegisteredComponent,
+} from './ComponentRegistry';
 import { ThemeApplicator, ThemeLayer } from './ThemeApplicator';
-import type { ThemeContext} from './ThemeApplicator';
+import type { ThemeContext } from './ThemeApplicator';
 
 // ============================================================================
 // Types
@@ -96,7 +99,10 @@ class NodeErrorBoundary extends React.Component<
   /**
    *
    */
-  constructor(props: { children: React.ReactNode; onError?: (error: Error) => void }) {
+  constructor(props: {
+    children: React.ReactNode;
+    onError?: (error: Error) => void;
+  }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -165,7 +171,11 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
 
   // Resolve props with theme
   const resolvedData = useMemo(() => {
-    return ThemeApplicator.applyTheme(nodeData.props, nodeData.tokens, themeContext);
+    return ThemeApplicator.applyTheme(
+      nodeData.props,
+      nodeData.tokens,
+      themeContext
+    );
   }, [nodeData.props, nodeData.tokens, themeContext]);
 
   // Merge styles
@@ -206,7 +216,10 @@ export const NodeRenderer: React.FC<NodeRendererProps> = ({
 
   // Log unresolved tokens in development
   React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && resolvedData.unresolvedTokens.length > 0) {
+    if (
+      process.env.NODE_ENV === 'development' &&
+      resolvedData.unresolvedTokens.length > 0
+    ) {
       console.warn(
         `NodeRenderer: Unresolved tokens for ${componentType}:`,
         resolvedData.unresolvedTokens
@@ -358,7 +371,9 @@ export const BatchNodeRenderer: React.FC<BatchNodeRendererProps> = ({
             themeContext={themeContext}
             mode={mode}
             onPropsChange={(props) => onPropsChange?.(node.id, props)}
-            onEvent={(eventName, payload) => onEvent?.(node.id, eventName, payload)}
+            onEvent={(eventName, payload) =>
+              onEvent?.(node.id, eventName, payload)
+            }
             onError={(error) => onError?.(node.id, error)}
           />
         );

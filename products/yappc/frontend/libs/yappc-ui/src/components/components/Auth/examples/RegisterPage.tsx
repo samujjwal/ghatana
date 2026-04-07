@@ -1,9 +1,9 @@
 /**
  * Register Page Example
- * 
+ *
  * Production-ready registration page with validation,
  * password strength, and terms acceptance.
- * 
+ *
  * @doc.type example
  * @doc.purpose Registration page example
  * @doc.layer ui
@@ -28,42 +28,42 @@ export interface RegisterPageProps {
    * @default '/dashboard'
    */
   redirectTo?: string;
-  
+
   /**
    * Show terms and conditions checkbox
    * @default true
    */
   showTerms?: boolean;
-  
+
   /**
    * Show sign in link
    * @default true
    */
   showSignIn?: boolean;
-  
+
   /**
    * Minimum password length
    * @default 8
    */
   minPasswordLength?: number;
-  
+
   /**
    * Custom logo component
    */
   logo?: React.ReactNode;
-  
+
   /**
    * Page title
    * @default 'Create Account'
    */
   title?: string;
-  
+
   /**
    * Page subtitle
    * @default 'Get started with your free account'
    */
   subtitle?: string;
-  
+
   /**
    * Auto-login after registration
    * @default true
@@ -73,15 +73,15 @@ export interface RegisterPageProps {
 
 /**
  * Register Page Component
- * 
+ *
  * Complete registration page with form validation, password strength,
  * terms acceptance, and auto-login functionality.
- * 
+ *
  * @example Basic Usage
  * ```tsx
  * <RegisterPage />
  * ```
- * 
+ *
  * @example Custom Configuration
  * ```tsx
  * <RegisterPage
@@ -106,17 +106,17 @@ export function RegisterPage({
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
   const toast = useToast();
-  
+
   // Get the return path from location state or use default
   const from = (location.state as unknown)?.from?.pathname || redirectTo;
-  
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, from]);
-  
+
   /**
    * Handle successful registration
    */
@@ -128,14 +128,17 @@ export function RegisterPage({
       });
       navigate(from, { replace: true });
     } else {
-      toast.success('Account created successfully! Please check your email to verify.', {
-        title: 'Registration Successful',
-        duration: 5000,
-      });
+      toast.success(
+        'Account created successfully! Please check your email to verify.',
+        {
+          title: 'Registration Successful',
+          duration: 5000,
+        }
+      );
       navigate('/login', { replace: true });
     }
   };
-  
+
   /**
    * Handle registration error
    */
@@ -145,13 +148,14 @@ export function RegisterPage({
       duration: 5000,
     });
   };
-  
+
   return (
     <Page
       maxWidth="sm"
       container
       padding={4}
-      className="flex items-center justify-center min-h-screen" >
+      className="flex items-center justify-center min-h-screen"
+    >
       <div
         style={{
           width: '100%',
@@ -174,7 +178,7 @@ export function RegisterPage({
             {logo}
           </div>
         )}
-        
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1
@@ -197,7 +201,7 @@ export function RegisterPage({
             {subtitle}
           </p>
         </div>
-        
+
         {/* Register Form */}
         <RegisterForm
           onSuccess={handleSuccess}
@@ -206,7 +210,7 @@ export function RegisterPage({
           showSignIn={showSignIn}
           minPasswordLength={minPasswordLength}
         />
-        
+
         {/* Additional Links */}
         <div
           style={{
@@ -232,7 +236,7 @@ export function RegisterPage({
             </p>
           )}
         </div>
-        
+
         {/* Features */}
         <div
           style={{
@@ -265,12 +269,8 @@ export function RegisterPage({
             <li style={{ marginBottom: '4px' }}>
               ✓ Free account with full access
             </li>
-            <li style={{ marginBottom: '4px' }}>
-              ✓ Secure data encryption
-            </li>
-            <li style={{ marginBottom: '4px' }}>
-              ✓ 24/7 customer support
-            </li>
+            <li style={{ marginBottom: '4px' }}>✓ Secure data encryption</li>
+            <li style={{ marginBottom: '4px' }}>✓ 24/7 customer support</li>
             <li>✓ No credit card required</li>
           </ul>
         </div>

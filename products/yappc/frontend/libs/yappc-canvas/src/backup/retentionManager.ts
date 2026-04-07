@@ -1,6 +1,6 @@
 /**
  * Retention Manager - Retention policies and lifecycle management
- * 
+ *
  * Implements retention policies with cold storage archival,
  * soft delete with recovery window, and automatic tier transitions.
  */
@@ -13,7 +13,11 @@ export type StorageTier = 'hot' | 'warm' | 'cold' | 'archived';
 /**
  * Snapshot lifecycle state
  */
-export type LifecycleState = 'active' | 'soft_deleted' | 'archived' | 'permanently_deleted';
+export type LifecycleState =
+  | 'active'
+  | 'soft_deleted'
+  | 'archived'
+  | 'permanently_deleted';
 
 /**
  * Retention policy configuration
@@ -203,7 +207,9 @@ export class RetentionManager {
   /**
    * Register snapshot for retention management
    */
-  registerSnapshot(snapshot: Omit<RetentionSnapshot, 'tier' | 'state'>): RetentionSnapshot {
+  registerSnapshot(
+    snapshot: Omit<RetentionSnapshot, 'tier' | 'state'>
+  ): RetentionSnapshot {
     const managedSnapshot: RetentionSnapshot = {
       ...snapshot,
       tier: 'hot',
@@ -241,25 +247,25 @@ export class RetentionManager {
 
     if (filter) {
       if (filter.tier) {
-        snapshots = snapshots.filter(s => s.tier === filter.tier);
+        snapshots = snapshots.filter((s) => s.tier === filter.tier);
       }
 
       if (filter.state) {
-        snapshots = snapshots.filter(s => s.state === filter.state);
+        snapshots = snapshots.filter((s) => s.state === filter.state);
       }
 
       if (filter.tags && filter.tags.length > 0) {
-        snapshots = snapshots.filter(s =>
-          s.tags?.some(tag => filter.tags!.includes(tag))
+        snapshots = snapshots.filter((s) =>
+          s.tags?.some((tag) => filter.tags!.includes(tag))
         );
       }
 
       if (filter.olderThan) {
-        snapshots = snapshots.filter(s => s.createdAt < filter.olderThan!);
+        snapshots = snapshots.filter((s) => s.createdAt < filter.olderThan!);
       }
 
       if (filter.newerThan) {
-        snapshots = snapshots.filter(s => s.createdAt > filter.newerThan!);
+        snapshots = snapshots.filter((s) => s.createdAt > filter.newerThan!);
       }
     }
 
@@ -338,7 +344,11 @@ export class RetentionManager {
   /**
    * Transition snapshot to different tier
    */
-  transitionTier(id: string, toTier: StorageTier, reason: string = 'Manual transition'): boolean {
+  transitionTier(
+    id: string,
+    toTier: StorageTier,
+    reason: string = 'Manual transition'
+  ): boolean {
     const snapshot = this.snapshots.get(id);
     if (!snapshot || snapshot.state !== 'active') {
       return false;
@@ -444,7 +454,10 @@ export class RetentionManager {
         const archivedAge = now - (snapshot.archivedAt || 0);
         const archivedAgeDays = archivedAge / (24 * 60 * 60 * 1000);
 
-        if (archivedAgeDays > (policy.totalRetentionDays - policy.coldRetentionDays)) {
+        if (
+          archivedAgeDays >
+          policy.totalRetentionDays - policy.coldRetentionDays
+        ) {
           // Check minimum snapshots requirement
           const activeCount = this.listSnapshots({ state: 'active' }).length;
           if (!policy.minSnapshots || activeCount > policy.minSnapshots) {
@@ -462,15 +475,25 @@ export class RetentionManager {
         if (this.transitionTier(snapshot.id, 'cold', 'Age-based transition')) {
           transitioned.push(snapshot.id);
         }
-      } else if (ageDays > policy.warmRetentionDays && ageDays <= policy.coldRetentionDays && snapshot.tier !== 'warm') {
+      } else if (
+        ageDays > policy.warmRetentionDays &&
+        ageDays <= policy.coldRetentionDays &&
+        snapshot.tier !== 'warm'
+      ) {
         // Should be in warm tier
         if (this.transitionTier(snapshot.id, 'warm', 'Age-based transition')) {
           transitioned.push(snapshot.id);
         }
-      } else if (ageDays > policy.hotRetentionDays && ageDays <= policy.warmRetentionDays && snapshot.tier !== 'warm') {
+      } else if (
+        ageDays > policy.hotRetentionDays &&
+        ageDays <= policy.warmRetentionDays &&
+        snapshot.tier !== 'warm'
+      ) {
         // Transition from hot to warm
         if (snapshot.tier === 'hot') {
-          if (this.transitionTier(snapshot.id, 'warm', 'Age-based transition')) {
+          if (
+            this.transitionTier(snapshot.id, 'warm', 'Age-based transition')
+          ) {
             transitioned.push(snapshot.id);
           }
         }
@@ -515,15 +538,19 @@ export class RetentionManager {
 
     if (filter) {
       if (filter.snapshotId) {
-        transitions = transitions.filter(t => t.snapshotId === filter.snapshotId);
+        transitions = transitions.filter(
+          (t) => t.snapshotId === filter.snapshotId
+        );
       }
 
       if (filter.startDate) {
-        transitions = transitions.filter(t => t.timestamp >= filter.startDate!);
+        transitions = transitions.filter(
+          (t) => t.timestamp >= filter.startDate!
+        );
       }
 
       if (filter.endDate) {
-        transitions = transitions.filter(t => t.timestamp <= filter.endDate!);
+        transitions = transitions.filter((t) => t.timestamp <= filter.endDate!);
       }
     }
 
@@ -536,19 +563,27 @@ export class RetentionManager {
   getStatistics(): RetentionStatistics {
     const snapshots = Array.from(this.snapshots.values());
 
-    const activeSnapshots = snapshots.filter(s => s.state === 'active').length;
-    const softDeletedSnapshots = snapshots.filter(s => s.state === 'soft_deleted').length;
-    const archivedSnapshots = snapshots.filter(s => s.state === 'archived').length;
+    const activeSnapshots = snapshots.filter(
+      (s) => s.state === 'active'
+    ).length;
+    const softDeletedSnapshots = snapshots.filter(
+      (s) => s.state === 'soft_deleted'
+    ).length;
+    const archivedSnapshots = snapshots.filter(
+      (s) => s.state === 'archived'
+    ).length;
 
     // Calculate tier statistics
     const tiers: StorageTier[] = ['hot', 'warm', 'cold', 'archived'];
-    const byTier: TierStatistics[] = tiers.map(tier => {
-      const tierSnapshots = snapshots.filter(s => s.tier === tier);
+    const byTier: TierStatistics[] = tiers.map((tier) => {
+      const tierSnapshots = snapshots.filter((s) => s.tier === tier);
       const totalSize = tierSnapshots.reduce((sum, s) => sum + s.size, 0);
 
-      const timestamps = tierSnapshots.map(s => s.createdAt);
-      const oldestSnapshot = timestamps.length > 0 ? Math.min(...timestamps) : undefined;
-      const newestSnapshot = timestamps.length > 0 ? Math.max(...timestamps) : undefined;
+      const timestamps = tierSnapshots.map((s) => s.createdAt);
+      const oldestSnapshot =
+        timestamps.length > 0 ? Math.min(...timestamps) : undefined;
+      const newestSnapshot =
+        timestamps.length > 0 ? Math.max(...timestamps) : undefined;
 
       return {
         tier,
@@ -562,19 +597,20 @@ export class RetentionManager {
     const totalStorage = snapshots.reduce((sum, s) => sum + s.size, 0);
 
     // Recent transitions (last 24h)
-    const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-    const recentTransitions = this.transitions.filter(t => 
-      t.timestamp >= twentyFourHoursAgo
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const recentTransitions = this.transitions.filter(
+      (t) => t.timestamp >= twentyFourHoursAgo
     ).length;
 
     // Pending deletions (soft deleted past recovery window)
-    const pendingDeletions = snapshots.filter(s => {
+    const pendingDeletions = snapshots.filter((s) => {
       if (s.state !== 'soft_deleted') {
         return false;
       }
 
       const policy = this.getPolicyForSnapshot(s);
-      const recoveryWindow = policy.softDeleteRecoveryDays * 24 * 60 * 60 * 1000;
+      const recoveryWindow =
+        policy.softDeleteRecoveryDays * 24 * 60 * 60 * 1000;
       const deletedAge = Date.now() - (s.softDeletedAt || 0);
 
       return deletedAge > recoveryWindow;
@@ -599,7 +635,10 @@ export class RetentionManager {
     // Find matching policy by tags
     if (snapshot.tags && snapshot.tags.length > 0) {
       for (const policy of this.policies.values()) {
-        if (policy.tags && policy.tags.some(tag => snapshot.tags!.includes(tag))) {
+        if (
+          policy.tags &&
+          policy.tags.some((tag) => snapshot.tags!.includes(tag))
+        ) {
           return policy;
         }
       }
@@ -632,6 +671,8 @@ export class RetentionManager {
 /**
  * Create retention manager
  */
-export function createRetentionManager(defaultPolicy?: Partial<RetentionPolicy>): RetentionManager {
+export function createRetentionManager(
+  defaultPolicy?: Partial<RetentionPolicy>
+): RetentionManager {
   return new RetentionManager(defaultPolicy);
 }

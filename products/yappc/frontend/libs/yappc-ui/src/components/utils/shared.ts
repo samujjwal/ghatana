@@ -9,17 +9,20 @@
  */
 export function hexToRgb(hex: string): [number, number, number] {
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  const formattedHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+  const formattedHex = hex.replace(
+    shorthandRegex,
+    (_, r, g, b) => r + r + g + g + b + b
+  );
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(formattedHex);
-  
+
   if (!result) {
     throw new Error(`Invalid hex color: ${hex}`);
   }
-  
+
   return [
     parseInt(result[1], 16),
     parseInt(result[2], 16),
-    parseInt(result[3], 16)
+    parseInt(result[3], 16),
   ];
 }
 
@@ -27,7 +30,7 @@ export function hexToRgb(hex: string): [number, number, number] {
  * Converts RGB values to hex color string
  */
 export function rgbToHex(r: number, g: number, b: number): string {
-  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 /**
@@ -46,13 +49,13 @@ export function parseVersion(version: string): VersionComponents {
   if (parts.length < 2) {
     throw new Error(`Invalid version format: ${version}`);
   }
-  
+
   const major = parseInt(parts[0], 10);
   const minor = parseInt(parts[1], 10);
-  
+
   let patch = 0;
   let prerelease: string | undefined;
-  
+
   if (parts.length >= 3) {
     const patchPart = parts[2];
     const dashIndex = patchPart.indexOf('-');
@@ -63,11 +66,11 @@ export function parseVersion(version: string): VersionComponents {
       patch = parseInt(patchPart, 10);
     }
   }
-  
+
   if (isNaN(major) || isNaN(minor) || isNaN(patch)) {
     throw new Error(`Invalid version format: ${version}`);
   }
-  
+
   return { major, minor, patch, prerelease };
 }
 
@@ -78,18 +81,18 @@ export function parseVersion(version: string): VersionComponents {
 export function compareVersions(v1: string, v2: string): number {
   const a = parseVersion(v1);
   const b = parseVersion(v2);
-  
+
   if (a.major !== b.major) return a.major - b.major;
   if (a.minor !== b.minor) return a.minor - b.minor;
   if (a.patch !== b.patch) return a.patch - b.patch;
-  
+
   // Handle prerelease comparison
   if (a.prerelease && !b.prerelease) return -1;
   if (!a.prerelease && b.prerelease) return 1;
   if (a.prerelease && b.prerelease) {
     return a.prerelease.localeCompare(b.prerelease);
   }
-  
+
   return 0;
 }
 
@@ -152,7 +155,7 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  
+
   return (...args: Parameters<T>) => {
     if (timeoutId) {
       clearTimeout(timeoutId);
@@ -169,12 +172,12 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       fn(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 }

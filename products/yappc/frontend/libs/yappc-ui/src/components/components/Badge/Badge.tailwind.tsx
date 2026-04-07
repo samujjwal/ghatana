@@ -1,6 +1,6 @@
 /**
  * Badge Component (Tailwind CSS)
- * 
+ *
  * A small status indicator that appears near another element.
  * Used for notification counts, status indicators, or labels.
  */
@@ -17,61 +17,68 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
    * Badge content (usually a number or short text)
    */
   badgeContent?: React.ReactNode;
-  
+
   /**
    * Color variant
    * @default 'primary'
    */
-  color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' | 'default';
-  
+  color?:
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'success'
+    | 'default';
+
   /**
    * Badge size
    * @default 'medium'
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Badge variant
    * @default 'standard'
    */
   variant?: 'standard' | 'dot';
-  
+
   /**
    * Hide badge when badgeContent is 0
    * @default false
    */
   showZero?: boolean;
-  
+
   /**
    * Max number to display (shows "max+" when exceeded)
    * @default 99
    */
   max?: number;
-  
+
   /**
    * Overlap with child element
    * @default 'rectangular'
    */
   overlap?: 'rectangular' | 'circular';
-  
+
   /**
    * Badge position anchor
    * @default 'top-right'
    */
   anchorOrigin?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
-  
+
   /**
    * Show pulse animation
    * @default false
    */
   pulse?: boolean;
-  
+
   /**
    * Hide the badge
    * @default false
    */
   invisible?: boolean;
-  
+
   /**
    * Element to apply badge to
    */
@@ -141,13 +148,13 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
     // Determine if badge should be shown
     const isZero = badgeContent === 0 || badgeContent === '0';
     const shouldHide = invisible || (isZero && !showZero);
-    
+
     // Format badge content (handle max)
     let displayContent = badgeContent;
     if (typeof badgeContent === 'number' && badgeContent > max) {
       displayContent = `${max}+`;
     }
-    
+
     // If no children, render standalone badge
     if (!children) {
       if (variant === 'dot') {
@@ -166,7 +173,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
           />
         );
       }
-      
+
       return (
         <span
           ref={ref}
@@ -184,10 +191,14 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         </span>
       );
     }
-    
+
     // Render badge with children
     return (
-      <span ref={ref} className={cn('relative inline-flex', className)} {...props}>
+      <span
+        ref={ref}
+        className={cn('relative inline-flex', className)}
+        {...props}
+      >
         {children}
         {!shouldHide && (
           <span

@@ -1,9 +1,9 @@
 /**
  * Component Library and Palette System
- * 
+ *
  * Provides a comprehensive component library with drag-and-drop palette,
  * component organization, and real-time search capabilities.
- * 
+ *
  * Features:
  * - 📦 Component library management
  * - 🎨 Visual component palette
@@ -11,7 +11,7 @@
  * - 🏷️ Component categorization and tagging
  * - 👥 Collaborative component sharing
  * - 📊 Component usage tracking
- * 
+ *
  * @doc.type system
  * @doc.purpose Component library and palette
  * @doc.layer product
@@ -140,14 +140,16 @@ export class ComponentLibrary {
    */
   searchComponents(query: string): ComponentDefinition[] {
     const lowerQuery = query.toLowerCase();
-    
+
     return this.getAllComponents().filter((component) => {
       const matchesName = component.name.toLowerCase().includes(lowerQuery);
-      const matchesDescription = component.metadata.description.toLowerCase().includes(lowerQuery);
+      const matchesDescription = component.metadata.description
+        .toLowerCase()
+        .includes(lowerQuery);
       const matchesTags = component.metadata.tags.some((tag) =>
         tag.toLowerCase().includes(lowerQuery)
       );
-      
+
       return matchesName || matchesDescription || matchesTags;
     });
   }
@@ -158,7 +160,7 @@ export class ComponentLibrary {
   getComponentsByCategory(categoryId: string): ComponentDefinition[] {
     const category = this.getCategory(categoryId);
     if (!category) return [];
-    
+
     return category.components;
   }
 
@@ -251,13 +253,13 @@ export class ComponentLibrary {
   import(json: string): void {
     try {
       const data = JSON.parse(json);
-      
+
       if (data.components) {
         data.components.forEach((component: ComponentDefinition) => {
           this.addComponent(component);
         });
       }
-      
+
       if (data.categories) {
         data.categories.forEach((category: ComponentCategory) => {
           this.addCategory(category);
@@ -419,7 +421,9 @@ export function createDefaultComponentLibrary(): ComponentLibrary {
 /**
  * Create component from library definition
  */
-export function createComponentFromDefinition(definition: ComponentDefinition): unknown {
+export function createComponentFromDefinition(
+  definition: ComponentDefinition
+): unknown {
   return {
     id: definition.id,
     type: definition.type,

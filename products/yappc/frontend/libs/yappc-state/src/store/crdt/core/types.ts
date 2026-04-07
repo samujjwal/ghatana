@@ -151,7 +151,11 @@ export interface Conflict {
   /** Conflict ID */
   id: string;
   /** Conflict type */
-  type: 'concurrent-update' | 'concurrent-delete' | 'move-conflict' | 'ordering-conflict';
+  type:
+    | 'concurrent-update'
+    | 'concurrent-delete'
+    | 'move-conflict'
+    | 'ordering-conflict';
   /** Target ID */
   targetId: string;
   /** Operation A */
@@ -161,7 +165,11 @@ export interface Conflict {
   /** Resolved flag */
   resolved: boolean;
   /** Resolution strategy */
-  resolutionStrategy?: 'last-write-wins' | 'first-write-wins' | 'merge' | 'custom';
+  resolutionStrategy?:
+    | 'last-write-wins'
+    | 'first-write-wins'
+    | 'merge'
+    | 'custom';
   /** Timestamp */
   timestamp: number;
 }
@@ -260,7 +268,11 @@ export interface SyncMessage {
  * @doc.layer product
  * @doc.pattern Value Object
  */
-export type MergeStrategy = 'last-write-wins' | 'first-write-wins' | 'merge' | 'custom';
+export type MergeStrategy =
+  | 'last-write-wins'
+  | 'first-write-wins'
+  | 'merge'
+  | 'custom';
 
 /**
  * CRDT configuration.

@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - IDE Settings Hook
- * 
+ *
  * React hook for managing IDE settings with Jotai atoms.
- * 
+ *
  * @doc.type hook
  * @doc.purpose IDE settings management
  * @doc.layer product
@@ -30,9 +30,14 @@ export interface UseIDESettingsReturn {
   /** Load settings from localStorage */
   loadSettings: () => void;
   /** Get setting value */
-  getSetting: <K extends keyof IDEWorkspaceSettings>(key: K) => IDEWorkspaceSettings[K];
+  getSetting: <K extends keyof IDEWorkspaceSettings>(
+    key: K
+  ) => IDEWorkspaceSettings[K];
   /** Set setting value */
-  setSetting: <K extends keyof IDEWorkspaceSettings>(key: K, value: IDEWorkspaceSettings[K]) => void;
+  setSetting: <K extends keyof IDEWorkspaceSettings>(
+    key: K,
+    value: IDEWorkspaceSettings[K]
+  ) => void;
 }
 
 /**
@@ -54,15 +59,18 @@ const DEFAULT_SETTINGS: IDEWorkspaceSettings = {
 
 /**
  * IDE Settings Hook
- * 
+ *
  * @doc.returns Settings management utilities
  */
 export function useIDESettings(): UseIDESettingsReturn {
   const [settings, setSettings] = useAtom(ideSettingsAtom);
 
-  const updateSettings = useCallback((newSettings: Partial<IDEWorkspaceSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, [setSettings]);
+  const updateSettings = useCallback(
+    (newSettings: Partial<IDEWorkspaceSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    },
+    [setSettings]
+  );
 
   const resetSettings = useCallback(() => {
     setSettings(DEFAULT_SETTINGS);
@@ -89,13 +97,22 @@ export function useIDESettings(): UseIDESettingsReturn {
     }
   }, [setSettings]);
 
-  const getSetting = useCallback(<K extends keyof IDEWorkspaceSettings>(key: K): IDEWorkspaceSettings[K] => {
-    return settings[key];
-  }, [settings]);
+  const getSetting = useCallback(
+    <K extends keyof IDEWorkspaceSettings>(key: K): IDEWorkspaceSettings[K] => {
+      return settings[key];
+    },
+    [settings]
+  );
 
-  const setSetting = useCallback(<K extends keyof IDEWorkspaceSettings>(key: K, value: IDEWorkspaceSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, [setSettings]);
+  const setSetting = useCallback(
+    <K extends keyof IDEWorkspaceSettings>(
+      key: K,
+      value: IDEWorkspaceSettings[K]
+    ) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    [setSettings]
+  );
 
   return {
     settings,

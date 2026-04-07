@@ -143,7 +143,11 @@ export interface TraceabilityOptions {
  * @doc.layer product
  * @doc.pattern Value Object
  */
-export type TraceabilityEvent = 'link-created' | 'link-updated' | 'link-deleted' | 'coverage-changed';
+export type TraceabilityEvent =
+  | 'link-created'
+  | 'link-updated'
+  | 'link-deleted'
+  | 'coverage-changed';
 
 /**
  * Traceability event listener.
@@ -153,7 +157,10 @@ export type TraceabilityEvent = 'link-created' | 'link-updated' | 'link-deleted'
  * @doc.layer product
  * @doc.pattern Value Object
  */
-export type TraceabilityEventListener = (event: TraceabilityEvent, data: unknown) => void;
+export type TraceabilityEventListener = (
+  event: TraceabilityEvent,
+  data: unknown
+) => void;
 
 /**
  * Traceability matrix.

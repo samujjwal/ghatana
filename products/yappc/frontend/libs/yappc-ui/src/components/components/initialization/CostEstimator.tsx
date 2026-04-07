@@ -176,42 +176,77 @@ const formatCurrency = (amount: number, currency = 'USD'): string => {
 const getCategoryIcon = (category: CostCategory): React.ReactNode => {
   const icons: Record<CostCategory, React.ReactNode> = {
     compute: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
         <rect x="9" y="9" width="6" height="6" />
       </svg>
     ),
     database: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <ellipse cx="12" cy="5" rx="9" ry="3" />
         <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
         <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
       </svg>
     ),
     storage: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
       </svg>
     ),
     network: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <line x1="2" y1="12" x2="22" y2="12" />
         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" />
       </svg>
     ),
     cdn: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
       </svg>
     ),
     monitoring: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
     ci_cd: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="17 1 21 5 17 9" />
         <path d="M3 11V9a4 4 0 0 1 4-4h14" />
         <polyline points="7 23 3 19 7 15" />
@@ -219,7 +254,12 @@ const getCategoryIcon = (category: CostCategory): React.ReactNode => {
       </svg>
     ),
     other: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <line x1="12" y1="16" x2="12" y2="12" />
         <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -246,7 +286,10 @@ const getCategoryColor = (category: CostCategory): string => {
 const getConfidenceBadge = (
   confidence: CostEstimates['confidence']
 ): { label: string; color: string } => {
-  const badges: Record<NonNullable<typeof confidence>, { label: string; color: string }> = {
+  const badges: Record<
+    NonNullable<typeof confidence>,
+    { label: string; color: string }
+  > = {
     low: { label: 'Low Confidence', color: '#EF4444' },
     medium: { label: 'Medium Confidence', color: '#F59E0B' },
     high: { label: 'High Confidence', color: '#10B981' },
@@ -299,7 +342,10 @@ const BreakdownItem: React.FC<BreakdownItemProps> = ({ item, onClick }) => {
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      <div className="cost-breakdown-icon" style={{ backgroundColor: `${color}20`, color }}>
+      <div
+        className="cost-breakdown-icon"
+        style={{ backgroundColor: `${color}20`, color }}
+      >
         {getCategoryIcon(item.category)}
       </div>
       <div className="cost-breakdown-info">
@@ -311,7 +357,9 @@ const BreakdownItem: React.FC<BreakdownItemProps> = ({ item, onClick }) => {
         )}
       </div>
       <div className="cost-breakdown-amount">
-        <span className="cost-breakdown-value">{formatCurrency(item.amount)}</span>
+        <span className="cost-breakdown-value">
+          {formatCurrency(item.amount)}
+        </span>
         {item.isVariable && (
           <span className="cost-breakdown-variable">
             {item.minAmount !== undefined && item.maxAmount !== undefined
@@ -328,7 +376,9 @@ interface OptimizationCardProps {
   optimization: CostOptimization;
 }
 
-const OptimizationCard: React.FC<OptimizationCardProps> = ({ optimization }) => {
+const OptimizationCard: React.FC<OptimizationCardProps> = ({
+  optimization,
+}) => {
   const difficultyColors = {
     easy: '#10B981',
     medium: '#F59E0B',
@@ -349,7 +399,9 @@ const OptimizationCard: React.FC<OptimizationCardProps> = ({ optimization }) => 
         </span>
       </div>
       <span className="cost-optimization-title">{optimization.title}</span>
-      <span className="cost-optimization-description">{optimization.description}</span>
+      <span className="cost-optimization-description">
+        {optimization.description}
+      </span>
     </div>
   );
 };
@@ -369,16 +421,21 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({
   loading = false,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<'breakdown' | 'providers' | 'environments'>(
-    'breakdown'
-  );
+  const [activeTab, setActiveTab] = useState<
+    'breakdown' | 'providers' | 'environments'
+  >('breakdown');
 
   const sortedBreakdown = useMemo(() => {
     return [...estimates.breakdown].sort((a, b) => b.amount - a.amount);
   }, [estimates.breakdown]);
 
   const totalSavings = useMemo(() => {
-    return estimates.optimizations?.reduce((sum, opt) => sum + opt.savingsAmount, 0) || 0;
+    return (
+      estimates.optimizations?.reduce(
+        (sum, opt) => sum + opt.savingsAmount,
+        0
+      ) || 0
+    );
   }, [estimates.optimizations]);
 
   const confidence = getConfidenceBadge(estimates.confidence);
@@ -408,8 +465,17 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({
           )}
         </div>
         {onOptimize && totalSavings > 0 && (
-          <button type="button" className="cost-optimize-btn" onClick={onOptimize}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button
+            type="button"
+            className="cost-optimize-btn"
+            onClick={onOptimize}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
             Save up to {formatCurrency(totalSavings)}/mo
@@ -484,7 +550,11 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({
             <BreakdownItem
               key={item.category}
               item={item}
-              onClick={onBreakdownClick ? () => onBreakdownClick(item.category) : undefined}
+              onClick={
+                onBreakdownClick
+                  ? () => onBreakdownClick(item.category)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -537,7 +607,9 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({
         estimates.optimizations.length > 0 &&
         variant === 'detailed' && (
           <div className="cost-optimizations">
-            <h4 className="cost-optimizations-title">Optimization Opportunities</h4>
+            <h4 className="cost-optimizations-title">
+              Optimization Opportunities
+            </h4>
             <div className="cost-optimizations-list">
               {estimates.optimizations.slice(0, 3).map((opt) => (
                 <OptimizationCard key={opt.id} optimization={opt} />

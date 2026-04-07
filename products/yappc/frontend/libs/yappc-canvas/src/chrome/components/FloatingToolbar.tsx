@@ -1,8 +1,8 @@
 /**
  * FloatingToolbar Component
- * 
+ *
  * Enhanced Miro-style floating toolbar with context-specific actions
- * 
+ *
  * Features:
  * - Smart positioning: flips above/below/left/right based on viewport space
  * - 300ms delay after selection before appearing
@@ -10,7 +10,7 @@
  * - Context-specific actions based on selection type
  * - Smooth animations and transitions
  * - Keyboard accessible
- * 
+ *
  * @doc.type component
  * @doc.purpose Context-aware floating toolbar
  * @doc.layer components
@@ -18,15 +18,40 @@
  */
 
 import { useAtom } from 'jotai';
-import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, MoreHorizontal as MoreIcon, BringToFront as BringForwardIcon, SendToBack as SendBackwardIcon, AlignStartHorizontal as AlignLeftIcon, AlignStartVertical as AlignTopIcon, PaintBucket as ColorIcon, Link as LinkIcon, Pencil as EditIcon, Users as GroupIcon } from 'lucide-react';
+import {
+  Copy as DuplicateIcon,
+  Trash2 as DeleteIcon,
+  Lock as LockIcon,
+  LockOpen as UnlockIcon,
+  MoreHorizontal as MoreIcon,
+  BringToFront as BringForwardIcon,
+  SendToBack as SendBackwardIcon,
+  AlignStartHorizontal as AlignLeftIcon,
+  AlignStartVertical as AlignTopIcon,
+  PaintBucket as ColorIcon,
+  Link as LinkIcon,
+  Pencil as EditIcon,
+  Users as GroupIcon,
+} from 'lucide-react';
 import React, { useMemo, useEffect, useState } from 'react';
 
-import { Box, IconButton, Tooltip, Divider, Menu, MenuItem, ListItemIcon, ListItemText } from '@ghatana/design-system';
+import {
+  Box,
+  IconButton,
+  Tooltip,
+  Divider,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from '@ghatana/design-system';
 
 import type { ContextAction } from '../lib/actions/ContextActionsManager';
-import { chromeFloatingToolbarVisibleAtom, chromeFloatingToolbarPositionAtom } from '../state/chrome-atoms';
+import {
+  chromeFloatingToolbarVisibleAtom,
+  chromeFloatingToolbarPositionAtom,
+} from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
-
 
 const { SPACING, Z_INDEX, COLORS, SHADOWS, CANVAS } = CANVAS_TOKENS;
 
@@ -62,7 +87,13 @@ export interface FloatingToolbarProps {
   showDelay?: number;
 
   /** Selection type for context-specific actions */
-  selectionType?: 'single' | 'multiple' | 'frame' | 'shape' | 'text' | 'connector';
+  selectionType?:
+    | 'single'
+    | 'multiple'
+    | 'frame'
+    | 'shape'
+    | 'text'
+    | 'connector';
 }
 
 /**
@@ -84,11 +115,15 @@ function calculateOptimalPlacement(
   const toolbarWidth = 300; // Approximate width
 
   // Transform canvas coordinates to screen coordinates
-  const centerX = (selectionBounds.x + selectionBounds.width / 2 - viewport.x) * viewport.zoom;
+  const centerX =
+    (selectionBounds.x + selectionBounds.width / 2 - viewport.x) *
+    viewport.zoom;
   const topY = (selectionBounds.y - viewport.y) * viewport.zoom;
-  const bottomY = (selectionBounds.y + selectionBounds.height - viewport.y) * viewport.zoom;
+  const bottomY =
+    (selectionBounds.y + selectionBounds.height - viewport.y) * viewport.zoom;
   const leftX = (selectionBounds.x - viewport.x) * viewport.zoom;
-  const rightX = (selectionBounds.x + selectionBounds.width - viewport.x) * viewport.zoom;
+  const rightX =
+    (selectionBounds.x + selectionBounds.width - viewport.x) * viewport.zoom;
 
   // Check space above
   const spaceAbove = topY;
@@ -174,9 +209,30 @@ function getContextSpecificActions(
   // Priority order for different selection types
   const priorityMap: Record<string, string[]> = {
     single: ['edit', 'duplicate', 'delete', 'lock', 'color', 'bring-forward'],
-    multiple: ['group', 'align-left', 'align-top', 'duplicate', 'delete', 'lock'],
-    frame: ['edit', 'duplicate', 'delete', 'bring-forward', 'send-backward', 'lock'],
-    shape: ['color', 'duplicate', 'delete', 'bring-forward', 'send-backward', 'lock'],
+    multiple: [
+      'group',
+      'align-left',
+      'align-top',
+      'duplicate',
+      'delete',
+      'lock',
+    ],
+    frame: [
+      'edit',
+      'duplicate',
+      'delete',
+      'bring-forward',
+      'send-backward',
+      'lock',
+    ],
+    shape: [
+      'color',
+      'duplicate',
+      'delete',
+      'bring-forward',
+      'send-backward',
+      'lock',
+    ],
     text: ['edit', 'color', 'duplicate', 'delete', 'bring-forward', 'lock'],
     connector: ['edit', 'delete', 'bring-forward', 'send-backward', 'lock'],
   };
@@ -198,11 +254,11 @@ function getContextSpecificActions(
 
 /**
  * FloatingToolbar - Miro-style toolbar that floats above selected objects
- * 
+ *
  * Automatically positions itself above the selection center and follows
  * as the selection moves. Provides quick access to common actions without
  * requiring users to move their cursor to a fixed toolbar location.
- * 
+ *
  * @example
  * ```tsx
  * <FloatingToolbar
@@ -223,7 +279,9 @@ export function FloatingToolbar({
   showDelay = 300,
   selectionType,
 }: FloatingToolbarProps) {
-  const [moreMenuAnchor, setMoreMenuAnchor] = useState<HTMLElement | null>(null);
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<HTMLElement | null>(
+    null
+  );
   const [showToolbar, setShowToolbar] = useState(false);
   const [, setToolbarVisible] = useAtom(chromeFloatingToolbarVisibleAtom);
   const [, setToolbarPosition] = useAtom(chromeFloatingToolbarPositionAtom);
@@ -281,7 +339,13 @@ export function FloatingToolbar({
   );
 
   // Don't render if not visible, no position, or delayed
-  if (!visible || !showToolbar || !position || !selectionBounds || actions.length === 0) {
+  if (
+    !visible ||
+    !showToolbar ||
+    !position ||
+    !selectionBounds ||
+    actions.length === 0
+  ) {
     return null;
   }
 
@@ -303,7 +367,16 @@ export function FloatingToolbar({
   return (
     <>
       <Box
-        className="fixed flex items-center gap-0" style={{ left: position.x, top: position.y, transform: getTransform(), zIndex: Z_INDEX.FLOATING_TOOLBAR || 450, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: SPACING.SM, border: `1px solid ${COLORS.BORDER_LIGHT}`}}
+        className="fixed flex items-center gap-0"
+        style={{
+          left: position.x,
+          top: position.y,
+          transform: getTransform(),
+          zIndex: Z_INDEX.FLOATING_TOOLBAR || 450,
+          backgroundColor: COLORS.PANEL_BG_LIGHT,
+          borderRadius: SPACING.SM,
+          border: `1px solid ${COLORS.BORDER_LIGHT}`,
+        }}
         role="toolbar"
         aria-label="Floating actions"
         onClick={(e) => e.stopPropagation()}
@@ -349,7 +422,8 @@ export function FloatingToolbar({
                   }}
                   disabled={!action.isEnabled}
                   size="sm"
-                  className="w-[32px] h-[32px]" style={{ color: COLORS.TEXT_PRIMARY }}
+                  className="w-[32px] h-[32px]"
+                  style={{ color: COLORS.TEXT_PRIMARY }}
                   aria-label={action.label}
                 >
                   {action.icon || getActionIcon(action.id)}
@@ -414,17 +488,10 @@ export function FloatingToolbar({
             }}
             disabled={!action.isEnabled}
           >
-            {action.icon && (
-              <ListItemIcon>
-                {action.icon}
-              </ListItemIcon>
-            )}
+            {action.icon && <ListItemIcon>{action.icon}</ListItemIcon>}
             <ListItemText>{action.label}</ListItemText>
             {action.shortcut && (
-              <Box
-                component="span"
-                className="ml-4 text-xs opacity-[0.6]"
-              >
+              <Box component="span" className="ml-4 text-xs opacity-[0.6]">
                 {action.shortcut}
               </Box>
             )}
@@ -439,7 +506,11 @@ export function FloatingToolbar({
  * Calculate bounding box for multiple nodes
  */
 export function calculateSelectionBounds(
-  nodes: Array<{ position: { x: number; y: number }; width?: number; height?: number }>
+  nodes: Array<{
+    position: { x: number; y: number };
+    width?: number;
+    height?: number;
+  }>
 ): { x: number; y: number; width: number; height: number } | null {
   if (nodes.length === 0) return null;
 

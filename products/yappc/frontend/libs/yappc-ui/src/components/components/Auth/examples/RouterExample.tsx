@@ -1,9 +1,9 @@
 /**
  * Complete Router Example
- * 
+ *
  * Production-ready router configuration demonstrating authentication flows,
  * protected routes, public routes, and error handling.
- * 
+ *
  * @doc.type example
  * @doc.purpose Complete router setup
  * @doc.layer ui
@@ -11,7 +11,12 @@
  */
 
 import { Suspense } from 'react';
-import { createBrowserRouter, Navigate, Outlet, type RouteObject } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  type RouteObject,
+} from 'react-router-dom';
 
 import { useAuth } from '@yappc/canvas';
 
@@ -107,7 +112,10 @@ const PublicLayout = () => (
       }}
     >
       <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-        <a href="/" style={{ fontSize: '20px', fontWeight: 700, color: '#667eea' }}>
+        <a
+          href="/"
+          style={{ fontSize: '20px', fontWeight: 700, color: '#667eea' }}
+        >
           YourApp
         </a>
         <div style={{ flex: 1 }} />
@@ -150,7 +158,7 @@ const AuthLayout = () => (
  */
 const AppLayout = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  
+
   return (
     <ProtectedRoute
       isAuthenticated={isAuthenticated}
@@ -169,7 +177,9 @@ const AppLayout = () => {
             padding: '24px',
           }}
         >
-          <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '32px' }}>
+          <div
+            style={{ fontSize: '20px', fontWeight: 700, marginBottom: '32px' }}
+          >
             YourApp
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -222,7 +232,7 @@ const AppLayout = () => {
             )}
           </nav>
         </aside>
-        
+
         {/* Main Content */}
         <main style={{ flex: 1, background: '#f9fafb' }}>
           <Suspense fallback={<InlineLoader />}>
@@ -243,15 +253,15 @@ const AppLayout = () => {
  */
 const GuestGuard = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <PageLoader />;
   }
-  
+
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return <Outlet />;
 };
 
@@ -273,7 +283,7 @@ export const routes: RouteObject[] = [
       { path: 'pricing', element: <PricingPage /> },
     ],
   },
-  
+
   // Authentication routes (guest only)
   {
     path: '/',
@@ -290,7 +300,7 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-  
+
   // Protected app routes
   {
     path: '/',
@@ -299,7 +309,7 @@ export const routes: RouteObject[] = [
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'settings', element: <SettingsPage /> },
-      
+
       // Admin routes (requires admin role)
       {
         path: 'admin',
@@ -307,7 +317,7 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-  
+
   // Error routes
   { path: '403', element: <UnauthorizedPage /> },
   { path: '*', element: <NotFoundPage /> },
@@ -339,10 +349,13 @@ export const ProtectedAdminPage = withProtectedRoute(AdminPage, {
 
 // Permission-based protection (Placeholder - create EditorPage in your app)
 // export const ProtectedEditorPage = withProtectedRoute(lazy(() => import('./EditorPage')), {
-export const ProtectedEditorPage = withProtectedRoute(() => <div>Editor Page</div>, {
-  requiredPermissions: ['write', 'edit'],
-  unauthorizedRedirectTo: '/403',
-});
+export const ProtectedEditorPage = withProtectedRoute(
+  () => <div>Editor Page</div>,
+  {
+    requiredPermissions: ['write', 'edit'],
+    unauthorizedRedirectTo: '/403',
+  }
+);
 
 // =============================================================================
 // Usage Examples
@@ -350,13 +363,13 @@ export const ProtectedEditorPage = withProtectedRoute(() => <div>Editor Page</di
 
 /**
  * @example App Entry Point
- * 
+ *
  * ```tsx
  * import { RouterProvider } from 'react-router-dom';
  * import { Provider as JotaiProvider } from 'jotai';
  * import { ToastProvider } from '@yappc/ui';
  * import { router } from './router';
- * 
+ *
  * function App() {
  *   return (
  *     <JotaiProvider>
@@ -367,9 +380,9 @@ export const ProtectedEditorPage = withProtectedRoute(() => <div>Editor Page</di
  *   );
  * }
  * ```
- * 
+ *
  * @example Custom Protected Route
- * 
+ *
  * ```tsx
  * <Route
  *   path="/premium"
@@ -385,13 +398,13 @@ export const ProtectedEditorPage = withProtectedRoute(() => <div>Editor Page</di
  *   }
  * />
  * ```
- * 
+ *
  * @example Role-Based Navigation
- * 
+ *
  * ```tsx
  * function Navigation() {
  *   const { user } = useAuth();
- *   
+ *
  *   return (
  *     <nav>
  *       <Link to="/dashboard">Dashboard</Link>

@@ -8,7 +8,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { DevInspector } from '../DevInspector';
 
-import type { CanvasDocument, CanvasSelection, CanvasViewport, CanvasHistoryEntry, CanvasUIState, CanvasPerformanceMetrics, CanvasNode } from '../../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasSelection,
+  CanvasViewport,
+  CanvasHistoryEntry,
+  CanvasUIState,
+  CanvasPerformanceMetrics,
+  CanvasNode,
+} from '../../types/canvas-document';
 
 // Mock Jotai atoms and state
 vi.mock('jotai', async (importOriginal) => {
@@ -152,7 +160,9 @@ describe('DevInspector', () => {
     it('should call onVisibilityChange when close button clicked', async () => {
       const user = userEvent.setup();
       const onVisibilityChange = vi.fn();
-      render(<DevInspector visible={true} onVisibilityChange={onVisibilityChange} />);
+      render(
+        <DevInspector visible={true} onVisibilityChange={onVisibilityChange} />
+      );
 
       const closeButton = screen.getByTitle('Close');
       await user.click(closeButton);
@@ -170,21 +180,27 @@ describe('DevInspector', () => {
     });
 
     it('should position at top-left when specified', () => {
-      const { container } = render(<DevInspector visible={true} position="top-left" />);
+      const { container } = render(
+        <DevInspector visible={true} position="top-left" />
+      );
       const panel = container.firstChild as HTMLElement;
       expect(panel.style.top).toBe('20px');
       expect(panel.style.left).toBe('20px');
     });
 
     it('should position at top-right when specified', () => {
-      const { container } = render(<DevInspector visible={true} position="top-right" />);
+      const { container } = render(
+        <DevInspector visible={true} position="top-right" />
+      );
       const panel = container.firstChild as HTMLElement;
       expect(panel.style.top).toBe('20px');
       expect(panel.style.right).toBe('20px');
     });
 
     it('should position at bottom-left when specified', () => {
-      const { container } = render(<DevInspector visible={true} position="bottom-left" />);
+      const { container } = render(
+        <DevInspector visible={true} position="bottom-left" />
+      );
       const panel = container.firstChild as HTMLElement;
       expect(panel.style.bottom).toBe('20px');
       expect(panel.style.left).toBe('20px');
@@ -227,25 +243,50 @@ describe('DevInspector', () => {
       render(<DevInspector visible={true} />);
       // Use getAllByRole to find buttons, then check their text
       const buttons = screen.getAllByRole('button');
-      const tabButtons = buttons.filter(btn => 
-        btn.textContent?.match(/Document|Selection|Viewport|History|UI|Performance/)
+      const tabButtons = buttons.filter((btn) =>
+        btn.textContent?.match(
+          /Document|Selection|Viewport|History|UI|Performance/
+        )
       );
-      
-      expect(tabButtons.some(btn => btn.textContent?.includes('Document'))).toBe(true);
-      expect(tabButtons.some(btn => btn.textContent?.includes('Selection'))).toBe(true);
-      expect(tabButtons.some(btn => btn.textContent?.includes('Viewport'))).toBe(true);
-      expect(tabButtons.some(btn => btn.textContent?.includes('History'))).toBe(true);
-      expect(tabButtons.some(btn => btn.textContent?.includes('UI'))).toBe(true);
-      expect(tabButtons.some(btn => btn.textContent?.includes('Performance'))).toBe(true);
+
+      expect(
+        tabButtons.some((btn) => btn.textContent?.includes('Document'))
+      ).toBe(true);
+      expect(
+        tabButtons.some((btn) => btn.textContent?.includes('Selection'))
+      ).toBe(true);
+      expect(
+        tabButtons.some((btn) => btn.textContent?.includes('Viewport'))
+      ).toBe(true);
+      expect(
+        tabButtons.some((btn) => btn.textContent?.includes('History'))
+      ).toBe(true);
+      expect(tabButtons.some((btn) => btn.textContent?.includes('UI'))).toBe(
+        true
+      );
+      expect(
+        tabButtons.some((btn) => btn.textContent?.includes('Performance'))
+      ).toBe(true);
     });
 
     it('should show element counts in tab labels', () => {
       render(<DevInspector visible={true} />);
       const buttons = screen.getAllByRole('button');
-      const docButton = buttons.find(btn => btn.textContent?.includes('Document') && btn.textContent?.includes('('));
-      const selButton = buttons.find(btn => btn.textContent?.includes('Selection') && btn.textContent?.includes('('));
-      const histButton = buttons.find(btn => btn.textContent?.includes('History') && btn.textContent?.includes('('));
-      
+      const docButton = buttons.find(
+        (btn) =>
+          btn.textContent?.includes('Document') &&
+          btn.textContent?.includes('(')
+      );
+      const selButton = buttons.find(
+        (btn) =>
+          btn.textContent?.includes('Selection') &&
+          btn.textContent?.includes('(')
+      );
+      const histButton = buttons.find(
+        (btn) =>
+          btn.textContent?.includes('History') && btn.textContent?.includes('(')
+      );
+
       expect(docButton?.textContent).toContain('(1)');
       expect(selButton?.textContent).toContain('(1)');
       expect(histButton?.textContent).toContain('(1)');
@@ -257,11 +298,11 @@ describe('DevInspector', () => {
 
       const buttons = screen.getAllByRole('button');
       // Find tab buttons by their content - they have element counts
-      const selectionTab = buttons.find(btn => {
+      const selectionTab = buttons.find((btn) => {
         const text = btn.textContent || '';
         return text.includes('Selection') && text.includes('(');
       });
-      
+
       expect(selectionTab).toBeDefined();
       await user.click(selectionTab!);
 
@@ -322,7 +363,12 @@ describe('DevInspector', () => {
     it('should handle empty selection', async () => {
       const user = userEvent.setup();
       mockUseAtomValue.mockImplementation((atom: unknown) => {
-        if (atom === canvasSelectionAtom) return { selectedIds: [], focusedId: undefined, hoveredId: undefined };
+        if (atom === canvasSelectionAtom)
+          return {
+            selectedIds: [],
+            focusedId: undefined,
+            hoveredId: undefined,
+          };
         if (atom === canvasDocumentAtom) return mockDocument;
         return null;
       });
@@ -488,7 +534,9 @@ describe('DevInspector', () => {
     });
 
     it('should respect custom height', () => {
-      const { container } = render(<DevInspector visible={true} height={700} />);
+      const { container } = render(
+        <DevInspector visible={true} height={700} />
+      );
       const panel = container.firstChild as HTMLElement;
       expect(panel.style.height).toBe('700px');
     });

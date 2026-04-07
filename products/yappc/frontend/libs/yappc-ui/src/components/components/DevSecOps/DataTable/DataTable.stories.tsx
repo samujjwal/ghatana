@@ -9,7 +9,12 @@ import { useState } from 'react';
 
 import { DataTable } from './DataTable';
 
-import type { DataTableColumn, SortConfig, FilterConfig, PaginationConfig } from './types';
+import type {
+  DataTableColumn,
+  SortConfig,
+  FilterConfig,
+  PaginationConfig,
+} from './types';
 import type { Meta, StoryObj } from '@storybook/react';
 import type { Item } from '@yappc/core/types/devsecops';
 
@@ -30,7 +35,12 @@ type Story = StoryObj<typeof DataTable>;
 
 // Mock data - 100 items for performance testing
 const generateMockData = (count: number): Item[] => {
-  const statuses: Item['status'][] = ['not-started', 'in-progress', 'completed', 'blocked'];
+  const statuses: Item['status'][] = [
+    'not-started',
+    'in-progress',
+    'completed',
+    'blocked',
+  ];
   const priorities: Item['priority'][] = ['low', 'medium', 'high', 'critical'];
   const titles = [
     'Implement authentication',
@@ -81,7 +91,11 @@ const customColumns: DataTableColumn<Item>[] = [
         <Typography as="p" className="text-sm" fontWeight="medium">
           {String(value)}
         </Typography>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+        >
           {row.description}
         </Typography>
       </Box>
@@ -96,8 +110,8 @@ const customColumns: DataTableColumn<Item>[] = [
       const statusColors = {
         'not-started': 'default',
         'in-progress': 'primary',
-        'completed': 'success',
-        'blocked': 'error',
+        completed: 'success',
+        blocked: 'error',
       } as const;
 
       return (
@@ -125,7 +139,9 @@ const customColumns: DataTableColumn<Item>[] = [
       return (
         <Chip
           label={String(value).toUpperCase()}
-          color={priorityColors[value as keyof typeof priorityColors] || 'default'}
+          color={
+            priorityColors[value as keyof typeof priorityColors] || 'default'
+          }
           size="sm"
           variant="outlined"
         />
@@ -139,12 +155,13 @@ const customColumns: DataTableColumn<Item>[] = [
     width: '20%',
     sortable: false,
     render: (value) => {
-      const progress = {
-        'not-started': 0,
-        'in-progress': 50,
-        'completed': 100,
-        'blocked': 25,
-      }[value as string] || 0;
+      const progress =
+        {
+          'not-started': 0,
+          'in-progress': 50,
+          completed: 100,
+          blocked: 25,
+        }[value as string] || 0;
 
       return (
         <Box className="flex items-center gap-2">
@@ -153,7 +170,11 @@ const customColumns: DataTableColumn<Item>[] = [
             value={progress}
             className="grow h-[6px] rounded-xl"
           />
-          <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            color="text.secondary"
+          >
             {progress}%
           </Typography>
         </Box>
@@ -165,7 +186,8 @@ const customColumns: DataTableColumn<Item>[] = [
     label: 'Created',
     field: 'createdAt',
     width: '20%',
-    format: (value) => (value instanceof Date ? value.toLocaleDateString() : String(value)),
+    format: (value) =>
+      value instanceof Date ? value.toLocaleDateString() : String(value),
   },
 ];
 
@@ -266,7 +288,8 @@ export const MultipleSelection: Story = {
     return (
       <Box>
         <Typography as="p" className="text-sm" className="mb-4">
-          Selected {selectedRows.length} row(s): {selectedRows.join(', ') || 'None'}
+          Selected {selectedRows.length} row(s):{' '}
+          {selectedRows.join(', ') || 'None'}
         </Typography>
         <DataTable
           data={mockData}
@@ -435,10 +458,16 @@ export const FullFeatured: Story = {
             Selected: {selectedRows.length} row(s)
           </Typography>
           <Typography as="p" className="text-sm">
-            Sort: {sortConfig ? `${sortConfig.column} (${sortConfig.direction})` : 'None'}
+            Sort:{' '}
+            {sortConfig
+              ? `${sortConfig.column} (${sortConfig.direction})`
+              : 'None'}
           </Typography>
           <Typography as="p" className="text-sm">
-            Page: {paginationConfig.page + 1} of {Math.ceil(paginationConfig.totalRows / paginationConfig.rowsPerPage)}
+            Page: {paginationConfig.page + 1} of{' '}
+            {Math.ceil(
+              paginationConfig.totalRows / paginationConfig.rowsPerPage
+            )}
           </Typography>
         </Box>
         <DataTable

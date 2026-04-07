@@ -115,7 +115,7 @@ describe('SelectorStandardsManager', () => {
     });
 
     it('should reject selectors exceeding max length', () => {
-      const longSelector = `canvas-${  'a'.repeat(60)}`;
+      const longSelector = `canvas-${'a'.repeat(60)}`;
       const result = manager.validateSelector(longSelector);
       expect(result.valid).toBe(false);
       expect(result.errors![0]).toContain('exceeds max length');
@@ -234,10 +234,7 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations).toHaveLength(1);
       expect(violations[0].component).toBe('CanvasToolbar');
     });
@@ -247,10 +244,7 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar data-testid="canvas-toolbar" />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations).toHaveLength(0);
     });
 
@@ -261,10 +255,7 @@ describe('SelectorStandardsManager', () => {
         </Fragment>
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations).toHaveLength(0);
     });
 
@@ -275,10 +266,7 @@ describe('SelectorStandardsManager', () => {
         <NodeEditor />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations.length).toBeGreaterThan(1);
     });
 
@@ -287,13 +275,8 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
-      expect(violations[0].suggestedFix).toBe(
-        'data-testid="canvas-toolbar"'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
+      expect(violations[0].suggestedFix).toBe('data-testid="canvas-toolbar"');
     });
 
     it('should not provide fix when autoFix is disabled', () => {
@@ -303,10 +286,7 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations[0].suggestedFix).toBeUndefined();
     });
 
@@ -315,10 +295,7 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations[0].line).toBeGreaterThan(0);
       expect(violations[0].column).toBeGreaterThan(0);
     });
@@ -330,10 +307,7 @@ describe('SelectorStandardsManager', () => {
         <CanvasToolbar />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations[0].severity).toBe('warning');
     });
   });
@@ -341,14 +315,8 @@ describe('SelectorStandardsManager', () => {
   describe('Violation Management', () => {
     beforeEach(() => {
       // Add some violations
-      manager.checkForMissingSelectors(
-        '<CanvasToolbar />',
-        'file1.tsx'
-      );
-      manager.checkForMissingSelectors(
-        '<PalettePanel />',
-        'file2.tsx'
-      );
+      manager.checkForMissingSelectors('<CanvasToolbar />', 'file1.tsx');
+      manager.checkForMissingSelectors('<PalettePanel />', 'file2.tsx');
     });
 
     it('should get all violations', () => {
@@ -458,10 +426,7 @@ describe('SelectorStandardsManager', () => {
         category: 'node',
       });
 
-      manager.checkForMissingSelectors(
-        '<CanvasToolbar />',
-        'test.tsx'
-      );
+      manager.checkForMissingSelectors('<CanvasToolbar />', 'test.tsx');
     });
 
     it('should calculate total selectors', () => {
@@ -548,10 +513,7 @@ describe('SelectorStandardsManager', () => {
         selector: 'test-selector',
         category: 'custom',
       });
-      manager.checkForMissingSelectors(
-        '<CanvasToolbar />',
-        'test.tsx'
-      );
+      manager.checkForMissingSelectors('<CanvasToolbar />', 'test.tsx');
     });
 
     it('should clear registry', () => {
@@ -591,10 +553,7 @@ describe('SelectorStandardsManager', () => {
         </div>
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
       expect(violations).toHaveLength(0);
     });
 
@@ -617,10 +576,7 @@ describe('SelectorStandardsManager', () => {
         <CustomButton />
       `;
 
-      const violations = manager.checkForMissingSelectors(
-        jsxCode,
-        'test.tsx'
-      );
+      const violations = manager.checkForMissingSelectors(jsxCode, 'test.tsx');
 
       // Node* components should be detected
       const nodeViolations = violations.filter((v) =>

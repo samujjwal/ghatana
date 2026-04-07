@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - WebSocket Service Hook
- * 
+ *
  * WebSocket service for real-time collaboration and communication.
  * Provides connection management, message handling, and event system.
- * 
+ *
  * @doc.type module
  * @doc.purpose WebSocket service for IDE collaboration
  * @doc.layer product
@@ -15,7 +15,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 /**
  * WebSocket connection states
  */
-export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'error';
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'error';
 
 /**
  * WebSocket message types
@@ -42,14 +46,17 @@ export interface WebSocketConfig {
  * WebSocket service hook
  */
 export function useWebSocketService(config?: Partial<WebSocketConfig>) {
-  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const [connectionState, setConnectionState] =
+    useState<ConnectionState>('disconnected');
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const eventListenersRef = useRef<Map<string, Set<(data: unknown) => void>>>(new Map());
+  const eventListenersRef = useRef<Map<string, Set<(data: unknown) => void>>>(
+    new Map()
+  );
   const reconnectAttemptsRef = useRef(0);
 
   const defaultConfig: WebSocketConfig = {
@@ -100,7 +107,7 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
           // Notify listeners
           const listeners = eventListenersRef.current.get(message.type);
           if (listeners) {
-            listeners.forEach(listener => listener(message.data));
+            listeners.forEach((listener) => listener(message.data));
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
@@ -117,7 +124,11 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
         }
 
         // Attempt reconnection if not a normal closure
-        if (!event.wasClean && reconnectAttemptsRef.current < (defaultConfig.maxReconnectAttempts || 5)) {
+        if (
+          !event.wasClean &&
+          reconnectAttemptsRef.current <
+            (defaultConfig.maxReconnectAttempts || 5)
+        ) {
           reconnectAttemptsRef.current++;
 
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -131,7 +142,6 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
         setError('WebSocket connection error');
         console.error('WebSocket error:', event);
       };
-
     } catch (err) {
       setConnectionState('error');
       setError('Failed to create WebSocket connection');
@@ -183,14 +193,32 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
   /**
    * Add event listener for specific message type
    */
-  const addEventListener = useCallback((type: string, listener: (data: unknown) => void) => {
-    if (!eventListenersRef.current.has(type)) {
-      eventListenersRef.current.set(type, new Set());
-    }
-    eventListenersRef.current.get(type)!.add(listener);
+  const addEventListener = useCallback(
+    (type: string, listener: (data: unknown) => void) => {
+      if (!eventListenersRef.current.has(type)) {
+        eventListenersRef.current.set(type, new Set());
+      }
+      eventListenersRef.current.get(type)!.add(listener);
 
-    // Return cleanup function
-    return () => {
+      // Return cleanup function
+      return () => {
+        const listeners = eventListenersRef.current.get(type);
+        if (listeners) {
+          listeners.delete(listener);
+          if (listeners.size === 0) {
+            eventListenersRef.current.delete(type);
+          }
+        }
+      };
+    },
+    []
+  );
+
+  /**
+   * Remove event listener
+   */
+  const removeEventListener = useCallback(
+    (type: string, listener: (data: unknown) => void) => {
       const listeners = eventListenersRef.current.get(type);
       if (listeners) {
         listeners.delete(listener);
@@ -198,21 +226,9 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
           eventListenersRef.current.delete(type);
         }
       }
-    };
-  }, []);
-
-  /**
-   * Remove event listener
-   */
-  const removeEventListener = useCallback((type: string, listener: (data: unknown) => void) => {
-    const listeners = eventListenersRef.current.get(type);
-    if (listeners) {
-      listeners.delete(listener);
-      if (listeners.size === 0) {
-        eventListenersRef.current.delete(type);
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   /**
    * Get connection statistics
@@ -259,7 +275,9 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
  */
 export function useMockWebSocketService() {
   const [isConnected, setIsConnected] = useState(true);
-  const eventListenersRef = useRef<Map<string, Set<(data: unknown) => void>>>(new Map());
+  const eventListenersRef = useRef<Map<string, Set<(data: unknown) => void>>>(
+    new Map()
+  );
 
   const sendMessage = useCallback((type: string, data: unknown) => {
     console.log('Mock WebSocket message:', { type, data });
@@ -268,18 +286,33 @@ export function useMockWebSocketService() {
     setTimeout(() => {
       const listeners = eventListenersRef.current.get(type);
       if (listeners) {
-        listeners.forEach(listener => listener({ type, data }));
+        listeners.forEach((listener) => listener({ type, data }));
       }
     }, 100);
   }, []);
 
-  const addEventListener = useCallback((type: string, listener: (data: unknown) => void) => {
-    if (!eventListenersRef.current.has(type)) {
-      eventListenersRef.current.set(type, new Set());
-    }
-    eventListenersRef.current.get(type)!.add(listener);
+  const addEventListener = useCallback(
+    (type: string, listener: (data: unknown) => void) => {
+      if (!eventListenersRef.current.has(type)) {
+        eventListenersRef.current.set(type, new Set());
+      }
+      eventListenersRef.current.get(type)!.add(listener);
 
-    return () => {
+      return () => {
+        const listeners = eventListenersRef.current.get(type);
+        if (listeners) {
+          listeners.delete(listener);
+          if (listeners.size === 0) {
+            eventListenersRef.current.delete(type);
+          }
+        }
+      };
+    },
+    []
+  );
+
+  const removeEventListener = useCallback(
+    (type: string, listener: (data: unknown) => void) => {
       const listeners = eventListenersRef.current.get(type);
       if (listeners) {
         listeners.delete(listener);
@@ -287,18 +320,9 @@ export function useMockWebSocketService() {
           eventListenersRef.current.delete(type);
         }
       }
-    };
-  }, []);
-
-  const removeEventListener = useCallback((type: string, listener: (data: unknown) => void) => {
-    const listeners = eventListenersRef.current.get(type);
-    if (listeners) {
-      listeners.delete(listener);
-      if (listeners.size === 0) {
-        eventListenersRef.current.delete(type);
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   return {
     connectionState: 'connected' as ConnectionState,

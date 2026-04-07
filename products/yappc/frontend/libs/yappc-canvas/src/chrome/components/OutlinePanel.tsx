@@ -1,13 +1,13 @@
 /**
  * OutlinePanel - Frame & content navigation
- * 
+ *
  * Shows:
  * - Hierarchical list of frames
  * - Nested children within frames (optional)
  * - Quick navigation (click to zoom)
  * - Search within outline
  * - Create new frame button
- * 
+ *
  * @doc.type component
  * @doc.purpose Navigation panel for frames
  * @doc.layer components
@@ -29,7 +29,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField, ListItemButton, Collapse } from '@ghatana/design-system';
 
-import { type Frame , type FrameManager} from '../lib/canvas/FrameManager';
+import { type Frame, type FrameManager } from '../lib/canvas/FrameManager';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
 
 const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT } = CANVAS_TOKENS;
@@ -40,19 +40,24 @@ const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT } = CANVAS_TOKENS;
 export interface OutlinePanelProps {
   /** Frame manager instance */
   frameManager: FrameManager;
-  
+
   /** Current viewport for centering new frames */
   viewport?: { x: number; y: number; zoom: number };
-  
+
   /** Callback when frame clicked for navigation */
   onFrameClick?: (frameId: string) => void;
-  
+
   /** Callback when create frame clicked */
-  onCreateFrame?: (bounds: { x: number; y: number; width: number; height: number }) => void;
-  
+  onCreateFrame?: (bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => void;
+
   /** Show children nodes within frames */
   showChildren?: boolean;
-  
+
   /** Get node label function (for showing children) */
   getNodeLabel?: (nodeId: string) => string;
 }
@@ -80,10 +85,11 @@ export function OutlinePanel({
     if (!searchQuery.trim()) return frames;
 
     const query = searchQuery.toLowerCase();
-    return frames.filter(frame =>
-      frame.title.toLowerCase().includes(query) ||
-      frame.lifecyclePhase?.toLowerCase().includes(query) ||
-      frame.metadata?.description?.toLowerCase().includes(query)
+    return frames.filter(
+      (frame) =>
+        frame.title.toLowerCase().includes(query) ||
+        frame.lifecyclePhase?.toLowerCase().includes(query) ||
+        frame.metadata?.description?.toLowerCase().includes(query)
     );
   }, [frames, searchQuery]);
 
@@ -96,7 +102,7 @@ export function OutlinePanel({
   };
 
   const handleToggleExpand = (frameId: string) => {
-    setExpandedFrames(prev => {
+    setExpandedFrames((prev) => {
       const next = new Set(prev);
       if (next.has(frameId)) {
         next.delete(frameId);
@@ -111,7 +117,7 @@ export function OutlinePanel({
     if (onCreateFrame && viewport) {
       const centerX = -viewport.x / viewport.zoom;
       const centerY = -viewport.y / viewport.zoom;
-      
+
       onCreateFrame({
         x: centerX - 400, // Half of default width
         y: centerY - 300, // Half of default height
@@ -137,8 +143,7 @@ export function OutlinePanel({
   };
 
   return (
-    <Box
-      className="h-full flex flex-col" >
+    <Box className="h-full flex flex-col">
       {/* Header */}
       <Box
         style={{
@@ -147,14 +152,24 @@ export function OutlinePanel({
         }}
       >
         <Typography
-          className="flex items-center text-lg font-semibold gap-2" style={{ color: COLORS.TEXT_PRIMARY, backgroundColor: COLORS.PANEL_BG_LIGHT }} >
+          className="flex items-center text-lg font-semibold gap-2"
+          style={{
+            color: COLORS.TEXT_PRIMARY,
+            backgroundColor: COLORS.PANEL_BG_LIGHT,
+          }}
+        >
           <span>📋</span>
           Outline
         </Typography>
       </Box>
 
       {/* Search */}
-      <Box style={{ padding: SPACING.MD, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`}}>
+      <Box
+        style={{
+          padding: SPACING.MD,
+          borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`,
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -162,7 +177,16 @@ export function OutlinePanel({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
-            startAdornment: <span style={{ marginRight: SPACING.SM, color: COLORS.TEXT_SECONDARY }}>🔍</span>,
+            startAdornment: (
+              <span
+                style={{
+                  marginRight: SPACING.SM,
+                  color: COLORS.TEXT_SECONDARY,
+                }}
+              >
+                🔍
+              </span>
+            ),
             style: {
               fontSize: TYPOGRAPHY.SM,
             },
@@ -176,11 +200,12 @@ export function OutlinePanel({
         style={{ paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}
       >
         {filteredFrames.length === 0 && (
-          <Box
-            className="text-center p-8" >
+          <Box className="text-center p-8">
             {searchQuery ? (
               <>
-                <Typography style={{ fontSize: TYPOGRAPHY.SM, marginBottom: SPACING.SM }}>
+                <Typography
+                  style={{ fontSize: TYPOGRAPHY.SM, marginBottom: SPACING.SM }}
+                >
                   No frames found
                 </Typography>
                 <Typography style={{ fontSize: TYPOGRAPHY.XS }}>
@@ -189,7 +214,9 @@ export function OutlinePanel({
               </>
             ) : (
               <>
-                <Typography style={{ fontSize: TYPOGRAPHY.SM, marginBottom: SPACING.SM }}>
+                <Typography
+                  style={{ fontSize: TYPOGRAPHY.SM, marginBottom: SPACING.SM }}
+                >
                   No frames yet
                 </Typography>
                 <Typography style={{ fontSize: TYPOGRAPHY.XS }}>
@@ -201,7 +228,7 @@ export function OutlinePanel({
         )}
 
         <List disablePadding>
-          {filteredFrames.map(frame => (
+          {filteredFrames.map((frame) => (
             <FrameOutlineItem
               key={frame.id}
               frame={frame}
@@ -300,7 +327,13 @@ function FrameOutlineItem({
               }}
               style={{ marginRight: SPACING.SM }}
             >
-              <span style={{ fontSize: '12px', color: COLORS.TEXT_PRIMARY, marginBottom: SPACING.XS / 2 }}>
+              <span
+                style={{
+                  fontSize: '12px',
+                  color: COLORS.TEXT_PRIMARY,
+                  marginBottom: SPACING.XS / 2,
+                }}
+              >
                 {expanded ? '▼' : '▶'}
               </span>
             </IconButton>
@@ -308,18 +341,20 @@ function FrameOutlineItem({
 
           {/* Frame info */}
           <Box className="flex-1 min-w-0 gap-2">
-            <Box className="flex items-center gap-2" style={{ marginBottom: SPACING.XS / 2 }}>
-              <Typography
-                className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium" >
+            <Box
+              className="flex items-center gap-2"
+              style={{ marginBottom: SPACING.XS / 2 }}
+            >
+              <Typography className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium">
                 {frame.title}
               </Typography>
-              
+
               {isHome && (
                 <Tooltip title="Home frame">
                   <span style={{ fontSize: '14px' }}>🏠</span>
                 </Tooltip>
               )}
-              
+
               {frame.isLocked && (
                 <Tooltip title="Locked">
                   <span style={{ fontSize: '14px' }}>🔒</span>
@@ -328,15 +363,19 @@ function FrameOutlineItem({
             </Box>
 
             {/* Metadata */}
-            <Box className="flex items-center gap-2" >
+            <Box className="flex items-center gap-2">
               {frame.lifecyclePhase && (
                 <Chip
                   label={frame.lifecyclePhase}
                   size="small"
-                  className="h-[18px] text-white" style={{ fontSize: TYPOGRAPHY.XS, backgroundColor: frame.color || COLORS.NEUTRAL_200 }}
+                  className="h-[18px] text-white"
+                  style={{
+                    fontSize: TYPOGRAPHY.XS,
+                    backgroundColor: frame.color || COLORS.NEUTRAL_200,
+                  }}
                 />
               )}
-              
+
               {hasChildren && (
                 <Typography
                   style={{
@@ -344,7 +383,8 @@ function FrameOutlineItem({
                     color: COLORS.TEXT_SECONDARY,
                   }}
                 >
-                  {frame.children.length} {frame.children.length === 1 ? 'item' : 'items'}
+                  {frame.children.length}{' '}
+                  {frame.children.length === 1 ? 'item' : 'items'}
                 </Typography>
               )}
             </Box>
@@ -356,7 +396,7 @@ function FrameOutlineItem({
       {showChildren && hasChildren && (
         <Collapse in={expanded}>
           <List disablePadding style={{ paddingLeft: SPACING.XL }}>
-            {frame.children.map(childId => (
+            {frame.children.map((childId) => (
               <ListItem
                 key={childId}
                 disablePadding

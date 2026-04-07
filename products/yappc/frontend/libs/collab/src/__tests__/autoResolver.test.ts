@@ -12,7 +12,10 @@ function makeVectorClock(values: Array<[string, number]>): VectorClock {
 }
 
 function makeOperation(
-  params: Partial<CRDTOperation> & { targetId: string; type: CRDTOperation['type'] }
+  params: Partial<CRDTOperation> & {
+    targetId: string;
+    type: CRDTOperation['type'];
+  }
 ): CRDTOperation {
   return {
     id: `op-${Math.random()}`,
@@ -56,7 +59,10 @@ describe('autoResolveOperations()', () => {
 
     expect(result.resolved).toBe(true);
     expect(result.rule).toBe('distinct-position-insert');
-    expect(result.operations.map((operation) => operation.id)).toEqual(['insert-a', 'insert-b']);
+    expect(result.operations.map((operation) => operation.id)).toEqual([
+      'insert-a',
+      'insert-b',
+    ]);
   });
 
   it('orders same-position inserts lexicographically by replica ID', () => {
@@ -87,7 +93,10 @@ describe('autoResolveOperations()', () => {
 
     expect(result.resolved).toBe(true);
     expect(result.rule).toBe('same-position-insert');
-    expect(result.operations.map((operation) => operation.replicaId)).toEqual(['replica-a', 'replica-z']);
+    expect(result.operations.map((operation) => operation.replicaId)).toEqual([
+      'replica-a',
+      'replica-z',
+    ]);
   });
 
   it('lets delete win over concurrent update on the same target', () => {

@@ -1,6 +1,6 @@
 /**
  * Plugin Architecture API Types
- * 
+ *
  * Defines the plugin system for extending Canvas functionality with custom features,
  * tools, renderers, and behaviors. Includes plugin lifecycle, hooks, and sandbox isolation.
  */
@@ -13,35 +13,35 @@ import type { CanvasDocument } from '../types';
 export interface PluginManifest {
   /** Unique plugin identifier (e.g., "com.example.my-plugin") */
   id: string;
-  
+
   /** Display name */
   name: string;
-  
+
   /** Semantic version (e.g., "1.0.0") */
   version: string;
-  
+
   /** Author information */
   author: {
     name: string;
     email?: string;
     url?: string;
   };
-  
+
   /** Plugin description */
   description: string;
-  
+
   /** Minimum required Canvas version */
   minCanvasVersion: string;
-  
+
   /** Plugin dependencies (other plugin IDs) */
   dependencies?: string[];
-  
+
   /** Optional dependencies (won't fail if missing) */
   optionalDependencies?: string[];
-  
+
   /** Plugin capabilities */
   capabilities?: PluginCapability[];
-  
+
   /** Custom metadata */
   metadata?: Record<string, unknown>;
 }
@@ -50,27 +50,27 @@ export interface PluginManifest {
  * Plugin capabilities define what the plugin can do
  */
 export type PluginCapability =
-  | 'custom-elements'      // Register custom element types
-  | 'custom-tools'         // Add custom drawing tools
-  | 'custom-commands'      // Register commands
-  | 'custom-panels'        // Add UI panels
-  | 'custom-exporters'     // Custom export formats
-  | 'custom-importers'     // Custom import formats
-  | 'event-hooks'          // Subscribe to Canvas events
-  | 'state-access'         // Access Canvas state
-  | 'api-access';          // Call Canvas APIs
+  | 'custom-elements' // Register custom element types
+  | 'custom-tools' // Add custom drawing tools
+  | 'custom-commands' // Register commands
+  | 'custom-panels' // Add UI panels
+  | 'custom-exporters' // Custom export formats
+  | 'custom-importers' // Custom import formats
+  | 'event-hooks' // Subscribe to Canvas events
+  | 'state-access' // Access Canvas state
+  | 'api-access'; // Call Canvas APIs
 
 /**
  * Plugin lifecycle states
  */
 export type PluginState =
-  | 'uninitialized'  // Plugin loaded but not initialized
-  | 'initializing'   // Plugin initialization in progress
-  | 'active'         // Plugin running normally
-  | 'paused'         // Plugin temporarily suspended
-  | 'error'          // Plugin encountered error
-  | 'disabled'       // Plugin disabled by user
-  | 'uninstalling';  // Plugin being removed
+  | 'uninitialized' // Plugin loaded but not initialized
+  | 'initializing' // Plugin initialization in progress
+  | 'active' // Plugin running normally
+  | 'paused' // Plugin temporarily suspended
+  | 'error' // Plugin encountered error
+  | 'disabled' // Plugin disabled by user
+  | 'uninstalling'; // Plugin being removed
 
 /**
  * Plugin lifecycle hooks
@@ -81,36 +81,36 @@ export interface PluginLifecycle {
    * Use for registration and setup
    */
   onLoad?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called when plugin is activated
    * Use for starting background tasks
    */
   onActivate?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called when plugin is paused
    * Use for cleaning up resources
    */
   onPause?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called when plugin is resumed from pause
    */
   onResume?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called when plugin is disabled
    * Use for cleanup and state saving
    */
   onDeactivate?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called before plugin is uninstalled
    * Use for final cleanup
    */
   onUninstall?(context: PluginContext): void | Promise<void>;
-  
+
   /**
    * Called when plugin encounters error
    */
@@ -123,22 +123,22 @@ export interface PluginLifecycle {
 export interface PluginContext {
   /** Plugin manifest */
   manifest: PluginManifest;
-  
+
   /** Current plugin state */
   state: PluginState;
-  
+
   /** Canvas API access (sandboxed) */
   canvas: PluginCanvasAPI;
-  
+
   /** Storage API for plugin data */
   storage: PluginStorage;
-  
+
   /** Event subscription API */
   events: PluginEventAPI;
-  
+
   /** UI extension API */
   ui: PluginUIAPI;
-  
+
   /** Logger for debugging */
   logger: PluginLogger;
 }
@@ -149,22 +149,22 @@ export interface PluginContext {
 export interface PluginCanvasAPI {
   /** Get current canvas document (read-only) */
   getDocument(): Readonly<CanvasDocument>;
-  
+
   /** Execute a command on the canvas */
   executeCommand(commandId: string, args?: unknown): Promise<void>;
-  
+
   /** Register a custom command */
   registerCommand(command: PluginCommand): void;
-  
+
   /** Register a custom element type */
   registerElementType(elementType: PluginElementType): void;
-  
+
   /** Register a custom tool */
   registerTool(tool: PluginTool): void;
-  
+
   /** Register a custom exporter */
   registerExporter(exporter: PluginExporter): void;
-  
+
   /** Register a custom importer */
   registerImporter(importer: PluginImporter): void;
 }
@@ -175,16 +175,16 @@ export interface PluginCanvasAPI {
 export interface PluginStorage {
   /** Get value from storage */
   get<T = unknown>(key: string): Promise<T | undefined>;
-  
+
   /** Set value in storage */
   set<T = unknown>(key: string, value: T): Promise<void>;
-  
+
   /** Delete value from storage */
   delete(key: string): Promise<void>;
-  
+
   /** Clear all plugin storage */
   clear(): Promise<void>;
-  
+
   /** Get all keys */
   keys(): Promise<string[]>;
 }
@@ -195,10 +195,10 @@ export interface PluginStorage {
 export interface PluginEventAPI {
   /** Subscribe to Canvas event */
   on(event: CanvasEvent, handler: EventHandler): () => void;
-  
+
   /** Subscribe once */
   once(event: CanvasEvent, handler: EventHandler): () => void;
-  
+
   /** Emit custom plugin event */
   emit(event: string, data?: unknown): void;
 }
@@ -229,13 +229,16 @@ export type EventHandler = (data: unknown) => void;
 export interface PluginUIAPI {
   /** Register a custom panel */
   registerPanel(panel: PluginPanel): void;
-  
+
   /** Show a notification */
-  notify(message: string, type?: 'info' | 'success' | 'warning' | 'error'): void;
-  
+  notify(
+    message: string,
+    type?: 'info' | 'success' | 'warning' | 'error'
+  ): void;
+
   /** Show a dialog */
   showDialog(dialog: PluginDialog): Promise<unknown>;
-  
+
   /** Register a context menu item */
   registerContextMenuItem(item: PluginContextMenuItem): void;
 }
@@ -382,21 +385,21 @@ export interface Plugin extends PluginLifecycle {
 export interface PluginRegistrationOptions {
   /** Whether to auto-activate after loading */
   autoActivate?: boolean;
-  
+
   /** Plugin configuration overrides */
   config?: Record<string, unknown>;
-  
+
   /** Sandbox restrictions */
   sandbox?: {
     /** Allow network access */
     allowNetwork?: boolean;
-    
+
     /** Allow file system access */
     allowFileSystem?: boolean;
-    
+
     /** Maximum memory usage (MB) */
     maxMemory?: number;
-    
+
     /** Maximum CPU time (ms) */
     maxCPUTime?: number;
   };
@@ -412,7 +415,7 @@ export class PluginError extends Error {
   constructor(
     message: string,
     public readonly pluginId: string,
-    public readonly code: PluginErrorCode,
+    public readonly code: PluginErrorCode
   ) {
     super(message);
     this.name = 'PluginError';

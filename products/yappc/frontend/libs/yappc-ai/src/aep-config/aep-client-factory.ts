@@ -28,7 +28,10 @@ export interface AepClient {
   isReady(): boolean;
 
   /** Execute an agent with given input */
-  executeAgent(agentId: string, input: Record<string, unknown>): Promise<unknown>;
+  executeAgent(
+    agentId: string,
+    input: Record<string, unknown>
+  ): Promise<unknown>;
 
   /** Publish an event */
   publishEvent(eventType: string, data: Record<string, unknown>): Promise<void>;

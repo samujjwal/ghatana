@@ -1,4 +1,25 @@
-import { Settings as SettingsIcon, Palette as PaletteIcon, Gauge as SpeedIcon, Accessibility as AccessibilityIcon, Brain as PsychologyIcon, Bell as NotificationsIcon, HelpCircle as HelpIcon, MessageCircle as FeedbackIcon, GraduationCap as TutorialIcon, Sparkles as AutoAwesomeIcon, Lightbulb as LightbulbIcon, CheckCircle as CheckCircleIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, X as CloseIcon, KeyboardArrowUp as KeyboardArrowUpIcon, ChevronDown as KeyboardArrowDownIcon, Eye as VisibilityIcon, EyeOff as VisibilityOffIcon } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  Palette as PaletteIcon,
+  Gauge as SpeedIcon,
+  Accessibility as AccessibilityIcon,
+  Brain as PsychologyIcon,
+  Bell as NotificationsIcon,
+  HelpCircle as HelpIcon,
+  MessageCircle as FeedbackIcon,
+  GraduationCap as TutorialIcon,
+  Sparkles as AutoAwesomeIcon,
+  Lightbulb as LightbulbIcon,
+  CheckCircle as CheckCircleIcon,
+  AlertTriangle as WarningIcon,
+  AlertCircle as ErrorIcon,
+  Info as InfoIcon,
+  X as CloseIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  ChevronDown as KeyboardArrowDownIcon,
+  Eye as VisibilityIcon,
+  EyeOff as VisibilityOffIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {
@@ -149,35 +170,35 @@ const defaultUXSettings: UXSettings = {
     mode: 'auto',
     primaryColor: '#1976d2',
     secondaryColor: '#dc004e',
-    customColors: {}
+    customColors: {},
   },
   accessibility: {
     highContrast: false,
     largeText: false,
     reducedMotion: false,
     screenReader: false,
-    keyboardNavigation: true
+    keyboardNavigation: true,
   },
   performance: {
     animations: true,
     autoSave: true,
     autoSaveInterval: 30,
     renderOptimization: true,
-    lazyLoading: true
+    lazyLoading: true,
   },
   behavior: {
     smartSnapping: true,
     autoLayout: false,
     gestureControls: true,
     voiceCommands: false,
-    aiSuggestions: true
+    aiSuggestions: true,
   },
   interface: {
     compactMode: false,
     showTooltips: true,
     showShortcuts: true,
     customToolbar: ['select', 'pan', 'node', 'edge', 'delete'],
-    panelLayout: 'right'
+    panelLayout: 'right',
   },
   notifications: {
     enabled: true,
@@ -185,8 +206,8 @@ const defaultUXSettings: UXSettings = {
     desktop: true,
     collaboration: true,
     errors: true,
-    achievements: true
-  }
+    achievements: true,
+  },
 };
 
 // UX Hook
@@ -198,60 +219,63 @@ export const useUXRefinements = () => {
   const [tutorialStep, setTutorialStep] = useState<number>(0);
   const [suggestions, setSuggestions] = useState<SmartSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Update settings
   const updateSettings = useCallback((path: string, value: unknown) => {
-    setSettings(prev => {
+    setSettings((prev) => {
       const keys = path.split('.');
       const updated = { ...prev };
       let current: Record<string, unknown> = updated as Record<string, unknown>;
-      
+
       for (let i = 0; i < keys.length - 1; i++) {
         current[keys[i]] = { ...(current[keys[i]] as Record<string, unknown>) };
         current = current[keys[i]] as Record<string, unknown>;
       }
-      
+
       current[keys[keys.length - 1]] = value;
       return updated;
     });
   }, []);
 
   // Show notification
-  const showNotification = useCallback((notification: Omit<UXNotification, 'id' | 'timestamp'>) => {
-    const newNotification: UXNotification = {
-      ...notification,
-      id: `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date()
-    };
+  const showNotification = useCallback(
+    (notification: Omit<UXNotification, 'id' | 'timestamp'>) => {
+      const newNotification: UXNotification = {
+        ...notification,
+        id: `notification-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date(),
+      };
 
-    setNotifications(prev => [...prev, newNotification]);
+      setNotifications((prev) => [...prev, newNotification]);
 
-    // Auto-dismiss non-persistent notifications
-    if (!notification.persistent) {
-      setTimeout(() => {
-        dismissNotification(newNotification.id);
-      }, 5000);
-    }
-
-    // Play sound if enabled
-    if (settings.notifications.sound) {
-      // Would play notification sound
-    }
-
-    // Show desktop notification if enabled
-    if (settings.notifications.desktop && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        new Notification(notification.title, {
-          body: notification.message,
-          icon: '/icon-192x192.png'
-        });
+      // Auto-dismiss non-persistent notifications
+      if (!notification.persistent) {
+        setTimeout(() => {
+          dismissNotification(newNotification.id);
+        }, 5000);
       }
-    }
-  }, [settings.notifications.sound, settings.notifications.desktop]);
+
+      // Play sound if enabled
+      if (settings.notifications.sound) {
+        // Would play notification sound
+      }
+
+      // Show desktop notification if enabled
+      if (settings.notifications.desktop && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification(notification.title, {
+            body: notification.message,
+            icon: '/icon-192x192.png',
+          });
+        }
+      }
+    },
+    [settings.notifications.sound, settings.notifications.desktop]
+  );
 
   // Dismiss notification
   const dismissNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   // Start tutorial
@@ -262,27 +286,27 @@ export const useUXRefinements = () => {
 
   // Next tutorial step
   const nextTutorialStep = useCallback(() => {
-    setTutorialStep(prev => prev + 1);
+    setTutorialStep((prev) => prev + 1);
   }, []);
 
   // Complete tutorial
   const completeTutorial = useCallback(() => {
     setCurrentTutorial(null);
     setTutorialStep(0);
-    
+
     showNotification({
       type: 'success',
       title: 'Tutorial Completed!',
-      message: 'Great job! You\'ve completed the tutorial.',
-      persistent: false
+      message: "Great job! You've completed the tutorial.",
+      persistent: false,
     });
   }, [showNotification]);
 
   // Add smart suggestion
   const addSuggestion = useCallback((suggestion: SmartSuggestion) => {
-    setSuggestions(prev => {
+    setSuggestions((prev) => {
       // Avoid duplicates
-      if (prev.some(s => s.id === suggestion.id)) {
+      if (prev.some((s) => s.id === suggestion.id)) {
         return prev;
       }
       return [...prev, suggestion].slice(-10); // Keep only last 10 suggestions
@@ -291,24 +315,27 @@ export const useUXRefinements = () => {
 
   // Dismiss suggestion
   const dismissSuggestion = useCallback((id: string) => {
-    setSuggestions(prev => prev.filter(s => s.id !== id));
+    setSuggestions((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   // Apply suggestion
-  const applySuggestion = useCallback((id: string) => {
-    const suggestion = suggestions.find(s => s.id === id);
-    if (suggestion) {
-      suggestion.action();
-      dismissSuggestion(id);
-      
-      showNotification({
-        type: 'success',
-        title: 'Suggestion Applied',
-        message: `Applied: ${suggestion.title}`,
-        persistent: false
-      });
-    }
-  }, [suggestions, dismissSuggestion, showNotification]);
+  const applySuggestion = useCallback(
+    (id: string) => {
+      const suggestion = suggestions.find((s) => s.id === id);
+      if (suggestion) {
+        suggestion.action();
+        dismissSuggestion(id);
+
+        showNotification({
+          type: 'success',
+          title: 'Suggestion Applied',
+          message: `Applied: ${suggestion.title}`,
+          persistent: false,
+        });
+      }
+    },
+    [suggestions, dismissSuggestion, showNotification]
+  );
 
   // Load settings from storage
   useEffect(() => {
@@ -316,7 +343,7 @@ export const useUXRefinements = () => {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        setSettings(prev => ({ ...prev, ...parsed }));
+        setSettings((prev) => ({ ...prev, ...parsed }));
       } catch (error) {
         console.error('Failed to load UX settings:', error);
       }
@@ -353,7 +380,7 @@ export const useUXRefinements = () => {
     dismissSuggestion,
     applySuggestion,
     isLoading,
-    setIsLoading
+    setIsLoading,
   };
 };
 
@@ -383,7 +410,7 @@ export const UXSettingsPanel: React.FC<{
         </IconButton>
       </DialogTitle>
       <DialogContent>
-        <Box className="border-gray-200 dark:border-gray-700 border-b" >
+        <Box className="border-gray-200 dark:border-gray-700 border-b">
           <Tabs value={activeTab} onChange={handleTabChange}>
             <Tab label="Theme" />
             <Tab label="Accessibility" />
@@ -397,34 +424,49 @@ export const UXSettingsPanel: React.FC<{
         {/* Theme Tab */}
         {activeTab === 0 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Theme Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Theme Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.theme.mode === 'dark'}
-                  onChange={(e) => updateSettings('theme.mode', e.target.checked ? 'dark' : 'light')}
+                  onChange={(e) =>
+                    updateSettings(
+                      'theme.mode',
+                      e.target.checked ? 'dark' : 'light'
+                    )
+                  }
                 />
               }
               label="Dark Mode"
             />
 
             <Box className="mt-4">
-              <Typography as="p" className="text-sm" gutterBottom>Primary Color</Typography>
+              <Typography as="p" className="text-sm" gutterBottom>
+                Primary Color
+              </Typography>
               <TextField
                 type="color"
                 value={settings.theme.primaryColor}
-                onChange={(e) => updateSettings('theme.primaryColor', e.target.value)}
+                onChange={(e) =>
+                  updateSettings('theme.primaryColor', e.target.value)
+                }
                 size="sm"
               />
             </Box>
 
             <Box className="mt-4">
-              <Typography as="p" className="text-sm" gutterBottom>Secondary Color</Typography>
+              <Typography as="p" className="text-sm" gutterBottom>
+                Secondary Color
+              </Typography>
               <TextField
                 type="color"
                 value={settings.theme.secondaryColor}
-                onChange={(e) => updateSettings('theme.secondaryColor', e.target.value)}
+                onChange={(e) =>
+                  updateSettings('theme.secondaryColor', e.target.value)
+                }
                 size="sm"
               />
             </Box>
@@ -434,13 +476,20 @@ export const UXSettingsPanel: React.FC<{
         {/* Accessibility Tab */}
         {activeTab === 1 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Accessibility Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Accessibility Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.accessibility.highContrast}
-                  onChange={(e) => updateSettings('accessibility.highContrast', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings(
+                      'accessibility.highContrast',
+                      e.target.checked
+                    )
+                  }
                 />
               }
               label="High Contrast"
@@ -450,7 +499,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.accessibility.largeText}
-                  onChange={(e) => updateSettings('accessibility.largeText', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('accessibility.largeText', e.target.checked)
+                  }
                 />
               }
               label="Large Text"
@@ -460,7 +511,12 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.accessibility.reducedMotion}
-                  onChange={(e) => updateSettings('accessibility.reducedMotion', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings(
+                      'accessibility.reducedMotion',
+                      e.target.checked
+                    )
+                  }
                 />
               }
               label="Reduced Motion"
@@ -470,7 +526,12 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.accessibility.keyboardNavigation}
-                  onChange={(e) => updateSettings('accessibility.keyboardNavigation', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings(
+                      'accessibility.keyboardNavigation',
+                      e.target.checked
+                    )
+                  }
                 />
               }
               label="Keyboard Navigation"
@@ -481,13 +542,17 @@ export const UXSettingsPanel: React.FC<{
         {/* Performance Tab */}
         {activeTab === 2 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Performance Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Performance Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.performance.animations}
-                  onChange={(e) => updateSettings('performance.animations', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('performance.animations', e.target.checked)
+                  }
                 />
               }
               label="Enable Animations"
@@ -497,7 +562,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.performance.autoSave}
-                  onChange={(e) => updateSettings('performance.autoSave', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('performance.autoSave', e.target.checked)
+                  }
                 />
               }
               label="Auto Save"
@@ -510,7 +577,9 @@ export const UXSettingsPanel: React.FC<{
                 </Typography>
                 <Slider
                   value={settings.performance.autoSaveInterval}
-                  onChange={(e, value) => updateSettings('performance.autoSaveInterval', value)}
+                  onChange={(e, value) =>
+                    updateSettings('performance.autoSaveInterval', value)
+                  }
                   min={10}
                   max={300}
                   step={10}
@@ -524,7 +593,12 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.performance.renderOptimization}
-                  onChange={(e) => updateSettings('performance.renderOptimization', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings(
+                      'performance.renderOptimization',
+                      e.target.checked
+                    )
+                  }
                 />
               }
               label="Render Optimization"
@@ -535,13 +609,17 @@ export const UXSettingsPanel: React.FC<{
         {/* Behavior Tab */}
         {activeTab === 3 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Behavior Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Behavior Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.behavior.smartSnapping}
-                  onChange={(e) => updateSettings('behavior.smartSnapping', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('behavior.smartSnapping', e.target.checked)
+                  }
                 />
               }
               label="Smart Snapping"
@@ -551,7 +629,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.behavior.autoLayout}
-                  onChange={(e) => updateSettings('behavior.autoLayout', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('behavior.autoLayout', e.target.checked)
+                  }
                 />
               }
               label="Auto Layout"
@@ -561,7 +641,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.behavior.aiSuggestions}
-                  onChange={(e) => updateSettings('behavior.aiSuggestions', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('behavior.aiSuggestions', e.target.checked)
+                  }
                 />
               }
               label="AI Suggestions"
@@ -572,13 +654,17 @@ export const UXSettingsPanel: React.FC<{
         {/* Interface Tab */}
         {activeTab === 4 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Interface Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Interface Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.interface.compactMode}
-                  onChange={(e) => updateSettings('interface.compactMode', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('interface.compactMode', e.target.checked)
+                  }
                 />
               }
               label="Compact Mode"
@@ -588,7 +674,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.interface.showTooltips}
-                  onChange={(e) => updateSettings('interface.showTooltips', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('interface.showTooltips', e.target.checked)
+                  }
                 />
               }
               label="Show Tooltips"
@@ -598,7 +686,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.interface.showShortcuts}
-                  onChange={(e) => updateSettings('interface.showShortcuts', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('interface.showShortcuts', e.target.checked)
+                  }
                 />
               }
               label="Show Keyboard Shortcuts"
@@ -609,13 +699,17 @@ export const UXSettingsPanel: React.FC<{
         {/* Notifications Tab */}
         {activeTab === 5 && (
           <Box className="p-6">
-            <Typography as="h6" gutterBottom>Notification Settings</Typography>
-            
+            <Typography as="h6" gutterBottom>
+              Notification Settings
+            </Typography>
+
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.notifications.enabled}
-                  onChange={(e) => updateSettings('notifications.enabled', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('notifications.enabled', e.target.checked)
+                  }
                 />
               }
               label="Enable Notifications"
@@ -625,7 +719,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.notifications.sound}
-                  onChange={(e) => updateSettings('notifications.sound', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('notifications.sound', e.target.checked)
+                  }
                 />
               }
               label="Sound Notifications"
@@ -635,7 +731,9 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.notifications.desktop}
-                  onChange={(e) => updateSettings('notifications.desktop', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings('notifications.desktop', e.target.checked)
+                  }
                 />
               }
               label="Desktop Notifications"
@@ -645,7 +743,12 @@ export const UXSettingsPanel: React.FC<{
               control={
                 <Switch
                   checked={settings.notifications.collaboration}
-                  onChange={(e) => updateSettings('notifications.collaboration', e.target.checked)}
+                  onChange={(e) =>
+                    updateSettings(
+                      'notifications.collaboration',
+                      e.target.checked
+                    )
+                  }
                 />
               }
               label="Collaboration Notifications"
@@ -684,7 +787,10 @@ export const SmartSuggestionsPanel: React.FC<{
         <Collapse in={expanded}>
           <Box className="mt-4">
             {suggestions.slice(0, 3).map((suggestion) => (
-              <Box key={suggestion.id} className="mb-4 p-2 rounded border border-gray-200 dark:border-gray-700">
+              <Box
+                key={suggestion.id}
+                className="mb-4 p-2 rounded border border-gray-200 dark:border-gray-700"
+              >
                 <Box className="flex items-center gap-2 mb-2">
                   <Chip
                     label={suggestion.type}
@@ -696,19 +802,29 @@ export const SmartSuggestionsPanel: React.FC<{
                     {Math.round(suggestion.confidence * 100)}% confidence
                   </Typography>
                 </Box>
-                
+
                 <Typography as="p" className="text-sm font-medium" gutterBottom>
                   {suggestion.title}
                 </Typography>
-                
-                <Typography as="p" className="text-sm" color="text.secondary" gutterBottom>
+
+                <Typography
+                  as="p"
+                  className="text-sm"
+                  color="text.secondary"
+                  gutterBottom
+                >
                   {suggestion.description}
                 </Typography>
-                
-                <Typography as="span" className="text-xs text-gray-500" color="success.main" gutterBottom>
+
+                <Typography
+                  as="span"
+                  className="text-xs text-gray-500"
+                  color="success.main"
+                  gutterBottom
+                >
                   Benefit: {suggestion.benefit}
                 </Typography>
-                
+
                 <Box className="flex gap-2 mt-2">
                   <Button
                     size="sm"
@@ -729,9 +845,14 @@ export const SmartSuggestionsPanel: React.FC<{
                 </Box>
               </Box>
             ))}
-            
+
             {suggestions.length > 3 && (
-              <Typography as="p" className="text-sm" color="text.secondary" align="center">
+              <Typography
+                as="p"
+                className="text-sm"
+                color="text.secondary"
+                align="center"
+              >
                 +{suggestions.length - 3} more suggestions
               </Typography>
             )}
@@ -779,8 +900,12 @@ export const UXNotificationSystem: React.FC<{
               )
             }
           >
-            <Typography as="p" className="text-sm font-medium">{notification.title}</Typography>
-            <Typography as="p" className="text-sm">{notification.message}</Typography>
+            <Typography as="p" className="text-sm font-medium">
+              {notification.title}
+            </Typography>
+            <Typography as="p" className="text-sm">
+              {notification.message}
+            </Typography>
           </Alert>
         </Snackbar>
       ))}
@@ -795,7 +920,9 @@ export const UXLoadingOverlay: React.FC<{
 }> = ({ open, message = 'Loading...' }) => {
   return (
     <Backdrop
-      className="text-[#fff]" style={{ zIndex: (theme) => theme.zIndex.drawer + 1 }} open={open}
+      className="text-[#fff]"
+      style={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      open={open}
     >
       <Box className="flex flex-col items-center gap-4">
         <CircularProgress tone="neutral" />

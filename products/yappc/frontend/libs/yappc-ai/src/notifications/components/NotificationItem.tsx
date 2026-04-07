@@ -1,27 +1,30 @@
 /**
  * Notification Item Component
- * 
+ *
  * Displays individual notification with type-specific styling and actions.
- * 
+ *
  * @module notifications/components
  */
 
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Info, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle, 
-  AtSign, 
-  ClipboardCheck, 
-  FileCheck, 
+import {
+  Info,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  AtSign,
+  ClipboardCheck,
+  FileCheck,
   Bell,
   X,
   ExternalLink,
 } from 'lucide-react';
 import React, { useCallback } from 'react';
 
-import type { Notification, NotificationType } from '../hooks/useNotificationBackend';
+import type {
+  Notification,
+  NotificationType,
+} from '../hooks/useNotificationBackend';
 
 export interface NotificationItemProps {
   notification: Notification;
@@ -44,7 +47,7 @@ const getNotificationIcon = (type: NotificationType) => {
     approval: FileCheck,
     system: Bell,
   };
-  
+
   return iconMap[type] || Info;
 };
 
@@ -102,13 +105,13 @@ const getNotificationColors = (type: NotificationType) => {
       badge: 'bg-zinc-500',
     },
   };
-  
+
   return colorMap[type] || colorMap.info;
 };
 
 /**
  * Notification Item Component
- * 
+ *
  * Renders a single notification with appropriate styling and actions.
  */
 export const NotificationItem: React.FC<NotificationItemProps> = ({
@@ -129,10 +132,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     }
   }, [notification, onRead, onAction]);
 
-  const handleDismiss = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDismiss?.(notification.id);
-  }, [notification.id, onDismiss]);
+  const handleDismiss = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onDismiss?.(notification.id);
+    },
+    [notification.id, onDismiss]
+  );
 
   return (
     <div
@@ -145,7 +151,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     >
       {/* Unread indicator */}
       {!notification.read && (
-        <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${colors.badge}`} />
+        <div
+          className={`absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${colors.badge}`}
+        />
       )}
 
       <div className="flex gap-3 ml-2">
@@ -171,9 +179,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           </div>
 
           {/* Message */}
-          <p className="text-sm text-zinc-400 mb-2">
-            {notification.message}
-          </p>
+          <p className="text-sm text-zinc-400 mb-2">{notification.message}</p>
 
           {/* Footer */}
           <div className="flex items-center justify-between gap-2">

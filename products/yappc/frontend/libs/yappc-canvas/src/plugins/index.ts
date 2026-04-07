@@ -1,8 +1,8 @@
 /**
  * Canvas Plugin System
- * 
+ *
  * Complete plugin architecture and extensibility system for Canvas.
- * 
+ *
  * @module @ghatana/yappc-canvas/plugins
  */
 
@@ -55,7 +55,10 @@ export type {
 } from './marketplaceTypes';
 
 // Marketplace manager
-export { MarketplaceManager, getMarketplaceManager } from './marketplaceManager';
+export {
+  MarketplaceManager,
+  getMarketplaceManager,
+} from './marketplaceManager';
 
 // Marketplace UI Components
 export {

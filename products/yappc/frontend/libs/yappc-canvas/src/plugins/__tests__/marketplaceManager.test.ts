@@ -227,7 +227,9 @@ describe('MarketplaceManager', () => {
       expect(progressEvents[0].status).toBe('downloading');
       expect(progressEvents.some((e) => e.status === 'verifying')).toBe(true);
       expect(progressEvents.some((e) => e.status === 'installing')).toBe(true);
-      expect(progressEvents[progressEvents.length - 1].status).toBe('completed');
+      expect(progressEvents[progressEvents.length - 1].status).toBe(
+        'completed'
+      );
     });
 
     it('should handle installation errors', async () => {

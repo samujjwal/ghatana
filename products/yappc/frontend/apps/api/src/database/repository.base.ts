@@ -97,7 +97,11 @@ export abstract class BaseRepository<T, M extends keyof PrismaClient> {
    */
   async findMany(
     where?: Record<string, unknown>,
-    options?: { skip?: number; take?: number; orderBy?: Record<string, unknown> }
+    options?: {
+      skip?: number;
+      take?: number;
+      orderBy?: Record<string, unknown>;
+    }
   ): Promise<T[]> {
     return this.getModel().findMany({
       where,
@@ -119,7 +123,11 @@ export abstract class BaseRepository<T, M extends keyof PrismaClient> {
    * @doc.layer product
    * @doc.pattern Repository
    */
-  async findAll(options?: { skip?: number; take?: number; orderBy?: Record<string, unknown> }): Promise<T[]> {
+  async findAll(options?: {
+    skip?: number;
+    take?: number;
+    orderBy?: Record<string, unknown>;
+  }): Promise<T[]> {
     return this.getModel().findMany(options);
   }
 
@@ -174,7 +182,10 @@ export abstract class BaseRepository<T, M extends keyof PrismaClient> {
    * @doc.layer product
    * @doc.pattern Repository
    */
-  async update(where: Record<string, unknown>, data: Record<string, unknown>): Promise<T> {
+  async update(
+    where: Record<string, unknown>,
+    data: Record<string, unknown>
+  ): Promise<T> {
     return this.getModel().update({ where, data });
   }
 

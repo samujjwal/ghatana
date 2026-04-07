@@ -1,9 +1,9 @@
 /**
  * Authentication API Client
- * 
+ *
  * Production-ready auth service with TypeScript types,
  * error handling, and request/response interceptors.
- * 
+ *
  * @module api/auth
  * @doc.type service
  * @doc.purpose Backend authentication integration
@@ -127,9 +127,10 @@ function resolveApiBaseUrl(configuredBaseUrl?: string): string {
     return configuredBaseUrl;
   }
 
-  const viteEnv = typeof import.meta !== 'undefined'
-    ? (import.meta.env as Record<string, string | undefined> | undefined)
-    : undefined;
+  const viteEnv =
+    typeof import.meta !== 'undefined'
+      ? (import.meta.env as Record<string, string | undefined> | undefined)
+      : undefined;
 
   return viteEnv?.VITE_API_BASE_URL ?? '/api';
 }
@@ -141,13 +142,13 @@ function resolveApiBaseUrl(configuredBaseUrl?: string): string {
 /**
  * Authentication service
  * Handles all authentication-related API calls
- * 
+ *
  * @example
  * const authService = new AuthService({
  *   baseUrl: 'https://api.example.com',
  *   onTokenExpired: () => navigate('/login'),
  * });
- * 
+ *
  * const response = await authService.login({
  *   email: 'user@example.com',
  *   password: 'password123',
@@ -159,7 +160,7 @@ export class AuthService {
   private retryAttempts: number;
   private onTokenExpired?: () => void;
   private onUnauthorized?: () => void;
-  
+
   /**
    *
    */
@@ -170,7 +171,7 @@ export class AuthService {
     this.onTokenExpired = config.onTokenExpired;
     this.onUnauthorized = config.onUnauthorized;
   }
-  
+
   /**
    * Make authenticated request
    */
@@ -179,28 +180,28 @@ export class AuthService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     // Add default headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
-    
+
     // Add auth token if available
     const token = localStorage.getItem('auth_token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const config: RequestInit = {
       ...options,
       headers,
       signal: AbortSignal.timeout(this.timeout),
     };
-    
+
     try {
       const response = await fetch(url, config);
-      
+
       // Handle different status codes
       if (response.status === 401) {
         if (this.onUnauthorized) {
@@ -208,21 +209,23 @@ export class AuthService {
         }
         throw new Error('Unauthorized');
       }
-      
+
       if (response.status === 403) {
         if (this.onTokenExpired) {
           this.onTokenExpired();
         }
         throw new Error('Token expired');
       }
-      
+
       if (!response.ok) {
-        const error = (await response.json().catch((): ApiError => ({
-          message: `HTTP ${response.status}: ${response.statusText}`,
-        }))) as ApiError;
+        const error = (await response.json().catch(
+          (): ApiError => ({
+            message: `HTTP ${response.status}: ${response.statusText}`,
+          })
+        )) as ApiError;
         throw new Error(error.message);
       }
-      
+
       const data: unknown = await response.json();
       return data as T;
     } catch (error) {
@@ -232,7 +235,7 @@ export class AuthService {
       throw new Error('Network error', { cause: error });
     }
   }
-  
+
   /**
    * Login user
    */
@@ -242,7 +245,7 @@ export class AuthService {
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Register new user
    */
@@ -252,7 +255,7 @@ export class AuthService {
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Logout user
    */
@@ -262,17 +265,19 @@ export class AuthService {
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Refresh access token
    */
-  async refreshToken(payload: RefreshTokenRequest): Promise<RefreshTokenResponse> {
+  async refreshToken(
+    payload: RefreshTokenRequest
+  ): Promise<RefreshTokenResponse> {
     return this.request<RefreshTokenResponse>('/auth/refresh', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Get current user profile
    */
@@ -281,7 +286,7 @@ export class AuthService {
       method: 'GET',
     });
   }
-  
+
   /**
    * Request password reset
    */
@@ -291,17 +296,19 @@ export class AuthService {
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Confirm password reset
    */
-  async confirmPasswordReset(payload: PasswordResetConfirmRequest): Promise<void> {
+  async confirmPasswordReset(
+    payload: PasswordResetConfirmRequest
+  ): Promise<void> {
     return this.request<void>('/auth/reset-password/confirm', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Update user profile
    */
@@ -311,7 +318,7 @@ export class AuthService {
       body: JSON.stringify(payload),
     });
   }
-  
+
   /**
    * Change password
    */

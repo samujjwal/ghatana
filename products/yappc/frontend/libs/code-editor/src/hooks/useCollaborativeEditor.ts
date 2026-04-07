@@ -1,16 +1,16 @@
 /**
  * useCollaborativeEditor Hook
- * 
+ *
  * React hook for integrating collaborative editing with Monaco editors.
  * Provides automatic setup, cleanup, and state management.
- * 
+ *
  * Features:
  * - 🎣 Easy React integration with hooks
  * - 🔄 Automatic CRDT binding setup
  * - 👥 Real-time cursor and presence tracking
  * - ⚡ Performance optimizations
  * - 🧼 Automatic cleanup on unmount
- * 
+ *
  * @doc.type hook
  * @doc.purpose Collaborative editor React hook
  * @doc.layer product
@@ -21,12 +21,12 @@ import type { editor } from 'monaco-editor';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as Y from 'yjs';
 
-import { 
+import {
   createYjsMonacoBinding,
   type YjsMonacoBinding,
-  type YjsMonacoBindingConfig 
+  type YjsMonacoBindingConfig,
 } from '../bindings/YjsMonacoBinding';
-import { 
+import {
   createCollaborativeEditingManager,
   type CollaborativeEditingManager,
   type CollaborativeEditingConfig,
@@ -98,11 +98,13 @@ export interface CollaborativeEditorActions {
 /**
  * Collaborative editor hook return value
  */
-export interface UseCollaborativeEditorReturn extends 
-  CollaborativeEditorState,
-  CollaborativeEditorActions {
+export interface UseCollaborativeEditorReturn
+  extends CollaborativeEditorState, CollaborativeEditorActions {
   /** Setup collaborative editing for editor */
-  setupEditor: (editor: editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => void;
+  setupEditor: (
+    editor: editor.IStandaloneCodeEditor,
+    monaco: typeof import('monaco-editor')
+  ) => void;
   /** Cleanup collaborative editing */
   cleanup: () => void;
 }
@@ -113,14 +115,8 @@ export interface UseCollaborativeEditorReturn extends
 export function useCollaborativeEditor(
   config: UseCollaborativeEditorConfig
 ): UseCollaborativeEditorReturn {
-  const {
-    userId,
-    userName,
-    fileId,
-    ydoc,
-    bindingConfig,
-    collaborationConfig,
-  } = config;
+  const { userId, userName, fileId, ydoc, bindingConfig, collaborationConfig } =
+    config;
 
   // State
   const [state, setState] = useState<CollaborativeEditorState>({
@@ -145,36 +141,45 @@ export function useCollaborativeEditor(
       collaborationConfig,
       {
         onUserJoined: (user) => {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
-            activeUsers: [...prev.activeUsers.filter(u => u.userId !== user.userId), user],
+            activeUsers: [
+              ...prev.activeUsers.filter((u) => u.userId !== user.userId),
+              user,
+            ],
           }));
         },
         onUserLeft: (userId) => {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
-            activeUsers: prev.activeUsers.filter(u => u.userId !== userId),
-            cursors: prev.cursors.filter(c => c.userId !== userId),
+            activeUsers: prev.activeUsers.filter((u) => u.userId !== userId),
+            cursors: prev.cursors.filter((c) => c.userId !== userId),
           }));
         },
         onCursorUpdated: (cursor) => {
           if (cursor.userId !== userId) {
-            setState(prev => ({
+            setState((prev) => ({
               ...prev,
-              cursors: [...prev.cursors.filter(c => c.userId !== cursor.userId), cursor],
+              cursors: [
+                ...prev.cursors.filter((c) => c.userId !== cursor.userId),
+                cursor,
+              ],
             }));
           }
         },
         onConflictDetected: (conflict) => {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
-            conflicts: [...prev.conflicts.filter(c => c.id !== conflict.id), conflict],
+            conflicts: [
+              ...prev.conflicts.filter((c) => c.id !== conflict.id),
+              conflict,
+            ],
           }));
         },
         onConflictResolved: (conflictId) => {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
-            conflicts: prev.conflicts.filter(c => c.id !== conflictId),
+            conflicts: prev.conflicts.filter((c) => c.id !== conflictId),
           }));
         },
       }
@@ -183,7 +188,7 @@ export function useCollaborativeEditor(
     managerRef.current = manager;
 
     // Set initial active users and cursors
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       activeUsers: manager.getActiveUsers(),
       cursors: manager.getCursorsForFile(fileId),
@@ -196,46 +201,44 @@ export function useCollaborativeEditor(
   }, [ydoc, userId, userName, fileId, collaborationConfig]);
 
   // Setup collaborative editing for editor
-  const setupEditor = useCallback((
-    editor: editor.IStandaloneCodeEditor,
-    monaco: typeof import('monaco-editor')
-  ) => {
-    if (!managerRef.current) return;
+  const setupEditor = useCallback(
+    (
+      editor: editor.IStandaloneCodeEditor,
+      monaco: typeof import('monaco-editor')
+    ) => {
+      if (!managerRef.current) return;
 
-    editorRef.current = editor;
+      editorRef.current = editor;
 
-    // Get Y.Text for this file
-    const ymap = ydoc.getMap('files');
-    let ytext = ymap.get(fileId) as Y.Text;
-    
-    if (!ytext) {
-      ytext = new Y.Text();
-      ymap.set(fileId, ytext);
-    }
+      // Get Y.Text for this file
+      const ymap = ydoc.getMap('files');
+      let ytext = ymap.get(fileId) as Y.Text;
 
-    // Create Yjs-Monaco binding
-    const binding = createYjsMonacoBinding(
-      editor,
-      monaco,
-      ytext,
-      {
+      if (!ytext) {
+        ytext = new Y.Text();
+        ymap.set(fileId, ytext);
+      }
+
+      // Create Yjs-Monaco binding
+      const binding = createYjsMonacoBinding(editor, monaco, ytext, {
         config: bindingConfig,
         callbacks: {
           onMetricsUpdate: (metrics) => {
-            setState(prev => ({ ...prev, metrics }));
+            setState((prev) => ({ ...prev, metrics }));
           },
         },
-      }
-    );
+      });
 
-    bindingRef.current = binding;
+      bindingRef.current = binding;
 
-    // Add editor to collaborative manager
-    managerRef.current.addEditor(fileId, editor);
+      // Add editor to collaborative manager
+      managerRef.current.addEditor(fileId, editor);
 
-    // Set as ready
-    setState(prev => ({ ...prev, isReady: true }));
-  }, [ydoc, fileId, bindingConfig]);
+      // Set as ready
+      setState((prev) => ({ ...prev, isReady: true }));
+    },
+    [ydoc, fileId, bindingConfig]
+  );
 
   // Cleanup
   const cleanup = useCallback(() => {
@@ -249,14 +252,14 @@ export function useCollaborativeEditor(
     }
 
     editorRef.current = null;
-    setState(prev => ({ ...prev, isReady: false }));
+    setState((prev) => ({ ...prev, isReady: false }));
   }, [fileId]);
 
   // Actions
   const setActive = useCallback((active: boolean) => {
     if (managerRef.current) {
       managerRef.current.setActive(active);
-      setState(prev => ({ ...prev, isActive: active }));
+      setState((prev) => ({ ...prev, isActive: active }));
     }
   }, []);
 
@@ -331,12 +334,17 @@ export function useEnhancedCollaborativeEditor(
   } = config;
 
   const baseHook = useCollaborativeEditor(baseConfig);
-  const [performanceMetrics, setPerformanceMetrics] = useState<{
-    renderTime: number;
-    syncTime: number;
-    memoryUsage: number;
-  } | undefined>();
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [performanceMetrics, setPerformanceMetrics] = useState<
+    | {
+        renderTime: number;
+        syncTime: number;
+        memoryUsage: number;
+      }
+    | undefined
+  >();
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>(
+    'saved'
+  );
 
   // Performance monitoring
   useEffect(() => {
@@ -349,7 +357,9 @@ export function useEnhancedCollaborativeEditor(
         setPerformanceMetrics({
           renderTime: metrics.averageSyncTime,
           syncTime: metrics.averageSyncTime,
-          memoryUsage: (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0,
+          memoryUsage:
+            (performance as unknown as { memory?: { usedJSHeapSize: number } })
+              .memory?.usedJSHeapSize || 0,
         });
       }
     };

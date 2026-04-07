@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Cursor Overlay Component
- * 
+ *
  * Visual representation of remote users' cursors and selections
  * in the code editor with real-time updates.
- * 
+ *
  * @doc.type component
  * @doc.purpose Shared cursor visualization for collaborative editing
  * @doc.layer product
@@ -12,7 +12,11 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 
-import { useCollaborativeEditing, generateUserAvatar, type UserPresence } from '../hooks/useCollaborativeEditing';
+import {
+  useCollaborativeEditing,
+  generateUserAvatar,
+  type UserPresence,
+} from '../hooks/useCollaborativeEditing';
 
 /**
  * Cursor position in editor coordinates
@@ -66,10 +70,26 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
           className="absolute pointer-events-none opacity-30"
           style={{
             backgroundColor: user.userColor,
-            top: position.top + (user.cursor.selection.start.line - user.cursor.position.line) * position.height,
-            left: position.left + (user.cursor.selection.start.column - user.cursor.position.column) * 8,
-            width: Math.abs(user.cursor.selection.end.column - user.cursor.selection.start.column) * 8,
-            height: Math.abs(user.cursor.selection.end.line - user.cursor.selection.start.line + 1) * position.height,
+            top:
+              position.top +
+              (user.cursor.selection.start.line - user.cursor.position.line) *
+                position.height,
+            left:
+              position.left +
+              (user.cursor.selection.start.column -
+                user.cursor.position.column) *
+                8,
+            width:
+              Math.abs(
+                user.cursor.selection.end.column -
+                  user.cursor.selection.start.column
+              ) * 8,
+            height:
+              Math.abs(
+                user.cursor.selection.end.line -
+                  user.cursor.selection.start.line +
+                  1
+              ) * position.height,
             zIndex: 1,
           }}
         />
@@ -127,9 +147,7 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
           style={{ backgroundColor: user.userColor }}
         >
           {user.userName}
-          {user.activity === 'typing' && (
-            <span className="ml-1">✏️</span>
-          )}
+          {user.activity === 'typing' && <span className="ml-1">✏️</span>}
         </div>
 
         {/* Detailed tooltip on hover */}
@@ -137,12 +155,15 @@ const RemoteCursor: React.FC<RemoteCursorProps> = ({
           <div className="absolute bottom-full left-0 mb-2 p-2 bg-gray-900 text-white text-xs rounded shadow-lg whitespace-nowrap">
             <div className="font-semibold">{user.userName}</div>
             <div className="text-gray-300">
-              Line {user.cursor.position.line + 1}, Column {user.cursor.position.column + 1}
+              Line {user.cursor.position.line + 1}, Column{' '}
+              {user.cursor.position.column + 1}
             </div>
             <div className="text-gray-400">
-              {user.activity === 'typing' ? 'Typing...' :
-                user.activity === 'selecting' ? 'Selecting...' :
-                  'Idle'}
+              {user.activity === 'typing'
+                ? 'Typing...'
+                : user.activity === 'selecting'
+                  ? 'Selecting...'
+                  : 'Idle'}
             </div>
             <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
           </div>
@@ -164,26 +185,28 @@ export const CursorOverlay: React.FC<CursorOverlayProps> = ({
   className = '',
 }) => {
   const { getUsersInFile, activeFileId } = useCollaborativeEditing();
-  const [cursors, setCursors] = useState<Array<{ user: UserPresence; position: CursorPosition }>>([]);
+  const [cursors, setCursors] = useState<
+    Array<{ user: UserPresence; position: CursorPosition }>
+  >([]);
 
   // Calculate cursor position from line/column to pixel coordinates
-  const calculateCursorPosition = useCallback((
-    line: number,
-    column: number
-  ): CursorPosition => {
-    // This is a simplified calculation - in a real implementation,
-    // you'd use the editor's internal positioning API
-    const top = line * lineHeight;
-    const left = column * (fontSize * 0.6); // Approximate character width
+  const calculateCursorPosition = useCallback(
+    (line: number, column: number): CursorPosition => {
+      // This is a simplified calculation - in a real implementation,
+      // you'd use the editor's internal positioning API
+      const top = line * lineHeight;
+      const left = column * (fontSize * 0.6); // Approximate character width
 
-    return {
-      line,
-      column,
-      top,
-      left,
-      height: lineHeight,
-    };
-  }, [lineHeight, fontSize]);
+      return {
+        line,
+        column,
+        top,
+        left,
+        height: lineHeight,
+      };
+    },
+    [lineHeight, fontSize]
+  );
 
   // Update cursor positions
   useEffect(() => {
@@ -191,8 +214,8 @@ export const CursorOverlay: React.FC<CursorOverlayProps> = ({
 
     const usersInFile = getUsersInFile(activeFileId);
     const updatedCursors = usersInFile
-      .filter(user => user.cursor.fileId === activeFileId)
-      .map(user => ({
+      .filter((user) => user.cursor.fileId === activeFileId)
+      .map((user) => ({
         user,
         position: calculateCursorPosition(
           user.cursor.position.line,
@@ -201,7 +224,13 @@ export const CursorOverlay: React.FC<CursorOverlayProps> = ({
       }));
 
     setCursors(updatedCursors);
-  }, [activeFileId, getUsersInFile, calculateCursorPosition, lineHeight, fontSize]);
+  }, [
+    activeFileId,
+    getUsersInFile,
+    calculateCursorPosition,
+    lineHeight,
+    fontSize,
+  ]);
 
   if (!activeFileId || cursors.length === 0) {
     return null;
@@ -230,30 +259,40 @@ export const CursorOverlay: React.FC<CursorOverlayProps> = ({
  * Hook for editor integration
  */
 export function useEditorCursorOverlay() {
-  const { broadcastCursor, broadcastSelection, broadcastTextEdit } = useCollaborativeEditing();
+  const { broadcastCursor, broadcastSelection, broadcastTextEdit } =
+    useCollaborativeEditing();
 
   // Handle cursor movement
-  const handleCursorMove = useCallback((line: number, column: number) => {
-    broadcastCursor({ line, column });
-  }, [broadcastCursor]);
+  const handleCursorMove = useCallback(
+    (line: number, column: number) => {
+      broadcastCursor({ line, column });
+    },
+    [broadcastCursor]
+  );
 
   // Handle selection change
-  const handleSelectionChange = useCallback((
-    start: { line: number; column: number },
-    end: { line: number; column: number }
-  ) => {
-    broadcastSelection({ start, end });
-  }, [broadcastSelection]);
+  const handleSelectionChange = useCallback(
+    (
+      start: { line: number; column: number },
+      end: { line: number; column: number }
+    ) => {
+      broadcastSelection({ start, end });
+    },
+    [broadcastSelection]
+  );
 
   // Handle text edit
-  const handleTextEdit = useCallback((
-    type: 'insert' | 'delete',
-    position: { line: number; column: number },
-    text?: string,
-    length?: number
-  ) => {
-    broadcastTextEdit({ type, position, text, length });
-  }, [broadcastTextEdit]);
+  const handleTextEdit = useCallback(
+    (
+      type: 'insert' | 'delete',
+      position: { line: number; column: number },
+      text?: string,
+      length?: number
+    ) => {
+      broadcastTextEdit({ type, position, text, length });
+    },
+    [broadcastTextEdit]
+  );
 
   return {
     handleCursorMove,

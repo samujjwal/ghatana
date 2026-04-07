@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Suggestion, SuggestionType } from './SmartSuggestions/types';
 import { fetchAllSuggestions } from './SmartSuggestions/utils';
 
-
 /**
  * Hook options for fetching AI suggestions.
  *

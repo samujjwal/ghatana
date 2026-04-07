@@ -1,6 +1,6 @@
 /**
  * Accessibility utilities for UI components
- * 
+ *
  * This file contains utilities for checking and enhancing accessibility in our components.
  */
 import React from 'react';
@@ -13,12 +13,12 @@ export interface AccessibilityAuditResult {
    * Whether the audit passed
    */
   passed: boolean;
-  
+
   /**
    * List of issues found
    */
   issues: AccessibilityIssue[];
-  
+
   /**
    * Component name
    */
@@ -33,22 +33,22 @@ export interface AccessibilityIssue {
    * Issue type
    */
   type: 'error' | 'warning' | 'info';
-  
+
   /**
    * Issue message
    */
   message: string;
-  
+
   /**
    * Issue code
    */
   code: string;
-  
+
   /**
    * Element selector
    */
   selector?: string;
-  
+
   /**
    * Suggested fix
    */
@@ -63,27 +63,27 @@ export interface AccessibilityRule {
    * Rule ID
    */
   id: string;
-  
+
   /**
    * Rule name
    */
   name: string;
-  
+
   /**
    * Rule description
    */
   description: string;
-  
+
   /**
    * Rule test function
    */
   test: (element: HTMLElement) => boolean;
-  
+
   /**
    * Rule fix suggestion
    */
   fix?: string;
-  
+
   /**
    * Rule severity
    */
@@ -112,11 +112,15 @@ export const accessibilityRules: AccessibilityRule[] = [
     name: 'Button Name',
     description: 'Buttons must have accessible name',
     test: (element: HTMLElement) => {
-      if (element.tagName.toLowerCase() === 'button' || 
-          (element.getAttribute('role') === 'button')) {
-        return !!(element.textContent?.trim() || 
-                element.getAttribute('aria-label') || 
-                element.getAttribute('aria-labelledby'));
+      if (
+        element.tagName.toLowerCase() === 'button' ||
+        element.getAttribute('role') === 'button'
+      ) {
+        return !!(
+          element.textContent?.trim() ||
+          element.getAttribute('aria-label') ||
+          element.getAttribute('aria-labelledby')
+        );
       }
       return true;
     },
@@ -140,8 +144,10 @@ export const accessibilityRules: AccessibilityRule[] = [
     description: 'Interactive elements must be focusable',
     test: (element: HTMLElement) => {
       const interactive = ['a', 'button', 'input', 'select', 'textarea'];
-      if (interactive.includes(element.tagName.toLowerCase()) || 
-          element.hasAttribute('tabindex')) {
+      if (
+        interactive.includes(element.tagName.toLowerCase()) ||
+        element.hasAttribute('tabindex')
+      ) {
         return element.getAttribute('tabindex') !== '-1';
       }
       return true;
@@ -156,23 +162,80 @@ export const accessibilityRules: AccessibilityRule[] = [
     test: (element: HTMLElement) => {
       const role = element.getAttribute('role');
       if (!role) return true;
-      
+
       // List of valid ARIA roles
       const validRoles = [
-        'alert', 'alertdialog', 'application', 'article', 'banner', 'button', 
-        'cell', 'checkbox', 'columnheader', 'combobox', 'complementary', 
-        'contentinfo', 'definition', 'dialog', 'directory', 'document', 
-        'feed', 'figure', 'form', 'grid', 'gridcell', 'group', 'heading', 
-        'img', 'link', 'list', 'listbox', 'listitem', 'log', 'main', 
-        'marquee', 'math', 'menu', 'menubar', 'menuitem', 'menuitemcheckbox', 
-        'menuitemradio', 'navigation', 'none', 'note', 'option', 'presentation', 
-        'progressbar', 'radio', 'radiogroup', 'region', 'row', 'rowgroup', 
-        'rowheader', 'scrollbar', 'search', 'searchbox', 'separator', 
-        'slider', 'spinbutton', 'status', 'switch', 'tab', 'table', 
-        'tablist', 'tabpanel', 'term', 'textbox', 'timer', 'toolbar', 
-        'tooltip', 'tree', 'treegrid', 'treeitem'
+        'alert',
+        'alertdialog',
+        'application',
+        'article',
+        'banner',
+        'button',
+        'cell',
+        'checkbox',
+        'columnheader',
+        'combobox',
+        'complementary',
+        'contentinfo',
+        'definition',
+        'dialog',
+        'directory',
+        'document',
+        'feed',
+        'figure',
+        'form',
+        'grid',
+        'gridcell',
+        'group',
+        'heading',
+        'img',
+        'link',
+        'list',
+        'listbox',
+        'listitem',
+        'log',
+        'main',
+        'marquee',
+        'math',
+        'menu',
+        'menubar',
+        'menuitem',
+        'menuitemcheckbox',
+        'menuitemradio',
+        'navigation',
+        'none',
+        'note',
+        'option',
+        'presentation',
+        'progressbar',
+        'radio',
+        'radiogroup',
+        'region',
+        'row',
+        'rowgroup',
+        'rowheader',
+        'scrollbar',
+        'search',
+        'searchbox',
+        'separator',
+        'slider',
+        'spinbutton',
+        'status',
+        'switch',
+        'tab',
+        'table',
+        'tablist',
+        'tabpanel',
+        'term',
+        'textbox',
+        'timer',
+        'toolbar',
+        'tooltip',
+        'tree',
+        'treegrid',
+        'treeitem',
       ];
-      
+
       return validRoles.includes(role);
     },
     fix: 'Use a valid ARIA role',
@@ -186,9 +249,12 @@ export const accessibilityRules: AccessibilityRule[] = [
  * @param componentName Component name
  * @returns Audit result
  */
-export function runAccessibilityAudit(element: HTMLElement, componentName: string): AccessibilityAuditResult {
+export function runAccessibilityAudit(
+  element: HTMLElement,
+  componentName: string
+): AccessibilityAuditResult {
   const issues: AccessibilityIssue[] = [];
-  
+
   // Helper function to audit an element and its children
   const auditElement = (el: HTMLElement, selector: string = '') => {
     // Run each rule on the element
@@ -203,21 +269,21 @@ export function runAccessibilityAudit(element: HTMLElement, componentName: strin
         });
       }
     }
-    
+
     // Audit children
     Array.from(el.children).forEach((child, index) => {
       if (child instanceof HTMLElement) {
-        const childSelector = selector ? 
-          `${selector} > ${child.tagName.toLowerCase()}:nth-child(${index + 1})` : 
-          `${child.tagName.toLowerCase()}:nth-child(${index + 1})`;
+        const childSelector = selector
+          ? `${selector} > ${child.tagName.toLowerCase()}:nth-child(${index + 1})`
+          : `${child.tagName.toLowerCase()}:nth-child(${index + 1})`;
         auditElement(child, childSelector);
       }
     });
   };
-  
+
   // Start audit
   auditElement(element);
-  
+
   return {
     passed: issues.length === 0,
     issues,
@@ -230,9 +296,11 @@ export function runAccessibilityAudit(element: HTMLElement, componentName: strin
  * @param props Element props
  * @returns Accessibility props
  */
-export function getA11yProps(props: Record<string, unknown>): Record<string, unknown> {
+export function getA11yProps(
+  props: Record<string, unknown>
+): Record<string, unknown> {
   const a11yProps: Record<string, unknown> = {};
-  
+
   // Extract accessibility props from props
   const {
     'aria-label': ariaLabel,
@@ -266,7 +334,7 @@ export function getA11yProps(props: Record<string, unknown>): Record<string, unk
     tabIndex,
     ...rest
   } = props;
-  
+
   // Add aria props if they exist
   if (ariaLabel) a11yProps['aria-label'] = ariaLabel;
   if (ariaLabelledby) a11yProps['aria-labelledby'] = ariaLabelledby;
@@ -283,7 +351,8 @@ export function getA11yProps(props: Record<string, unknown>): Record<string, unk
   if (ariaHaspopup !== undefined) a11yProps['aria-haspopup'] = ariaHaspopup;
   if (ariaInvalid !== undefined) a11yProps['aria-invalid'] = ariaInvalid;
   if (ariaMultiline !== undefined) a11yProps['aria-multiline'] = ariaMultiline;
-  if (ariaMultiselectable !== undefined) a11yProps['aria-multiselectable'] = ariaMultiselectable;
+  if (ariaMultiselectable !== undefined)
+    a11yProps['aria-multiselectable'] = ariaMultiselectable;
   if (ariaOrientation) a11yProps['aria-orientation'] = ariaOrientation;
   if (ariaPlaceholder) a11yProps['aria-placeholder'] = ariaPlaceholder;
   if (ariaPressed !== undefined) a11yProps['aria-pressed'] = ariaPressed;
@@ -297,7 +366,7 @@ export function getA11yProps(props: Record<string, unknown>): Record<string, unk
   if (ariaValuetext) a11yProps['aria-valuetext'] = ariaValuetext;
   if (role) a11yProps.role = role;
   if (tabIndex !== undefined) a11yProps.tabIndex = tabIndex;
-  
+
   return { a11yProps, rest };
 }
 
@@ -307,7 +376,10 @@ export function getA11yProps(props: Record<string, unknown>): Record<string, unk
  * @param id Element ID
  * @returns Accessibility props for label and element
  */
-export function createA11yLabel(_label: string, id: string): {
+export function createA11yLabel(
+  _label: string,
+  id: string
+): {
   labelProps: Record<string, unknown>;
   elementProps: Record<string, unknown>;
 } {
@@ -331,9 +403,16 @@ export function createA11yLabel(_label: string, id: string): {
  * Wrap an interactive element in a non-interactive span to prevent MUI Tooltip
  * from cloning/modifying the element and changing its accessible attributes.
  */
-export function wrapForTooltip(element: React.ReactElement, spanProps?: Record<string, unknown>): React.ReactElement {
+export function wrapForTooltip(
+  element: React.ReactElement,
+  spanProps?: Record<string, unknown>
+): React.ReactElement {
   // Use React.createElement to avoid requiring .tsx extension for this util file.
-  return React.createElement('span', { style: { display: 'inline-block' }, ...spanProps }, element) as React.ReactElement;
+  return React.createElement(
+    'span',
+    { style: { display: 'inline-block' }, ...spanProps },
+    element
+  ) as React.ReactElement;
 }
 
 /**
@@ -347,9 +426,11 @@ export function isPlainTextChildren(children: unknown): boolean {
 /**
  * Compute an aria-label when none is provided and children are plain text.
  */
-export function computeAriaLabel(children: unknown, explicitAriaLabel?: string): string | undefined {
+export function computeAriaLabel(
+  children: unknown,
+  explicitAriaLabel?: string
+): string | undefined {
   if (explicitAriaLabel) return explicitAriaLabel;
   if (isPlainTextChildren(children)) return String(children);
   return undefined;
 }
-

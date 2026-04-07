@@ -6,11 +6,8 @@
 import clsx from 'clsx';
 import React, { useState, useEffect } from 'react';
 
-import {
-  accessibilityAuditor,
-} from '../utils/AccessibilityAuditor';
-import type {
-  AccessibilityReport} from '../utils/AccessibilityAuditor';
+import { accessibilityAuditor } from '../utils/AccessibilityAuditor';
+import type { AccessibilityReport } from '../utils/AccessibilityAuditor';
 
 /**
  *
@@ -45,11 +42,11 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
-    
+
     if (isMonitoring) {
       unsubscribe = accessibilityAuditor.startMonitoring(setReport);
     }
-    
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -71,13 +68,19 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
 
   const runAutoFix = async () => {
     if (!report) return;
-    
+
     setAutoFixProgress({ inProgress: true, fixed: 0, failed: 0 });
-    
+
     try {
-      const { fixed, failed } = await accessibilityAuditor.autoFix(report.issues);
-      setAutoFixProgress({ inProgress: false, fixed: fixed.length, failed: failed.length });
-      
+      const { fixed, failed } = await accessibilityAuditor.autoFix(
+        report.issues
+      );
+      setAutoFixProgress({
+        inProgress: false,
+        fixed: fixed.length,
+        failed: failed.length,
+      });
+
       // Re-run audit to get updated results
       setTimeout(() => runAudit(), 1000);
     } catch (error) {
@@ -86,11 +89,14 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
     }
   };
 
-  const filteredIssues = report?.issues.filter(issue => {
-    const categoryMatch = selectedCategory === 'all' || issue.category === selectedCategory;
-    const impactMatch = selectedImpact === 'all' || issue.impact === selectedImpact;
-    return categoryMatch && impactMatch;
-  }) || [];
+  const filteredIssues =
+    report?.issues.filter((issue) => {
+      const categoryMatch =
+        selectedCategory === 'all' || issue.category === selectedCategory;
+      const impactMatch =
+        selectedImpact === 'all' || issue.impact === selectedImpact;
+      return categoryMatch && impactMatch;
+    }) || [];
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600';
@@ -106,39 +112,59 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'critical': return 'text-red-700 bg-red-100';
-      case 'serious': return 'text-red-600 bg-red-50';
-      case 'moderate': return 'text-yellow-600 bg-yellow-50';
-      case 'minor': return 'text-blue-600 bg-blue-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'critical':
+        return 'text-red-700 bg-red-100';
+      case 'serious':
+        return 'text-red-600 bg-red-50';
+      case 'moderate':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'minor':
+        return 'text-blue-600 bg-blue-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'color-contrast': return '🎨';
-      case 'keyboard-navigation': return '⌨️';
-      case 'screen-reader': return '🔊';
-      case 'focus-management': return '🎯';
-      case 'semantic-html': return '📝';
-      case 'aria': return '🏷️';
-      case 'motion': return '🎬';
-      default: return '⚠️';
+      case 'color-contrast':
+        return '🎨';
+      case 'keyboard-navigation':
+        return '⌨️';
+      case 'screen-reader':
+        return '🔊';
+      case 'focus-management':
+        return '🎯';
+      case 'semantic-html':
+        return '📝';
+      case 'aria':
+        return '🏷️';
+      case 'motion':
+        return '🎬';
+      default:
+        return '⚠️';
     }
   };
 
   return (
-    <div className={clsx('bg-white rounded-lg shadow-lg border border-gray-200', className)}>
+    <div
+      className={clsx(
+        'bg-white rounded-lg shadow-lg border border-gray-200',
+        className
+      )}
+    >
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Accessibility Dashboard</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Accessibility Dashboard
+            </h2>
             <p className="text-sm text-gray-600 mt-1">
               Monitor and improve accessibility compliance
             </p>
           </div>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={() => setIsMonitoring(!isMonitoring)}
@@ -152,7 +178,7 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
             >
               {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
             </button>
-            
+
             <button
               onClick={runAudit}
               disabled={isRunning}
@@ -170,11 +196,20 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Score */}
-            <div className={clsx('p-4 rounded-lg', getScoreBgColor(report.score))}>
+            <div
+              className={clsx('p-4 rounded-lg', getScoreBgColor(report.score))}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Accessibility Score</p>
-                  <p className={clsx('text-2xl font-bold', getScoreColor(report.score))}>
+                  <p className="text-sm font-medium text-gray-600">
+                    Accessibility Score
+                  </p>
+                  <p
+                    className={clsx(
+                      'text-2xl font-bold',
+                      getScoreColor(report.score)
+                    )}
+                  >
                     {report.score}/100
                   </p>
                 </div>
@@ -188,8 +223,12 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Issues</p>
-                  <p className="text-2xl font-bold text-gray-900">{report.totalIssues}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Issues
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {report.totalIssues}
+                  </p>
                 </div>
                 <div className="text-2xl">🔍</div>
               </div>
@@ -199,7 +238,9 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
             <div className="p-4 bg-red-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Critical Issues</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Critical Issues
+                  </p>
                   <p className="text-2xl font-bold text-red-600">
                     {report.issuesByImpact.critical || 0}
                   </p>
@@ -212,9 +253,11 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Auto-fixable</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Auto-fixable
+                  </p>
                   <p className="text-2xl font-bold text-green-600">
-                    {report.issues.filter(i => i.autoFixable).length}
+                    {report.issues.filter((i) => i.autoFixable).length}
                   </p>
                 </div>
                 <div className="text-2xl">🔧</div>
@@ -223,29 +266,35 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
           </div>
 
           {/* Auto-fix Actions */}
-          {showAutoFix && report.issues.some(i => i.autoFixable) && (
+          {showAutoFix && report.issues.some((i) => i.autoFixable) && (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-blue-900">Auto-fix Available</h3>
+                  <h3 className="text-sm font-medium text-blue-900">
+                    Auto-fix Available
+                  </h3>
                   <p className="text-sm text-blue-700">
-                    {report.issues.filter(i => i.autoFixable).length} issues can be automatically fixed
+                    {report.issues.filter((i) => i.autoFixable).length} issues
+                    can be automatically fixed
                   </p>
                 </div>
-                
+
                 <button
                   onClick={runAutoFix}
                   disabled={autoFixProgress?.inProgress}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   data-testid="run-autofix"
                 >
-                  {autoFixProgress?.inProgress ? 'Fixing...' : 'Auto-fix Issues'}
+                  {autoFixProgress?.inProgress
+                    ? 'Fixing...'
+                    : 'Auto-fix Issues'}
                 </button>
               </div>
-              
+
               {autoFixProgress && !autoFixProgress.inProgress && (
                 <div className="mt-2 text-sm text-blue-700">
-                  Fixed: {autoFixProgress.fixed}, Failed: {autoFixProgress.failed}
+                  Fixed: {autoFixProgress.fixed}, Failed:{' '}
+                  {autoFixProgress.failed}
                 </div>
               )}
             </div>
@@ -254,7 +303,9 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
           {/* Recommendations */}
           {report.recommendations.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Recommendations</h3>
+              <h3 className="text-sm font-medium text-gray-900 mb-2">
+                Recommendations
+              </h3>
               <ul className="text-sm text-gray-600 space-y-1">
                 {report.recommendations.map((rec, index) => (
                   <li key={index} className="flex items-start">
@@ -282,9 +333,10 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Categories</option>
-                {Object.keys(report.issuesByCategory).map(category => (
+                {Object.keys(report.issuesByCategory).map((category) => (
                   <option key={category} value={category}>
-                    {getCategoryIcon(category)} {category.replace('-', ' ')} ({report.issuesByCategory[category]})
+                    {getCategoryIcon(category)} {category.replace('-', ' ')} (
+                    {report.issuesByCategory[category]})
                   </option>
                 ))}
               </select>
@@ -300,7 +352,7 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">All Impact Levels</option>
-                {Object.keys(report.issuesByImpact).map(impact => (
+                {Object.keys(report.issuesByImpact).map((impact) => (
                   <option key={impact} value={impact}>
                     {impact} ({report.issuesByImpact[impact]})
                   </option>
@@ -320,11 +372,15 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-lg">{getCategoryIcon(issue.category)}</span>
-                      <span className={clsx(
-                        'px-2 py-1 text-xs font-medium rounded-full',
-                        getImpactColor(issue.impact)
-                      )}>
+                      <span className="text-lg">
+                        {getCategoryIcon(issue.category)}
+                      </span>
+                      <span
+                        className={clsx(
+                          'px-2 py-1 text-xs font-medium rounded-full',
+                          getImpactColor(issue.impact)
+                        )}
+                      >
                         {issue.impact}
                       </span>
                       <span className="text-xs text-gray-500">
@@ -336,15 +392,15 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
                         </span>
                       )}
                     </div>
-                    
+
                     <h4 className="text-sm font-medium text-gray-900 mb-1">
                       {issue.message}
                     </h4>
-                    
+
                     <p className="text-sm text-gray-600 mb-2">
                       {issue.suggestion}
                     </p>
-                    
+
                     <div className="flex items-center text-xs text-gray-500 space-x-4">
                       <span>WCAG: {issue.wcagCriteria.join(', ')}</span>
                       {issue.documentation && (
@@ -359,13 +415,19 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
                       )}
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => {
-                      issue.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      issue.element.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                      });
                       issue.element.classList.add('ring-2', 'ring-red-500');
                       setTimeout(() => {
-                        issue.element.classList.remove('ring-2', 'ring-red-500');
+                        issue.element.classList.remove(
+                          'ring-2',
+                          'ring-red-500'
+                        );
                       }, 3000);
                     }}
                     className="ml-4 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
@@ -380,16 +442,14 @@ export const AccessibilityDashboard: React.FC<AccessibilityDashboardProps> = ({
           <div className="px-6 py-12 text-center">
             <div className="text-4xl mb-4">🎉</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {selectedCategory === 'all' && selectedImpact === 'all' 
+              {selectedCategory === 'all' && selectedImpact === 'all'
                 ? 'No accessibility issues found!'
-                : 'No issues match your filters'
-              }
+                : 'No issues match your filters'}
             </h3>
             <p className="text-gray-600">
               {selectedCategory === 'all' && selectedImpact === 'all'
                 ? 'Your page meets accessibility standards.'
-                : 'Try adjusting your filters to see more issues.'
-              }
+                : 'Try adjusting your filters to see more issues.'}
             </p>
           </div>
         ) : (

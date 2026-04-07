@@ -8,7 +8,6 @@
 import type { AccessibilityIssue } from './types';
 import { AccessibilityUtils } from './utils';
 
-
 /**
  * Core auditor class with specialized audit methods for each category.
  *

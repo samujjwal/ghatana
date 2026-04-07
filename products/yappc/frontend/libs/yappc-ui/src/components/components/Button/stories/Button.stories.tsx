@@ -45,7 +45,8 @@ const meta: Meta<typeof Button> = {
     },
     fullWidth: {
       control: 'boolean',
-      description: 'Whether the button should take up the full width of its container',
+      description:
+        'Whether the button should take up the full width of its container',
       defaultValue: false,
     },
     shape: {

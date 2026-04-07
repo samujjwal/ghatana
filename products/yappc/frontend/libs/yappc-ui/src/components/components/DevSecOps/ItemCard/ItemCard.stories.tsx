@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/react';
 // Small local noop used in stories when interactive callbacks are required
 const fn = () => () => {};
 
-
 import { ItemCard } from './ItemCard';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 
@@ -176,7 +175,8 @@ export const LongTitle: Story = {
   args: {
     item: {
       id: '890',
-      title: 'Implement Advanced Multi-Factor Authentication System with Biometric Support',
+      title:
+        'Implement Advanced Multi-Factor Authentication System with Biometric Support',
       priority: 'high',
       owners: ['Security Engineering Team'],
       progress: 35,

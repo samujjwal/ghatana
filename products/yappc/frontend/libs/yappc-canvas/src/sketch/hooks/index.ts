@@ -9,7 +9,10 @@
  */
 
 export { useSketchTools } from './useSketchTools';
-export type { UseSketchToolsParams, UseSketchToolsResult } from './useSketchTools';
+export type {
+  UseSketchToolsParams,
+  UseSketchToolsResult,
+} from './useSketchTools';
 
 export { useSketchKeyboard } from './useSketchKeyboard';
 export type { UseSketchKeyboardParams } from './useSketchKeyboard';

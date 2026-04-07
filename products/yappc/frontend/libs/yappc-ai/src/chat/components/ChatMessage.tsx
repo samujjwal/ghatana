@@ -1,9 +1,9 @@
 /**
  * Chat Message Component
- * 
+ *
  * Displays individual chat message with reactions, replies, and timestamps.
  * Supports editing, threading, and read receipts.
- * 
+ *
  * @module chat/components
  */
 
@@ -11,7 +11,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { MoreVertical, Reply, Smile, Check, CheckCheck } from 'lucide-react';
 import React, { useState, useCallback } from 'react';
 
-import type { ChatMessage as ChatMessageType, ChatReaction } from '../hooks/useChatBackend';
+import type {
+  ChatMessage as ChatMessageType,
+  ChatReaction,
+} from '../hooks/useChatBackend';
 
 export interface ChatMessageProps {
   message: ChatMessageType;
@@ -27,7 +30,7 @@ export interface ChatMessageProps {
 
 /**
  * Chat Message Component
- * 
+ *
  * Renders a single chat message with full functionality.
  */
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -44,23 +47,30 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
 
-  const handleReact = useCallback((emoji: string) => {
-    onReact?.(message.id, emoji);
-    setShowReactions(false);
-  }, [message.id, onReact]);
+  const handleReact = useCallback(
+    (emoji: string) => {
+      onReact?.(message.id, emoji);
+      setShowReactions(false);
+    },
+    [message.id, onReact]
+  );
 
   const handleReply = useCallback(() => {
     onReply?.(message.id);
   }, [message.id, onReply]);
 
   // Group reactions by emoji
-  const groupedReactions = message.reactions?.reduce((acc, reaction) => {
-    if (!acc[reaction.emoji]) {
-      acc[reaction.emoji] = [];
-    }
-    acc[reaction.emoji].push(reaction);
-    return acc;
-  }, {} as Record<string, ChatReaction[]>) || {};
+  const groupedReactions =
+    message.reactions?.reduce(
+      (acc, reaction) => {
+        if (!acc[reaction.emoji]) {
+          acc[reaction.emoji] = [];
+        }
+        acc[reaction.emoji].push(reaction);
+        return acc;
+      },
+      {} as Record<string, ChatReaction[]>
+    ) || {};
 
   const hasReactions = Object.keys(groupedReactions).length > 0;
 
@@ -90,7 +100,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       {/* Message Content */}
       <div className={`flex-1 min-w-0 ${isOwn ? 'text-right' : ''}`}>
         {/* Header */}
-        <div className={`flex items-baseline gap-2 mb-1 ${isOwn ? 'justify-end' : ''}`}>
+        <div
+          className={`flex items-baseline gap-2 mb-1 ${isOwn ? 'justify-end' : ''}`}
+        >
           <span className="font-medium text-sm text-zinc-200">
             {message.userName}
           </span>
@@ -105,9 +117,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Message Body */}
         <div
           className={`inline-block px-3 py-2 rounded-lg ${
-            isOwn
-              ? 'bg-violet-600 text-white'
-              : 'bg-zinc-800 text-zinc-100'
+            isOwn ? 'bg-violet-600 text-white' : 'bg-zinc-800 text-zinc-100'
           }`}
         >
           <p className="text-sm whitespace-pre-wrap break-words">
@@ -117,7 +127,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
         {/* Reactions */}
         {hasReactions && (
-          <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}>
+          <div
+            className={`flex flex-wrap gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}
+          >
             {Object.entries(groupedReactions).map(([emoji, reactions]) => (
               <button
                 key={emoji}
@@ -139,7 +151,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* Read Receipts */}
         {isOwn && readBy.length > 0 && (
           <div className="flex items-center gap-1 mt-1 justify-end text-xs text-zinc-500">
-            {readBy.length === 1 ? <Check className="w-3 h-3" /> : <CheckCheck className="w-3 h-3" />}
+            {readBy.length === 1 ? (
+              <Check className="w-3 h-3" />
+            ) : (
+              <CheckCheck className="w-3 h-3" />
+            )}
             <span>Read by {readBy.length}</span>
           </div>
         )}
@@ -147,7 +163,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
       {/* Actions */}
       {showActions && (
-        <div className={`flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${isOwn ? 'order-first' : ''}`}>
+        <div
+          className={`flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity ${isOwn ? 'order-first' : ''}`}
+        >
           <button
             onClick={handleReply}
             className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-white"

@@ -1,6 +1,6 @@
 /**
  * Plugin Manager
- * 
+ *
  * Central registry and lifecycle manager for Canvas plugins.
  * Handles plugin loading, activation, sandboxing, and communication.
  */
@@ -27,17 +27,17 @@ import type {
  */
 export class PluginManager {
   private static instance: PluginManager | null = null;
-  
+
   private plugins = new Map<string, PluginInstance>();
   private eventListeners = new Map<string, Set<EventHandler>>();
-  
+
   /**
    *
    */
   private constructor() {
     // Private constructor for singleton
   }
-  
+
   /**
    * Get singleton instance
    */
@@ -47,34 +47,34 @@ export class PluginManager {
     }
     return PluginManager.instance;
   }
-  
+
   /**
    * Register a plugin
    */
   async register(
     plugin: Plugin,
-    options: PluginRegistrationOptions = {},
+    options: PluginRegistrationOptions = {}
   ): Promise<void> {
     const { manifest } = plugin;
-    
+
     // Validate manifest
     this.validateManifest(manifest);
-    
+
     // Check if already registered
     if (this.plugins.has(manifest.id)) {
       throw new PluginError(
         `Plugin "${manifest.id}" is already registered`,
         manifest.id,
-        'LOAD_FAILED',
+        'LOAD_FAILED'
       );
     }
-    
+
     // Check dependencies
     await this.checkDependencies(manifest);
-    
+
     // Check version compatibility
     this.checkVersionCompatibility(manifest);
-    
+
     // Create plugin instance
     const instance: PluginInstance = {
       plugin,
@@ -83,39 +83,39 @@ export class PluginManager {
       context: this.createContext(manifest, options),
       options,
     };
-    
+
     // Register plugin
     this.plugins.set(manifest.id, instance);
-    
+
     try {
       // Initialize plugin
       instance.state = 'initializing';
       // Update context state before calling onLoad
       instance.context.state = 'initializing';
       await plugin.onLoad?.(instance.context);
-      
+
       // After loading, set to disabled and optionally activate
       instance.state = 'disabled';
       instance.context.state = 'disabled';
-      
+
       // Auto-activate if requested
       if (options.autoActivate !== false) {
         await this.activate(manifest.id);
       }
-      
+
       this.log('info', `Plugin "${manifest.id}" registered successfully`);
     } catch (error) {
       instance.state = 'error';
       this.plugins.delete(manifest.id);
-      
+
       throw new PluginError(
         `Failed to load plugin "${manifest.id}": ${(error as Error).message}`,
         manifest.id,
-        'LOAD_FAILED',
+        'LOAD_FAILED'
       );
     }
   }
-  
+
   /**
    * Unregister a plugin
    */
@@ -125,37 +125,37 @@ export class PluginManager {
       throw new PluginError(
         `Plugin "${pluginId}" not found`,
         pluginId,
-        'LOAD_FAILED',
+        'LOAD_FAILED'
       );
     }
-    
+
     try {
       // Deactivate if active
       if (instance.state === 'active') {
         await this.deactivate(pluginId);
       }
-      
+
       // Uninstall
       instance.state = 'uninstalling';
       instance.context.state = 'uninstalling';
       await instance.plugin.onUninstall?.(instance.context);
-      
+
       // Remove from registry
       this.plugins.delete(pluginId);
-      
+
       // Clear storage
       await instance.context.storage.clear();
-      
+
       this.log('info', `Plugin "${pluginId}" unregistered`);
     } catch (error) {
       throw new PluginError(
         `Failed to unregister plugin "${pluginId}": ${(error as Error).message}`,
         pluginId,
-        'RUNTIME_ERROR',
+        'RUNTIME_ERROR'
       );
     }
   }
-  
+
   /**
    * Activate a plugin
    */
@@ -165,31 +165,31 @@ export class PluginManager {
       throw new PluginError(
         `Plugin "${pluginId}" not found`,
         pluginId,
-        'ACTIVATION_FAILED',
+        'ACTIVATION_FAILED'
       );
     }
-    
+
     if (instance.state === 'active') {
       return; // Already active
     }
-    
+
     try {
       await instance.plugin.onActivate?.(instance.context);
       instance.state = 'active';
       instance.context.state = 'active';
-      
+
       this.log('info', `Plugin "${pluginId}" activated`);
     } catch (error) {
       instance.state = 'error';
-      
+
       throw new PluginError(
         `Failed to activate plugin "${pluginId}": ${(error as Error).message}`,
         pluginId,
-        'ACTIVATION_FAILED',
+        'ACTIVATION_FAILED'
       );
     }
   }
-  
+
   /**
    * Deactivate a plugin
    */
@@ -199,71 +199,73 @@ export class PluginManager {
       throw new PluginError(
         `Plugin "${pluginId}" not found`,
         pluginId,
-        'RUNTIME_ERROR',
+        'RUNTIME_ERROR'
       );
     }
-    
+
     if (instance.state !== 'active') {
       return; // Not active
     }
-    
+
     try {
       await instance.plugin.onDeactivate?.(instance.context);
       instance.state = 'disabled';
       instance.context.state = 'disabled';
-      
+
       this.log('info', `Plugin "${pluginId}" deactivated`);
     } catch (error) {
       throw new PluginError(
         `Failed to deactivate plugin "${pluginId}": ${(error as Error).message}`,
         pluginId,
-        'RUNTIME_ERROR',
+        'RUNTIME_ERROR'
       );
     }
   }
-  
+
   /**
    * Pause a plugin
    */
   async pause(pluginId: string): Promise<void> {
     const instance = this.plugins.get(pluginId);
     if (!instance) return;
-    
+
     if (instance.state === 'active') {
       await instance.plugin.onPause?.(instance.context);
       instance.state = 'paused';
       instance.context.state = 'paused';
     }
   }
-  
+
   /**
    * Resume a plugin
    */
   async resume(pluginId: string): Promise<void> {
     const instance = this.plugins.get(pluginId);
     if (!instance) return;
-    
+
     if (instance.state === 'paused') {
       await instance.plugin.onResume?.(instance.context);
       instance.state = 'active';
       instance.context.state = 'active';
     }
   }
-  
+
   /**
    * Get plugin state
    */
   getState(pluginId: string): PluginState | undefined {
     return this.plugins.get(pluginId)?.state;
   }
-  
+
   /**
    * Get all plugins
    */
   getPlugins(): PluginManifest[] {
-    return Array.from(this.plugins.values()).map((instance) => instance.manifest);
+    return Array.from(this.plugins.values()).map(
+      (instance) => instance.manifest
+    );
   }
-  
+
   /**
    * Get active plugins
    */
@@ -272,7 +274,7 @@ export class PluginManager {
       .filter((instance) => instance.state === 'active')
       .map((instance) => instance.manifest);
   }
-  
+
   /**
    * Emit Canvas event to all plugins
    */
@@ -288,9 +290,9 @@ export class PluginManager {
       });
     }
   }
-  
+
   // Private methods
-  
+
   /**
    *
    */
@@ -304,39 +306,39 @@ export class PluginManager {
     if (!manifest.version) {
       throw new Error('Plugin manifest must include a version');
     }
-    
+
     // Validate version format (semver)
     const versionRegex = /^\d+\.\d+\.\d+$/;
     if (!versionRegex.test(manifest.version)) {
       throw new Error('Plugin version must be in semver format (e.g., 1.0.0)');
     }
   }
-  
+
   /**
    *
    */
   private async checkDependencies(manifest: PluginManifest): Promise<void> {
     if (!manifest.dependencies) return;
-    
+
     for (const depId of manifest.dependencies) {
       const dep = this.plugins.get(depId);
       if (!dep) {
         throw new PluginError(
           `Missing required dependency: ${depId}`,
           manifest.id,
-          'DEPENDENCY_MISSING',
+          'DEPENDENCY_MISSING'
         );
       }
       if (dep.state !== 'active') {
         throw new PluginError(
           `Dependency "${depId}" is not active`,
           manifest.id,
-          'DEPENDENCY_MISSING',
+          'DEPENDENCY_MISSING'
         );
       }
     }
   }
-  
+
   /**
    *
    */
@@ -344,19 +346,22 @@ export class PluginManager {
     // For now, just check that minCanvasVersion is present
     // In a real implementation, compare with actual Canvas version
     if (!manifest.minCanvasVersion) {
-      this.log('warn', `Plugin "${manifest.id}" does not specify minCanvasVersion`);
+      this.log(
+        'warn',
+        `Plugin "${manifest.id}" does not specify minCanvasVersion`
+      );
     }
   }
-  
+
   /**
    *
    */
   private createContext(
     manifest: PluginManifest,
-    options: PluginRegistrationOptions,
+    options: PluginRegistrationOptions
   ): PluginContext {
     const pluginId = manifest.id;
-    
+
     return {
       manifest,
       state: 'uninitialized',
@@ -367,7 +372,7 @@ export class PluginManager {
       logger: this.createLogger(pluginId),
     };
   }
-  
+
   /**
    *
    */
@@ -379,15 +384,24 @@ export class PluginManager {
         return {} as unknown;
       },
       executeCommand: async (commandId: string, args?: unknown) => {
-        this.log('debug', `Plugin "${pluginId}" executing command: ${commandId}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" executing command: ${commandId}`
+        );
         // Execute command on canvas
       },
       registerCommand: (command) => {
-        this.log('debug', `Plugin "${pluginId}" registering command: ${command.id}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering command: ${command.id}`
+        );
         // Register command
       },
       registerElementType: (elementType) => {
-        this.log('debug', `Plugin "${pluginId}" registering element type: ${elementType.type}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering element type: ${elementType.type}`
+        );
         // Register element type
       },
       registerTool: (tool) => {
@@ -395,22 +409,28 @@ export class PluginManager {
         // Register tool
       },
       registerExporter: (exporter) => {
-        this.log('debug', `Plugin "${pluginId}" registering exporter: ${exporter.id}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering exporter: ${exporter.id}`
+        );
         // Register exporter
       },
       registerImporter: (importer) => {
-        this.log('debug', `Plugin "${pluginId}" registering importer: ${importer.id}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering importer: ${importer.id}`
+        );
         // Register importer
       },
     };
   }
-  
+
   /**
    *
    */
   private createStorageAPI(pluginId: string): PluginStorage {
     const storageKey = `plugin:${pluginId}`;
-    
+
     return {
       get: async <T = unknown>(key: string): Promise<T | undefined> => {
         const data = localStorage.getItem(`${storageKey}:${key}`);
@@ -423,7 +443,9 @@ export class PluginManager {
         localStorage.removeItem(`${storageKey}:${key}`);
       },
       clear: async (): Promise<void> => {
-        const keys = Object.keys(localStorage).filter((k) => k.startsWith(storageKey));
+        const keys = Object.keys(localStorage).filter((k) =>
+          k.startsWith(storageKey)
+        );
         keys.forEach((k) => localStorage.removeItem(k));
       },
       keys: async (): Promise<string[]> => {
@@ -433,7 +455,7 @@ export class PluginManager {
       },
     };
   }
-  
+
   /**
    *
    */
@@ -444,7 +466,7 @@ export class PluginManager {
           this.eventListeners.set(event, new Set());
         }
         this.eventListeners.get(event)!.add(handler);
-        
+
         // Return unsubscribe function
         return () => {
           this.eventListeners.get(event)?.delete(handler);
@@ -455,12 +477,12 @@ export class PluginManager {
           handler(data);
           this.eventListeners.get(event)?.delete(wrappedHandler);
         };
-        
+
         if (!this.eventListeners.has(event)) {
           this.eventListeners.set(event, new Set());
         }
         this.eventListeners.get(event)!.add(wrappedHandler);
-        
+
         return () => {
           this.eventListeners.get(event)?.delete(wrappedHandler);
         };
@@ -471,39 +493,49 @@ export class PluginManager {
       },
     };
   }
-  
+
   /**
    *
    */
   private createUIAPI(pluginId: string): PluginUIAPI {
     return {
       registerPanel: (panel) => {
-        this.log('debug', `Plugin "${pluginId}" registering panel: ${panel.id}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering panel: ${panel.id}`
+        );
         // Register UI panel
       },
       notify: (message: string, type = 'info' as const) => {
-        const logLevel = type === 'success' ? 'info' : type === 'warning' ? 'warn' : type;
+        const logLevel =
+          type === 'success' ? 'info' : type === 'warning' ? 'warn' : type;
         this.log(logLevel, `Plugin "${pluginId}": ${message}`);
         // Show notification
       },
       showDialog: async (dialog) => {
-        this.log('debug', `Plugin "${pluginId}" showing dialog: ${dialog.title}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" showing dialog: ${dialog.title}`
+        );
         // Show dialog and return result
         return undefined;
       },
       registerContextMenuItem: (item) => {
-        this.log('debug', `Plugin "${pluginId}" registering context menu item: ${item.id}`);
+        this.log(
+          'debug',
+          `Plugin "${pluginId}" registering context menu item: ${item.id}`
+        );
         // Register context menu item
       },
     };
   }
-  
+
   /**
    *
    */
   private createLogger(pluginId: string): PluginLogger {
     const prefix = `[Plugin:${pluginId}]`;
-    
+
     return {
       debug: (message: string, ...args: unknown[]) => {
         console.debug(prefix, message, ...args);
@@ -519,11 +551,15 @@ export class PluginManager {
       },
     };
   }
-  
+
   /**
    *
    */
-  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, ...args: unknown[]): void {
+  private log(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    ...args: unknown[]
+  ): void {
     const prefix = '[PluginManager]';
     switch (level) {
       case 'debug':
@@ -563,7 +599,7 @@ export class PluginError extends Error implements PluginErrorType {
   constructor(
     message: string,
     public readonly pluginId: string,
-    public readonly code: PluginErrorCode,
+    public readonly code: PluginErrorCode
   ) {
     super(message);
     this.name = 'PluginError';

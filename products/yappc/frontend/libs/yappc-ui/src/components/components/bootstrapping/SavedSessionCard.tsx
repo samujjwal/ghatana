@@ -49,7 +49,12 @@ import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 // Types
 // =============================================================================
 
-export type SessionStatus = 'in_progress' | 'paused' | 'completed' | 'error' | 'archived';
+export type SessionStatus =
+  | 'in_progress'
+  | 'paused'
+  | 'completed'
+  | 'error'
+  | 'archived';
 
 export interface SessionCollaborator {
   id: string;
@@ -101,12 +106,15 @@ export interface SavedSessionCardProps {
 // Constants
 // =============================================================================
 
-const STATUS_CONFIG: Record<SessionStatus, {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  color: string;
-  bgColor: string;
-}> = {
+const STATUS_CONFIG: Record<
+  SessionStatus,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+    bgColor: string;
+  }
+> = {
   in_progress: {
     icon: Play,
     label: 'In Progress',
@@ -188,7 +196,8 @@ export const SavedSessionCard: React.FC<SavedSessionCardProps> = ({
   const statusConfig = STATUS_CONFIG[session.status];
   const StatusIcon = statusConfig.icon;
 
-  const canResume = session.status === 'in_progress' || session.status === 'paused';
+  const canResume =
+    session.status === 'in_progress' || session.status === 'paused';
   const isComplete = session.status === 'completed';
   const lastUpdated = formatDate(session.updatedAt);
 
@@ -208,10 +217,15 @@ export const SavedSessionCard: React.FC<SavedSessionCardProps> = ({
         )}
         onClick={onResume}
       >
-        <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', statusConfig.bgColor)}>
+        <div
+          className={cn(
+            'flex h-10 w-10 items-center justify-center rounded-lg',
+            statusConfig.bgColor
+          )}
+        >
           <StatusIcon className={cn('h-5 w-5', statusConfig.color)} />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -263,7 +277,14 @@ export const SavedSessionCard: React.FC<SavedSessionCardProps> = ({
             <h3 className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
               {session.name}
             </h3>
-            <Badge variant="outline" className={cn('shrink-0', statusConfig.color, statusConfig.bgColor)}>
+            <Badge
+              variant="outline"
+              className={cn(
+                'shrink-0',
+                statusConfig.color,
+                statusConfig.bgColor
+              )}
+            >
               <StatusIcon className="mr-1 h-3 w-3" />
               {statusConfig.label}
             </Badge>
@@ -301,7 +322,12 @@ export const SavedSessionCard: React.FC<SavedSessionCardProps> = ({
             </DropdownMenuItem>
             {onToggleStar && (
               <DropdownMenuItem onClick={onToggleStar}>
-                <Star className={cn('mr-2 h-4 w-4', session.isStarred && 'fill-current')} />
+                <Star
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    session.isStarred && 'fill-current'
+                  )}
+                />
                 {session.isStarred ? 'Unstar' : 'Star'}
               </DropdownMenuItem>
             )}
@@ -312,7 +338,10 @@ export const SavedSessionCard: React.FC<SavedSessionCardProps> = ({
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-error-600 dark:text-error-400">
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="text-error-600 dark:text-error-400"
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>

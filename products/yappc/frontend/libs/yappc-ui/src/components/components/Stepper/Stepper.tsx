@@ -100,11 +100,7 @@ const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
  * Error icon for error steps
  */
 const ErrorIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    className={className}
-    fill="currentColor"
-    viewBox="0 0 24 24"
-  >
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
   </svg>
 );
@@ -145,7 +141,8 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
     const handleStepClick = (index: number) => {
       if (steps[index].disabled) return;
-      if (!nonLinear && index > activeStep && !completed.includes(activeStep)) return;
+      if (!nonLinear && index > activeStep && !completed.includes(activeStep))
+        return;
 
       onStepClick?.(index);
     };
@@ -158,7 +155,8 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     };
 
     const getStepIconClasses = (index: number) => {
-      const base = 'flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors';
+      const base =
+        'flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors';
 
       if (isStepError(index)) {
         return cn(base, 'bg-error-500 text-white');
@@ -186,7 +184,10 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     };
 
     const getConnectorColor = (index: number) => {
-      if (isStepComplete(index) || (isStepActive(index) && isStepComplete(index - 1))) {
+      if (
+        isStepComplete(index) ||
+        (isStepActive(index) && isStepComplete(index - 1))
+      ) {
         return 'bg-success-500';
       }
       return 'bg-grey-300';
@@ -226,7 +227,12 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
                   {/* Connector */}
                   {showConnector && (
-                    <div className={cn(getConnectorClasses(index), getConnectorColor(index))} />
+                    <div
+                      className={cn(
+                        getConnectorClasses(index),
+                        getConnectorColor(index)
+                      )}
+                    />
                   )}
                 </div>
 
@@ -241,11 +247,15 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                   >
                     {step.label}
                     {step.optional && (
-                      <span className="ml-2 text-xs text-grey-500">(Optional)</span>
+                      <span className="ml-2 text-xs text-grey-500">
+                        (Optional)
+                      </span>
                     )}
                   </div>
                   {step.description && (
-                    <div className="text-sm text-grey-500 mt-1">{step.description}</div>
+                    <div className="text-sm text-grey-500 mt-1">
+                      {step.description}
+                    </div>
                   )}
                 </div>
               </div>
@@ -304,11 +314,15 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
                     >
                       {step.label}
                       {step.optional && (
-                        <span className="ml-1 text-xs text-grey-500">(Optional)</span>
+                        <span className="ml-1 text-xs text-grey-500">
+                          (Optional)
+                        </span>
                       )}
                     </div>
                     {step.description && (
-                      <div className="text-xs text-grey-500 mt-0.5">{step.description}</div>
+                      <div className="text-xs text-grey-500 mt-0.5">
+                        {step.description}
+                      </div>
                     )}
                   </div>
                 )}
@@ -333,11 +347,18 @@ export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
               {/* Connector */}
               {showConnector && !alternativeLabel && (
-                <div className={cn(getConnectorClasses(index), getConnectorColor(index))} />
+                <div
+                  className={cn(
+                    getConnectorClasses(index),
+                    getConnectorColor(index)
+                  )}
+                />
               )}
 
               {showConnector && alternativeLabel && (
-                <div className={cn('flex-1 h-0.5 mx-2', getConnectorColor(index))} />
+                <div
+                  className={cn('flex-1 h-0.5 mx-2', getConnectorColor(index))}
+                />
               )}
             </React.Fragment>
           );

@@ -174,7 +174,8 @@ export function getActiveDetailLevel(
   // Find matching threshold
   for (const threshold of lodConfig.thresholds) {
     const aboveMin = zoom >= threshold.minZoom;
-    const belowMax = threshold.maxZoom === undefined || zoom <= threshold.maxZoom;
+    const belowMax =
+      threshold.maxZoom === undefined || zoom <= threshold.maxZoom;
 
     if (aboveMin && belowMax) {
       // Check if render condition is met
@@ -346,7 +347,10 @@ export function getParentScene(state: DrillDownState): NestedScene | null {
 /**
  * Get scene by ID
  */
-export function getScene(state: DrillDownState, sceneId: string): NestedScene | null {
+export function getScene(
+  state: DrillDownState,
+  sceneId: string
+): NestedScene | null {
   return state.scenes.get(sceneId) || null;
 }
 
@@ -401,7 +405,10 @@ export async function loadNestedScene(
 /**
  * Check if scene is loading
  */
-export function isSceneLoading(state: DrillDownState, sceneId: string): boolean {
+export function isSceneLoading(
+  state: DrillDownState,
+  sceneId: string
+): boolean {
   return state.loading.has(sceneId);
 }
 

@@ -70,9 +70,17 @@ export interface CodeEditorConfig {
   /** Enable bracket pair colorization */
   bracketPairColorization?: boolean;
   /** Enable auto-closing brackets */
-  autoClosingBrackets?: 'always' | 'languageDefined' | 'beforeWhitespace' | 'never';
+  autoClosingBrackets?:
+    | 'always'
+    | 'languageDefined'
+    | 'beforeWhitespace'
+    | 'never';
   /** Enable auto-closing quotes */
-  autoClosingQuotes?: 'always' | 'languageDefined' | 'beforeWhitespace' | 'never';
+  autoClosingQuotes?:
+    | 'always'
+    | 'languageDefined'
+    | 'beforeWhitespace'
+    | 'never';
   /** Enable suggestions */
   suggestOnTriggerCharacters?: boolean;
   /** Enable quick suggestions */

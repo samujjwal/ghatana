@@ -52,12 +52,16 @@ interface ArchitectureNodeData extends BaseNodeData {
   decisions?: string[];
 }
 
-export function buildServicePrompt(data: ServiceNodeData | RequirementNodeData): string {
+export function buildServicePrompt(
+  data: ServiceNodeData | RequirementNodeData
+): string {
   return [
     'Generate a production-ready TypeScript service.',
     `Service name: ${data.label}`,
     data.description ? `Description: ${data.description}` : '',
-    data.type === 'requirement' && data.userStory ? `User story: ${data.userStory}` : '',
+    data.type === 'requirement' && data.userStory
+      ? `User story: ${data.userStory}`
+      : '',
     data.type === 'requirement' && data.acceptanceCriteria?.length
       ? `Acceptance criteria:\n- ${data.acceptanceCriteria.join('\n- ')}`
       : '',
@@ -89,7 +93,12 @@ export function buildAPIRoutePrompt(data: APIEndpointNodeData): string {
 
 export function buildPrismaSchemaPrompt(data: DatabaseNodeData): string {
   const tableHints =
-    data.schema?.tables?.map((t) => `- ${t.name}: ${t.columns.map((c) => `${c.name}:${c.type}`).join(', ')}`).join('\n') ?? '';
+    data.schema?.tables
+      ?.map(
+        (t) =>
+          `- ${t.name}: ${t.columns.map((c) => `${c.name}:${c.type}`).join(', ')}`
+      )
+      .join('\n') ?? '';
 
   return [
     'Generate a Prisma schema.',
@@ -106,15 +115,25 @@ export function buildPrismaSchemaPrompt(data: DatabaseNodeData): string {
     .join('\n');
 }
 
-export function buildArchitecturePrompt(data: ArchitectureNodeData | RequirementNodeData): string {
+export function buildArchitecturePrompt(
+  data: ArchitectureNodeData | RequirementNodeData
+): string {
   return [
     'Generate a concise system architecture document in Markdown.',
     `System: ${data.label}`,
     data.description ? `Context: ${data.description}` : '',
-    'components' in data && data.components?.length ? `Components: ${data.components.join(', ')}` : '',
-    'technologies' in data && data.technologies?.length ? `Technologies: ${data.technologies.join(', ')}` : '',
-    'constraints' in data && data.constraints?.length ? `Constraints: ${data.constraints.join(', ')}` : '',
-    'decisions' in data && data.decisions?.length ? `Decisions: ${data.decisions.join(', ')}` : '',
+    'components' in data && data.components?.length
+      ? `Components: ${data.components.join(', ')}`
+      : '',
+    'technologies' in data && data.technologies?.length
+      ? `Technologies: ${data.technologies.join(', ')}`
+      : '',
+    'constraints' in data && data.constraints?.length
+      ? `Constraints: ${data.constraints.join(', ')}`
+      : '',
+    'decisions' in data && data.decisions?.length
+      ? `Decisions: ${data.decisions.join(', ')}`
+      : '',
     'Required sections: Overview, Components, Data Flow, Security, Scalability, Risks.',
   ]
     .filter(Boolean)
@@ -139,7 +158,10 @@ export function buildCodeReviewPrompt(code: string, language: string): string {
   ].join('\n');
 }
 
-export function buildTestGenerationPrompt(code: string, testType: 'unit' | 'integration' | 'e2e'): string {
+export function buildTestGenerationPrompt(
+  code: string,
+  testType: 'unit' | 'integration' | 'e2e'
+): string {
   return [
     `Generate ${testType} tests for the following code.`,
     'Include edge cases and failure paths.',

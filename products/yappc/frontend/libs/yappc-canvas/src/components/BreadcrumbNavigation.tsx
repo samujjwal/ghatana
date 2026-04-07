@@ -1,4 +1,11 @@
-import { Home, ChevronRight, Layers, ExternalLink as Launch, History, AlertTriangle as Warning } from 'lucide-react';
+import {
+  Home,
+  ChevronRight,
+  Layers,
+  ExternalLink as Launch,
+  History,
+  AlertTriangle as Warning,
+} from 'lucide-react';
 import React from 'react';
 import type { CSSProperties } from 'react';
 
@@ -13,7 +20,6 @@ import {
 import { Breadcrumbs, Link } from '@ghatana/design-system';
 
 import { useCanvasPortal } from '../hooks/useCanvasPortal';
-
 
 export interface BreadcrumbNavigationProps {
   /** Show home icon for root canvas */
@@ -34,13 +40,13 @@ export function BreadcrumbNavigation({
   showHomeIcon = true,
   maxItems = 5,
   showValidation = true,
-  sx = {}
+  sx = {},
 }: BreadcrumbNavigationProps) {
   const {
     drillDownContext,
     navigateToCanvas,
     validateCanvasReferences,
-    drillUp
+    drillUp,
   } = useCanvasPortal();
 
   const validation = showValidation ? validateCanvasReferences() : null;
@@ -49,18 +55,18 @@ export function BreadcrumbNavigation({
     navigateToCanvas(canvasId);
   };
 
-  const renderBreadcrumbItem = (item: { id: string; label: string }, index: number, isLast: boolean) => {
+  const renderBreadcrumbItem = (
+    item: { id: string; label: string },
+    index: number,
+    isLast: boolean
+  ) => {
     const isRoot = item.id === 'root';
 
     if (isLast) {
       return (
         <Box key={item.id} display="flex" alignItems="center" gap={1}>
           {isRoot && showHomeIcon && <Home size={16} />}
-          <Typography
-            color="text.primary"
-            fontWeight="medium"
-            variant="body2"
-          >
+          <Typography color="text.primary" fontWeight="medium" variant="body2">
             {item.label}
           </Typography>
           {drillDownContext.canvasStack.length > 0 && (
@@ -90,9 +96,7 @@ export function BreadcrumbNavigation({
   };
 
   return (
-    <Box
-      style={{ display: 'flex', alignItems: 'center', gap: 16, ...sx }}
-    >
+    <Box style={{ display: 'flex', alignItems: 'center', gap: 16, ...sx }}>
       {/* Main breadcrumb navigation */}
       <Breadcrumbs
         aria-label="canvas navigation"
@@ -111,18 +115,16 @@ export function BreadcrumbNavigation({
         {/* Back button */}
         {drillDownContext.canvasStack.length > 0 && (
           <Tooltip title="Back to parent canvas">
-            <IconButton
-              size="small"
-              onClick={drillUp}
-              color="primary"
-            >
+            <IconButton size="small" onClick={drillUp} color="primary">
               <History />
             </IconButton>
           </Tooltip>
         )}
 
         {/* Canvas layers indicator */}
-        <Tooltip title={`Canvas depth: ${drillDownContext.canvasStack.length + 1}`}>
+        <Tooltip
+          title={`Canvas depth: ${drillDownContext.canvasStack.length + 1}`}
+        >
           <IconButton size="small" disabled>
             <Layers />
             <Typography variant="caption" className="ml-1">
@@ -133,7 +135,9 @@ export function BreadcrumbNavigation({
 
         {/* Validation warning */}
         {validation && !validation.isValid && (
-          <Tooltip title={`Validation issues: ${validation.errors.length} errors, ${validation.warnings.length} warnings`}>
+          <Tooltip
+            title={`Validation issues: ${validation.errors.length} errors, ${validation.warnings.length} warnings`}
+          >
             <IconButton size="small" color="warning">
               <Warning />
             </IconButton>

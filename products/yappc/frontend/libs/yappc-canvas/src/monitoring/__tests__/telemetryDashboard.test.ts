@@ -1,6 +1,6 @@
 /**
  * Tests for Performance Metrics Dashboard (Feature 2.29)
- * 
+ *
  * Tests comprehensive telemetry system including:
  * - FPS/memory monitoring
  * - Performance trace collection
@@ -30,7 +30,7 @@ import {
   type TelemetryDashboard,
   type PerformanceTrace,
   type AlertThreshold,
-  type PerformanceAlert
+  type PerformanceAlert,
 } from '../telemetryDashboard';
 
 describe('telemetryDashboard', () => {
@@ -67,14 +67,16 @@ describe('telemetryDashboard', () => {
         maxTraces: 50,
         devModeEnabled: true,
         devModePosition: 'top-left',
-        otlpEndpoint: 'http://localhost:4318/v1/metrics'
+        otlpEndpoint: 'http://localhost:4318/v1/metrics',
       });
 
       expect(custom.config.sampleInterval).toBe(500);
       expect(custom.config.maxTraces).toBe(50);
       expect(custom.config.devModeEnabled).toBe(true);
       expect(custom.config.devModePosition).toBe('top-left');
-      expect(custom.config.otlpEndpoint).toBe('http://localhost:4318/v1/metrics');
+      expect(custom.config.otlpEndpoint).toBe(
+        'http://localhost:4318/v1/metrics'
+      );
     });
 
     it('should initialize empty data arrays', () => {
@@ -85,13 +87,17 @@ describe('telemetryDashboard', () => {
     });
 
     it('should have default thresholds configured', () => {
-      const fpsThreshold = dashboard.config.thresholds.find(t => t.id === 'fps-low');
+      const fpsThreshold = dashboard.config.thresholds.find(
+        (t) => t.id === 'fps-low'
+      );
       expect(fpsThreshold).toBeDefined();
       expect(fpsThreshold?.metric).toBe('fps');
       expect(fpsThreshold?.operator).toBe('lt');
       expect(fpsThreshold?.value).toBe(30);
 
-      const memThreshold = dashboard.config.thresholds.find(t => t.id === 'memory-high');
+      const memThreshold = dashboard.config.thresholds.find(
+        (t) => t.id === 'memory-high'
+      );
       expect(memThreshold).toBeDefined();
       expect(memThreshold?.metric).toBe('memory.percentUsed');
       expect(memThreshold?.operator).toBe('gt');
@@ -236,7 +242,7 @@ describe('telemetryDashboard', () => {
   describe('Performance Tracing', () => {
     it('should start a new trace', () => {
       const trace = startTrace(dashboard, 'canvas-render', {
-        nodeCount: 100
+        nodeCount: 100,
       });
 
       expect(trace.id).toMatch(/^trace_/);
@@ -262,13 +268,20 @@ describe('telemetryDashboard', () => {
 
     it('should add spans to a trace', () => {
       const trace = startTrace(dashboard, 'render-pipeline');
-      
+
       const span1 = addSpan(trace, 'layout-calculation', 0, 10, {
-        elementCount: 50
+        elementCount: 50,
       });
-      const span2 = addSpan(trace, 'paint-nodes', 10, 25, {
-        nodesRendered: 50
-      }, span1.id);
+      const span2 = addSpan(
+        trace,
+        'paint-nodes',
+        10,
+        25,
+        {
+          nodesRendered: 50,
+        },
+        span1.id
+      );
 
       expect(trace.spans.length).toBe(2);
       expect(span1.name).toBe('layout-calculation');
@@ -306,10 +319,24 @@ describe('telemetryDashboard', () => {
 
     it('should track nested spans with parent-child relationships', () => {
       const trace = startTrace(dashboard, 'complex-operation');
-      
+
       const parentSpan = addSpan(trace, 'parent-operation', 0, 100);
-      const childSpan1 = addSpan(trace, 'child-op-1', 10, 40, {}, parentSpan.id);
-      const childSpan2 = addSpan(trace, 'child-op-2', 50, 90, {}, parentSpan.id);
+      const childSpan1 = addSpan(
+        trace,
+        'child-op-1',
+        10,
+        40,
+        {},
+        parentSpan.id
+      );
+      const childSpan2 = addSpan(
+        trace,
+        'child-op-2',
+        50,
+        90,
+        {},
+        parentSpan.id
+      );
 
       expect(childSpan1.parentSpanId).toBe(parentSpan.id);
       expect(childSpan2.parentSpanId).toBe(parentSpan.id);
@@ -327,22 +354,45 @@ describe('telemetryDashboard', () => {
         {
           timestamp: 1000,
           fps: 60,
-          memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-          rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-          interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+          memory: {
+            usedJSHeapSize: 0,
+            totalJSHeapSize: 0,
+            jsHeapSizeLimit: 0,
+            percentUsed: 50,
+          },
+          rendering: {
+            elementCount: 0,
+            visibleElements: 0,
+            renderTime: 16,
+            paintTime: 0,
+            layoutTime: 0,
+            scriptTime: 0,
+            idleTime: 0,
+          },
+          interaction: {
+            inputDelay: 0,
+            eventLatency: 0,
+            interactionCount: 0,
+            longTasks: 0,
+            blockedTime: 0,
+          },
           network: { online: true },
-          vitals: { lcp: 1200 }
-        }
+          vitals: { lcp: 1200 },
+        },
       ];
 
       const otlp = convertToOTLP(metrics);
 
       expect(otlp.resourceMetrics).toBeDefined();
-      expect(otlp.resourceMetrics[0].resource.attributes['service.name']).toBe('canvas-app');
-      expect(otlp.resourceMetrics[0].scopeMetrics[0].metrics.length).toBeGreaterThan(0);
+      expect(otlp.resourceMetrics[0].resource.attributes['service.name']).toBe(
+        'canvas-app'
+      );
+      expect(
+        otlp.resourceMetrics[0].scopeMetrics[0].metrics.length
+      ).toBeGreaterThan(0);
 
       const fpsMetric = otlp.resourceMetrics[0].scopeMetrics[0].metrics.find(
-        m => m.name === 'canvas.performance.fps'
+        (m) => m.name === 'canvas.performance.fps'
       );
       expect(fpsMetric).toBeDefined();
       expect(fpsMetric?.type).toBe('gauge');
@@ -355,21 +405,50 @@ describe('telemetryDashboard', () => {
         {
           timestamp: 1000,
           fps: 55,
-          memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 75 },
-          rendering: { elementCount: 0, visibleElements: 0, renderTime: 20, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-          interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+          memory: {
+            usedJSHeapSize: 0,
+            totalJSHeapSize: 0,
+            jsHeapSizeLimit: 0,
+            percentUsed: 75,
+          },
+          rendering: {
+            elementCount: 0,
+            visibleElements: 0,
+            renderTime: 20,
+            paintTime: 0,
+            layoutTime: 0,
+            scriptTime: 0,
+            idleTime: 0,
+          },
+          interaction: {
+            inputDelay: 0,
+            eventLatency: 0,
+            interactionCount: 0,
+            longTasks: 0,
+            blockedTime: 0,
+          },
           network: { online: true },
-          vitals: { lcp: 2500 }
-        }
+          vitals: { lcp: 2500 },
+        },
       ];
 
       const otlp = convertToOTLP(metrics);
       const exportedMetrics = otlp.resourceMetrics[0].scopeMetrics[0].metrics;
 
-      expect(exportedMetrics.some(m => m.name === 'canvas.performance.fps')).toBe(true);
-      expect(exportedMetrics.some(m => m.name === 'canvas.performance.memory.percent_used')).toBe(true);
-      expect(exportedMetrics.some(m => m.name === 'canvas.performance.render_time')).toBe(true);
-      expect(exportedMetrics.some(m => m.name === 'canvas.performance.lcp')).toBe(true);
+      expect(
+        exportedMetrics.some((m) => m.name === 'canvas.performance.fps')
+      ).toBe(true);
+      expect(
+        exportedMetrics.some(
+          (m) => m.name === 'canvas.performance.memory.percent_used'
+        )
+      ).toBe(true);
+      expect(
+        exportedMetrics.some((m) => m.name === 'canvas.performance.render_time')
+      ).toBe(true);
+      expect(
+        exportedMetrics.some((m) => m.name === 'canvas.performance.lcp')
+      ).toBe(true);
     });
 
     it('should handle missing Web Vitals gracefully', () => {
@@ -377,17 +456,36 @@ describe('telemetryDashboard', () => {
         {
           timestamp: 1000,
           fps: 60,
-          memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-          rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-          interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+          memory: {
+            usedJSHeapSize: 0,
+            totalJSHeapSize: 0,
+            jsHeapSizeLimit: 0,
+            percentUsed: 50,
+          },
+          rendering: {
+            elementCount: 0,
+            visibleElements: 0,
+            renderTime: 16,
+            paintTime: 0,
+            layoutTime: 0,
+            scriptTime: 0,
+            idleTime: 0,
+          },
+          interaction: {
+            inputDelay: 0,
+            eventLatency: 0,
+            interactionCount: 0,
+            longTasks: 0,
+            blockedTime: 0,
+          },
           network: { online: true },
-          vitals: {} // No vitals available
-        }
+          vitals: {}, // No vitals available
+        },
       ];
 
       const otlp = convertToOTLP(metrics);
       const lcpMetric = otlp.resourceMetrics[0].scopeMetrics[0].metrics.find(
-        m => m.name === 'canvas.performance.lcp'
+        (m) => m.name === 'canvas.performance.lcp'
       );
 
       expect(lcpMetric?.dataPoints.length).toBe(0);
@@ -403,11 +501,30 @@ describe('telemetryDashboard', () => {
       const metrics = {
         timestamp: Date.now(),
         fps: 20, // Below 30 threshold
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 50,
+        },
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       checkThresholds(dashboard, metrics);
@@ -422,11 +539,30 @@ describe('telemetryDashboard', () => {
       const metrics = {
         timestamp: Date.now(),
         fps: 60,
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 85 }, // Above 80 threshold
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 85,
+        }, // Above 80 threshold
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       checkThresholds(dashboard, metrics);
@@ -438,17 +574,38 @@ describe('telemetryDashboard', () => {
     });
 
     it('should respect cooldown period between alerts', () => {
-      const threshold = dashboard.config.thresholds.find(t => t.id === 'fps-low')!;
+      const threshold = dashboard.config.thresholds.find(
+        (t) => t.id === 'fps-low'
+      )!;
       threshold.cooldownPeriod = 10000; // 10 seconds
 
       const lowFpsMetrics = {
         timestamp: Date.now(),
         fps: 20,
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 50,
+        },
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       checkThresholds(dashboard, lowFpsMetrics);
@@ -466,17 +623,38 @@ describe('telemetryDashboard', () => {
     });
 
     it('should not trigger alert when threshold disabled', () => {
-      const threshold = dashboard.config.thresholds.find(t => t.id === 'fps-low')!;
+      const threshold = dashboard.config.thresholds.find(
+        (t) => t.id === 'fps-low'
+      )!;
       threshold.enabled = false;
 
       const lowFpsMetrics = {
         timestamp: Date.now(),
         fps: 20,
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 50,
+        },
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       checkThresholds(dashboard, lowFpsMetrics);
@@ -493,7 +671,7 @@ describe('telemetryDashboard', () => {
         actualValue: 20,
         thresholdValue: 30,
         message: 'FPS below threshold',
-        acknowledged: false
+        acknowledged: false,
       };
       dashboard.alerts.push(alert);
 
@@ -510,11 +688,30 @@ describe('telemetryDashboard', () => {
       const metrics = {
         timestamp: Date.now(),
         fps: 20,
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 50,
+        },
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       for (let i = 0; i < 10; i++) {
@@ -532,11 +729,30 @@ describe('telemetryDashboard', () => {
       const metrics = {
         timestamp: Date.now(),
         fps: 20,
-        memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-        rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-        interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 0, blockedTime: 0 },
+        memory: {
+          usedJSHeapSize: 0,
+          totalJSHeapSize: 0,
+          jsHeapSizeLimit: 0,
+          percentUsed: 50,
+        },
+        rendering: {
+          elementCount: 0,
+          visibleElements: 0,
+          renderTime: 16,
+          paintTime: 0,
+          layoutTime: 0,
+          scriptTime: 0,
+          idleTime: 0,
+        },
+        interaction: {
+          inputDelay: 0,
+          eventLatency: 0,
+          interactionCount: 0,
+          longTasks: 0,
+          blockedTime: 0,
+        },
         network: { online: true },
-        vitals: {}
+        vitals: {},
       };
 
       checkThresholds(dashboard, metrics);
@@ -557,21 +773,59 @@ describe('telemetryDashboard', () => {
         {
           timestamp: 1000,
           fps: 60,
-          memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 50 },
-          rendering: { elementCount: 0, visibleElements: 0, renderTime: 16, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-          interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 2, blockedTime: 0 },
+          memory: {
+            usedJSHeapSize: 0,
+            totalJSHeapSize: 0,
+            jsHeapSizeLimit: 0,
+            percentUsed: 50,
+          },
+          rendering: {
+            elementCount: 0,
+            visibleElements: 0,
+            renderTime: 16,
+            paintTime: 0,
+            layoutTime: 0,
+            scriptTime: 0,
+            idleTime: 0,
+          },
+          interaction: {
+            inputDelay: 0,
+            eventLatency: 0,
+            interactionCount: 0,
+            longTasks: 2,
+            blockedTime: 0,
+          },
           network: { online: true },
-          vitals: {}
+          vitals: {},
         },
         {
           timestamp: 2000,
           fps: 55,
-          memory: { usedJSHeapSize: 0, totalJSHeapSize: 0, jsHeapSizeLimit: 0, percentUsed: 60 },
-          rendering: { elementCount: 0, visibleElements: 0, renderTime: 20, paintTime: 0, layoutTime: 0, scriptTime: 0, idleTime: 0 },
-          interaction: { inputDelay: 0, eventLatency: 0, interactionCount: 0, longTasks: 1, blockedTime: 0 },
+          memory: {
+            usedJSHeapSize: 0,
+            totalJSHeapSize: 0,
+            jsHeapSizeLimit: 0,
+            percentUsed: 60,
+          },
+          rendering: {
+            elementCount: 0,
+            visibleElements: 0,
+            renderTime: 20,
+            paintTime: 0,
+            layoutTime: 0,
+            scriptTime: 0,
+            idleTime: 0,
+          },
+          interaction: {
+            inputDelay: 0,
+            eventLatency: 0,
+            interactionCount: 0,
+            longTasks: 1,
+            blockedTime: 0,
+          },
           network: { online: true },
-          vitals: {}
-        }
+          vitals: {},
+        },
       ];
 
       // Add traces
@@ -588,7 +842,7 @@ describe('telemetryDashboard', () => {
         actualValue: 20,
         thresholdValue: 30,
         message: 'Test alert',
-        acknowledged: false
+        acknowledged: false,
       };
       dashboard.alerts.push(alert);
 
@@ -627,7 +881,7 @@ describe('telemetryDashboard', () => {
           actualValue: 20,
           thresholdValue: 30,
           message: 'Warning',
-          acknowledged: false
+          acknowledged: false,
         },
         {
           id: '2',
@@ -638,7 +892,7 @@ describe('telemetryDashboard', () => {
           actualValue: 85,
           thresholdValue: 80,
           message: 'Error',
-          acknowledged: false
+          acknowledged: false,
         },
         {
           id: '3',
@@ -649,8 +903,8 @@ describe('telemetryDashboard', () => {
           actualValue: 25,
           thresholdValue: 30,
           message: 'Warning 2',
-          acknowledged: false
-        }
+          acknowledged: false,
+        },
       ];
 
       const stats = getTelemetryStatistics(dashboard);
@@ -668,10 +922,10 @@ describe('telemetryDashboard', () => {
   describe('Utilities', () => {
     it('should toggle dev mode', () => {
       expect(dashboard.config.devModeEnabled).toBe(false);
-      
+
       toggleDevMode(dashboard);
       expect(dashboard.config.devModeEnabled).toBe(true);
-      
+
       toggleDevMode(dashboard);
       expect(dashboard.config.devModeEnabled).toBe(false);
     });
@@ -680,17 +934,19 @@ describe('telemetryDashboard', () => {
       dashboard.metrics = [collectMetrics()];
       const trace = startTrace(dashboard, 'test');
       endTrace(dashboard, trace.id);
-      dashboard.alerts = [{
-        id: '1',
-        thresholdId: 'test',
-        timestamp: Date.now(),
-        severity: 'warning',
-        metric: 'fps',
-        actualValue: 20,
-        thresholdValue: 30,
-        message: 'Test',
-        acknowledged: false
-      }];
+      dashboard.alerts = [
+        {
+          id: '1',
+          thresholdId: 'test',
+          timestamp: Date.now(),
+          severity: 'warning',
+          metric: 'fps',
+          actualValue: 20,
+          thresholdValue: 30,
+          message: 'Test',
+          acknowledged: false,
+        },
+      ];
 
       clearTelemetryData(dashboard);
 

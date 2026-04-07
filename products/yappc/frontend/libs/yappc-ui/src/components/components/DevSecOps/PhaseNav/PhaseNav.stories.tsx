@@ -9,20 +9,54 @@ import type { Meta, StoryObj } from '@storybook/react';
 // Small local noop used in stories when interactive callbacks are required
 const fn = () => () => {};
 
-
 import { PhaseNav } from './PhaseNav';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 
 import type { Phase } from './types';
 
 const allPhases: Phase[] = [
-  { id: '1', title: 'Ideation', key: 'ideation', description: 'Brainstorming and idea generation' },
-  { id: '2', title: 'Planning', key: 'planning', description: 'Requirements and architecture' },
-  { id: '3', title: 'Development', key: 'development', description: 'Code implementation' },
-  { id: '4', title: 'Security', key: 'security', description: 'Security reviews and testing' },
-  { id: '5', title: 'Testing', key: 'testing', description: 'QA and validation' },
-  { id: '6', title: 'Deployment', key: 'deployment', description: 'Release to production' },
-  { id: '7', title: 'Operations', key: 'operations', description: 'Monitoring and maintenance' },
+  {
+    id: '1',
+    title: 'Ideation',
+    key: 'ideation',
+    description: 'Brainstorming and idea generation',
+  },
+  {
+    id: '2',
+    title: 'Planning',
+    key: 'planning',
+    description: 'Requirements and architecture',
+  },
+  {
+    id: '3',
+    title: 'Development',
+    key: 'development',
+    description: 'Code implementation',
+  },
+  {
+    id: '4',
+    title: 'Security',
+    key: 'security',
+    description: 'Security reviews and testing',
+  },
+  {
+    id: '5',
+    title: 'Testing',
+    key: 'testing',
+    description: 'QA and validation',
+  },
+  {
+    id: '6',
+    title: 'Deployment',
+    key: 'deployment',
+    description: 'Release to production',
+  },
+  {
+    id: '7',
+    title: 'Operations',
+    key: 'operations',
+    description: 'Monitoring and maintenance',
+  },
 ];
 
 const meta: Meta<typeof PhaseNav> = {

@@ -1,10 +1,10 @@
 /**
  * Threat Modeling Module
- * 
+ *
  * STRIDE/LINDDUN threat modeling automation for security analysis.
- * 
+ *
  * @module threat-modeling
- * 
+ *
  * @example
  * ```typescript
  * import {
@@ -14,10 +14,10 @@
  *   analyzeThreatModel,
  *   exportThreatModel,
  * } from '@yappc/canvas/devsecops/threat-modeling';
- * 
+ *
  * // Create model
  * const model = createThreatModel({ enableSTRIDE: true });
- * 
+ *
  * // Add elements
  * const withElement = addElement(model, {
  *   id: 'web-server',
@@ -25,11 +25,11 @@
  *   name: 'Web Server',
  *   trustZone: 'dmz',
  * });
- * 
+ *
  * // Analyze
  * const analysis = analyzeThreatModel(withElement);
  * console.log(`Found ${analysis.newThreats.length} threats`);
- * 
+ *
  * // Export
  * const report = exportThreatModel(withElement, 'markdown');
  * ```
@@ -74,20 +74,12 @@ export {
 } from './state';
 
 // Analysis
-export {
-  analyzeThreatModel,
-} from './analyzer';
+export { analyzeThreatModel } from './analyzer';
 
 // Catalogs
-export {
-  getSTRIDEThreatCatalog,
-} from './catalogs/stride';
+export { getSTRIDEThreatCatalog } from './catalogs/stride';
 
-export {
-  getLINDDUNThreatCatalog,
-} from './catalogs/linddun';
+export { getLINDDUNThreatCatalog } from './catalogs/linddun';
 
 // Export
-export {
-  exportThreatModel,
-} from './export';
+export { exportThreatModel } from './export';

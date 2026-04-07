@@ -6,7 +6,23 @@
 
 import { Trash2 as DeleteIcon } from 'lucide-react';
 import { RefreshCw as RefreshIcon } from 'lucide-react';
-import { Box, Card, CardContent, Typography, Button, Spinner as CircularProgress, Alert, Stack, TextField, Chip, Grid, InteractiveList as List, ListItem, ListItemText, Divider } from '@ghatana/design-system';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Spinner as CircularProgress,
+  Alert,
+  Stack,
+  TextField,
+  Chip,
+  Grid,
+  InteractiveList as List,
+  ListItem,
+  ListItemText,
+  Divider,
+} from '@ghatana/design-system';
 import { resolveMuiColor } from '../utils/safePalette';
 import React, { useState } from 'react';
 
@@ -20,7 +36,10 @@ import { useDataSource } from './useDataSource';
  *
  */
 export function BasicRESTExample() {
-  const { data, isLoading, error, refetch } = useDataSource<{ userId: number; title: string }>({
+  const { data, isLoading, error, refetch } = useDataSource<{
+    userId: number;
+    title: string;
+  }>({
     type: 'rest',
     url: 'https://jsonplaceholder.typicode.com/todos/1',
   });
@@ -35,9 +54,17 @@ export function BasicRESTExample() {
         {error && <Alert severity="error">{error.message}</Alert>}
         {data && (
           <Box>
-            <Typography as="p" className="text-sm">User ID: {data.userId}</Typography>
-            <Typography as="p" className="text-sm">Title: {data.title}</Typography>
-            <Button startIcon={<RefreshIcon />} onClick={refetch} className="mt-4">
+            <Typography as="p" className="text-sm">
+              User ID: {data.userId}
+            </Typography>
+            <Typography as="p" className="text-sm">
+              Title: {data.title}
+            </Typography>
+            <Button
+              startIcon={<RefreshIcon />}
+              onClick={refetch}
+              className="mt-4"
+            >
               Refetch
             </Button>
           </Box>
@@ -103,9 +130,13 @@ export function RESTPostExample() {
             {isLoading ? 'Creating...' : 'Create Post'}
           </Button>
         </Stack>
-        {error && <Alert severity="error" className="mt-4">{error.message}</Alert>}
+        {error && (
+          <Alert severity="error" className="mt-4">
+            {error.message}
+          </Alert>
+        )}
         {data && (
-            <Alert severity="success" className="mt-4">
+          <Alert severity="success" className="mt-4">
             Post created with ID: {(data as unknown).id}
           </Alert>
         )}
@@ -234,14 +265,19 @@ export function CachedListExample() {
           Cached List with Pagination
         </Typography>
         {isLoading && <CircularProgress size={24} />}
-        {isValidating && <Chip label="Revalidating..." size="sm" tone="primary" />}
+        {isValidating && (
+          <Chip label="Revalidating..." size="sm" tone="primary" />
+        )}
         {data && (
           <>
             <List>
               {(data as unknown[]).map((post: unknown) => (
                 <React.Fragment key={post.id}>
                   <ListItem>
-                    <ListItemText primary={post.title} secondary={`Post #${post.id}`} />
+                    <ListItemText
+                      primary={post.title}
+                      secondary={`Post #${post.id}`}
+                    />
                   </ListItem>
                   <Divider />
                 </React.Fragment>
@@ -281,14 +317,26 @@ export function AutoRefreshExample() {
         <Typography as="h6" gutterBottom>
           Auto-Refresh Every 10 Seconds
         </Typography>
-        {isValidating && <Chip label="Refreshing..." size="sm" tone="primary" className="mb-4" />}
+        {isValidating && (
+          <Chip
+            label="Refreshing..."
+            size="sm"
+            tone="primary"
+            className="mb-4"
+          />
+        )}
         {isLoading && <CircularProgress size={24} />}
         {data && (
           <Box>
             <Typography as="p" className="text-sm">
               <strong>Title:</strong> {(data as unknown).title}
             </Typography>
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-2 block">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+              className="mt-2 block"
+            >
               Last updated: {new Date().toLocaleTimeString()}
             </Typography>
           </Box>
@@ -331,13 +379,23 @@ export function OptimisticUpdateExample() {
         {isLoading && <CircularProgress size={24} />}
         {data && (
           <Box>
-            <Typography as="p" className="text-sm">{(data as unknown).title}</Typography>
+            <Typography as="p" className="text-sm">
+              {(data as unknown).title}
+            </Typography>
             <Chip
               label={(data as unknown).completed ? 'Completed' : 'Pending'}
-              color={resolveMuiColor(useTheme(), (data as unknown).completed ? 'success' : 'default', 'default')}
+              color={resolveMuiColor(
+                useTheme(),
+                (data as unknown).completed ? 'success' : 'default',
+                'default'
+              )}
               className="mt-4"
             />
-            <Button variant="outlined" onClick={handleToggle} className="mt-4 ml-4">
+            <Button
+              variant="outlined"
+              onClick={handleToggle}
+              className="mt-4 ml-4"
+            >
               Toggle Status
             </Button>
           </Box>
@@ -355,7 +413,9 @@ export function OptimisticUpdateExample() {
  *
  */
 export function ErrorHandlingExample() {
-  const [url, setUrl] = useState('https://jsonplaceholder.typicode.com/posts/1');
+  const [url, setUrl] = useState(
+    'https://jsonplaceholder.typicode.com/posts/1'
+  );
   const [errorMessage, setErrorMessage] = useState('');
 
   const { data, isLoading, error, refetch } = useDataSource({
@@ -424,7 +484,9 @@ export function CacheManagementExample() {
         {isLoading && <CircularProgress size={24} />}
         {data && (
           <Box>
-            <Typography as="p" className="text-sm">Name: {(data as unknown).name}</Typography>
+            <Typography as="p" className="text-sm">
+              Name: {(data as unknown).name}
+            </Typography>
             <Stack direction="row" spacing={2} className="mt-4">
               <Button startIcon={<RefreshIcon />} onClick={refetch}>
                 Refetch
@@ -440,7 +502,12 @@ export function CacheManagementExample() {
                 Clear Cache & Refetch
               </Button>
             </Stack>
-            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-4 block">
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              color="text.secondary"
+              className="mt-4 block"
+            >
               Try navigating away and back - data should load from cache
             </Typography>
           </Box>
@@ -464,7 +531,8 @@ export function DataSourceExamplesDemo() {
         useDataSource Hook Examples
       </Typography>
       <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-        Comprehensive examples demonstrating REST, GraphQL, caching, mutations, and more.
+        Comprehensive examples demonstrating REST, GraphQL, caching, mutations,
+        and more.
       </Typography>
 
       <Grid container spacing={3}>

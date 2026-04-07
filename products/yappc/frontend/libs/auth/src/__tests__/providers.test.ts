@@ -87,7 +87,9 @@ describe('createMicrosoftProvider()', () => {
 describe('OAuthProviders.google()', () => {
   it('throws when REACT_APP_GOOGLE_CLIENT_ID is not set', () => {
     vi.stubEnv('REACT_APP_GOOGLE_CLIENT_ID', '');
-    expect(() => OAuthProviders.google()).toThrow('REACT_APP_GOOGLE_CLIENT_ID is not configured');
+    expect(() => OAuthProviders.google()).toThrow(
+      'REACT_APP_GOOGLE_CLIENT_ID is not configured'
+    );
   });
 
   it('returns a Google provider when env var is set', () => {
@@ -101,7 +103,9 @@ describe('OAuthProviders.google()', () => {
 describe('OAuthProviders.github()', () => {
   it('throws when REACT_APP_GITHUB_CLIENT_ID is not set', () => {
     vi.stubEnv('REACT_APP_GITHUB_CLIENT_ID', '');
-    expect(() => OAuthProviders.github()).toThrow('REACT_APP_GITHUB_CLIENT_ID is not configured');
+    expect(() => OAuthProviders.github()).toThrow(
+      'REACT_APP_GITHUB_CLIENT_ID is not configured'
+    );
   });
 
   it('returns a GitHub provider when env var is set', () => {
@@ -114,7 +118,9 @@ describe('OAuthProviders.github()', () => {
 describe('OAuthProviders.microsoft()', () => {
   it('throws when REACT_APP_MICROSOFT_CLIENT_ID is not set', () => {
     vi.stubEnv('REACT_APP_MICROSOFT_CLIENT_ID', '');
-    expect(() => OAuthProviders.microsoft()).toThrow('REACT_APP_MICROSOFT_CLIENT_ID is not configured');
+    expect(() => OAuthProviders.microsoft()).toThrow(
+      'REACT_APP_MICROSOFT_CLIENT_ID is not configured'
+    );
   });
 
   it('returns a Microsoft provider when env var is set', () => {

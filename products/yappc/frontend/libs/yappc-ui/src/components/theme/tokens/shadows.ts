@@ -1,6 +1,6 @@
 /**
  * Shadow tokens for the design system
- * 
+ *
  * These tokens define the shadow styles for the application,
  * with consistent elevation levels for components.
  */

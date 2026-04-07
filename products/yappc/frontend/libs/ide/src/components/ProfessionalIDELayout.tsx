@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Professional IDE Layout Component
- * 
+ *
  * Professional-grade IDE layout with customizable panels,
  * theme support, and responsive design.
- * 
+ *
  * @doc.type component
  * @doc.purpose Professional IDE layout shell
  * @doc.layer product
@@ -155,32 +155,40 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
   const [size, setSize] = useState(panel.defaultSize);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!panel.resizable) return;
-    e.preventDefault();
-    setIsResizing(true);
-  }, [panel.resizable]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!panel.resizable) return;
+      e.preventDefault();
+      setIsResizing(true);
+    },
+    [panel.resizable]
+  );
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing || !panelRef.current) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing || !panelRef.current) return;
 
-    const rect = panelRef.current.getBoundingClientRect();
-    let newSize: number;
+      const rect = panelRef.current.getBoundingClientRect();
+      let newSize: number;
 
-    if (panel.position === 'left' || panel.position === 'right') {
-      newSize = panel.position === 'left'
-        ? e.clientX - rect.left
-        : rect.right - e.clientX;
-    } else {
-      newSize = panel.position === 'top'
-        ? e.clientY - rect.top
-        : rect.bottom - e.clientY;
-    }
+      if (panel.position === 'left' || panel.position === 'right') {
+        newSize =
+          panel.position === 'left'
+            ? e.clientX - rect.left
+            : rect.right - e.clientX;
+      } else {
+        newSize =
+          panel.position === 'top'
+            ? e.clientY - rect.top
+            : rect.bottom - e.clientY;
+      }
 
-    newSize = Math.max(panel.minSize, Math.min(panel.maxSize, newSize));
-    setSize(newSize);
-    onResize(newSize);
-  }, [isResizing, panel, onResize]);
+      newSize = Math.max(panel.minSize, Math.min(panel.maxSize, newSize));
+      setSize(newSize);
+      onResize(newSize);
+    },
+    [isResizing, panel, onResize]
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
@@ -207,10 +215,34 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
   };
 
   const resizeHandleStyles: React.CSSProperties = {
-    ...(panel.position === 'left' && { right: 0, top: 0, bottom: 0, width: 4, cursor: 'ew-resize' }),
-    ...(panel.position === 'right' && { left: 0, top: 0, bottom: 0, width: 4, cursor: 'ew-resize' }),
-    ...(panel.position === 'top' && { bottom: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' }),
-    ...(panel.position === 'bottom' && { top: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' }),
+    ...(panel.position === 'left' && {
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      cursor: 'ew-resize',
+    }),
+    ...(panel.position === 'right' && {
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+      cursor: 'ew-resize',
+    }),
+    ...(panel.position === 'top' && {
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+      cursor: 'ns-resize',
+    }),
+    ...(panel.position === 'bottom' && {
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+      cursor: 'ns-resize',
+    }),
   };
 
   return (
@@ -228,20 +260,14 @@ const ResizablePanel: React.FC<ResizablePanelProps> = ({
           </span>
         </div>
         {panel.collapsible && (
-          <InteractiveButton
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-          >
+          <InteractiveButton variant="ghost" size="sm" onClick={onToggle}>
             ◀
           </InteractiveButton>
         )}
       </div>
 
       {/* Panel content */}
-      <div className="flex-1 overflow-hidden">
-        {children}
-      </div>
+      <div className="flex-1 overflow-hidden">{children}</div>
 
       {/* Resize handle */}
       {panel.resizable && (
@@ -291,7 +317,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
     ...customPanels,
   ]);
 
-  const { } = useIDEFileOperations();
+  const {} = useIDEFileOperations();
   const { registerShortcut } = useKeyboardShortcuts();
 
   // Apply theme
@@ -340,15 +366,17 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
   }, [enableKeyboardShortcuts, registerShortcut]);
 
   const togglePanel = useCallback((panelId: string) => {
-    setPanels(prev => prev.map(panel =>
-      panel.id === panelId ? { ...panel, visible: !panel.visible } : panel
-    ));
+    setPanels((prev) =>
+      prev.map((panel) =>
+        panel.id === panelId ? { ...panel, visible: !panel.visible } : panel
+      )
+    );
   }, []);
 
   const handlePanelResize = useCallback((panelId: string, size: number) => {
-    setPanels(prev => prev.map(panel =>
-      panel.id === panelId ? { ...panel, size } : panel
-    ));
+    setPanels((prev) =>
+      prev.map((panel) => (panel.id === panelId ? { ...panel, size } : panel))
+    );
   }, []);
 
   const handleThemeChange = useCallback((theme: IDETheme) => {
@@ -356,15 +384,17 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
   }, []);
 
   const handleConflictResolution = useCallback((conflictId: string) => {
-    setConflicts(prev => prev.filter(c => c.id !== conflictId));
+    setConflicts((prev) => prev.filter((c) => c.id !== conflictId));
     // Handle conflict resolution logic here
   }, []);
 
   // Get panels by position
-  const leftPanels = panels.filter(p => p.position === 'left' && p.visible);
-  const rightPanels = panels.filter(p => p.position === 'right' && p.visible);
-  const topPanels = panels.filter(p => p.position === 'top' && p.visible);
-  const bottomPanels = panels.filter(p => p.position === 'bottom' && p.visible);
+  const leftPanels = panels.filter((p) => p.position === 'left' && p.visible);
+  const rightPanels = panels.filter((p) => p.position === 'right' && p.visible);
+  const topPanels = panels.filter((p) => p.position === 'top' && p.visible);
+  const bottomPanels = panels.filter(
+    (p) => p.position === 'bottom' && p.visible
+  );
 
   return (
     <div
@@ -374,7 +404,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
       {/* Top panels */}
       {topPanels.length > 0 && (
         <div className="flex border-b border-gray-200 dark:border-gray-700">
-          {topPanels.map(panel => (
+          {topPanels.map((panel) => (
             <ResizablePanel
               key={panel.id}
               panel={panel}
@@ -392,7 +422,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
         {/* Left panels */}
         {leftPanels.length > 0 && (
           <div className="flex border-r border-gray-200 dark:border-gray-700">
-            {leftPanels.map(panel => (
+            {leftPanels.map((panel) => (
               <ResizablePanel
                 key={panel.id}
                 panel={panel}
@@ -432,7 +462,10 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
                 editorRef={{ current: null }}
                 fileId="current-file"
                 onConflictDetected={(conflict) => {
-                  setConflicts(prev => [...prev, conflict as unknown as FileConflict]);
+                  setConflicts((prev) => [
+                    ...prev,
+                    conflict as unknown as FileConflict,
+                  ]);
                 }}
               />
             )}
@@ -441,7 +474,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
           {/* Bottom panels */}
           {bottomPanels.length > 0 && (
             <div className="flex border-t border-gray-200 dark:border-gray-700">
-              {bottomPanels.map(panel => (
+              {bottomPanels.map((panel) => (
                 <ResizablePanel
                   key={panel.id}
                   panel={panel}
@@ -458,7 +491,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
         {/* Right panels */}
         {rightPanels.length > 0 && (
           <div className="flex border-l border-gray-200 dark:border-gray-700">
-            {rightPanels.map(panel => (
+            {rightPanels.map((panel) => (
               <ResizablePanel
                 key={panel.id}
                 panel={panel}
@@ -475,9 +508,7 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
       {/* Status bar */}
       <div className="border-t border-gray-200 dark:border-gray-700">
         <StatusBar />
-        {enableCollaboration && (
-          <CollaborationStatusBar />
-        )}
+        {enableCollaboration && <CollaborationStatusBar />}
       </div>
 
       {/* Theme selector */}
@@ -485,12 +516,12 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
         <select
           value={currentTheme.id}
           onChange={(e) => {
-            const theme = DEFAULT_THEMES.find(t => t.id === e.target.value);
+            const theme = DEFAULT_THEMES.find((t) => t.id === e.target.value);
             if (theme) handleThemeChange(theme);
           }}
           className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
         >
-          {DEFAULT_THEMES.map(theme => (
+          {DEFAULT_THEMES.map((theme) => (
             <option key={theme.id} value={theme.id}>
               {theme.name}
             </option>
@@ -505,10 +536,10 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
           onClose={() => setShowCommandPalette(false)}
           commands={[]}
           query=""
-          onQueryChange={() => { }}
+          onQueryChange={() => {}}
           selectedIndex={0}
-          onSelectedIndexChange={() => { }}
-          onKeyDown={() => { }}
+          onSelectedIndexChange={() => {}}
+          onKeyDown={() => {}}
         />
       )}
 
@@ -542,9 +573,9 @@ export const ProfessionalIDELayout: React.FC<ProfessionalIDELayoutProps> = ({
                 conflicts={conflicts}
                 onResolveConflict={handleConflictResolution}
                 onPostponeConflict={(id) => {
-                  setConflicts(prev => prev.filter(c => c.id !== id));
+                  setConflicts((prev) => prev.filter((c) => c.id !== id));
                 }}
-                onRequestUserInfo={() => { }}
+                onRequestUserInfo={() => {}}
               />
             </div>
           </div>

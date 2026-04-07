@@ -869,7 +869,12 @@ describe('UserEnablementManager', () => {
         searchTerms: [],
       });
 
-      const feedback = manager.submitHelpFeedback('user1', article.id, true, 'Very helpful!');
+      const feedback = manager.submitHelpFeedback(
+        'user1',
+        article.id,
+        true,
+        'Very helpful!'
+      );
 
       expect(feedback.id).toBeDefined();
       expect(feedback.helpful).toBe(true);
@@ -1240,7 +1245,9 @@ describe('UserEnablementManager', () => {
 
       // Manually set completion date to past retention period
       const userProgress = manager.getUserOnboardingProgress('user1');
-      userProgress[0]!.completedAt = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000); // 400 days ago
+      userProgress[0]!.completedAt = new Date(
+        Date.now() - 400 * 24 * 60 * 60 * 1000
+      ); // 400 days ago
 
       const result = manager.cleanupOldProgress();
       expect(result.onboardingRemoved).toBe(1);
@@ -1296,9 +1303,33 @@ describe('User Enablement Helper Functions', () => {
         targetAudience: 'all',
         estimatedDuration: 10,
         steps: [
-          { id: 'step1', order: 1, title: 'Step 1', content: '', type: 'text', duration: 60, required: true },
-          { id: 'step2', order: 2, title: 'Step 2', content: '', type: 'text', duration: 60, required: true },
-          { id: 'step3', order: 3, title: 'Step 3', content: '', type: 'text', duration: 60, required: true },
+          {
+            id: 'step1',
+            order: 1,
+            title: 'Step 1',
+            content: '',
+            type: 'text',
+            duration: 60,
+            required: true,
+          },
+          {
+            id: 'step2',
+            order: 2,
+            title: 'Step 2',
+            content: '',
+            type: 'text',
+            duration: 60,
+            required: true,
+          },
+          {
+            id: 'step3',
+            order: 3,
+            title: 'Step 3',
+            content: '',
+            type: 'text',
+            duration: 60,
+            required: true,
+          },
         ],
         prerequisites: [],
         createdAt: new Date(),
@@ -1364,9 +1395,36 @@ describe('User Enablement Helper Functions', () => {
         tags: [],
         duration: 30,
         lessons: [
-          { id: 'lesson1', order: 1, title: 'Lesson 1', content: '', codeExamples: [], exercises: [], resources: [], duration: 10 },
-          { id: 'lesson2', order: 2, title: 'Lesson 2', content: '', codeExamples: [], exercises: [], resources: [], duration: 10 },
-          { id: 'lesson3', order: 3, title: 'Lesson 3', content: '', codeExamples: [], exercises: [], resources: [], duration: 10 },
+          {
+            id: 'lesson1',
+            order: 1,
+            title: 'Lesson 1',
+            content: '',
+            codeExamples: [],
+            exercises: [],
+            resources: [],
+            duration: 10,
+          },
+          {
+            id: 'lesson2',
+            order: 2,
+            title: 'Lesson 2',
+            content: '',
+            codeExamples: [],
+            exercises: [],
+            resources: [],
+            duration: 10,
+          },
+          {
+            id: 'lesson3',
+            order: 3,
+            title: 'Lesson 3',
+            content: '',
+            codeExamples: [],
+            exercises: [],
+            resources: [],
+            duration: 10,
+          },
         ],
         prerequisites: [],
         createdAt: new Date(),
@@ -1438,9 +1496,33 @@ describe('User Enablement Helper Functions', () => {
         targetAudience: 'all',
         estimatedDuration: 10,
         steps: [
-          { id: 'step1', order: 1, title: 'Step 1', content: '', type: 'text', duration: 60, required: true },
-          { id: 'step2', order: 2, title: 'Step 2', content: '', type: 'text', duration: 120, required: true },
-          { id: 'step3', order: 3, title: 'Step 3', content: '', type: 'text', duration: 180, required: true },
+          {
+            id: 'step1',
+            order: 1,
+            title: 'Step 1',
+            content: '',
+            type: 'text',
+            duration: 60,
+            required: true,
+          },
+          {
+            id: 'step2',
+            order: 2,
+            title: 'Step 2',
+            content: '',
+            type: 'text',
+            duration: 120,
+            required: true,
+          },
+          {
+            id: 'step3',
+            order: 3,
+            title: 'Step 3',
+            content: '',
+            type: 'text',
+            duration: 180,
+            required: true,
+          },
         ],
         prerequisites: [],
         createdAt: new Date(),
@@ -1519,7 +1601,8 @@ describe('User Enablement Helper Functions', () => {
 
   describe('generateSearchTerms', () => {
     it('should generate search terms from title and content', () => {
-      const content = 'This is a guide on how to create amazing canvas applications using our platform';
+      const content =
+        'This is a guide on how to create amazing canvas applications using our platform';
       const title = 'Canvas Creation Guide';
 
       const terms = generateSearchTerms(content, title);

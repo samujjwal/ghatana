@@ -35,7 +35,12 @@ type Story = StoryObj<typeof FormField>;
 export const Default: Story = {
   args: {
     label: 'Email Address',
-    children: <input type="email" className="px-3 py-2 border border-grey-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />,
+    children: (
+      <input
+        type="email"
+        className="px-3 py-2 border border-grey-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    ),
   },
 };
 
@@ -46,15 +51,32 @@ export const Layouts: Story = {
   render: () => (
     <div className="space-y-6">
       <FormField label="Vertical Layout (default)">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
-      <FormField label="Horizontal Layout" layout="horizontal" labelWidth="150px">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="Horizontal Layout"
+        layout="horizontal"
+        labelWidth="150px"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
-      <FormField label="Horizontal Wide Label" layout="horizontal" labelWidth="200px">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="Horizontal Wide Label"
+        layout="horizontal"
+        labelWidth="200px"
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
     </div>
   ),
@@ -67,15 +89,24 @@ export const Sizes: Story = {
   render: () => (
     <div className="space-y-4">
       <FormField label="Small Size" size="small">
-        <input type="text" className="px-2 py-1 text-sm border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-2 py-1 text-sm border border-grey-300 rounded w-full"
+        />
       </FormField>
 
       <FormField label="Medium Size (default)" size="medium">
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
       <FormField label="Large Size" size="large">
-        <input type="text" className="px-4 py-3 text-lg border border-grey-300 rounded w-full" />
+        <input
+          type="text"
+          className="px-4 py-3 text-lg border border-grey-300 rounded w-full"
+        />
       </FormField>
     </div>
   ),
@@ -88,7 +119,12 @@ export const WithHelperText: Story = {
   args: {
     label: 'Username',
     helperText: 'Must be 3-20 characters, letters and numbers only',
-    children: <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />,
+    children: (
+      <input
+        type="text"
+        className="px-3 py-2 border border-grey-300 rounded w-full"
+      />
+    ),
   },
 };
 
@@ -99,7 +135,12 @@ export const WithError: Story = {
   args: {
     label: 'Email',
     error: 'Please enter a valid email address',
-    children: <input type="email" className="px-3 py-2 border-2 border-red-500 rounded w-full" />,
+    children: (
+      <input
+        type="email"
+        className="px-3 py-2 border-2 border-red-500 rounded w-full"
+      />
+    ),
   },
 };
 
@@ -111,7 +152,12 @@ export const Required: Story = {
     label: 'Full Name',
     required: true,
     helperText: 'This field is required',
-    children: <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />,
+    children: (
+      <input
+        type="text"
+        className="px-3 py-2 border border-grey-300 rounded w-full"
+      />
+    ),
   },
 };
 
@@ -122,7 +168,14 @@ export const Disabled: Story = {
   args: {
     label: 'Email',
     disabled: true,
-    children: <input type="email" value="user@example.com" readOnly className="px-3 py-2 border border-grey-300 rounded w-full bg-grey-100 cursor-not-allowed" />,
+    children: (
+      <input
+        type="email"
+        value="user@example.com"
+        readOnly
+        className="px-3 py-2 border border-grey-300 rounded w-full bg-grey-100 cursor-not-allowed"
+      />
+    ),
   },
 };
 
@@ -133,7 +186,13 @@ export const HiddenLabel: Story = {
   args: {
     label: 'Search',
     hideLabel: true,
-    children: <input type="search" placeholder="Search..." className="px-3 py-2 border border-grey-300 rounded w-full" />,
+    children: (
+      <input
+        type="search"
+        placeholder="Search..."
+        className="px-3 py-2 border border-grey-300 rounded w-full"
+      />
+    ),
   },
 };
 
@@ -144,7 +203,12 @@ export const WithTextarea: Story = {
   args: {
     label: 'Description',
     helperText: 'Provide a detailed description',
-    children: <textarea rows={4} className="px-3 py-2 border border-grey-300 rounded w-full resize-none" />,
+    children: (
+      <textarea
+        rows={4}
+        className="px-3 py-2 border border-grey-300 rounded w-full resize-none"
+      />
+    ),
   },
 };
 
@@ -244,31 +308,68 @@ export const FormValidation: Story = {
 export const HorizontalForm: Story = {
   render: () => (
     <form className="space-y-4 max-w-2xl">
-      <FormField label="First Name" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="First Name"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
-      <FormField label="Last Name" layout="horizontal" labelWidth="150px" required>
-        <input type="text" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="Last Name"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+      >
+        <input
+          type="text"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
-      <FormField label="Email" layout="horizontal" labelWidth="150px" required helperText="We'll never share your email">
-        <input type="email" className="px-3 py-2 border border-grey-300 rounded w-full" />
+      <FormField
+        label="Email"
+        layout="horizontal"
+        labelWidth="150px"
+        required
+        helperText="We'll never share your email"
+      >
+        <input
+          type="email"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
       <FormField label="Phone" layout="horizontal" labelWidth="150px">
-        <input type="tel" className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <input
+          type="tel"
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
       <FormField label="Message" layout="horizontal" labelWidth="150px">
-        <textarea rows={4} className="px-3 py-2 border border-grey-300 rounded w-full" />
+        <textarea
+          rows={4}
+          className="px-3 py-2 border border-grey-300 rounded w-full"
+        />
       </FormField>
 
       <div className="flex justify-end gap-2" style={{ marginLeft: '150px' }}>
-        <button type="button" className="px-4 py-2 border border-grey-300 rounded hover:bg-grey-50">
+        <button
+          type="button"
+          className="px-4 py-2 border border-grey-300 rounded hover:bg-grey-50"
+        >
           Cancel
         </button>
-        <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
           Submit
         </button>
       </div>
@@ -286,16 +387,29 @@ export const DarkMode: Story = {
   render: () => (
     <div className="dark">
       <div className="space-y-4 max-w-md">
-        <FormField label="Username" required helperText="Choose a unique username">
-          <input type="text" className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white" />
+        <FormField
+          label="Username"
+          required
+          helperText="Choose a unique username"
+        >
+          <input
+            type="text"
+            className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
 
         <FormField label="Email" error="This email is already registered">
-          <input type="email" className="px-3 py-2 border-2 border-red-500 rounded w-full bg-grey-800 text-white" />
+          <input
+            type="email"
+            className="px-3 py-2 border-2 border-red-500 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
 
         <FormField label="Bio">
-          <textarea rows={4} className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white" />
+          <textarea
+            rows={4}
+            className="px-3 py-2 border border-grey-600 rounded w-full bg-grey-800 text-white"
+          />
         </FormField>
       </div>
     </div>

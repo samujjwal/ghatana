@@ -57,22 +57,15 @@ export interface SkeletonProps {
  * ```
  */
 export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
-  (
-    {
-      variant = 'text',
-      width,
-      height,
-      className,
-      animation = true,
-    },
-    ref
-  ) => {
+  ({ variant = 'text', width, height, className, animation = true }, ref) => {
     // Default heights based on variant
-    const defaultHeight = variant === 'text' ? '1em' : variant === 'circular' ? '40px' : '100px';
-    
+    const defaultHeight =
+      variant === 'text' ? '1em' : variant === 'circular' ? '40px' : '100px';
+
     // Convert number to px string
     const widthValue = typeof width === 'number' ? `${width}px` : width;
-    const heightValue = typeof height === 'number' ? `${height}px` : height ?? defaultHeight;
+    const heightValue =
+      typeof height === 'number' ? `${height}px` : (height ?? defaultHeight);
 
     // Variant-specific classes
     const variantClasses = {

@@ -227,7 +227,10 @@ export class TestUtilitiesManager {
     if (waitForReactFlow) {
       await page.waitForFunction(
         () => {
-          return (window as unknown as { ReactFlow?: unknown }).ReactFlow !== undefined;
+          return (
+            (window as unknown as { ReactFlow?: unknown }).ReactFlow !==
+            undefined
+          );
         },
         { timeout }
       );
@@ -411,70 +414,73 @@ export class TestUtilitiesManager {
     this.mockState = { ...globalMockState };
 
     // Mock useReactFlow
-    (globalThis as unknown as { useReactFlow?: () => unknown }).useReactFlow = () => ({
-      getNodes: () => [...this.mockState.nodes],
-      getEdges: () => [...this.mockState.edges],
-      setNodes: (nodes: MockNode[]) => {
-        this.mockState.nodes = [...nodes];
-      },
-      setEdges: (edges: MockEdge[]) => {
-        this.mockState.edges = [...edges];
-      },
-      getNode: (id: string) => this.mockState.nodes.find((n) => n.id === id),
-      getEdge: (id: string) => this.mockState.edges.find((e) => e.id === id),
-      addNodes: (nodes: MockNode[]) => {
-        this.mockState.nodes.push(...nodes);
-      },
-      addEdges: (edges: MockEdge[]) => {
-        this.mockState.edges.push(...edges);
-      },
-      deleteElements: ({
-        nodes,
-        edges,
-      }: {
-        nodes?: { id: string }[];
-        edges?: { id: string }[];
-      }) => {
-        if (nodes) {
-          const nodeIds = new Set(nodes.map((n) => n.id));
-          this.mockState.nodes = this.mockState.nodes.filter(
-            (n) => !nodeIds.has(n.id)
-          );
-        }
-        if (edges) {
-          const edgeIds = new Set(edges.map((e) => e.id));
-          this.mockState.edges = this.mockState.edges.filter(
-            (e) => !edgeIds.has(e.id)
-          );
-        }
-      },
-      fitView: () => {},
-      zoomIn: () => {
-        this.mockState.viewport.zoom *= 1.2;
-      },
-      zoomOut: () => {
-        this.mockState.viewport.zoom /= 1.2;
-      },
-      setViewport: (viewport: { x: number; y: number; zoom: number }) => {
-        this.mockState.viewport = { ...viewport };
-      },
-      getViewport: () => ({ ...this.mockState.viewport }),
-      project: (position: { x: number; y: number }) => position,
-      screenToFlowPosition: (position: { x: number; y: number }) => position,
-    });
+    (globalThis as unknown as { useReactFlow?: () => unknown }).useReactFlow =
+      () => ({
+        getNodes: () => [...this.mockState.nodes],
+        getEdges: () => [...this.mockState.edges],
+        setNodes: (nodes: MockNode[]) => {
+          this.mockState.nodes = [...nodes];
+        },
+        setEdges: (edges: MockEdge[]) => {
+          this.mockState.edges = [...edges];
+        },
+        getNode: (id: string) => this.mockState.nodes.find((n) => n.id === id),
+        getEdge: (id: string) => this.mockState.edges.find((e) => e.id === id),
+        addNodes: (nodes: MockNode[]) => {
+          this.mockState.nodes.push(...nodes);
+        },
+        addEdges: (edges: MockEdge[]) => {
+          this.mockState.edges.push(...edges);
+        },
+        deleteElements: ({
+          nodes,
+          edges,
+        }: {
+          nodes?: { id: string }[];
+          edges?: { id: string }[];
+        }) => {
+          if (nodes) {
+            const nodeIds = new Set(nodes.map((n) => n.id));
+            this.mockState.nodes = this.mockState.nodes.filter(
+              (n) => !nodeIds.has(n.id)
+            );
+          }
+          if (edges) {
+            const edgeIds = new Set(edges.map((e) => e.id));
+            this.mockState.edges = this.mockState.edges.filter(
+              (e) => !edgeIds.has(e.id)
+            );
+          }
+        },
+        fitView: () => {},
+        zoomIn: () => {
+          this.mockState.viewport.zoom *= 1.2;
+        },
+        zoomOut: () => {
+          this.mockState.viewport.zoom /= 1.2;
+        },
+        setViewport: (viewport: { x: number; y: number; zoom: number }) => {
+          this.mockState.viewport = { ...viewport };
+        },
+        getViewport: () => ({ ...this.mockState.viewport }),
+        project: (position: { x: number; y: number }) => position,
+        screenToFlowPosition: (position: { x: number; y: number }) => position,
+      });
 
     // Mock useNodes
-    (globalThis as unknown as { useNodes?: () => MockNode[] }).useNodes = () => [
-      ...this.mockState.nodes,
-    ];
+    (globalThis as unknown as { useNodes?: () => MockNode[] }).useNodes =
+      () => [...this.mockState.nodes];
 
     // Mock useEdges
-    (globalThis as unknown as { useEdges?: () => MockEdge[] }).useEdges = () => [
-      ...this.mockState.edges,
-    ];
+    (globalThis as unknown as { useEdges?: () => MockEdge[] }).useEdges =
+      () => [...this.mockState.edges];
 
     // Mock useViewport
-    (globalThis as unknown as { useViewport?: () => { x: number; y: number; zoom: number } }).useViewport = () => ({
+    (
+      globalThis as unknown as {
+        useViewport?: () => { x: number; y: number; zoom: number };
+      }
+    ).useViewport = () => ({
       ...this.mockState.viewport,
     });
   }
@@ -582,10 +588,14 @@ export class TestUtilitiesManager {
       throw new Error('Could not get element bounds');
     }
 
-    const sourceX = sourceBounds.x + (options?.sourcePosition?.x ?? sourceBounds.width / 2);
-    const sourceY = sourceBounds.y + (options?.sourcePosition?.y ?? sourceBounds.height / 2);
-    const targetX = targetBounds.x + (options?.targetPosition?.x ?? targetBounds.width / 2);
-    const targetY = targetBounds.y + (options?.targetPosition?.y ?? targetBounds.height / 2);
+    const sourceX =
+      sourceBounds.x + (options?.sourcePosition?.x ?? sourceBounds.width / 2);
+    const sourceY =
+      sourceBounds.y + (options?.sourcePosition?.y ?? sourceBounds.height / 2);
+    const targetX =
+      targetBounds.x + (options?.targetPosition?.x ?? targetBounds.width / 2);
+    const targetY =
+      targetBounds.y + (options?.targetPosition?.y ?? targetBounds.height / 2);
 
     await page.mouse.move(sourceX, sourceY);
     await page.mouse.down();
@@ -649,9 +659,10 @@ export function createMockEdge(partial?: Partial<MockEdge>): MockEdge {
 /**
  * Create canvas fixture (standalone)
  */
-export function createCanvasFixture(
-  config?: CanvasFixtureConfig
-): { nodes: MockNode[]; edges: MockEdge[] } {
+export function createCanvasFixture(config?: CanvasFixtureConfig): {
+  nodes: MockNode[];
+  edges: MockEdge[];
+} {
   const manager = new TestUtilitiesManager();
   return manager.createCanvasFixture(config);
 }

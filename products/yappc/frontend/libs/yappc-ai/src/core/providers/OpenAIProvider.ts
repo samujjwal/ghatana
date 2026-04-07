@@ -224,7 +224,11 @@ export class OpenAIProvider extends AIService {
   private mapUsage(
     usage:
       | OpenAI.Completions.CompletionUsage
-      | { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+      | {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+          total_tokens?: number;
+        }
       | undefined
   ): TokenUsage {
     return {
@@ -239,8 +243,15 @@ export class OpenAIProvider extends AIService {
    */
   private handleError(error: unknown): AIServiceError {
     if (error && typeof error === 'object' && 'status' in error) {
-      const apiError = error as { status?: number; message?: string; code?: string };
-      const cause = error instanceof Error ? error : new Error(apiError.message || 'OpenAI API error');
+      const apiError = error as {
+        status?: number;
+        message?: string;
+        code?: string;
+      };
+      const cause =
+        error instanceof Error
+          ? error
+          : new Error(apiError.message || 'OpenAI API error');
       return new AIServiceError(
         apiError.message || 'OpenAI API error',
         apiError.code || 'OPENAI_ERROR',

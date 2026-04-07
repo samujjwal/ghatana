@@ -1,4 +1,17 @@
-import { Shield as SecurityIcon, AlertTriangle as WarningIcon, AlertCircle as ErrorIcon, Info as InfoIcon, CheckCircle as CheckCircleIcon, ChevronDown as ExpandMoreIcon, RefreshCw as RefreshIcon, Eye as VisibilityIcon, Code as CodeIcon, Image as ImageIcon, FileText as DescriptionIcon, Link as LinkIcon } from 'lucide-react';
+import {
+  Shield as SecurityIcon,
+  AlertTriangle as WarningIcon,
+  AlertCircle as ErrorIcon,
+  Info as InfoIcon,
+  CheckCircle as CheckCircleIcon,
+  ChevronDown as ExpandMoreIcon,
+  RefreshCw as RefreshIcon,
+  Eye as VisibilityIcon,
+  Code as CodeIcon,
+  Image as ImageIcon,
+  FileText as DescriptionIcon,
+  Link as LinkIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useMemo } from 'react';
 
 import {
@@ -35,7 +48,6 @@ import type { SecurityViolation } from '../schemas/export-schemas';
 
 import { useSecurityAudit } from './hooks';
 
-
 // Security audit panel component
 /**
  *
@@ -53,7 +65,8 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
   autoRefresh = false,
   refreshInterval = 30000,
 }) => {
-  const [selectedViolation, setSelectedViolation] = useState<SecurityViolation | null>(null);
+  const [selectedViolation, setSelectedViolation] =
+    useState<SecurityViolation | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const {
@@ -74,11 +87,11 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
       medium: [],
       low: [],
     };
-    
-    violations.forEach(violation => {
+
+    violations.forEach((violation) => {
       grouped[violation.type].push(violation);
     });
-    
+
     return grouped;
   }, [violations]);
 
@@ -86,38 +99,58 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
     await auditCanvas(canvas);
   }, [auditCanvas, canvas]);
 
-  const handleViolationClick = useCallback((violation: SecurityViolation) => {
-    setSelectedViolation(violation);
-    setShowDetails(true);
-    onViolationClick?.(violation);
-  }, [onViolationClick]);
+  const handleViolationClick = useCallback(
+    (violation: SecurityViolation) => {
+      setSelectedViolation(violation);
+      setShowDetails(true);
+      onViolationClick?.(violation);
+    },
+    [onViolationClick]
+  );
 
-  const handleFixViolation = useCallback(async (violation: SecurityViolation) => {
-    try {
-      await fixViolation(violation.id);
-      // Refresh audit after fix
-      await auditCanvas(canvas);
-    } catch (err) {
-      console.error('Failed to fix violation:', err);
-    }
-  }, [fixViolation, auditCanvas, canvas]);
+  const handleFixViolation = useCallback(
+    async (violation: SecurityViolation) => {
+      try {
+        await fixViolation(violation.id);
+        // Refresh audit after fix
+        await auditCanvas(canvas);
+      } catch (err) {
+        console.error('Failed to fix violation:', err);
+      }
+    },
+    [fixViolation, auditCanvas, canvas]
+  );
 
   const theme = useTheme();
 
   const getSeverityIcon = (type: string) => {
     switch (type) {
       case 'high':
-        return <ErrorIcon color={resolveMuiColor(theme, 'error', 'default') as unknown} />;
+        return (
+          <ErrorIcon
+            color={resolveMuiColor(theme, 'error', 'default') as unknown}
+          />
+        );
       case 'medium':
-        return <WarningIcon color={resolveMuiColor(theme, 'warning', 'default') as unknown} />;
+        return (
+          <WarningIcon
+            color={resolveMuiColor(theme, 'warning', 'default') as unknown}
+          />
+        );
       case 'low':
-        return <InfoIcon color={resolveMuiColor(theme, 'info', 'default') as unknown} />;
+        return (
+          <InfoIcon
+            color={resolveMuiColor(theme, 'info', 'default') as unknown}
+          />
+        );
       default:
         return <SecurityIcon />;
     }
   };
 
-  const getSeverityColor = (type: string): 'error' | 'warning' | 'info' | 'success' => {
+  const getSeverityColor = (
+    type: string
+  ): 'error' | 'warning' | 'info' | 'success' => {
     switch (type) {
       case 'high':
         return 'error';
@@ -137,22 +170,31 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
           <Box className="flex items-center gap-2">
             <SecurityIcon />
             <Typography variant="h6">Security Audit</Typography>
-            <Badge badgeContent={violations.length} color={resolveMuiColor(theme, 'error', 'default') as unknown}>
+            <Badge
+              badgeContent={violations.length}
+              color={resolveMuiColor(theme, 'error', 'default') as unknown}
+            >
               <Chip
                 label={riskLevel.toUpperCase()}
-                color={resolveMuiColor(theme, String(getSeverityColor(riskLevel)), 'default') as unknown}
+                color={
+                  resolveMuiColor(
+                    theme,
+                    String(getSeverityColor(riskLevel)),
+                    'default'
+                  ) as unknown
+                }
                 size="small"
               />
             </Badge>
           </Box>
-          
+
           <Tooltip title="Refresh Audit">
             <IconButton onClick={handleRefresh} disabled={isAuditing}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
         </Box>
-        
+
         {isAuditing && (
           <Box className="mb-4">
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -161,16 +203,22 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
             <LinearProgress />
           </Box>
         )}
-        
+
         {lastAuditTime && (
-          <Typography variant="caption" color="text.secondary" className="mb-4 block">
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            className="mb-4 block"
+          >
             Last audit: {new Date(lastAuditTime).toLocaleString()}
           </Typography>
         )}
-        
+
         {violations.length === 0 ? (
           <Box className="flex items-center gap-2 py-4">
-            <CheckCircleIcon color={resolveMuiColor(theme, 'success', 'default') as unknown} />
+            <CheckCircleIcon
+              color={resolveMuiColor(theme, 'success', 'default') as unknown}
+            />
             <Typography color="success.main">
               No security violations detected
             </Typography>
@@ -182,7 +230,11 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
               <Accordion defaultExpanded>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Box className="flex items-center gap-2">
-                    <ErrorIcon color={resolveMuiColor(theme, 'error', 'default') as unknown} />
+                    <ErrorIcon
+                      color={
+                        resolveMuiColor(theme, 'error', 'default') as unknown
+                      }
+                    />
                     <Typography variant="subtitle1">
                       High Risk ({violationsByType.high.length})
                     </Typography>
@@ -197,7 +249,9 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                         onClick={() => handleViolationClick(violation)}
                       >
                         <ListItemIcon>
-                          {violation.category === 'content' && <DescriptionIcon />}
+                          {violation.category === 'content' && (
+                            <DescriptionIcon />
+                          )}
                           {violation.category === 'script' && <CodeIcon />}
                           {violation.category === 'style' && <ImageIcon />}
                           {violation.category === 'url' && <LinkIcon />}
@@ -210,7 +264,13 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                           <Button
                             size="small"
                             variant="outlined"
-                            color={resolveMuiColor(theme, 'error', 'default') as unknown}
+                            color={
+                              resolveMuiColor(
+                                theme,
+                                'error',
+                                'default'
+                              ) as unknown
+                            }
                             onClick={(e) => {
                               e.stopPropagation();
                               handleFixViolation(violation);
@@ -225,13 +285,17 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                 </AccordionDetails>
               </Accordion>
             )}
-            
+
             {/* Medium Severity Violations */}
             {violationsByType.medium.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Box className="flex items-center gap-2">
-                    <WarningIcon color={resolveMuiColor(theme, 'warning', 'default') as unknown} />
+                    <WarningIcon
+                      color={
+                        resolveMuiColor(theme, 'warning', 'default') as unknown
+                      }
+                    />
                     <Typography variant="subtitle1">
                       Medium Risk ({violationsByType.medium.length})
                     </Typography>
@@ -246,7 +310,9 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                         onClick={() => handleViolationClick(violation)}
                       >
                         <ListItemIcon>
-                          {violation.category === 'content' && <DescriptionIcon />}
+                          {violation.category === 'content' && (
+                            <DescriptionIcon />
+                          )}
                           {violation.category === 'script' && <CodeIcon />}
                           {violation.category === 'style' && <ImageIcon />}
                           {violation.category === 'url' && <LinkIcon />}
@@ -259,7 +325,13 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                           <Button
                             size="small"
                             variant="outlined"
-                            color={resolveMuiColor(theme, 'warning', 'default') as unknown}
+                            color={
+                              resolveMuiColor(
+                                theme,
+                                'warning',
+                                'default'
+                              ) as unknown
+                            }
                             onClick={(e) => {
                               e.stopPropagation();
                               handleFixViolation(violation);
@@ -274,13 +346,17 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                 </AccordionDetails>
               </Accordion>
             )}
-            
+
             {/* Low Severity Violations */}
             {violationsByType.low.length > 0 && (
               <Accordion>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Box className="flex items-center gap-2">
-                    <InfoIcon color={resolveMuiColor(theme, 'info', 'default') as unknown} />
+                    <InfoIcon
+                      color={
+                        resolveMuiColor(theme, 'info', 'default') as unknown
+                      }
+                    />
                     <Typography variant="subtitle1">
                       Low Risk ({violationsByType.low.length})
                     </Typography>
@@ -295,7 +371,9 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
                         onClick={() => handleViolationClick(violation)}
                       >
                         <ListItemIcon>
-                          {violation.category === 'content' && <DescriptionIcon />}
+                          {violation.category === 'content' && (
+                            <DescriptionIcon />
+                          )}
                           {violation.category === 'script' && <CodeIcon />}
                           {violation.category === 'style' && <ImageIcon />}
                           {violation.category === 'url' && <LinkIcon />}
@@ -325,7 +403,7 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
           </Box>
         )}
       </CardContent>
-      
+
       {/* Violation Details Dialog */}
       <Dialog
         open={showDetails && selectedViolation !== null}
@@ -337,12 +415,15 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
         <DialogContent>
           {selectedViolation && (
             <Box>
-              <Alert severity={getSeverityColor(selectedViolation.type)} className="mb-4">
+              <Alert
+                severity={getSeverityColor(selectedViolation.type)}
+                className="mb-4"
+              >
                 <Typography variant="h6">
                   {selectedViolation.message}
                 </Typography>
               </Alert>
-              
+
               <Typography variant="subtitle1" gutterBottom>
                 Details
               </Typography>
@@ -358,15 +439,13 @@ export const SecurityAuditPanel: React.FC<SecurityAuditPanelProps> = ({
               <Typography variant="body2" paragraph>
                 <strong>Context:</strong> {selectedViolation.context || 'N/A'}
               </Typography>
-              
+
               {selectedViolation.suggestion && (
                 <Box className="mt-4">
                   <Typography variant="subtitle1" gutterBottom>
                     Suggested Fix
                   </Typography>
-                  <Alert severity="info">
-                    {selectedViolation.suggestion}
-                  </Alert>
+                  <Alert severity="info">{selectedViolation.suggestion}</Alert>
                 </Box>
               )}
             </Box>
@@ -423,16 +502,21 @@ export const ExportProgress: React.FC<ExportProgressProps> = ({
             </Button>
           )}
         </Box>
-        
-        <LinearProgress variant="determinate" value={progress} className="mb-2" />
-        
+
+        <LinearProgress
+          variant="determinate"
+          value={progress}
+          className="mb-2"
+        />
+
         <Box className="flex justify-between items-center">
           <Typography variant="body2" color="text.secondary">
             {currentStep || 'Processing...'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {Math.round(progress)}%
-            {totalSteps && ` (Step ${Math.ceil(progress / (100 / totalSteps))} of ${totalSteps})`}
+            {totalSteps &&
+              ` (Step ${Math.ceil(progress / (100 / totalSteps))} of ${totalSteps})`}
           </Typography>
         </Box>
       </CardContent>
@@ -446,7 +530,9 @@ export const ExportProgress: React.FC<ExportProgressProps> = ({
  */
 export interface BatchExportProps {
   canvases: CanvasData[];
-  onExportComplete?: (results: Array<{ canvas: CanvasData; result: unknown; error?: string }>) => void;
+  onExportComplete?: (
+    results: Array<{ canvas: CanvasData; result: unknown; error?: string }>
+  ) => void;
 }
 
 export const BatchExport: React.FC<BatchExportProps> = ({
@@ -455,14 +541,16 @@ export const BatchExport: React.FC<BatchExportProps> = ({
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<Array<{ canvas: CanvasData; result: unknown; error?: string }>>([]);
+  const [results, setResults] = useState<
+    Array<{ canvas: CanvasData; result: unknown; error?: string }>
+  >([]);
 
   const { batchExport } = useSecurityAudit({});
 
   const handleBatchExport = useCallback(async () => {
     setIsExporting(true);
     setResults([]);
-    
+
     try {
       const batchResults = await batchExport(
         canvases,
@@ -480,7 +568,7 @@ export const BatchExport: React.FC<BatchExportProps> = ({
           setProgress((completed / total) * 100);
         }
       );
-      
+
       setResults(batchResults);
       onExportComplete?.(batchResults);
     } catch (err) {
@@ -496,7 +584,7 @@ export const BatchExport: React.FC<BatchExportProps> = ({
         <Typography variant="h6" gutterBottom>
           Batch Export ({canvases.length} canvases)
         </Typography>
-        
+
         {!isExporting && results.length === 0 && (
           <Button
             variant="contained"
@@ -506,7 +594,7 @@ export const BatchExport: React.FC<BatchExportProps> = ({
             Start Batch Export
           </Button>
         )}
-        
+
         {isExporting && (
           <ExportProgress
             isExporting={isExporting}
@@ -515,7 +603,7 @@ export const BatchExport: React.FC<BatchExportProps> = ({
             totalSteps={canvases.length}
           />
         )}
-        
+
         {results.length > 0 && (
           <Box className="mt-4">
             <Typography variant="subtitle1" gutterBottom>
@@ -532,7 +620,9 @@ export const BatchExport: React.FC<BatchExportProps> = ({
                     )}
                   </ListItemIcon>
                   <ListItemText
-                    primary={result.canvas.metadata.name || `Canvas ${index + 1}`}
+                    primary={
+                      result.canvas.metadata.name || `Canvas ${index + 1}`
+                    }
                     secondary={result.error || 'Export completed successfully'}
                   />
                 </ListItem>

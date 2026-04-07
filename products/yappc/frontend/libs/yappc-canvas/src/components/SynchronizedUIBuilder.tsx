@@ -1,10 +1,10 @@
 /**
  * Synchronized UI Builder Component
- * 
+ *
  * Complete UI builder with bidirectional synchronization between
  * visual editor and Monaco code editor, including conflict resolution
  * and real-time collaboration support.
- * 
+ *
  * @doc.type component
  * @doc.purpose Synchronized visual and code editing
  * @doc.layer product
@@ -50,9 +50,12 @@ export const SynchronizedUIBuilder: React.FC<SynchronizedUIBuilderProps> = ({
   onCodeChange,
   onSyncStatusChange,
 }) => {
-  const [components, setComponents] = useState<UIComponent[]>(initialComponents);
+  const [components, setComponents] =
+    useState<UIComponent[]>(initialComponents);
   const [code, setCode] = useState('');
-  const [syncStatus, setSyncStatus] = useState<'syncing' | 'synced' | 'conflict'>('synced');
+  const [syncStatus, setSyncStatus] = useState<
+    'syncing' | 'synced' | 'conflict'
+  >('synced');
 
   // Setup bidirectional sync
   const sync = useUIBuilderSync({
@@ -115,7 +118,7 @@ export const SynchronizedUIBuilder: React.FC<SynchronizedUIBuilderProps> = ({
   const handleResolveConflict = useCallback(
     (conflictId: string, preferredSource: 'visual' | 'code') => {
       sync.resolveConflict(conflictId, preferredSource);
-      
+
       if (preferredSource === 'visual') {
         // Apply visual changes to code
         sync.syncComponentTree(components);
@@ -135,7 +138,9 @@ export const SynchronizedUIBuilder: React.FC<SynchronizedUIBuilderProps> = ({
       return null;
     }
 
-    const lastConflict = sync.syncHistory.find((event) => event.type === 'conflict');
+    const lastConflict = sync.syncHistory.find(
+      (event) => event.type === 'conflict'
+    );
     if (!lastConflict) return null;
 
     return (
@@ -145,18 +150,22 @@ export const SynchronizedUIBuilder: React.FC<SynchronizedUIBuilderProps> = ({
             Sync Conflict Detected
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Changes were made in both the visual editor and code editor simultaneously.
-            Which version would you like to keep?
+            Changes were made in both the visual editor and code editor
+            simultaneously. Which version would you like to keep?
           </p>
           <div className="flex gap-3">
             <button
-              onClick={() => handleResolveConflict(lastConflict.conflictId || '', 'visual')}
+              onClick={() =>
+                handleResolveConflict(lastConflict.conflictId || '', 'visual')
+              }
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
               Keep Visual
             </button>
             <button
-              onClick={() => handleResolveConflict(lastConflict.conflictId || '', 'code')}
+              onClick={() =>
+                handleResolveConflict(lastConflict.conflictId || '', 'code')
+              }
               className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
             >
               Keep Code
@@ -177,20 +186,23 @@ export const SynchronizedUIBuilder: React.FC<SynchronizedUIBuilderProps> = ({
               syncStatus === 'synced'
                 ? 'bg-green-500'
                 : syncStatus === 'syncing'
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
+                  ? 'bg-yellow-500'
+                  : 'bg-red-500'
             }`}
           />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {syncStatus === 'synced'
               ? 'Synced'
               : syncStatus === 'syncing'
-              ? 'Syncing...'
-              : 'Conflict'}
+                ? 'Syncing...'
+                : 'Conflict'}
           </span>
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          Last sync: {sync.lastSyncTime ? new Date(sync.lastSyncTime).toLocaleTimeString() : 'Never'}
+          Last sync:{' '}
+          {sync.lastSyncTime
+            ? new Date(sync.lastSyncTime).toLocaleTimeString()
+            : 'Never'}
         </div>
       </div>
 

@@ -14,7 +14,11 @@
 /**
  * Sensitivity levels for data classification
  */
-export type SensitivityLevel = 'public' | 'internal' | 'confidential' | 'restricted';
+export type SensitivityLevel =
+  | 'public'
+  | 'internal'
+  | 'confidential'
+  | 'restricted';
 
 /**
  * Redaction strategies for sensitive fields
@@ -257,7 +261,12 @@ export interface ExportPolicyStore {
 /**
  * Sensitivity level hierarchy (lower index = less sensitive)
  */
-const SENSITIVITY_HIERARCHY: SensitivityLevel[] = ['public', 'internal', 'confidential', 'restricted'];
+const SENSITIVITY_HIERARCHY: SensitivityLevel[] = [
+  'public',
+  'internal',
+  'confidential',
+  'restricted',
+];
 
 /**
  * Default redaction placeholder by strategy
@@ -289,7 +298,10 @@ export function createExportPolicyStore(): ExportPolicyStore {
 /**
  * Registers a new export policy
  */
-export function registerPolicy(store: ExportPolicyStore, policy: ExportPolicy): ExportPolicyStore {
+export function registerPolicy(
+  store: ExportPolicyStore,
+  policy: ExportPolicy
+): ExportPolicyStore {
   if (store.policies.has(policy.id)) {
     throw new Error(`Policy with ID '${policy.id}' already exists`);
   }
@@ -328,7 +340,10 @@ export function setActivePolicy(
 /**
  * Gets the active policy for a sensitivity level
  */
-export function getActivePolicy(store: ExportPolicyStore, sensitivity: SensitivityLevel): ExportPolicy | undefined {
+export function getActivePolicy(
+  store: ExportPolicyStore,
+  sensitivity: SensitivityLevel
+): ExportPolicy | undefined {
   const policyId = store.activePolicies.get(sensitivity);
   return policyId ? store.policies.get(policyId) : undefined;
 }
@@ -336,7 +351,10 @@ export function getActivePolicy(store: ExportPolicyStore, sensitivity: Sensitivi
 /**
  * Checks if a field should be redacted based on sensitivity
  */
-function shouldRedactField(rule: RedactionRule, sensitivity: SensitivityLevel): boolean {
+function shouldRedactField(
+  rule: RedactionRule,
+  sensitivity: SensitivityLevel
+): boolean {
   const ruleLevel = SENSITIVITY_HIERARCHY.indexOf(rule.minSensitivity);
   const currentLevel = SENSITIVITY_HIERARCHY.indexOf(sensitivity);
   return currentLevel >= ruleLevel;
@@ -374,7 +392,9 @@ function setFieldValue(obj: unknown, path: string, value: unknown): unknown {
     if (current[part] === null || current[part] === undefined) {
       current[part] = {};
     } else if (typeof current[part] === 'object') {
-      current[part] = Array.isArray(current[part]) ? [...current[part]] : { ...current[part] };
+      current[part] = Array.isArray(current[part])
+        ? [...current[part]]
+        : { ...current[part] };
     }
     current = current[part] as Record<string, unknown>;
   }
@@ -400,7 +420,9 @@ function deleteFieldValue(obj: unknown, path: string): unknown {
       return copy; // Path doesn't exist, nothing to delete
     }
     if (typeof current[part] === 'object') {
-      current[part] = Array.isArray(current[part]) ? [...current[part]] : { ...current[part] };
+      current[part] = Array.isArray(current[part])
+        ? [...current[part]]
+        : { ...current[part] };
     }
     current = current[part] as Record<string, unknown>;
     parents.push(current);
@@ -413,7 +435,11 @@ function deleteFieldValue(obj: unknown, path: string): unknown {
 /**
  * Applies a single redaction rule to data
  */
-function applyRedactionRule(data: unknown, rule: RedactionRule, sensitivity: SensitivityLevel): {
+function applyRedactionRule(
+  data: unknown,
+  rule: RedactionRule,
+  sensitivity: SensitivityLevel
+): {
   data: unknown;
   redacted?: RedactedField;
 } {
@@ -426,7 +452,9 @@ function applyRedactionRule(data: unknown, rule: RedactionRule, sensitivity: Sen
     return { data }; // Field doesn't exist, nothing to redact
   }
 
-  const originalType = Array.isArray(originalValue) ? 'array' : typeof originalValue;
+  const originalType = Array.isArray(originalValue)
+    ? 'array'
+    : typeof originalValue;
 
   let redactedValue: unknown;
   let redactedData: unknown;
@@ -463,7 +491,11 @@ function applyRedactionRule(data: unknown, rule: RedactionRule, sensitivity: Sen
 /**
  * Applies redaction policy to data
  */
-export function applyRedaction(data: unknown, policy: ExportPolicy, context: ExportContext): RedactionResult {
+export function applyRedaction(
+  data: unknown,
+  policy: ExportPolicy,
+  context: ExportContext
+): RedactionResult {
   let processedData = data;
   const redactedFields: RedactedField[] = [];
 
@@ -485,7 +517,10 @@ export function applyRedaction(data: unknown, policy: ExportPolicy, context: Exp
 /**
  * Interpolates variables in a watermark template
  */
-function interpolateWatermark(template: string, context: ExportContext): string {
+function interpolateWatermark(
+  template: string,
+  context: ExportContext
+): string {
   return template
     .replace(/{id}/g, context.exportId || 'N/A')
     .replace(/{timestamp}/g, new Date(context.timestamp).toISOString())
@@ -495,7 +530,11 @@ function interpolateWatermark(template: string, context: ExportContext): string 
 /**
  * Applies watermark to exported data
  */
-export function applyWatermark(data: unknown, config: WatermarkConfig, context: ExportContext): WatermarkResult {
+export function applyWatermark(
+  data: unknown,
+  config: WatermarkConfig,
+  context: ExportContext
+): WatermarkResult {
   const watermarkText = interpolateWatermark(config.template, context);
 
   // For structured data, add watermark as metadata
@@ -541,7 +580,11 @@ function hashData(data: unknown): string {
 /**
  * Signs data for tamper detection
  */
-export function signData(data: unknown, config: SigningConfig, context: ExportContext): SignatureResult {
+export function signData(
+  data: unknown,
+  config: SigningConfig,
+  context: ExportContext
+): SignatureResult {
   const dataHash = hashData(data);
 
   // Simplified signature (in production, use crypto.sign with proper keys)
@@ -561,7 +604,10 @@ export function signData(data: unknown, config: SigningConfig, context: ExportCo
 /**
  * Verifies a signature
  */
-export function verifySignature(bundle: SecureExportBundle, config: SigningConfig): boolean {
+export function verifySignature(
+  bundle: SecureExportBundle,
+  config: SigningConfig
+): boolean {
   if (!bundle.signature) {
     return false;
   }
@@ -606,12 +652,19 @@ export function secureExport(
 ): { store: ExportPolicyStore; bundle: SecureExportBundle } {
   const policy = getActivePolicy(store, context.sensitivity);
   if (!policy) {
-    throw new Error(`No active policy found for sensitivity level '${context.sensitivity}'`);
+    throw new Error(
+      `No active policy found for sensitivity level '${context.sensitivity}'`
+    );
   }
 
   // Check if policy applies to this format
-  if (policy.applicableFormats && !policy.applicableFormats.includes(context.format)) {
-    throw new Error(`Policy '${policy.id}' does not support format '${context.format}'`);
+  if (
+    policy.applicableFormats &&
+    !policy.applicableFormats.includes(context.format)
+  ) {
+    throw new Error(
+      `Policy '${policy.id}' does not support format '${context.format}'`
+    );
   }
 
   const auditTrail: AuditEntry[] = [];
@@ -729,9 +782,11 @@ export function secureExport(
       },
       bySensitivity: {
         ...store.statistics.bySensitivity,
-        [context.sensitivity]: store.statistics.bySensitivity[context.sensitivity] + 1,
+        [context.sensitivity]:
+          store.statistics.bySensitivity[context.sensitivity] + 1,
       },
-      redactionCount: store.statistics.redactionCount + redactionResult.redactedFields.length,
+      redactionCount:
+        store.statistics.redactionCount + redactionResult.redactedFields.length,
     },
   };
 
@@ -741,28 +796,43 @@ export function secureExport(
 /**
  * Gets export statistics
  */
-export function getExportStatistics(store: ExportPolicyStore): ExportPolicyStore['statistics'] {
+export function getExportStatistics(
+  store: ExportPolicyStore
+): ExportPolicyStore['statistics'] {
   return store.statistics;
 }
 
 /**
  * Gets audit trail entries for a specific export
  */
-export function getExportAuditTrail(store: ExportPolicyStore, exportId: string): AuditEntry[] {
-  return store.auditLog.filter((entry) => (entry.details.exportId as string) === exportId);
+export function getExportAuditTrail(
+  store: ExportPolicyStore,
+  exportId: string
+): AuditEntry[] {
+  return store.auditLog.filter(
+    (entry) => (entry.details.exportId as string) === exportId
+  );
 }
 
 /**
  * Gets all policies for a sensitivity level
  */
-export function getPoliciesForSensitivity(store: ExportPolicyStore, sensitivity: SensitivityLevel): ExportPolicy[] {
-  return Array.from(store.policies.values()).filter((policy) => policy.sensitivity === sensitivity);
+export function getPoliciesForSensitivity(
+  store: ExportPolicyStore,
+  sensitivity: SensitivityLevel
+): ExportPolicy[] {
+  return Array.from(store.policies.values()).filter(
+    (policy) => policy.sensitivity === sensitivity
+  );
 }
 
 /**
  * Removes a policy (if not currently active)
  */
-export function removePolicy(store: ExportPolicyStore, policyId: string): ExportPolicyStore {
+export function removePolicy(
+  store: ExportPolicyStore,
+  policyId: string
+): ExportPolicyStore {
   const policy = store.policies.get(policyId);
   if (!policy) {
     throw new Error(`Policy '${policyId}' not found`);
@@ -771,7 +841,9 @@ export function removePolicy(store: ExportPolicyStore, policyId: string): Export
   // Check if policy is currently active
   const isActive = Array.from(store.activePolicies.values()).includes(policyId);
   if (isActive) {
-    throw new Error(`Cannot remove active policy '${policyId}'. Deactivate it first.`);
+    throw new Error(
+      `Cannot remove active policy '${policyId}'. Deactivate it first.`
+    );
   }
 
   const updatedPolicies = new Map(store.policies);
@@ -786,7 +858,11 @@ export function removePolicy(store: ExportPolicyStore, policyId: string): Export
 /**
  * Updates an existing policy
  */
-export function updatePolicy(store: ExportPolicyStore, policyId: string, updates: Partial<ExportPolicy>): ExportPolicyStore {
+export function updatePolicy(
+  store: ExportPolicyStore,
+  policyId: string,
+  updates: Partial<ExportPolicy>
+): ExportPolicyStore {
   const existingPolicy = store.policies.get(policyId);
   if (!existingPolicy) {
     throw new Error(`Policy '${policyId}' not found`);
@@ -812,7 +888,10 @@ export function updatePolicy(store: ExportPolicyStore, policyId: string, updates
 /**
  * Clears audit log entries older than specified days
  */
-export function pruneAuditLog(store: ExportPolicyStore, daysToKeep: number): ExportPolicyStore {
+export function pruneAuditLog(
+  store: ExportPolicyStore,
+  daysToKeep: number
+): ExportPolicyStore {
   const cutoffTime = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
 
   return {

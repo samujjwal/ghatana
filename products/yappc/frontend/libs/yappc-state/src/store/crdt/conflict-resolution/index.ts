@@ -100,7 +100,10 @@ export class ConflictResolutionEngine {
    * @param operationB - Second operation
    * @returns Detected conflicts
    */
-  public detectConflicts(operationA: CRDTOperation, operationB: CRDTOperation): Conflict[] {
+  public detectConflicts(
+    operationA: CRDTOperation,
+    operationB: CRDTOperation
+  ): Conflict[] {
     const conflicts: Conflict[] = [];
 
     // Check if operations target the same resource
@@ -114,7 +117,9 @@ export class ConflictResolutionEngine {
       operationA.type === 'update' &&
       operationB.type === 'update'
     ) {
-      conflicts.push(this.createConflict('concurrent-update', operationA, operationB));
+      conflicts.push(
+        this.createConflict('concurrent-update', operationA, operationB)
+      );
     }
 
     // Concurrent delete conflict
@@ -123,7 +128,9 @@ export class ConflictResolutionEngine {
       operationA.type === 'delete' &&
       operationB.type === 'delete'
     ) {
-      conflicts.push(this.createConflict('concurrent-delete', operationA, operationB));
+      conflicts.push(
+        this.createConflict('concurrent-delete', operationA, operationB)
+      );
     }
 
     // Update-delete conflict
@@ -131,7 +138,9 @@ export class ConflictResolutionEngine {
       (operationA.type === 'update' && operationB.type === 'delete') ||
       (operationA.type === 'delete' && operationB.type === 'update')
     ) {
-      conflicts.push(this.createConflict('concurrent-update', operationA, operationB));
+      conflicts.push(
+        this.createConflict('concurrent-update', operationA, operationB)
+      );
     }
 
     // Move conflict
@@ -140,7 +149,9 @@ export class ConflictResolutionEngine {
       operationA.type === 'move' &&
       operationB.type === 'move'
     ) {
-      conflicts.push(this.createConflict('move-conflict', operationA, operationB));
+      conflicts.push(
+        this.createConflict('move-conflict', operationA, operationB)
+      );
     }
 
     return conflicts;
@@ -223,7 +234,9 @@ export class ConflictResolutionEngine {
    * @param conflict - Conflict
    * @returns Resolution suggestions
    */
-  private generateResolutionSuggestions(conflict: Conflict): ResolutionSuggestion[] {
+  private generateResolutionSuggestions(
+    conflict: Conflict
+  ): ResolutionSuggestion[] {
     const suggestions: ResolutionSuggestion[] = [];
 
     // Last-write-wins suggestion
@@ -326,14 +339,20 @@ export class ConflictResolutionEngine {
           break;
 
         case 'merge':
-          resolvedValue = this.mergeValues(conflict.operationA.data, conflict.operationB.data);
+          resolvedValue = this.mergeValues(
+            conflict.operationA.data,
+            conflict.operationB.data
+          );
           break;
 
         case 'custom':
           if (!customResolver) {
             throw new Error('Custom resolver required for custom strategy');
           }
-          resolvedValue = customResolver(conflict.operationA.data, conflict.operationB.data);
+          resolvedValue = customResolver(
+            conflict.operationA.data,
+            conflict.operationB.data
+          );
           break;
 
         default:
@@ -345,7 +364,10 @@ export class ConflictResolutionEngine {
 
       // Update statistics
       this.statistics.totalResolved++;
-      this.statistics.totalPending = Math.max(0, this.statistics.totalPending - 1);
+      this.statistics.totalPending = Math.max(
+        0,
+        this.statistics.totalPending - 1
+      );
 
       return {
         id: `resolution-${Date.now()}`,
@@ -436,13 +458,20 @@ export class ConflictResolutionEngine {
       mergedValue = input.local; // Only local changed
     } else if (input.remote !== input.base && input.local === input.base) {
       mergedValue = input.remote; // Only remote changed
-    } else if (input.local !== input.base && input.remote !== input.base && input.local === input.remote) {
+    } else if (
+      input.local !== input.base &&
+      input.remote !== input.base &&
+      input.local === input.remote
+    ) {
       mergedValue = input.local; // Same change on both sides
     } else if (conflicts.length === 0) {
       mergedValue = input.remote; // Default to remote
     } else {
       // Resolve conflict using strategy
-      mergedValue = this.resolveConflict(conflicts[0], input.strategy).resolvedValue;
+      mergedValue = this.resolveConflict(
+        conflicts[0],
+        input.strategy
+      ).resolvedValue;
     }
 
     return {
@@ -493,7 +522,10 @@ export class ConflictResolutionEngine {
     const conflictsBySeverity = new Map<ConflictSeverity, number>();
 
     for (const conflict of this.conflicts.values()) {
-      conflictsByType.set(conflict.type, (conflictsByType.get(conflict.type) || 0) + 1);
+      conflictsByType.set(
+        conflict.type,
+        (conflictsByType.get(conflict.type) || 0) + 1
+      );
       conflictsBySeverity.set(
         conflict.severity,
         (conflictsBySeverity.get(conflict.severity) || 0) + 1

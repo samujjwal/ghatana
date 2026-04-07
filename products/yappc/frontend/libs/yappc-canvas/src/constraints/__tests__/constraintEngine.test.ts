@@ -122,7 +122,9 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
 
     it('should get constraints for element', () => {
       const engine = createConstraintEngine();
-      const c1 = createContainerConstraint('c1', 'child', 'parent', { priority: 100 });
+      const c1 = createContainerConstraint('c1', 'child', 'parent', {
+        priority: 100,
+      });
       const c2 = createSizeConstraint('c2', 'child', { priority: 50 });
       const c3 = createContainerConstraint('c3', 'other', 'parent');
 
@@ -257,7 +259,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, child);
 
       const constraint = createContainerConstraint('c1', 'child', 'container');
-      const violation = validateContainerConstraint(constraint, child, engine.elements);
+      const violation = validateContainerConstraint(
+        constraint,
+        child,
+        engine.elements
+      );
 
       expect(violation).toBeNull();
     });
@@ -271,7 +277,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, child);
 
       const constraint = createContainerConstraint('c1', 'child', 'container');
-      const violation = validateContainerConstraint(constraint, child, engine.elements);
+      const violation = validateContainerConstraint(
+        constraint,
+        child,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.severity).toBe(ViolationSeverity.ERROR);
@@ -289,7 +299,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       const constraint = createContainerConstraint('c1', 'child', 'container', {
         padding: 5,
       });
-      const violation = validateContainerConstraint(constraint, child, engine.elements);
+      const violation = validateContainerConstraint(
+        constraint,
+        child,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull(); // Should violate due to padding
     });
@@ -305,12 +319,16 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       const constraint = createContainerConstraint('c1', 'child', 'container', {
         allowPartialOverlap: true,
       });
-      const violation = validateContainerConstraint(constraint, child, engine.elements);
+      const violation = validateContainerConstraint(
+        constraint,
+        child,
+        engine.elements
+      );
 
       // Should pass or be warning since there's overlap
-      expect(violation === null || violation.severity === ViolationSeverity.WARNING).toBe(
-        true
-      );
+      expect(
+        violation === null || violation.severity === ViolationSeverity.WARNING
+      ).toBe(true);
     });
 
     it('should report error if container not found', () => {
@@ -319,8 +337,16 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
 
       setElement(engine, child);
 
-      const constraint = createContainerConstraint('c1', 'child', 'missing-container');
-      const violation = validateContainerConstraint(constraint, child, engine.elements);
+      const constraint = createContainerConstraint(
+        'c1',
+        'child',
+        'missing-container'
+      );
+      const violation = validateContainerConstraint(
+        constraint,
+        child,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.severity).toBe(ViolationSeverity.ERROR);
@@ -341,7 +367,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
         x: 20,
         y: 20,
       });
-      const violation = validateStickyConstraint(constraint, sticky, engine.elements);
+      const violation = validateStickyConstraint(
+        constraint,
+        sticky,
+        engine.elements
+      );
 
       expect(violation).toBeNull();
     });
@@ -358,7 +388,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
         x: 20,
         y: 20,
       });
-      const violation = validateStickyConstraint(constraint, sticky, engine.elements);
+      const violation = validateStickyConstraint(
+        constraint,
+        sticky,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.severity).toBe(ViolationSeverity.WARNING);
@@ -373,9 +407,15 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, anchor);
       setElement(engine, sticky);
 
-      const constraint = createStickyConstraint('c1', 'sticky', 'anchor', { x: 20, y: 20 }, {
-        maintainRelativePosition: true,
-      });
+      const constraint = createStickyConstraint(
+        'c1',
+        'sticky',
+        'anchor',
+        { x: 20, y: 20 },
+        {
+          maintainRelativePosition: true,
+        }
+      );
       addConstraint(engine, constraint);
 
       updateStickyForAnchorMove(engine, 'anchor', 50, 50);
@@ -392,9 +432,15 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, anchor);
       setElement(engine, sticky);
 
-      const constraint = createStickyConstraint('c1', 'sticky', 'anchor', { x: 20, y: 20 }, {
-        maintainRelativePosition: false,
-      });
+      const constraint = createStickyConstraint(
+        'c1',
+        'sticky',
+        'anchor',
+        { x: 20, y: 20 },
+        {
+          maintainRelativePosition: false,
+        }
+      );
       addConstraint(engine, constraint);
 
       updateStickyForAnchorMove(engine, 'anchor', 50, 50);
@@ -409,11 +455,20 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
 
       setElement(engine, sticky);
 
-      const constraint = createStickyConstraint('c1', 'sticky', 'missing-anchor', {
-        x: 20,
-        y: 20,
-      });
-      const violation = validateStickyConstraint(constraint, sticky, engine.elements);
+      const constraint = createStickyConstraint(
+        'c1',
+        'sticky',
+        'missing-anchor',
+        {
+          x: 20,
+          y: 20,
+        }
+      );
+      const violation = validateStickyConstraint(
+        constraint,
+        sticky,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.severity).toBe(ViolationSeverity.ERROR);
@@ -496,7 +551,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, element);
 
       const constraint = createPositionConstraint('c1', 'e1', { gridSize: 10 });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).toBeNull();
     });
@@ -508,7 +567,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, element);
 
       const constraint = createPositionConstraint('c1', 'e1', { gridSize: 10 });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.suggestedFix?.x).toBe(110);
@@ -524,7 +587,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       const constraint = createPositionConstraint('c1', 'e1', {
         bounds: { x: 0, y: 0, width: 200, height: 200 },
       });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).toBeNull();
     });
@@ -538,7 +605,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       const constraint = createPositionConstraint('c1', 'e1', {
         bounds: { x: 0, y: 0, width: 200, height: 200 },
       });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.suggestedFix?.x).toBe(150); // 200 - 50
@@ -553,8 +624,14 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, target);
       setElement(engine, element);
 
-      const constraint = createPositionConstraint('c1', 'e1', { alignTo: 'target' });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const constraint = createPositionConstraint('c1', 'e1', {
+        alignTo: 'target',
+      });
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).toBeNull();
     });
@@ -567,8 +644,14 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, target);
       setElement(engine, element);
 
-      const constraint = createPositionConstraint('c1', 'e1', { alignTo: 'target' });
-      const violation = validatePositionConstraint(constraint, element, engine.elements);
+      const constraint = createPositionConstraint('c1', 'e1', {
+        alignTo: 'target',
+      });
+      const violation = validatePositionConstraint(
+        constraint,
+        element,
+        engine.elements
+      );
 
       expect(violation).not.toBeNull();
       expect(violation?.suggestedFix?.x).toBe(100);
@@ -584,11 +667,11 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, container);
       setElement(engine, element);
 
+      addConstraint(engine, createContainerConstraint('c1', 'e1', 'container'));
       addConstraint(
         engine,
-        createContainerConstraint('c1', 'e1', 'container')
+        createSizeConstraint('c2', 'e1', { minWidth: 100 })
       );
-      addConstraint(engine, createSizeConstraint('c2', 'e1', { minWidth: 100 }));
 
       const violations = validateElement(engine, 'e1');
 
@@ -682,7 +765,10 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, element);
 
       addConstraint(engine, createContainerConstraint('c1', 'e1', 'container'));
-      addConstraint(engine, createSizeConstraint('c2', 'e1', { minWidth: 100 }));
+      addConstraint(
+        engine,
+        createSizeConstraint('c2', 'e1', { minWidth: 100 })
+      );
 
       validateAll(engine);
 
@@ -753,7 +839,10 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       setElement(engine, element);
 
       addConstraint(engine, createContainerConstraint('c1', 'e1', 'container'));
-      addConstraint(engine, createSizeConstraint('c2', 'e1', { minWidth: 100 }));
+      addConstraint(
+        engine,
+        createSizeConstraint('c2', 'e1', { minWidth: 100 })
+      );
       addConstraint(
         engine,
         createPositionConstraint('c3', 'e1', { gridSize: 10 })
@@ -781,7 +870,10 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
       c1.enabled = false;
 
       addConstraint(engine, c1);
-      addConstraint(engine, createSizeConstraint('c2', 'e1', { minWidth: 100 }));
+      addConstraint(
+        engine,
+        createSizeConstraint('c2', 'e1', { minWidth: 100 })
+      );
 
       const stats = getConstraintStatistics(engine);
 
@@ -809,7 +901,9 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
 
       const stats = getConstraintStatistics(engine);
 
-      expect(stats.violationsBySeverity[ViolationSeverity.ERROR]).toBeGreaterThan(0);
+      expect(
+        stats.violationsBySeverity[ViolationSeverity.ERROR]
+      ).toBeGreaterThan(0);
     });
   });
 
@@ -890,7 +984,10 @@ describe('Feature 2.8: Grouping & Constraints - constraintEngine', () => {
 
       setElement(engine, element);
 
-      addConstraint(engine, createSizeConstraint('c1', 'e1', { priority: 100 }));
+      addConstraint(
+        engine,
+        createSizeConstraint('c1', 'e1', { priority: 100 })
+      );
       addConstraint(
         engine,
         createPositionConstraint('c2', 'e1', { priority: 100 })

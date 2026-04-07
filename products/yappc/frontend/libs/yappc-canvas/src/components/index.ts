@@ -43,10 +43,7 @@ export type {
 } from '../types/canvas-document';
 
 // Minimap & Viewport Controls (Feature 2.9)
-export {
-  MinimapPanel,
-  type MinimapPanelProps,
-} from './MinimapPanel';
+export { MinimapPanel, type MinimapPanelProps } from './MinimapPanel';
 
 // Breadcrumb Navigation (Feature 5: Drill-down)
 export {
@@ -90,10 +87,7 @@ export {
 } from './PropertyPanels';
 
 // Journey Template Dialogs
-export {
-  TemplateDialog,
-  type TemplateDialogProps,
-} from './TemplateDialog';
+export { TemplateDialog, type TemplateDialogProps } from './TemplateDialog';
 
 export {
   SaveTemplateDialog,
@@ -106,16 +100,9 @@ export {
 } from './ExportCodeDialog';
 
 // Node Grouping Components (Journey 1.1: PM Handoff Workflow)
-export {
-  NodeGroup,
-  type NodeGroupData,
-  type GroupStatus,
-} from './NodeGroup';
+export { NodeGroup, type NodeGroupData, type GroupStatus } from './NodeGroup';
 
-export {
-  GroupingToolbar,
-  type GroupingToolbarProps,
-} from './GroupingToolbar';
+export { GroupingToolbar, type GroupingToolbarProps } from './GroupingToolbar';
 
 // Test Generation Components (Journey 4.1: QA - Test Generation)
 export {
@@ -154,32 +141,19 @@ export {
 } from './PersonaSwitcher';
 
 // Zero-Trust Architecture Canvas (Journey 15.1: Security Architect - Zero-Trust Design)
-export {
-  ZeroTrustArchitectureCanvas,
-} from './ZeroTrustArchitectureCanvas';
+export { ZeroTrustArchitectureCanvas } from './ZeroTrustArchitectureCanvas';
 
 // Cloud Infrastructure Canvas (Journey 16.1: Technical Architect - Cloud Infrastructure)
-export {
-  CloudInfrastructureCanvas,
-} from './CloudInfrastructureCanvas';
+export { CloudInfrastructureCanvas } from './CloudInfrastructureCanvas';
 
 // Compliance Canvas (Journey 26.1: Compliance Officer - Compliance Canvas)
-export {
-  ComplianceCanvas,
-} from './ComplianceCanvas';
+export { ComplianceCanvas } from './ComplianceCanvas';
 
 // CISO Dashboard (Journey 27.1: CISO - Executive Security Dashboard)
-export {
-  CISODashboard,
-} from './CISODashboard';
+export { CISODashboard } from './CISODashboard';
 
 // Release Train (Journey 29.1: Release Train - Multi-Team Orchestration)
-export {
-  ReleaseTrain,
-} from './ReleaseTrain';
+export { ReleaseTrain } from './ReleaseTrain';
 
 // Performance Analysis (Journey 31.1: Performance Analysis - Profiling & Optimization)
-export {
-  PerformanceAnalysis,
-} from './PerformanceAnalysis';
-
+export { PerformanceAnalysis } from './PerformanceAnalysis';

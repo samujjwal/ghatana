@@ -1,25 +1,25 @@
 /**
  * Compliance Mapping System
- * 
+ *
  * Provides compliance control tagging and tracking for canvas nodes:
  * - Attach compliance controls to nodes with status tracking
  * - Generate coverage reports (satisfied/unsatisfied controls)
  * - Create audit bundles with diagrams and logs
  * - Map controls to frameworks (SOC2, ISO27001, GDPR, HIPAA)
- * 
+ *
  * Features:
  * - Control lifecycle management (planned → implemented → tested → validated)
  * - Evidence attachment and tracking
  * - Gap analysis and remediation tracking
  * - Export to multiple formats (JSON, CSV, Markdown)
- * 
+ *
  * @module devsecops/complianceMapping
  */
 
 /**
  * Compliance frameworks
  */
-export type ComplianceFramework = 
+export type ComplianceFramework =
   | 'SOC2'
   | 'ISO27001'
   | 'GDPR'
@@ -31,7 +31,7 @@ export type ComplianceFramework =
 /**
  * Control status
  */
-export type ControlStatus = 
+export type ControlStatus =
   | 'planned'
   | 'implemented'
   | 'tested'
@@ -83,7 +83,13 @@ export interface Evidence {
   /** Evidence ID */
   id: string;
   /** Evidence type */
-  type: 'document' | 'screenshot' | 'log' | 'test_result' | 'audit_report' | 'other';
+  type:
+    | 'document'
+    | 'screenshot'
+    | 'log'
+    | 'test_result'
+    | 'audit_report'
+    | 'other';
   /** Title */
   title: string;
   /** Description */
@@ -179,7 +185,7 @@ export interface ComplianceStoreConfig {
 
 /**
  * ComplianceStore
- * 
+ *
  * Manages compliance controls and mappings
  */
 export class ComplianceStore {
@@ -202,7 +208,9 @@ export class ComplianceStore {
   /**
    * Add compliance control
    */
-  addControl(control: Omit<ComplianceControl, 'evidence' | 'nodeIds'>): ComplianceControl {
+  addControl(
+    control: Omit<ComplianceControl, 'evidence' | 'nodeIds'>
+  ): ComplianceControl {
     const fullControl: ComplianceControl = {
       ...control,
       evidence: [],
@@ -216,9 +224,12 @@ export class ComplianceStore {
   /**
    * Update control
    */
-  updateControl(controlId: string, updates: Partial<ComplianceControl>): boolean {
+  updateControl(
+    controlId: string,
+    updates: Partial<ComplianceControl>
+  ): boolean {
     const control = this.controls.get(controlId);
-    
+
     if (!control) {
       return false;
     }
@@ -239,7 +250,7 @@ export class ComplianceStore {
    */
   deleteControl(controlId: string): boolean {
     const control = this.controls.get(controlId);
-    
+
     if (!control) {
       return false;
     }
@@ -265,23 +276,23 @@ export class ComplianceStore {
     let controls = Array.from(this.controls.values());
 
     if (filter?.framework) {
-      controls = controls.filter(c => c.framework === filter.framework);
+      controls = controls.filter((c) => c.framework === filter.framework);
     }
 
     if (filter?.status) {
-      controls = controls.filter(c => c.status === filter.status);
+      controls = controls.filter((c) => c.status === filter.status);
     }
 
     if (filter?.severity) {
-      controls = controls.filter(c => c.severity === filter.severity);
+      controls = controls.filter((c) => c.severity === filter.severity);
     }
 
     if (filter?.owner) {
-      controls = controls.filter(c => c.owner === filter.owner);
+      controls = controls.filter((c) => c.owner === filter.owner);
     }
 
     if (filter?.nodeId) {
-      controls = controls.filter(c => c.nodeIds.includes(filter.nodeId!));
+      controls = controls.filter((c) => c.nodeIds.includes(filter.nodeId!));
     }
 
     return controls;
@@ -292,7 +303,7 @@ export class ComplianceStore {
    */
   attachControlToNode(controlId: string, nodeId: string): boolean {
     const control = this.controls.get(controlId);
-    
+
     if (!control) {
       return false;
     }
@@ -314,12 +325,12 @@ export class ComplianceStore {
    */
   detachControlFromNode(controlId: string, nodeId: string): boolean {
     const control = this.controls.get(controlId);
-    
+
     if (!control) {
       return false;
     }
 
-    control.nodeIds = control.nodeIds.filter(id => id !== nodeId);
+    control.nodeIds = control.nodeIds.filter((id) => id !== nodeId);
     this.nodeMappings.get(nodeId)?.delete(controlId);
     return true;
   }
@@ -329,13 +340,13 @@ export class ComplianceStore {
    */
   getNodeControls(nodeId: string): ComplianceControl[] {
     const controlIds = this.nodeMappings.get(nodeId);
-    
+
     if (!controlIds) {
       return [];
     }
 
     return Array.from(controlIds)
-      .map(id => this.controls.get(id))
+      .map((id) => this.controls.get(id))
       .filter((c): c is ComplianceControl => c !== undefined);
   }
 
@@ -347,7 +358,7 @@ export class ComplianceStore {
     evidence: Omit<Evidence, 'id' | 'timestamp'>
   ): Evidence | null {
     const control = this.controls.get(controlId);
-    
+
     if (!control) {
       return null;
     }
@@ -372,7 +383,7 @@ export class ComplianceStore {
     let controls = Array.from(this.controls.values());
 
     if (options?.framework) {
-      controls = controls.filter(c => c.framework === options.framework);
+      controls = controls.filter((c) => c.framework === options.framework);
     }
 
     const byStatus: Record<ControlStatus, number> = {
@@ -399,7 +410,10 @@ export class ComplianceStore {
       byStatus[control.status]++;
       bySeverity[control.severity]++;
 
-      if (control.status === 'validated' || control.status === 'not_applicable') {
+      if (
+        control.status === 'validated' ||
+        control.status === 'not_applicable'
+      ) {
         satisfiedControls.push(control);
       } else if (control.status === 'planned') {
         gaps.push(control);
@@ -409,13 +423,15 @@ export class ComplianceStore {
       }
     }
 
-    const overallCoverage = controls.length > 0
-      ? (satisfiedControls.length / controls.length) * 100
-      : 0;
+    const overallCoverage =
+      controls.length > 0
+        ? (satisfiedControls.length / controls.length) * 100
+        : 0;
 
-    const nodeCoverage = options?.includeNodeCoverage !== false
-      ? this.calculateNodeCoverage()
-      : [];
+    const nodeCoverage =
+      options?.includeNodeCoverage !== false
+        ? this.calculateNodeCoverage()
+        : [];
 
     return {
       timestamp: Date.now(),
@@ -442,7 +458,9 @@ export class ComplianceStore {
     documents?: Evidence[];
   }): AuditBundle {
     const controls = this.listControls({ framework: options?.framework });
-    const coverageReport = this.generateCoverageReport({ framework: options?.framework });
+    const coverageReport = this.generateCoverageReport({
+      framework: options?.framework,
+    });
 
     return {
       id: `bundle-${++this.bundleCounter}`,
@@ -520,8 +538,10 @@ export class ComplianceStore {
     const nodesWithControls = this.nodeMappings.size;
     const totalControls = controls.length;
 
-    const totalNodeMappings = Array.from(this.nodeMappings.values())
-      .reduce((sum, set) => sum + set.size, 0);
+    const totalNodeMappings = Array.from(this.nodeMappings.values()).reduce(
+      (sum, set) => sum + set.size,
+      0
+    );
 
     return {
       totalControls,
@@ -530,7 +550,8 @@ export class ComplianceStore {
       controlsByStatus,
       nodesWithControls,
       nodesWithoutControls: 0, // Would need node list to calculate
-      averageControlsPerNode: nodesWithControls > 0 ? totalNodeMappings / nodesWithControls : 0,
+      averageControlsPerNode:
+        nodesWithControls > 0 ? totalNodeMappings / nodesWithControls : 0,
     };
   }
 
@@ -544,18 +565,17 @@ export class ComplianceStore {
 
     for (const [nodeId, controlIds] of this.nodeMappings.entries()) {
       const controls = Array.from(controlIds)
-        .map(id => this.controls.get(id))
+        .map((id) => this.controls.get(id))
         .filter((c): c is ComplianceControl => c !== undefined);
 
-      const validatedCount = controls.filter(c => 
-        c.status === 'validated' || c.status === 'not_applicable'
+      const validatedCount = controls.filter(
+        (c) => c.status === 'validated' || c.status === 'not_applicable'
       ).length;
 
-      const coverage = controls.length > 0 
-        ? (validatedCount / controls.length) * 100 
-        : 0;
+      const coverage =
+        controls.length > 0 ? (validatedCount / controls.length) * 100 : 0;
 
-      const hasFailures = controls.some(c => c.status === 'failed');
+      const hasFailures = controls.some((c) => c.status === 'failed');
 
       nodeCoverage.push({
         nodeId,
@@ -573,21 +593,26 @@ export class ComplianceStore {
    */
   private toCsv(report: CoverageReport): string {
     const lines: string[] = [];
-    
+
     // Header
     lines.push('Control ID,Framework,Title,Status,Severity,Owner,Node Count');
-    
+
     // Data rows
-    for (const control of [...report.satisfiedControls, ...report.unsatisfiedControls]) {
-      lines.push([
-        control.controlId,
-        control.framework,
-        `"${control.title}"`,
-        control.status,
-        control.severity,
-        control.owner ?? '',
-        control.nodeIds.length.toString(),
-      ].join(','));
+    for (const control of [
+      ...report.satisfiedControls,
+      ...report.unsatisfiedControls,
+    ]) {
+      lines.push(
+        [
+          control.controlId,
+          control.framework,
+          `"${control.title}"`,
+          control.status,
+          control.severity,
+          control.owner ?? '',
+          control.nodeIds.length.toString(),
+        ].join(',')
+      );
     }
 
     return lines.join('\n');
@@ -598,7 +623,7 @@ export class ComplianceStore {
    */
   private toMarkdown(report: CoverageReport): string {
     const lines: string[] = [];
-    
+
     lines.push('# Compliance Coverage Report');
     lines.push('');
     lines.push(`**Generated**: ${new Date(report.timestamp).toISOString()}`);
@@ -622,7 +647,9 @@ export class ComplianceStore {
       lines.push('| Control ID | Title | Status | Severity |');
       lines.push('|-----------|-------|--------|----------|');
       for (const control of report.unsatisfiedControls) {
-        lines.push(`| ${control.controlId} | ${control.title} | ${control.status} | ${control.severity} |`);
+        lines.push(
+          `| ${control.controlId} | ${control.title} | ${control.status} | ${control.severity} |`
+        );
       }
       lines.push('');
     }
@@ -634,6 +661,8 @@ export class ComplianceStore {
 /**
  * Create compliance store
  */
-export function createComplianceStore(config?: ComplianceStoreConfig): ComplianceStore {
+export function createComplianceStore(
+  config?: ComplianceStoreConfig
+): ComplianceStore {
   return new ComplianceStore(config);
 }

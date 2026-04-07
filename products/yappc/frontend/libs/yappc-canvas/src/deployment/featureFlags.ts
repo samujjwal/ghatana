@@ -1,9 +1,9 @@
 /**
  * Feature Flag System for Canvas Application
- * 
+ *
  * Provides runtime feature toggles for gradual rollouts, A/B testing,
  * and risk mitigation during deployments.
- * 
+ *
  * Features:
  * - Boolean, number, and string flag types
  * - User-based targeting (% rollout, user lists)
@@ -11,7 +11,7 @@
  * - Real-time flag evaluation
  * - Flag change subscriptions
  * - Analytics event tracking
- * 
+ *
  * @module featureFlags
  */
 
@@ -32,11 +32,11 @@ export type FlagType = 'boolean' | 'number' | 'string';
 /**
  * Targeting rule operator
  */
-export type TargetingOperator = 
-  | 'in' 
-  | 'not_in' 
-  | 'contains' 
-  | 'starts_with' 
+export type TargetingOperator =
+  | 'in'
+  | 'not_in'
+  | 'contains'
+  | 'starts_with'
   | 'ends_with'
   | 'gt'
   | 'gte'
@@ -81,14 +81,14 @@ export interface FeatureFlag {
   defaultValue: FlagValue;
   enabled: boolean;
   description?: string;
-  
+
   // Targeting
   targeting?: {
     rules?: TargetingRule[];
     rollout?: RolloutPercentage;
     userList?: string[]; // Specific user IDs
   };
-  
+
   // Variants (for A/B testing)
   variants?: FlagVariant[];
 }
@@ -211,10 +211,7 @@ export function registerFlags(
 /**
  * Unregister flag
  */
-export function unregisterFlag(
-  state: FeatureFlagsState,
-  key: string
-): boolean {
+export function unregisterFlag(state: FeatureFlagsState, key: string): boolean {
   return state.flags.delete(key);
 }
 
@@ -669,10 +666,7 @@ function notifyFlagChange(
 /**
  * Track analytics event
  */
-function trackAnalytics(
-  state: FeatureFlagsState,
-  event: AnalyticsEvent
-): void {
+function trackAnalytics(state: FeatureFlagsState, event: AnalyticsEvent): void {
   if (!state.config.enableAnalytics) {
     return;
   }

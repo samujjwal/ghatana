@@ -153,14 +153,8 @@ export const appendCopilotMessageAtom = atom(
  * Write-only atom that clears the copilot session.
  */
 export const clearCopilotSessionAtom = atom(null, (_get, set) => {
-  set(
-    copilotSessionAtom,
-    null
-  );
-  set(
-    copilotErrorAtom,
-    null
-  );
+  set(copilotSessionAtom, null);
+  set(copilotErrorAtom, null);
 });
 
 /**

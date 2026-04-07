@@ -82,7 +82,6 @@ import { cn } from '@ghatana/design-system';
 import { Button } from '@ghatana/design-system';
 import { Tooltip } from '@ghatana/design-system';
 
-
 import {
   canvasStateAtom,
   canvasNodesAtom,
@@ -216,75 +215,83 @@ const nodeTemplates: Array<{
 // Custom Node Component
 // =============================================================================
 
-const CustomNode = React.memo(({ data, selected }: { data: CanvasNode['data']; selected: boolean }) => {
-  const IconComponent = useMemo(() => {
-    const iconMap: Record<NodeCategory, React.ComponentType<{ className?: string }>> = {
-      service: Server,
-      database: Database,
-      api: Globe,
-      queue: GitBranch,
-      storage: Cloud,
-      auth: Shield,
-      cache: Layers,
-      cdn: Globe,
-      container: Boxes,
-      serverless: Cpu,
-      notification: Bell,
-      analytics: FileCode,
-      custom: Boxes,
-    };
-    return iconMap[data.type] || Boxes;
-  }, [data.type]);
+const CustomNode = React.memo(
+  ({ data, selected }: { data: CanvasNode['data']; selected: boolean }) => {
+    const IconComponent = useMemo(() => {
+      const iconMap: Record<
+        NodeCategory,
+        React.ComponentType<{ className?: string }>
+      > = {
+        service: Server,
+        database: Database,
+        api: Globe,
+        queue: GitBranch,
+        storage: Cloud,
+        auth: Shield,
+        cache: Layers,
+        cdn: Globe,
+        container: Boxes,
+        serverless: Cpu,
+        notification: Bell,
+        analytics: FileCode,
+        custom: Boxes,
+      };
+      return iconMap[data.type] || Boxes;
+    }, [data.type]);
 
-  const statusColor = useMemo(() => {
-    switch (data.status) {
-      case 'configured':
-        return 'border-green-500 bg-green-500/10';
-      case 'error':
-        return 'border-red-500 bg-red-500/10';
-      default:
-        return 'border-zinc-600 bg-zinc-800';
-    }
-  }, [data.status]);
+    const statusColor = useMemo(() => {
+      switch (data.status) {
+        case 'configured':
+          return 'border-green-500 bg-green-500/10';
+        case 'error':
+          return 'border-red-500 bg-red-500/10';
+        default:
+          return 'border-zinc-600 bg-zinc-800';
+      }
+    }, [data.status]);
 
-  return (
-    <div
-      className={cn(
-        'relative px-4 py-3 rounded-lg border-2 min-w-[140px] transition-all',
-        statusColor,
-        selected && 'ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-900'
-      )}
-    >
-      {/* Status indicator */}
-      {data.status === 'configured' && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-zinc-900" />
-      )}
-      {data.status === 'error' && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border-2 border-zinc-900" />
-      )}
+    return (
+      <div
+        className={cn(
+          'relative px-4 py-3 rounded-lg border-2 min-w-[140px] transition-all',
+          statusColor,
+          selected &&
+            'ring-2 ring-violet-500 ring-offset-2 ring-offset-zinc-900'
+        )}
+      >
+        {/* Status indicator */}
+        {data.status === 'configured' && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 border-2 border-zinc-900" />
+        )}
+        {data.status === 'error' && (
+          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border-2 border-zinc-900" />
+        )}
 
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-zinc-700/50 flex items-center justify-center">
-          <IconComponent className="w-5 h-5 text-zinc-300" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-zinc-700/50 flex items-center justify-center">
+            <IconComponent className="w-5 h-5 text-zinc-300" />
+          </div>
+          <div>
+            <div className="font-medium text-sm text-zinc-100">
+              {data.label}
+            </div>
+            <div className="text-xs text-zinc-500 capitalize">{data.type}</div>
+          </div>
         </div>
-        <div>
-          <div className="font-medium text-sm text-zinc-100">{data.label}</div>
-          <div className="text-xs text-zinc-500 capitalize">{data.type}</div>
-        </div>
+
+        {data.description && (
+          <div className="mt-2 text-xs text-zinc-400 line-clamp-2">
+            {data.description}
+          </div>
+        )}
+
+        {/* Connection handles */}
+        <div className="absolute top-1/2 -left-2 w-4 h-4 rounded-full bg-zinc-700 border-2 border-zinc-600 transform -translate-y-1/2" />
+        <div className="absolute top-1/2 -right-2 w-4 h-4 rounded-full bg-zinc-700 border-2 border-zinc-600 transform -translate-y-1/2" />
       </div>
-
-      {data.description && (
-        <div className="mt-2 text-xs text-zinc-400 line-clamp-2">
-          {data.description}
-        </div>
-      )}
-
-      {/* Connection handles */}
-      <div className="absolute top-1/2 -left-2 w-4 h-4 rounded-full bg-zinc-700 border-2 border-zinc-600 transform -translate-y-1/2" />
-      <div className="absolute top-1/2 -right-2 w-4 h-4 rounded-full bg-zinc-700 border-2 border-zinc-600 transform -translate-y-1/2" />
-    </div>
-  );
-});
+    );
+  }
+);
 
 CustomNode.displayName = 'CustomNode';
 
@@ -292,182 +299,204 @@ CustomNode.displayName = 'CustomNode';
 // Toolbar Component
 // =============================================================================
 
-const CanvasToolbar = React.memo(({
-  activeTool,
-  onToolChange,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-  isLocked,
-  onToggleLock,
-  onExport,
-  onImport,
-  onDeleteSelected,
-  hasSelection,
-}: {
-  activeTool: CanvasTool;
-  onToolChange: (tool: CanvasTool) => void;
-  onUndo: () => void;
-  onRedo: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
-  isLocked: boolean;
-  onToggleLock: () => void;
-  onExport: () => void;
-  onImport: () => void;
-  onDeleteSelected: () => void;
-  hasSelection: boolean;
-}) => {
-  const tools: Array<{ id: CanvasTool; icon: React.ComponentType<{ className?: string }>; label: string }> = [
-    { id: 'select', icon: MousePointer2, label: 'Select' },
-    { id: 'pan', icon: Hand, label: 'Pan' },
-    { id: 'connect', icon: PenTool, label: 'Connect' },
-  ];
+const CanvasToolbar = React.memo(
+  ({
+    activeTool,
+    onToolChange,
+    onUndo,
+    onRedo,
+    canUndo,
+    canRedo,
+    isLocked,
+    onToggleLock,
+    onExport,
+    onImport,
+    onDeleteSelected,
+    hasSelection,
+  }: {
+    activeTool: CanvasTool;
+    onToolChange: (tool: CanvasTool) => void;
+    onUndo: () => void;
+    onRedo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    isLocked: boolean;
+    onToggleLock: () => void;
+    onExport: () => void;
+    onImport: () => void;
+    onDeleteSelected: () => void;
+    hasSelection: boolean;
+  }) => {
+    const tools: Array<{
+      id: CanvasTool;
+      icon: React.ComponentType<{ className?: string }>;
+      label: string;
+    }> = [
+      { id: 'select', icon: MousePointer2, label: 'Select' },
+      { id: 'pan', icon: Hand, label: 'Pan' },
+      { id: 'connect', icon: PenTool, label: 'Connect' },
+    ];
 
-  return (
-    <div className="flex items-center gap-1 p-1 bg-zinc-900/90 backdrop-blur-sm rounded-lg border border-zinc-800">
-      {/* Tool selection */}
-      {tools.map((tool) => (
-        <Tooltip key={tool.id}>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === tool.id ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => onToolChange(tool.id)}
-            >
-              <tool.icon className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{tool.label}</TooltipContent>
-        </Tooltip>
-      ))}
+    return (
+      <div className="flex items-center gap-1 p-1 bg-zinc-900/90 backdrop-blur-sm rounded-lg border border-zinc-800">
+        {/* Tool selection */}
+        {tools.map((tool) => (
+          <Tooltip key={tool.id}>
+            <TooltipTrigger asChild>
+              <Button
+                variant={activeTool === tool.id ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onToolChange(tool.id)}
+              >
+                <tool.icon className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{tool.label}</TooltipContent>
+          </Tooltip>
+        ))}
 
-      <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <div className="w-px h-6 bg-zinc-700 mx-1" />
 
-      {/* Add node dropdown */}
-      <DropdownMenu>
+        {/* Add node dropdown */}
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Add Node</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="start" className="w-48">
+            {nodeTemplates.map((category) => (
+              <React.Fragment key={category.category}>
+                <DropdownMenuLabel className="text-xs text-zinc-500">
+                  {category.category}
+                </DropdownMenuLabel>
+                {category.items.map((item) => (
+                  <DropdownMenuItem
+                    key={item.type}
+                    onClick={() => onToolChange('add')}
+                  >
+                    <item.icon className="w-4 h-4 mr-2" />
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+              </React.Fragment>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="w-px h-6 bg-zinc-700 mx-1" />
+
+        {/* Undo/Redo */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onUndo}
+              disabled={!canUndo}
+            >
+              <Undo2 className="w-4 h-4" />
+            </Button>
           </TooltipTrigger>
-          <TooltipContent>Add Node</TooltipContent>
+          <TooltipContent>Undo (⌘Z)</TooltipContent>
         </Tooltip>
-        <DropdownMenuContent align="start" className="w-48">
-          {nodeTemplates.map((category) => (
-            <React.Fragment key={category.category}>
-              <DropdownMenuLabel className="text-xs text-zinc-500">
-                {category.category}
-              </DropdownMenuLabel>
-              {category.items.map((item) => (
-                <DropdownMenuItem
-                  key={item.type}
-                  onClick={() => onToolChange('add')}
-                >
-                  <item.icon className="w-4 h-4 mr-2" />
-                  {item.label}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-            </React.Fragment>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
 
-      <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onRedo}
+              disabled={!canRedo}
+            >
+              <Redo2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Redo (⌘⇧Z)</TooltipContent>
+        </Tooltip>
 
-      {/* Undo/Redo */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onUndo}
-            disabled={!canUndo}
-          >
-            <Undo2 className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Undo (⌘Z)</TooltipContent>
-      </Tooltip>
+        <div className="w-px h-6 bg-zinc-700 mx-1" />
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onRedo}
-            disabled={!canRedo}
-          >
-            <Redo2 className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Redo (⌘⇧Z)</TooltipContent>
-      </Tooltip>
+        {/* Delete */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onDeleteSelected}
+              disabled={!hasSelection}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete (⌫)</TooltipContent>
+        </Tooltip>
 
-      <div className="w-px h-6 bg-zinc-700 mx-1" />
+        <div className="w-px h-6 bg-zinc-700 mx-1" />
 
-      {/* Delete */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onDeleteSelected}
-            disabled={!hasSelection}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Delete (⌫)</TooltipContent>
-      </Tooltip>
+        {/* Lock */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={isLocked ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={onToggleLock}
+            >
+              {isLocked ? (
+                <Lock className="w-4 h-4" />
+              ) : (
+                <Unlock className="w-4 h-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isLocked ? 'Unlock canvas' : 'Lock canvas'}
+          </TooltipContent>
+        </Tooltip>
 
-      <div className="w-px h-6 bg-zinc-700 mx-1" />
+        {/* Export/Import */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onExport}
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Export</TooltipContent>
+        </Tooltip>
 
-      {/* Lock */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={isLocked ? 'secondary' : 'ghost'}
-            size="icon"
-            className="h-8 w-8"
-            onClick={onToggleLock}
-          >
-            {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{isLocked ? 'Unlock canvas' : 'Lock canvas'}</TooltipContent>
-      </Tooltip>
-
-      {/* Export/Import */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onExport}>
-            <Download className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Export</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onImport}>
-            <Upload className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Import</TooltipContent>
-      </Tooltip>
-    </div>
-  );
-});
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onImport}
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Import</TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
+);
 
 CanvasToolbar.displayName = 'CanvasToolbar';
 
@@ -504,7 +533,9 @@ const ProjectCanvasInner = forwardRef<ProjectCanvasRef, ProjectCanvasProps>(
     const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 
     // History for undo/redo
-    const [history, setHistory] = useState<Array<{ nodes: CanvasNode[]; edges: CanvasEdge[] }>>([]);
+    const [history, setHistory] = useState<
+      Array<{ nodes: CanvasNode[]; edges: CanvasEdge[] }>
+    >([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
 
     // Custom node types
@@ -641,7 +672,14 @@ const ProjectCanvasInner = forwardRef<ProjectCanvasRef, ProjectCanvasProps>(
             !selectedNodeIds.includes(e.target)
         )
       );
-    }, [readOnly, isLocked, selectedNodeIds, setNodes, setEdges, pushToHistory]);
+    }, [
+      readOnly,
+      isLocked,
+      selectedNodeIds,
+      setNodes,
+      setEdges,
+      pushToHistory,
+    ]);
 
     // Export canvas
     const exportCanvas = useCallback(() => {
@@ -675,7 +713,10 @@ const ProjectCanvasInner = forwardRef<ProjectCanvasRef, ProjectCanvasProps>(
     // Keyboard shortcuts
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (
+          e.target instanceof HTMLInputElement ||
+          e.target instanceof HTMLTextAreaElement
+        ) {
           return;
         }
 

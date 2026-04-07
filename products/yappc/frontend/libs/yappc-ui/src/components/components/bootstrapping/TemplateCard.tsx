@@ -42,15 +42,15 @@ import { TooltipContent, TooltipTrigger } from '@yappc/ui';
 // Types
 // =============================================================================
 
-export type TemplateCategory = 
-  | 'web' 
-  | 'mobile' 
-  | 'backend' 
-  | 'fullstack' 
-  | 'microservices' 
-  | 'data' 
-  | 'ml' 
-  | 'devops' 
+export type TemplateCategory =
+  | 'web'
+  | 'mobile'
+  | 'backend'
+  | 'fullstack'
+  | 'microservices'
+  | 'data'
+  | 'ml'
+  | 'devops'
   | 'custom';
 
 export interface TemplateAuthor {
@@ -103,16 +103,23 @@ export interface TemplateCardProps {
 // Constants
 // =============================================================================
 
-const CATEGORY_CONFIG: Record<TemplateCategory, {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  color: string;
-}> = {
+const CATEGORY_CONFIG: Record<
+  TemplateCategory,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    color: string;
+  }
+> = {
   web: { icon: Globe, label: 'Web App', color: 'text-blue-500' },
   mobile: { icon: Smartphone, label: 'Mobile', color: 'text-purple-500' },
   backend: { icon: Server, label: 'Backend', color: 'text-green-500' },
   fullstack: { icon: Layers, label: 'Full Stack', color: 'text-indigo-500' },
-  microservices: { icon: GitBranch, label: 'Microservices', color: 'text-cyan-500' },
+  microservices: {
+    icon: GitBranch,
+    label: 'Microservices',
+    color: 'text-cyan-500',
+  },
   data: { icon: Database, label: 'Data', color: 'text-amber-500' },
   ml: { icon: Box, label: 'ML/AI', color: 'text-pink-500' },
   devops: { icon: Shield, label: 'DevOps', color: 'text-orange-500' },
@@ -162,18 +169,21 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           'group flex items-center gap-3 rounded-lg border p-3 text-left transition-all',
           'hover:border-primary-300 hover:bg-primary-50/50',
           'dark:border-neutral-700 dark:hover:border-primary-700 dark:hover:bg-primary-950/20',
-          selected && 'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-950/30',
+          selected &&
+            'border-primary-500 bg-primary-50 dark:border-primary-500 dark:bg-primary-950/30',
           className
         )}
       >
-        <div className={cn(
-          'flex h-10 w-10 items-center justify-center rounded-lg',
-          'bg-neutral-100 dark:bg-neutral-800',
-          categoryConfig.color
-        )}>
+        <div
+          className={cn(
+            'flex h-10 w-10 items-center justify-center rounded-lg',
+            'bg-neutral-100 dark:bg-neutral-800',
+            categoryConfig.color
+          )}
+        >
           <CategoryIcon className="h-5 w-5" />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -239,7 +249,9 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
           </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <CategoryIcon className={cn('h-16 w-16 opacity-50', categoryConfig.color)} />
+            <CategoryIcon
+              className={cn('h-16 w-16 opacity-50', categoryConfig.color)}
+            />
           </div>
         )}
 
@@ -269,10 +281,13 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
             whileHover={{ opacity: 1 }}
             className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <Button variant="solid" onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              onPreview();
-            }}>
+            <Button
+              variant="solid"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                onPreview();
+              }}
+            >
               <Eye className="mr-2 h-4 w-4" />
               Preview
             </Button>
@@ -284,7 +299,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
       <div className="p-4">
         {/* Category */}
         <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className={cn('text-xs', categoryConfig.color)}>
+          <Badge
+            variant="outline"
+            className={cn('text-xs', categoryConfig.color)}
+          >
             <CategoryIcon className="mr-1 h-3 w-3" />
             {categoryConfig.label}
           </Badge>
@@ -305,27 +323,33 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
         </p>
 
         {/* Tech stack */}
-        {showTechStack && template.techStack && template.techStack.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
-            {template.techStack.slice(0, 4).map((tech) => (
-              <Badge key={tech} variant="outline" className="text-xs">
-                {tech}
-              </Badge>
-            ))}
-            {template.techStack.length > 4 && (
-              <Badge variant="outline" className="text-xs">
-                +{template.techStack.length - 4}
-              </Badge>
-            )}
-          </div>
-        )}
+        {showTechStack &&
+          template.techStack &&
+          template.techStack.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {template.techStack.slice(0, 4).map((tech) => (
+                <Badge key={tech} variant="outline" className="text-xs">
+                  {tech}
+                </Badge>
+              ))}
+              {template.techStack.length > 4 && (
+                <Badge variant="outline" className="text-xs">
+                  +{template.techStack.length - 4}
+                </Badge>
+              )}
+            </div>
+          )}
 
         {/* Footer */}
         <div className="mt-4 flex items-center justify-between">
           {/* Author */}
           {showAuthor && (
             <div className="flex items-center gap-2">
-              <Avatar size="small" alt={template.author.name} src={template.author.avatar} />
+              <Avatar
+                size="small"
+                alt={template.author.name}
+                src={template.author.avatar}
+              />
               <div className="flex items-center gap-1">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
                   {template.author.name}

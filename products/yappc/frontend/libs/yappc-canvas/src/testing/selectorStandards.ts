@@ -362,10 +362,7 @@ export class SelectorStandardsManager {
   /**
    * Generate standardized selector for a component
    */
-  generateSelector(
-    category: SelectorCategory,
-    componentName: string
-  ): string {
+  generateSelector(category: SelectorCategory, componentName: string): string {
     // Convert component name to kebab-case
     const kebabName = this.toKebabCase(componentName);
 
@@ -439,9 +436,7 @@ export class SelectorStandardsManager {
         result.valid = false;
         result.errors!.push('Selector does not match any naming convention');
       } else {
-        result.warnings!.push(
-          'Selector does not match standard conventions'
-        );
+        result.warnings!.push('Selector does not match standard conventions');
       }
 
       // Provide suggestions
@@ -454,9 +449,7 @@ export class SelectorStandardsManager {
     } else if (!matchesCategory && !matchesCustomOnly) {
       // Doesn't match any pattern at all
       result.valid = false;
-      result.errors!.push(
-        'Selector format is invalid'
-      );
+      result.errors!.push('Selector format is invalid');
     }
 
     return result;
@@ -581,9 +574,7 @@ export class SelectorStandardsManager {
     if (pattern === name) return true;
 
     // Convert wildcard pattern to regex
-    const regexPattern = pattern
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+    const regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
 
     return new RegExp(`^${regexPattern}$`).test(name);
   }
@@ -634,9 +625,7 @@ export class SelectorStandardsManager {
    */
   clearViolations(filePath?: string): void {
     if (filePath) {
-      this.violations = this.violations.filter(
-        (v) => v.filePath !== filePath
-      );
+      this.violations = this.violations.filter((v) => v.filePath !== filePath);
     } else {
       this.violations = [];
     }
@@ -693,9 +682,9 @@ export class SelectorStandardsManager {
       violationCount: this.violations.length,
       coveragePercentage:
         this.registry.size > 0
-          ? ((this.registry.size /
+          ? (this.registry.size /
               (this.registry.size + this.violations.length)) *
-              100)
+            100
           : 0,
     };
   }

@@ -1,6 +1,26 @@
 import { Handle, Position } from '@xyflow/react';
 import type { Node, NodeTypes, NodeProps } from '@xyflow/react';
-import { MoreVertical as MoreVertIcon, Pencil as EditIcon, Trash2 as DeleteIcon, Users as GroupIcon, GitFork as UngroupIcon, ChevronDown as ExpandMoreIcon, ChevronUp as ExpandLessIcon, Code as CodeIcon, Braces as DataIcon, SquareFunction as FunctionIcon, HardDrive as DatabaseIcon, Plug as ApiIcon, Globe as WebIcon, Cloud as CloudIcon, Shield as SecurityIcon, Play as PlayIcon, Pause as PauseIcon, Settings as SettingsIcon, ExternalLink as OpenInNewIcon } from 'lucide-react';
+import {
+  MoreVertical as MoreVertIcon,
+  Pencil as EditIcon,
+  Trash2 as DeleteIcon,
+  Users as GroupIcon,
+  GitFork as UngroupIcon,
+  ChevronDown as ExpandMoreIcon,
+  ChevronUp as ExpandLessIcon,
+  Code as CodeIcon,
+  Braces as DataIcon,
+  SquareFunction as FunctionIcon,
+  HardDrive as DatabaseIcon,
+  Plug as ApiIcon,
+  Globe as WebIcon,
+  Cloud as CloudIcon,
+  Shield as SecurityIcon,
+  Play as PlayIcon,
+  Pause as PauseIcon,
+  Settings as SettingsIcon,
+  ExternalLink as OpenInNewIcon,
+} from 'lucide-react';
 import React, { useState } from 'react';
 
 import {
@@ -31,9 +51,7 @@ import { TextField, MenuItem, Collapse } from '@ghatana/design-system';
 
 import { useMuiTheme as useTheme, resolveMuiColor } from '@yappc/ui';
 
-
 // consolidate useTheme into the primary MUI import list to avoid duplicate imports
-
 
 // Extended node data interface
 /**
@@ -41,7 +59,16 @@ import { useMuiTheme as useTheme, resolveMuiColor } from '@yappc/ui';
  */
 export interface AdvancedNodeData {
   label: string;
-  type: 'default' | 'process' | 'decision' | 'data' | 'api' | 'database' | 'cloud' | 'security' | 'group';
+  type:
+    | 'default'
+    | 'process'
+    | 'decision'
+    | 'data'
+    | 'api'
+    | 'database'
+    | 'cloud'
+    | 'security'
+    | 'group';
   description?: string;
   properties?: Record<string, unknown>;
   status?: 'idle' | 'running' | 'completed' | 'error';
@@ -87,25 +114,38 @@ interface CustomNodeProps {
 // Node type icons
 const getNodeIcon = (type: string) => {
   switch (type) {
-    case 'process': return <FunctionIcon />;
-    case 'decision': return <CodeIcon />;
-    case 'data': return <DataIcon />;
-    case 'api': return <ApiIcon />;
-    case 'database': return <DatabaseIcon />;
-    case 'cloud': return <CloudIcon />;
-    case 'security': return <SecurityIcon />;
-    case 'group': return <GroupIcon />;
-    default: return <WebIcon />;
+    case 'process':
+      return <FunctionIcon />;
+    case 'decision':
+      return <CodeIcon />;
+    case 'data':
+      return <DataIcon />;
+    case 'api':
+      return <ApiIcon />;
+    case 'database':
+      return <DatabaseIcon />;
+    case 'cloud':
+      return <CloudIcon />;
+    case 'security':
+      return <SecurityIcon />;
+    case 'group':
+      return <GroupIcon />;
+    default:
+      return <WebIcon />;
   }
 };
 
 // Status colors
 const getStatusColor = (status?: string) => {
   switch (status) {
-    case 'running': return 'primary';
-    case 'completed': return 'success';
-    case 'error': return 'error';
-    default: return 'default';
+    case 'running':
+      return 'primary';
+    case 'completed':
+      return 'success';
+    case 'error':
+      return 'error';
+    default:
+      return 'default';
   }
 };
 
@@ -120,7 +160,7 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
   onGroup,
   onUngroup,
   onExecute,
-  onDrillDown
+  onDrillDown,
 }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -155,14 +195,24 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
     }
   };
 
-  const nodeColor = selected ? resolveMuiColor(theme, 'primary', 'primary') :
-    dragging ? resolveMuiColor(theme, 'secondary', 'primary') :
-      data.status === 'error' ? resolveMuiColor(theme, 'error', 'primary') : resolveMuiColor(theme, 'grey', 'primary');
+  const nodeColor = selected
+    ? resolveMuiColor(theme, 'primary', 'primary')
+    : dragging
+      ? resolveMuiColor(theme, 'secondary', 'primary')
+      : data.status === 'error'
+        ? resolveMuiColor(theme, 'error', 'primary')
+        : resolveMuiColor(theme, 'grey', 'primary');
 
   return (
     <>
       <Card
-        className="min-w-[200px] max-w-[300px] border-[2px] relative" style={{ borderColor: nodeColor, backgroundColor: data.status === 'running' ? 'rgba(0,0,0,0.04)' : '#fff', opacity: data.locked ? 0.7 : 1 }}
+        className="min-w-[200px] max-w-[300px] border-[2px] relative"
+        style={{
+          borderColor: nodeColor,
+          backgroundColor:
+            data.status === 'running' ? 'rgba(0,0,0,0.04)' : '#fff',
+          opacity: data.locked ? 0.7 : 1,
+        }}
         elevation={selected ? 8 : dragging ? 4 : 1}
       >
         {/* Input Handle */}
@@ -174,16 +224,27 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
 
         <CardContent className="pb-2">
           {/* Header */}
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            mb={1}
+          >
             <Box display="flex" alignItems="center" gap={1}>
-              <Avatar className="w-[24px] h-[24px]" >
+              <Avatar className="w-[24px] h-[24px]">
                 {getNodeIcon(data.type)}
               </Avatar>
               {data.status && (
                 <Chip
                   label={data.status}
                   size="small"
-                  color={resolveMuiColor(theme, String(getStatusColor(data.status)), 'default') as unknown}
+                  color={
+                    resolveMuiColor(
+                      theme,
+                      String(getStatusColor(data.status)),
+                      'default'
+                    ) as unknown
+                  }
                 />
               )}
             </Box>
@@ -191,7 +252,11 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
               {/* Drill Down Action in Header for visibility */}
               {data.drillDownTarget && (
                 <Tooltip title="Drill down to details">
-                  <IconButton size="small" onClick={handleDrillDown} color="primary">
+                  <IconButton
+                    size="small"
+                    onClick={handleDrillDown}
+                    color="primary"
+                  >
                     <OpenInNewIcon size={16} />
                   </IconButton>
                 </Tooltip>
@@ -241,7 +306,7 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
                       width: '100%',
                       height: 4,
                       backgroundColor: '#e0e0e0',
-                      borderRadius: 2
+                      borderRadius: 2,
                     }}
                   >
                     <div
@@ -250,7 +315,7 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
                         height: '100%',
                         backgroundColor: '#1976d2',
                         borderRadius: 2,
-                        transition: 'width 0.3s ease'
+                        transition: 'width 0.3s ease',
                       }}
                     />
                   </div>
@@ -269,7 +334,11 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
                 <Chip key={index} label={tag} size="small" variant="outlined" />
               ))}
               {data.tags.length > 3 && (
-                <Chip label={`+${data.tags.length - 3}`} size="small" variant="outlined" />
+                <Chip
+                  label={`+${data.tags.length - 3}`}
+                  size="small"
+                  variant="outlined"
+                />
               )}
             </Box>
           )}
@@ -324,35 +393,75 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={() => { setEditMode(true); handleMenuClose(); }}>
-          <ListItemIcon><EditIcon size={16} /></ListItemIcon>
+        <MenuItem
+          onClick={() => {
+            setEditMode(true);
+            handleMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <EditIcon size={16} />
+          </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
-        <MenuItem onClick={() => { onDelete(id); handleMenuClose(); }}>
-          <ListItemIcon><DeleteIcon size={16} /></ListItemIcon>
+        <MenuItem
+          onClick={() => {
+            onDelete(id);
+            handleMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <DeleteIcon size={16} />
+          </ListItemIcon>
           <ListItemText>Delete</ListItemText>
         </MenuItem>
         {data.drillDownTarget && (
-          <MenuItem onClick={() => { handleDrillDown(); handleMenuClose(); }}>
-            <ListItemIcon><OpenInNewIcon size={16} /></ListItemIcon>
+          <MenuItem
+            onClick={() => {
+              handleDrillDown();
+              handleMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <OpenInNewIcon size={16} />
+            </ListItemIcon>
             <ListItemText>Open Details</ListItemText>
           </MenuItem>
         )}
         <Divider />
-        <MenuItem onClick={() => { onGroup([id]); handleMenuClose(); }}>
-          <ListItemIcon><GroupIcon size={16} /></ListItemIcon>
+        <MenuItem
+          onClick={() => {
+            onGroup([id]);
+            handleMenuClose();
+          }}
+        >
+          <ListItemIcon>
+            <GroupIcon size={16} />
+          </ListItemIcon>
           <ListItemText>Create Group</ListItemText>
         </MenuItem>
         {data.type === 'group' && (
-          <MenuItem onClick={() => { onUngroup(id); handleMenuClose(); }}>
-            <ListItemIcon><UngroupIcon size={16} /></ListItemIcon>
+          <MenuItem
+            onClick={() => {
+              onUngroup(id);
+              handleMenuClose();
+            }}
+          >
+            <ListItemIcon>
+              <UngroupIcon size={16} />
+            </ListItemIcon>
             <ListItemText>Ungroup</ListItemText>
           </MenuItem>
         )}
       </Menu>
 
       {/* Properties Dialog */}
-      <Dialog open={propertiesOpen} onClose={() => setPropertiesOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={propertiesOpen}
+        onClose={() => setPropertiesOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Node Properties</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -373,7 +482,9 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
             <TextField
               label="Drill Down Target ID"
               value={data.drillDownTarget || ''}
-              onChange={(e) => onUpdate(id, { drillDownTarget: e.target.value })}
+              onChange={(e) =>
+                onUpdate(id, { drillDownTarget: e.target.value })
+              }
               fullWidth
               placeholder="e.g., diagram-id-123"
               helperText="ID of the view to open when drilling down"
@@ -381,7 +492,9 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
             <TextField
               label="Type"
               value={data.type}
-              onChange={(e) => onUpdate(id, { type: e.target.value as unknown })}
+              onChange={(e) =>
+                onUpdate(id, { type: e.target.value as unknown })
+              }
               fullWidth
               select
             >
@@ -398,14 +511,13 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
             {/* Properties */}
             {data.properties && (
               <Box>
-                <Typography variant="subtitle2" gutterBottom>Properties</Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Properties
+                </Typography>
                 <List dense>
                   {Object.entries(data.properties).map(([key, value]) => (
                     <ListItem key={key}>
-                      <ListItemText
-                        primary={key}
-                        secondary={String(value)}
-                      />
+                      <ListItemText primary={key} secondary={String(value)} />
                     </ListItem>
                   ))}
                 </List>
@@ -415,10 +527,14 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
             {/* Validation */}
             {data.validation && (
               <Box>
-                <Typography variant="subtitle2" gutterBottom>Validation</Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Validation
+                </Typography>
                 {data.validation.errors.length > 0 && (
                   <Box>
-                    <Typography variant="caption" color="error">Errors:</Typography>
+                    <Typography variant="caption" color="error">
+                      Errors:
+                    </Typography>
                     <List dense>
                       {data.validation.errors.map((error, index) => (
                         <ListItem key={index}>
@@ -430,7 +546,9 @@ const BaseCustomNode: React.FC<CustomNodeProps> = ({
                 )}
                 {data.validation.warnings.length > 0 && (
                   <Box>
-                    <Typography variant="caption" color="warning.main">Warnings:</Typography>
+                    <Typography variant="caption" color="warning.main">
+                      Warnings:
+                    </Typography>
                     <List dense>
                       {data.validation.warnings.map((warning, index) => (
                         <ListItem key={index}>
@@ -460,14 +578,26 @@ const GroupNode: React.FC<CustomNodeProps> = (props) => {
   return (
     <Paper
       className="min-w-[300px] min-h-[150px] border-[2px]"
-      style={{ borderColor: props.selected ? resolveMuiColor(theme, 'primary', 'primary') : resolveMuiColor(theme, 'grey', 'primary') }}
+      style={{
+        borderColor: props.selected
+          ? resolveMuiColor(theme, 'primary', 'primary')
+          : resolveMuiColor(theme, 'grey', 'primary'),
+      }}
       elevation={props.selected ? 4 : 1}
     >
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={1}
+      >
         <Box display="flex" alignItems="center" gap={1}>
           <GroupIcon />
           <Typography variant="h6">{props.data.label}</Typography>
-          <Badge badgeContent={props.data.children?.length || 0} color="primary">
+          <Badge
+            badgeContent={props.data.children?.length || 0}
+            color="primary"
+          >
             <GroupIcon />
           </Badge>
         </Box>
@@ -508,11 +638,13 @@ const DecisionNode: React.FC<CustomNodeProps> = (props) => {
     <Box
       className="w-[120px] h-[120px] border-[2px]"
       style={{
-        borderColor: props.selected ? resolveMuiColor(theme, 'primary', 'primary') : resolveMuiColor(theme, 'grey', 'primary'),
+        borderColor: props.selected
+          ? resolveMuiColor(theme, 'primary', 'primary')
+          : resolveMuiColor(theme, 'grey', 'primary'),
         transform: 'rotate(45deg)',
       }}
     >
-      <Box className="text-center" >
+      <Box className="text-center">
         <CodeIcon />
         <Typography variant="caption" display="block">
           {props.data.label}
@@ -520,9 +652,33 @@ const DecisionNode: React.FC<CustomNodeProps> = (props) => {
       </Box>
 
       {/* Handles positioned for diamond shape */}
-      <Handle type="target" position={Position.Top} style={{ top: -8, left: '50%', transform: 'translateX(-50%) rotate(-45deg)' }} />
-      <Handle type="source" position={Position.Bottom} style={{ bottom: -8, left: '50%', transform: 'translateX(-50%) rotate(-45deg)' }} />
-      <Handle type="source" position={Position.Right} style={{ right: -8, top: '50%', transform: 'translateY(-50%) rotate(-45deg)' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          top: -8,
+          left: '50%',
+          transform: 'translateX(-50%) rotate(-45deg)',
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{
+          bottom: -8,
+          left: '50%',
+          transform: 'translateX(-50%) rotate(-45deg)',
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={{
+          right: -8,
+          top: '50%',
+          transform: 'translateY(-50%) rotate(-45deg)',
+        }}
+      />
     </Box>
   );
 };
@@ -533,7 +689,11 @@ const DatabaseNode: React.FC<CustomNodeProps> = (props) => {
   return (
     <Box
       className="w-[140px] h-[100px] border-[2px]"
-      style={{ borderColor: props.selected ? resolveMuiColor(theme, 'primary', 'primary') : resolveMuiColor(theme, 'grey', 'primary') }}
+      style={{
+        borderColor: props.selected
+          ? resolveMuiColor(theme, 'primary', 'primary')
+          : resolveMuiColor(theme, 'grey', 'primary'),
+      }}
     >
       <DatabaseIcon className="text-sky-600 text-[32px]" />
       <Typography variant="subtitle2" textAlign="center">
@@ -603,7 +763,7 @@ export const customNodeTypes: NodeTypes = {
   data: createNodeWrapper(BaseCustomNode),
   api: createNodeWrapper(BaseCustomNode),
   cloud: createNodeWrapper(BaseCustomNode),
-  security: createNodeWrapper(BaseCustomNode)
+  security: createNodeWrapper(BaseCustomNode),
 };
 
 // Node creation helper
@@ -620,13 +780,13 @@ export const createCustomNode = (
     tags: [type],
     connections: { input: 0, output: 0 },
     validation: { isValid: true, errors: [], warnings: [] },
-    ...overrides
+    ...overrides,
   };
 
   return {
     id: `${type}-${Date.now()}`,
     type,
     position,
-    data: baseData
+    data: baseData,
   };
 };

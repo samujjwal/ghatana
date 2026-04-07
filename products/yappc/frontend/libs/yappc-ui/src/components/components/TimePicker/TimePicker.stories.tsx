@@ -59,7 +59,7 @@ export const Sizes: Story = {
     const time = new Date();
     time.setHours(14, 30, 0, 0);
     const [value, setValue] = React.useState<Date | null>(time);
-    
+
     return (
       <div className="flex flex-col gap-4 items-start">
         <TimePicker size="small" value={value} onChange={setValue} />
@@ -132,7 +132,9 @@ export const MeetingTime: Story = {
           minuteStep={15}
           placeholder="Select meeting time"
         />
-        <div className="mt-2 text-sm text-grey-600">Available in 15-minute intervals</div>
+        <div className="mt-2 text-sm text-grey-600">
+          Available in 15-minute intervals
+        </div>
       </div>
     );
   },
@@ -154,11 +156,15 @@ export const OpeningHours: Story = {
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-grey-700 mb-2">Opening Time</label>
+          <label className="block text-sm font-medium text-grey-700 mb-2">
+            Opening Time
+          </label>
           <TimePicker value={open} onChange={setOpen} format="24h" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-grey-700 mb-2">Closing Time</label>
+          <label className="block text-sm font-medium text-grey-700 mb-2">
+            Closing Time
+          </label>
           <TimePicker value={close} onChange={setClose} format="24h" />
         </div>
       </div>

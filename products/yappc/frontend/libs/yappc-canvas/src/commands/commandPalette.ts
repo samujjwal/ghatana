@@ -135,7 +135,7 @@ export function shortcutToString(shortcut: KeyboardShortcut): string {
  * Parse shortcut string to KeyboardShortcut
  */
 export function parseShortcut(shortcutString: string): KeyboardShortcut | null {
-  const parts = shortcutString.split('+').map(p => p.trim());
+  const parts = shortcutString.split('+').map((p) => p.trim());
   if (parts.length === 0 || !shortcutString.trim()) return null;
 
   const key = parts[parts.length - 1];
@@ -156,7 +156,10 @@ export function parseShortcut(shortcutString: string): KeyboardShortcut | null {
 /**
  * Check if two shortcuts are equal
  */
-export function shortcutsEqual(a: KeyboardShortcut, b: KeyboardShortcut): boolean {
+export function shortcutsEqual(
+  a: KeyboardShortcut,
+  b: KeyboardShortcut
+): boolean {
   return shortcutToString(a) === shortcutToString(b);
 }
 
@@ -183,17 +186,18 @@ export function registerCommand(
     // Detect conflicts
     if (opts.detectConflicts && existing.length > 1) {
       const conflictingCommands = existing
-        .map(id => state.commands.get(id))
+        .map((id) => state.commands.get(id))
         .filter((cmd): cmd is Command => cmd !== undefined);
 
       // Check if conflict already exists
-      const existingConflict = state.conflicts.find(c =>
+      const existingConflict = state.conflicts.find((c) =>
         shortcutsEqual(c.shortcut, command.shortcut!)
       );
 
       if (existingConflict) {
         existingConflict.commands = conflictingCommands;
-        existingConflict.severity = conflictingCommands.length >= 3 ? 'error' : 'warning';
+        existingConflict.severity =
+          conflictingCommands.length >= 3 ? 'error' : 'warning';
       } else {
         state.conflicts.push({
           shortcut: command.shortcut,
@@ -222,7 +226,7 @@ export function unregisterCommand(
   if (command.shortcut) {
     const shortcutKey = shortcutToString(command.shortcut);
     const existing = state.shortcuts.get(shortcutKey) || [];
-    const filtered = existing.filter(id => id !== commandId);
+    const filtered = existing.filter((id) => id !== commandId);
 
     if (filtered.length === 0) {
       state.shortcuts.delete(shortcutKey);
@@ -232,9 +236,11 @@ export function unregisterCommand(
 
     // Update conflicts
     state.conflicts = state.conflicts
-      .map(conflict => {
+      .map((conflict) => {
         if (shortcutsEqual(conflict.shortcut, command.shortcut!)) {
-          const updatedCommands = conflict.commands.filter(cmd => cmd.id !== commandId);
+          const updatedCommands = conflict.commands.filter(
+            (cmd) => cmd.id !== commandId
+          );
           if (updatedCommands.length > 1) {
             return {
               ...conflict,
@@ -257,7 +263,9 @@ export function getCommandsByCategory(
   state: CommandPaletteState,
   category: CommandCategory
 ): Command[] {
-  return Array.from(state.commands.values()).filter(cmd => cmd.category === category);
+  return Array.from(state.commands.values()).filter(
+    (cmd) => cmd.category === category
+  );
 }
 
 /**
@@ -270,7 +278,7 @@ export function getCommandByShortcut(
   const shortcutKey = shortcutToString(shortcut);
   const commandIds = state.shortcuts.get(shortcutKey) || [];
   return commandIds
-    .map(id => state.commands.get(id))
+    .map((id) => state.commands.get(id))
     .filter((cmd): cmd is Command => cmd !== undefined);
 }
 
@@ -290,7 +298,8 @@ function calculateScore(
   let score = 0;
 
   // Helper to normalize text
-  const normalize = (text: string) => (caseSensitive ? text : text.toLowerCase());
+  const normalize = (text: string) =>
+    caseSensitive ? text : text.toLowerCase();
 
   // Check label (highest priority)
   const label = normalize(command.label);
@@ -385,9 +394,9 @@ export function searchCommands(
   // If query is empty, return all commands
   if (!query.trim()) {
     const allCommands = Array.from(state.commands.values())
-      .filter(cmd => cmd.enabled !== false)
+      .filter((cmd) => cmd.enabled !== false)
       .slice(0, opts.maxResults)
-      .map(command => ({ command, score: 0, matchedFields: [] }));
+      .map((command) => ({ command, score: 0, matchedFields: [] }));
 
     state.results = allCommands;
     state.selectedIndex = allCommands.length > 0 ? 0 : -1;
@@ -448,7 +457,9 @@ export function selectPrevious(state: CommandPaletteState): void {
   if (state.results.length === 0) return;
 
   state.selectedIndex =
-    state.selectedIndex <= 0 ? state.results.length - 1 : state.selectedIndex - 1;
+    state.selectedIndex <= 0
+      ? state.results.length - 1
+      : state.selectedIndex - 1;
 }
 
 /**
@@ -476,7 +487,9 @@ export async function executeCommand(command: Command): Promise<void> {
 /**
  * Execute selected command
  */
-export async function executeSelected(state: CommandPaletteState): Promise<void> {
+export async function executeSelected(
+  state: CommandPaletteState
+): Promise<void> {
   const selected = getSelectedCommand(state);
   if (!selected) {
     throw new Error('No command selected');
@@ -503,15 +516,19 @@ export function getConflictsForCommand(
   if (!command || !command.shortcut) return null;
 
   return (
-    state.conflicts.find(conflict => shortcutsEqual(conflict.shortcut, command.shortcut!)) ||
-    null
+    state.conflicts.find((conflict) =>
+      shortcutsEqual(conflict.shortcut, command.shortcut!)
+    ) || null
   );
 }
 
 /**
  * Check if command has shortcut conflict
  */
-export function hasConflict(state: CommandPaletteState, commandId: string): boolean {
+export function hasConflict(
+  state: CommandPaletteState,
+  commandId: string
+): boolean {
   return getConflictsForCommand(state, commandId) !== null;
 }
 
@@ -519,14 +536,18 @@ export function hasConflict(state: CommandPaletteState, commandId: string): bool
  * Get all enabled commands
  */
 export function getEnabledCommands(state: CommandPaletteState): Command[] {
-  return Array.from(state.commands.values()).filter(cmd => cmd.enabled !== false);
+  return Array.from(state.commands.values()).filter(
+    (cmd) => cmd.enabled !== false
+  );
 }
 
 /**
  * Get all disabled commands
  */
 export function getDisabledCommands(state: CommandPaletteState): Command[] {
-  return Array.from(state.commands.values()).filter(cmd => cmd.enabled === false);
+  return Array.from(state.commands.values()).filter(
+    (cmd) => cmd.enabled === false
+  );
 }
 
 /**

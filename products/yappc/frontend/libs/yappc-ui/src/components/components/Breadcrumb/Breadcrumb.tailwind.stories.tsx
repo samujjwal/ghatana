@@ -61,18 +61,9 @@ export const WithHomeIcon: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-full">
-      <Breadcrumb
-        items={basicItems}
-        size="small"
-      />
-      <Breadcrumb
-        items={basicItems}
-        size="medium"
-      />
-      <Breadcrumb
-        items={basicItems}
-        size="large"
-      />
+      <Breadcrumb items={basicItems} size="small" />
+      <Breadcrumb items={basicItems} size="medium" />
+      <Breadcrumb items={basicItems} size="large" />
     </div>
   ),
 };
@@ -120,11 +111,49 @@ export const WithCustomIcons: Story = {
         label: 'Dashboard',
         href: '/',
         icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-            <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-            <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
-            <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="2"
+              y="2"
+              width="5"
+              height="5"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <rect
+              x="9"
+              y="2"
+              width="5"
+              height="5"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <rect
+              x="2"
+              y="9"
+              width="5"
+              height="5"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <rect
+              x="9"
+              y="9"
+              width="5"
+              height="5"
+              rx="1"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
           </svg>
         ),
       },
@@ -132,7 +161,13 @@ export const WithCustomIcons: Story = {
         label: 'Settings',
         href: '/settings',
         icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path
               d="M8 10C9.10457 10 10 9.10457 10 8C10 6.89543 9.10457 6 8 6C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10Z"
               stroke="currentColor"
@@ -149,8 +184,20 @@ export const WithCustomIcons: Story = {
       {
         label: 'Profile',
         icon: (
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="8" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="8"
+              cy="5"
+              r="2.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
             <path
               d="M3 13C3 10.7909 5.23858 9 8 9C10.7614 9 13 10.7909 13 13"
               stroke="currentColor"

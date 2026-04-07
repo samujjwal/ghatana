@@ -1,8 +1,8 @@
 /**
  * @yappc/testing
- * 
+ *
  * Unified testing utilities, helpers, and mocks for YAPPC.
- * 
+ *
  * @example
  * ```typescript
  * import { renderWithProviders } from '@yappc/testing/helpers';

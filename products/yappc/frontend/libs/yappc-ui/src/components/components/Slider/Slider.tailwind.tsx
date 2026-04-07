@@ -1,9 +1,9 @@
 /**
  * Slider Component (Tailwind CSS + Base UI)
- * 
+ *
  * A range input slider component using Base UI Slider primitives styled with Tailwind CSS.
  * Supports single value, range (min/max), step increments, and marks.
- * 
+ *
  * @example
  * ```tsx
  * <SliderTailwind
@@ -46,7 +46,13 @@ export interface SliderProps {
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
   /** Color scheme */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
   /** Show value label */
   showValue?: boolean;
   /** Format function for value display */
@@ -65,7 +71,7 @@ export interface SliderProps {
 
 /**
  * Slider component for range input
- * 
+ *
  * Built with Base UI Slider primitives and styled with Tailwind CSS.
  * Supports single value, range selection, and custom marks.
  */
@@ -97,8 +103,16 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
     const isHorizontal = orientation === 'horizontal';
 
     // Normalize value to array for consistent handling
-    const normalizedValue = Array.isArray(value) ? value : value !== undefined ? [value] : undefined;
-    const displayValue = normalizedValue ? (normalizedValue.length === 1 ? formatValue(normalizedValue[0]) : `${formatValue(normalizedValue[0])} - ${formatValue(normalizedValue[1])}`) : '';
+    const normalizedValue = Array.isArray(value)
+      ? value
+      : value !== undefined
+        ? [value]
+        : undefined;
+    const displayValue = normalizedValue
+      ? normalizedValue.length === 1
+        ? formatValue(normalizedValue[0])
+        : `${formatValue(normalizedValue[0])} - ${formatValue(normalizedValue[1])}`
+      : '';
 
     // Size classes for track and thumb
     const trackSizeClasses = {
@@ -143,11 +157,7 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 
     return (
       <div
-        className={cn(
-          'w-full',
-          isHorizontal ? 'py-2' : 'h-64 px-2',
-          className
-        )}
+        className={cn('w-full', isHorizontal ? 'py-2' : 'h-64 px-2', className)}
       >
         {(label || showValue) && (
           <div className="mb-4 flex items-center justify-between">
@@ -176,7 +186,13 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
           step={step}
           value={value}
           defaultValue={defaultValue}
-          onValueChange={(newValue) => onChange?.(Array.isArray(newValue) && newValue.length === 1 ? newValue[0] : newValue)}
+          onValueChange={(newValue) =>
+            onChange?.(
+              Array.isArray(newValue) && newValue.length === 1
+                ? newValue[0]
+                : newValue
+            )
+          }
           disabled={disabled}
           orientation={orientation}
           className={cn(
@@ -217,7 +233,9 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
                 hasError
                   ? 'border-error-600 bg-white ring-error-500'
                   : colorClasses[colorScheme].thumb,
-                disabled ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
+                disabled
+                  ? 'cursor-not-allowed'
+                  : 'cursor-grab active:cursor-grabbing'
               )}
             />
 
@@ -231,7 +249,9 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
                   hasError
                     ? 'border-error-600 bg-white ring-error-500'
                     : colorClasses[colorScheme].thumb,
-                  disabled ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
+                  disabled
+                    ? 'cursor-not-allowed'
+                    : 'cursor-grab active:cursor-grabbing'
                 )}
               />
             )}
@@ -254,9 +274,7 @@ export const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
                     key={mark.value}
                     className={cn(
                       'absolute text-xs text-grey-600',
-                      isHorizontal
-                        ? '-translate-x-1/2'
-                        : '-translate-y-1/2'
+                      isHorizontal ? '-translate-x-1/2' : '-translate-y-1/2'
                     )}
                     style={
                       isHorizontal

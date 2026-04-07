@@ -4,12 +4,15 @@ import type { InputHTMLAttributes } from 'react';
 /**
  *
  */
-export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface RadioProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   /**
    * Radio label
    */
   label?: string;
-  
+
   /**
    * Radio size variant
    */
@@ -18,7 +21,7 @@ export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 
 /**
  * Radio button component for single selection
- * 
+ *
  * @example
  * ```tsx
  * <Radio
@@ -31,16 +34,7 @@ export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
  * ```
  */
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(
-  (
-    {
-      label,
-      size = 'medium',
-      className = '',
-      id,
-      ...props
-    },
-    ref
-  ) => {
+  ({ label, size = 'medium', className = '', id, ...props }, ref) => {
     const generatedId = useId();
     const radioId = id || generatedId;
 
@@ -66,13 +60,18 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
     };
 
     const labelTextStyle: React.CSSProperties = {
-      fontSize: size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
+      fontSize:
+        size === 'small' ? '0.875rem' : size === 'large' ? '1.125rem' : '1rem',
       color: '#212121',
       userSelect: 'none',
     };
 
     return (
-      <label htmlFor={radioId} style={labelContainerStyle} className={className}>
+      <label
+        htmlFor={radioId}
+        style={labelContainerStyle}
+        className={className}
+      >
         <input
           ref={ref}
           type="radio"
@@ -96,27 +95,27 @@ export interface RadioGroupProps {
    * Radio group label
    */
   label?: string;
-  
+
   /**
    * Helper text
    */
   helperText?: string;
-  
+
   /**
    * Error message
    */
   error?: string;
-  
+
   /**
    * Radio buttons
    */
   children: React.ReactNode;
-  
+
   /**
    * Layout direction
    */
   direction?: 'row' | 'column';
-  
+
   /**
    * Gap between radio buttons
    */
@@ -125,7 +124,7 @@ export interface RadioGroupProps {
 
 /**
  * Radio group component for organizing radio buttons
- * 
+ *
  * @example
  * ```tsx
  * <RadioGroup label="Select a plan" direction="column">

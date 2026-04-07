@@ -1,6 +1,6 @@
 /**
  * Provider Management - WebSocket/WebRTC provider management with auth
- * 
+ *
  * Implements provider selection, failover, and JWT authentication
  * for real-time collaboration providers.
  */
@@ -13,7 +13,12 @@ export type ProviderType = 'websocket' | 'webrtc' | 'none';
 /**
  * Provider status
  */
-export type ProviderStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting' | 'failed';
+export type ProviderStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'failed';
 
 /**
  * Connection state
@@ -180,7 +185,10 @@ export class ProviderManager {
    * Connect to provider
    */
   async connect(roomId?: string): Promise<boolean> {
-    if (this.state.status === 'connected' || this.state.status === 'connecting') {
+    if (
+      this.state.status === 'connected' ||
+      this.state.status === 'connecting'
+    ) {
       return false;
     }
 
@@ -301,19 +309,19 @@ export class ProviderManager {
 
     if (filter) {
       if (filter.type) {
-        events = events.filter(e => e.type === filter.type);
+        events = events.filter((e) => e.type === filter.type);
       }
 
       if (filter.provider) {
-        events = events.filter(e => e.provider === filter.provider);
+        events = events.filter((e) => e.provider === filter.provider);
       }
 
       if (filter.startDate) {
-        events = events.filter(e => e.timestamp >= filter.startDate!);
+        events = events.filter((e) => e.timestamp >= filter.startDate!);
       }
 
       if (filter.endDate) {
-        events = events.filter(e => e.timestamp <= filter.endDate!);
+        events = events.filter((e) => e.timestamp <= filter.endDate!);
       }
     }
 
@@ -338,7 +346,11 @@ export class ProviderManager {
   /**
    * Validate JWT token
    */
-  validateToken(token: string): { valid: boolean; payload?: JWTPayload; error?: string } {
+  validateToken(token: string): {
+    valid: boolean;
+    payload?: JWTPayload;
+    error?: string;
+  } {
     try {
       // Parse JWT (simplified - in production use proper JWT library)
       const parts = token.split('.');
@@ -372,20 +384,32 @@ export class ProviderManager {
   private selectProvider(): ProviderType {
     // If failover is active, try alternate provider
     if (this.state.failoverActive) {
-      if (this.config.preferredProvider === 'websocket' && this.config.enableWebRTC) {
+      if (
+        this.config.preferredProvider === 'websocket' &&
+        this.config.enableWebRTC
+      ) {
         return 'webrtc';
       }
-      if (this.config.preferredProvider === 'webrtc' && this.config.enableWebSocket) {
+      if (
+        this.config.preferredProvider === 'webrtc' &&
+        this.config.enableWebSocket
+      ) {
         return 'websocket';
       }
     }
 
     // Use preferred provider if enabled
-    if (this.config.preferredProvider === 'websocket' && this.config.enableWebSocket) {
+    if (
+      this.config.preferredProvider === 'websocket' &&
+      this.config.enableWebSocket
+    ) {
       return 'websocket';
     }
 
-    if (this.config.preferredProvider === 'webrtc' && this.config.enableWebRTC) {
+    if (
+      this.config.preferredProvider === 'webrtc' &&
+      this.config.enableWebRTC
+    ) {
       return 'webrtc';
     }
 
@@ -433,7 +457,11 @@ export class ProviderManager {
       }
 
       // Verify room access if provided
-      if (roomId && validation.payload?.room && validation.payload.room !== roomId) {
+      if (
+        roomId &&
+        validation.payload?.room &&
+        validation.payload.room !== roomId
+      ) {
         this.emitEvent({
           type: 'auth_failure',
           timestamp: Date.now(),
@@ -470,12 +498,15 @@ export class ProviderManager {
   /**
    * Attempt connection to provider
    */
-  private async attemptConnection(provider: ProviderType, roomId?: string): Promise<boolean> {
+  private async attemptConnection(
+    provider: ProviderType,
+    roomId?: string
+  ): Promise<boolean> {
     // Simulate connection attempt (in real implementation, connect to actual provider)
     // For testing: use synchronous random instead of setTimeout
     // This makes the code testable with fake timers
     await Promise.resolve(); // Make it async for consistent behavior
-    
+
     // Simulate random failures for testing
     const success = Math.random() > 0.1; // 90% success rate
     return success;
@@ -503,7 +534,8 @@ export class ProviderManager {
     // Update average connection time
     const totalSuccessful = this.statistics.successfulConnections;
     this.statistics.averageConnectionTime =
-      (this.statistics.averageConnectionTime * (totalSuccessful - 1) + connectionTime) /
+      (this.statistics.averageConnectionTime * (totalSuccessful - 1) +
+        connectionTime) /
       totalSuccessful;
 
     this.emitEvent({
@@ -644,6 +676,8 @@ export class ProviderManager {
 /**
  * Create provider manager
  */
-export function createProviderManager(config?: Partial<ProviderConfig>): ProviderManager {
+export function createProviderManager(
+  config?: Partial<ProviderConfig>
+): ProviderManager {
   return new ProviderManager(config);
 }

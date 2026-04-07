@@ -212,7 +212,11 @@ export function EventLog({
       >
         <span style={{ fontWeight: 'bold', fontSize: '12px' }}>
           📋 Event Log
-          {!isCollapsed && <span style={{ marginLeft: '8px', opacity: 0.6 }}>({filteredEvents.length})</span>}
+          {!isCollapsed && (
+            <span style={{ marginLeft: '8px', opacity: 0.6 }}>
+              ({filteredEvents.length})
+            </span>
+          )}
         </span>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
@@ -340,8 +344,12 @@ export function EventLog({
             }}
           >
             {filteredEvents.length === 0 ? (
-              <div style={{ color: '#888', textAlign: 'center', padding: '20px' }}>
-                {events.length === 0 ? 'No events logged yet' : 'No events match filter'}
+              <div
+                style={{ color: '#888', textAlign: 'center', padding: '20px' }}
+              >
+                {events.length === 0
+                  ? 'No events logged yet'
+                  : 'No events match filter'}
               </div>
             ) : (
               filteredEvents.map((event) => (
@@ -383,8 +391,16 @@ function EventItem({ event }: { event: LogEntry }) {
         borderLeft: `3px solid ${eventColor}`,
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span style={{ fontWeight: 'bold', color: eventColor }}>{event.type}</span>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: '4px',
+        }}
+      >
+        <span style={{ fontWeight: 'bold', color: eventColor }}>
+          {event.type}
+        </span>
         <span style={{ fontSize: '9px', color: '#888' }}>{timeStr}</span>
       </div>
 

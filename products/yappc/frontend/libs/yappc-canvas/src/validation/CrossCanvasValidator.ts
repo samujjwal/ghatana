@@ -60,11 +60,11 @@ export class CrossCanvasValidator {
    */
   validateAll(): ValidationReport[] {
     const reports: ValidationReport[] = [];
-    
+
     for (const [canvasId] of this.canvasRegistry) {
       reports.push(this.validateCanvas(canvasId));
     }
-    
+
     return reports;
   }
 
@@ -74,13 +74,15 @@ export class CrossCanvasValidator {
   validateCanvas(canvasId: string): ValidationReport {
     const canvasData = this.canvasRegistry.get(canvasId);
     if (!canvasData) {
-      return this.createEmptyReport(canvasId, 'error', [{
-        id: `missing-canvas-${canvasId}`,
-        type: 'error',
-        severity: 'critical',
-        message: `Canvas ${canvasId} not found`,
-        canvasId,
-      }]);
+      return this.createEmptyReport(canvasId, 'error', [
+        {
+          id: `missing-canvas-${canvasId}`,
+          type: 'error',
+          severity: 'critical',
+          message: `Canvas ${canvasId} not found`,
+          canvasId,
+        },
+      ]);
     }
 
     const issues: ValidationIssue[] = [];
@@ -88,19 +90,21 @@ export class CrossCanvasValidator {
 
     // Validate portal references
     issues.push(...this.validatePortalReferences(canvasId, canvasData));
-    
+
     // Validate component dependencies
     issues.push(...this.validateComponentDependencies(canvasId, canvasData));
-    
+
     // Validate data flow consistency
     issues.push(...this.validateDataFlowConsistency(canvasId, canvasData));
-    
+
     // Check for circular references
     issues.push(...this.detectCircularReferences(canvasId));
 
-    const status = issues.some(i => i.type === 'error') ? 'error' 
-                 : issues.some(i => i.type === 'warning') ? 'warning' 
-                 : 'valid';
+    const status = issues.some((i) => i.type === 'error')
+      ? 'error'
+      : issues.some((i) => i.type === 'warning')
+        ? 'warning'
+        : 'valid';
 
     return {
       canvasId,
@@ -115,14 +119,17 @@ export class CrossCanvasValidator {
   /**
    * Validate portal element references
    */
-  private validatePortalReferences(canvasId: string, canvasData: unknown): ValidationIssue[] {
+  private validatePortalReferences(
+    canvasId: string,
+    canvasData: unknown
+  ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
     const elements = canvasData.elements || [];
 
     for (const element of elements) {
       if (element.type === 'portal' && element.data?.targetCanvasId) {
         const targetCanvasId = element.data.targetCanvasId;
-        
+
         // Check if target canvas exists
         if (!this.canvasRegistry.has(targetCanvasId)) {
           issues.push({
@@ -143,7 +150,7 @@ export class CrossCanvasValidator {
           const targetExists = targetCanvas?.elements?.some(
             (el: unknown) => el.id === element.data.targetElementId
           );
-          
+
           if (!targetExists) {
             issues.push({
               id: `broken-portal-element-${element.id}`,
@@ -152,7 +159,8 @@ export class CrossCanvasValidator {
               message: `Portal element "${element.id}" references non-existent target element "${element.data.targetElementId}"`,
               canvasId,
               elementId: element.id,
-              fixSuggestion: 'Remove target element reference or create the target element',
+              fixSuggestion:
+                'Remove target element reference or create the target element',
               autoFixAvailable: true,
             });
           }
@@ -166,16 +174,23 @@ export class CrossCanvasValidator {
   /**
    * Validate component dependencies
    */
-  private validateComponentDependencies(canvasId: string, canvasData: unknown): ValidationIssue[] {
+  private validateComponentDependencies(
+    canvasId: string,
+    canvasData: unknown
+  ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
     const elements = canvasData.elements || [];
     const connections = canvasData.connections || [];
 
     // Check for orphaned connections
     for (const connection of connections) {
-      const sourceExists = elements.some((el: unknown) => el.id === connection.source);
-      const targetExists = elements.some((el: unknown) => el.id === connection.target);
-      
+      const sourceExists = elements.some(
+        (el: unknown) => el.id === connection.source
+      );
+      const targetExists = elements.some(
+        (el: unknown) => el.id === connection.target
+      );
+
       if (!sourceExists) {
         issues.push({
           id: `orphaned-connection-source-${connection.id}`,
@@ -183,11 +198,12 @@ export class CrossCanvasValidator {
           severity: 'medium',
           message: `Connection "${connection.id}" references missing source element "${connection.source}"`,
           canvasId,
-          fixSuggestion: 'Remove orphaned connection or restore missing element',
+          fixSuggestion:
+            'Remove orphaned connection or restore missing element',
           autoFixAvailable: true,
         });
       }
-      
+
       if (!targetExists) {
         issues.push({
           id: `orphaned-connection-target-${connection.id}`,
@@ -195,7 +211,8 @@ export class CrossCanvasValidator {
           severity: 'medium',
           message: `Connection "${connection.id}" references missing target element "${connection.target}"`,
           canvasId,
-          fixSuggestion: 'Remove orphaned connection or restore missing element',
+          fixSuggestion:
+            'Remove orphaned connection or restore missing element',
           autoFixAvailable: true,
         });
       }
@@ -207,7 +224,10 @@ export class CrossCanvasValidator {
   /**
    * Validate data flow consistency
    */
-  private validateDataFlowConsistency(canvasId: string, canvasData: unknown): ValidationIssue[] {
+  private validateDataFlowConsistency(
+    canvasId: string,
+    canvasData: unknown
+  ): ValidationIssue[] {
     const issues: ValidationIssue[] = [];
     const elements = canvasData.elements || [];
     const connections = canvasData.connections || [];
@@ -225,7 +245,7 @@ export class CrossCanvasValidator {
     const connectedNodes = new Set<string>();
     for (const [source, targets] of graph) {
       connectedNodes.add(source);
-      targets.forEach(target => connectedNodes.add(target));
+      targets.forEach((target) => connectedNodes.add(target));
     }
 
     for (const element of elements) {
@@ -237,7 +257,8 @@ export class CrossCanvasValidator {
           message: `Element "${element.data?.label || element.id}" is not connected to any other elements`,
           canvasId,
           elementId: element.id,
-          fixSuggestion: 'Consider connecting to other elements or remove if unused',
+          fixSuggestion:
+            'Consider connecting to other elements or remove if unused',
         });
       }
     }
@@ -258,16 +279,17 @@ export class CrossCanvasValidator {
         // Found a cycle
         const cycleStart = path.indexOf(currentCanvasId);
         const cycle = path.slice(cycleStart).concat(currentCanvasId);
-        
+
         issues.push({
           id: `circular-reference-${currentCanvasId}`,
           type: 'error',
           severity: 'critical',
           message: `Circular reference detected in canvas hierarchy: ${cycle.join(' → ')}`,
           canvasId: currentCanvasId,
-          fixSuggestion: 'Remove one of the portal references to break the cycle',
+          fixSuggestion:
+            'Remove one of the portal references to break the cycle',
         });
-        
+
         return true;
       }
 
@@ -283,7 +305,10 @@ export class CrossCanvasValidator {
       if (canvasData?.elements) {
         for (const element of canvasData.elements) {
           if (element.type === 'portal' && element.data?.targetCanvasId) {
-            const hasCycle = detectCycle(element.data.targetCanvasId, [...path, currentCanvasId]);
+            const hasCycle = detectCycle(element.data.targetCanvasId, [
+              ...path,
+              currentCanvasId,
+            ]);
             if (hasCycle) return true;
           }
         }
@@ -324,19 +349,25 @@ export class CrossCanvasValidator {
    */
   private generateSuggestions(issues: ValidationIssue[]): string[] {
     const suggestions: string[] = [];
-    const errorCount = issues.filter(i => i.type === 'error').length;
-    const warningCount = issues.filter(i => i.type === 'warning').length;
+    const errorCount = issues.filter((i) => i.type === 'error').length;
+    const warningCount = issues.filter((i) => i.type === 'warning').length;
 
     if (errorCount > 0) {
-      suggestions.push(`Fix ${errorCount} critical error${errorCount > 1 ? 's' : ''} to ensure canvas functionality`);
+      suggestions.push(
+        `Fix ${errorCount} critical error${errorCount > 1 ? 's' : ''} to ensure canvas functionality`
+      );
     }
 
     if (warningCount > 0) {
-      suggestions.push(`Review ${warningCount} warning${warningCount > 1 ? 's' : ''} to improve canvas quality`);
+      suggestions.push(
+        `Review ${warningCount} warning${warningCount > 1 ? 's' : ''} to improve canvas quality`
+      );
     }
 
-    if (issues.some(i => i.autoFixAvailable)) {
-      suggestions.push('Some issues can be automatically fixed - click "Auto Fix" where available');
+    if (issues.some((i) => i.autoFixAvailable)) {
+      suggestions.push(
+        'Some issues can be automatically fixed - click "Auto Fix" where available'
+      );
     }
 
     return suggestions;
@@ -346,8 +377,8 @@ export class CrossCanvasValidator {
    * Create empty validation report
    */
   private createEmptyReport(
-    canvasId: string, 
-    status: ValidationReport['status'], 
+    canvasId: string,
+    status: ValidationReport['status'],
     issues: ValidationIssue[] = []
   ): ValidationReport {
     return {
@@ -363,10 +394,13 @@ export class CrossCanvasValidator {
   /**
    * Auto-fix issues where possible
    */
-  autoFixIssues(canvasId: string, issueIds: string[]): { fixed: string[]; failed: string[] } {
+  autoFixIssues(
+    canvasId: string,
+    issueIds: string[]
+  ): { fixed: string[]; failed: string[] } {
     const fixed: string[] = [];
     const failed: string[] = [];
-    
+
     const canvasData = this.canvasRegistry.get(canvasId);
     if (!canvasData) {
       return { fixed, failed: issueIds };
@@ -384,7 +418,9 @@ export class CrossCanvasValidator {
         } else if (issueId.startsWith('broken-portal-element-')) {
           // Remove broken portal element references
           const elementId = issueId.replace('broken-portal-element-', '');
-          const element = canvasData.elements.find((el: unknown) => el.id === elementId);
+          const element = canvasData.elements.find(
+            (el: unknown) => el.id === elementId
+          );
           if (element?.data) {
             delete element.data.targetElementId;
           }

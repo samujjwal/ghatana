@@ -8,17 +8,17 @@ export interface SpinnerProps {
    * Spinner size
    */
   size?: 'small' | 'medium' | 'large' | number;
-  
+
   /**
    * Spinner color
    */
   color?: string;
-  
+
   /**
    * Additional class name
    */
   className?: string;
-  
+
   /**
    * Accessibility label
    */
@@ -27,7 +27,7 @@ export interface SpinnerProps {
 
 /**
  * Loading spinner component
- * 
+ *
  * @example
  * ```tsx
  * <Spinner size="medium" color="#2196f3" label="Loading..." />
@@ -87,17 +87,17 @@ export interface SkeletonProps {
    * Skeleton width
    */
   width?: string | number;
-  
+
   /**
    * Skeleton height
    */
   height?: string | number;
-  
+
   /**
    * Skeleton variant
    */
   variant?: 'text' | 'circular' | 'rectangular';
-  
+
   /**
    * Additional class name
    */
@@ -106,7 +106,7 @@ export interface SkeletonProps {
 
 /**
  * Skeleton loading placeholder
- * 
+ *
  * @example
  * ```tsx
  * <Skeleton variant="text" width="100%" height="20px" />
@@ -122,7 +122,8 @@ export function Skeleton({
 }: SkeletonProps) {
   const baseStyle: CSSProperties = {
     backgroundColor: '#e0e0e0',
-    backgroundImage: 'linear-gradient(90deg, #e0e0e0 0%, #f5f5f5 50%, #e0e0e0 100%)',
+    backgroundImage:
+      'linear-gradient(90deg, #e0e0e0 0%, #f5f5f5 50%, #e0e0e0 100%)',
     backgroundSize: '200% 100%',
     animation: 'skeleton-loading 1.5s ease-in-out infinite',
     width: typeof width === 'number' ? `${width}px` : width,

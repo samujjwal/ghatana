@@ -1,13 +1,17 @@
 /**
  * Software Bill of Materials (SBOM) Integration & Dependency Tracking
- * 
+ *
  * Parses CycloneDX and SPDX SBOM formats to visualize software dependencies,
  * detect vulnerabilities, check license compliance, and assess security risks.
- * 
+ *
  * @module devsecops/sbomParser
  */
 
-import type { CanvasDocument, CanvasNode, CanvasEdge } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasNode,
+  CanvasEdge,
+} from '../types/canvas-document';
 
 /**
  * Supported SBOM formats
@@ -47,7 +51,12 @@ export type LicenseCategory =
 /**
  * Dependency scope
  */
-export type DependencyScope = 'required' | 'optional' | 'dev' | 'test' | 'runtime';
+export type DependencyScope =
+  | 'required'
+  | 'optional'
+  | 'dev'
+  | 'test'
+  | 'runtime';
 
 /**
  * Component/Package in SBOM
@@ -206,7 +215,7 @@ export function createSBOMConfig(overrides?: Partial<SBOMConfig>): SBOMConfig {
 
 /**
  * Parse CycloneDX SBOM
- * 
+ *
  * @param json - CycloneDX JSON string or object
  * @returns Parsed SBOM
  */
@@ -219,7 +228,9 @@ export function parseCycloneDX(json: string | any): SBOM {
     serialNumber: data.serialNumber,
     name: data.metadata?.component?.name,
     description: data.metadata?.component?.description,
-    timestamp: data.metadata?.timestamp ? new Date(data.metadata.timestamp) : undefined,
+    timestamp: data.metadata?.timestamp
+      ? new Date(data.metadata.timestamp)
+      : undefined,
     components: [],
     dependencies: [],
     metadata: {
@@ -252,18 +263,20 @@ export function parseCycloneDX(json: string | any): SBOM {
 
       // Parse vulnerabilities if present
       if (comp.vulnerabilities) {
-        component.metadata.vulnerabilities = comp.vulnerabilities.map((v: unknown) => ({
-          id: v.id,
-          source: v.source?.name,
-          description: v.description,
-          severity: mapCVSSSeverity(v.ratings?.[0]?.score),
-          cvssScore: v.ratings?.[0]?.score,
-          cvssVector: v.ratings?.[0]?.vector,
-          published: v.published ? new Date(v.published) : undefined,
-          updated: v.updated ? new Date(v.updated) : undefined,
-          references: v.references?.map((r: unknown) => r.url),
-          cwe: v.cwes,
-        }));
+        component.metadata.vulnerabilities = comp.vulnerabilities.map(
+          (v: unknown) => ({
+            id: v.id,
+            source: v.source?.name,
+            description: v.description,
+            severity: mapCVSSSeverity(v.ratings?.[0]?.score),
+            cvssScore: v.ratings?.[0]?.score,
+            cvssVector: v.ratings?.[0]?.vector,
+            published: v.published ? new Date(v.published) : undefined,
+            updated: v.updated ? new Date(v.updated) : undefined,
+            references: v.references?.map((r: unknown) => r.url),
+            cwe: v.cwes,
+          })
+        );
       }
 
       sbom.components.push(component);
@@ -283,7 +296,7 @@ export function parseCycloneDX(json: string | any): SBOM {
           });
 
           // Add to component's dependencies array
-          const component = sbom.components.find(c => c.id === from);
+          const component = sbom.components.find((c) => c.id === from);
           if (component) {
             component.dependencies.push(to);
           }
@@ -300,7 +313,7 @@ export function parseCycloneDX(json: string | any): SBOM {
 
 /**
  * Parse SPDX SBOM
- * 
+ *
  * @param json - SPDX JSON string or object
  * @returns Parsed SBOM
  */
@@ -313,12 +326,18 @@ export function parseSPDX(json: string | any): SBOM {
     serialNumber: data.SPDXID,
     name: data.name,
     description: data.documentDescribes?.[0],
-    timestamp: data.creationInfo?.created ? new Date(data.creationInfo.created) : undefined,
+    timestamp: data.creationInfo?.created
+      ? new Date(data.creationInfo.created)
+      : undefined,
     components: [],
     dependencies: [],
     metadata: {
-      tools: data.creationInfo?.creators?.filter((c: string) => c.startsWith('Tool:')),
-      authors: data.creationInfo?.creators?.filter((c: string) => c.startsWith('Person:')),
+      tools: data.creationInfo?.creators?.filter((c: string) =>
+        c.startsWith('Tool:')
+      ),
+      authors: data.creationInfo?.creators?.filter((c: string) =>
+        c.startsWith('Person:')
+      ),
     },
   };
 
@@ -347,7 +366,10 @@ export function parseSPDX(json: string | any): SBOM {
       if (pkg.externalRefs) {
         const vulnerabilities: Vulnerability[] = [];
         pkg.externalRefs.forEach((ref: unknown) => {
-          if (ref.referenceCategory === 'SECURITY' && ref.referenceType === 'cpe23Type') {
+          if (
+            ref.referenceCategory === 'SECURITY' &&
+            ref.referenceType === 'cpe23Type'
+          ) {
             component.cpe = ref.referenceLocator;
           }
           if (ref.comment && ref.comment.includes('CVE-')) {
@@ -375,7 +397,10 @@ export function parseSPDX(json: string | any): SBOM {
   // Parse relationships (dependencies)
   if (data.relationships) {
     data.relationships.forEach((rel: unknown) => {
-      if (rel.relationshipType === 'DEPENDS_ON' || rel.relationshipType === 'DEPENDENCY_OF') {
+      if (
+        rel.relationshipType === 'DEPENDS_ON' ||
+        rel.relationshipType === 'DEPENDENCY_OF'
+      ) {
         const from = rel.spdxElementId;
         const to = rel.relatedSpdxElement;
 
@@ -385,7 +410,7 @@ export function parseSPDX(json: string | any): SBOM {
           relationship: 'dependsOn',
         });
 
-        const component = sbom.components.find(c => c.id === from);
+        const component = sbom.components.find((c) => c.id === from);
         if (component) {
           component.dependencies.push(to);
         }
@@ -400,7 +425,7 @@ export function parseSPDX(json: string | any): SBOM {
 
 /**
  * Convert SBOM to canvas document
- * 
+ *
  * @param sbom - Parsed SBOM
  * @param config - Visualization configuration
  * @returns Canvas document
@@ -420,19 +445,25 @@ export function sbomToCanvas(
   // Filter components based on severity
   let filteredComponents = sbom.components;
   if (config.filterSeverity && config.filterSeverity.length > 0) {
-    filteredComponents = sbom.components.filter(comp => {
+    filteredComponents = sbom.components.filter((comp) => {
       const vulnerabilities = comp.metadata.vulnerabilities || [];
-      return vulnerabilities.some(v => config.filterSeverity!.includes(v.severity));
+      return vulnerabilities.some((v) =>
+        config.filterSeverity!.includes(v.severity)
+      );
     });
   }
 
   // Build dependency tree
   const roots = findRootComponents(filteredComponents, sbom.dependencies);
-  const levels = calculateComponentLevels(filteredComponents, sbom.dependencies, config.maxDepth);
+  const levels = calculateComponentLevels(
+    filteredComponents,
+    sbom.dependencies,
+    config.maxDepth
+  );
 
   // Layout components by level
   const levelGroups = new Map<number, Component[]>();
-  filteredComponents.forEach(comp => {
+  filteredComponents.forEach((comp) => {
     const level = levels.get(comp.id) || 0;
     const group = levelGroups.get(level) || [];
     group.push(comp);
@@ -442,13 +473,15 @@ export function sbomToCanvas(
   // Position components
   levelGroups.forEach((components, level) => {
     components.forEach((comp, index) => {
-      const x = 50 + (level * HORIZONTAL_GAP);
-      const y = 50 + (index * VERTICAL_GAP);
+      const x = 50 + level * HORIZONTAL_GAP;
+      const y = 50 + index * VERTICAL_GAP;
 
       const hasCriticalVuln = comp.metadata.vulnerabilities?.some(
-        v => v.severity === 'critical'
+        (v) => v.severity === 'critical'
       );
-      const hasHighVuln = comp.metadata.vulnerabilities?.some(v => v.severity === 'high');
+      const hasHighVuln = comp.metadata.vulnerabilities?.some(
+        (v) => v.severity === 'high'
+      );
 
       const node: CanvasNode = {
         id: comp.id,
@@ -473,7 +506,7 @@ export function sbomToCanvas(
           componentName: comp.name,
           version: comp.version,
           type: comp.type,
-          licenses: comp.licenses.map(l => l.id || l.name).filter(Boolean),
+          licenses: comp.licenses.map((l) => l.id || l.name).filter(Boolean),
           vulnerabilities: comp.metadata.vulnerabilities,
           riskScore: comp.metadata.riskScore,
           deprecated: comp.metadata.deprecated,
@@ -485,10 +518,13 @@ export function sbomToCanvas(
           label: `${comp.name}@${comp.version}`,
           type: comp.type,
           vulnCount: comp.metadata.vulnerabilities?.length || 0,
-          criticalVulns: comp.metadata.vulnerabilities?.filter(v => v.severity === 'critical')
-            .length,
-          highVulns: comp.metadata.vulnerabilities?.filter(v => v.severity === 'high').length,
-          licenses: comp.licenses.map(l => l.id || l.name).join(', '),
+          criticalVulns: comp.metadata.vulnerabilities?.filter(
+            (v) => v.severity === 'critical'
+          ).length,
+          highVulns: comp.metadata.vulnerabilities?.filter(
+            (v) => v.severity === 'high'
+          ).length,
+          licenses: comp.licenses.map((l) => l.id || l.name).join(', '),
           riskScore: comp.metadata.riskScore,
         },
         inputs: [],
@@ -502,7 +538,7 @@ export function sbomToCanvas(
   });
 
   // Create edges for dependencies
-  sbom.dependencies.forEach(dep => {
+  sbom.dependencies.forEach((dep) => {
     // Only create edges for visible components
     if (elements[dep.from] && elements[dep.to]) {
       const edgeId = `edge-${dep.from}-${dep.to}`;
@@ -579,7 +615,7 @@ export function sbomToCanvas(
 
 /**
  * Detect vulnerabilities by enriching SBOM with CVE data
- * 
+ *
  * @param sbom - SBOM to enrich
  * @param cveDatabase - CVE vulnerability database
  * @returns SBOM with vulnerability information
@@ -590,7 +626,7 @@ export function detectVulnerabilities(
 ): SBOM {
   const enriched = { ...sbom };
 
-  enriched.components = sbom.components.map(comp => {
+  enriched.components = sbom.components.map((comp) => {
     // Look up vulnerabilities by component name, purl, or cpe
     const key = comp.purl || comp.cpe || `${comp.name}@${comp.version}`;
     const vulns = cveDatabase[key] || cveDatabase[comp.name] || [];
@@ -612,7 +648,7 @@ export function detectVulnerabilities(
 
 /**
  * Check license compliance
- * 
+ *
  * @param sbom - SBOM to check
  * @param allowedLicenses - List of allowed license IDs
  * @param prohibitedLicenses - List of prohibited license IDs
@@ -632,8 +668,8 @@ export function checkLicenseCompliance(
     unknown: 0,
   };
 
-  sbom.components.forEach(comp => {
-    comp.licenses.forEach(license => {
+  sbom.components.forEach((comp) => {
+    comp.licenses.forEach((license) => {
       const licenseId = license.id || license.name || 'unknown';
       const category = license.category || categorizeLicense(licenseId);
 
@@ -662,7 +698,8 @@ export function checkLicenseCompliance(
           category,
           severity: 'high',
           reason: `Prohibited license: ${licenseId}`,
-          recommendation: 'Find alternative component or obtain license exception',
+          recommendation:
+            'Find alternative component or obtain license exception',
         });
       }
 
@@ -674,7 +711,8 @@ export function checkLicenseCompliance(
           category,
           severity: 'medium',
           reason: `License not in allowed list: ${licenseId}`,
-          recommendation: 'Review license and add to allowed list if acceptable',
+          recommendation:
+            'Review license and add to allowed list if acceptable',
         });
       }
 
@@ -705,7 +743,7 @@ export function checkLicenseCompliance(
   });
 
   return {
-    compliant: issues.filter(i => i.severity === 'high').length === 0,
+    compliant: issues.filter((i) => i.severity === 'high').length === 0,
     issues,
     summary,
   };
@@ -713,14 +751,14 @@ export function checkLicenseCompliance(
 
 /**
  * Analyze dependency risk
- * 
+ *
  * @param sbom - SBOM to analyze
  * @returns SBOM with risk scores
  */
 export function analyzeDependencyRisk(sbom: SBOM): SBOM {
   const analyzed = { ...sbom };
 
-  analyzed.components = sbom.components.map(comp => {
+  analyzed.components = sbom.components.map((comp) => {
     const vulns = comp.metadata.vulnerabilities || [];
     const riskScore = calculateRiskScore(comp, vulns);
 
@@ -735,7 +773,7 @@ export function analyzeDependencyRisk(sbom: SBOM): SBOM {
 
   // Calculate high-risk components
   analyzed.metadata.highRiskComponents = analyzed.components.filter(
-    c => (c.metadata.riskScore || 0) >= 70
+    (c) => (c.metadata.riskScore || 0) >= 70
   ).length;
 
   return analyzed;
@@ -798,7 +836,7 @@ function parseCycloneDXLicenses(licenses?: unknown[]): License[] {
   if (!licenses) return [];
 
   return licenses
-    .map(l => {
+    .map((l) => {
       if (l.license) {
         return {
           id: l.license.id,
@@ -832,7 +870,7 @@ function parseSPDXLicenses(concluded?: string, declared?: string): License[] {
   // Split compound licenses (AND, OR)
   const licenseIds = licenseStr.split(/\s+(?:AND|OR)\s+/);
 
-  licenseIds.forEach(id => {
+  licenseIds.forEach((id) => {
     const cleanId = id.trim().replace(/[()]/g, '');
     licenses.push({
       id: cleanId,
@@ -848,7 +886,14 @@ function parseSPDXLicenses(concluded?: string, declared?: string): License[] {
  *
  */
 function categorizeLicense(licenseId: string): LicenseCategory {
-  const permissive = ['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD'];
+  const permissive = [
+    'MIT',
+    'Apache-2.0',
+    'BSD-2-Clause',
+    'BSD-3-Clause',
+    'ISC',
+    '0BSD',
+  ];
   const strongCopyleft = ['GPL-2.0', 'GPL-3.0', 'AGPL-3.0'];
   const weakCopyleft = ['LGPL-2.1', 'LGPL-3.0', 'MPL-2.0', 'EPL-1.0'];
   const publicDomain = ['Unlicense', 'CC0-1.0'];
@@ -877,11 +922,14 @@ function mapCVSSSeverity(score?: number): Severity {
 /**
  *
  */
-function calculateRiskScore(comp: Component, vulnerabilities: Vulnerability[]): number {
+function calculateRiskScore(
+  comp: Component,
+  vulnerabilities: Vulnerability[]
+): number {
   let score = 0;
 
   // Vulnerability score (0-70 points)
-  vulnerabilities.forEach(v => {
+  vulnerabilities.forEach((v) => {
     switch (v.severity) {
       case 'critical':
         score += 20;
@@ -904,14 +952,14 @@ function calculateRiskScore(comp: Component, vulnerabilities: Vulnerability[]): 
   }
 
   // Unknown license (5 points)
-  if (comp.licenses.some(l => l.category === 'unknown')) {
+  if (comp.licenses.some((l) => l.category === 'unknown')) {
     score += 5;
   }
 
   // Copyleft license (5 points for strong, 3 for weak)
-  if (comp.licenses.some(l => l.category === 'copyleft-strong')) {
+  if (comp.licenses.some((l) => l.category === 'copyleft-strong')) {
     score += 5;
-  } else if (comp.licenses.some(l => l.category === 'copyleft-weak')) {
+  } else if (comp.licenses.some((l) => l.category === 'copyleft-weak')) {
     score += 3;
   }
 
@@ -925,8 +973,8 @@ function findRootComponents(
   components: Component[],
   dependencies: DependencyRelation[]
 ): Component[] {
-  const dependentIds = new Set(dependencies.map(d => d.to));
-  return components.filter(c => !dependentIds.has(c.id));
+  const dependentIds = new Set(dependencies.map((d) => d.to));
+  return components.filter((c) => !dependentIds.has(c.id));
 }
 
 /**
@@ -941,7 +989,7 @@ function calculateComponentLevels(
 
   // Build adjacency list
   const adjList = new Map<string, string[]>();
-  dependencies.forEach(dep => {
+  dependencies.forEach((dep) => {
     const deps = adjList.get(dep.from) || [];
     deps.push(dep.to);
     adjList.set(dep.from, deps);
@@ -949,7 +997,7 @@ function calculateComponentLevels(
 
   // BFS to calculate levels
   const roots = findRootComponents(components, dependencies);
-  const queue: Array<{ id: string; level: number }> = roots.map(r => ({
+  const queue: Array<{ id: string; level: number }> = roots.map((r) => ({
     id: r.id,
     level: 0,
   }));
@@ -963,13 +1011,13 @@ function calculateComponentLevels(
     levels.set(id, level);
 
     const deps = adjList.get(id) || [];
-    deps.forEach(depId => {
+    deps.forEach((depId) => {
       queue.push({ id: depId, level: level + 1 });
     });
   }
 
   // Set level 0 for any orphaned components
-  components.forEach(c => {
+  components.forEach((c) => {
     if (!levels.has(c.id)) {
       levels.set(c.id, 0);
     }
@@ -985,10 +1033,10 @@ function calculateSBOMMetadata(sbom: SBOM): void {
   let totalVulns = 0;
   let criticalVulns = 0;
 
-  sbom.components.forEach(comp => {
+  sbom.components.forEach((comp) => {
     const vulns = comp.metadata.vulnerabilities || [];
     totalVulns += vulns.length;
-    criticalVulns += vulns.filter(v => v.severity === 'critical').length;
+    criticalVulns += vulns.filter((v) => v.severity === 'critical').length;
   });
 
   sbom.metadata.totalVulnerabilities = totalVulns;
@@ -1012,8 +1060,8 @@ export function getComponentStyle(
   // Vulnerability-based styling (highest priority)
   if (config.highlightCritical) {
     const vulns = comp.metadata.vulnerabilities || [];
-    const hasCritical = vulns.some(v => v.severity === 'critical');
-    const hasHigh = vulns.some(v => v.severity === 'high');
+    const hasCritical = vulns.some((v) => v.severity === 'critical');
+    const hasHigh = vulns.some((v) => v.severity === 'high');
 
     if (hasCritical) {
       return {
@@ -1036,7 +1084,10 @@ export function getComponentStyle(
   }
 
   // Type-based styling
-  const typeColors: Record<PackageType, { bg: string; border: string; text: string }> = {
+  const typeColors: Record<
+    PackageType,
+    { bg: string; border: string; text: string }
+  > = {
     library: { bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' },
     framework: { bg: '#f0f9ff', border: '#0ea5e9', text: '#0c4a6e' },
     application: { bg: '#f0fdf4', border: '#22c55e', text: '#14532d' },

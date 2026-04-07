@@ -11,10 +11,16 @@
  * @param timeoutMs - Timeout in milliseconds (default: 5000)
  * @returns Promise that resolves with the value
  */
-export async function waitFor<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
+export async function waitFor<T>(
+  promise: Promise<T>,
+  timeoutMs = 5000
+): Promise<T> {
   let timeoutId: NodeJS.Timeout | null = null;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(`Timeout after ${timeoutMs}ms`)), timeoutMs);
+    timeoutId = setTimeout(
+      () => reject(new Error(`Timeout after ${timeoutMs}ms`)),
+      timeoutMs
+    );
   });
 
   try {
@@ -76,7 +82,8 @@ export function spyOn<T extends Record<string, unknown>, K extends keyof T>(
   methodName: K
 ) {
   const original = object[methodName];
-  const calls: Array<{ args: unknown[]; result?: unknown; error?: unknown }> = [];
+  const calls: Array<{ args: unknown[]; result?: unknown; error?: unknown }> =
+    [];
 
   const spy = function (...args: unknown[]) {
     try {
@@ -94,7 +101,9 @@ export function spyOn<T extends Record<string, unknown>, K extends keyof T>(
   return {
     calls,
     calledWith(...expectedArgs: unknown[]) {
-      return calls.some((call) => JSON.stringify(call.args) === JSON.stringify(expectedArgs));
+      return calls.some(
+        (call) => JSON.stringify(call.args) === JSON.stringify(expectedArgs)
+      );
     },
     callCount() {
       return calls.length;
@@ -144,7 +153,10 @@ export function deepClone<T>(obj: T): T {
  * @param source - Source object to merge
  * @returns Merged object
  */
-export function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+export function deepMerge<T extends Record<string, unknown>>(
+  target: T,
+  source: Partial<T>
+): T {
   const result = deepClone(target);
 
   for (const key in source) {
@@ -177,7 +189,10 @@ export function deepMerge<T extends Record<string, unknown>>(target: T, source: 
  * @param factory - Factory function to create each item
  * @returns Array of created items
  */
-export function createArray<T>(count: number, factory: (index: number) => T): T[] {
+export function createArray<T>(
+  count: number,
+  factory: (index: number) => T
+): T[] {
   return Array.from({ length: count }, (_, index) => factory(index));
 }
 
@@ -326,7 +341,7 @@ export function createMockFetchResponse(
     json: async () => data,
     text: async () => JSON.stringify(data),
     blob: async () => new Blob([JSON.stringify(data)]),
-    clone () {
+    clone() {
       return this;
     },
   };
@@ -342,7 +357,8 @@ export function createMockFetchResponse(
 export function assertEqual<T>(actual: T, expected: T, message?: string): void {
   if (actual !== expected) {
     throw new Error(
-      message || `Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`
+      message ||
+        `Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`
     );
   }
 }
@@ -355,7 +371,9 @@ export function assertEqual<T>(actual: T, expected: T, message?: string): void {
  */
 export function assertTrue(value: unknown, message?: string): void {
   if (!value) {
-    throw new Error(message || `Expected truthy value, but got ${JSON.stringify(value)}`);
+    throw new Error(
+      message || `Expected truthy value, but got ${JSON.stringify(value)}`
+    );
   }
 }
 
@@ -367,7 +385,9 @@ export function assertTrue(value: unknown, message?: string): void {
  */
 export function assertFalse(value: unknown, message?: string): void {
   if (value) {
-    throw new Error(message || `Expected falsy value, but got ${JSON.stringify(value)}`);
+    throw new Error(
+      message || `Expected falsy value, but got ${JSON.stringify(value)}`
+    );
   }
 }
 
@@ -383,7 +403,10 @@ export function assertThrows(fn: () => void, message?: string): Error {
     fn();
     throw new Error(message || 'Expected function to throw, but it did not');
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Expected function to throw')) {
+    if (
+      error instanceof Error &&
+      error.message.includes('Expected function to throw')
+    ) {
       throw error;
     }
     return error as Error;

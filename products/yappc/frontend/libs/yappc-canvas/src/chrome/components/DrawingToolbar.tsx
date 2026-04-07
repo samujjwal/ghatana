@@ -1,13 +1,13 @@
 /**
  * DrawingToolbar - Drawing tool controls
- * 
+ *
  * Progressive disclosure: Appears only when draw tool is active
  * Provides controls for:
  * - Tool type (pen, marker, highlighter, eraser)
  * - Color selection
  * - Stroke width
  * - Opacity (for highlighter)
- * 
+ *
  * @doc.type component
  * @doc.purpose Drawing tool configuration UI
  * @doc.layer components
@@ -28,10 +28,22 @@ import { ToggleButtonGroup } from '@ghatana/design-system';
 
 import { Popover } from '@yappc/ui/base-ui';
 
-import type { DrawingStyle, DrawingToolType } from '../lib/canvas/DrawingManager';
+import type {
+  DrawingStyle,
+  DrawingToolType,
+} from '../lib/canvas/DrawingManager';
 import { CANVAS_TOKENS } from '../tokens';
 
-const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS, Z_INDEX, DRAWING_PRESETS } = CANVAS_TOKENS;
+const {
+  SPACING,
+  COLORS,
+  TYPOGRAPHY,
+  FONT_WEIGHT,
+  RADIUS,
+  SHADOWS,
+  Z_INDEX,
+  DRAWING_PRESETS,
+} = CANVAS_TOKENS;
 
 /**
  *
@@ -39,10 +51,10 @@ const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS, Z_INDEX, DRAW
 export interface DrawingToolbarProps {
   /** Current drawing style */
   style: DrawingStyle;
-  
+
   /** Callback when style changes */
   onStyleChange: (style: DrawingStyle) => void;
-  
+
   /** Whether toolbar is visible */
   visible?: boolean;
 }
@@ -75,7 +87,11 @@ const TOOL_ICONS: Record<DrawingToolType, string> = {
 /**
  *
  */
-export function DrawingToolbar({ style, onStyleChange, visible = true }: DrawingToolbarProps) {
+export function DrawingToolbar({
+  style,
+  onStyleChange,
+  visible = true,
+}: DrawingToolbarProps) {
   const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
 
   if (!visible) return null;
@@ -107,7 +123,17 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
 
   return (
     <Box
-      className="absolute top-[80px] left-[50%] flex items-center" style={{ gap: SPACING.MD, padding: SPACING.MD, backgroundColor: COLORS.PANEL_BG_LIGHT, borderRadius: RADIUS.LG, boxShadow: SHADOWS.LG, border: `1px solid ${COLORS.BORDER_LIGHT}`, transform: 'translateX(-50%)' }}>
+      className="absolute top-[80px] left-[50%] flex items-center"
+      style={{
+        gap: SPACING.MD,
+        padding: SPACING.MD,
+        backgroundColor: COLORS.PANEL_BG_LIGHT,
+        borderRadius: RADIUS.LG,
+        boxShadow: SHADOWS.LG,
+        border: `1px solid ${COLORS.BORDER_LIGHT}`,
+        transform: 'translateX(-50%)',
+      }}
+    >
       {/* Tool Type Selector */}
       <Box>
         <Typography
@@ -126,7 +152,7 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
           onChange={(_, value) => value && handleToolChange(value)}
           size="small"
         >
-          {(Object.keys(TOOL_LABELS) as DrawingToolType[]).map(tool => (
+          {(Object.keys(TOOL_LABELS) as DrawingToolType[]).map((tool) => (
             <ToggleButton
               key={tool}
               value={tool}
@@ -139,7 +165,7 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
                 fontSize: TYPOGRAPHY.SM,
               }}
             >
-              <Box className="flex items-center gap-1" >
+              <Box className="flex items-center gap-1">
                 <span style={{ fontSize: '18px' }}>{TOOL_ICONS[tool]}</span>
                 <span>{TOOL_LABELS[tool]}</span>
               </Box>
@@ -165,7 +191,11 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
         <Button
           onClick={(e) => setColorAnchor(e.currentTarget)}
           aria-label="Select color"
-          className="min-w-[40px] w-[40px] h-[40px] p-0" style={{ backgroundColor: style.color, border: `2px solid ${COLORS.BORDER_LIGHT}`}}
+          className="min-w-[40px] w-[40px] h-[40px] p-0"
+          style={{
+            backgroundColor: style.color,
+            border: `2px solid ${COLORS.BORDER_LIGHT}`,
+          }}
         />
 
         {/* Color Picker Popover */}
@@ -183,16 +213,28 @@ export function DrawingToolbar({ style, onStyleChange, visible = true }: Drawing
           }}
         >
           <Box style={{ padding: SPACING.MD }}>
-            <Typography style={{ fontSize: TYPOGRAPHY.SM, marginBottom: SPACING.SM, fontWeight: FONT_WEIGHT.MEDIUM }}>
+            <Typography
+              style={{
+                fontSize: TYPOGRAPHY.SM,
+                marginBottom: SPACING.SM,
+                fontWeight: FONT_WEIGHT.MEDIUM,
+              }}
+            >
               Select Color
             </Typography>
-            <Box
-              className="grid" >
-              {PRESET_COLORS.map(color => (
+            <Box className="grid">
+              {PRESET_COLORS.map((color) => (
                 <Button
                   key={color}
                   onClick={() => handleColorChange(color)}
-                  className="min-w-[40px] w-[40px] h-[40px] p-0" style={{ backgroundColor: color, border: style.color === color ? `3px solid ${COLORS.PRIMARY}` : 'none' }}
+                  className="min-w-[40px] w-[40px] h-[40px] p-0"
+                  style={{
+                    backgroundColor: color,
+                    border:
+                      style.color === color
+                        ? `3px solid ${COLORS.PRIMARY}`
+                        : 'none',
+                  }}
                   aria-label={`Select color ${color}`}
                 />
               ))}

@@ -1,6 +1,6 @@
 /**
  * Worker Manager - Web Worker Offloading for Heavy Computation
- * 
+ *
  * Provides worker management capabilities:
  * - Layout computation in separate thread
  * - Worker lifecycle management (spawn, terminate, restart)
@@ -8,13 +8,13 @@
  * - Error handling and crash recovery
  * - Progress reporting for long-running tasks
  * - Worker pool management for parallel execution
- * 
+ *
  * Benefits:
  * - Non-blocking UI during heavy computation
  * - Parallelization of independent tasks
  * - Graceful degradation on worker failure
  * - Efficient memory transfer with transferables
- * 
+ *
  * @module workerManager
  */
 
@@ -22,12 +22,12 @@
  * Worker task types
  */
 export type WorkerTaskType =
-  | 'layout'           // Layout computation (force-directed, hierarchical)
-  | 'pathfinding'      // Path calculation for connectors
-  | 'clustering'       // Node grouping and clustering
-  | 'export'           // Document export (PDF, SVG, PNG)
-  | 'validation'       // Schema validation and linting
-  | 'analytics';       // Metrics and statistics computation
+  | 'layout' // Layout computation (force-directed, hierarchical)
+  | 'pathfinding' // Path calculation for connectors
+  | 'clustering' // Node grouping and clustering
+  | 'export' // Document export (PDF, SVG, PNG)
+  | 'validation' // Schema validation and linting
+  | 'analytics'; // Metrics and statistics computation
 
 /**
  * Worker task priority
@@ -37,7 +37,7 @@ export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 /**
  * Worker task status
  */
-export type TaskStatus = 
+export type TaskStatus =
   | 'pending'
   | 'running'
   | 'completed'
@@ -52,9 +52,9 @@ export interface WorkerTask<TInput = unknown, TOutput = unknown> {
   type: WorkerTaskType;
   priority: TaskPriority;
   input: TInput;
-  transferables?: Transferable[];  // For zero-copy transfer
-  timeout?: number;                 // Task timeout in ms
-  retryCount?: number;              // Number of retries on failure
+  transferables?: Transferable[]; // For zero-copy transfer
+  timeout?: number; // Task timeout in ms
+  retryCount?: number; // Number of retries on failure
   onProgress?: (progress: TaskProgress) => void;
   onComplete?: (output: TOutput) => void;
   onError?: (error: Error) => void;
@@ -65,7 +65,7 @@ export interface WorkerTask<TInput = unknown, TOutput = unknown> {
  */
 export interface TaskProgress {
   taskId: string;
-  progress: number;      // 0-100
+  progress: number; // 0-100
   message?: string;
   currentStep?: string;
   totalSteps?: number;
@@ -109,22 +109,22 @@ export interface WorkerInstance {
   id: string;
   worker: Worker;
   status: 'idle' | 'busy' | 'crashed';
-  currentTask?: string;       // Current task ID
-  taskCount: number;          // Total tasks processed
-  errorCount: number;         // Total errors encountered
-  lastActivity: number;       // Timestamp of last activity
-  crashCount: number;         // Number of crashes
+  currentTask?: string; // Current task ID
+  taskCount: number; // Total tasks processed
+  errorCount: number; // Total errors encountered
+  lastActivity: number; // Timestamp of last activity
+  crashCount: number; // Number of crashes
 }
 
 /**
  * Worker pool configuration
  */
 export interface WorkerPoolConfig {
-  maxWorkers: number;         // Maximum number of workers
-  taskQueueSize: number;      // Maximum queued tasks
-  workerTimeout: number;      // Worker idle timeout (ms)
-  maxRetries: number;         // Max retry attempts per task
-  crashThreshold: number;     // Max crashes before permanent failure
+  maxWorkers: number; // Maximum number of workers
+  taskQueueSize: number; // Maximum queued tasks
+  workerTimeout: number; // Worker idle timeout (ms)
+  maxRetries: number; // Max retry attempts per task
+  crashThreshold: number; // Max crashes before permanent failure
 }
 
 /**
@@ -223,7 +223,7 @@ export function spawnWorker(
   workerScript: string | URL
 ): { worker: WorkerInstance; state: WorkerManagerState } {
   const workerId = generateWorkerId();
-  
+
   const worker: WorkerInstance = {
     id: workerId,
     worker: new Worker(workerScript, { type: 'module' }),
@@ -233,7 +233,7 @@ export function spawnWorker(
     lastActivity: Date.now(),
     crashCount: 0,
   };
-  
+
   return {
     worker,
     state: {
@@ -255,25 +255,28 @@ export function terminateWorker(
   workerId: string
 ): WorkerManagerState {
   const worker = state.workers.get(workerId);
-  
+
   if (!worker) {
     return state;
   }
-  
+
   // Terminate the worker
   worker.worker.terminate();
-  
+
   // Remove from workers map
   const newWorkers = new Map(state.workers);
   newWorkers.delete(workerId);
-  
+
   return {
     ...state,
     workers: newWorkers,
     statistics: {
       ...state.statistics,
       activeWorkers: Math.max(0, state.statistics.activeWorkers - 1),
-      idleWorkers: Math.max(0, state.statistics.idleWorkers - (worker.status === 'idle' ? 1 : 0)),
+      idleWorkers: Math.max(
+        0,
+        state.statistics.idleWorkers - (worker.status === 'idle' ? 1 : 0)
+      ),
     },
   };
 }
@@ -291,12 +294,12 @@ export function getAvailableWorker(
       return { worker, state };
     }
   }
-  
+
   // Spawn new worker if under max limit
   if (state.workers.size < state.config.maxWorkers) {
     return spawnWorker(state, workerScript);
   }
-  
+
   // No workers available
   return { worker: null, state };
 }
@@ -311,32 +314,34 @@ export function queueTask<TInput, TOutput>(
   }
 ): { taskId: string; state: WorkerManagerState } {
   const taskId = generateTaskId(task.type);
-  
+
   const fullTask: WorkerTask<TInput, TOutput> = {
     ...task,
     id: taskId,
     priority: task.priority ?? 'normal',
   };
-  
+
   // Check queue size limit
   if (state.taskQueue.length >= state.config.taskQueueSize) {
     throw new Error(`Task queue full (max ${state.config.taskQueueSize})`);
   }
-  
+
   // Insert task based on priority
   const newQueue = [...state.taskQueue];
   const priorityOrder = { urgent: 0, high: 1, normal: 2, low: 3 };
-  
+
   let insertIndex = newQueue.length;
   for (let i = 0; i < newQueue.length; i++) {
-    if (priorityOrder[fullTask.priority] < priorityOrder[newQueue[i].priority]) {
+    if (
+      priorityOrder[fullTask.priority] < priorityOrder[newQueue[i].priority]
+    ) {
       insertIndex = i;
       break;
     }
   }
-  
+
   newQueue.splice(insertIndex, 0, fullTask);
-  
+
   return {
     taskId,
     state: {
@@ -360,14 +365,14 @@ export function assignTaskToWorker(
   taskId: string
 ): WorkerManagerState {
   const worker = state.workers.get(workerId);
-  const taskIndex = state.taskQueue.findIndex(t => t.id === taskId);
-  
+  const taskIndex = state.taskQueue.findIndex((t) => t.id === taskId);
+
   if (!worker || taskIndex === -1) {
     return state;
   }
-  
+
   const task = state.taskQueue[taskIndex];
-  
+
   // Update worker state
   const updatedWorker: WorkerInstance = {
     ...worker,
@@ -375,17 +380,17 @@ export function assignTaskToWorker(
     currentTask: taskId,
     lastActivity: Date.now(),
   };
-  
+
   // Remove task from queue and add to active
   const newQueue = [...state.taskQueue];
   newQueue.splice(taskIndex, 1);
-  
+
   const newActiveTasks = new Map(state.activeTasks);
   newActiveTasks.set(taskId, task);
-  
+
   const newWorkers = new Map(state.workers);
   newWorkers.set(workerId, updatedWorker);
-  
+
   return {
     ...state,
     workers: newWorkers,
@@ -408,11 +413,11 @@ export function completeTask(
   result: unknown
 ): WorkerManagerState {
   const task = state.activeTasks.get(taskId);
-  
+
   if (!task) {
     return state;
   }
-  
+
   // Find and update worker
   let updatedState = state;
   for (const [workerId, worker] of state.workers) {
@@ -424,10 +429,10 @@ export function completeTask(
         taskCount: worker.taskCount + 1,
         lastActivity: Date.now(),
       };
-      
+
       const newWorkers = new Map(state.workers);
       newWorkers.set(workerId, updatedWorker);
-      
+
       updatedState = {
         ...state,
         workers: newWorkers,
@@ -439,14 +444,14 @@ export function completeTask(
       break;
     }
   }
-  
+
   // Remove from active tasks and add to completed
   const newActiveTasks = new Map(updatedState.activeTasks);
   newActiveTasks.delete(taskId);
-  
+
   const newCompletedTasks = new Map(updatedState.completedTasks);
   newCompletedTasks.set(taskId, { result, timestamp: Date.now() });
-  
+
   return {
     ...updatedState,
     activeTasks: newActiveTasks,
@@ -467,11 +472,11 @@ export function failTask(
   error: Error
 ): WorkerManagerState {
   const task = state.activeTasks.get(taskId);
-  
+
   if (!task) {
     return state;
   }
-  
+
   // Find and update worker
   let updatedState = state;
   for (const [workerId, worker] of state.workers) {
@@ -483,10 +488,10 @@ export function failTask(
         errorCount: worker.errorCount + 1,
         lastActivity: Date.now(),
       };
-      
+
       const newWorkers = new Map(state.workers);
       newWorkers.set(workerId, updatedWorker);
-      
+
       updatedState = {
         ...state,
         workers: newWorkers,
@@ -498,14 +503,14 @@ export function failTask(
       break;
     }
   }
-  
+
   // Remove from active tasks and add to failed
   const newActiveTasks = new Map(updatedState.activeTasks);
   newActiveTasks.delete(taskId);
-  
+
   const newFailedTasks = new Map(updatedState.failedTasks);
   newFailedTasks.set(taskId, { error, timestamp: Date.now() });
-  
+
   return {
     ...updatedState,
     activeTasks: newActiveTasks,
@@ -525,23 +530,23 @@ export function handleWorkerCrash(
   workerId: string
 ): WorkerManagerState {
   const worker = state.workers.get(workerId);
-  
+
   if (!worker) {
     return state;
   }
-  
+
   const crashCount = worker.crashCount + 1;
-  
+
   // Mark worker as crashed
   const updatedWorker: WorkerInstance = {
     ...worker,
     status: 'crashed',
     crashCount,
   };
-  
+
   const newWorkers = new Map(state.workers);
   newWorkers.set(workerId, updatedWorker);
-  
+
   let updatedState: WorkerManagerState = {
     ...state,
     workers: newWorkers,
@@ -550,7 +555,7 @@ export function handleWorkerCrash(
       totalWorkerCrashes: state.statistics.totalWorkerCrashes + 1,
     },
   };
-  
+
   // If task was running, fail it
   if (worker.currentTask) {
     updatedState = failTask(
@@ -558,7 +563,7 @@ export function handleWorkerCrash(
       worker.currentTask,
       new Error(`Worker ${workerId} crashed`)
     );
-    
+
     // Restore crashed status (failTask sets it to idle)
     const updatedWorkerFromFail = updatedState.workers.get(workerId);
     if (updatedWorkerFromFail) {
@@ -575,12 +580,12 @@ export function handleWorkerCrash(
       };
     }
   }
-  
+
   // If crash threshold exceeded, terminate worker
   if (crashCount >= state.config.crashThreshold) {
     updatedState = terminateWorker(updatedState, workerId);
   }
-  
+
   return updatedState;
 }
 
@@ -592,12 +597,12 @@ export function cancelTask(
   taskId: string
 ): WorkerManagerState {
   // Check if task is in queue
-  const queueIndex = state.taskQueue.findIndex(t => t.id === taskId);
-  
+  const queueIndex = state.taskQueue.findIndex((t) => t.id === taskId);
+
   if (queueIndex !== -1) {
     const newQueue = [...state.taskQueue];
     newQueue.splice(queueIndex, 1);
-    
+
     return {
       ...state,
       taskQueue: newQueue,
@@ -608,7 +613,7 @@ export function cancelTask(
       },
     };
   }
-  
+
   // Check if task is active
   if (state.activeTasks.has(taskId)) {
     // Find worker running the task
@@ -619,7 +624,7 @@ export function cancelTask(
           type: 'terminate',
           taskId,
         } as WorkerMessage);
-        
+
         // Mark worker as idle
         const updatedWorker: WorkerInstance = {
           ...worker,
@@ -627,13 +632,13 @@ export function cancelTask(
           currentTask: undefined,
           lastActivity: Date.now(),
         };
-        
+
         const newWorkers = new Map(state.workers);
         newWorkers.set(workerId, updatedWorker);
-        
+
         const newActiveTasks = new Map(state.activeTasks);
         newActiveTasks.delete(taskId);
-        
+
         return {
           ...state,
           workers: newWorkers,
@@ -647,7 +652,7 @@ export function cancelTask(
       }
     }
   }
-  
+
   return state;
 }
 
@@ -658,22 +663,22 @@ export function getTaskStatus(
   state: WorkerManagerState,
   taskId: string
 ): TaskStatus | null {
-  if (state.taskQueue.some(t => t.id === taskId)) {
+  if (state.taskQueue.some((t) => t.id === taskId)) {
     return 'pending';
   }
-  
+
   if (state.activeTasks.has(taskId)) {
     return 'running';
   }
-  
+
   if (state.completedTasks.has(taskId)) {
     return 'completed';
   }
-  
+
   if (state.failedTasks.has(taskId)) {
     return 'failed';
   }
-  
+
   return null;
 }
 
@@ -707,8 +712,12 @@ export function getWorkerStatistics(
 ): WorkerStatistics {
   return {
     ...state.statistics,
-    activeWorkers: Array.from(state.workers.values()).filter(w => w.status !== 'crashed').length,
-    idleWorkers: Array.from(state.workers.values()).filter(w => w.status === 'idle').length,
+    activeWorkers: Array.from(state.workers.values()).filter(
+      (w) => w.status !== 'crashed'
+    ).length,
+    idleWorkers: Array.from(state.workers.values()).filter(
+      (w) => w.status === 'idle'
+    ).length,
     queuedTasks: state.taskQueue.length,
   };
 }
@@ -721,21 +730,21 @@ export function cleanupTasks(
   maxAge: number = 3600000 // 1 hour
 ): WorkerManagerState {
   const now = Date.now();
-  
+
   const newCompletedTasks = new Map(state.completedTasks);
   for (const [taskId, { timestamp }] of newCompletedTasks) {
     if (now - timestamp > maxAge) {
       newCompletedTasks.delete(taskId);
     }
   }
-  
+
   const newFailedTasks = new Map(state.failedTasks);
   for (const [taskId, { timestamp }] of newFailedTasks) {
     if (now - timestamp > maxAge) {
       newFailedTasks.delete(taskId);
     }
   }
-  
+
   return {
     ...state,
     completedTasks: newCompletedTasks,
@@ -753,7 +762,7 @@ export function terminateAllWorkers(
   for (const worker of state.workers.values()) {
     worker.worker.terminate();
   }
-  
+
   return {
     ...state,
     workers: new Map(),
@@ -775,7 +784,9 @@ export function supportsWorkers(): boolean {
 /**
  * Create transferable for large data
  */
-export function createTransferable(data: ArrayBuffer | MessagePort | ImageBitmap): Transferable {
+export function createTransferable(
+  data: ArrayBuffer | MessagePort | ImageBitmap
+): Transferable {
   return data as Transferable;
 }
 
@@ -789,15 +800,21 @@ export function getWorkerHealth(worker: WorkerInstance): {
   if (worker.status === 'crashed') {
     return { healthy: false, reason: 'Worker has crashed' };
   }
-  
+
   if (worker.crashCount >= 3) {
-    return { healthy: false, reason: `High crash count (${worker.crashCount})` };
+    return {
+      healthy: false,
+      reason: `High crash count (${worker.crashCount})`,
+    };
   }
-  
+
   const timeSinceActivity = Date.now() - worker.lastActivity;
   if (timeSinceActivity > 60000 && worker.status === 'busy') {
-    return { healthy: false, reason: 'Worker appears stuck (no activity for 60s)' };
+    return {
+      healthy: false,
+      reason: 'Worker appears stuck (no activity for 60s)',
+    };
   }
-  
+
   return { healthy: true };
 }

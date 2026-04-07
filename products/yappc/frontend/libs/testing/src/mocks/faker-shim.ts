@@ -24,19 +24,29 @@ export const faker = {
     userName: () => `user${randomInt(1000)}`,
     password: (len = 12) => `p${randomInt(1000000)}`.slice(0, len),
     url: () => `https://example.com/${randomInt(10000)}`,
-    color: () => `#${(randomInt(0xffffff)).toString(16).padStart(6, '0')}`,
+    color: () => `#${randomInt(0xffffff).toString(16).padStart(6, '0')}`,
   },
   image: {
-    avatar: () => `https://api.dicebear.com/6.x/identicon/svg?seed=${randomInt()}`,
+    avatar: () =>
+      `https://api.dicebear.com/6.x/identicon/svg?seed=${randomInt()}`,
   },
   company: {
     name: () => `Acme ${randomInt(1000)}`,
     catchPhrase: () => `Doing great things ${randomInt(1000)}`,
   },
   date: {
-    past: () => new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 365)),
-    recent: () => new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 30)),
-    future: () => new Date(Date.now() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 365)),
+    past: () =>
+      new Date(
+        Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 365)
+      ),
+    recent: () =>
+      new Date(
+        Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 30)
+      ),
+    future: () =>
+      new Date(
+        Date.now() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 365)
+      ),
   },
   commerce: {
     productName: () => `Product ${randomInt(1000)}`,

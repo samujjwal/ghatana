@@ -427,7 +427,12 @@ export const LoadingExample: Story = {
     const [step, setStep] = useState(0);
     const [progress, setProgress] = useState(0);
 
-    const steps = ['Uploading...', 'Processing...', 'Finalizing...', 'Complete!'];
+    const steps = [
+      'Uploading...',
+      'Processing...',
+      'Finalizing...',
+      'Complete!',
+    ];
 
     useEffect(() => {
       const timer = setInterval(() => {
@@ -510,7 +515,9 @@ export const LoadingStates: Story = {
 
         <div className="space-y-4">
           <div>
-            <p className="mb-2 text-sm font-medium text-grey-700">Determinate (with progress)</p>
+            <p className="mb-2 text-sm font-medium text-grey-700">
+              Determinate (with progress)
+            </p>
             <Progress
               label="Determinate progress"
               variant="linear"
@@ -521,8 +528,12 @@ export const LoadingStates: Story = {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-grey-700">Indeterminate (unknown duration)</p>
-            {isLoading && <Progress label="Indeterminate loading" variant="linear" />}
+            <p className="mb-2 text-sm font-medium text-grey-700">
+              Indeterminate (unknown duration)
+            </p>
+            {isLoading && (
+              <Progress label="Indeterminate loading" variant="linear" />
+            )}
             {!isLoading && (
               <div className="rounded-md border border-grey-200 bg-grey-50 p-3 text-center text-sm text-grey-500">
                 Not loading
@@ -553,7 +564,9 @@ export const Accessibility: Story = {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-          <h3 className="mb-2 font-semibold text-grey-900">Accessibility Features:</h3>
+          <h3 className="mb-2 font-semibold text-grey-900">
+            Accessibility Features:
+          </h3>
           <ul className="space-y-1 text-sm text-grey-700">
             <li>• ARIA role="progressbar" for screen readers</li>
             <li>• aria-valuenow, aria-valuemin, aria-valuemax attributes</li>
@@ -602,7 +615,13 @@ export const Playground: Story = {
   },
   render: (args) => {
     return (
-      <div className={args.variant === 'circular' ? 'flex items-center justify-center' : 'w-full max-w-md'}>
+      <div
+        className={
+          args.variant === 'circular'
+            ? 'flex items-center justify-center'
+            : 'w-full max-w-md'
+        }
+      >
         <Progress {...args} />
       </div>
     );

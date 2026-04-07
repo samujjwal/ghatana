@@ -9,7 +9,6 @@
 import type { DataTableColumn } from './types';
 import { DataTableUtils } from './utils';
 
-
 /**
  * Export utilities for DataTable
  */
@@ -102,7 +101,7 @@ export class DataTableExport {
         if (!col.field) continue;
 
         const value = DataTableUtils.getNestedValue(row, col.field as string);
-         
+
         obj[col.id] = value;
       }
 
@@ -119,7 +118,11 @@ export class DataTableExport {
    * @param filename - File name
    * @param mimeType - MIME type
    */
-  static downloadFile(content: string, filename: string, mimeType: string): void {
+  static downloadFile(
+    content: string,
+    filename: string,
+    mimeType: string
+  ): void {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -222,7 +225,10 @@ export class DataTableExport {
           .map((col) => {
             if (!col.field) return '<td></td>';
 
-            const value = DataTableUtils.getNestedValue(row, col.field as string);
+            const value = DataTableUtils.getNestedValue(
+              row,
+              col.field as string
+            );
             const formatted = col.format
               ? col.format(value)
               : DataTableUtils.formatValue(value);

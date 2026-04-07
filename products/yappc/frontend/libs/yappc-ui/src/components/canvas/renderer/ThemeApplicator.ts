@@ -110,12 +110,11 @@ export class ThemeApplicator {
   /**
    * Resolve a token path through the theme layers
    */
-  static resolveToken(
-    tokenPath: string,
-    context: ThemeContext
-  ): unknown {
+  static resolveToken(tokenPath: string, context: ThemeContext): unknown {
     // Remove $ prefix if present
-    const cleanPath = tokenPath.startsWith('$') ? tokenPath.slice(1) : tokenPath;
+    const cleanPath = tokenPath.startsWith('$')
+      ? tokenPath.slice(1)
+      : tokenPath;
 
     // Try to resolve from active layer first, then cascade down
     const layerOrder = this.getLayerCascade(context.activeLayer);
@@ -136,7 +135,11 @@ export class ThemeApplicator {
   private static getLayerCascade(activeLayer: ThemeLayer): ThemeLayer[] {
     const order: ThemeLayer[] = ['base'];
 
-    if (activeLayer === 'brand' || activeLayer === 'workspace' || activeLayer === 'app') {
+    if (
+      activeLayer === 'brand' ||
+      activeLayer === 'workspace' ||
+      activeLayer === 'app'
+    ) {
       order.push('brand');
     }
 
@@ -154,7 +157,10 @@ export class ThemeApplicator {
   /**
    * Get nested value from object using dot notation
    */
-  private static getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  private static getNestedValue(
+    obj: Record<string, unknown>,
+    path: string
+  ): unknown {
     const keys = path.split('.');
     let current: unknown = obj;
 

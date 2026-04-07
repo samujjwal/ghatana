@@ -6,7 +6,6 @@ import { Button } from '../Button';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-
 const meta = {
   title: 'Components/Form',
   component: Form,
@@ -25,11 +24,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     initialValues: { name: '', email: '', message: '' },
-    onSubmit: (_values: Record<string, unknown>) => { },
+    onSubmit: (_values: Record<string, unknown>) => {},
     children: null,
   },
   render: () => {
-     
     const [result, setResult] = useState<string>('');
 
     const handleSubmit = (values: Record<string, unknown>) => {
@@ -45,7 +43,9 @@ export const Default: Story = {
 
       if (!values.email) {
         errors.email = 'Email is required';
-      } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
+      } else if (
+        !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
+      ) {
         errors.email = 'Invalid email address';
       }
 
@@ -63,15 +63,39 @@ export const Default: Story = {
           onSubmit={handleSubmit}
           validate={validate}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <FormInput name="name" label="Name" placeholder="Enter your name" required />
-            <FormInput name="email" label="Email" type="email" placeholder="Enter your email" required />
-            <FormInput name="message" label="Message" placeholder="Enter your message" />
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
+            <FormInput
+              name="name"
+              label="Name"
+              placeholder="Enter your name"
+              required
+            />
+            <FormInput
+              name="email"
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              required
+            />
+            <FormInput
+              name="message"
+              label="Message"
+              placeholder="Enter your message"
+            />
 
             <Button type="submit">Submit</Button>
 
             {result && (
-              <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+              <div
+                style={{
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '4px',
+                }}
+              >
                 <pre>{result}</pre>
               </div>
             )}
@@ -85,16 +109,19 @@ export const Default: Story = {
 export const WithValidation: Story = {
   args: {
     initialValues: { username: '', password: '' },
-    onSubmit: (_values: Record<string, unknown>) => { },
+    onSubmit: (_values: Record<string, unknown>) => {},
     children: null,
   },
   render: () => {
     const validatePassword = (value: string) => {
       if (!value) return 'Password is required';
       if (value.length < 8) return 'Password must be at least 8 characters';
-      if (!/[A-Z]/.test(value)) return 'Password must contain at least one uppercase letter';
-      if (!/[a-z]/.test(value)) return 'Password must contain at least one lowercase letter';
-      if (!/[0-9]/.test(value)) return 'Password must contain at least one number';
+      if (!/[A-Z]/.test(value))
+        return 'Password must contain at least one uppercase letter';
+      if (!/[a-z]/.test(value))
+        return 'Password must contain at least one lowercase letter';
+      if (!/[0-9]/.test(value))
+        return 'Password must contain at least one number';
       return undefined;
     };
 
@@ -111,12 +138,16 @@ export const WithValidation: Story = {
           }}
           onSubmit={handleSubmit}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormInput
               name="username"
               label="Username"
               placeholder="Enter your username"
-              validate={(value) => !value ? 'Username is required' : undefined}
+              validate={(value) =>
+                !value ? 'Username is required' : undefined
+              }
             />
 
             <FormInput
@@ -139,7 +170,7 @@ export const WithValidation: Story = {
 export const WithFormattingAndMasking: Story = {
   args: {
     initialValues: { name: '', phone: '', creditCard: '', zipCode: '' },
-    onSubmit: (_values: Record<string, unknown>) => { },
+    onSubmit: (_values: Record<string, unknown>) => {},
     children: null,
   },
   render: () => {
@@ -154,7 +185,9 @@ export const WithFormattingAndMasking: Story = {
           }}
           onSubmit={(values) => console.log(values)}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
             <FormInput
               name="name"
               label="Name"

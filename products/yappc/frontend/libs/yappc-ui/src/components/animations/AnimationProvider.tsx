@@ -152,7 +152,8 @@ export const AnimationProvider: React.FC<AnimationProviderProps> = ({
       <MotionConfig
         reducedMotion={config.reducedMotion ? 'always' : 'never'}
         transition={{
-          duration: config.tokens.duration.normal / 1000 * config.durationMultiplier,
+          duration:
+            (config.tokens.duration.normal / 1000) * config.durationMultiplier,
           ease: config.tokens.easing.easeInOut,
         }}
       >
@@ -195,9 +196,8 @@ export function useAnimationDuration(
 ): number {
   const config = useAnimationConfig();
 
-  const baseDuration = typeof duration === 'number'
-    ? duration
-    : config.tokens.duration[duration];
+  const baseDuration =
+    typeof duration === 'number' ? duration : config.tokens.duration[duration];
 
   return baseDuration * config.durationMultiplier;
 }

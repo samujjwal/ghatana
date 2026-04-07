@@ -104,11 +104,15 @@ describe.skip('Runbook Manager', () => {
       const updated = getRunbook(state, 'rb-1');
       expect(updated?.description).toBe('Updated description');
       expect(updated?.version).toBe('1.1.0');
-      expect(updated?.lastUpdated.getTime()).toBeGreaterThan(testRunbook.lastUpdated.getTime());
+      expect(updated?.lastUpdated.getTime()).toBeGreaterThan(
+        testRunbook.lastUpdated.getTime()
+      );
     });
 
     it('should not update non-existent runbook', () => {
-      const newState = updateRunbook(state, 'non-existent', { description: 'test' });
+      const newState = updateRunbook(state, 'non-existent', {
+        description: 'test',
+      });
       expect(newState).toBe(state);
     });
 
@@ -329,7 +333,13 @@ describe.skip('Runbook Manager', () => {
 
     it('should update incident status', () => {
       state = createIncident(state, testIncident);
-      state = updateIncidentStatus(state, 'inc-1', 'investigating', 'sre-1', 'Investigating root cause');
+      state = updateIncidentStatus(
+        state,
+        'inc-1',
+        'investigating',
+        'sre-1',
+        'Investigating root cause'
+      );
 
       const updated = getIncident(state, 'inc-1');
       expect(updated?.status).toBe('investigating');
@@ -386,7 +396,9 @@ describe.skip('Runbook Manager', () => {
         status: 'resolved',
       });
 
-      const active = getIncidentsForNode(state, 'node-1', { status: 'detected' });
+      const active = getIncidentsForNode(state, 'node-1', {
+        status: 'detected',
+      });
       expect(active).toHaveLength(1);
       expect(active[0].id).toBe('inc-1');
     });
@@ -400,7 +412,9 @@ describe.skip('Runbook Manager', () => {
         severity: 'low',
       });
 
-      const critical = getIncidentsForNode(state, 'node-1', { severity: 'critical' });
+      const critical = getIncidentsForNode(state, 'node-1', {
+        severity: 'critical',
+      });
       expect(critical).toHaveLength(1);
       expect(critical[0].id).toBe('inc-1');
     });
@@ -602,8 +616,8 @@ describe.skip('Runbook Manager', () => {
         ...testPlaybook,
         id: 'pb-2',
         name: 'API Deployment',
-        description: 'Deploy new API version',  // Changed
-        scenario: 'New API version release',      // Changed to avoid "database" match
+        description: 'Deploy new API version', // Changed
+        scenario: 'New API version release', // Changed to avoid "database" match
         tags: ['deployment', 'api'],
       });
 

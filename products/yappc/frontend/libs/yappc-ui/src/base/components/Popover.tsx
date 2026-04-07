@@ -49,11 +49,20 @@ export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
     ref
   ) => {
     return (
-      <BasePopover.Root open={open} onOpenChange={onOpenChange} defaultOpen={defaultOpen}>
+      <BasePopover.Root
+        open={open}
+        onOpenChange={onOpenChange}
+        defaultOpen={defaultOpen}
+      >
         <BasePopover.Trigger>{trigger}</BasePopover.Trigger>
 
         <BasePopover.Portal>
-          <BasePopover.Positioner side={placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left'} sideOffset={offset}>
+          <BasePopover.Positioner
+            side={
+              placement.split('-')[0] as 'top' | 'right' | 'bottom' | 'left'
+            }
+            sideOffset={offset}
+          >
             <BasePopover.Popup
               ref={ref}
               className={cn(

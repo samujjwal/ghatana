@@ -1,9 +1,9 @@
 /**
  * Error Boundary Component
- * 
+ *
  * React error boundary for graceful error handling.
  * Catches JavaScript errors anywhere in the child component tree.
- * 
+ *
  * @module ui/components
  */
 
@@ -13,16 +13,20 @@ import React, { Component, type ReactNode, type ErrorInfo } from 'react';
 export interface ErrorBoundaryProps {
   /** Child components */
   children: ReactNode;
-  
+
   /** Fallback UI */
-  fallback?: (error: Error, errorInfo: ErrorInfo, reset: () => void) => ReactNode;
-  
+  fallback?: (
+    error: Error,
+    errorInfo: ErrorInfo,
+    reset: () => void
+  ) => ReactNode;
+
   /** Error callback */
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
-  
+
   /** Show reset button */
   showReset?: boolean;
-  
+
   /** Show home button */
   showHome?: boolean;
 }
@@ -35,9 +39,9 @@ interface ErrorBoundaryState {
 
 /**
  * Error Boundary Component
- * 
+ *
  * Catches and displays errors in React component tree.
- * 
+ *
  * @example
  * ```tsx
  * <ErrorBoundary
@@ -50,7 +54,10 @@ interface ErrorBoundaryState {
  * </ErrorBoundary>
  * ```
  */
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   /**
    *
    */
@@ -132,14 +139,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
             {/* Message */}
             <p className="text-zinc-400 text-center mb-6">
-              We're sorry, but something unexpected happened. The error has been logged
-              and we'll look into it.
+              We're sorry, but something unexpected happened. The error has been
+              logged and we'll look into it.
             </p>
 
             {/* Error details (development only) */}
             {process.env.NODE_ENV === 'development' && (
               <div className="mb-6 p-4 bg-zinc-950 rounded border border-zinc-800">
-                <h3 className="text-sm font-medium text-red-400 mb-2">Error Details:</h3>
+                <h3 className="text-sm font-medium text-red-400 mb-2">
+                  Error Details:
+                </h3>
                 <pre className="text-xs text-zinc-400 overflow-auto max-h-40">
                   {this.state.error.toString()}
                 </pre>

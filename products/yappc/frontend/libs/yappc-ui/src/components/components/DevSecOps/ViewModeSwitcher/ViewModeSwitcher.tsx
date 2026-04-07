@@ -12,8 +12,12 @@ import { Table as TableChartIcon } from 'lucide-react';
 import { Activity as TimelineIcon } from 'lucide-react';
 import { Kanban as ViewKanbanIcon } from 'lucide-react';
 
-import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@ghatana/design-system';
-
+import {
+  Box,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+} from '@ghatana/design-system';
 
 import type { ViewMode } from '@yappc/core/types/devsecops';
 
@@ -74,7 +78,10 @@ export function ViewModeSwitcher({
   labels,
   className,
 }: ViewModeSwitcherProps) {
-  const handleChange = (_event: React.MouseEvent<HTMLElement>, newMode: ViewMode | null) => {
+  const handleChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newMode: ViewMode | null
+  ) => {
     if (newMode !== null) {
       onChange?.(newMode); // Use optional chaining to prevent crash
     }
@@ -106,14 +113,28 @@ export function ViewModeSwitcher({
             >
               <Tooltip title={metadata.description} placement="top">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <Box style={{ fontSize: size === 'small' ? '20px' : size === 'large' ? '32px' : '24px' }}>
+                  <Box
+                    style={{
+                      fontSize:
+                        size === 'small'
+                          ? '20px'
+                          : size === 'large'
+                            ? '32px'
+                            : '24px',
+                    }}
+                  >
                     <IconComponent />
                   </Box>
                   {variant === 'full' && (
                     <Box
                       component="span"
                       className="font-medium"
-                      style={{ fontSize: size === 'small' ? 'var(--ds-text-sm)' : 'var(--ds-text-base)' }}
+                      style={{
+                        fontSize:
+                          size === 'small'
+                            ? 'var(--ds-text-sm)'
+                            : 'var(--ds-text-base)',
+                      }}
                     >
                       {label}
                     </Box>

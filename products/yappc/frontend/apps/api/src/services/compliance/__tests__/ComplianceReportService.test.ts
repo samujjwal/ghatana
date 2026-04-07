@@ -73,9 +73,7 @@ describe('ComplianceReportService', () => {
         { id: '3', status: 'implemented', severity: 'medium' },
       ];
 
-      const findings = [
-        { controlId: '2', severity: 'high', status: 'open' },
-      ];
+      const findings = [{ controlId: '2', severity: 'high', status: 'open' }];
 
       mockAssessmentRepository.findById.mockResolvedValue(assessment);
       mockControlRepository.findByAssessment.mockResolvedValue(controls);
@@ -238,8 +236,18 @@ describe('ComplianceReportService', () => {
         id: 'report-123',
         framework: 'SOC2',
         controls: [
-          { id: 'C1', title: 'Control 1', status: 'implemented', severity: 'high' },
-          { id: 'C2', title: 'Control 2', status: 'not_implemented', severity: 'medium' },
+          {
+            id: 'C1',
+            title: 'Control 1',
+            status: 'implemented',
+            severity: 'high',
+          },
+          {
+            id: 'C2',
+            title: 'Control 2',
+            status: 'not_implemented',
+            severity: 'medium',
+          },
         ],
       };
 
@@ -382,9 +390,9 @@ describe('ComplianceReportService', () => {
 
       // WHEN: Generate report
       // THEN: Should throw error
-      await expect(
-        service.generateReport('non-existent')
-      ).rejects.toThrow('Assessment not found');
+      await expect(service.generateReport('non-existent')).rejects.toThrow(
+        'Assessment not found'
+      );
     });
 
     it('should handle database errors gracefully', async () => {
@@ -395,9 +403,9 @@ describe('ComplianceReportService', () => {
 
       // WHEN: Generate report
       // THEN: Should propagate error
-      await expect(
-        service.generateReport('assessment-123')
-      ).rejects.toThrow('Database connection failed');
+      await expect(service.generateReport('assessment-123')).rejects.toThrow(
+        'Database connection failed'
+      );
     });
 
     it('should handle PDF generation errors', async () => {
@@ -406,8 +414,9 @@ describe('ComplianceReportService', () => {
 
       // WHEN: Export to PDF
       // THEN: Should throw error
-      await expect(service.exportToPDF(invalidReport as unknown)).rejects.toThrow();
+      await expect(
+        service.exportToPDF(invalidReport as unknown)
+      ).rejects.toThrow();
     });
   });
 });
-

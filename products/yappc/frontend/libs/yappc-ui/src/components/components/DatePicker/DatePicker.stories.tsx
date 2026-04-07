@@ -67,7 +67,12 @@ export const MinMaxDates: Story = {
 
     return (
       <div>
-        <DatePicker value={value} onChange={setValue} minDate={minDate} maxDate={maxDate} />
+        <DatePicker
+          value={value}
+          onChange={setValue}
+          minDate={minDate}
+          maxDate={maxDate}
+        />
         <div className="mt-2 text-sm text-grey-600">
           Only dates in current month are selectable
         </div>
@@ -82,7 +87,7 @@ export const MinMaxDates: Story = {
 export const DisabledDates: Story = {
   render: () => {
     const [value, setValue] = React.useState<Date | null>(null);
-    
+
     // Disable weekends
     const shouldDisableDate = (date: Date) => {
       const day = date.getDay();
@@ -91,7 +96,11 @@ export const DisabledDates: Story = {
 
     return (
       <div>
-        <DatePicker value={value} onChange={setValue} shouldDisableDate={shouldDisableDate} />
+        <DatePicker
+          value={value}
+          onChange={setValue}
+          shouldDisableDate={shouldDisableDate}
+        />
         <div className="mt-2 text-sm text-grey-600">Weekends are disabled</div>
       </div>
     );
@@ -126,9 +135,24 @@ export const CustomFormat: Story = {
     const [value, setValue] = React.useState<Date | null>(new Date());
     return (
       <div className="flex flex-col gap-4 items-start">
-        <DatePicker value={value} onChange={setValue} format="MM/DD/YYYY" placeholder="MM/DD/YYYY" />
-        <DatePicker value={value} onChange={setValue} format="DD/MM/YYYY" placeholder="DD/MM/YYYY" />
-        <DatePicker value={value} onChange={setValue} format="YYYY-MM-DD" placeholder="YYYY-MM-DD" />
+        <DatePicker
+          value={value}
+          onChange={setValue}
+          format="MM/DD/YYYY"
+          placeholder="MM/DD/YYYY"
+        />
+        <DatePicker
+          value={value}
+          onChange={setValue}
+          format="DD/MM/YYYY"
+          placeholder="DD/MM/YYYY"
+        />
+        <DatePicker
+          value={value}
+          onChange={setValue}
+          format="YYYY-MM-DD"
+          placeholder="YYYY-MM-DD"
+        />
       </div>
     );
   },
@@ -161,12 +185,18 @@ export const BirthdayPicker: Story = {
   render: () => {
     const [value, setValue] = React.useState<Date | null>(null);
     const today = new Date();
-    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const maxDate = new Date(
+      today.getFullYear() - 18,
+      today.getMonth(),
+      today.getDate()
+    );
     const minDate = new Date(today.getFullYear() - 120, 0, 1);
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Date of Birth</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Date of Birth
+        </label>
         <DatePicker
           value={value}
           onChange={setValue}
@@ -174,7 +204,9 @@ export const BirthdayPicker: Story = {
           maxDate={maxDate}
           placeholder="Select your birthday"
         />
-        <div className="mt-2 text-sm text-grey-600">Must be at least 18 years old</div>
+        <div className="mt-2 text-sm text-grey-600">
+          Must be at least 18 years old
+        </div>
       </div>
     );
   },

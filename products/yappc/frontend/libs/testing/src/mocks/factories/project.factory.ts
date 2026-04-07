@@ -8,7 +8,6 @@ import { faker } from '../faker-shim';
 
 import { createWorkspace } from './workspace.factory';
 
-
 /**
  *
  */

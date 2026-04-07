@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardActions } from '../Card';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-
 const meta: Meta<typeof Card> = {
   title: 'UI/Components/Card',
   component: Card,
@@ -32,7 +31,8 @@ const meta: Meta<typeof Card> = {
     },
     elevation: {
       control: { type: 'range', min: 0, max: 24, step: 1 },
-      description: 'The elevation of the card (only applies to elevation variant)',
+      description:
+        'The elevation of the card (only applies to elevation variant)',
       defaultValue: 1,
     },
     shape: {
@@ -67,7 +67,8 @@ export const WithHeader: Story = {
       <>
         <CardHeader title="Card Title" subheader="Card Subtitle" />
         <CardContent>
-          This is a card with a header. The header includes a title and a subtitle.
+          This is a card with a header. The header includes a title and a
+          subtitle.
         </CardContent>
       </>
     ),
@@ -79,12 +80,12 @@ export const WithActions: Story = {
     children: (
       <>
         <CardHeader title="Card with Actions" />
-        <CardContent>
-          This card has action buttons at the bottom.
-        </CardContent>
+        <CardContent>This card has action buttons at the bottom.</CardContent>
         <CardActions>
           <Button size="small">Cancel</Button>
-          <Button size="small" variant="contained" color="primary">Save</Button>
+          <Button size="small" variant="contained" color="primary">
+            Save
+          </Button>
         </CardActions>
       </>
     ),
@@ -111,9 +112,7 @@ export const HighElevation: Story = {
     children: (
       <>
         <CardHeader title="High Elevation Card" />
-        <CardContent>
-          This card has a higher elevation (shadow).
-        </CardContent>
+        <CardContent>This card has a higher elevation (shadow).</CardContent>
       </>
     ),
   },
@@ -139,9 +138,7 @@ export const SoftShape: Story = {
     children: (
       <>
         <CardHeader title="Soft Card" />
-        <CardContent>
-          This card has soft, more rounded corners.
-        </CardContent>
+        <CardContent>This card has soft, more rounded corners.</CardContent>
       </>
     ),
   },
@@ -169,7 +166,16 @@ export const Complex: Story = {
         <CardHeader
           title="Complex Card Example"
           subheader="Last updated: September 29, 2025"
-          avatar={<div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#1976d2' }}></div>}
+          avatar={
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                backgroundColor: '#1976d2',
+              }}
+            ></div>
+          }
           action={
             <Button variant="text" size="small">
               More
@@ -178,7 +184,10 @@ export const Complex: Story = {
         />
         <CardContent>
           <p>This is a more complex card example with multiple components.</p>
-          <p>It demonstrates how to combine various card parts to create a rich UI component.</p>
+          <p>
+            It demonstrates how to combine various card parts to create a rich
+            UI component.
+          </p>
         </CardContent>
         <CardActions>
           <Button size="small">Share</Button>
@@ -199,11 +208,11 @@ export const DarkTheme: Story = {
     children: (
       <>
         <CardHeader title="Dark Theme Card" />
-        <CardContent>
-          This card is displayed with the dark theme.
-        </CardContent>
+        <CardContent>This card is displayed with the dark theme.</CardContent>
         <CardActions>
-          <Button size="small" variant="contained">Action</Button>
+          <Button size="small" variant="contained">
+            Action
+          </Button>
         </CardActions>
       </>
     ),

@@ -84,7 +84,11 @@ export const WithSelection: Story = {
 
     return (
       <div>
-        <TreeView data={fileSystemData} selected={selected} onSelect={setSelected} />
+        <TreeView
+          data={fileSystemData}
+          selected={selected}
+          onSelect={setSelected}
+        />
         <div className="mt-4 p-3 bg-grey-100 rounded text-sm">
           Selected: {selected.length > 0 ? selected.join(', ') : 'None'}
         </div>
@@ -102,7 +106,12 @@ export const MultiSelect: Story = {
 
     return (
       <div>
-        <TreeView data={fileSystemData} selected={selected} onSelect={setSelected} multiSelect />
+        <TreeView
+          data={fileSystemData}
+          selected={selected}
+          onSelect={setSelected}
+          multiSelect
+        />
         <div className="mt-4 p-3 bg-grey-100 rounded text-sm">
           Selected: {selected.length > 0 ? selected.join(', ') : 'None'}
         </div>
@@ -134,7 +143,11 @@ export const ControlledExpansion: Story = {
             Collapse All
           </button>
         </div>
-        <TreeView data={fileSystemData} expanded={expanded} onExpand={setExpanded} />
+        <TreeView
+          data={fileSystemData}
+          expanded={expanded}
+          onExpand={setExpanded}
+        />
       </div>
     );
   },
@@ -177,9 +190,21 @@ export const CustomIcons: Story = {
         label: 'Home',
         icon: <span className="text-lg">🏠</span>,
         children: [
-          { id: '1-1', label: 'Living Room', icon: <span className="text-lg">🛋️</span> },
-          { id: '1-2', label: 'Kitchen', icon: <span className="text-lg">🍳</span> },
-          { id: '1-3', label: 'Bedroom', icon: <span className="text-lg">🛏️</span> },
+          {
+            id: '1-1',
+            label: 'Living Room',
+            icon: <span className="text-lg">🛋️</span>,
+          },
+          {
+            id: '1-2',
+            label: 'Kitchen',
+            icon: <span className="text-lg">🍳</span>,
+          },
+          {
+            id: '1-3',
+            label: 'Bedroom',
+            icon: <span className="text-lg">🛏️</span>,
+          },
         ],
       },
       {
@@ -187,8 +212,16 @@ export const CustomIcons: Story = {
         label: 'Work',
         icon: <span className="text-lg">💼</span>,
         children: [
-          { id: '2-1', label: 'Office', icon: <span className="text-lg">🏢</span> },
-          { id: '2-2', label: 'Meeting Room', icon: <span className="text-lg">👥</span> },
+          {
+            id: '2-1',
+            label: 'Office',
+            icon: <span className="text-lg">🏢</span>,
+          },
+          {
+            id: '2-2',
+            label: 'Meeting Room',
+            icon: <span className="text-lg">👥</span>,
+          },
         ],
       },
     ];
@@ -215,9 +248,7 @@ export const DisabledNodes: Story = {
         id: '2',
         label: 'Disabled Folder',
         disabled: true,
-        children: [
-          { id: '2-1', label: 'Hidden File' },
-        ],
+        children: [{ id: '2-1', label: 'Hidden File' }],
       },
     ];
 
@@ -234,7 +265,9 @@ export const CustomRender: Story = {
       <div className="flex items-center gap-2">
         <span className={isSelected ? 'font-semibold' : ''}>{node.label}</span>
         {node.children && (
-          <span className="text-xs text-grey-500">({node.children.length} items)</span>
+          <span className="text-xs text-grey-500">
+            ({node.children.length} items)
+          </span>
         )}
       </div>
     );
@@ -322,8 +355,16 @@ export const OrganizationChart: Story = {
             label: 'CTO - Sarah Johnson',
             icon: <span className="text-lg">💻</span>,
             children: [
-              { id: 'dev1', label: 'Developer - Mike Brown', icon: <span className="text-lg">👨‍💻</span> },
-              { id: 'dev2', label: 'Developer - Lisa Davis', icon: <span className="text-lg">👩‍💻</span> },
+              {
+                id: 'dev1',
+                label: 'Developer - Mike Brown',
+                icon: <span className="text-lg">👨‍💻</span>,
+              },
+              {
+                id: 'dev2',
+                label: 'Developer - Lisa Davis',
+                icon: <span className="text-lg">👩‍💻</span>,
+              },
             ],
           },
           {
@@ -331,7 +372,11 @@ export const OrganizationChart: Story = {
             label: 'CFO - Robert Wilson',
             icon: <span className="text-lg">💰</span>,
             children: [
-              { id: 'acc1', label: 'Accountant - Emma Taylor', icon: <span className="text-lg">📊</span> },
+              {
+                id: 'acc1',
+                label: 'Accountant - Emma Taylor',
+                icon: <span className="text-lg">📊</span>,
+              },
             ],
           },
         ],

@@ -46,13 +46,14 @@ export const BodyText: Story = {
         Subtitle 2 - A smaller subtitle for subsections
       </Typography>
       <Typography variant="body1">
-        Body 1 - The default text style for most content. Lorem ipsum dolor sit amet, 
-        consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et 
-        dolore magna aliqua.
+        Body 1 - The default text style for most content. Lorem ipsum dolor sit
+        amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
+        labore et dolore magna aliqua.
       </Typography>
       <Typography variant="body2">
-        Body 2 - Slightly smaller text for secondary content. Ut enim ad minim veniam, 
-        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        Body 2 - Slightly smaller text for secondary content. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+        commodo consequat.
       </Typography>
     </div>
   ),
@@ -64,12 +65,8 @@ export const SmallText: Story = {
       <Typography variant="caption">
         Caption text - Used for image captions, footnotes, or helper text
       </Typography>
-      <Typography variant="overline">
-        Overline text
-      </Typography>
-      <Typography variant="button">
-        Button text
-      </Typography>
+      <Typography variant="overline">Overline text</Typography>
+      <Typography variant="button">Button text</Typography>
     </div>
   ),
 };
@@ -95,9 +92,9 @@ export const Alignment: Story = {
       <Typography align="center">Center aligned text</Typography>
       <Typography align="right">Right aligned text</Typography>
       <Typography align="justify">
-        Justified text. Lorem ipsum dolor sit amet, consectetur adipiscing elit, 
-        sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim 
-        ad minim veniam, quis nostrud exercitation ullamco laboris.
+        Justified text. Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+        enim ad minim veniam, quis nostrud exercitation ullamco laboris.
       </Typography>
     </div>
   ),
@@ -107,8 +104,8 @@ export const NoWrap: Story = {
   render: () => (
     <div className="max-w-xs border border-grey-300 p-4">
       <Typography variant="body1" noWrap>
-        This is a very long text that will not wrap and will be truncated with an ellipsis 
-        when it exceeds the container width
+        This is a very long text that will not wrap and will be truncated with
+        an ellipsis when it exceeds the container width
       </Typography>
     </div>
   ),
@@ -121,7 +118,8 @@ export const GutterBottom: Story = {
         Heading with Bottom Margin
       </Typography>
       <Typography variant="body1">
-        The heading above has gutterBottom prop which adds margin-bottom spacing.
+        The heading above has gutterBottom prop which adds margin-bottom
+        spacing.
       </Typography>
     </div>
   ),
@@ -149,34 +147,35 @@ export const ArticleExample: Story = {
       <Typography variant="h1" gutterBottom>
         The Future of Web Development
       </Typography>
-      
+
       <Typography variant="subtitle1" color="text" gutterBottom>
         Exploring modern technologies and design patterns
       </Typography>
-      
+
       <Typography variant="caption" className="block mb-6">
         Published on October 25, 2025 • 5 min read
       </Typography>
-      
+
       <Typography variant="body1" gutterBottom>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod 
-        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, 
-        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+        commodo consequat.
       </Typography>
-      
+
       <Typography variant="h3" gutterBottom>
         Modern CSS Frameworks
       </Typography>
-      
+
       <Typography variant="body1" gutterBottom>
-        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore 
-        eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt 
-        in culpa qui officia deserunt mollit anim id est laborum.
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+        dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+        proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
       </Typography>
-      
+
       <Typography variant="body2" color="text">
-        Note: This example demonstrates how Typography components can be used together 
-        to create a well-structured article layout.
+        Note: This example demonstrates how Typography components can be used
+        together to create a well-structured article layout.
       </Typography>
     </article>
   ),

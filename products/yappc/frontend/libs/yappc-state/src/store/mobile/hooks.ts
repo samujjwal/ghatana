@@ -20,19 +20,29 @@ import {
   mobileSystemThemeAtom,
   resolvedMobileThemeAtom,
 } from './atoms';
-import type { MobilePlatform, MobileSettings, MobileThemePreference } from './atoms';
+import type {
+  MobilePlatform,
+  MobileSettings,
+  MobileThemePreference,
+} from './atoms';
 
 /**
  * Hook to read the active mobile platform and update it.
  */
-export function useMobilePlatform(): [MobilePlatform, (platform: MobilePlatform) => void] {
+export function useMobilePlatform(): [
+  MobilePlatform,
+  (platform: MobilePlatform) => void,
+] {
   return useAtom(mobilePlatformAtom);
 }
 
 /**
  * Hook to read the mobile settings and update them.
  */
-export function useMobileSettings(): [MobileSettings, (settings: MobileSettings) => void] {
+export function useMobileSettings(): [
+  MobileSettings,
+  (settings: MobileSettings) => void,
+] {
   return useAtom(mobileSettingsAtom);
 }
 
@@ -62,7 +72,10 @@ export function useSetMobileSettings(): (
 /**
  * Hook to read and update the mobile theme preference.
  */
-export function useMobileThemePreference(): [MobileThemePreference, (preference: MobileThemePreference) => void] {
+export function useMobileThemePreference(): [
+  MobileThemePreference,
+  (preference: MobileThemePreference) => void,
+] {
   const [settings, setSettings] = useMobileSettings();
 
   const setPreference = useCallback(
@@ -88,7 +101,10 @@ export function useResolvedMobileTheme(): 'light' | 'dark' {
 /**
  * Hook to read and update the detected system theme.
  */
-export function useMobileSystemTheme(): ['light' | 'dark', (theme: 'light' | 'dark') => void] {
+export function useMobileSystemTheme(): [
+  'light' | 'dark',
+  (theme: 'light' | 'dark') => void,
+] {
   return useAtom(mobileSystemThemeAtom);
 }
 
@@ -103,13 +119,19 @@ export function useMobileNotificationSettings(): MobileSettings['notifications']
  * Hook to update notification settings via an updater function.
  */
 export function useSetMobileNotificationSettings(): (
-  updater: (prev: MobileSettings['notifications']) => MobileSettings['notifications']
+  updater: (
+    prev: MobileSettings['notifications']
+  ) => MobileSettings['notifications']
 ) => void {
   const settings = useMobileSettingsValue();
   const setSettings = useSetAtom(mobileSettingsAtom);
 
   return useCallback(
-    (updater: (prev: MobileSettings['notifications']) => MobileSettings['notifications']) => {
+    (
+      updater: (
+        prev: MobileSettings['notifications']
+      ) => MobileSettings['notifications']
+    ) => {
       setSettings({
         ...settings,
         notifications: updater(settings.notifications),
@@ -136,7 +158,9 @@ export function useSetMobileOfflineSettings(): (
   const setSettings = useSetAtom(mobileSettingsAtom);
 
   return useCallback(
-    (updater: (prev: MobileSettings['offline']) => MobileSettings['offline']) => {
+    (
+      updater: (prev: MobileSettings['offline']) => MobileSettings['offline']
+    ) => {
       setSettings({
         ...settings,
         offline: updater(settings.offline),

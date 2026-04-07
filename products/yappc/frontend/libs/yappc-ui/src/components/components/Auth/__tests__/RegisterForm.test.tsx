@@ -1,8 +1,8 @@
 /**
  * RegisterForm Component Tests
- * 
+ *
  * Unit tests for RegisterForm component
- * 
+ *
  * @module ui/components/Auth/__tests__/RegisterForm.test
  */
 
@@ -34,7 +34,9 @@ describe('RegisterForm', () => {
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /create account/i })
+      ).toBeInTheDocument();
     });
 
     it('should render terms checkbox when enabled', () => {
@@ -46,7 +48,9 @@ describe('RegisterForm', () => {
     it('should not render terms checkbox when disabled', () => {
       render(<RegisterForm showTerms={false} />);
 
-      expect(screen.queryByLabelText(/agree to.*terms/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText(/agree to.*terms/i)
+      ).not.toBeInTheDocument();
     });
 
     it('should render sign in link when enabled', () => {
@@ -58,7 +62,9 @@ describe('RegisterForm', () => {
     it('should render custom submit text', () => {
       render(<RegisterForm submitText="Register Now" />);
 
-      expect(screen.getByRole('button', { name: /register now/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /register now/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -175,7 +181,10 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^name/i), 'John Doe');
       await user.type(screen.getByLabelText(/email/i), 'john@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123!');
-      await user.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        'Password123!'
+      );
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -189,8 +198,12 @@ describe('RegisterForm', () => {
       const user = userEvent.setup();
       render(<RegisterForm />);
 
-      const passwordInput = screen.getByLabelText(/^password$/i) as HTMLInputElement;
-      const toggleButtons = screen.getAllByRole('button', { name: /show password/i });
+      const passwordInput = screen.getByLabelText(
+        /^password$/i
+      ) as HTMLInputElement;
+      const toggleButtons = screen.getAllByRole('button', {
+        name: /show password/i,
+      });
 
       expect(passwordInput.type).toBe('password');
 
@@ -203,8 +216,12 @@ describe('RegisterForm', () => {
       const user = userEvent.setup();
       render(<RegisterForm />);
 
-      const confirmInput = screen.getByLabelText(/confirm password/i) as HTMLInputElement;
-      const toggleButtons = screen.getAllByRole('button', { name: /show password/i });
+      const confirmInput = screen.getByLabelText(
+        /confirm password/i
+      ) as HTMLInputElement;
+      const toggleButtons = screen.getAllByRole('button', {
+        name: /show password/i,
+      });
 
       expect(confirmInput.type).toBe('password');
 
@@ -217,7 +234,9 @@ describe('RegisterForm', () => {
       const user = userEvent.setup();
       render(<RegisterForm showTerms={true} />);
 
-      const checkbox = screen.getByLabelText(/agree to.*terms/i) as HTMLInputElement;
+      const checkbox = screen.getByLabelText(
+        /agree to.*terms/i
+      ) as HTMLInputElement;
 
       expect(checkbox.checked).toBe(false);
 
@@ -244,7 +263,10 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^name/i), 'John Doe');
       await user.type(screen.getByLabelText(/email/i), 'john@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123!');
-      await user.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        'Password123!'
+      );
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -300,7 +322,10 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^name/i), 'John Doe');
       await user.type(screen.getByLabelText(/email/i), 'john@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123!');
-      await user.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        'Password123!'
+      );
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -326,7 +351,10 @@ describe('RegisterForm', () => {
       await user.type(screen.getByLabelText(/^name/i), 'John Doe');
       await user.type(screen.getByLabelText(/email/i), 'existing@example.com');
       await user.type(screen.getByLabelText(/^password$/i), 'Password123!');
-      await user.type(screen.getByLabelText(/confirm password/i), 'Password123!');
+      await user.type(
+        screen.getByLabelText(/confirm password/i),
+        'Password123!'
+      );
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -365,8 +393,12 @@ describe('RegisterForm', () => {
 
       expect(screen.getByLabelText(/^name/i)).toHaveAttribute('aria-label');
       expect(screen.getByLabelText(/email/i)).toHaveAttribute('aria-label');
-      expect(screen.getByLabelText(/^password$/i)).toHaveAttribute('aria-label');
-      expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute('aria-label');
+      expect(screen.getByLabelText(/^password$/i)).toHaveAttribute(
+        'aria-label'
+      );
+      expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute(
+        'aria-label'
+      );
     });
 
     it('should mark invalid fields with aria-invalid', async () => {
@@ -391,7 +423,9 @@ describe('RegisterForm', () => {
       const passwordInput = screen.getByLabelText(/^password$/i);
       const confirmInput = screen.getByLabelText(/confirm password/i);
       const termsCheckbox = screen.getByLabelText(/agree to.*terms/i);
-      const submitButton = screen.getByRole('button', { name: /create account/i });
+      const submitButton = screen.getByRole('button', {
+        name: /create account/i,
+      });
 
       // Tab through form
       await user.tab();
@@ -406,14 +440,14 @@ describe('RegisterForm', () => {
       // Skip show password buttons
       await user.tab();
       await user.tab();
-      
+
       await user.tab();
       expect(confirmInput).toHaveFocus();
 
       // Skip show password button
       await user.tab();
       await user.tab();
-      
+
       await user.tab();
       expect(termsCheckbox).toHaveFocus();
 

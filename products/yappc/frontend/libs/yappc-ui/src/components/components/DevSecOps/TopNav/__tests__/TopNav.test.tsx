@@ -187,7 +187,9 @@ describe('TopNav Component', () => {
       const user = userEvent.setup();
       const mockOnClick = vi.fn();
 
-      render(<TopNav onNotificationsClick={mockOnClick} notificationCount={3} />);
+      render(
+        <TopNav onNotificationsClick={mockOnClick} notificationCount={3} />
+      );
 
       const notificationsButton = screen.getByLabelText('3 notifications');
       await user.click(notificationsButton);
@@ -262,7 +264,9 @@ describe('TopNav Component', () => {
     it('does not render user section when no user provided', () => {
       render(<TopNav />);
 
-      expect(screen.queryByText(/Developer|PM|Executive/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/Developer|PM|Executive/i)
+      ).not.toBeInTheDocument();
     });
 
     it('handles all user roles', () => {
@@ -276,7 +280,9 @@ describe('TopNav Component', () => {
       ];
 
       roles.forEach((role) => {
-        const { unmount } = render(<TopNav user={{ name: 'Test User', role }} />);
+        const { unmount } = render(
+          <TopNav user={{ name: 'Test User', role }} />
+        );
         expect(screen.getByText(role)).toBeInTheDocument();
         unmount();
       });
@@ -338,35 +344,45 @@ describe('TopNav Component', () => {
     it('renders dashboard icon', () => {
       const { container } = render(<TopNav />);
 
-      const dashboardIcon = container.querySelector('[data-testid="DashboardIcon"]');
+      const dashboardIcon = container.querySelector(
+        '[data-testid="DashboardIcon"]'
+      );
       expect(dashboardIcon).toBeInTheDocument();
     });
 
     it('renders timeline icon for phases', () => {
       const { container } = render(<TopNav />);
 
-      const timelineIcons = container.querySelectorAll('[data-testid="TimelineIcon"]');
+      const timelineIcons = container.querySelectorAll(
+        '[data-testid="TimelineIcon"]'
+      );
       expect(timelineIcons.length).toBeGreaterThan(0);
     });
 
     it('renders assessment icon for reports', () => {
       const { container } = render(<TopNav />);
 
-      const assessmentIcon = container.querySelector('[data-testid="AssessmentIcon"]');
+      const assessmentIcon = container.querySelector(
+        '[data-testid="AssessmentIcon"]'
+      );
       expect(assessmentIcon).toBeInTheDocument();
     });
 
     it('renders settings icon', () => {
       const { container } = render(<TopNav />);
 
-      const settingsIcon = container.querySelector('[data-testid="SettingsIcon"]');
+      const settingsIcon = container.querySelector(
+        '[data-testid="SettingsIcon"]'
+      );
       expect(settingsIcon).toBeInTheDocument();
     });
 
     it('renders notifications icon', () => {
       const { container } = render(<TopNav />);
 
-      const notificationsIcon = container.querySelector('[data-testid="NotificationsIcon"]');
+      const notificationsIcon = container.querySelector(
+        '[data-testid="NotificationsIcon"]'
+      );
       expect(notificationsIcon).toBeInTheDocument();
     });
   });
@@ -482,11 +498,7 @@ describe('TopNav Component', () => {
 
       const start = performance.now();
       render(
-        <TopNav
-          currentPage="dashboard"
-          notificationCount={5}
-          user={mockUser}
-        />
+        <TopNav currentPage="dashboard" notificationCount={5} user={mockUser} />
       );
       const duration = performance.now() - start;
 
@@ -497,7 +509,12 @@ describe('TopNav Component', () => {
     it('handles rapid navigation changes', () => {
       const { rerender } = render(<TopNav currentPage="dashboard" />);
 
-      const pages: NavigationPage[] = ['dashboard', 'phases', 'reports', 'settings'];
+      const pages: NavigationPage[] = [
+        'dashboard',
+        'phases',
+        'reports',
+        'settings',
+      ];
 
       const start = performance.now();
       pages.forEach((page) => {

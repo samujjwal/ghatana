@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Loading States Components
- * 
+ *
  * Comprehensive loading states including skeleton screens,
  * progress indicators, spinners, and loading overlays.
- * 
+ *
  * @doc.type component
  * @doc.purpose Loading states for better perceived performance
  * @doc.layer product
@@ -82,7 +82,11 @@ export const DotsLoader: React.FC<DotsLoaderProps> = ({
   };
 
   return (
-    <div className={`flex space-x-1 ${className}`} role="status" aria-label="Loading">
+    <div
+      className={`flex space-x-1 ${className}`}
+      role="status"
+      aria-label="Loading"
+    >
       {[0, 1, 2].map((index) => (
         <div
           key={index}
@@ -130,7 +134,11 @@ export const PulseLoader: React.FC<PulseLoaderProps> = ({
   };
 
   return (
-    <div className={`flex space-x-2 ${className}`} role="status" aria-label="Loading">
+    <div
+      className={`flex space-x-2 ${className}`}
+      role="status"
+      aria-label="Loading"
+    >
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}
@@ -207,7 +215,10 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm ${className}`} aria-hidden="true">
+    <div
+      className={`p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm ${className}`}
+      aria-hidden="true"
+    >
       {showAvatar && (
         <div className="flex items-center space-x-3 mb-4">
           <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
@@ -217,11 +228,11 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
           </div>
         </div>
       )}
-      
+
       {showTitle && (
         <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-2/3 animate-pulse mb-3" />
       )}
-      
+
       {showDescription && (
         <div className="space-y-2">
           {Array.from({ length: lines }).map((_, index) => (
@@ -271,7 +282,7 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
           ))}
         </div>
       )}
-      
+
       <div className="space-y-3">
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div key={`row-${rowIndex}`} className="flex">
@@ -307,10 +318,14 @@ export const SkeletonFileTree: React.FC<SkeletonFileTreeProps> = ({
   folders = 2,
   className = '',
 }) => {
-  const renderSkeletonItem = (level: number, isFolder: boolean, index: number) => {
+  const renderSkeletonItem = (
+    level: number,
+    isFolder: boolean,
+    index: number
+  ) => {
     const indent = level * 16;
     const width = isFolder ? '60%' : `${80 + Math.random() * 20}%`;
-    
+
     return (
       <div
         key={`${level}-${index}`}
@@ -336,9 +351,9 @@ export const SkeletonFileTree: React.FC<SkeletonFileTreeProps> = ({
       {Array.from({ length: folders }).map((_, index) => (
         <React.Fragment key={`folder-${index}`}>
           {renderSkeletonItem(0, true, index)}
-          {Array.from({ length: Math.floor(files / folders) }).map((_, fileIndex) => (
-            renderSkeletonItem(1, false, fileIndex)
-          ))}
+          {Array.from({ length: Math.floor(files / folders) }).map(
+            (_, fileIndex) => renderSkeletonItem(1, false, fileIndex)
+          )}
         </React.Fragment>
       ))}
     </div>
@@ -378,7 +393,10 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
         <div className="flex flex-col items-center space-y-4">
           {spinner && <Spinner size="lg" />}
-          <div id="loading-message" className="text-gray-700 dark:text-gray-300 text-center">
+          <div
+            id="loading-message"
+            className="text-gray-700 dark:text-gray-300 text-center"
+          >
             {message}
           </div>
         </div>
@@ -436,7 +454,9 @@ export const ProgressLoader: React.FC<ProgressLoaderProps> = ({
           )}
         </div>
       )}
-      <div className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full ${sizeClasses[size]}`}>
+      <div
+        className={`w-full bg-gray-200 dark:bg-gray-700 rounded-full ${sizeClasses[size]}`}
+      >
         <div
           className={`
             ${colorClasses[color]} ${sizeClasses[size]} rounded-full
@@ -468,11 +488,7 @@ export const StaggeredLoader: React.FC<StaggeredLoaderProps> = ({
   return (
     <div className={className}>
       {Array.from({ length: items }).map((_, index) => (
-        <Component
-          key={index}
-          index={index}
-          delay={index * stagger}
-        />
+        <Component key={index} index={index} delay={index * stagger} />
       ))}
     </div>
   );

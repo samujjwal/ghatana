@@ -671,7 +671,8 @@ export const useDebug = ({
         if (nodeIds.has(node.id)) issues.push(`Duplicate node ID: ${node.id}`);
         nodeIds.add(node.id);
 
-        if (!node.type) issues.push(`Node ${(node as unknown).id} missing type`);
+        if (!node.type)
+          issues.push(`Node ${(node as unknown).id} missing type`);
         if (!node.position) issues.push(`Node ${node.id} missing position`);
       });
 

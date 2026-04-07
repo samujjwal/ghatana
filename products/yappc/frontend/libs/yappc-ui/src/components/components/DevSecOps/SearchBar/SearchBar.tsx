@@ -11,7 +11,20 @@ import { History as HistoryIcon } from 'lucide-react';
 import { Search as SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Box, Spinner as CircularProgress, IconButton, InputAdornment, InteractiveList as List, ListItem, ListItemButton, ListItemText, Surface as Paper, Popper, TextField, Typography } from '@ghatana/design-system';
+import {
+  Box,
+  Spinner as CircularProgress,
+  IconButton,
+  InputAdornment,
+  InteractiveList as List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Surface as Paper,
+  Popper,
+  TextField,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { SearchBarProps } from './types';
 
@@ -127,11 +140,16 @@ export function SearchBar({
           ),
           endAdornment: (
             <InputAdornment position="end">
-              {loading && <CircularProgress size={20} aria-label="Loading search results" />}
+              {loading && (
+                <CircularProgress
+                  size={20}
+                  aria-label="Loading search results"
+                />
+              )}
               {inputValue && !loading && (
-                <IconButton 
-                  size="sm" 
-                  onClick={handleClear} 
+                <IconButton
+                  size="sm"
+                  onClick={handleClear}
                   edge="end"
                   aria-label="Clear search"
                 >
@@ -146,7 +164,8 @@ export function SearchBar({
 
       {resultsCount !== undefined && inputValue && (
         <Typography
-          as="span" className="text-xs text-gray-500"
+          as="span"
+          className="text-xs text-gray-500"
           color="text.secondary"
           className="ml-2 mt-1 block"
         >
@@ -165,13 +184,23 @@ export function SearchBar({
         <Paper elevation={3} className="mt-1 overflow-auto max-h-[300px]">
           <List dense>
             <ListItem>
-              <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+              <Typography
+                as="span"
+                className="text-xs text-gray-500"
+                color="text.secondary"
+              >
                 Recent Searches
               </Typography>
             </ListItem>
             {recentSearches.slice(0, 5).map((search, index) => (
-              <ListItemButton key={index} onClick={() => handleRecentClick(search)}>
-                <HistoryIcon size={16} className="mr-2 text-gray-500 dark:text-gray-400" />
+              <ListItemButton
+                key={index}
+                onClick={() => handleRecentClick(search)}
+              >
+                <HistoryIcon
+                  size={16}
+                  className="mr-2 text-gray-500 dark:text-gray-400"
+                />
                 <ListItemText primary={search} />
               </ListItemButton>
             ))}

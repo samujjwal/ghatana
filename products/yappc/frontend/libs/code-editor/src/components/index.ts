@@ -1,6 +1,6 @@
 /**
  * Code Editor Components Index
- * 
+ *
  * @doc.type module
  * @doc.purpose Component exports
  * @doc.layer shared

@@ -1,16 +1,16 @@
 /**
  * PhaseIndicator Component
- * 
+ *
  * Phase indicator with quick jump menu
  * Shows current phase with dot + label
  * Click to open phase jump menu
- * 
+ *
  * Features:
  * - Current phase display with emoji and color
  * - Click to show all phases with jump navigation
  * - Shows frame count and completion % per phase
  * - Smooth animated pan+zoom to selected phase
- * 
+ *
  * @doc.type component
  * @doc.purpose Phase navigation and indication
  * @doc.layer components
@@ -26,14 +26,19 @@ import {
   chromeCurrentPhaseAtom,
   chromePhaseIndicatorVisibleAtom,
 } from '../state/chrome-atoms';
-import { CANVAS_TOKENS, LIFECYCLE_PHASES, type LifecyclePhase } from '../tokens/canvas-tokens';
+import {
+  CANVAS_TOKENS,
+  LIFECYCLE_PHASES,
+  type LifecyclePhase,
+} from '../tokens/canvas-tokens';
 
-const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS } = CANVAS_TOKENS;
+const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS, SHADOWS } =
+  CANVAS_TOKENS;
 
 export interface PhaseIndicatorProps {
   /** Callback when phase selected */
   onPhaseSelect?: (phase: LifecyclePhase) => void;
-  
+
   /** Phase statistics */
   phaseStats?: Record<string, { frameCount: number; completion: number }>;
 }
@@ -50,7 +55,9 @@ export function PhaseIndicator({
     return null;
   }
 
-  const phase = currentPhase ? LIFECYCLE_PHASES[currentPhase as LifecyclePhase] : null;
+  const phase = currentPhase
+    ? LIFECYCLE_PHASES[currentPhase as LifecyclePhase]
+    : null;
   const menuOpen = Boolean(anchorEl);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -71,10 +78,21 @@ export function PhaseIndicator({
       {/* Phase Indicator Button */}
       <Box
         onClick={handleClick}
-        className="flex items-center cursor-pointer" style={{ gap: SPACING.SM, paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, borderRadius: RADIUS.MD, transition: 'background-color 150ms ease' }} >
+        className="flex items-center cursor-pointer"
+        style={{
+          gap: SPACING.SM,
+          paddingLeft: SPACING.MD,
+          paddingRight: SPACING.MD,
+          paddingTop: SPACING.SM,
+          paddingBottom: SPACING.SM,
+          borderRadius: RADIUS.MD,
+          transition: 'background-color 150ms ease',
+        }}
+      >
         {/* Phase dot */}
         <Box
-          className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: phase?.color || COLORS.TEXT_DISABLED }}
+          className="w-[8px] h-[8px] rounded-full"
+          style={{ backgroundColor: phase?.color || COLORS.TEXT_DISABLED }}
         />
 
         {/* Phase label */}
@@ -149,11 +167,20 @@ export function PhaseIndicator({
             <MenuItem
               key={phaseKey}
               onClick={() => handlePhaseSelect(phaseKey)}
-              className="flex items-center" style={{ gap: SPACING.MD, paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, backgroundColor: isCurrent ? COLORS.SELECTION_BG : 'transparent' }}
+              className="flex items-center"
+              style={{
+                gap: SPACING.MD,
+                paddingLeft: SPACING.MD,
+                paddingRight: SPACING.MD,
+                paddingTop: SPACING.SM,
+                paddingBottom: SPACING.SM,
+                backgroundColor: isCurrent
+                  ? COLORS.SELECTION_BG
+                  : 'transparent',
+              }}
             >
               {/* Phase color dot */}
-              <Box
-                className="rounded-full shrink-0 w-[12px] h-[12px]" />
+              <Box className="rounded-full shrink-0 w-[12px] h-[12px]" />
 
               {/* Phase info */}
               <Box className="flex-1">
@@ -174,7 +201,8 @@ export function PhaseIndicator({
                       marginTop: SPACING.XS / 2,
                     }}
                   >
-                    {stats.frameCount} frames • {Math.round(stats.completion)}% complete
+                    {stats.frameCount} frames • {Math.round(stats.completion)}%
+                    complete
                   </Box>
                 )}
               </Box>

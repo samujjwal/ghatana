@@ -1,6 +1,6 @@
 /**
  * Consolidated Canvas User Journey Hook
- * 
+ *
  * Replaces: useUserJourney + journey features
  * Provides: User journey mapping
  */
@@ -74,39 +74,47 @@ export function useCanvasUserJourney(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const createJourney = useCallback(async (spec: UserJourneySpec): Promise<UserJourney> => {
-    const journey: UserJourney = {
-      id: `journey-${Date.now()}`,
-      name: spec.name,
-      persona: spec.persona,
-      stages: spec.stages.map((s, i) => ({ ...s, id: `stage-${i}` })),
-      touchpoints: [],
-    };
-    setJourneys(prev => [...prev, journey]);
-    return journey;
-  }, []);
+  const createJourney = useCallback(
+    async (spec: UserJourneySpec): Promise<UserJourney> => {
+      const journey: UserJourney = {
+        id: `journey-${Date.now()}`,
+        name: spec.name,
+        persona: spec.persona,
+        stages: spec.stages.map((s, i) => ({ ...s, id: `stage-${i}` })),
+        touchpoints: [],
+      };
+      setJourneys((prev) => [...prev, journey]);
+      return journey;
+    },
+    []
+  );
 
   const updateJourney = useCallback(
     async (id: string, updates: Partial<UserJourney>): Promise<void> => {
-      setJourneys(prev => prev.map(j => (j.id === id ? { ...j, ...updates } : j)));
+      setJourneys((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, ...updates } : j))
+      );
     },
     []
   );
 
   const deleteJourney = useCallback(async (id: string): Promise<void> => {
-    setJourneys(prev => prev.filter(j => j.id !== id));
+    setJourneys((prev) => prev.filter((j) => j.id !== id));
   }, []);
 
-  const analyzeJourney = useCallback(async (journeyId: string): Promise<JourneyAnalysis> => {
-    const journey = journeys.find(j => j.id === journeyId);
-    if (!journey) throw new Error('Journey not found');
+  const analyzeJourney = useCallback(
+    async (journeyId: string): Promise<JourneyAnalysis> => {
+      const journey = journeys.find((j) => j.id === journeyId);
+      if (!journey) throw new Error('Journey not found');
 
-    return {
-      painPoints: journey.stages.flatMap(s => s.painPoints),
-      opportunities: ['Improve onboarding', 'Streamline checkout'],
-      recommendations: ['Add live chat support', 'Simplify form fields'],
-    };
-  }, [journeys]);
+      return {
+        painPoints: journey.stages.flatMap((s) => s.painPoints),
+        opportunities: ['Improve onboarding', 'Streamline checkout'],
+        recommendations: ['Add live chat support', 'Simplify form fields'],
+      };
+    },
+    [journeys]
+  );
 
   return {
     journeys,

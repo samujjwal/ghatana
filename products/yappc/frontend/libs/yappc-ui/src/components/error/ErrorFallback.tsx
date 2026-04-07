@@ -1,8 +1,8 @@
 /**
  * Error Fallback Components
- * 
+ *
  * Pre-built fallback components for common error scenarios
- * 
+ *
  * @module ui/error
  * @doc.type component
  * @doc.purpose Reusable error fallback UI components
@@ -21,16 +21,16 @@ import type { ReactNode } from 'react';
 export interface ErrorFallbackProps {
   /** Error object */
   error: Error;
-  
+
   /** Reset callback */
   onReset?: () => void;
-  
+
   /** Additional actions */
   actions?: ReactNode;
-  
+
   /** Custom title */
   title?: string;
-  
+
   /** Custom message */
   message?: string;
 }
@@ -41,7 +41,7 @@ export interface ErrorFallbackProps {
 export interface MinimalErrorFallbackProps {
   /** Error message override */
   message?: string;
-  
+
   /** Reset callback */
   onReset?: () => void;
 }
@@ -52,7 +52,7 @@ export interface MinimalErrorFallbackProps {
 export interface FullPageErrorFallbackProps extends ErrorFallbackProps {
   /** Whether to show contact support */
   showSupport?: boolean;
-  
+
   /** Support email */
   supportEmail?: string;
 }
@@ -64,7 +64,7 @@ export interface FullPageErrorFallbackProps extends ErrorFallbackProps {
 /**
  * Minimal error fallback
  * For small components, inline errors
- * 
+ *
  * @example
  * <ErrorBoundary fallback={<MinimalErrorFallback />}>
  *   <SmallComponent />
@@ -114,7 +114,7 @@ export function MinimalErrorFallback({
 /**
  * Card error fallback
  * For card/panel components
- * 
+ *
  * @example
  * <ErrorBoundary fallback={<CardErrorFallback />}>
  *   <DashboardCard />
@@ -148,8 +148,12 @@ export function CardErrorFallback({
       >
         {title}
       </h3>
-      <p style={{ margin: '0 0 1rem 0', color: '#7f1d1d', fontSize: '0.875rem' }}>
-        {message || error.message || 'An error occurred while loading this component'}
+      <p
+        style={{ margin: '0 0 1rem 0', color: '#7f1d1d', fontSize: '0.875rem' }}
+      >
+        {message ||
+          error.message ||
+          'An error occurred while loading this component'}
       </p>
       {onReset && (
         <button
@@ -179,7 +183,7 @@ export function CardErrorFallback({
 /**
  * Full page error fallback
  * For entire application/route errors
- * 
+ *
  * @example
  * <ErrorBoundary fallback={<FullPageErrorFallback />}>
  *   <App />
@@ -233,7 +237,7 @@ export function FullPageErrorFallback({
         >
           ⚠️
         </div>
-        
+
         {/* Title */}
         <h1
           style={{
@@ -246,7 +250,7 @@ export function FullPageErrorFallback({
         >
           {title}
         </h1>
-        
+
         {/* Message */}
         <p
           style={{
@@ -257,10 +261,10 @@ export function FullPageErrorFallback({
             lineHeight: 1.6,
           }}
         >
-          {message || 
+          {message ||
             'We encountered an unexpected error. Please try again or contact support if the problem persists.'}
         </p>
-        
+
         {/* Error details */}
         {process.env.NODE_ENV === 'development' && (
           <details style={{ marginBottom: '1.5rem' }}>
@@ -293,7 +297,7 @@ export function FullPageErrorFallback({
             </pre>
           </details>
         )}
-        
+
         {/* Actions */}
         <div
           style={{
@@ -321,9 +325,9 @@ export function FullPageErrorFallback({
               Try Again
             </button>
           )}
-          
+
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => (window.location.href = '/')}
             style={{
               width: '100%',
               padding: '0.75rem 1.5rem',
@@ -338,10 +342,10 @@ export function FullPageErrorFallback({
           >
             Go to Homepage
           </button>
-          
+
           {actions}
         </div>
-        
+
         {/* Support */}
         {showSupport && (
           <div
@@ -351,7 +355,13 @@ export function FullPageErrorFallback({
               textAlign: 'center',
             }}
           >
-            <p style={{ margin: '0 0 0.5rem 0', color: '#7f1d1d', fontSize: '0.875rem' }}>
+            <p
+              style={{
+                margin: '0 0 0.5rem 0',
+                color: '#7f1d1d',
+                fontSize: '0.875rem',
+              }}
+            >
               Need help? Contact our support team
             </p>
             <a
@@ -379,7 +389,7 @@ export function FullPageErrorFallback({
 /**
  * Network error fallback
  * For API/network errors
- * 
+ *
  * @example
  * <ErrorBoundary fallback={<NetworkErrorFallback />}>
  *   <DataComponent />
@@ -392,7 +402,7 @@ export function NetworkErrorFallback({
   message,
 }: ErrorFallbackProps): React.JSX.Element {
   const isOffline = !navigator.onLine;
-  
+
   return (
     <div
       role="alert"
@@ -408,7 +418,7 @@ export function NetworkErrorFallback({
       <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
         {isOffline ? '📡' : '🔌'}
       </div>
-      
+
       <h2
         style={{
           margin: '0 0 0.75rem 0',
@@ -419,14 +429,14 @@ export function NetworkErrorFallback({
       >
         {title}
       </h2>
-      
+
       <p style={{ margin: '0 0 1.5rem 0', color: '#78350f', fontSize: '1rem' }}>
-        {message || 
-          (isOffline 
+        {message ||
+          (isOffline
             ? 'You appear to be offline. Please check your internet connection.'
             : 'Unable to connect to the server. Please try again.')}
       </p>
-      
+
       {process.env.NODE_ENV === 'development' && (
         <p
           style={{
@@ -439,7 +449,7 @@ export function NetworkErrorFallback({
           {error.message}
         </p>
       )}
-      
+
       {onReset && (
         <button
           onClick={onReset}
@@ -469,7 +479,7 @@ export function NetworkErrorFallback({
 /**
  * Not found error fallback
  * For 404/resource not found errors
- * 
+ *
  * @example
  * <ErrorBoundary fallback={<NotFoundErrorFallback />}>
  *   <ResourceComponent />
@@ -490,7 +500,7 @@ export function NotFoundErrorFallback({
       }}
     >
       <div style={{ fontSize: '6rem', marginBottom: '1rem' }}>404</div>
-      
+
       <h2
         style={{
           margin: '0 0 1rem 0',
@@ -501,11 +511,11 @@ export function NotFoundErrorFallback({
       >
         {title}
       </h2>
-      
+
       <p style={{ margin: '0 0 2rem 0', color: '#6b7280', fontSize: '1rem' }}>
         {message}
       </p>
-      
+
       <button
         onClick={() => window.history.back()}
         style={{
@@ -522,9 +532,9 @@ export function NotFoundErrorFallback({
       >
         Go Back
       </button>
-      
+
       <button
-        onClick={() => window.location.href = '/'}
+        onClick={() => (window.location.href = '/')}
         style={{
           padding: '0.75rem 1.5rem',
           backgroundColor: '#3b82f6',

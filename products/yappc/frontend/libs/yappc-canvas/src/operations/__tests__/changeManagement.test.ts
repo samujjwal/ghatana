@@ -479,8 +479,18 @@ describe('ChangeManagementManager', () => {
         adrReferences: [],
       });
 
-      manager.addApproval(change.id, 'approver1@example.com', 'approved', 'LGTM');
-      manager.addApproval(change.id, 'approver2@example.com', 'approved', 'LGTM');
+      manager.addApproval(
+        change.id,
+        'approver1@example.com',
+        'approved',
+        'LGTM'
+      );
+      manager.addApproval(
+        change.id,
+        'approver2@example.com',
+        'approved',
+        'LGTM'
+      );
 
       const updated = manager.getChangeRequest(change.id);
       expect(updated?.approvalStatus).toBe('approved');
@@ -501,7 +511,12 @@ describe('ChangeManagementManager', () => {
         adrReferences: [],
       });
 
-      manager.addApproval(change.id, 'approver1@example.com', 'approved', 'LGTM');
+      manager.addApproval(
+        change.id,
+        'approver1@example.com',
+        'approved',
+        'LGTM'
+      );
       manager.addApproval(
         change.id,
         'approver2@example.com',
@@ -681,7 +696,10 @@ describe('ChangeManagementManager', () => {
         adrReferences: [],
       });
 
-      manager.scheduleChange(change1.id, new Date(Date.now() + 24 * 60 * 60 * 1000));
+      manager.scheduleChange(
+        change1.id,
+        new Date(Date.now() + 24 * 60 * 60 * 1000)
+      );
       manager.scheduleChange(
         change2.id,
         new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)

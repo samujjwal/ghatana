@@ -12,7 +12,18 @@
 import { useAtom } from 'jotai';
 import React from 'react';
 
-import { Box, Card, CardContent, Typography, Stack, Chip, FormControl, InputLabel, Select, MenuItem } from '@ghatana/design-system';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from '@ghatana/design-system';
 
 import { selectedWorkflowIdAtom } from '@yappc/state';
 
@@ -46,7 +57,12 @@ interface PhaseCardProps {
 const PhaseCard: React.FC<PhaseCardProps> = ({ phase }) => (
   <Card variant="outlined">
     <CardContent>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        mb={1}
+      >
         <Box>
           <Typography as="p" className="text-lg font-medium" fontWeight={500}>
             {phase.name}
@@ -79,7 +95,12 @@ const PhaseCard: React.FC<PhaseCardProps> = ({ phase }) => (
       {/* Tasks */}
       {phase.tasks && phase.tasks.length > 0 && (
         <Box className="mt-4">
-          <Typography as="span" className="text-xs text-gray-500" color="text.secondary" gutterBottom>
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            color="text.secondary"
+            gutterBottom
+          >
             Tasks ({phase.tasks.length})
           </Typography>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
@@ -117,11 +138,15 @@ const PhaseCard: React.FC<PhaseCardProps> = ({ phase }) => (
  * <WorkflowRenderer className="my-4" />
  * ```
  */
-export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({ className = '' }) => {
+export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({
+  className = '',
+}) => {
   const workflows = useWorkflows();
   const [selectedId, setSelectedId] = useAtom(selectedWorkflowIdAtom);
   // Cast to any to access extended workflow properties from API
-  const selectedWorkflow = workflows.find((w) => w.id === selectedId) as unknown;
+  const selectedWorkflow = workflows.find(
+    (w) => w.id === selectedId
+  ) as unknown;
 
   return (
     <Box className={className}>
@@ -156,53 +181,74 @@ export const WorkflowRenderer: React.FC<WorkflowRendererProps> = ({ className = 
                 {selectedWorkflow.name}
               </Typography>
               {selectedWorkflow.description && (
-                <Typography as="p" className="text-sm" color="text.secondary" className="mt-1">
+                <Typography
+                  as="p"
+                  className="text-sm"
+                  color="text.secondary"
+                  className="mt-1"
+                >
                   {selectedWorkflow.description}
                 </Typography>
               )}
             </Box>
 
             {/* Lifecycle Stages */}
-            {selectedWorkflow.lifecycleStages && selectedWorkflow.lifecycleStages.length > 0 && (
-              <Box className="mb-6">
-                <Typography as="p" className="text-sm font-medium" color="text.secondary" gutterBottom>
-                  Lifecycle Stages
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  className="overflow-x-auto pb-2"
-                >
-                  {selectedWorkflow.lifecycleStages.map((stage: string, idx: number) => (
-                    <React.Fragment key={stage}>
-                      <Chip
-                        label={stage}
-                        tone="primary"
-                        variant="outlined"
-                        className="min-w-max"
-                      />
-                      {idx < selectedWorkflow.lifecycleStages.length - 1 && (
-                        <Typography color="text.secondary" className="px-1">
-                          →
-                        </Typography>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </Stack>
-              </Box>
-            )}
+            {selectedWorkflow.lifecycleStages &&
+              selectedWorkflow.lifecycleStages.length > 0 && (
+                <Box className="mb-6">
+                  <Typography
+                    as="p"
+                    className="text-sm font-medium"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Lifecycle Stages
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    className="overflow-x-auto pb-2"
+                  >
+                    {selectedWorkflow.lifecycleStages.map(
+                      (stage: string, idx: number) => (
+                        <React.Fragment key={stage}>
+                          <Chip
+                            label={stage}
+                            tone="primary"
+                            variant="outlined"
+                            className="min-w-max"
+                          />
+                          {idx <
+                            selectedWorkflow.lifecycleStages.length - 1 && (
+                            <Typography color="text.secondary" className="px-1">
+                              →
+                            </Typography>
+                          )}
+                        </React.Fragment>
+                      )
+                    )}
+                  </Stack>
+                </Box>
+              )}
 
             {/* Phases */}
             {selectedWorkflow.phases && selectedWorkflow.phases.length > 0 && (
               <Box>
-                <Typography as="p" className="text-sm font-medium" color="text.secondary" gutterBottom>
+                <Typography
+                  as="p"
+                  className="text-sm font-medium"
+                  color="text.secondary"
+                  gutterBottom
+                >
                   Workflow Phases
                 </Typography>
                 <Stack spacing={2}>
-                  {selectedWorkflow.phases.map((phase: PhaseCardProps['phase']) => (
-                    <PhaseCard key={phase.id} phase={phase} />
-                  ))}
+                  {selectedWorkflow.phases.map(
+                    (phase: PhaseCardProps['phase']) => (
+                      <PhaseCard key={phase.id} phase={phase} />
+                    )
+                  )}
                 </Stack>
               </Box>
             )}

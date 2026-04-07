@@ -12,7 +12,6 @@ import { ComponentRenderer } from './ComponentRenderer';
 import type { ComponentSchema } from './ComponentRenderer';
 import type { Meta, StoryObj } from '@storybook/react';
 
-
 const meta: Meta<typeof ComponentRenderer> = {
   title: 'Renderer/ComponentRenderer',
   component: ComponentRenderer,

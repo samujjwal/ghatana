@@ -1,29 +1,29 @@
 /**
  * Tailwind CSS Switch Component
- * 
+ *
  * Toggle switch built with Base UI Switch primitives and Tailwind CSS.
  * Follows Base UI composable API: Switch.Root → Switch.Thumb
- * 
+ *
  * @example
  * ```tsx
  * // Basic switch
  * <Switch label="Enable notifications" />
- * 
+ *
  * // Checked state
  * <Switch label="Dark mode" checked />
- * 
+ *
  * // Different colors
  * <Switch label="Success" colorScheme="success" />
  * <Switch label="Error" colorScheme="error" />
- * 
+ *
  * // Sizes
  * <Switch label="Small" size="sm" />
  * <Switch label="Large" size="lg" />
- * 
+ *
  * // Disabled
  * <Switch label="Disabled" disabled />
  * ```
- * 
+ *
  * @see {@link https://base-ui.com/react/switch Base UI Switch Documentation}
  */
 import { Switch as BaseSwitch } from '@base-ui/react/switch';
@@ -34,7 +34,10 @@ import { cn } from '../../utils/cn';
 /**
  * Switch component props
  */
-export interface SwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
+export interface SwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'type'
+> {
   /**
    * Label text displayed next to switch
    */
@@ -47,18 +50,24 @@ export interface SwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
 
   /**
    * Color scheme for the switch
-   * 
+   *
    * @default 'primary'
    */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
 
   /**
    * Size of the switch
-   * 
+   *
    * - `sm`: Small (w-8 h-5)
    * - `md`: Medium (w-11 h-6) - default
    * - `lg`: Large (w-14 h-7)
-   * 
+   *
    * @default 'md'
    */
   size?: 'sm' | 'md' | 'lg';
@@ -81,7 +90,7 @@ export interface SwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
 
 /**
  * Switch Component
- * 
+ *
  * @param props - Switch component props
  * @param ref - Forwarded ref to switch button element
  * @returns Rendered switch component

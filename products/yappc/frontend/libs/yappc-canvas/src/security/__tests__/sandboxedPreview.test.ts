@@ -9,8 +9,8 @@ import {
   validatePreviewConfig,
   type PreviewConfig,
   type CSPDirectives,
-
-  SandboxedPreviewManager} from '../sandboxedPreview';
+  SandboxedPreviewManager,
+} from '../sandboxedPreview';
 
 describe('SandboxedPreviewManager', () => {
   let manager: SandboxedPreviewManager;
@@ -42,11 +42,9 @@ describe('SandboxedPreviewManager', () => {
     });
 
     it('should create iframe with custom sandbox', () => {
-      const result = manager.createPreview(
-        container,
-        '<p>Test</p>',
-        { sandbox: ['allow-scripts', 'allow-forms'] }
-      );
+      const result = manager.createPreview(container, '<p>Test</p>', {
+        sandbox: ['allow-scripts', 'allow-forms'],
+      });
 
       expect(result.success).toBe(true);
       const sandbox = result.iframe!.getAttribute('sandbox');
@@ -56,22 +54,18 @@ describe('SandboxedPreviewManager', () => {
 
     it('should reject oversized content', () => {
       const largeContent = 'x'.repeat(2 * 1024 * 1024); // 2MB
-      const result = manager.createPreview(
-        container,
-        largeContent,
-        { maxContentSize: 1024 * 1024 }
-      );
+      const result = manager.createPreview(container, largeContent, {
+        maxContentSize: 1024 * 1024,
+      });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('exceeds maximum');
     });
 
     it('should set iframe title for accessibility', () => {
-      const result = manager.createPreview(
-        container,
-        '<p>Test</p>',
-        { iframeTitle: 'Custom Preview' }
-      );
+      const result = manager.createPreview(container, '<p>Test</p>', {
+        iframeTitle: 'Custom Preview',
+      });
 
       expect(result.success).toBe(true);
       expect(result.iframe!.title).toBe('Custom Preview');
@@ -151,11 +145,7 @@ describe('SandboxedPreviewManager', () => {
         imgSrc: ['*'],
       };
 
-      const result = manager.createPreview(
-        container,
-        '<p>Test</p>',
-        { csp }
-      );
+      const result = manager.createPreview(container, '<p>Test</p>', { csp });
 
       expect(result.success).toBe(true);
       const iframe = result.iframe!;
@@ -184,9 +174,9 @@ describe('SandboxedPreviewManager', () => {
 
     it('should clear violations for specific preview', () => {
       const result = manager.createPreview(container, '<p>Test</p>');
-      
+
       manager.clearViolations(result.previewId);
-      
+
       const violations = manager.getViolations(result.previewId);
       expect(violations).toEqual([]);
     });
@@ -208,8 +198,8 @@ describe('SandboxedPreviewManager', () => {
 
       const events = manager.getSecurityEvents({ previewId: result.previewId });
       expect(events.length).toBeGreaterThanOrEqual(1);
-      
-      const createEvent = events.find(e => e.type === 'preview_created');
+
+      const createEvent = events.find((e) => e.type === 'preview_created');
       expect(createEvent).toBeDefined();
       expect(createEvent!.severity).toBe('low');
     });
@@ -219,23 +209,21 @@ describe('SandboxedPreviewManager', () => {
       manager.destroyPreview(result.previewId);
 
       const events = manager.getSecurityEvents({ previewId: result.previewId });
-      const destroyEvent = events.find(e => e.type === 'preview_destroyed');
-      
+      const destroyEvent = events.find((e) => e.type === 'preview_destroyed');
+
       expect(destroyEvent).toBeDefined();
       expect(destroyEvent!.details.lifetime).toBeGreaterThanOrEqual(0);
     });
 
     it('should log size exceeded event', () => {
       const largeContent = 'x'.repeat(2 * 1024 * 1024);
-      const result = manager.createPreview(
-        container,
-        largeContent,
-        { maxContentSize: 1024 * 1024 }
-      );
+      const result = manager.createPreview(container, largeContent, {
+        maxContentSize: 1024 * 1024,
+      });
 
       const events = manager.getSecurityEvents();
-      const sizeEvent = events.find(e => e.type === 'size_exceeded');
-      
+      const sizeEvent = events.find((e) => e.type === 'size_exceeded');
+
       expect(sizeEvent).toBeDefined();
       expect(sizeEvent!.severity).toBe('medium');
     });
@@ -245,20 +233,28 @@ describe('SandboxedPreviewManager', () => {
       const result2 = manager.createPreview(container, '<p>Test 2</p>');
       manager.destroyPreview(result2.previewId);
 
-      const createEvents = manager.getSecurityEvents({ type: 'preview_created' });
-      const destroyEvents = manager.getSecurityEvents({ type: 'preview_destroyed' });
+      const createEvents = manager.getSecurityEvents({
+        type: 'preview_created',
+      });
+      const destroyEvents = manager.getSecurityEvents({
+        type: 'preview_destroyed',
+      });
 
       expect(createEvents.length).toBeGreaterThanOrEqual(2);
       expect(destroyEvents.length).toBeGreaterThanOrEqual(1);
-      expect(createEvents.every(e => e.type === 'preview_created')).toBe(true);
-      expect(destroyEvents.every(e => e.type === 'preview_destroyed')).toBe(true);
+      expect(createEvents.every((e) => e.type === 'preview_created')).toBe(
+        true
+      );
+      expect(destroyEvents.every((e) => e.type === 'preview_destroyed')).toBe(
+        true
+      );
     });
 
     it('should filter events by severity', () => {
       manager.createPreview(container, '<p>Test</p>');
-      
+
       const lowEvents = manager.getSecurityEvents({ severity: 'low' });
-      expect(lowEvents.every(e => e.severity === 'low')).toBe(true);
+      expect(lowEvents.every((e) => e.severity === 'low')).toBe(true);
     });
 
     it('should filter events by time', () => {
@@ -267,7 +263,7 @@ describe('SandboxedPreviewManager', () => {
 
       const recentEvents = manager.getSecurityEvents({ since: before });
       expect(recentEvents.length).toBeGreaterThanOrEqual(1);
-      expect(recentEvents.every(e => e.timestamp >= before)).toBe(true);
+      expect(recentEvents.every((e) => e.timestamp >= before)).toBe(true);
     });
 
     it('should clear security events', () => {
@@ -280,7 +276,7 @@ describe('SandboxedPreviewManager', () => {
 
     it('should notify event subscribers', () => {
       const events: unknown[] = [];
-      const unsubscribe = manager.subscribe(event => {
+      const unsubscribe = manager.subscribe((event) => {
         events.push(event);
       });
 
@@ -294,7 +290,7 @@ describe('SandboxedPreviewManager', () => {
 
     it('should unsubscribe from events', () => {
       const events: unknown[] = [];
-      const unsubscribe = manager.subscribe(event => {
+      const unsubscribe = manager.subscribe((event) => {
         events.push(event);
       });
 
@@ -313,8 +309,8 @@ describe('SandboxedPreviewManager', () => {
       const events1: unknown[] = [];
       const events2: unknown[] = [];
 
-      manager.subscribe(event => events1.push(event));
-      manager.subscribe(event => events2.push(event));
+      manager.subscribe((event) => events1.push(event));
+      manager.subscribe((event) => events2.push(event));
 
       manager.createPreview(container, '<p>Test</p>');
 
@@ -380,7 +376,9 @@ describe('SandboxedPreviewManager', () => {
 
       const result = validatePreviewConfig(config);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('proxyUrl required when useProxy is true');
+      expect(result.errors).toContain(
+        'proxyUrl required when useProxy is true'
+      );
     });
 
     it('should accept valid proxy config', () => {
@@ -426,11 +424,9 @@ describe('SandboxedPreviewManager', () => {
     });
 
     it('should handle zero maxContentSize gracefully', () => {
-      const result = manager.createPreview(
-        container,
-        '<p>Test</p>',
-        { maxContentSize: 0 }
-      );
+      const result = manager.createPreview(container, '<p>Test</p>', {
+        maxContentSize: 0,
+      });
 
       expect(result.success).toBe(false);
     });

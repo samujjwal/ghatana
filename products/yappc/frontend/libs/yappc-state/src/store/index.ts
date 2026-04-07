@@ -79,7 +79,10 @@ export {
   subscribeToSync,
   getSyncStatistics,
 } from './cross-tab-sync';
-export type { StorageEvent as SyncMessage, SyncConfig as CrossTabSyncOptions } from './cross-tab-sync';
+export type {
+  StorageEvent as SyncMessage,
+  SyncConfig as CrossTabSyncOptions,
+} from './cross-tab-sync';
 export {
   useSyncedAtom,
   useSyncedAtomValue,

@@ -56,7 +56,7 @@ export const Sizes: Story = {
 export const Interactive: Story = {
   render: () => {
     const [value, setValue] = React.useState(0);
-    
+
     return (
       <div className="flex flex-col gap-4">
         <Rating value={value} onChange={setValue} />
@@ -72,7 +72,7 @@ export const Interactive: Story = {
 export const HalfStar: Story = {
   render: () => {
     const [value, setValue] = React.useState(3.5);
-    
+
     return (
       <div className="flex flex-col gap-4">
         <Rating value={value} precision={0.5} onChange={setValue} />
@@ -180,7 +180,7 @@ export const CustomIcons: Story = {
 export const ProductReview: Story = {
   render: () => {
     const [rating, setRating] = React.useState(0);
-    
+
     return (
       <div className="max-w-md p-6 bg-white rounded-lg shadow-sm border border-grey-200">
         <h3 className="text-lg font-semibold mb-4">Rate this product</h3>
@@ -221,24 +221,32 @@ export const AverageRating: Story = {
     ];
 
     const totalReviews = reviews.reduce((sum, r) => sum + r.count, 0);
-    const averageRating = reviews.reduce((sum, r) => sum + r.rating * r.count, 0) / totalReviews;
+    const averageRating =
+      reviews.reduce((sum, r) => sum + r.rating * r.count, 0) / totalReviews;
 
     return (
       <div className="max-w-md p-6 bg-white rounded-lg shadow-sm border border-grey-200">
         <h3 className="text-lg font-semibold mb-4">Customer Reviews</h3>
-        
+
         <div className="flex items-center gap-4 mb-6">
           <div className="text-center">
             <div className="text-4xl font-bold">{averageRating.toFixed(1)}</div>
-            <Rating value={averageRating} precision={0.5} readOnly size="small" />
-            <div className="text-sm text-grey-600 mt-1">{totalReviews} reviews</div>
+            <Rating
+              value={averageRating}
+              precision={0.5}
+              readOnly
+              size="small"
+            />
+            <div className="text-sm text-grey-600 mt-1">
+              {totalReviews} reviews
+            </div>
           </div>
         </div>
 
         <div className="space-y-2">
           {reviews.map((review) => {
             const percentage = (review.count / totalReviews) * 100;
-            
+
             return (
               <div key={review.rating} className="flex items-center gap-3">
                 <span className="text-sm w-8">{review.rating}★</span>
@@ -275,18 +283,19 @@ export const FormIntegration: Story = {
     };
 
     return (
-      <form onSubmit={handleSubmit} className="max-w-md p-6 bg-white rounded-lg shadow-sm border border-grey-200">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md p-6 bg-white rounded-lg shadow-sm border border-grey-200"
+      >
         <div className="mb-4">
           <label className="block text-sm font-medium mb-2">
             How would you rate our service? *
           </label>
-          <Rating
-            value={rating}
-            onChange={setRating}
-            name="service-rating"
-          />
+          <Rating value={rating} onChange={setRating} name="service-rating" />
           {rating === 0 && (
-            <p className="text-sm text-error-600 mt-1">Please select a rating</p>
+            <p className="text-sm text-error-600 mt-1">
+              Please select a rating
+            </p>
           )}
         </div>
 
@@ -299,7 +308,9 @@ export const FormIntegration: Story = {
         </button>
 
         {submitted && (
-          <p className="text-sm text-success-600 mt-2">Thank you for your feedback!</p>
+          <p className="text-sm text-success-600 mt-2">
+            Thank you for your feedback!
+          </p>
         )}
       </form>
     );
@@ -346,7 +357,7 @@ export const Playground: Story = {
   },
   render: (args) => {
     const [value, setValue] = React.useState(args.value || 0);
-    
+
     return (
       <div className="flex flex-col gap-4">
         <Rating {...args} value={value} onChange={setValue} />

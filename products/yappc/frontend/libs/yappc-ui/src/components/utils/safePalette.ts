@@ -21,7 +21,6 @@ export function resolveThemeColor(
   key: string | undefined,
   fallback: string = 'primary'
 ) {
-   
   const p: Record<string, { main?: string } | undefined> =
     (theme && (theme as any).palette) || {};
   if (key && p[key] && typeof p[key].main === 'string') return key;
@@ -70,7 +69,7 @@ export function getPaletteMain(
   // We intentionally perform a dynamic lookup here. The security rule flags generic object
   // injection for indexed access; this is acceptable because the source of `paletteKey` is
   // constrained by resolveThemeColor which only returns keys known to exist on theme.palette.
-   
+
   const p: ThemePalette = theme.palette;
   return (p[paletteKey]?.main as string) ?? theme.palette.primary.main;
 }

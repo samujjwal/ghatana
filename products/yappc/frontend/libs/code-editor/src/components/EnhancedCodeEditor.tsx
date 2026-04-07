@@ -1,9 +1,9 @@
 /**
  * Enhanced Code Editor Component
- * 
+ *
  * Monaco-based code editor with CRDT integration, collaborative editing,
  * and performance optimizations for large files.
- * 
+ *
  * Features:
  * - 🔄 CRDT-bound Monaco instances with Y.Text
  * - 👥 Collaborative cursors and selections
@@ -11,18 +11,23 @@
  * - 🎯 Editor lifecycle management and pooling
  * - 📝 Multi-file tab system support
  * - 🔌 LSP integration foundation
- * 
+ *
  * @doc.type component
  * @doc.purpose Enhanced collaborative code editor
  * @doc.layer product
  * @doc.pattern Advanced Component
  */
 
-
 import Editor from '@monaco-editor/react';
 import type { OnMount, Monaco } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
-import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+} from 'react';
 import * as Y from 'yjs';
 
 import type { CodeEditorConfig } from '@yappc/code-editor';
@@ -43,8 +48,6 @@ export interface CollaborativeCursor {
   };
   color: string;
 }
-
-
 
 /**
  * Editor instance metadata
@@ -83,7 +86,9 @@ export interface EnhancedCodeEditorProps {
   /** Yjs document for collaboration */
   ydoc: Y.Doc;
   /** Editor configuration */
-  config?: Partial<CodeEditorConfig> & { options?: editor.IStandaloneEditorConstructionOptions };
+  config?: Partial<CodeEditorConfig> & {
+    options?: editor.IStandaloneEditorConstructionOptions;
+  };
   /** Collaborative cursors */
   cursors?: CollaborativeCursor[];
   /** Read-only mode */
@@ -142,113 +147,115 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
   /**
    * Enhanced editor options for performance
    */
-  const enhancedOptions: editor.IStandaloneEditorConstructionOptions = useMemo(() => ({
-    // Base options
-    minimap: { enabled: false },
-    fontSize: 14,
-    lineNumbers: 'on',
-    roundedSelection: true,
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    tabSize: 2,
-    wordWrap: 'on',
-    folding: true,
-    lineDecorationsWidth: 10,
-    lineNumbersMinChars: 3,
-    renderLineHighlight: 'line',
+  const enhancedOptions: editor.IStandaloneEditorConstructionOptions = useMemo(
+    () => ({
+      // Base options
+      minimap: { enabled: false },
+      fontSize: 14,
+      lineNumbers: 'on',
+      roundedSelection: true,
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      tabSize: 2,
+      wordWrap: 'on',
+      folding: true,
+      lineDecorationsWidth: 10,
+      lineNumbersMinChars: 3,
+      renderLineHighlight: 'line',
 
-    // Performance optimizations for large files
-    guides: {
-      indentation: false,
-      bracketPairs: false,
-    },
-    suggest: {
-      showKeywords: false,
-      showSnippets: false,
-    },
-    hover: {
-      enabled: false,
-    },
+      // Performance optimizations for large files
+      guides: {
+        indentation: false,
+        bracketPairs: false,
+      },
+      suggest: {
+        showKeywords: false,
+        showSnippets: false,
+      },
+      hover: {
+        enabled: false,
+      },
 
-    codeLens: false,
-    foldingStrategy: 'indentation',
-    renderValidationDecorations: 'on',
+      codeLens: false,
+      foldingStrategy: 'indentation',
+      renderValidationDecorations: 'on',
 
-    // Scrollbar optimization
-    scrollbar: {
-      vertical: 'auto',
-      horizontal: 'auto',
-      verticalScrollbarSize: 10,
-      horizontalScrollbarSize: 10,
-      useShadows: false,
-    },
+      // Scrollbar optimization
+      scrollbar: {
+        vertical: 'auto',
+        horizontal: 'auto',
+        verticalScrollbarSize: 10,
+        horizontalScrollbarSize: 10,
+        useShadows: false,
+      },
 
-    // Padding and spacing
-    padding: { top: 10, bottom: 10 },
+      // Padding and spacing
+      padding: { top: 10, bottom: 10 },
 
-    // Read-only and language
-    readOnly,
+      // Read-only and language
+      readOnly,
 
-    // Custom options
-    ...config?.options,
-  }), [config, readOnly]);
+      // Custom options
+      ...config?.options,
+    }),
+    [config, readOnly]
+  );
 
   /**
    * Setup Yjs-Monaco binding
    */
-  const setupYjsBinding = useCallback((
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco,
-    ytext: Y.Text
-  ) => {
-    // Create binding between Y.Text and Monaco
-    // Note: In production, use y-monaco or similar library
-    const binding = {
-      ytext,
-      editor,
-      monaco,
+  const setupYjsBinding = useCallback(
+    (editor: editor.IStandaloneCodeEditor, monaco: Monaco, ytext: Y.Text) => {
+      // Create binding between Y.Text and Monaco
+      // Note: In production, use y-monaco or similar library
+      const binding = {
+        ytext,
+        editor,
+        monaco,
 
-      // Local change handler
-      onLocalChange: () => {
-        if (!bindingRef.current) return;
+        // Local change handler
+        onLocalChange: () => {
+          if (!bindingRef.current) return;
 
-        const value = editor.getValue();
-        const ytextValue = ytext.toString();
+          const value = editor.getValue();
+          const ytextValue = ytext.toString();
 
-        if (value !== ytextValue) {
-          // Apply change to Y.Text
-          ytext.delete(0, ytext.length);
-          ytext.insert(0, value);
-        }
-      },
+          if (value !== ytextValue) {
+            // Apply change to Y.Text
+            ytext.delete(0, ytext.length);
+            ytext.insert(0, value);
+          }
+        },
 
-      // Remote change handler
-      onRemoteChange: () => {
-        if (!bindingRef.current) return;
+        // Remote change handler
+        onRemoteChange: () => {
+          if (!bindingRef.current) return;
 
-        const value = ytext.toString();
-        const editorValue = editor.getValue();
+          const value = ytext.toString();
+          const editorValue = editor.getValue();
 
-        if (value !== editorValue) {
-          // Apply remote change to editor
-          editor.setValue(value);
-        }
-      },
-    };
+          if (value !== editorValue) {
+            // Apply remote change to editor
+            editor.setValue(value);
+          }
+        },
+      };
 
-    // Setup event listeners
-    const disposable = editor.onDidChangeModelContent(() => {
-      binding.onLocalChange();
-    });
+      // Setup event listeners
+      const disposable = editor.onDidChangeModelContent(() => {
+        binding.onLocalChange();
+      });
 
-    ytext.observe(binding.onRemoteChange);
+      ytext.observe(binding.onRemoteChange);
 
-    bindingRef.current = {
-      ...binding,
-      disposable,
-      ytextUnobserve: () => ytext.unobserve(binding.onRemoteChange),
-    };
-  }, []);
+      bindingRef.current = {
+        ...binding,
+        disposable,
+        ytextUnobserve: () => ytext.unobserve(binding.onRemoteChange),
+      };
+    },
+    []
+  );
 
   /**
    * Render collaborative cursors
@@ -280,7 +287,8 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
         options: {
           className: `collaborative-cursor-${cursor.userId}`,
           hoverMessage: { value: `${cursor.userName}'s cursor` },
-          stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+          stickiness:
+            monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
         },
       };
       decorations.push(cursorDecoration);
@@ -296,7 +304,8 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
           ),
           options: {
             className: `collaborative-selection-${cursor.userId}`,
-            stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+            stickiness:
+              monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
             isWholeLine: false,
           },
         };
@@ -338,57 +347,60 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
   /**
    * Handle editor mount
    */
-  const handleEditorMount: OnMount = useCallback((editor, monaco) => {
-    const startTime = performance.now();
+  const handleEditorMount: OnMount = useCallback(
+    (editor, monaco) => {
+      const startTime = performance.now();
 
-    editorRef.current = editor;
-    monacoRef.current = monaco;
+      editorRef.current = editor;
+      monacoRef.current = monaco;
 
-    // Setup Yjs binding
-    const ytext = getYText();
-    setupYjsBinding(editor, monaco, ytext);
+      // Setup Yjs binding
+      const ytext = getYText();
+      setupYjsBinding(editor, monaco, ytext);
 
-    // Set initial content
-    const initialValue = ytext.toString();
-    editor.setValue(initialValue);
+      // Set initial content
+      const initialValue = ytext.toString();
+      editor.setValue(initialValue);
 
-    // Setup cursor change handler
-    editor.onDidChangeCursorPosition((e) => {
-      onCursorChange?.({
-        line: e.position.lineNumber,
-        column: e.position.column,
+      // Setup cursor change handler
+      editor.onDidChangeCursorPosition((e) => {
+        onCursorChange?.({
+          line: e.position.lineNumber,
+          column: e.position.column,
+        });
       });
-    });
 
-    // Setup performance monitoring
-    if (onPerformanceMetrics) {
-      const metrics = calculateMetrics();
-      metrics.renderTime = performance.now() - startTime;
-      onPerformanceMetrics(metrics);
-    }
+      // Setup performance monitoring
+      if (onPerformanceMetrics) {
+        const metrics = calculateMetrics();
+        metrics.renderTime = performance.now() - startTime;
+        onPerformanceMetrics(metrics);
+      }
 
-    // Add collaborative cursor styles
-    cursors.forEach((cursor) => {
-      monaco.editor.defineTheme(`cursor-${cursor.userId}`, {
-        base: theme === 'vs-dark' ? 'vs-dark' : 'vs',
-        inherit: true,
-        rules: [],
-        colors: {
-          'editorCursor.foreground': cursor.color,
-        },
+      // Add collaborative cursor styles
+      cursors.forEach((cursor) => {
+        monaco.editor.defineTheme(`cursor-${cursor.userId}`, {
+          base: theme === 'vs-dark' ? 'vs-dark' : 'vs',
+          inherit: true,
+          rules: [],
+          colors: {
+            'editorCursor.foreground': cursor.color,
+          },
+        });
       });
-    });
 
-    setIsReady(true);
-  }, [
-    theme,
-    cursors,
-    getYText,
-    setupYjsBinding,
-    onCursorChange,
-    onPerformanceMetrics,
-    calculateMetrics,
-  ]);
+      setIsReady(true);
+    },
+    [
+      theme,
+      cursors,
+      getYText,
+      setupYjsBinding,
+      onCursorChange,
+      onPerformanceMetrics,
+      calculateMetrics,
+    ]
+  );
 
   /**
    * Update collaborative cursors
@@ -398,7 +410,12 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
       renderCollaborativeCursors();
       onCollaborativeCursorUpdate?.(cursors);
     }
-  }, [cursors, isReady, renderCollaborativeCursors, onCollaborativeCursorUpdate]);
+  }, [
+    cursors,
+    isReady,
+    renderCollaborativeCursors,
+    onCollaborativeCursorUpdate,
+  ]);
 
   /**
    * Cleanup on unmount
@@ -420,7 +437,9 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
     <div className={`enhanced-code-editor ${className}`} style={{ height }}>
       {!isReady && (
         <div className="flex items-center justify-center h-full bg-gray-900 dark:bg-gray-1000">
-          <div className="text-gray-400 dark:text-gray-600">Loading collaborative editor...</div>
+          <div className="text-gray-400 dark:text-gray-600">
+            Loading collaborative editor...
+          </div>
         </div>
       )}
 
@@ -432,19 +451,21 @@ export const EnhancedCodeEditor: React.FC<EnhancedCodeEditorProps> = ({
         options={enhancedOptions}
         loading={
           <div className="flex items-center justify-center h-full bg-gray-900 dark:bg-gray-1000">
-            <div className="text-gray-400 dark:text-gray-600">Initializing Monaco...</div>
+            <div className="text-gray-400 dark:text-gray-600">
+              Initializing Monaco...
+            </div>
           </div>
         }
       />
 
       {/* Collaborative cursor styles */}
       <style>{`
-        .collaborative-cursor-${cursors.map(c => c.userId).join(', .collaborative-cursor-')} {
+        .collaborative-cursor-${cursors.map((c) => c.userId).join(', .collaborative-cursor-')} {
           border-left: 2px solid;
           position: relative;
         }
         
-        .collaborative-selection-${cursors.map(c => c.userId).join(', .collaborative-selection-')} {
+        .collaborative-selection-${cursors.map((c) => c.userId).join(', .collaborative-selection-')} {
           background-color: rgba(var(--cursor-color), 0.2);
         }
       `}</style>

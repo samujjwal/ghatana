@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Keyboard Navigation Component
- * 
+ *
  * Advanced keyboard navigation system with shortcuts, focus management,
  * and screen reader support for full accessibility.
- * 
+ *
  * @doc.type component
  * @doc.purpose Enhanced keyboard navigation for IDE
  * @doc.layer product
@@ -99,8 +99,9 @@ class KeyboardNavigationManager {
    *
    */
   getVisibleItems(): NavigationItem[] {
-    return Array.from(this.navigationItems.values())
-      .filter(item => item.visible && item.enabled && item.focusable);
+    return Array.from(this.navigationItems.values()).filter(
+      (item) => item.visible && item.enabled && item.focusable
+    );
   }
 
   /**
@@ -121,7 +122,8 @@ class KeyboardNavigationManager {
     const visibleItems = this.getVisibleItems();
     if (visibleItems.length === 0) return null;
 
-    this.currentIndex = this.currentIndex === 0 ? visibleItems.length - 1 : this.currentIndex - 1;
+    this.currentIndex =
+      this.currentIndex === 0 ? visibleItems.length - 1 : this.currentIndex - 1;
     return visibleItems[this.currentIndex];
   }
 
@@ -133,7 +135,7 @@ class KeyboardNavigationManager {
     if (!item || !item.visible || !item.enabled) return null;
 
     const visibleItems = this.getVisibleItems();
-    this.currentIndex = visibleItems.findIndex(i => i.id === itemId);
+    this.currentIndex = visibleItems.findIndex((i) => i.id === itemId);
     return item;
   }
 
@@ -183,15 +185,19 @@ class KeyboardNavigationManager {
    *
    */
   parseShortcut(shortcut: string): string[] {
-    return shortcut.toLowerCase().split('+').map(key => key.trim());
+    return shortcut
+      .toLowerCase()
+      .split('+')
+      .map((key) => key.trim());
   }
 
   /**
    *
    */
   getItemsByCategory(category: string): NavigationItem[] {
-    return Array.from(this.navigationItems.values())
-      .filter(item => item.category === category);
+    return Array.from(this.navigationItems.values()).filter(
+      (item) => item.category === category
+    );
   }
 
   /**
@@ -218,7 +224,7 @@ class KeyboardNavigationManager {
    *
    */
   stopAutoDiscovery(): void {
-    this.observers.forEach(observer => observer.disconnect());
+    this.observers.forEach((observer) => observer.disconnect());
     this.observers = [];
   }
 
@@ -298,7 +304,11 @@ class KeyboardNavigationManager {
   private getElementCategory(element: HTMLElement): string {
     const tagName = element.tagName.toLowerCase();
 
-    if (['button', 'input[type="button"]', 'input[type="submit"]'].includes(tagName)) {
+    if (
+      ['button', 'input[type="button"]', 'input[type="submit"]'].includes(
+        tagName
+      )
+    ) {
       return 'actions';
     }
 
@@ -338,14 +348,20 @@ export const KeyboardNavigation: React.FC<KeyboardNavigationProps> = ({
   const helpTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Callback functions
-  const handleNavigationChange = useCallback((item: NavigationItem) => {
-    setCurrentItem(item);
-    onNavigationChange?.(item);
-  }, [onNavigationChange]);
+  const handleNavigationChange = useCallback(
+    (item: NavigationItem) => {
+      setCurrentItem(item);
+      onNavigationChange?.(item);
+    },
+    [onNavigationChange]
+  );
 
-  const handleShortcutTriggered = useCallback((shortcut: string, item: NavigationItem) => {
-    onShortcutTriggered?.(shortcut, item);
-  }, [onShortcutTriggered]);
+  const handleShortcutTriggered = useCallback(
+    (shortcut: string, item: NavigationItem) => {
+      onShortcutTriggered?.(shortcut, item);
+    },
+    [onShortcutTriggered]
+  );
 
   // Register keyboard shortcuts
   useEffect(() => {
@@ -420,7 +436,16 @@ export const KeyboardNavigation: React.FC<KeyboardNavigationProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [enableShortcuts, enableFocusManagement, navigationManager, showHelp, handleNavigationChange, handleShortcutTriggered, onNavigationChange, onShortcutTriggered]);
+  }, [
+    enableShortcuts,
+    enableFocusManagement,
+    navigationManager,
+    showHelp,
+    handleNavigationChange,
+    handleShortcutTriggered,
+    onNavigationChange,
+    onShortcutTriggered,
+  ]);
 
   // Auto-discover navigation items
   useEffect(() => {
@@ -463,10 +488,12 @@ export const KeyboardNavigation: React.FC<KeyboardNavigationProps> = ({
 
   // Get shortcuts by category
   const shortcutsByCategory = React.useMemo(() => {
-    const items = navigationManager.getVisibleItems().filter(item => item.shortcut);
+    const items = navigationManager
+      .getVisibleItems()
+      .filter((item) => item.shortcut);
     const categories: Record<string, NavigationItem[]> = {};
 
-    items.forEach(item => {
+    items.forEach((item) => {
       if (!categories[item.category]) {
         categories[item.category] = [];
       }
@@ -517,36 +544,44 @@ export const KeyboardNavigation: React.FC<KeyboardNavigationProps> = ({
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span>Move to next item</span>
-                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Tab</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        Tab
+                      </kbd>
                     </div>
                     <div className="flex justify-between">
                       <span>Move to previous item</span>
-                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Shift + Tab</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        Shift + Tab
+                      </kbd>
                     </div>
                     <div className="flex justify-between">
                       <span>Show keyboard help</span>
-                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Ctrl + ?</kbd>
+                      <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                        Ctrl + ?
+                      </kbd>
                     </div>
                   </div>
                 </div>
 
-                {Object.entries(shortcutsByCategory).map(([category, items]) => (
-                  <div key={category}>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2 capitalize">
-                      {category}
-                    </h3>
-                    <div className="space-y-1 text-sm">
-                      {items.map(item => (
-                        <div key={item.id} className="flex justify-between">
-                          <span>{item.label}</span>
-                          <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-                            {item.shortcut}
-                          </kbd>
-                        </div>
-                      ))}
+                {Object.entries(shortcutsByCategory).map(
+                  ([category, items]) => (
+                    <div key={category}>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2 capitalize">
+                        {category}
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {items.map((item) => (
+                          <div key={item.id} className="flex justify-between">
+                            <span>{item.label}</span>
+                            <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                              {item.shortcut}
+                            </kbd>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </div>
 

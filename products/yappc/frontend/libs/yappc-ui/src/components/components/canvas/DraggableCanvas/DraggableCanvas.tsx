@@ -12,7 +12,13 @@
 
 import React, { useState, useCallback } from 'react';
 
-import { Box, Typography, Card, Button, TextField } from '@ghatana/design-system';
+import {
+  Box,
+  Typography,
+  Card,
+  Button,
+  TextField,
+} from '@ghatana/design-system';
 
 // ============================================================================
 // Types
@@ -76,7 +82,11 @@ export interface DraggableCanvasProps {
   /** Called when items change */
   onItemsChange: (items: CanvasItem[]) => void;
   /** Available components for the library (optional) */
-  availableComponents?: Array<{ type: ComponentType; label: string; icon?: string }>;
+  availableComponents?: Array<{
+    type: ComponentType;
+    label: string;
+    icon?: string;
+  }>;
   /** Whether to show the component library */
   showLibrary?: boolean;
   /** Canvas min height */
@@ -103,14 +113,7 @@ const ComponentRenderer: React.FC<{
         </Button>
       );
     case 'input':
-      return (
-        <TextField
-          type="text"
-          fullWidth
-          size="sm"
-          {...props}
-        />
-      );
+      return <TextField type="text" fullWidth size="sm" {...props} />;
     case 'card':
       return (
         <Card className="p-4 my-2" {...props}>
@@ -145,22 +148,31 @@ export const DraggableItem: React.FC<DraggableItemProps> = ({
   onDrop,
   onDragOver,
 }) => {
-  const handleDragStart = useCallback((e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', id);
-    e.dataTransfer.effectAllowed = 'move';
-    if (onDragStart) onDragStart(id);
-  }, [id, onDragStart]);
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      e.dataTransfer.setData('text/plain', id);
+      e.dataTransfer.effectAllowed = 'move';
+      if (onDragStart) onDragStart(id);
+    },
+    [id, onDragStart]
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (onDrop) onDrop(id);
-  }, [id, onDrop]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (onDrop) onDrop(id);
+    },
+    [id, onDrop]
+  );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (onDragOver) onDragOver(e);
-  }, [onDragOver]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (onDragOver) onDragOver(e);
+    },
+    [onDragOver]
+  );
 
   return (
     <Box
@@ -265,44 +277,53 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
 
   const handleItemSelect = useCallback((id: string) => {
-    setSelectedItem(prev => prev === id ? null : id);
+    setSelectedItem((prev) => (prev === id ? null : id));
   }, []);
 
   const handleDragStart = useCallback((id: string) => {
     setDraggedItem(id);
   }, []);
 
-  const handleDrop = useCallback((targetId: string) => {
-    if (!draggedItem) return;
+  const handleDrop = useCallback(
+    (targetId: string) => {
+      if (!draggedItem) return;
 
-    const draggedIndex = items.findIndex(item => item.id === draggedItem);
-    const targetIndex = items.findIndex(item => item.id === targetId);
+      const draggedIndex = items.findIndex((item) => item.id === draggedItem);
+      const targetIndex = items.findIndex((item) => item.id === targetId);
 
-    if (draggedIndex === targetIndex) return;
+      if (draggedIndex === targetIndex) return;
 
-    const newItems = [...items];
-    const [movedItem] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, movedItem);
+      const newItems = [...items];
+      const [movedItem] = newItems.splice(draggedIndex, 1);
+      newItems.splice(targetIndex, 0, movedItem);
 
-    onItemsChange(newItems);
-    setDraggedItem(null);
-  }, [draggedItem, items, onItemsChange]);
+      onItemsChange(newItems);
+      setDraggedItem(null);
+    },
+    [draggedItem, items, onItemsChange]
+  );
 
-  const addNewItem = useCallback((type: ComponentType) => {
-    const newItem: CanvasItem = {
-      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      type,
-      props: {},
-    };
-    onItemsChange([...items, newItem]);
-  }, [items, onItemsChange]);
+  const addNewItem = useCallback(
+    (type: ComponentType) => {
+      const newItem: CanvasItem = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        type,
+        props: {},
+      };
+      onItemsChange([...items, newItem]);
+    },
+    [items, onItemsChange]
+  );
 
-  const removeItem = useCallback((id: string) => {
-    onItemsChange(items.filter(item => item.id !== id));
-    if (selectedItem === id) {
-      setSelectedItem(null);
-    }
-  }, [items, onItemsChange, selectedItem]);
+  const removeItem = useCallback(
+    (id: string) => {
+      onItemsChange(items.filter((item) => item.id !== id));
+      if (selectedItem === id) {
+        setSelectedItem(null);
+      }
+    },
+    [items, onItemsChange, selectedItem]
+  );
 
   return (
     <Box className="flex">
@@ -313,7 +334,8 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
         />
       )}
       <Box
-        className="flex-1 p-4 rounded overflow-auto bg-gray-100 dark:bg-gray-800 min-h-full border-[2px] border-gray-200 dark:border-gray-700 border-dashed" role="list"
+        className="flex-1 p-4 rounded overflow-auto bg-gray-100 dark:bg-gray-800 min-h-full border-[2px] border-gray-200 dark:border-gray-700 border-dashed"
+        role="list"
         aria-label="Canvas area"
       >
         <Box className="flex justify-between items-center mb-4">
@@ -328,8 +350,7 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
         </Box>
 
         {items.length === 0 ? (
-          <Box
-            className="text-center p-10 rounded-lg text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-dashed" >
+          <Box className="text-center p-10 rounded-lg text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-dashed">
             <Typography as="p">
               Click on components in the library to add them to the canvas
             </Typography>
@@ -349,7 +370,9 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
               }}
               tabIndex={0}
               className={`rounded m-1 bg-white dark:bg-gray-900 relative group ${
-                selectedItem === item.id ? 'outline outline-2 outline-blue-600' : ''
+                selectedItem === item.id
+                  ? 'outline outline-2 outline-blue-600'
+                  : ''
               }`}
             >
               <DraggableItem

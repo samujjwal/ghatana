@@ -232,7 +232,10 @@ export class AnthropicProvider extends AIService {
   private handleError(error: unknown): AIServiceError {
     if (error && typeof error === 'object' && 'status' in error) {
       const apiError = error as { status?: number; message?: string };
-      const cause = error instanceof Error ? error : new Error(apiError.message || 'Anthropic API error');
+      const cause =
+        error instanceof Error
+          ? error
+          : new Error(apiError.message || 'Anthropic API error');
       return new AIServiceError(
         apiError.message || 'Anthropic API error',
         'ANTHROPIC_ERROR',

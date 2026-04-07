@@ -117,8 +117,14 @@ export class CodeGenerator {
     // Generate data binding hooks
     let hooksCode = '';
     if (opts.includeDataBinding && nodeData.dataBinding) {
-      hooksCode = this.generateDataBindingHook(nodeData.dataBinding, opts, indent);
-      imports.push(`import { useDataBinding } from '@ghatana/yappc-shared-ui-core/hooks';`);
+      hooksCode = this.generateDataBindingHook(
+        nodeData.dataBinding,
+        opts,
+        indent
+      );
+      imports.push(
+        `import { useDataBinding } from '@ghatana/yappc-shared-ui-core/hooks';`
+      );
     }
 
     // Generate event handlers
@@ -130,8 +136,14 @@ export class CodeGenerator {
     // Generate validation
     let validationCode = '';
     if (opts.includeValidation && nodeData.validation) {
-      validationCode = this.generateValidation(nodeData.validation, opts, indent);
-      imports.push(`import { useForm } from '@ghatana/yappc-shared-ui-core/hooks';`);
+      validationCode = this.generateValidation(
+        nodeData.validation,
+        opts,
+        indent
+      );
+      imports.push(
+        `import { useForm } from '@ghatana/yappc-shared-ui-core/hooks';`
+      );
     }
 
     // Build component
@@ -183,7 +195,9 @@ export class CodeGenerator {
       } else if (typeof value === 'number' || typeof value === 'boolean') {
         props.push(`${indent}${indent}${indent}${key}={${value}}`);
       } else {
-        props.push(`${indent}${indent}${indent}${key}={${JSON.stringify(value)}}`);
+        props.push(
+          `${indent}${indent}${indent}${key}={${JSON.stringify(value)}}`
+        );
       }
     }
 
@@ -217,10 +231,14 @@ export class CodeGenerator {
     const code: string[] = [];
 
     if (options.includeComments) {
-      code.push(`${indent}// Data binding: ${binding.source}.${binding.path || ''}`);
+      code.push(
+        `${indent}// Data binding: ${binding.source}.${binding.path || ''}`
+      );
     }
 
-    code.push(`${indent}const { value: boundValue, setValue: setBoundValue } = useDataBinding({`);
+    code.push(
+      `${indent}const { value: boundValue, setValue: setBoundValue } = useDataBinding({`
+    );
     code.push(`${indent}${indent}source: '${binding.source}',`);
     if (binding.path) {
       code.push(`${indent}${indent}path: '${binding.path}',`);
@@ -266,7 +284,9 @@ export class CodeGenerator {
 
       if (config.payload) {
         for (const [key, value] of Object.entries(config.payload)) {
-          code.push(`${indent}${indent}${indent}${key}: ${JSON.stringify(value)},`);
+          code.push(
+            `${indent}${indent}${indent}${key}: ${JSON.stringify(value)},`
+          );
         }
       }
 
@@ -297,7 +317,9 @@ export class CodeGenerator {
     code.push(`${indent}${indent}validationRules: {`);
 
     for (const rule of validation.rules) {
-      const params = rule.params ? rule.params.map(p => JSON.stringify(p)).join(', ') : '';
+      const params = rule.params
+        ? rule.params.map((p) => JSON.stringify(p)).join(', ')
+        : '';
       code.push(`${indent}${indent}${indent}${rule.type}: [${params}],`);
     }
 

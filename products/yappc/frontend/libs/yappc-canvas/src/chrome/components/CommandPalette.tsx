@@ -1,9 +1,9 @@
 /**
  * Command Palette Component
- * 
+ *
  * Cmd/Ctrl+K command palette for keyboard-first interaction
  * Implements fuzzy search, keyboard navigation, and recent commands
- * 
+ *
  * @doc.type component
  * @doc.purpose Universal command interface
  * @doc.layer components
@@ -25,10 +25,13 @@ import {
 } from '@ghatana/design-system';
 import { TextField, ListItemButton } from '@ghatana/design-system';
 
-import type { CommandRegistry, Command, CommandContext } from '../lib/commands/CommandRegistry';
+import type {
+  CommandRegistry,
+  Command,
+  CommandContext,
+} from '../lib/commands/CommandRegistry';
 import { chromeCommandPaletteOpenAtom } from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
-
 
 const { SPACING, COLORS, TYPOGRAPHY, Z_INDEX, SHADOWS, RADIUS } = CANVAS_TOKENS;
 
@@ -90,12 +93,12 @@ export function CommandPalette({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+          setSelectedIndex((prev) => Math.min(prev + 1, results.length - 1));
           break;
 
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => Math.max(prev - 1, 0));
+          setSelectedIndex((prev) => Math.max(prev - 1, 0));
           break;
 
         case 'Enter':
@@ -117,7 +120,9 @@ export function CommandPalette({
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current) {
-      const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+      const selectedElement = listRef.current.children[
+        selectedIndex
+      ] as HTMLElement;
       if (selectedElement) {
         selectedElement.scrollIntoView({
           block: 'nearest',
@@ -149,9 +154,9 @@ export function CommandPalette({
       create: COLORS.SUCCESS,
       navigate: COLORS.INFO,
       edit: COLORS.PRIMARY,
-      view: COLORS.INFO,  // PHASE_VISION not available
+      view: COLORS.INFO, // PHASE_VISION not available
       help: COLORS.WARNING,
-      arrange: COLORS.PRIMARY,  // PHASE_ARCHITECTURE not available
+      arrange: COLORS.PRIMARY, // PHASE_ARCHITECTURE not available
     };
     return colors[category];
   };
@@ -195,12 +200,22 @@ export function CommandPalette({
           fullWidth
           placeholder="Type a command or search..."
           value={query}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setQuery(e.target.value)
+          }
           onKeyDown={handleKeyDown}
           autoComplete="off"
           InputProps={{
             startAdornment: (
-              <span style={{ fontSize: '20px', marginRight: SPACING.SM, color: COLORS.TEXT_SECONDARY }}>🔍</span>
+              <span
+                style={{
+                  fontSize: '20px',
+                  marginRight: SPACING.SM,
+                  color: COLORS.TEXT_SECONDARY,
+                }}
+              >
+                🔍
+              </span>
             ),
             style: {
               fontSize: TYPOGRAPHY.LG,
@@ -216,11 +231,13 @@ export function CommandPalette({
         style={{ maxHeight: '50vh' }}
       >
         {results.length === 0 ? (
-          <Box
-            className="text-center p-8" >
+          <Box className="text-center p-8">
             {query ? (
               <>
-                <Typography variant="body1" style={{ marginBottom: SPACING.SM }}>
+                <Typography
+                  variant="body1"
+                  style={{ marginBottom: SPACING.SM }}
+                >
                   No commands found
                 </Typography>
                 <Typography variant="body2" style={{ fontSize: TYPOGRAPHY.SM }}>
@@ -229,7 +246,10 @@ export function CommandPalette({
               </>
             ) : (
               <>
-                <Typography variant="body1" style={{ marginBottom: SPACING.SM }}>
+                <Typography
+                  variant="body1"
+                  style={{ marginBottom: SPACING.SM }}
+                >
                   Type to search commands
                 </Typography>
                 <Typography variant="body2" style={{ fontSize: TYPOGRAPHY.SM }}>
@@ -247,8 +267,14 @@ export function CommandPalette({
                 key={command.id}
                 disablePadding
                 style={{
-                  backgroundColor: index === selectedIndex ? COLORS.SELECTION_BG : 'transparent',
-                  borderLeft: index === selectedIndex ? `3px solid ${COLORS.PRIMARY}` : '3px solid transparent',
+                  backgroundColor:
+                    index === selectedIndex
+                      ? COLORS.SELECTION_BG
+                      : 'transparent',
+                  borderLeft:
+                    index === selectedIndex
+                      ? `3px solid ${COLORS.PRIMARY}`
+                      : '3px solid transparent',
                 }}
               >
                 <ListItemButton
@@ -263,16 +289,14 @@ export function CommandPalette({
                   }}
                 >
                   {/* Icon */}
-                  <Box
-                    className="text-2xl flex items-center justify-center w-[32px] h-[32px]"
-                  >
+                  <Box className="text-2xl flex items-center justify-center w-[32px] h-[32px]">
                     {command.icon || getCategoryIcon(command.category)}
                   </Box>
 
                   {/* Label and Description */}
                   <ListItemText
                     primary={
-                      <Box className="flex items-center gap-2" >
+                      <Box className="flex items-center gap-2">
                         <Typography
                           style={{
                             fontSize: TYPOGRAPHY.BASE,
@@ -285,7 +309,12 @@ export function CommandPalette({
                         <Chip
                           label={command.category}
                           size="small"
-                          className="h-[20px] text-white text-xs" style={{ backgroundColor: getCategoryColor(command.category), fontWeight: CANVAS_TOKENS.FONT_WEIGHT.MEDIUM }} />
+                          className="h-[20px] text-white text-xs"
+                          style={{
+                            backgroundColor: getCategoryColor(command.category),
+                            fontWeight: CANVAS_TOKENS.FONT_WEIGHT.MEDIUM,
+                          }}
+                        />
                       </Box>
                     }
                     secondary={
@@ -309,17 +338,36 @@ export function CommandPalette({
                       className="flex items-center ml-auto"
                       style={{ gap: SPACING.XS }}
                     >
-                      {command.shortcut.split('+').map((key: string, i: number) => (
-                        <React.Fragment key={i}>
-                          {i > 0 && <span style={{ color: COLORS.TEXT_SECONDARY, paddingTop: SPACING.XS / 2, paddingBottom: SPACING.XS / 2, backgroundColor: COLORS.NEUTRAL_100, fontWeight: CANVAS_TOKENS.FONT_WEIGHT.MEDIUM }}>+</span>}
-                          <Box
-                            className="inline-flex items-center justify-center min-w-[24px] h-[24px] rounded font-mono text-xs"
-                            style={{ padding: '2px 6px', backgroundColor: COLORS.NEUTRAL_100, border: `1px solid ${COLORS.BORDER_LIGHT}`, color: COLORS.TEXT_SECONDARY }}
-                          >
-                            {key.replace('mod', '⌘')}
-                          </Box>
-                        </React.Fragment>
-                      ))}
+                      {command.shortcut
+                        .split('+')
+                        .map((key: string, i: number) => (
+                          <React.Fragment key={i}>
+                            {i > 0 && (
+                              <span
+                                style={{
+                                  color: COLORS.TEXT_SECONDARY,
+                                  paddingTop: SPACING.XS / 2,
+                                  paddingBottom: SPACING.XS / 2,
+                                  backgroundColor: COLORS.NEUTRAL_100,
+                                  fontWeight: CANVAS_TOKENS.FONT_WEIGHT.MEDIUM,
+                                }}
+                              >
+                                +
+                              </span>
+                            )}
+                            <Box
+                              className="inline-flex items-center justify-center min-w-[24px] h-[24px] rounded font-mono text-xs"
+                              style={{
+                                padding: '2px 6px',
+                                backgroundColor: COLORS.NEUTRAL_100,
+                                border: `1px solid ${COLORS.BORDER_LIGHT}`,
+                                color: COLORS.TEXT_SECONDARY,
+                              }}
+                            >
+                              {key.replace('mod', '⌘')}
+                            </Box>
+                          </React.Fragment>
+                        ))}
                     </Box>
                   )}
                 </ListItemButton>
@@ -340,21 +388,47 @@ export function CommandPalette({
           justifyContent: 'space-between',
         }}
       >
-        <Box className="flex gap-4 text-xs" >
-          <Box className="flex items-center gap-1" >
-            <kbd style={{ padding: '2px 6px', backgroundColor: COLORS.NEUTRAL_200, borderRadius: RADIUS.SM }}>↑↓</kbd>
+        <Box className="flex gap-4 text-xs">
+          <Box className="flex items-center gap-1">
+            <kbd
+              style={{
+                padding: '2px 6px',
+                backgroundColor: COLORS.NEUTRAL_200,
+                borderRadius: RADIUS.SM,
+              }}
+            >
+              ↑↓
+            </kbd>
             <span>Navigate</span>
           </Box>
-          <Box className="flex items-center gap-1" >
-            <kbd style={{ padding: '2px 6px', backgroundColor: COLORS.NEUTRAL_200, borderRadius: RADIUS.SM }}>↵</kbd>
+          <Box className="flex items-center gap-1">
+            <kbd
+              style={{
+                padding: '2px 6px',
+                backgroundColor: COLORS.NEUTRAL_200,
+                borderRadius: RADIUS.SM,
+              }}
+            >
+              ↵
+            </kbd>
             <span>Execute</span>
           </Box>
-          <Box className="flex items-center gap-1" >
-            <kbd style={{ padding: '2px 6px', backgroundColor: COLORS.NEUTRAL_200, borderRadius: RADIUS.SM }}>esc</kbd>
+          <Box className="flex items-center gap-1">
+            <kbd
+              style={{
+                padding: '2px 6px',
+                backgroundColor: COLORS.NEUTRAL_200,
+                borderRadius: RADIUS.SM,
+              }}
+            >
+              esc
+            </kbd>
             <span>Close</span>
           </Box>
         </Box>
-        <Typography style={{ fontSize: TYPOGRAPHY.XS, color: COLORS.TEXT_SECONDARY }}>
+        <Typography
+          style={{ fontSize: TYPOGRAPHY.XS, color: COLORS.TEXT_SECONDARY }}
+        >
           {results.length} {results.length === 1 ? 'command' : 'commands'}
         </Typography>
       </Box>

@@ -259,7 +259,9 @@ export const WithHelperText: Story = {
         onChange={(v) => setValue(v || '')}
         helperText="Choose your local timezone for accurate event times"
       >
-        <SelectOption value="utc">UTC (Coordinated Universal Time)</SelectOption>
+        <SelectOption value="utc">
+          UTC (Coordinated Universal Time)
+        </SelectOption>
         <SelectOption value="est">EST (Eastern Standard Time)</SelectOption>
         <SelectOption value="cst">CST (Central Standard Time)</SelectOption>
         <SelectOption value="mst">MST (Mountain Standard Time)</SelectOption>
@@ -376,7 +378,9 @@ export const FormExample: Story = {
 
     return (
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-grey-200 bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-grey-900">Location Information</h3>
+        <h3 className="text-lg font-semibold text-grey-900">
+          Location Information
+        </h3>
 
         <Select
           label="Country"
@@ -443,7 +447,9 @@ export const Accessibility: Story = {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-          <h3 className="mb-2 font-semibold text-grey-900">Keyboard Navigation:</h3>
+          <h3 className="mb-2 font-semibold text-grey-900">
+            Keyboard Navigation:
+          </h3>
           <ul className="space-y-1 text-sm text-grey-700">
             <li>• Tab: Focus select trigger</li>
             <li>• Space/Enter: Open dropdown</li>
@@ -492,11 +498,7 @@ export const Playground: Story = {
     const [value, setValue] = useState<string>('');
 
     return (
-      <Select
-        {...args}
-        value={value}
-        onChange={(v) => setValue(v || '')}
-      >
+      <Select {...args} value={value} onChange={(v) => setValue(v || '')}>
         <SelectOption value="1">Option 1</SelectOption>
         <SelectOption value="2">Option 2</SelectOption>
         <SelectOption value="3">Option 3</SelectOption>

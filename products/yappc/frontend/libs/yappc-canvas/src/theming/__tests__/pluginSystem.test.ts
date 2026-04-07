@@ -4,9 +4,16 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { PluginManager, type Plugin, type PluginPermissions } from '../pluginSystem';
+import {
+  PluginManager,
+  type Plugin,
+  type PluginPermissions,
+} from '../pluginSystem';
 
-import type { CanvasDocument, CanvasElement } from '../../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasElement,
+} from '../../types/canvas-document';
 
 describe.skip('PluginManager', () => {
   let manager: PluginManager;
@@ -65,7 +72,7 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const plugins = manager.getPlugins();
       expect(plugins).toHaveLength(1);
       expect(plugins[0]).toBe(plugin);
@@ -90,7 +97,7 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       expect(initSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -117,8 +124,10 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin1);
-      
-      await expect(manager.register(plugin2)).rejects.toThrow('already registered');
+
+      await expect(manager.register(plugin2)).rejects.toThrow(
+        'already registered'
+      );
     });
   });
 
@@ -144,7 +153,7 @@ describe.skip('PluginManager', () => {
 
       await manager.register(plugin);
       await manager.activate('test-plugin');
-      
+
       expect(activateSpy).toHaveBeenCalledTimes(1);
       expect(manager.isActive('test-plugin')).toBe(true);
     });
@@ -171,13 +180,15 @@ describe.skip('PluginManager', () => {
       await manager.register(plugin);
       await manager.activate('test-plugin');
       await manager.deactivate('test-plugin');
-      
+
       expect(deactivateSpy).toHaveBeenCalledTimes(1);
       expect(manager.isActive('test-plugin')).toBe(false);
     });
 
     it('should not activate non-existent plugin', async () => {
-      await expect(manager.activate('non-existent')).rejects.toThrow('not found');
+      await expect(manager.activate('non-existent')).rejects.toThrow(
+        'not found'
+      );
     });
   });
 
@@ -203,14 +214,16 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const doc = capturedAPI.getDocument();
       expect(doc).toEqual(mockDocument);
     });
 
     it('should deny read access without permission', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+      const consoleWarn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+
       let capturedAPI: unknown;
       const plugin: Plugin = {
         metadata: {
@@ -231,11 +244,11 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const doc = capturedAPI.getDocument();
       expect(doc).toBeNull();
       expect(consoleWarn).toHaveBeenCalled();
-      
+
       consoleWarn.mockRestore();
     });
 
@@ -260,14 +273,16 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const id = capturedAPI.addElement({ type: 'node' });
       expect(id).toBe('new-id');
     });
 
     it('should deny write access without permission', async () => {
-      const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+      const consoleWarn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+
       let capturedAPI: unknown;
       const plugin: Plugin = {
         metadata: {
@@ -288,10 +303,10 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const id = capturedAPI.addElement({ type: 'node' });
       expect(id).toBeNull();
-      
+
       consoleWarn.mockRestore();
     });
   });
@@ -318,12 +333,12 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const handler = vi.fn();
       capturedAPI.on('test-event', handler);
-      
+
       manager.emit('test-event', 'data');
-      
+
       expect(handler).toHaveBeenCalledWith('data');
     });
 
@@ -348,13 +363,13 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       const handler = vi.fn();
       const unsubscribe = capturedAPI.on('test-event', handler);
-      
+
       unsubscribe();
       manager.emit('test-event', 'data');
-      
+
       expect(handler).not.toHaveBeenCalled();
     });
   });
@@ -381,14 +396,14 @@ describe.skip('PluginManager', () => {
       };
 
       await manager.register(plugin);
-      
+
       capturedAPI.registerTool({
         id: 'custom-tool',
         name: 'Custom Tool',
         onActivate: vi.fn(),
         onDeactivate: vi.fn(),
       });
-      
+
       const tools = manager.getTools();
       expect(tools).toHaveLength(1);
       expect(tools[0].id).toBe('custom-tool');
@@ -417,7 +432,7 @@ describe.skip('PluginManager', () => {
 
       await manager.register(plugin);
       await manager.unregister('cleanup-plugin');
-      
+
       expect(destroySpy).toHaveBeenCalledTimes(1);
       expect(manager.getPlugins()).toHaveLength(0);
     });
@@ -457,9 +472,9 @@ describe.skip('PluginManager', () => {
 
       await manager.register(plugin1);
       await manager.register(plugin2);
-      
+
       await manager.destroy();
-      
+
       expect(manager.getPlugins()).toHaveLength(0);
     });
   });

@@ -1,6 +1,6 @@
 /**
  * Consolidated Canvas Analytics Hook
- * 
+ *
  * New hook for analytics & insights
  * Provides: Usage analytics, performance monitoring, recommendations
  */
@@ -39,13 +39,13 @@ export interface UseCanvasAnalyticsOptions {
 export interface UseCanvasAnalyticsReturn {
   canvasMetrics: CanvasMetrics;
   userActivity: Activity[];
-  
+
   renderTime: number;
   nodeCount: number;
   edgeCount: number;
-  
+
   recommendations: Recommendation[];
-  
+
   trackEvent: (event: string, metadata?: Record<string, unknown>) => void;
   getInsights: () => Promise<unknown>;
 }
@@ -77,8 +77,11 @@ export function useCanvasAnalytics(
         metadata: metadata || {},
       };
 
-      setUserActivity(prev => [...prev, activity]);
-      setCanvasMetrics(prev => ({ ...prev, interactions: prev.interactions + 1 }));
+      setUserActivity((prev) => [...prev, activity]);
+      setCanvasMetrics((prev) => ({
+        ...prev,
+        interactions: prev.interactions + 1,
+      }));
     },
     [enableTracking]
   );
@@ -94,7 +97,7 @@ export function useCanvasAnalytics(
   useEffect(() => {
     const startTime = Date.now();
     const interval = setInterval(() => {
-      setCanvasMetrics(prev => ({
+      setCanvasMetrics((prev) => ({
         ...prev,
         sessionDuration: Math.floor((Date.now() - startTime) / 1000),
       }));

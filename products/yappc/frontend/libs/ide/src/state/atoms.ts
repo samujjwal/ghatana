@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - State Management Atoms
- * 
+ *
  * Jotai atoms for IDE state management following YAPPC patterns.
- * 
+ *
  * @doc.type module
  * @doc.purpose IDE state management using Jotai
  * @doc.layer product
@@ -250,15 +250,18 @@ export const ideCurrentUserPresenceAtom = atom<IDEPresence | null>(null);
  */
 export interface IDECollaborationState {
   activeUsers: Record<string, IDEPresence>;
-  conflicts: Record<string, {
-    id: string;
-    fileId: string;
-    type: 'concurrent-edit' | 'selection-overlap' | 'file-lock';
-    users: string[];
-    position: { line: number; column: number };
-    timestamp: number;
-    resolved: boolean;
-  }>;
+  conflicts: Record<
+    string,
+    {
+      id: string;
+      fileId: string;
+      type: 'concurrent-edit' | 'selection-overlap' | 'file-lock';
+      users: string[];
+      position: { line: number; column: number };
+      timestamp: number;
+      resolved: boolean;
+    }
+  >;
   settings: {
     showCursors: boolean;
     showSelections: boolean;
@@ -282,7 +285,9 @@ const DEFAULT_COLLABORATION_STATE: IDECollaborationState = {
   },
 };
 
-export const ideCollaborationAtom = atom<IDECollaborationState>(DEFAULT_COLLABORATION_STATE);
+export const ideCollaborationAtom = atom<IDECollaborationState>(
+  DEFAULT_COLLABORATION_STATE
+);
 
 /**
  * Dirty files atom - files with unsaved changes
@@ -379,4 +384,3 @@ export const ideRunVisibleAtom = atom<boolean>(false);
  * Extensions panel visibility atom
  */
 export const ideExtensionsVisibleAtom = atom<boolean>(false);
-

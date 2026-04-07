@@ -1,8 +1,8 @@
 /**
  * Loading State Component
- * 
+ *
  * Reusable loading state with skeleton screens and spinners.
- * 
+ *
  * @module ui/components
  */
 
@@ -11,23 +11,23 @@ import React from 'react';
 export interface LoadingStateProps {
   /** Loading variant */
   variant?: 'spinner' | 'skeleton' | 'dots' | 'pulse';
-  
+
   /** Size */
   size?: 'sm' | 'md' | 'lg';
-  
+
   /** Loading message */
   message?: string;
-  
+
   /** Full screen overlay */
   fullScreen?: boolean;
-  
+
   /** Additional CSS classes */
   className?: string;
 }
 
 /**
  * Loading State Component
- * 
+ *
  * @example
  * ```tsx
  * <LoadingState variant="spinner" message="Loading data..." />
@@ -49,7 +49,9 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   };
 
   const renderSpinner = () => (
-    <div className={`animate-spin rounded-full border-2 border-violet-600 border-t-transparent ${sizeClasses[size]}`} />
+    <div
+      className={`animate-spin rounded-full border-2 border-violet-600 border-t-transparent ${sizeClasses[size]}`}
+    />
   );
 
   const renderSkeleton = () => (
@@ -62,14 +64,25 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
 
   const renderDots = () => (
     <div className="flex gap-2">
-      <div className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`} style={{ animationDelay: '0ms' }} />
-      <div className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`} style={{ animationDelay: '150ms' }} />
-      <div className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`} style={{ animationDelay: '300ms' }} />
+      <div
+        className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`}
+        style={{ animationDelay: '0ms' }}
+      />
+      <div
+        className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`}
+        style={{ animationDelay: '150ms' }}
+      />
+      <div
+        className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-bounce`}
+        style={{ animationDelay: '300ms' }}
+      />
     </div>
   );
 
   const renderPulse = () => (
-    <div className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-pulse`} />
+    <div
+      className={`${sizeClasses[size]} bg-violet-600 rounded-full animate-pulse`}
+    />
   );
 
   const renderLoader = () => {
@@ -88,11 +101,11 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   };
 
   const content = (
-    <div className={`flex flex-col items-center justify-center gap-4 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center gap-4 ${className}`}
+    >
       {renderLoader()}
-      {message && (
-        <p className="text-sm text-zinc-400">{message}</p>
-      )}
+      {message && <p className="text-sm text-zinc-400">{message}</p>}
     </div>
   );
 

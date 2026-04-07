@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - IDE State Hook
- * 
+ *
  * React hook for managing IDE state with Jotai atoms.
- * 
+ *
  * @doc.type hook
  * @doc.purpose IDE state management
  * @doc.layer product
@@ -44,7 +44,7 @@ export interface UseIDEStateReturn {
 
 /**
  * IDE State Hook
- * 
+ *
  * @doc.returns IDE state and utilities
  */
 export function useIDEState(): UseIDEStateReturn {
@@ -55,7 +55,7 @@ export function useIDEState(): UseIDEStateReturn {
   const [settings, setSettings] = useAtom(ideSettingsAtom);
 
   const updateSettings = (newSettings: Partial<IDEWorkspaceSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+    setSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
   return {

@@ -69,26 +69,65 @@ export interface IncidentTimelineProps {
 // ============================================================================
 
 const getEventTypeConfig = (type: TimelineEventType) => {
-  const configs: Record<TimelineEventType, { icon: string; color: string; bg: string }> = {
+  const configs: Record<
+    TimelineEventType,
+    { icon: string; color: string; bg: string }
+  > = {
     created: { icon: '🆕', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
-    status_change: { icon: '🔄', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)' },
-    severity_change: { icon: '⚠️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-    assignee_change: { icon: '👤', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.1)' },
-    responder_joined: { icon: '➕', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    responder_left: { icon: '➖', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.1)' },
+    status_change: {
+      icon: '🔄',
+      color: '#8B5CF6',
+      bg: 'rgba(139, 92, 246, 0.1)',
+    },
+    severity_change: {
+      icon: '⚠️',
+      color: '#F59E0B',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    assignee_change: {
+      icon: '👤',
+      color: '#06B6D4',
+      bg: 'rgba(6, 182, 212, 0.1)',
+    },
+    responder_joined: {
+      icon: '➕',
+      color: '#10B981',
+      bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    responder_left: {
+      icon: '➖',
+      color: '#6B7280',
+      bg: 'rgba(107, 114, 128, 0.1)',
+    },
     comment: { icon: '💬', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
-    action_taken: { icon: '⚡', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-    alert_linked: { icon: '🔗', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)' },
-    runbook_executed: { icon: '📋', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.1)' },
+    action_taken: {
+      icon: '⚡',
+      color: '#F59E0B',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    alert_linked: {
+      icon: '🔗',
+      color: '#EC4899',
+      bg: 'rgba(236, 72, 153, 0.1)',
+    },
+    runbook_executed: {
+      icon: '📋',
+      color: '#8B5CF6',
+      bg: 'rgba(139, 92, 246, 0.1)',
+    },
     resolved: { icon: '✅', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    postmortem_created: { icon: '📝', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)' },
+    postmortem_created: {
+      icon: '📝',
+      color: '#6366F1',
+      bg: 'rgba(99, 102, 241, 0.1)',
+    },
   };
   return configs[type];
 };
 
 const formatTime = (timestamp: string, relative: boolean): string => {
   const date = new Date(timestamp);
-  
+
   if (relative) {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -109,7 +148,9 @@ const formatTime = (timestamp: string, relative: boolean): string => {
   });
 };
 
-const groupEventsByDate = (events: TimelineEvent[]): Map<string, TimelineEvent[]> => {
+const groupEventsByDate = (
+  events: TimelineEvent[]
+): Map<string, TimelineEvent[]> => {
   const groups = new Map<string, TimelineEvent[]>();
 
   events.forEach((event) => {
@@ -159,10 +200,7 @@ const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
       tabIndex={onClick ? 0 : undefined}
     >
       {/* Icon */}
-      <div
-        className="event-icon"
-        style={{ backgroundColor: config.bg }}
-      >
+      <div className="event-icon" style={{ backgroundColor: config.bg }}>
         <span>{config.icon}</span>
       </div>
 
@@ -203,19 +241,20 @@ const TimelineEventItem: React.FC<TimelineEventItemProps> = ({
         )}
 
         {/* Metadata (status/severity changes) */}
-        {event.metadata && (event.metadata.oldValue || event.metadata.newValue) && (
-          <div className="event-change">
-            {event.metadata.oldValue && (
-              <span className="change-old">{event.metadata.oldValue}</span>
-            )}
-            {event.metadata.oldValue && event.metadata.newValue && (
-              <span className="change-arrow">→</span>
-            )}
-            {event.metadata.newValue && (
-              <span className="change-new">{event.metadata.newValue}</span>
-            )}
-          </div>
-        )}
+        {event.metadata &&
+          (event.metadata.oldValue || event.metadata.newValue) && (
+            <div className="event-change">
+              {event.metadata.oldValue && (
+                <span className="change-old">{event.metadata.oldValue}</span>
+              )}
+              {event.metadata.oldValue && event.metadata.newValue && (
+                <span className="change-arrow">→</span>
+              )}
+              {event.metadata.newValue && (
+                <span className="change-new">{event.metadata.newValue}</span>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
@@ -236,15 +275,24 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({
   // Sort events by timestamp (newest first)
   const sortedEvents = useMemo(() => {
     return [...events].sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
   }, [events]);
 
-  const groupedEvents = useMemo(() => groupEventsByDate(sortedEvents), [sortedEvents]);
+  const groupedEvents = useMemo(
+    () => groupEventsByDate(sortedEvents),
+    [sortedEvents]
+  );
 
   if (isLoading) {
     return (
-      <div className={cn('incident-timeline incident-timeline--loading', className)}>
+      <div
+        className={cn(
+          'incident-timeline incident-timeline--loading',
+          className
+        )}
+      >
         <div className="timeline-loading">
           <div className="loading-spinner" />
           <span>Loading timeline...</span>
@@ -288,7 +336,9 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({
                     key={event.id}
                     event={event}
                     showRelativeTime={showRelativeTime}
-                    onClick={onEventClick ? () => onEventClick(event) : undefined}
+                    onClick={
+                      onEventClick ? () => onEventClick(event) : undefined
+                    }
                   />
                 ))}
               </div>

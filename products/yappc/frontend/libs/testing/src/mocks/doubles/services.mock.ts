@@ -240,7 +240,8 @@ export function mockTaskServiceWithData(tasks: Task[]) {
 
       // ensure status is narrowed to TaskStatus if present
       if ((updatedTask as unknown).status) {
-        (updatedTask as unknown).status = (updatedTask as unknown).status as unknown;
+        (updatedTask as unknown).status = (updatedTask as unknown)
+          .status as unknown;
       }
 
       tasks[index] = updatedTask;

@@ -255,8 +255,14 @@ describe('Feature 2.30: Shortcut Palette - commandPalette', () => {
     it('should get commands by category', () => {
       const palette = createCommandPalette();
 
-      registerCommand(palette, createTestCommand('undo', 'Undo', CommandCategory.EDIT));
-      registerCommand(palette, createTestCommand('zoom', 'Zoom', CommandCategory.VIEW));
+      registerCommand(
+        palette,
+        createTestCommand('undo', 'Undo', CommandCategory.EDIT)
+      );
+      registerCommand(
+        palette,
+        createTestCommand('zoom', 'Zoom', CommandCategory.VIEW)
+      );
       registerCommand(
         palette,
         createTestCommand('select', 'Select', CommandCategory.SELECTION)
@@ -319,12 +325,12 @@ describe('Feature 2.30: Shortcut Palette - commandPalette', () => {
     });
 
     it('should search by label exact match', () => {
-      const palette = createCommandPalette({fuzzySearch: false}); // Disable fuzzy search
+      const palette = createCommandPalette({ fuzzySearch: false }); // Disable fuzzy search
 
       registerCommand(palette, createTestCommand('undo', 'Undo'));
       registerCommand(palette, createTestCommand('save', 'Save'));
 
-      const results = searchCommands(palette, 'Undo', {fuzzySearch: false});
+      const results = searchCommands(palette, 'Undo', { fuzzySearch: false });
 
       // Should rank exact match highest
       expect(results.length).toBeGreaterThan(0);
@@ -397,12 +403,22 @@ describe('Feature 2.30: Shortcut Palette - commandPalette', () => {
 
       registerCommand(palette, createTestCommand('test-cmd', 'TestCommand'));
 
-      const results1 = searchCommands(palette, 'testcommand', { caseSensitive: true, fuzzySearch: false });
-      const results2 = searchCommands(palette, 'TestCommand', { caseSensitive: true, fuzzySearch: false });
+      const results1 = searchCommands(palette, 'testcommand', {
+        caseSensitive: true,
+        fuzzySearch: false,
+      });
+      const results2 = searchCommands(palette, 'TestCommand', {
+        caseSensitive: true,
+        fuzzySearch: false,
+      });
 
-      // With case sensitivity, "testcommand" should not match "TestCommand" 
-      expect(results1.filter(r => r.command.id === 'test-cmd')).toHaveLength(0);
-      expect(results2.filter(r => r.command.id === 'test-cmd')).toHaveLength(1); // Exact match
+      // With case sensitivity, "testcommand" should not match "TestCommand"
+      expect(results1.filter((r) => r.command.id === 'test-cmd')).toHaveLength(
+        0
+      );
+      expect(results2.filter((r) => r.command.id === 'test-cmd')).toHaveLength(
+        1
+      ); // Exact match
     });
 
     it('should limit results to maxResults', () => {
@@ -585,7 +601,9 @@ describe('Feature 2.30: Shortcut Palette - commandPalette', () => {
     it('should throw error when no command selected', async () => {
       const palette = createCommandPalette();
 
-      await expect(executeSelected(palette)).rejects.toThrow('No command selected');
+      await expect(executeSelected(palette)).rejects.toThrow(
+        'No command selected'
+      );
     });
   });
 
@@ -716,7 +734,11 @@ describe('Feature 2.30: Shortcut Palette - commandPalette', () => {
         createTestCommand('view1', 'View 1', CommandCategory.VIEW)
       );
 
-      const disabled = createTestCommand('disabled', 'Disabled', CommandCategory.VIEW);
+      const disabled = createTestCommand(
+        'disabled',
+        'Disabled',
+        CommandCategory.VIEW
+      );
       disabled.enabled = false;
       registerCommand(palette, disabled);
 

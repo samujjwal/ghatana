@@ -1,12 +1,17 @@
 /**
  * Template Library Dialog Component
  * Feature 1.4: Document Management - UI Component
- * 
+ *
  * Provides UI for browsing, filtering, and loading document templates.
  * Integrates with historyManager utilities for template operations.
  */
 
-import { X as CloseIcon, CloudUpload as UploadIcon, Trash2 as DeleteIcon, Pencil as EditIcon } from 'lucide-react';
+import {
+  X as CloseIcon,
+  CloudUpload as UploadIcon,
+  Trash2 as DeleteIcon,
+  Pencil as EditIcon,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import {
@@ -36,16 +41,24 @@ export interface TemplateLibraryDialogProps<T = unknown> {
   onClose: () => void;
   templates: DocumentTemplate<T>[];
   onLoadTemplate: (template: DocumentTemplate<T>) => void;
-  onSaveAsTemplate?: (name: string, description: string, category: string, tags: string[]) => void;
+  onSaveAsTemplate?: (
+    name: string,
+    description: string,
+    category: string,
+    tags: string[]
+  ) => void;
   onDeleteTemplate?: (templateId: string) => void;
-  onEditTemplate?: (templateId: string, updates: Partial<DocumentTemplate<T>>) => void;
+  onEditTemplate?: (
+    templateId: string,
+    updates: Partial<DocumentTemplate<T>>
+  ) => void;
   currentState?: T;
   categories?: string[];
 }
 
 /**
  * Template Library Dialog
- * 
+ *
  * Main UI component for managing document templates.
  * Features:
  * - Grid view of templates with previews
@@ -72,7 +85,8 @@ export function TemplateLibraryDialog<T = unknown>({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
-  const [newTemplateCategory, setNewTemplateCategory] = useState(defaultCategory);
+  const [newTemplateCategory, setNewTemplateCategory] =
+    useState(defaultCategory);
   const [newTemplateTags, setNewTemplateTags] = useState('');
 
   const filteredTemplates = useMemo(() => {
@@ -85,7 +99,8 @@ export function TemplateLibraryDialog<T = unknown>({
         template.description?.toLowerCase().includes(query) ||
         template.tags?.some((tag) => tag.toLowerCase().includes(query));
 
-      const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === 'all' || template.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
@@ -98,12 +113,15 @@ export function TemplateLibraryDialog<T = unknown>({
     setNewTemplateTags('');
   }, [defaultCategory]);
 
-  const handleSaveDialogChange = useCallback((nextOpen: boolean) => {
-    if (!nextOpen) {
-      resetSaveForm();
-    }
-    setShowSaveDialog(nextOpen);
-  }, [resetSaveForm]);
+  const handleSaveDialogChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        resetSaveForm();
+      }
+      setShowSaveDialog(nextOpen);
+    },
+    [resetSaveForm]
+  );
 
   const handleSaveTemplate = useCallback(() => {
     if (!onSaveAsTemplate || !newTemplateName.trim()) {
@@ -119,16 +137,26 @@ export function TemplateLibraryDialog<T = unknown>({
       newTemplateName.trim(),
       newTemplateDescription.trim(),
       newTemplateCategory,
-      tags,
+      tags
     );
 
     handleSaveDialogChange(false);
-  }, [handleSaveDialogChange, newTemplateCategory, newTemplateDescription, newTemplateName, newTemplateTags, onSaveAsTemplate]);
+  }, [
+    handleSaveDialogChange,
+    newTemplateCategory,
+    newTemplateDescription,
+    newTemplateName,
+    newTemplateTags,
+    onSaveAsTemplate,
+  ]);
 
-  const handleLoadTemplate = useCallback((template: DocumentTemplate<T>) => {
-    onLoadTemplate(template);
-    onClose();
-  }, [onClose, onLoadTemplate]);
+  const handleLoadTemplate = useCallback(
+    (template: DocumentTemplate<T>) => {
+      onLoadTemplate(template);
+      onClose();
+    },
+    [onClose, onLoadTemplate]
+  );
 
   return (
     <>
@@ -174,7 +202,9 @@ export function TemplateLibraryDialog<T = unknown>({
                   label="Search"
                   placeholder="Search templates..."
                   value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.currentTarget.value)}
+                  onChange={(event) =>
+                    setSearchQuery(event.currentTarget.value)
+                  }
                   data-testid="template-search-input"
                 />
               </div>
@@ -196,7 +226,8 @@ export function TemplateLibraryDialog<T = unknown>({
             </div>
 
             <Typography variant="body2" className="text-grey-600">
-              {filteredTemplates.length} template{filteredTemplates.length === 1 ? '' : 's'} found
+              {filteredTemplates.length} template
+              {filteredTemplates.length === 1 ? '' : 's'} found
             </Typography>
 
             {filteredTemplates.length === 0 ? (
@@ -254,10 +285,19 @@ export function TemplateLibraryDialog<T = unknown>({
                           />
                         )}
                         {template.tags?.slice(0, 3).map((tag) => (
-                          <Chip key={tag} label={tag} size="small" variant="outlined" />
+                          <Chip
+                            key={tag}
+                            label={tag}
+                            size="small"
+                            variant="outlined"
+                          />
                         ))}
                         {template.tags && template.tags.length > 3 && (
-                          <Chip label={`+${template.tags.length - 3}`} size="small" variant="outlined" />
+                          <Chip
+                            label={`+${template.tags.length - 3}`}
+                            size="small"
+                            variant="outlined"
+                          />
                         )}
                       </div>
                     </CardContent>
@@ -317,7 +357,9 @@ export function TemplateLibraryDialog<T = unknown>({
             <TextField
               label="Template Name"
               value={newTemplateName}
-              onChange={(event) => setNewTemplateName(event.currentTarget.value)}
+              onChange={(event) =>
+                setNewTemplateName(event.currentTarget.value)
+              }
               required
               autoFocus
               data-testid="template-name-input"
@@ -325,14 +367,18 @@ export function TemplateLibraryDialog<T = unknown>({
             <TextField
               label="Description"
               value={newTemplateDescription}
-              onChange={(event) => setNewTemplateDescription(event.currentTarget.value)}
+              onChange={(event) =>
+                setNewTemplateDescription(event.currentTarget.value)
+              }
               placeholder="Add a brief description"
               data-testid="template-description-input"
             />
             <Select
               label="Category"
               value={newTemplateCategory}
-              onChange={(value) => setNewTemplateCategory(value ?? defaultCategory)}
+              onChange={(value) =>
+                setNewTemplateCategory(value ?? defaultCategory)
+              }
               data-testid="template-category-select"
             >
               {categories.map((category) => (
@@ -344,7 +390,9 @@ export function TemplateLibraryDialog<T = unknown>({
             <TextField
               label="Tags"
               value={newTemplateTags}
-              onChange={(event) => setNewTemplateTags(event.currentTarget.value)}
+              onChange={(event) =>
+                setNewTemplateTags(event.currentTarget.value)
+              }
               placeholder="Comma-separated tags"
               helperText="Separate tags with commas"
               data-testid="template-tags-input"

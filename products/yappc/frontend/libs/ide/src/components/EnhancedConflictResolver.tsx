@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Enhanced Conflict Resolver Component
- * 
+ *
  * Advanced conflict resolution interface with merge visualization,
  * diff views, and interactive resolution tools.
- * 
+ *
  * @doc.type component
  * @doc.purpose Enhanced conflict resolution for collaborative editing
  * @doc.layer product
@@ -19,7 +19,12 @@ import { InteractiveButton } from './MicroInteractions';
 /**
  * Conflict types
  */
-export type ConflictType = 'edit' | 'delete' | 'rename' | 'permission' | 'format';
+export type ConflictType =
+  | 'edit'
+  | 'delete'
+  | 'rename'
+  | 'permission'
+  | 'format';
 
 /**
  * Conflict severity levels
@@ -29,7 +34,12 @@ export type ConflictSeverity = 'low' | 'medium' | 'high' | 'critical';
 /**
  * Conflict resolution options
  */
-export type ResolutionAction = 'accept-theirs' | 'accept-mine' | 'merge' | 'manual' | 'postpone';
+export type ResolutionAction =
+  | 'accept-theirs'
+  | 'accept-mine'
+  | 'merge'
+  | 'manual'
+  | 'postpone';
 
 /**
  * File conflict information
@@ -62,7 +72,11 @@ export interface FileConflict {
  */
 export interface EnhancedConflictResolverProps {
   conflicts: FileConflict[];
-  onResolveConflict: (conflictId: string, action: ResolutionAction, resolution?: string) => void;
+  onResolveConflict: (
+    conflictId: string,
+    action: ResolutionAction,
+    resolution?: string
+  ) => void;
   onPostponeConflict: (conflictId: string) => void;
   onRequestUserInfo: (userId: string) => void;
   showDiffView?: boolean;
@@ -81,15 +95,26 @@ interface DiffViewProps {
   onMergeComplete: (result: string) => void;
 }
 
-const DiffView: React.FC<DiffViewProps> = ({ base, theirs, mine, onMergeComplete }) => {
-  const [selectedVersion, setSelectedVersion] = useState<'base' | 'theirs' | 'mine'>('base');
+const DiffView: React.FC<DiffViewProps> = ({
+  base,
+  theirs,
+  mine,
+  onMergeComplete,
+}) => {
+  const [selectedVersion, setSelectedVersion] = useState<
+    'base' | 'theirs' | 'mine'
+  >('base');
 
   const lines = useMemo(() => {
     const baseLines = base.split('\n');
     const theirsLines = theirs.split('\n');
     const mineLines = mine.split('\n');
 
-    const maxLines = Math.max(baseLines.length, theirsLines.length, mineLines.length);
+    const maxLines = Math.max(
+      baseLines.length,
+      theirsLines.length,
+      mineLines.length
+    );
 
     return Array.from({ length: maxLines }, (_, i) => ({
       base: baseLines[i] || '',
@@ -99,35 +124,37 @@ const DiffView: React.FC<DiffViewProps> = ({ base, theirs, mine, onMergeComplete
     }));
   }, [base, theirs, mine]);
 
-
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       {/* Version selector */}
       <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         <button
           onClick={() => setSelectedVersion('base')}
-          className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-700 ${selectedVersion === 'base'
-            ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+          className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-700 ${
+            selectedVersion === 'base'
+              ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
         >
           Base Version
         </button>
         <button
           onClick={() => setSelectedVersion('theirs')}
-          className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-700 ${selectedVersion === 'theirs'
-            ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+          className={`px-4 py-2 text-sm font-medium border-r border-gray-200 dark:border-gray-700 ${
+            selectedVersion === 'theirs'
+              ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
         >
           Their Version
         </button>
         <button
           onClick={() => setSelectedVersion('mine')}
-          className={`px-4 py-2 text-sm font-medium ${selectedVersion === 'mine'
-            ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-            }`}
+          className={`px-4 py-2 text-sm font-medium ${
+            selectedVersion === 'mine'
+              ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
         >
           My Version
         </button>
@@ -146,7 +173,9 @@ const DiffView: React.FC<DiffViewProps> = ({ base, theirs, mine, onMergeComplete
                   <span className="text-xs text-gray-400 mr-3 w-8 text-right">
                     {line.lineNumber}
                   </span>
-                  <span className="text-sm font-mono">{line.base || '\u00A0'}</span>
+                  <span className="text-sm font-mono">
+                    {line.base || '\u00A0'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -162,8 +191,13 @@ const DiffView: React.FC<DiffViewProps> = ({ base, theirs, mine, onMergeComplete
                   <span className="text-xs text-gray-400 mr-3 w-8 text-right">
                     {line.lineNumber}
                   </span>
-                  <span className={`text-sm font-mono ${line.theirs !== line.base ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : ''
-                    }`}>
+                  <span
+                    className={`text-sm font-mono ${
+                      line.theirs !== line.base
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : ''
+                    }`}
+                  >
                     {line.theirs || '\u00A0'}
                   </span>
                 </div>
@@ -181,8 +215,13 @@ const DiffView: React.FC<DiffViewProps> = ({ base, theirs, mine, onMergeComplete
                   <span className="text-xs text-gray-400 mr-3 w-8 text-right">
                     {line.lineNumber}
                   </span>
-                  <span className={`text-sm font-mono ${line.mine !== line.base ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : ''
-                    }`}>
+                  <span
+                    className={`text-sm font-mono ${
+                      line.mine !== line.base
+                        ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20'
+                        : ''
+                    }`}
+                  >
                     {line.mine || '\u00A0'}
                   </span>
                 </div>
@@ -250,20 +289,29 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
 
   const getSeverityColor = (severity: ConflictSeverity) => {
     switch (severity) {
-      case 'critical': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
-      case 'high': return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20';
-      case 'medium': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
-      case 'low': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      case 'critical':
+        return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+      case 'high':
+        return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20';
+      case 'medium':
+        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20';
+      case 'low':
+        return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
     }
   };
 
   const getTypeIcon = (type: ConflictType) => {
     switch (type) {
-      case 'edit': return '✏️';
-      case 'delete': return '🗑️';
-      case 'rename': return '📝';
-      case 'permission': return '🔒';
-      case 'format': return '🎨';
+      case 'edit':
+        return '✏️';
+      case 'delete':
+        return '🗑️';
+      case 'rename':
+        return '📝';
+      case 'permission':
+        return '🔒';
+      case 'format':
+        return '🎨';
     }
   };
 
@@ -278,7 +326,9 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {conflict.fileName}
               </h3>
-              <span className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(conflict.severity)}`}>
+              <span
+                className={`px-2 py-1 text-xs font-medium rounded ${getSeverityColor(conflict.severity)}`}
+              >
                 {conflict.severity.toUpperCase()}
               </span>
             </div>
@@ -312,8 +362,10 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
 
         {/* Users involved */}
         <div className="mt-3 flex items-center gap-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400">Involved:</span>
-          {conflict.users.map(user => (
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Involved:
+          </span>
+          {conflict.users.map((user) => (
             <button
               key={user.userId}
               onClick={() => onRequestUserInfo(user.userId)}
@@ -334,25 +386,40 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Type:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{conflict.type}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                Type:
+              </span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">
+                {conflict.type}
+              </span>
             </div>
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">Severity:</span>
-              <span className="ml-2 text-gray-600 dark:text-gray-400">{conflict.severity}</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                Severity:
+              </span>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">
+                {conflict.severity}
+              </span>
             </div>
             {conflict.metadata?.lineNumbers && (
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Lines:</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  Lines:
+                </span>
                 <span className="ml-2 text-gray-600 dark:text-gray-400">
-                  {conflict.metadata.lineNumbers.start}-{conflict.metadata.lineNumbers.end}
+                  {conflict.metadata.lineNumbers.start}-
+                  {conflict.metadata.lineNumbers.end}
                 </span>
               </div>
             )}
             {conflict.metadata?.changeType && (
               <div>
-                <span className="font-medium text-gray-700 dark:text-gray-300">Change:</span>
-                <span className="ml-2 text-gray-600 dark:text-gray-400">{conflict.metadata.changeType}</span>
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  Change:
+                </span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">
+                  {conflict.metadata.changeType}
+                </span>
               </div>
             )}
           </div>
@@ -378,11 +445,7 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
             Choose how to resolve this conflict
           </div>
           <div className="flex gap-2">
-            <InteractiveButton
-              variant="ghost"
-              size="sm"
-              onClick={onPostpone}
-            >
+            <InteractiveButton variant="ghost" size="sm" onClick={onPostpone}>
               Postpone
             </InteractiveButton>
             <InteractiveButton
@@ -416,7 +479,9 @@ const ConflictCard: React.FC<ConflictCardProps> = ({
 /**
  * Enhanced Conflict Resolver Component
  */
-export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> = ({
+export const EnhancedConflictResolver: React.FC<
+  EnhancedConflictResolverProps
+> = ({
   conflicts,
   onResolveConflict,
   onPostponeConflict,
@@ -426,7 +491,9 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
   enableBatchResolution = true,
   className = '',
 }) => {
-  const [selectedConflicts, setSelectedConflicts] = useState<Set<string>>(new Set());
+  const [selectedConflicts, setSelectedConflicts] = useState<Set<string>>(
+    new Set()
+  );
   const [filter, setFilter] = useState<{
     severity?: ConflictSeverity;
     type?: ConflictType;
@@ -434,47 +501,59 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
   }>({});
 
   const filteredConflicts = useMemo(() => {
-    return conflicts.filter(conflict => {
-      if (filter.severity && conflict.severity !== filter.severity) return false;
+    return conflicts.filter((conflict) => {
+      if (filter.severity && conflict.severity !== filter.severity)
+        return false;
       if (filter.type && conflict.type !== filter.type) return false;
       return true;
     });
   }, [conflicts, filter]);
 
-  const handleResolveConflict = useCallback((conflictId: string, action: ResolutionAction, resolution?: string) => {
-    onResolveConflict(conflictId, action, resolution);
-    setSelectedConflicts(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(conflictId);
-      return newSet;
-    });
-  }, [onResolveConflict]);
+  const handleResolveConflict = useCallback(
+    (conflictId: string, action: ResolutionAction, resolution?: string) => {
+      onResolveConflict(conflictId, action, resolution);
+      setSelectedConflicts((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(conflictId);
+        return newSet;
+      });
+    },
+    [onResolveConflict]
+  );
 
-  const handleBatchResolve = useCallback((action: ResolutionAction) => {
-    selectedConflicts.forEach(conflictId => {
-      onResolveConflict(conflictId, action);
-    });
-    setSelectedConflicts(new Set());
-  }, [selectedConflicts, onResolveConflict]);
+  const handleBatchResolve = useCallback(
+    (action: ResolutionAction) => {
+      selectedConflicts.forEach((conflictId) => {
+        onResolveConflict(conflictId, action);
+      });
+      setSelectedConflicts(new Set());
+    },
+    [selectedConflicts, onResolveConflict]
+  );
 
   const handleSelectAll = useCallback(() => {
     if (selectedConflicts.size === filteredConflicts.length) {
       setSelectedConflicts(new Set());
     } else {
-      setSelectedConflicts(new Set(filteredConflicts.map(c => c.id)));
+      setSelectedConflicts(new Set(filteredConflicts.map((c) => c.id)));
     }
   }, [selectedConflicts.size, filteredConflicts]);
 
   const severityCounts = useMemo(() => {
-    return conflicts.reduce((acc, conflict) => {
-      acc[conflict.severity] = (acc[conflict.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<ConflictSeverity, number>);
+    return conflicts.reduce(
+      (acc, conflict) => {
+        acc[conflict.severity] = (acc[conflict.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<ConflictSeverity, number>
+    );
   }, [conflicts]);
 
   if (conflicts.length === 0) {
     return (
-      <div className={`text-center py-8 text-gray-500 dark:text-gray-400 ${className}`}>
+      <div
+        className={`text-center py-8 text-gray-500 dark:text-gray-400 ${className}`}
+      >
         <div className="text-4xl mb-2">✅</div>
         <div className="text-lg font-medium">No conflicts detected</div>
         <div className="text-sm">All files are in sync</div>
@@ -523,7 +602,9 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
                 size="sm"
                 onClick={handleSelectAll}
               >
-                {selectedConflicts.size === filteredConflicts.length ? 'Deselect All' : 'Select All'}
+                {selectedConflicts.size === filteredConflicts.length
+                  ? 'Deselect All'
+                  : 'Select All'}
               </InteractiveButton>
               {selectedConflicts.size > 0 && (
                 <>
@@ -560,7 +641,12 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
         <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <select
             value={filter.severity || ''}
-            onChange={(e) => setFilter({ ...filter, severity: e.target.value as ConflictSeverity | undefined })}
+            onChange={(e) =>
+              setFilter({
+                ...filter,
+                severity: e.target.value as ConflictSeverity | undefined,
+              })
+            }
             className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">All Severities</option>
@@ -572,7 +658,12 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
 
           <select
             value={filter.type || ''}
-            onChange={(e) => setFilter({ ...filter, type: e.target.value as ConflictType | undefined })}
+            onChange={(e) =>
+              setFilter({
+                ...filter,
+                type: e.target.value as ConflictType | undefined,
+              })
+            }
             className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">All Types</option>
@@ -587,11 +678,13 @@ export const EnhancedConflictResolver: React.FC<EnhancedConflictResolverProps> =
 
       {/* Conflict list */}
       <div className="space-y-3">
-        {filteredConflicts.map(conflict => (
+        {filteredConflicts.map((conflict) => (
           <ConflictCard
             key={conflict.id}
             conflict={conflict}
-            onResolve={(action, resolution) => handleResolveConflict(conflict.id, action, resolution)}
+            onResolve={(action, resolution) =>
+              handleResolveConflict(conflict.id, action, resolution)
+            }
             onPostpone={() => onPostponeConflict(conflict.id)}
             onRequestUserInfo={onRequestUserInfo}
             showDiff={showDiffView}

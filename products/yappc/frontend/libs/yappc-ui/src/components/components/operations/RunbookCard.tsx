@@ -19,7 +19,12 @@ import { cn } from '@ghatana/design-system';
 // ============================================================================
 
 export type RunbookStatus = 'draft' | 'published' | 'deprecated';
-export type RunbookExecutionStatus = 'idle' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type RunbookExecutionStatus =
+  | 'idle'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 export type StepType = 'manual' | 'automated' | 'approval' | 'conditional';
 
 export interface RunbookStep {
@@ -71,16 +76,30 @@ export interface RunbookCardProps {
 // ============================================================================
 
 const getStatusConfig = (status: RunbookStatus) => {
-  const configs: Record<RunbookStatus, { label: string; color: string; bg: string }> = {
+  const configs: Record<
+    RunbookStatus,
+    { label: string; color: string; bg: string }
+  > = {
     draft: { label: 'Draft', color: '#6B7280', bg: 'rgba(107, 114, 128, 0.1)' },
-    published: { label: 'Published', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    deprecated: { label: 'Deprecated', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
+    published: {
+      label: 'Published',
+      color: '#10B981',
+      bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    deprecated: {
+      label: 'Deprecated',
+      color: '#F59E0B',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
   };
   return configs[status];
 };
 
 const getExecutionStatusConfig = (status: RunbookExecutionStatus) => {
-  const configs: Record<RunbookExecutionStatus, { label: string; color: string; icon: string }> = {
+  const configs: Record<
+    RunbookExecutionStatus,
+    { label: string; color: string; icon: string }
+  > = {
     idle: { label: 'Ready', color: '#6B7280', icon: '⏸️' },
     running: { label: 'Running', color: '#3B82F6', icon: '▶️' },
     completed: { label: 'Completed', color: '#10B981', icon: '✅' },
@@ -131,7 +150,11 @@ interface StepProgressProps {
   status: RunbookExecutionStatus;
 }
 
-const StepProgress: React.FC<StepProgressProps> = ({ steps, currentStep, status }) => {
+const StepProgress: React.FC<StepProgressProps> = ({
+  steps,
+  currentStep,
+  status,
+}) => {
   return (
     <div className="step-progress">
       {steps.map((step, index) => {
@@ -154,7 +177,12 @@ const StepProgress: React.FC<StepProgressProps> = ({ steps, currentStep, status 
               {isCompleted ? '✓' : isFailed ? '✕' : index + 1}
             </div>
             {index < steps.length - 1 && (
-              <div className={cn('step-connector', isCompleted && 'step-connector--completed')} />
+              <div
+                className={cn(
+                  'step-connector',
+                  isCompleted && 'step-connector--completed'
+                )}
+              />
             )}
           </div>
         );
@@ -177,9 +205,13 @@ export const RunbookCard: React.FC<RunbookCardProps> = ({
   className,
 }) => {
   const statusConfig = getStatusConfig(runbook.status);
-  const execStatusConfig = execution ? getExecutionStatusConfig(execution.status) : null;
+  const execStatusConfig = execution
+    ? getExecutionStatusConfig(execution.status)
+    : null;
 
-  const canExecute = runbook.status === 'published' && (!execution || execution.status === 'idle');
+  const canExecute =
+    runbook.status === 'published' &&
+    (!execution || execution.status === 'idle');
   const isRunning = execution?.status === 'running';
 
   // Count step types
@@ -218,7 +250,10 @@ export const RunbookCard: React.FC<RunbookCardProps> = ({
         <div className="runbook-badges">
           <span
             className="status-badge"
-            style={{ color: statusConfig.color, backgroundColor: statusConfig.bg }}
+            style={{
+              color: statusConfig.color,
+              backgroundColor: statusConfig.bg,
+            }}
           >
             {statusConfig.label}
           </span>
@@ -234,9 +269,7 @@ export const RunbookCard: React.FC<RunbookCardProps> = ({
       </div>
 
       {/* Description */}
-      {!compact && (
-        <p className="runbook-description">{runbook.description}</p>
-      )}
+      {!compact && <p className="runbook-description">{runbook.description}</p>}
 
       {/* Execution Progress */}
       {isRunning && execution && (
@@ -261,7 +294,9 @@ export const RunbookCard: React.FC<RunbookCardProps> = ({
         </div>
         <div className="stat-item">
           <span className="stat-icon">⏱️</span>
-          <span className="stat-value">{formatDuration(runbook.estimatedDuration)}</span>
+          <span className="stat-value">
+            {formatDuration(runbook.estimatedDuration)}
+          </span>
           <span className="stat-label">Est. Time</span>
         </div>
         {runbook.executionCount !== undefined && (

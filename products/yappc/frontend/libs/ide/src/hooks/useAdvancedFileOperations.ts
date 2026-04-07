@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Advanced File Operations Hook
- * 
+ *
  * Enhanced file operations with bulk actions, search, and optimization.
  * Extends existing file operations with advanced capabilities.
- * 
+ *
  * @doc.type module
  * @doc.purpose Advanced file operations for IDE
  * @doc.layer product
@@ -13,19 +13,11 @@
 import { useAtom } from 'jotai';
 import { useCallback, useState, useMemo } from 'react';
 
-import {
-  ideFilesAtom,
-  ideFoldersAtom,
-} from '../state/atoms';
+import { ideFilesAtom, ideFoldersAtom } from '../state/atoms';
 import type { IDEFile, IDEFolder } from '../types';
-import {
-  normalizePath,
-  isFile,
-  isFolder,
-} from '../utils/fileSystem';
+import { normalizePath, isFile, isFolder } from '../utils/fileSystem';
 
 import { useIDEFileOperations } from './useIDEFileOperations';
-
 
 /**
  * Bulk file operation types
@@ -105,50 +97,55 @@ export function useAdvancedFileOperations() {
     deleteFile: baseDeleteFile,
     deleteFolder: baseDeleteFolder,
     renameFile: baseRenameFile,
-    moveFile: baseMoveFile
+    moveFile: baseMoveFile,
   } = useIDEFileOperations();
-  const [bulkOperation, setBulkOperation] = useState<BulkOperation | null>(null);
+  const [bulkOperation, setBulkOperation] = useState<BulkOperation | null>(
+    null
+  );
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   /**
    * Enhanced file selection with multi-select support
    */
-  const selectFile = useCallback((fileId: string, event: React.MouseEvent | KeyboardEvent) => {
-    setSelection(prev => {
-      const newSelection = { ...prev };
+  const selectFile = useCallback(
+    (fileId: string, event: React.MouseEvent | KeyboardEvent) => {
+      setSelection((prev) => {
+        const newSelection = { ...prev };
 
-      if (event.ctrlKey || event.metaKey) {
-        // Toggle selection
-        if (newSelection.selectedIds.has(fileId)) {
-          newSelection.selectedIds.delete(fileId);
+        if (event.ctrlKey || event.metaKey) {
+          // Toggle selection
+          if (newSelection.selectedIds.has(fileId)) {
+            newSelection.selectedIds.delete(fileId);
+          } else {
+            newSelection.selectedIds.add(fileId);
+          }
+          newSelection.lastSelectedId = fileId;
+        } else if (event.shiftKey && prev.lastSelectedId) {
+          // Range selection
+          const allIds = Object.keys(files);
+          const lastIndex = allIds.indexOf(prev.lastSelectedId);
+          const currentIndex = allIds.indexOf(fileId);
+
+          if (lastIndex !== -1 && currentIndex !== -1) {
+            const start = Math.min(lastIndex, currentIndex);
+            const end = Math.max(lastIndex, currentIndex);
+
+            newSelection.selectedIds = new Set(allIds.slice(start, end + 1));
+          }
+          newSelection.lastSelectedId = fileId;
         } else {
-          newSelection.selectedIds.add(fileId);
+          // Single selection
+          newSelection.selectedIds = new Set([fileId]);
+          newSelection.lastSelectedId = fileId;
+          newSelection.rangeStartId = fileId;
         }
-        newSelection.lastSelectedId = fileId;
-      } else if (event.shiftKey && prev.lastSelectedId) {
-        // Range selection
-        const allIds = Object.keys(files);
-        const lastIndex = allIds.indexOf(prev.lastSelectedId);
-        const currentIndex = allIds.indexOf(fileId);
 
-        if (lastIndex !== -1 && currentIndex !== -1) {
-          const start = Math.min(lastIndex, currentIndex);
-          const end = Math.max(lastIndex, currentIndex);
-
-          newSelection.selectedIds = new Set(allIds.slice(start, end + 1));
-        }
-        newSelection.lastSelectedId = fileId;
-      } else {
-        // Single selection
-        newSelection.selectedIds = new Set([fileId]);
-        newSelection.lastSelectedId = fileId;
-        newSelection.rangeStartId = fileId;
-      }
-
-      return newSelection;
-    });
-  }, [files]);
+        return newSelection;
+      });
+    },
+    [files]
+  );
 
   /**
    * Select all files in current directory
@@ -176,92 +173,100 @@ export function useAdvancedFileOperations() {
   /**
    * Bulk rename files with pattern support
    */
-  const bulkRename = useCallback(async (pattern: string) => {
-    if (!pattern || selection.selectedIds.size === 0) return;
+  const bulkRename = useCallback(
+    async (pattern: string) => {
+      if (!pattern || selection.selectedIds.size === 0) return;
 
-    const operation: BulkOperation = {
-      type: 'rename',
-      fileIds: Array.from(selection.selectedIds),
-      options: { pattern },
-    };
+      const operation: BulkOperation = {
+        type: 'rename',
+        fileIds: Array.from(selection.selectedIds),
+        options: { pattern },
+      };
 
-    setBulkOperation(operation);
+      setBulkOperation(operation);
 
-    try {
-      const updatedFiles = { ...files };
-      let counter = 1;
+      try {
+        const updatedFiles = { ...files };
+        let counter = 1;
 
-      for (const fileId of selection.selectedIds) {
-        const file = updatedFiles[fileId];
-        if (!file) continue;
+        for (const fileId of selection.selectedIds) {
+          const file = updatedFiles[fileId];
+          if (!file) continue;
 
-        const extension = file.name.includes('.') ? file.name.split('.').pop() : '';
-        const newName = pattern
-          .replace('{name}', file.name.replace(/\.[^/.]+$/, ''))
-          .replace('{ext}', extension || '')
-          .replace('{n}', counter.toString().padStart(3, '0'))
-          .replace('{uuid}', file.id.substring(0, 8));
+          const extension = file.name.includes('.')
+            ? file.name.split('.').pop()
+            : '';
+          const newName = pattern
+            .replace('{name}', file.name.replace(/\.[^/.]+$/, ''))
+            .replace('{ext}', extension || '')
+            .replace('{n}', counter.toString().padStart(3, '0'))
+            .replace('{uuid}', file.id.substring(0, 8));
 
-        const newPath = file.path.replace(file.name, newName);
+          const newPath = file.path.replace(file.name, newName);
 
-        updatedFiles[fileId] = {
-          ...file,
-          name: newName,
-          path: newPath,
-          lastModified: Date.now(),
-        };
-        counter++;
+          updatedFiles[fileId] = {
+            ...file,
+            name: newName,
+            path: newPath,
+            lastModified: Date.now(),
+          };
+          counter++;
+        }
+
+        setFiles(updatedFiles);
+        clearSelection();
+      } catch (error) {
+        console.error('Bulk rename failed:', error);
+      } finally {
+        setBulkOperation(null);
       }
-
-      setFiles(updatedFiles);
-      clearSelection();
-    } catch (error) {
-      console.error('Bulk rename failed:', error);
-    } finally {
-      setBulkOperation(null);
-    }
-  }, [files, selection.selectedIds, setFiles, clearSelection]);
+    },
+    [files, selection.selectedIds, setFiles, clearSelection]
+  );
 
   /**
    * Bulk move files to destination
    */
-  const bulkMove = useCallback(async (destination: string) => {
-    if (!destination || selection.selectedIds.size === 0) return;
+  const bulkMove = useCallback(
+    async (destination: string) => {
+      if (!destination || selection.selectedIds.size === 0) return;
 
-    const operation: BulkOperation = {
-      type: 'move',
-      fileIds: Array.from(selection.selectedIds),
-      destination,
-      options: { preserveStructure: true },
-    };
+      const operation: BulkOperation = {
+        type: 'move',
+        fileIds: Array.from(selection.selectedIds),
+        destination,
+        options: { preserveStructure: true },
+      };
 
-    setBulkOperation(operation);
+      setBulkOperation(operation);
 
-    try {
-      const updatedFiles = { ...files };
+      try {
+        const updatedFiles = { ...files };
 
-      for (const fileId of selection.selectedIds) {
-        const file = updatedFiles[fileId];
-        if (!file) continue;
+        for (const fileId of selection.selectedIds) {
+          const file = updatedFiles[fileId];
+          if (!file) continue;
 
-        const fileName = file.path.split('/').pop() || '';
-        const newPath = normalizePath(`${destination}/${fileName}`);
+          const fileName = file.path.split('/').pop() || '';
+          const newPath = normalizePath(`${destination}/${fileName}`);
 
-        updatedFiles[fileId] = {
-          ...file,
-          path: newPath,
-          lastModified: Date.now(),
-        };
+          updatedFiles[fileId] = {
+            ...file,
+            path: newPath,
+            lastModified: Date.now(),
+          };
+        }
+
+        setFiles(updatedFiles);
+        clearSelection();
+      } catch (error) {
+        console.error('Bulk move failed:', error);
+      } finally {
+        setBulkOperation(null);
       }
-
-      setFiles(updatedFiles);
-      clearSelection();
-    } catch (error) {
-      console.error('Bulk move failed:', error);
-    } finally {
-      setBulkOperation(null);
-    }
-  }, [files, selection.selectedIds, setFiles, clearSelection]);
+    },
+    [files, selection.selectedIds, setFiles, clearSelection]
+  );
 
   /**
    * Bulk delete files with confirmation
@@ -299,92 +304,116 @@ export function useAdvancedFileOperations() {
     } finally {
       setBulkOperation(null);
     }
-  }, [files, folders, selection.selectedIds, setFiles, setFolders, clearSelection]);
+  }, [
+    files,
+    folders,
+    selection.selectedIds,
+    setFiles,
+    setFolders,
+    clearSelection,
+  ]);
 
   /**
    * Advanced file search with indexing
    */
-  const searchFiles = useCallback(async (query: FileSearchQuery) => {
-    setIsSearching(true);
-    setSearchResults([]);
+  const searchFiles = useCallback(
+    async (query: FileSearchQuery) => {
+      setIsSearching(true);
+      setSearchResults([]);
 
-    try {
-      const results: SearchResult[] = [];
-      const allFiles = Object.values(files);
+      try {
+        const results: SearchResult[] = [];
+        const allFiles = Object.values(files);
 
-      // Normalize search pattern
-      const pattern = query.caseSensitive ? query.pattern : query.pattern.toLowerCase();
-      const contentPattern = query.content
-        ? (query.caseSensitive ? query.content : query.content.toLowerCase())
-        : null;
+        // Normalize search pattern
+        const pattern = query.caseSensitive
+          ? query.pattern
+          : query.pattern.toLowerCase();
+        const contentPattern = query.content
+          ? query.caseSensitive
+            ? query.content
+            : query.content.toLowerCase()
+          : null;
 
-      for (const file of allFiles) {
-        let score = 0;
-        const matches: SearchResult['matches'] = [];
+        for (const file of allFiles) {
+          let score = 0;
+          const matches: SearchResult['matches'] = [];
 
-        // File name matching
-        const fileName = query.caseSensitive ? file.name : file.name.toLowerCase();
-        if (fileName.includes(pattern)) {
-          score += fileName === pattern ? 100 : 50;
-        }
-
-        // File extension matching
-        if (query.fileTypes && query.fileTypes.length > 0) {
-          const extension = file.name.split('.').pop()?.toLowerCase();
-          if (extension && query.fileTypes.includes(extension)) {
-            score += 25;
+          // File name matching
+          const fileName = query.caseSensitive
+            ? file.name
+            : file.name.toLowerCase();
+          if (fileName.includes(pattern)) {
+            score += fileName === pattern ? 100 : 50;
           }
-        }
 
-        // Date range matching
-        if (query.dateRange) {
-          const fileDate = new Date(file.lastModified);
-          if (fileDate >= query.dateRange.start && fileDate <= query.dateRange.end) {
-            score += 20;
-          }
-        }
-
-        // Size matching
-        if (query.minSize !== undefined && file.size < query.minSize) {
-          continue;
-        }
-        if (query.maxSize !== undefined && file.size > query.maxSize) {
-          continue;
-        }
-
-        // Content matching
-        if (contentPattern && file.content) {
-          const content = query.caseSensitive ? file.content : file.content.toLowerCase();
-          const lines = content.split('\n');
-
-          lines.forEach((line, index) => {
-            if (line.includes(contentPattern)) {
-              const column = line.indexOf(contentPattern);
-              matches.push({
-                line: index + 1,
-                column,
-                text: line.trim(),
-                context: line.substring(Math.max(0, column - 50), column + 50),
-              });
-              score += 10;
+          // File extension matching
+          if (query.fileTypes && query.fileTypes.length > 0) {
+            const extension = file.name.split('.').pop()?.toLowerCase();
+            if (extension && query.fileTypes.includes(extension)) {
+              score += 25;
             }
-          });
+          }
+
+          // Date range matching
+          if (query.dateRange) {
+            const fileDate = new Date(file.lastModified);
+            if (
+              fileDate >= query.dateRange.start &&
+              fileDate <= query.dateRange.end
+            ) {
+              score += 20;
+            }
+          }
+
+          // Size matching
+          if (query.minSize !== undefined && file.size < query.minSize) {
+            continue;
+          }
+          if (query.maxSize !== undefined && file.size > query.maxSize) {
+            continue;
+          }
+
+          // Content matching
+          if (contentPattern && file.content) {
+            const content = query.caseSensitive
+              ? file.content
+              : file.content.toLowerCase();
+            const lines = content.split('\n');
+
+            lines.forEach((line, index) => {
+              if (line.includes(contentPattern)) {
+                const column = line.indexOf(contentPattern);
+                matches.push({
+                  line: index + 1,
+                  column,
+                  text: line.trim(),
+                  context: line.substring(
+                    Math.max(0, column - 50),
+                    column + 50
+                  ),
+                });
+                score += 10;
+              }
+            });
+          }
+
+          if (score > 0) {
+            results.push({ file, matches, score });
+          }
         }
 
-        if (score > 0) {
-          results.push({ file, matches, score });
-        }
+        // Sort by score (descending)
+        results.sort((a, b) => b.score - a.score);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsSearching(false);
       }
-
-      // Sort by score (descending)
-      results.sort((a, b) => b.score - a.score);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  }, [files]);
+    },
+    [files]
+  );
 
   /**
    * Clear search results
@@ -398,16 +427,19 @@ export function useAdvancedFileOperations() {
    */
   const selectedFiles = useMemo(() => {
     return Array.from(selection.selectedIds)
-      .map(id => (files[id] || folders[id]) as IDEFile | IDEFolder)
+      .map((id) => (files[id] || folders[id]) as IDEFile | IDEFolder)
       .filter(Boolean);
   }, [selection.selectedIds, files, folders]);
 
   /**
    * Check if file is selected
    */
-  const isFileSelected = useCallback((fileId: string) => {
-    return selection.selectedIds.has(fileId);
-  }, [selection.selectedIds]);
+  const isFileSelected = useCallback(
+    (fileId: string) => {
+      return selection.selectedIds.has(fileId);
+    },
+    [selection.selectedIds]
+  );
 
   /**
    * Get selection count

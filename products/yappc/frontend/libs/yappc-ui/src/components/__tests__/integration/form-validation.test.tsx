@@ -34,7 +34,9 @@ describe.skip('Form + Validation Integration', () => {
       });
 
       // Should show email error
-      expect(result.current.errors.email).toBe('Please enter a valid email address');
+      expect(result.current.errors.email).toBe(
+        'Please enter a valid email address'
+      );
 
       // Valid email
       act(() => {
@@ -76,7 +78,9 @@ describe.skip('Form + Validation Integration', () => {
       });
 
       // Now should show error
-      expect(result.current.errors.email).toBe('Please enter a valid email address');
+      expect(result.current.errors.email).toBe(
+        'Please enter a valid email address'
+      );
       expect(result.current.touched.email).toBe(true);
     });
   });
@@ -93,7 +97,10 @@ describe.skip('Form + Validation Integration', () => {
             password: [validators.required(), validators.minLength(8)],
             confirmPassword: [
               validators.required(),
-              validators.match('password', (name) => result.current.values.password),
+              validators.match(
+                'password',
+                (name) => result.current.values.password
+              ),
             ],
           },
           onSubmit,
@@ -112,7 +119,9 @@ describe.skip('Form + Validation Integration', () => {
       // Should show all errors
       expect(result.current.errors.email).toBe('This field is required');
       expect(result.current.errors.password).toBe('This field is required');
-      expect(result.current.errors.confirmPassword).toBe('This field is required');
+      expect(result.current.errors.confirmPassword).toBe(
+        'This field is required'
+      );
 
       // All fields should be marked as touched
       expect(result.current.touched.email).toBe(true);
@@ -184,8 +193,14 @@ describe.skip('Form + Validation Integration', () => {
             username: [
               validators.required('Username is required'),
               validators.minLength(3, 'Username must be at least 3 characters'),
-              validators.maxLength(20, 'Username must be at most 20 characters'),
-              validators.pattern(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+              validators.maxLength(
+                20,
+                'Username must be at most 20 characters'
+              ),
+              validators.pattern(
+                /^[a-zA-Z0-9_]+$/,
+                'Username can only contain letters, numbers, and underscores'
+              ),
             ],
           },
           onSubmit: jest.fn(),
@@ -203,19 +218,25 @@ describe.skip('Form + Validation Integration', () => {
       act(() => {
         result.current.setFieldValue('username', 'ab');
       });
-      expect(result.current.errors.username).toBe('Username must be at least 3 characters');
+      expect(result.current.errors.username).toBe(
+        'Username must be at least 3 characters'
+      );
 
       // Test maxLength validation
       act(() => {
         result.current.setFieldValue('username', 'a'.repeat(21));
       });
-      expect(result.current.errors.username).toBe('Username must be at most 20 characters');
+      expect(result.current.errors.username).toBe(
+        'Username must be at most 20 characters'
+      );
 
       // Test pattern validation
       act(() => {
         result.current.setFieldValue('username', 'invalid-username!');
       });
-      expect(result.current.errors.username).toBe('Username can only contain letters, numbers, and underscores');
+      expect(result.current.errors.username).toBe(
+        'Username can only contain letters, numbers, and underscores'
+      );
 
       // Test valid username
       act(() => {
@@ -232,7 +253,11 @@ describe.skip('Form + Validation Integration', () => {
             password: [validators.required(), validators.minLength(8)],
             confirmPassword: [
               validators.required(),
-              validators.match('password', (name) => result.current.values.password, 'Passwords must match'),
+              validators.match(
+                'password',
+                (name) => result.current.values.password,
+                'Passwords must match'
+              ),
             ],
           },
           onSubmit: jest.fn(),
@@ -250,7 +275,9 @@ describe.skip('Form + Validation Integration', () => {
         result.current.setFieldValue('confirmPassword', 'different');
       });
 
-      expect(result.current.errors.confirmPassword).toBe('Passwords must match');
+      expect(result.current.errors.confirmPassword).toBe(
+        'Passwords must match'
+      );
 
       // Set matching confirm password
       act(() => {
@@ -288,7 +315,9 @@ describe.skip('Form + Validation Integration', () => {
       act(() => {
         result.current.setFieldValue('age', 15);
       });
-      expect(result.current.errors.age).toBe('You must be at least 18 years old');
+      expect(result.current.errors.age).toBe(
+        'You must be at least 18 years old'
+      );
 
       // Test maximum age
       act(() => {
@@ -444,8 +473,10 @@ describe.skip('Form + Validation Integration', () => {
       });
 
       // Only show error for touched field (UI pattern)
-      const shouldShowEmailError = result.current.touched.email && result.current.errors.email;
-      const shouldShowPasswordError = result.current.touched.password && result.current.errors.password;
+      const shouldShowEmailError =
+        result.current.touched.email && result.current.errors.email;
+      const shouldShowPasswordError =
+        result.current.touched.password && result.current.errors.password;
 
       expect(shouldShowEmailError).toBeTruthy();
       expect(shouldShowPasswordError).toBeFalsy();
@@ -480,7 +511,12 @@ describe.skip('Form + Validation Integration', () => {
         useForm({
           initialValues: { agree: false },
           validationRules: {
-            agree: [validators.custom((value) => value === true, 'You must agree to the terms')],
+            agree: [
+              validators.custom(
+                (value) => value === true,
+                'You must agree to the terms'
+              ),
+            ],
           },
           onSubmit: jest.fn(),
           validateOnChange: true,

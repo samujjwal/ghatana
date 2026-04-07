@@ -13,7 +13,13 @@ export interface Command {
   id: string;
   title: string;
   description?: string;
-  category: 'navigation' | 'editing' | 'export' | 'view' | 'collaboration' | 'system';
+  category:
+    | 'navigation'
+    | 'editing'
+    | 'export'
+    | 'view'
+    | 'collaboration'
+    | 'system';
   keywords: string[];
   icon?: string;
   shortcut?: string;
@@ -175,7 +181,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-96 overflow-y-auto">
           {filteredCommands.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
-              {query ? 'No commands found' : 'Start typing to search commands...'}
+              {query
+                ? 'No commands found'
+                : 'Start typing to search commands...'}
             </div>
           ) : (
             <div className="p-2">
@@ -221,13 +229,20 @@ const CommandItem: React.FC<CommandItemProps> = ({
 }) => {
   const getCategoryIcon = (category: Command['category']) => {
     switch (category) {
-      case 'navigation': return '🧭';
-      case 'editing': return '✏️';
-      case 'export': return '📤';
-      case 'view': return '👁️';
-      case 'collaboration': return '👥';
-      case 'system': return '⚙️';
-      default: return '📋';
+      case 'navigation':
+        return '🧭';
+      case 'editing':
+        return '✏️';
+      case 'export':
+        return '📤';
+      case 'view':
+        return '👁️';
+      case 'collaboration':
+        return '👥';
+      case 'system':
+        return '⚙️';
+      default:
+        return '📋';
     }
   };
 
@@ -235,9 +250,7 @@ const CommandItem: React.FC<CommandItemProps> = ({
     <div
       className={clsx(
         'flex items-center p-3 rounded-md cursor-pointer transition-colors',
-        isSelected
-          ? 'bg-blue-50 text-blue-900'
-          : 'hover:bg-gray-50',
+        isSelected ? 'bg-blue-50 text-blue-900' : 'hover:bg-gray-50',
         command.disabled && 'opacity-50 cursor-not-allowed',
         command.dangerous && 'text-red-600'
       )}
@@ -253,9 +266,7 @@ const CommandItem: React.FC<CommandItemProps> = ({
 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium truncate">
-            {command.title}
-          </h3>
+          <h3 className="text-sm font-medium truncate">{command.title}</h3>
           {command.shortcut && (
             <span className="ml-2 px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded">
               {command.shortcut}
@@ -270,12 +281,14 @@ const CommandItem: React.FC<CommandItemProps> = ({
       </div>
 
       <div className="flex-shrink-0 ml-3">
-        <span className={clsx(
-          'px-2 py-1 text-xs rounded-full',
-          isSelected
-            ? 'bg-blue-100 text-blue-700'
-            : 'bg-gray-100 text-gray-600'
-        )}>
+        <span
+          className={clsx(
+            'px-2 py-1 text-xs rounded-full',
+            isSelected
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-gray-100 text-gray-600'
+          )}
+        >
           {command.category}
         </span>
       </div>

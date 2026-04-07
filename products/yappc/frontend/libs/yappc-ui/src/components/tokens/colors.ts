@@ -1,6 +1,6 @@
 /**
  * Color tokens for the design system
- * 
+ *
  * These tokens define the color palette for the application,
  * with semantic naming for consistent usage across components.
  * All colors are designed to meet WCAG 2.1 AA contrast requirements.
@@ -22,7 +22,7 @@ export const palette = {
     900: '#072a60',
     contrastText: '#ffffff',
   },
-  
+
   // Secondary colors - Teal (better for accessibility than pink/red)
   secondary: {
     50: '#e0f2f1',
@@ -37,7 +37,7 @@ export const palette = {
     900: '#004d40',
     contrastText: '#ffffff',
   },
-  
+
   // Neutral colors - Grayscale
   neutral: {
     50: '#fafafa',
@@ -51,17 +51,17 @@ export const palette = {
     800: '#424242',
     900: '#212121',
   },
-  
+
   // Semantic colors with improved contrast
   success: {
     light: '#81c784',
-    main: '#2e7d32',  // Darker for better contrast
+    main: '#2e7d32', // Darker for better contrast
     dark: '#1b5e20',
     contrastText: '#ffffff',
   },
   warning: {
     light: '#ffb74d',
-    main: '#ed6c02',  // Darker orange for better contrast
+    main: '#ed6c02', // Darker orange for better contrast
     dark: '#e65100',
     contrastText: '#000000de',
   },
@@ -73,7 +73,7 @@ export const palette = {
   },
   info: {
     light: '#4fc3f7',
-    main: '#0288d1',  // Darker blue for better contrast
+    main: '#0288d1', // Darker blue for better contrast
     dark: '#01579b',
     contrastText: '#ffffff',
   },
@@ -89,7 +89,7 @@ export const lightColors = {
     surface: '#f8f9fa',
     backdrop: 'rgba(0, 0, 0, 0.5)',
   },
-  
+
   // Text colors
   text: {
     primary: 'rgba(0, 0, 0, 0.87)',
@@ -98,11 +98,11 @@ export const lightColors = {
     hint: 'rgba(0, 0, 0, 0.38)',
     icon: 'rgba(0, 0, 0, 0.54)',
   },
-  
+
   // UI elements
   divider: 'rgba(0, 0, 0, 0.12)',
   border: 'rgba(0, 0, 0, 0.12)',
-  
+
   // Action states
   action: {
     active: 'rgba(0, 0, 0, 0.54)',
@@ -129,7 +129,7 @@ export const darkColors = {
     surface: '#1e1e1e',
     backdrop: 'rgba(0, 0, 0, 0.7)',
   },
-  
+
   // Text colors
   text: {
     primary: 'rgba(255, 255, 255, 0.87)',
@@ -138,11 +138,11 @@ export const darkColors = {
     hint: 'rgba(255, 255, 255, 0.5)',
     icon: 'rgba(255, 255, 255, 0.5)',
   },
-  
+
   // UI elements
   divider: 'rgba(255, 255, 255, 0.12)',
   border: 'rgba(255, 255, 255, 0.12)',
-  
+
   // Action states
   action: {
     active: '#fff',

@@ -54,7 +54,11 @@ import {
 // =============================================================================
 
 export type ReviewerRole = 'owner' | 'reviewer' | 'viewer';
-export type ReviewStatus = 'pending' | 'in_review' | 'approved' | 'changes_requested';
+export type ReviewStatus =
+  | 'pending'
+  | 'in_review'
+  | 'approved'
+  | 'changes_requested';
 
 export interface Reviewer {
   id: string;
@@ -113,12 +117,15 @@ export interface TeamReviewPanelProps {
 // Constants
 // =============================================================================
 
-const ROLE_CONFIG: Record<ReviewerRole, {
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}> = {
+const ROLE_CONFIG: Record<
+  ReviewerRole,
+  {
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }
+> = {
   owner: {
     label: 'Owner',
     description: 'Full access, can manage reviewers',
@@ -139,11 +146,14 @@ const ROLE_CONFIG: Record<ReviewerRole, {
   },
 };
 
-const STATUS_CONFIG: Record<ReviewStatus, {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-}> = {
+const STATUS_CONFIG: Record<
+  ReviewStatus,
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+  }
+> = {
   pending: {
     label: 'Pending',
     icon: Clock,
@@ -210,7 +220,8 @@ const ReviewerCard: React.FC<ReviewerCardProps> = ({
   const RoleIcon = roleConfig.icon;
   const StatusIcon = statusConfig.icon;
   const isCurrentUser = reviewer.id === currentUserId;
-  const canManage = allowRoleManagement && currentUserRole === 'owner' && !isCurrentUser;
+  const canManage =
+    allowRoleManagement && currentUserRole === 'owner' && !isCurrentUser;
 
   return (
     <motion.div
@@ -235,7 +246,9 @@ const ReviewerCard: React.FC<ReviewerCardProps> = ({
             {reviewer.name}
           </span>
           {isCurrentUser && (
-            <Badge variant="outline" className="text-xs">You</Badge>
+            <Badge variant="outline" className="text-xs">
+              You
+            </Badge>
           )}
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-500">
@@ -448,9 +461,7 @@ const InviteDialog: React.FC<InviteDialogProps> = ({
               setError('');
             }}
           />
-          {error && (
-            <p className="mt-1 text-xs text-error-500">{error}</p>
-          )}
+          {error && <p className="mt-1 text-xs text-error-500">{error}</p>}
         </div>
 
         <div>
@@ -475,7 +486,9 @@ const InviteDialog: React.FC<InviteDialogProps> = ({
                   <config.icon className={cn('mt-0.5 h-5 w-5', config.color)} />
                   <div>
                     <span className="font-medium">{config.label}</span>
-                    <p className="text-sm text-neutral-500">{config.description}</p>
+                    <p className="text-sm text-neutral-500">
+                      {config.description}
+                    </p>
                   </div>
                   {role === r && (
                     <Check className="ml-auto h-5 w-5 text-primary-500" />
@@ -516,7 +529,8 @@ export const TeamReviewPanel: React.FC<TeamReviewPanelProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [generatingLink, setGeneratingLink] = useState(false);
 
-  const canInvite = currentUserRole === 'owner' || currentUserRole === 'reviewer';
+  const canInvite =
+    currentUserRole === 'owner' || currentUserRole === 'reviewer';
 
   // Review stats
   const stats = useMemo(() => {
@@ -629,7 +643,11 @@ export const TeamReviewPanel: React.FC<TeamReviewPanelProps> = ({
                       readOnly
                       className="flex-1 bg-white dark:bg-neutral-900"
                     />
-                    <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyLink}
+                    >
                       {copiedLink ? (
                         <Check className="h-4 w-4 text-success-500" />
                       ) : (
@@ -660,7 +678,9 @@ export const TeamReviewPanel: React.FC<TeamReviewPanelProps> = ({
                           currentUserId={currentUserId}
                           currentUserRole={currentUserRole}
                           onRemove={() => onRemoveReviewer(reviewer.id)}
-                          onChangeRole={(role) => onChangeRole(reviewer.id, role)}
+                          onChangeRole={(role) =>
+                            onChangeRole(reviewer.id, role)
+                          }
                           allowRoleManagement={allowRoleManagement}
                         />
                       ))}

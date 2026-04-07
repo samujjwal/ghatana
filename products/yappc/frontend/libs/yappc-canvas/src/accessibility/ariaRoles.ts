@@ -10,7 +10,6 @@
 import type { Node, Edge } from '@xyflow/react';
 import { useEffect, useRef, useCallback } from 'react';
 
-
 /**
  * ARIA role for canvas diagram elements
  */
@@ -234,7 +233,10 @@ export const globalAnnouncer = new AriaAnnouncer();
  * }
  * ```
  */
-export function useAriaAnnouncer(): (message: string, politeness?: AnnouncePolite) => void {
+export function useAriaAnnouncer(): (
+  message: string,
+  politeness?: AnnouncePolite
+) => void {
   const announcerRef = useRef(globalAnnouncer);
 
   useEffect(() => {
@@ -244,9 +246,12 @@ export function useAriaAnnouncer(): (message: string, politeness?: AnnouncePolit
     };
   }, []);
 
-  return useCallback((message: string, politeness: AnnouncePolite = 'polite') => {
-    announcerRef.current.announce(message, politeness);
-  }, []);
+  return useCallback(
+    (message: string, politeness: AnnouncePolite = 'polite') => {
+      announcerRef.current.announce(message, politeness);
+    },
+    []
+  );
 }
 
 /**
@@ -257,23 +262,23 @@ export function describeNodeRelationships(
   edges: Edge[],
   nodes: Node[]
 ): string {
-  const incoming = edges.filter(e => e.target === node.id);
-  const outgoing = edges.filter(e => e.source === node.id);
+  const incoming = edges.filter((e) => e.target === node.id);
+  const outgoing = edges.filter((e) => e.source === node.id);
 
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
   const parts: string[] = [];
 
   if (incoming.length > 0) {
     const sources = incoming
-      .map(e => nodeMap.get(e.source)?.data?.label || e.source)
+      .map((e) => nodeMap.get(e.source)?.data?.label || e.source)
       .join(', ');
     parts.push(`Receives from: ${sources}`);
   }
 
   if (outgoing.length > 0) {
     const targets = outgoing
-      .map(e => nodeMap.get(e.target)?.data?.label || e.target)
+      .map((e) => nodeMap.get(e.target)?.data?.label || e.target)
       .join(', ');
     parts.push(`Connects to: ${targets}`);
   }
@@ -322,15 +327,16 @@ export const CANVAS_ANNOUNCEMENTS = {
 export function useCanvasAnnouncements() {
   const announce = useAriaAnnouncer();
 
-  return useCallback((
-    action: keyof typeof CANVAS_ANNOUNCEMENTS,
-    ...args: unknown[]
-  ) => {
-    const announcementFn = CANVAS_ANNOUNCEMENTS[action];
-    const message = typeof announcementFn === 'function'
-      ? (announcementFn as (...params: unknown[]) => string)(...args)
-      : announcementFn;
+  return useCallback(
+    (action: keyof typeof CANVAS_ANNOUNCEMENTS, ...args: unknown[]) => {
+      const announcementFn = CANVAS_ANNOUNCEMENTS[action];
+      const message =
+        typeof announcementFn === 'function'
+          ? (announcementFn as (...params: unknown[]) => string)(...args)
+          : announcementFn;
 
-    announce(message, 'polite');
-  }, [announce]);
+      announce(message, 'polite');
+    },
+    [announce]
+  );
 }

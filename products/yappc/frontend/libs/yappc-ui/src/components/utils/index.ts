@@ -9,12 +9,9 @@ export * from './platform';
 export * from './responsive';
 export * from './PlatformWrapper';
 export * from './AccessibilityAuditor';
-export {
-    accessibilityRules,
-    runAccessibilityAudit,
-} from './accessibility';
+export { accessibilityRules, runAccessibilityAudit } from './accessibility';
 export type {
-    AccessibilityAuditResult,
-    AccessibilityRule,
+  AccessibilityAuditResult,
+  AccessibilityRule,
 } from './accessibility';
 export * from './safePalette';

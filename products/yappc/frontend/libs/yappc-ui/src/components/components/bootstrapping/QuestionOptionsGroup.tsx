@@ -381,7 +381,11 @@ const ScaleOption: React.FC<ScaleOptionProps> = ({
       {range.labels && range.labels.length > 2 && (
         <div className="flex items-center justify-between text-xs text-neutral-500">
           {range.labels.map((label, i) => (
-            <span key={i} className="text-center" style={{ width: `${100 / range.labels!.length}%` }}>
+            <span
+              key={i}
+              className="text-center"
+              style={{ width: `${100 / range.labels!.length}%` }}
+            >
               {label}
             </span>
           ))}
@@ -459,7 +463,9 @@ const TextOption: React.FC<TextOptionProps> = ({
     <motion.div variants={itemVariants} className="space-y-2">
       <Textarea
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+          onChange(e.target.value)
+        }
         placeholder={placeholder || 'Type your response...'}
         disabled={disabled}
         className="min-h-[120px] resize-y"
@@ -528,12 +534,22 @@ export const QuestionOptionsGroup: React.FC<QuestionOptionsGroupProps> = ({
       errors.push('This question is required');
     }
 
-    if (validation.minSelections && selectedValues.length < validation.minSelections) {
-      errors.push(`Please select at least ${validation.minSelections} option(s)`);
+    if (
+      validation.minSelections &&
+      selectedValues.length < validation.minSelections
+    ) {
+      errors.push(
+        `Please select at least ${validation.minSelections} option(s)`
+      );
     }
 
-    if (validation.maxSelections && selectedValues.length > validation.maxSelections) {
-      errors.push(`Please select at most ${validation.maxSelections} option(s)`);
+    if (
+      validation.maxSelections &&
+      selectedValues.length > validation.maxSelections
+    ) {
+      errors.push(
+        `Please select at most ${validation.maxSelections} option(s)`
+      );
     }
 
     if (type === 'text' && typeof value === 'string') {
@@ -722,7 +738,9 @@ export const QuestionOptionsGroup: React.FC<QuestionOptionsGroupProps> = ({
               >
                 <Textarea
                   value={otherValue}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setOtherValue(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setOtherValue(e.target.value)
+                  }
                   placeholder="Please specify..."
                   disabled={disabled}
                   className="mt-2"

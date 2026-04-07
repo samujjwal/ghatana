@@ -1,9 +1,9 @@
 /**
  * Production Authentication Service
- * 
+ *
  * JWT-based authentication system with refresh tokens,
  * role-based access control, and session management.
- * 
+ *
  * @doc.type service
  * @doc.purpose Production authentication and authorization
  * @doc.layer product
@@ -106,7 +106,9 @@ export class AuthService {
   // User Registration
   // -------------------------------------------------------------------------
 
-  async register(data: RegisterData): Promise<{ user: AuthUser; tokens: AuthTokens }> {
+  async register(
+    data: RegisterData
+  ): Promise<{ user: AuthUser; tokens: AuthTokens }> {
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
@@ -117,7 +119,10 @@ export class AuthService {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(data.password, JWT_CONFIG.bcryptRounds);
+    const passwordHash = await bcrypt.hash(
+      data.password,
+      JWT_CONFIG.bcryptRounds
+    );
 
     // Create user
     const user = await this.prisma.user.create({
@@ -157,7 +162,9 @@ export class AuthService {
   // User Login
   // -------------------------------------------------------------------------
 
-  async login(credentials: LoginCredentials): Promise<{ user: AuthUser; tokens: AuthTokens }> {
+  async login(
+    credentials: LoginCredentials
+  ): Promise<{ user: AuthUser; tokens: AuthTokens }> {
     // Find user with password
     const user = await this.prisma.user.findUnique({
       where: { email: credentials.email },
@@ -175,14 +182,19 @@ export class AuthService {
     }
 
     // Verify password
-    const isValidPassword = await bcrypt.compare(credentials.password, user.passwordHash);
+    const isValidPassword = await bcrypt.compare(
+      credentials.password,
+      user.passwordHash
+    );
     if (!isValidPassword) {
       throw new Error('Invalid email or password');
     }
 
     // Check workspace access if specified
     if (credentials.workspaceId) {
-      const hasAccess = user.workspaces.some(wm => wm.workspaceId === credentials.workspaceId);
+      const hasAccess = user.workspaces.some(
+        (wm) => wm.workspaceId === credentials.workspaceId
+      );
       if (!hasAccess) {
         throw new Error('Access denied to this workspace');
       }
@@ -204,7 +216,10 @@ export class AuthService {
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
       // Verify JWT signature and extract session token
-      const decoded = jwt.verify(refreshToken, JWT_CONFIG.refreshTokenSecret) as JWTPayload;
+      const decoded = jwt.verify(
+        refreshToken,
+        JWT_CONFIG.refreshTokenSecret
+      ) as JWTPayload;
 
       // Validate the database session (not revoked, not expired)
       if (decoded.sessionToken) {
@@ -242,11 +257,16 @@ export class AuthService {
 
   async validateAccessToken(token: string): Promise<JWTPayload> {
     try {
-      const decoded = jwt.verify(token, JWT_CONFIG.accessTokenSecret) as JWTPayload;
+      const decoded = jwt.verify(
+        token,
+        JWT_CONFIG.accessTokenSecret
+      ) as JWTPayload;
 
       // Check per-user token revocation (set by logoutAllSessions).
       // `iat` is in Unix seconds; the revocation registry stores the same unit.
-      const revocationTime = AuthService.tokenRevocationRegistry.get(decoded.userId);
+      const revocationTime = AuthService.tokenRevocationRegistry.get(
+        decoded.userId
+      );
       if (revocationTime !== undefined && (decoded.iat ?? 0) < revocationTime) {
         throw new Error('Token revoked: all sessions have been invalidated');
       }
@@ -318,8 +338,11 @@ export class AuthService {
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
-      const decoded = jwt.verify(token, JWT_CONFIG.accessTokenSecret) as unknown;
-      
+      const decoded = jwt.verify(
+        token,
+        JWT_CONFIG.accessTokenSecret
+      ) as unknown;
+
       if (decoded.type !== 'password-reset') {
         throw new Error('Invalid reset token');
       }
@@ -333,7 +356,10 @@ export class AuthService {
       }
 
       // Hash new password
-      const passwordHash = await bcrypt.hash(newPassword, JWT_CONFIG.bcryptRounds);
+      const passwordHash = await bcrypt.hash(
+        newPassword,
+        JWT_CONFIG.bcryptRounds
+      );
 
       // Update password and clear reset token
       await this.prisma.user.update({
@@ -354,7 +380,10 @@ export class AuthService {
 
   async logout(refreshToken: string): Promise<void> {
     try {
-      const decoded = jwt.verify(refreshToken, JWT_CONFIG.refreshTokenSecret) as JWTPayload;
+      const decoded = jwt.verify(
+        refreshToken,
+        JWT_CONFIG.refreshTokenSecret
+      ) as JWTPayload;
       if (decoded.sessionToken) {
         await this.sessionService.revoke(decoded.sessionToken);
       }
@@ -377,19 +406,24 @@ export class AuthService {
     // the revocation intent is not silently lost.  We bump `updatedAt` which
     // callers can compare against token `iat` if they persist the registry to
     // Redis on startup.
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { updatedAt: new Date(revocationTimestamp * 1000) },
-    }).catch(() => {
-      // Non-fatal: the in-process registry already handles this request
-    });
+    await this.prisma.user
+      .update({
+        where: { id: userId },
+        data: { updatedAt: new Date(revocationTimestamp * 1000) },
+      })
+      .catch(() => {
+        // Non-fatal: the in-process registry already handles this request
+      });
   }
 
   // -------------------------------------------------------------------------
   // Helper Methods
   // -------------------------------------------------------------------------
 
-  private async generateTokens(user: unknown, workspaceId?: string): Promise<AuthTokens> {
+  private async generateTokens(
+    user: unknown,
+    workspaceId?: string
+  ): Promise<AuthTokens> {
     const payload: JWTPayload = {
       userId: (user as { id: string }).id,
       email: (user as { email: string }).email,
@@ -411,9 +445,13 @@ export class AuthService {
     });
 
     const refreshPayload: JWTPayload = { ...payload, sessionToken };
-    const refreshToken = jwt.sign(refreshPayload, JWT_CONFIG.refreshTokenSecret, {
-      expiresIn: JWT_CONFIG.refreshTokenExpiry,
-    });
+    const refreshToken = jwt.sign(
+      refreshPayload,
+      JWT_CONFIG.refreshTokenSecret,
+      {
+        expiresIn: JWT_CONFIG.refreshTokenExpiry,
+      }
+    );
 
     const expiresIn = 15 * 60; // 15 minutes
 
@@ -448,7 +486,7 @@ export function createAuthMiddleware(authService: AuthService) {
   return async (request: unknown, reply: unknown) => {
     try {
       const authHeader = request.headers.authorization;
-      
+
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         throw new Error('Missing or invalid authorization header');
       }
@@ -458,7 +496,7 @@ export function createAuthMiddleware(authService: AuthService) {
 
       // Add user info to request
       request.user = payload;
-      
+
       // Add workspace context if available
       if (payload.workspaceId) {
         request.workspaceId = payload.workspaceId;
@@ -489,7 +527,9 @@ export function requireRole(requiredRole: Role) {
     };
 
     if (roleHierarchy[userRole] < roleHierarchy[requiredRole]) {
-      reply.code(403).send({ error: 'Forbidden', message: 'Insufficient permissions' });
+      reply
+        .code(403)
+        .send({ error: 'Forbidden', message: 'Insufficient permissions' });
       return;
     }
   };
@@ -513,7 +553,12 @@ export function requireWorkspaceRole(requiredRole: Role) {
     };
 
     if (roleHierarchy[userRole] < roleHierarchy[requiredRole]) {
-      reply.code(403).send({ error: 'Forbidden', message: 'Insufficient workspace permissions' });
+      reply
+        .code(403)
+        .send({
+          error: 'Forbidden',
+          message: 'Insufficient workspace permissions',
+        });
       return;
     }
   };

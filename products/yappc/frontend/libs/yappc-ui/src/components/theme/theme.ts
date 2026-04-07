@@ -491,8 +491,12 @@ const getThemeOptions = (mode: PaletteMode): ThemeOptions => {
 };
 
 // Create themes with proper type assertion
-export const lightTheme = createTheme(getThemeOptions('light') as MuiThemeOptions);
-export const darkTheme = createTheme(getThemeOptions('dark') as MuiThemeOptions);
+export const lightTheme = createTheme(
+  getThemeOptions('light') as MuiThemeOptions
+);
+export const darkTheme = createTheme(
+  getThemeOptions('dark') as MuiThemeOptions
+);
 
 // Default theme (for backward compatibility)
 export const theme = lightTheme;

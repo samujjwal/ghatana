@@ -62,36 +62,59 @@ export const CODE_EDITOR_VERSION = '1.0.0';
 // Components
 export { CodeEditor } from './components/CodeEditor';
 export { EnhancedCodeEditor } from './components/EnhancedCodeEditor';
-export type { EnhancedCodeEditorProps, CollaborativeCursor, EditorInstance, EditorMetrics } from './components/EnhancedCodeEditor';
+export type {
+  EnhancedCodeEditorProps,
+  CollaborativeCursor,
+  EditorInstance,
+  EditorMetrics,
+} from './components/EnhancedCodeEditor';
 export { MultiFileCodeEditor } from './components/MultiFileCodeEditor';
-export type { FileTab, FileEditorState, MultiFileEditorConfig } from './components/MultiFileCodeEditor';
+export type {
+  FileTab,
+  FileEditorState,
+  MultiFileEditorConfig,
+} from './components/MultiFileCodeEditor';
 
 // Managers
-export { EditorLifecycleManager, getEditorLifecycleManager, disposeEditorManager } from './managers/EditorLifecycleManager';
-export type { EditorPoolConfig, EditorFactory } from './managers/EditorLifecycleManager';
-export { 
-  CollaborativeEditingManager, 
-  createCollaborativeEditingManager 
+export {
+  EditorLifecycleManager,
+  getEditorLifecycleManager,
+  disposeEditorManager,
+} from './managers/EditorLifecycleManager';
+export type {
+  EditorPoolConfig,
+  EditorFactory,
+} from './managers/EditorLifecycleManager';
+export {
+  CollaborativeEditingManager,
+  createCollaborativeEditingManager,
 } from './managers/CollaborativeEditingManager';
-export type { 
-  CollaborativeEditingConfig, 
-  UserPresence, 
-  EditConflict, 
-  CollaborativeEditingEvents 
+export type {
+  CollaborativeEditingConfig,
+  UserPresence,
+  EditConflict,
+  CollaborativeEditingEvents,
 } from './managers/CollaborativeEditingManager';
 
 // Bindings
-export { YjsMonacoBinding, createYjsMonacoBinding } from './bindings/YjsMonacoBinding';
-export type { YjsMonacoBindingConfig, TextChangeEvent, BindingMetrics } from './bindings/YjsMonacoBinding';
+export {
+  YjsMonacoBinding,
+  createYjsMonacoBinding,
+} from './bindings/YjsMonacoBinding';
+export type {
+  YjsMonacoBindingConfig,
+  TextChangeEvent,
+  BindingMetrics,
+} from './bindings/YjsMonacoBinding';
 
 // Hooks
-export { 
-  useCollaborativeEditor, 
-  useEnhancedCollaborativeEditor 
+export {
+  useCollaborativeEditor,
+  useEnhancedCollaborativeEditor,
 } from './hooks/useCollaborativeEditor';
-export type { 
-  UseCollaborativeEditorConfig, 
-  CollaborativeEditorState, 
-  CollaborativeEditorActions, 
-  UseCollaborativeEditorReturn 
+export type {
+  UseCollaborativeEditorConfig,
+  CollaborativeEditorState,
+  CollaborativeEditorActions,
+  UseCollaborativeEditorReturn,
 } from './hooks/useCollaborativeEditor';

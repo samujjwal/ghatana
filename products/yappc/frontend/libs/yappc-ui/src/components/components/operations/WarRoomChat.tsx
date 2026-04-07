@@ -124,16 +124,27 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
       {showAuthor && (
         <div className="message-avatar">
           {message.author.avatar ? (
-            <img src={message.author.avatar} alt={message.author.name} className="avatar-img" />
+            <img
+              src={message.author.avatar}
+              alt={message.author.name}
+              className="avatar-img"
+            />
           ) : (
-            <div className="avatar-placeholder">{message.author.name.charAt(0)}</div>
+            <div className="avatar-placeholder">
+              {message.author.name.charAt(0)}
+            </div>
           )}
           {message.author.isOnline && <span className="online-indicator" />}
         </div>
       )}
 
       {/* Message Content */}
-      <div className={cn('message-content', !showAuthor && 'message-content--no-avatar')}>
+      <div
+        className={cn(
+          'message-content',
+          !showAuthor && 'message-content--no-avatar'
+        )}
+      >
         {/* Header */}
         {showAuthor && (
           <div className="message-header">
@@ -146,15 +157,21 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 {roleConfig.label}
               </span>
             )}
-            <span className="message-time">{formatMessageTime(message.timestamp)}</span>
+            <span className="message-time">
+              {formatMessageTime(message.timestamp)}
+            </span>
             {message.isEdited && <span className="edited-label">(edited)</span>}
           </div>
         )}
 
         {/* Content */}
         <div className="message-text">
-          {message.type === 'action' && <span className="action-prefix">⚡ Action: </span>}
-          {message.type === 'status_update' && <span className="status-prefix">📢 Update: </span>}
+          {message.type === 'action' && (
+            <span className="action-prefix">⚡ Action: </span>
+          )}
+          {message.type === 'status_update' && (
+            <span className="status-prefix">📢 Update: </span>
+          )}
           {message.content}
         </div>
 
@@ -167,7 +184,8 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 type="button"
                 className={cn(
                   'reaction-btn',
-                  reaction.users.includes(currentUserId) && 'reaction-btn--active'
+                  reaction.users.includes(currentUserId) &&
+                    'reaction-btn--active'
                 )}
                 onClick={() => onReaction?.(reaction.emoji)}
               >
@@ -181,7 +199,8 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         {/* Thread */}
         {message.threadCount && message.threadCount > 0 && (
           <button type="button" className="thread-btn" onClick={onOpenThread}>
-            💬 {message.threadCount} repl{message.threadCount === 1 ? 'y' : 'ies'}
+            💬 {message.threadCount} repl
+            {message.threadCount === 1 ? 'y' : 'ies'}
           </button>
         )}
 
@@ -224,7 +243,9 @@ interface ParticipantsListProps {
   participants: ChatUser[];
 }
 
-const ParticipantsList: React.FC<ParticipantsListProps> = ({ participants }) => {
+const ParticipantsList: React.FC<ParticipantsListProps> = ({
+  participants,
+}) => {
   const online = participants.filter((p) => p.isOnline);
   const offline = participants.filter((p) => !p.isOnline);
 
@@ -243,7 +264,9 @@ const ParticipantsList: React.FC<ParticipantsListProps> = ({ participants }) => 
                 {user.avatar ? (
                   <img src={user.avatar} alt={user.name} />
                 ) : (
-                  <div className="avatar-placeholder">{user.name.charAt(0)}</div>
+                  <div className="avatar-placeholder">
+                    {user.name.charAt(0)}
+                  </div>
                 )}
                 <span className="online-dot" />
               </div>
@@ -284,7 +307,9 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({
   className,
 }) => {
   const [inputValue, setInputValue] = useState('');
-  const [messageType, setMessageType] = useState<'message' | 'action' | 'status_update'>('message');
+  const [messageType, setMessageType] = useState<
+    'message' | 'action' | 'status_update'
+  >('message');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -328,7 +353,9 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({
     const previous = messages[index - 1];
     if (current.author.id !== previous.author.id) return true;
     // Show author if messages are > 5 min apart
-    const timeDiff = new Date(current.timestamp).getTime() - new Date(previous.timestamp).getTime();
+    const timeDiff =
+      new Date(current.timestamp).getTime() -
+      new Date(previous.timestamp).getTime();
     return timeDiff > 5 * 60 * 1000;
   };
 
@@ -352,8 +379,14 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({
               message={message}
               showAuthor={shouldShowAuthor(index)}
               currentUserId={currentUser.id}
-              onReaction={onReaction ? (emoji) => onReaction(message.id, emoji) : undefined}
-              onOpenThread={onOpenThread ? () => onOpenThread(message.id) : undefined}
+              onReaction={
+                onReaction
+                  ? (emoji) => onReaction(message.id, emoji)
+                  : undefined
+              }
+              onOpenThread={
+                onOpenThread ? () => onOpenThread(message.id) : undefined
+              }
             />
           ))}
           <div ref={messagesEndRef} />
@@ -365,21 +398,30 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({
           <div className="input-type-selector">
             <button
               type="button"
-              className={cn('type-btn', messageType === 'message' && 'type-btn--active')}
+              className={cn(
+                'type-btn',
+                messageType === 'message' && 'type-btn--active'
+              )}
               onClick={() => setMessageType('message')}
             >
               💬 Message
             </button>
             <button
               type="button"
-              className={cn('type-btn', messageType === 'action' && 'type-btn--active')}
+              className={cn(
+                'type-btn',
+                messageType === 'action' && 'type-btn--active'
+              )}
               onClick={() => setMessageType('action')}
             >
               ⚡ Action
             </button>
             <button
               type="button"
-              className={cn('type-btn', messageType === 'status_update' && 'type-btn--active')}
+              className={cn(
+                'type-btn',
+                messageType === 'status_update' && 'type-btn--active'
+              )}
               onClick={() => setMessageType('status_update')}
             >
               📢 Update

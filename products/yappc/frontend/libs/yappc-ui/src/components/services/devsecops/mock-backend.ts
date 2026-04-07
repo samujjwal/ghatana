@@ -32,7 +32,13 @@ class MockDataGenerator {
    * Generate mock users
    */
   generateUsers(count: number = 10): User[] {
-    const roles: User['role'][] = ['Developer', 'PM', 'Security', 'DevOps', 'QA'];
+    const roles: User['role'][] = [
+      'Developer',
+      'PM',
+      'Security',
+      'DevOps',
+      'QA',
+    ];
     const names = [
       'John Doe',
       'Jane Smith',
@@ -61,13 +67,48 @@ class MockDataGenerator {
    */
   generatePhases(): Phase[] {
     const phases = [
-      { key: 'ideation', title: 'Ideation', description: 'Brainstorming and idea generation', color: '#8b5cf6' },
-      { key: 'planning', title: 'Planning', description: 'Requirements and architecture', color: '#3b82f6' },
-      { key: 'development', title: 'Development', description: 'Code implementation', color: '#10b981' },
-      { key: 'security', title: 'Security', description: 'Security reviews and testing', color: '#ef4444' },
-      { key: 'testing', title: 'Testing', description: 'QA and validation', color: '#f59e0b' },
-      { key: 'deployment', title: 'Deployment', description: 'Release to production', color: '#06b6d4' },
-      { key: 'operations', title: 'Operations', description: 'Monitoring and maintenance', color: '#6366f1' },
+      {
+        key: 'ideation',
+        title: 'Ideation',
+        description: 'Brainstorming and idea generation',
+        color: '#8b5cf6',
+      },
+      {
+        key: 'planning',
+        title: 'Planning',
+        description: 'Requirements and architecture',
+        color: '#3b82f6',
+      },
+      {
+        key: 'development',
+        title: 'Development',
+        description: 'Code implementation',
+        color: '#10b981',
+      },
+      {
+        key: 'security',
+        title: 'Security',
+        description: 'Security reviews and testing',
+        color: '#ef4444',
+      },
+      {
+        key: 'testing',
+        title: 'Testing',
+        description: 'QA and validation',
+        color: '#f59e0b',
+      },
+      {
+        key: 'deployment',
+        title: 'Deployment',
+        description: 'Release to production',
+        color: '#06b6d4',
+      },
+      {
+        key: 'operations',
+        title: 'Operations',
+        description: 'Monitoring and maintenance',
+        color: '#6366f1',
+      },
     ] as const;
 
     return phases.map((p, i) => ({
@@ -101,12 +142,22 @@ class MockDataGenerator {
     ];
 
     const types: Item['type'][] = ['feature', 'story', 'task', 'bug'];
-    const priorities: Item['priority'][] = ['low', 'medium', 'high', 'critical'];
-    const statuses: Item['status'][] = ['not-started', 'in-progress', 'in-review', 'completed'];
+    const priorities: Item['priority'][] = [
+      'low',
+      'medium',
+      'high',
+      'critical',
+    ];
+    const statuses: Item['status'][] = [
+      'not-started',
+      'in-progress',
+      'in-review',
+      'completed',
+    ];
 
     return Array.from({ length: count }, (_, i) => {
       const id = `item-${this.itemIdCounter++}`;
-      const title = `${titles[i % titles.length]  } #${i + 1}`;
+      const title = `${titles[i % titles.length]} #${i + 1}`;
       const phaseIndex = Math.floor((i / count) * phases.length);
 
       return {
@@ -133,7 +184,12 @@ class MockDataGenerator {
    */
   generateArtifacts(count: number, itemId: string): Artifact[] {
     const types: Artifact['type'][] = ['diagram', 'document', 'code', 'design'];
-    const titles = ['Architecture Diagram', 'Requirements Doc', 'Implementation', 'UI Mockups'];
+    const titles = [
+      'Architecture Diagram',
+      'Requirements Doc',
+      'Implementation',
+      'UI Mockups',
+    ];
 
     return Array.from({ length: count }, (_, i) => ({
       id: `artifact-${this.artifactIdCounter++}`,
@@ -143,7 +199,12 @@ class MockDataGenerator {
       description: `Artifact description ${i + 1}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: { id: 'user-1', name: 'John Doe', email: 'john@example.com', role: 'Developer' },
+      createdBy: {
+        id: 'user-1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        role: 'Developer',
+      },
     }));
   }
 
@@ -275,15 +336,21 @@ export class MockBackendService {
     let filtered = [...this.items];
 
     if (filter?.phaseIds?.length) {
-      filtered = filtered.filter((item) => filter.phaseIds?.includes(item.phaseId));
+      filtered = filtered.filter((item) =>
+        filter.phaseIds?.includes(item.phaseId)
+      );
     }
 
     if (filter?.status?.length) {
-      filtered = filtered.filter((item) => filter.status?.includes(item.status));
+      filtered = filtered.filter((item) =>
+        filter.status?.includes(item.status)
+      );
     }
 
     if (filter?.priority?.length) {
-      filtered = filtered.filter((item) => filter.priority?.includes(item.priority));
+      filtered = filtered.filter((item) =>
+        filter.priority?.includes(item.priority)
+      );
     }
 
     if (filter?.tags?.length) {
@@ -342,7 +409,10 @@ export class MockBackendService {
   /**
    *
    */
-  async updateItem(itemId: string, data: Partial<Item>): Promise<ApiResponse<Item>> {
+  async updateItem(
+    itemId: string,
+    data: Partial<Item>
+  ): Promise<ApiResponse<Item>> {
     await this.simulateDelay();
 
     const index = this.items.findIndex((i) => i.id === itemId);

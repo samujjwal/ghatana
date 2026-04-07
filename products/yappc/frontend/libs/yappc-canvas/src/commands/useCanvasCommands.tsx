@@ -13,7 +13,6 @@
 import { useAtom, useSetAtom } from 'jotai';
 import { useEffect, useMemo } from 'react';
 
-
 import {
   canvasDocumentAtom,
   canvasSelectionAtom,

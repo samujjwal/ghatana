@@ -1,9 +1,9 @@
 /**
  * Consolidated Canvas Collaboration Hook
- * 
+ *
  * Replaces: useCollaboration, useAdvancedCollaboration, useCanvasCollaborationBackend, useBidirectionalSync
  * Provides: Real-time collaboration, presence, cursors, comments, sync
- * 
+ *
  * @doc.type hook
  * @doc.purpose Consolidated collaboration features
  * @doc.layer presentation
@@ -69,25 +69,25 @@ export interface UseCanvasCollaborationReturn {
   // Presence
   activeUsers: User[];
   isUserActive: (userId: string) => boolean;
-  
+
   // Cursors
   userCursors: Map<string, Cursor>;
   updateCursor: (x: number, y: number) => void;
-  
+
   // Sync
   syncStatus: SyncStatus;
   lastSyncTime: Date | null;
   conflicts: Conflict[];
   resolveConflict: (conflictId: string, resolution: Resolution) => void;
   forceSyncNow: () => Promise<void>;
-  
+
   // Comments
   comments: Comment[];
   addComment: (nodeId: string, text: string) => Promise<void>;
   replyToComment: (commentId: string, text: string) => Promise<void>;
   resolveComment: (commentId: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
-  
+
   // Connection
   isConnected: boolean;
   reconnect: () => void;
@@ -327,7 +327,9 @@ export function useCanvasCollaboration(
   const connect = useCallback(() => {
     if (ws?.readyState === WebSocket.OPEN) return;
 
-    const websocket = new WebSocket(`${websocketUrl}?canvasId=${canvasId}&userId=${userId}`);
+    const websocket = new WebSocket(
+      `${websocketUrl}?canvasId=${canvasId}&userId=${userId}`
+    );
 
     websocket.onopen = () => {
       console.log('Connected to collaboration server');
@@ -396,7 +398,17 @@ export function useCanvasCollaboration(
     };
 
     setWs(websocket);
-  }, [websocketUrl, canvasId, userId, ws, setSyncStatus, setActiveUsers, setUserCursors, setConflicts, setComments]);
+  }, [
+    websocketUrl,
+    canvasId,
+    userId,
+    ws,
+    setSyncStatus,
+    setActiveUsers,
+    setUserCursors,
+    setConflicts,
+    setComments,
+  ]);
 
   const reconnect = useCallback(() => {
     if (ws) {

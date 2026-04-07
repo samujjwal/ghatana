@@ -30,7 +30,7 @@ export function resetApiMocks() {
 
 /**
  * Configure API mock to return success response
- * 
+ *
  * @param method - HTTP method to mock
  * @param path - API path to mock
  * @param response - Response data
@@ -42,23 +42,27 @@ export function mockApiSuccess(
   response: unknown,
   status = 200
 ) {
-  mockApiClient[method].mockImplementation((url: string, ...args: unknown[]) => {
-    if (url === path || url.includes(path)) {
-      return Promise.resolve({
-        data: response,
-        status,
-        statusText: 'OK',
-        headers: {},
-        config: {},
-      });
+  mockApiClient[method].mockImplementation(
+    (url: string, ...args: unknown[]) => {
+      if (url === path || url.includes(path)) {
+        return Promise.resolve({
+          data: response,
+          status,
+          statusText: 'OK',
+          headers: {},
+          config: {},
+        });
+      }
+      return Promise.reject(
+        new Error(`No mock found for ${method.toUpperCase()} ${url}`)
+      );
     }
-    return Promise.reject(new Error(`No mock found for ${method.toUpperCase()} ${url}`));
-  });
+  );
 }
 
 /**
  * Configure API mock to return error response
- * 
+ *
  * @param method - HTTP method to mock
  * @param path - API path to mock
  * @param error - Error object or message
@@ -70,21 +74,25 @@ export function mockApiError(
   error: unknown,
   status = 400
 ) {
-  mockApiClient[method].mockImplementation((url: string, ...args: unknown[]) => {
-    if (url === path || url.includes(path)) {
-      const errorObj = typeof error === 'string' ? { message: error } : error;
-      return Promise.reject({
-        response: {
-          data: errorObj,
-          status,
-          statusText: 'Error',
-          headers: {},
-          config: {},
-        },
-      });
+  mockApiClient[method].mockImplementation(
+    (url: string, ...args: unknown[]) => {
+      if (url === path || url.includes(path)) {
+        const errorObj = typeof error === 'string' ? { message: error } : error;
+        return Promise.reject({
+          response: {
+            data: errorObj,
+            status,
+            statusText: 'Error',
+            headers: {},
+            config: {},
+          },
+        });
+      }
+      return Promise.reject(
+        new Error(`No mock found for ${method.toUpperCase()} ${url}`)
+      );
     }
-    return Promise.reject(new Error(`No mock found for ${method.toUpperCase()} ${url}`));
-  });
+  );
 }
 
 /**
@@ -98,7 +106,7 @@ export function mockEndpoint(config: {
   status?: number;
 }) {
   const { method, path, response, error, status = error ? 400 : 200 } = config;
-  
+
   if (error) {
     mockApiError(method, path, error, status);
   } else {
@@ -109,12 +117,14 @@ export function mockEndpoint(config: {
 /**
  * Mock multiple API endpoints at once
  */
-export function mockEndpoints(configs: Array<{
-  method: 'get' | 'post' | 'put' | 'patch' | 'delete' | 'request';
-  path: string;
-  response?: unknown;
-  error?: unknown;
-  status?: number;
-}>) {
+export function mockEndpoints(
+  configs: Array<{
+    method: 'get' | 'post' | 'put' | 'patch' | 'delete' | 'request';
+    path: string;
+    response?: unknown;
+    error?: unknown;
+    status?: number;
+  }>
+) {
   configs.forEach(mockEndpoint);
 }

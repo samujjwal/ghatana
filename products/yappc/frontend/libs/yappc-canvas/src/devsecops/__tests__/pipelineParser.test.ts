@@ -27,7 +27,7 @@ import {
 describe.skip('PipelineParser - Configuration', () => {
   it('should create default configuration', () => {
     const config = createPipelineParserConfig();
-    
+
     expect(config.layout).toBe('horizontal');
     expect(config.showMetrics).toBe(true);
     expect(config.showGates).toBe(true);
@@ -41,7 +41,7 @@ describe.skip('PipelineParser - Configuration', () => {
       showMetrics: false,
       jobSpacing: { x: 200, y: 200 },
     });
-    
+
     expect(config.layout).toBe('vertical');
     expect(config.showMetrics).toBe(false);
     expect(config.showGates).toBe(true);
@@ -64,7 +64,7 @@ jobs:
 `;
 
     const pipeline = parseGitHubActions(yaml);
-    
+
     expect(pipeline.platform).toBe('github-actions');
     expect(pipeline.name).toBe('CI');
     expect(pipeline.jobs).toHaveLength(1);
@@ -94,16 +94,16 @@ jobs:
 `;
 
     const pipeline = parseGitHubActions(yaml);
-    
+
     expect(pipeline.jobs).toHaveLength(3);
-    
-    const buildJob = pipeline.jobs.find(j => j.id === 'build');
+
+    const buildJob = pipeline.jobs.find((j) => j.id === 'build');
     expect(buildJob?.dependsOn).toEqual([]);
-    
-    const testJob = pipeline.jobs.find(j => j.id === 'test');
+
+    const testJob = pipeline.jobs.find((j) => j.id === 'test');
     expect(testJob?.dependsOn).toEqual(['build']);
-    
-    const deployJob = pipeline.jobs.find(j => j.id === 'deploy');
+
+    const deployJob = pipeline.jobs.find((j) => j.id === 'deploy');
     expect(deployJob?.dependsOn).toContain('build');
     expect(deployJob?.dependsOn).toContain('test');
   });
@@ -124,7 +124,7 @@ jobs:
 `;
 
     const pipeline = parseGitHubActions(yaml);
-    
+
     expect(pipeline.triggers).toContain('push');
     expect(pipeline.triggers).toContain('pull_request');
   });
@@ -148,9 +148,9 @@ jobs:
 `;
 
     const pipeline = parseGitHubActions(yaml);
-    
+
     expect(pipeline.jobs).toHaveLength(3);
-    expect(pipeline.jobs.map(j => j.id)).toEqual(['lint', 'test', 'build']);
+    expect(pipeline.jobs.map((j) => j.id)).toEqual(['lint', 'test', 'build']);
   });
 
   it('should handle environment in GitHub Actions', () => {
@@ -165,7 +165,7 @@ jobs:
 `;
 
     const pipeline = parseGitHubActions(yaml);
-    
+
     const deployJob = pipeline.jobs[0];
     expect(deployJob.metadata.environment).toBe('production');
   });
@@ -191,16 +191,16 @@ test-job:
 `;
 
     const pipeline = parseGitLabCI(yaml);
-    
+
     expect(pipeline.platform).toBe('gitlab-ci');
     expect(pipeline.jobs).toHaveLength(2);
     expect(pipeline.stages).toHaveLength(2);
-    expect(pipeline.stages.map(s => s.name)).toEqual(['build', 'test']);
-    
-    const buildJob = pipeline.jobs.find(j => j.id === 'build-job');
+    expect(pipeline.stages.map((s) => s.name)).toEqual(['build', 'test']);
+
+    const buildJob = pipeline.jobs.find((j) => j.id === 'build-job');
     expect(buildJob?.stage).toBe('build');
-    
-    const testJob = pipeline.jobs.find(j => j.id === 'test-job');
+
+    const testJob = pipeline.jobs.find((j) => j.id === 'test-job');
     expect(testJob?.stage).toBe('test');
   });
 
@@ -230,14 +230,14 @@ deploy:
 `;
 
     const pipeline = parseGitLabCI(yaml);
-    
-    const buildJob = pipeline.jobs.find(j => j.id === 'build');
+
+    const buildJob = pipeline.jobs.find((j) => j.id === 'build');
     expect(buildJob?.dependsOn).toEqual([]);
-    
-    const testJob = pipeline.jobs.find(j => j.id === 'test');
+
+    const testJob = pipeline.jobs.find((j) => j.id === 'test');
     expect(testJob?.dependsOn).toEqual(['build']);
-    
-    const deployJob = pipeline.jobs.find(j => j.id === 'deploy');
+
+    const deployJob = pipeline.jobs.find((j) => j.id === 'deploy');
     expect(deployJob?.dependsOn).toContain('build');
     expect(deployJob?.dependsOn).toContain('test');
   });
@@ -258,9 +258,9 @@ job-b:
 `;
 
     const pipeline = parseGitLabCI(yaml);
-    
+
     // job-b in stage2 should depend on all jobs in stage1
-    const jobB = pipeline.jobs.find(j => j.id === 'job-b');
+    const jobB = pipeline.jobs.find((j) => j.id === 'job-b');
     expect(jobB?.dependsOn).toContain('job-a');
   });
 
@@ -281,7 +281,7 @@ build:
 `;
 
     const pipeline = parseGitLabCI(yaml);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.only).toContain('main');
   });
@@ -301,7 +301,7 @@ build:
 `;
 
     const pipeline = parseGitLabCI(yaml);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.artifacts).toEqual({ paths: ['dist/'] });
   });
@@ -329,15 +329,15 @@ pipeline {
 `;
 
     const pipeline = parseJenkins(jenkinsfile);
-    
+
     expect(pipeline.platform).toBe('jenkins');
     expect(pipeline.jobs).toHaveLength(2);
-    
-    const buildJob = pipeline.jobs.find(j => j.name === 'Build');
+
+    const buildJob = pipeline.jobs.find((j) => j.name === 'Build');
     expect(buildJob).toBeDefined();
     expect(buildJob?.stage).toBe('Build');
-    
-    const testJob = pipeline.jobs.find(j => j.name === 'Test');
+
+    const testJob = pipeline.jobs.find((j) => j.name === 'Test');
     expect(testJob).toBeDefined();
     expect(testJob?.dependsOn).toContain(buildJob?.id);
   });
@@ -366,11 +366,13 @@ pipeline {
 `;
 
     const pipeline = parseJenkins(jenkinsfile);
-    
+
     expect(pipeline.jobs).toHaveLength(2);
-    const unitTest = pipeline.jobs.find(j => j.name === 'Unit Tests');
-    const integrationTest = pipeline.jobs.find(j => j.name === 'Integration Tests');
-    
+    const unitTest = pipeline.jobs.find((j) => j.name === 'Unit Tests');
+    const integrationTest = pipeline.jobs.find(
+      (j) => j.name === 'Integration Tests'
+    );
+
     expect(unitTest?.dependsOn).toEqual([]);
     expect(integrationTest?.dependsOn).toEqual([]);
   });
@@ -390,7 +392,7 @@ pipeline {
 `;
 
     const pipeline = parseJenkins(jenkinsfile);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.agent).toBe('linux');
   });
@@ -413,7 +415,7 @@ pipeline {
 `;
 
     const pipeline = parseJenkins(jenkinsfile);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.when).toBe('branch main');
   });
@@ -449,11 +451,11 @@ workflows:
 `;
 
     const pipeline = parseCircleCI(yaml);
-    
+
     expect(pipeline.platform).toBe('circleci');
     expect(pipeline.jobs).toHaveLength(2);
-    
-    const testJob = pipeline.jobs.find(j => j.id === 'test');
+
+    const testJob = pipeline.jobs.find((j) => j.id === 'test');
     expect(testJob?.dependsOn).toContain('build');
   });
 
@@ -478,10 +480,10 @@ workflows:
 `;
 
     const pipeline = parseCircleCI(yaml);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.filters).toEqual({
-      branches: { only: 'main' }
+      branches: { only: 'main' },
     });
   });
 
@@ -502,7 +504,7 @@ workflows:
 `;
 
     const pipeline = parseCircleCI(yaml);
-    
+
     const job = pipeline.jobs[0];
     expect(job.metadata.executor).toBe('docker: cimg/node:16.13');
   });
@@ -526,7 +528,7 @@ workflows:
 `;
 
     const pipeline = parseCircleCI(yaml);
-    
+
     expect(pipeline.metadata.orbs).toEqual(['circleci/node@5.0']);
   });
 });
@@ -536,11 +538,17 @@ describe.skip('PipelineParser - DAG Layout', () => {
     const jobs: PipelineJob[] = [
       { id: 'a', name: 'Job A', stage: 'build', dependsOn: [], metadata: {} },
       { id: 'b', name: 'Job B', stage: 'test', dependsOn: ['a'], metadata: {} },
-      { id: 'c', name: 'Job C', stage: 'deploy', dependsOn: ['b'], metadata: {} },
+      {
+        id: 'c',
+        name: 'Job C',
+        stage: 'deploy',
+        dependsOn: ['b'],
+        metadata: {},
+      },
     ];
 
     const levels = calculateJobLevels(jobs);
-    
+
     expect(levels.get('a')).toBe(0);
     expect(levels.get('b')).toBe(1);
     expect(levels.get('c')).toBe(2);
@@ -551,11 +559,17 @@ describe.skip('PipelineParser - DAG Layout', () => {
       { id: 'a', name: 'Job A', stage: 'build', dependsOn: [], metadata: {} },
       { id: 'b', name: 'Job B', stage: 'test', dependsOn: ['a'], metadata: {} },
       { id: 'c', name: 'Job C', stage: 'test', dependsOn: ['a'], metadata: {} },
-      { id: 'd', name: 'Job D', stage: 'deploy', dependsOn: ['b', 'c'], metadata: {} },
+      {
+        id: 'd',
+        name: 'Job D',
+        stage: 'deploy',
+        dependsOn: ['b', 'c'],
+        metadata: {},
+      },
     ];
 
     const levels = calculateJobLevels(jobs);
-    
+
     expect(levels.get('a')).toBe(0);
     expect(levels.get('b')).toBe(1);
     expect(levels.get('c')).toBe(1);
@@ -571,7 +585,7 @@ describe.skip('PipelineParser - DAG Layout', () => {
     ];
 
     const levels = calculateJobLevels(jobs);
-    
+
     expect(levels.get('a')).toBe(0);
     expect(levels.get('b')).toBe(1);
     expect(levels.get('c')).toBe(1);
@@ -594,7 +608,7 @@ describe.skip('PipelineParser - DAG Layout', () => {
     };
 
     const grouped = groupJobsByStage(pipeline);
-    
+
     expect(grouped.size).toBe(2);
     expect(grouped.get('build')).toHaveLength(2);
     expect(grouped.get('test')).toHaveLength(1);
@@ -607,8 +621,20 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
       platform: 'github-actions',
       name: 'Test Pipeline',
       jobs: [
-        { id: 'build', name: 'Build', stage: 'build', dependsOn: [], metadata: {} },
-        { id: 'test', name: 'Test', stage: 'test', dependsOn: ['build'], metadata: {} },
+        {
+          id: 'build',
+          name: 'Build',
+          stage: 'build',
+          dependsOn: [],
+          metadata: {},
+        },
+        {
+          id: 'test',
+          name: 'Test',
+          stage: 'test',
+          dependsOn: ['build'],
+          metadata: {},
+        },
       ],
       stages: ['build', 'test'] as unknown, // String array for backward compat
       gates: [],
@@ -618,7 +644,7 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig();
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     expect(doc.id).toBe('pipeline-Test Pipeline');
     expect(doc.title).toBe('Pipeline: Test Pipeline');
     expect(Object.keys(doc.elements)).toHaveLength(3); // 2 jobs + 1 edge
@@ -641,15 +667,17 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig({ layout: 'horizontal' });
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     const jobA = doc.elements['a'];
     const jobB = doc.elements['b'];
-    
+
     expect(jobA.type).toBe('node');
     expect(jobB.type).toBe('node');
-    
+
     if (jobA.type === 'node' && jobB.type === 'node') {
-      expect(jobB.transform.position.x).toBeGreaterThan(jobA.transform.position.x);
+      expect(jobB.transform.position.x).toBeGreaterThan(
+        jobA.transform.position.x
+      );
     }
   });
 
@@ -669,12 +697,14 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig({ layout: 'vertical' });
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     const jobA = doc.elements['a'];
     const jobB = doc.elements['b'];
-    
+
     if (jobA.type === 'node' && jobB.type === 'node') {
-      expect(jobB.transform.position.y).toBeGreaterThan(jobA.transform.position.y);
+      expect(jobB.transform.position.y).toBeGreaterThan(
+        jobA.transform.position.y
+      );
     }
   });
 
@@ -694,13 +724,14 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig();
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     const edge = doc.elements['edge-a-b'];
     expect(edge).toBeDefined();
     expect(edge.type).toBe('edge');
-    
+
     if (edge.type === 'edge') {
-      const canvasEdge = edge as import('../../types/canvas-document').CanvasEdge;
+      const canvasEdge =
+        edge as import('../../types/canvas-document').CanvasEdge;
       expect(canvasEdge.sourceId).toBe('a');
       expect(canvasEdge.targetId).toBe('b');
     }
@@ -723,10 +754,10 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig();
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     const jobB = doc.elements['b'];
     const jobC = doc.elements['c'];
-    
+
     if (jobB.type === 'node' && jobC.type === 'node') {
       // Parallel jobs should be at different Y positions
       expect(jobB.transform.position.y).not.toBe(jobC.transform.position.y);
@@ -748,10 +779,10 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig({ showStageLabels: true });
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     // Should have stage label node
     const stageLabelExists = Object.values(doc.elements).some(
-      el => el.type === 'node' && (el as unknown).nodeType === 'stage-label'
+      (el) => el.type === 'node' && (el as unknown).nodeType === 'stage-label'
     );
     expect(stageLabelExists).toBe(true);
   });
@@ -766,7 +797,12 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
       ],
       stages: ['s1', 's2'] as unknown,
       gates: [
-        { id: 'gate-1', type: 'manual-approval', beforeJob: 'b', name: 'Approve Deploy' },
+        {
+          id: 'gate-1',
+          type: 'manual-approval',
+          beforeJob: 'b',
+          name: 'Approve Deploy',
+        },
       ],
       triggers: [],
       metadata: {},
@@ -774,11 +810,11 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig({ showGates: true });
     const doc = pipelineToCanvas(pipeline, config);
-    
+
     const gate = doc.elements['gate-1'];
     expect(gate).toBeDefined();
     expect(gate.type).toBe('node');
-    
+
     if (gate.type === 'node') {
       expect((gate as unknown).nodeType).toBe('pipeline-gate');
     }
@@ -800,8 +836,13 @@ describe.skip('PipelineParser - Canvas Conversion', () => {
 
     const config = createPipelineParserConfig();
     const doc = pipelineToCanvas(pipeline, config);
-    
-    const bounds = doc.metadata.bounds as { width: number; height: number; x: number; y: number };
+
+    const bounds = doc.metadata.bounds as {
+      width: number;
+      height: number;
+      x: number;
+      y: number;
+    };
     expect(bounds.width).toBeGreaterThan(0);
     expect(bounds.height).toBeGreaterThan(0);
   });
@@ -813,7 +854,13 @@ describe.skip('PipelineParser - Runtime Metrics', () => {
       platform: 'github-actions',
       name: 'Test',
       jobs: [
-        { id: 'build', name: 'Build', stage: 'build', dependsOn: [], metadata: {} },
+        {
+          id: 'build',
+          name: 'Build',
+          stage: 'build',
+          dependsOn: [],
+          metadata: {},
+        },
       ],
       stages: ['build'] as unknown,
       gates: [],
@@ -839,8 +886,8 @@ describe.skip('PipelineParser - Runtime Metrics', () => {
     };
 
     const updatedPipeline = addMetricsToPipeline(pipeline, execution);
-    
-    const buildJob = updatedPipeline.jobs.find(j => j.id === 'build');
+
+    const buildJob = updatedPipeline.jobs.find((j) => j.id === 'build');
     expect(buildJob?.metadata.metrics).toBeDefined();
     expect(buildJob?.metadata.metrics?.status).toBe('success');
     expect(buildJob?.metadata.metrics?.duration).toBe(600);
@@ -874,11 +921,9 @@ describe.skip('PipelineParser - Runtime Metrics', () => {
     };
 
     const config = createPipelineParserConfig({ showMetrics: true });
-    const metrics = new Map([
-      ['build', pipeline.jobs[0].metadata.metrics!],
-    ]);
+    const metrics = new Map([['build', pipeline.jobs[0].metadata.metrics!]]);
     const doc = pipelineToCanvas(pipeline, config, metrics);
-    
+
     const buildJob = doc.elements['build'];
     expect(buildJob.metadata.duration).toBe(600);
     expect(buildJob.metadata.status).toBe('success');
@@ -894,7 +939,8 @@ describe.skip('PipelineParser - Runtime Metrics', () => {
       jobMetrics: [],
     };
 
-    const duration = (execution.endTime.getTime() - execution.startTime.getTime()) / 1000;
+    const duration =
+      (execution.endTime.getTime() - execution.startTime.getTime()) / 1000;
     expect(duration).toBe(1200); // 20 minutes
   });
 

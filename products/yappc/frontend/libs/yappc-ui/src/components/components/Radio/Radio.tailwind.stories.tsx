@@ -145,10 +145,17 @@ export const FormExample: Story = {
     return (
       <div className="w-96 p-6 bg-grey-50 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Choose Your Plan</h2>
-        
+
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-grey-700 mb-3">Plan Type</h3>
-          <RadioGroup name="plan" value={plan} onChange={setPlan} className="gap-3">
+          <h3 className="text-sm font-semibold text-grey-700 mb-3">
+            Plan Type
+          </h3>
+          <RadioGroup
+            name="plan"
+            value={plan}
+            onChange={setPlan}
+            className="gap-3"
+          >
             <div className="p-4 bg-white rounded-md border-2 border-grey-200 hover:border-primary-300 transition-colors">
               <Radio value="basic" label="Basic" colorScheme="primary" />
               <p className="ml-7 text-sm text-grey-600 mt-1">
@@ -162,7 +169,11 @@ export const FormExample: Story = {
               </p>
             </div>
             <div className="p-4 bg-white rounded-md border-2 border-grey-200 hover:border-primary-300 transition-colors">
-              <Radio value="enterprise" label="Enterprise" colorScheme="primary" />
+              <Radio
+                value="enterprise"
+                label="Enterprise"
+                colorScheme="primary"
+              />
               <p className="ml-7 text-sm text-grey-600 mt-1">
                 For large organizations - Custom pricing
               </p>
@@ -171,10 +182,16 @@ export const FormExample: Story = {
         </div>
 
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-grey-700 mb-3">Billing Cycle</h3>
+          <h3 className="text-sm font-semibold text-grey-700 mb-3">
+            Billing Cycle
+          </h3>
           <RadioGroup name="billing" value={billing} onChange={setBilling}>
             <Radio value="monthly" label="Monthly" colorScheme="success" />
-            <Radio value="yearly" label="Yearly (Save 20%)" colorScheme="success" />
+            <Radio
+              value="yearly"
+              label="Yearly (Save 20%)"
+              colorScheme="success"
+            />
           </RadioGroup>
         </div>
 

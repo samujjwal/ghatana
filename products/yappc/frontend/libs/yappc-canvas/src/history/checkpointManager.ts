@@ -1,12 +1,12 @@
 /**
  * Checkpoint Manager - Timeline UI and Advanced Undo/Redo System
- * 
+ *
  * Provides timeline-based history tracking with:
  * - Actor and timestamp tracking for collaborative environments
  * - Named checkpoints for manual save points and branching
  * - Conflict detection and resolution for collaborative undo
  * - Timeline UI data structures for history visualization
- * 
+ *
  * @module checkpointManager
  */
 
@@ -150,13 +150,13 @@ export function recordAction(
   options: RecordActionOptions = {}
 ): TimelineAction {
   const now = Date.now();
-  
+
   // Check if should merge with previous action
   if (options.merge && state.currentIndex >= 0) {
     const prevAction = state.timeline[state.currentIndex];
     const timeSincePrev = now - prevAction.timestamp;
     const mergeDuration = options.mergeDuration ?? 1000;
-    
+
     if (
       prevAction.type === type &&
       prevAction.actorId === state.currentActorId &&
@@ -171,7 +171,7 @@ export function recordAction(
       return prevAction;
     }
   }
-  
+
   const action: TimelineAction = {
     id: `action-${now}-${Math.random().toString(36).substr(2, 9)}`,
     type,
@@ -182,28 +182,28 @@ export function recordAction(
     data,
     metadata: options.metadata,
   };
-  
+
   // Truncate forward history if we're not at the end
   if (state.currentIndex < state.timeline.length - 1) {
     state.timeline = state.timeline.slice(0, state.currentIndex + 1);
   }
-  
+
   // Add action
   state.timeline.push(action);
   state.currentIndex = state.timeline.length - 1;
-  
+
   // Enforce max timeline size
   if (state.timeline.length > state.maxTimelineSize) {
     const removeCount = state.timeline.length - state.maxTimelineSize;
     state.timeline = state.timeline.slice(removeCount);
     state.currentIndex -= removeCount;
-    
+
     // Update checkpoint indices
     state.checkpoints.forEach((checkpoint) => {
       checkpoint.historyIndex -= removeCount;
     });
   }
-  
+
   return action;
 }
 
@@ -217,28 +217,29 @@ export function undo(
   if (state.currentIndex < 0) {
     return { action: null, conflict: null };
   }
-  
+
   const actionToUndo = state.timeline[state.currentIndex];
-  
-  // Check for conflict: trying to undo someone else's action  
+
+  // Check for conflict: trying to undo someone else's action
   if (actionToUndo.actorId !== state.currentActorId) {
     // Check if there are other actions after this one
     const actionsAfterUndo = state.timeline.slice(state.currentIndex + 1);
-    
+
     const conflict: UndoConflict = {
       conflictId: `conflict-${Date.now()}`,
       actionId: actionToUndo.id,
       action: actionToUndo,
       conflictingActorId: actionToUndo.actorId,
       conflictingActorName: actionToUndo.actorName,
-      conflictingActions: actionsAfterUndo.length > 0 ? actionsAfterUndo : [actionToUndo],
+      conflictingActions:
+        actionsAfterUndo.length > 0 ? actionsAfterUndo : [actionToUndo],
       detectedAt: Date.now(),
     };
-    
+
     state.conflicts.set(conflict.conflictId, conflict);
     return { action: actionToUndo, conflict };
   }
-  
+
   state.currentIndex--;
   return { action: actionToUndo, conflict: null };
 }
@@ -250,7 +251,7 @@ export function redo(state: CheckpointManagerState): TimelineAction | null {
   if (state.currentIndex >= state.timeline.length - 1) {
     return null;
   }
-  
+
   state.currentIndex++;
   return state.timeline[state.currentIndex];
 }
@@ -258,21 +259,23 @@ export function redo(state: CheckpointManagerState): TimelineAction | null {
 /**
  * Force undo despite conflicts
  */
-export function forceUndo(state: CheckpointManagerState): TimelineAction | null {
+export function forceUndo(
+  state: CheckpointManagerState
+): TimelineAction | null {
   if (state.currentIndex < 0) {
     return null;
   }
-  
+
   const action = state.timeline[state.currentIndex];
   state.currentIndex--;
-  
+
   // Clear related conflicts
   state.conflicts.forEach((conflict, id) => {
     if (conflict.actionId === action.id) {
       state.conflicts.delete(id);
     }
   });
-  
+
   return action;
 }
 
@@ -317,10 +320,12 @@ export function createCheckpoint(
   options: CheckpointOptions = {}
 ): Checkpoint {
   const now = Date.now();
-  
+
   const checkpoint: Checkpoint = {
     id: `checkpoint-${now}-${Math.random().toString(36).substr(2, 9)}`,
-    name: options.autoName ? `Checkpoint ${new Date(now).toLocaleString()}` : name,
+    name: options.autoName
+      ? `Checkpoint ${new Date(now).toLocaleString()}`
+      : name,
     description: options.description,
     timestamp: now,
     actorId: state.currentActorId,
@@ -329,7 +334,7 @@ export function createCheckpoint(
     state: structuredClone(currentState),
     tags: options.tags,
   };
-  
+
   state.checkpoints.set(checkpoint.id, checkpoint);
   return checkpoint;
 }
@@ -364,7 +369,7 @@ export function restoreCheckpoint(
   if (!checkpoint) {
     return null;
   }
-  
+
   // If we're not at the checkpoint index, create a branch
   let branch: TimelineBranch | null = null;
   if (state.currentIndex !== checkpoint.historyIndex) {
@@ -374,10 +379,10 @@ export function restoreCheckpoint(
       checkpointId
     );
   }
-  
+
   // Restore to checkpoint index
   state.currentIndex = checkpoint.historyIndex;
-  
+
   return { checkpoint, branch };
 }
 
@@ -403,11 +408,12 @@ export function updateCheckpoint(
   if (!checkpoint) {
     return null;
   }
-  
+
   if (updates.name !== undefined) checkpoint.name = updates.name;
-  if (updates.description !== undefined) checkpoint.description = updates.description;
+  if (updates.description !== undefined)
+    checkpoint.description = updates.description;
   if (updates.tags !== undefined) checkpoint.tags = updates.tags;
-  
+
   return checkpoint;
 }
 
@@ -420,7 +426,7 @@ export function createBranch(
   parentCheckpointId: string
 ): TimelineBranch {
   const now = Date.now();
-  
+
   const branch: TimelineBranch = {
     id: `branch-${now}-${Math.random().toString(36).substr(2, 9)}`,
     name,
@@ -429,10 +435,10 @@ export function createBranch(
     actions: [],
     checkpoints: [],
   };
-  
+
   state.branches.set(branch.id, branch);
   state.activeBranchId = branch.id;
-  
+
   return branch;
 }
 
@@ -449,7 +455,9 @@ export function getBranch(
 /**
  * Get all branches
  */
-export function getAllBranches(state: CheckpointManagerState): TimelineBranch[] {
+export function getAllBranches(
+  state: CheckpointManagerState
+): TimelineBranch[] {
   return Array.from(state.branches.values());
 }
 
@@ -464,12 +472,12 @@ export function switchBranch(
   if (!branch) {
     return null;
   }
-  
+
   state.activeBranchId = branchId;
-  
+
   // Restore timeline to branch state
   // (In real implementation, would need to reconstruct timeline from branch)
-  
+
   return branch;
 }
 
@@ -486,7 +494,9 @@ export function getConflict(
 /**
  * Get all unresolved conflicts
  */
-export function getUnresolvedConflicts(state: CheckpointManagerState): UndoConflict[] {
+export function getUnresolvedConflicts(
+  state: CheckpointManagerState
+): UndoConflict[] {
   return Array.from(state.conflicts.values()).filter((c) => !c.resolution);
 }
 
@@ -502,9 +512,9 @@ export function resolveConflict(
   if (!conflict) {
     return false;
   }
-  
+
   conflict.resolution = options.strategy;
-  
+
   if (options.strategy === 'force') {
     // Force undo by moving index back (but keep conflict record with resolution)
     if (state.currentIndex >= 0) {
@@ -517,7 +527,7 @@ export function resolveConflict(
     // Custom merge logic (would need current state passed in)
     // This is a placeholder - real implementation would apply merge
   }
-  
+
   return true;
 }
 
@@ -583,7 +593,7 @@ export function getTimelineStats(state: CheckpointManagerState): {
 } {
   const actors = new Set(state.timeline.map((a) => a.actorId));
   const types = new Set(state.timeline.map((a) => a.type));
-  
+
   return {
     totalActions: state.timeline.length,
     actorCount: actors.size,
@@ -604,14 +614,16 @@ export function searchCheckpoints(
   query: string
 ): Checkpoint[] {
   const lowerQuery = query.toLowerCase();
-  
+
   return Array.from(state.checkpoints.values()).filter((checkpoint) => {
     const nameMatch = checkpoint.name.toLowerCase().includes(lowerQuery);
-    const descMatch = checkpoint.description?.toLowerCase().includes(lowerQuery);
+    const descMatch = checkpoint.description
+      ?.toLowerCase()
+      .includes(lowerQuery);
     const tagMatch = checkpoint.tags?.some((tag) =>
       tag.toLowerCase().includes(lowerQuery)
     );
-    
+
     return nameMatch || descMatch || tagMatch;
   });
 }
@@ -630,13 +642,17 @@ export function clearTimeline(state: CheckpointManagerState): void {
  * Export timeline as JSON
  */
 export function exportTimeline(state: CheckpointManagerState): string {
-  return JSON.stringify({
-    timeline: state.timeline,
-    currentIndex: state.currentIndex,
-    checkpoints: Array.from(state.checkpoints.entries()),
-    branches: Array.from(state.branches.entries()),
-    conflicts: Array.from(state.conflicts.entries()),
-  }, null, 2);
+  return JSON.stringify(
+    {
+      timeline: state.timeline,
+      currentIndex: state.currentIndex,
+      checkpoints: Array.from(state.checkpoints.entries()),
+      branches: Array.from(state.branches.entries()),
+      conflicts: Array.from(state.conflicts.entries()),
+    },
+    null,
+    2
+  );
 }
 
 /**
@@ -648,13 +664,13 @@ export function importTimeline(
 ): boolean {
   try {
     const data = JSON.parse(json);
-    
+
     state.timeline = data.timeline || [];
     state.currentIndex = data.currentIndex ?? -1;
     state.checkpoints = new Map(data.checkpoints || []);
     state.branches = new Map(data.branches || []);
     state.conflicts = new Map(data.conflicts || []);
-    
+
     return true;
   } catch (error) {
     return false;

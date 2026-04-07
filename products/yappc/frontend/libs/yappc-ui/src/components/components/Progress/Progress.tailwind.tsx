@@ -1,9 +1,9 @@
 /**
  * Progress Component (Tailwind CSS + Base UI)
- * 
+ *
  * A progress indicator component using Base UI Progress primitives styled with Tailwind CSS.
  * Supports linear and circular variants, determinate and indeterminate states.
- * 
+ *
  * @example
  * ```tsx
  * <ProgressTailwind
@@ -32,7 +32,13 @@ export interface ProgressProps {
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
   /** Color scheme */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
   /** Variant style */
   variant?: 'linear' | 'circular';
   /** Show value label */
@@ -47,7 +53,7 @@ export interface ProgressProps {
 
 /**
  * Progress component for showing completion status
- * 
+ *
  * Built with Base UI Progress primitives and styled with Tailwind CSS.
  * Supports both determinate (with value) and indeterminate (without value) states.
  */
@@ -67,7 +73,8 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     },
     ref
   ) => {
-    const percentage = value != null ? Math.min(Math.max((value / max) * 100, 0), 100) : null;
+    const percentage =
+      value != null ? Math.min(Math.max((value / max) * 100, 0), 100) : null;
     const isIndeterminate = value == null;
 
     // Size classes for linear progress
@@ -98,10 +105,15 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       const strokeWidth = size === 'sm' ? 3 : size === 'md' ? 4 : 5;
       const radius = 50 - strokeWidth / 2;
       const circumference = 2 * Math.PI * radius;
-      const strokeDashoffset = percentage != null ? circumference - (percentage / 100) * circumference : 0;
+      const strokeDashoffset =
+        percentage != null
+          ? circumference - (percentage / 100) * circumference
+          : 0;
 
       return (
-        <div className={cn('inline-flex flex-col items-center gap-2', className)}>
+        <div
+          className={cn('inline-flex flex-col items-center gap-2', className)}
+        >
           {label && (
             <span
               className={cn(

@@ -31,10 +31,9 @@ import type {
   PdfExportOptions,
   CodeExportOptions,
   JsonExportOptions,
-  ExportResult} from '../schemas/export-schemas';
-import {
-  ExportFormat
+  ExportResult,
 } from '../schemas/export-schemas';
+import { ExportFormat } from '../schemas/export-schemas';
 
 import { sanitizeExportContent, auditExportSecurity } from './sanitizer';
 
@@ -63,10 +62,10 @@ export class SVGRenderer {
    */
   public renderCanvas(canvas: CanvasData): string {
     const svg = this.createSVGElement();
-    
+
     // Add background
     svg.appendChild(this.createBackground());
-    
+
     // Create main group for canvas content
     const mainGroup = this.createElement('g', {
       id: 'canvas-content',
@@ -74,19 +73,19 @@ export class SVGRenderer {
     });
 
     // Render edges first (so they appear behind nodes)
-    canvas.edges.forEach(edge => {
+    canvas.edges.forEach((edge) => {
       const edgeElement = this.renderEdge(edge);
       if (edgeElement) mainGroup.appendChild(edgeElement);
     });
 
     // Render nodes
-    canvas.nodes.forEach(node => {
+    canvas.nodes.forEach((node) => {
       const nodeElement = this.renderNode(node);
       if (nodeElement) mainGroup.appendChild(nodeElement);
     });
 
     svg.appendChild(mainGroup);
-    
+
     return this.serializeSVG(svg);
   }
 
@@ -145,7 +144,7 @@ export class SVGRenderer {
   private renderProcessNode(node: Node, group: SVGElement): SVGElement {
     const width = node.width || 120;
     const height = node.height || 60;
-    
+
     // Process rectangle
     const rect = this.createElement('rect', {
       x: '0',
@@ -158,7 +157,7 @@ export class SVGRenderer {
       'stroke-width': '2',
     });
     group.appendChild(rect);
-    
+
     // Label
     if (node.data?.label) {
       const text = this.createElement('text', {
@@ -172,7 +171,7 @@ export class SVGRenderer {
       text.textContent = node.data.label;
       group.appendChild(text);
     }
-    
+
     return group;
   }
 
@@ -182,16 +181,16 @@ export class SVGRenderer {
   private renderDecisionNode(node: Node, group: SVGElement): SVGElement {
     const width = node.width || 100;
     const height = node.height || 80;
-    
+
     // Diamond shape
     const diamond = this.createElement('polygon', {
-      points: `${width/2},0 ${width},${height/2} ${width/2},${height} 0,${height/2}`,
+      points: `${width / 2},0 ${width},${height / 2} ${width / 2},${height} 0,${height / 2}`,
       fill: (node.style?.backgroundColor as string) || '#fff3e0',
       stroke: (node.style?.borderColor as string) || '#ff9800',
       'stroke-width': '2',
     });
     group.appendChild(diamond);
-    
+
     // Label
     if (node.data?.label) {
       const text = this.createElement('text', {
@@ -205,7 +204,7 @@ export class SVGRenderer {
       text.textContent = node.data.label;
       group.appendChild(text);
     }
-    
+
     return group;
   }
 
@@ -215,7 +214,7 @@ export class SVGRenderer {
   private renderDatabaseNode(node: Node, group: SVGElement): SVGElement {
     const width = node.width || 100;
     const height = node.height || 80;
-    
+
     // Database cylinder shape
     const topEllipse = this.createElement('ellipse', {
       cx: (width / 2).toString(),
@@ -227,7 +226,7 @@ export class SVGRenderer {
       'stroke-width': '2',
     });
     group.appendChild(topEllipse);
-    
+
     const rect = this.createElement('rect', {
       x: '0',
       y: '15',
@@ -238,7 +237,7 @@ export class SVGRenderer {
       'stroke-width': '2',
     });
     group.appendChild(rect);
-    
+
     const bottomEllipse = this.createElement('ellipse', {
       cx: (width / 2).toString(),
       cy: (height - 15).toString(),
@@ -249,7 +248,7 @@ export class SVGRenderer {
       'stroke-width': '2',
     });
     group.appendChild(bottomEllipse);
-    
+
     // Label
     if (node.data?.label) {
       const text = this.createElement('text', {
@@ -263,7 +262,7 @@ export class SVGRenderer {
       text.textContent = node.data.label;
       group.appendChild(text);
     }
-    
+
     return group;
   }
 
@@ -273,7 +272,7 @@ export class SVGRenderer {
   private renderGroupNode(node: Node, group: SVGElement): SVGElement {
     const width = node.width || 200;
     const height = node.height || 150;
-    
+
     // Group background
     const rect = this.createElement('rect', {
       x: '0',
@@ -288,7 +287,7 @@ export class SVGRenderer {
       opacity: '0.8',
     });
     group.appendChild(rect);
-    
+
     // Title bar
     const titleBar = this.createElement('rect', {
       x: '0',
@@ -299,7 +298,7 @@ export class SVGRenderer {
       fill: (node.style?.borderColor as string) || '#ccc',
     });
     group.appendChild(titleBar);
-    
+
     // Title text
     if (node.data?.label) {
       const text = this.createElement('text', {
@@ -313,7 +312,7 @@ export class SVGRenderer {
       text.textContent = node.data.label;
       group.appendChild(text);
     }
-    
+
     return group;
   }
 
@@ -323,7 +322,7 @@ export class SVGRenderer {
   private renderDefaultNode(node: Node, group: SVGElement): SVGElement {
     const width = node.width || 100;
     const height = node.height || 50;
-    
+
     const rect = this.createElement('rect', {
       x: '0',
       y: '0',
@@ -335,7 +334,7 @@ export class SVGRenderer {
       'stroke-width': '1',
     });
     group.appendChild(rect);
-    
+
     return group;
   }
 
@@ -367,7 +366,12 @@ export class SVGRenderer {
   /**
    *
    */
-  private renderStandardEdge(edge: Edge, group: SVGElement, source: { x: number; y: number }, target: { x: number; y: number }): SVGElement {
+  private renderStandardEdge(
+    edge: Edge,
+    group: SVGElement,
+    source: { x: number; y: number },
+    target: { x: number; y: number }
+  ): SVGElement {
     const line = this.createElement('line', {
       x1: source.x.toString(),
       y1: source.y.toString(),
@@ -378,17 +382,22 @@ export class SVGRenderer {
       'marker-end': 'url(#arrowhead)',
     });
     group.appendChild(line);
-    
+
     // Add arrowhead marker definition (would be added to defs section)
     this.addArrowheadMarker(group);
-    
+
     return group;
   }
 
   /**
    *
    */
-  private renderConditionalEdge(edge: Edge, group: SVGElement, source: { x: number; y: number }, target: { x: number; y: number }): SVGElement {
+  private renderConditionalEdge(
+    edge: Edge,
+    group: SVGElement,
+    source: { x: number; y: number },
+    target: { x: number; y: number }
+  ): SVGElement {
     const line = this.createElement('line', {
       x1: source.x.toString(),
       y1: source.y.toString(),
@@ -400,12 +409,12 @@ export class SVGRenderer {
       'marker-end': 'url(#arrowhead)',
     });
     group.appendChild(line);
-    
+
     // Add condition label
     if (edge.data?.condition) {
       const midX = (source.x + target.x) / 2;
       const midY = (source.y + target.y) / 2;
-      
+
       const text = this.createElement('text', {
         x: midX.toString(),
         y: (midY - 10).toString(),
@@ -417,19 +426,24 @@ export class SVGRenderer {
       text.textContent = edge.data.condition;
       group.appendChild(text);
     }
-    
+
     return group;
   }
 
   /**
    *
    */
-  private renderBezierEdge(edge: Edge, group: SVGElement, source: { x: number; y: number }, target: { x: number; y: number }): SVGElement {
+  private renderBezierEdge(
+    edge: Edge,
+    group: SVGElement,
+    source: { x: number; y: number },
+    target: { x: number; y: number }
+  ): SVGElement {
     const cp1x = source.x + (target.x - source.x) * 0.5;
     const cp1y = source.y;
     const cp2x = target.x - (target.x - source.x) * 0.5;
     const cp2y = target.y;
-    
+
     const path = this.createElement('path', {
       d: `M ${source.x} ${source.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${target.x} ${target.y}`,
       stroke: (edge.style?.stroke as string) || '#666',
@@ -438,7 +452,7 @@ export class SVGRenderer {
       'marker-end': 'url(#arrowhead)',
     });
     group.appendChild(path);
-    
+
     return group;
   }
 
@@ -456,12 +470,12 @@ export class SVGRenderer {
       refY: '3.5',
       orient: 'auto',
     });
-    
+
     const polygon = this.createElement('polygon', {
       points: '0 0, 10 3.5, 0 7',
       fill: '#666',
     });
-    
+
     marker.appendChild(polygon);
     defs.appendChild(marker);
     group.appendChild(defs);
@@ -470,13 +484,19 @@ export class SVGRenderer {
   /**
    *
    */
-  private createElement(tagName: string, attributes: Record<string, string> = {}): SVGElement {
-    const element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
-    
+  private createElement(
+    tagName: string,
+    attributes: Record<string, string> = {}
+  ): SVGElement {
+    const element = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      tagName
+    );
+
     Object.entries(attributes).forEach(([key, value]) => {
       element.setAttribute(key, value);
     });
-    
+
     return element;
   }
 
@@ -486,10 +506,10 @@ export class SVGRenderer {
   private serializeSVG(svg: SVGSVGElement): string {
     const serializer = new XMLSerializer();
     let svgString = serializer.serializeToString(svg);
-    
+
     // Add XML declaration and DOCTYPE
-    svgString = `<?xml version="1.0" encoding="UTF-8"?>\n${  svgString}`;
-    
+    svgString = `<?xml version="1.0" encoding="UTF-8"?>\n${svgString}`;
+
     return svgString;
   }
 }
@@ -511,12 +531,15 @@ export class ExportEngine {
   /**
    *
    */
-  public async exportCanvas(canvas: CanvasData, options: ExportOptions): Promise<ExportResult> {
+  public async exportCanvas(
+    canvas: CanvasData,
+    options: ExportOptions
+  ): Promise<ExportResult> {
     const startTime = Date.now();
-    
+
     try {
       let result: ExportResult;
-      
+
       switch (options.format) {
         case 'svg':
           result = await this.exportToSVG(canvas, options);
@@ -535,9 +558,11 @@ export class ExportEngine {
           result = await this.exportToJSON(canvas, options);
           break;
         default:
-          throw new Error(`Unsupported export format: ${(options as unknown).format}`);
+          throw new Error(
+            `Unsupported export format: ${(options as unknown).format}`
+          );
       }
-      
+
       result.completedAt = new Date().toISOString();
       result.metadata = {
         ...result.metadata,
@@ -545,9 +570,8 @@ export class ExportEngine {
         nodeCount: canvas.nodes.length,
         edgeCount: canvas.edges.length,
       };
-      
+
       return result;
-      
     } catch (error) {
       return {
         id: `export_${Date.now()}`,
@@ -562,22 +586,25 @@ export class ExportEngine {
   /**
    *
    */
-  private async exportToSVG(canvas: CanvasData, options: ImageExportOptions): Promise<ExportResult> {
+  private async exportToSVG(
+    canvas: CanvasData,
+    options: ImageExportOptions
+  ): Promise<ExportResult> {
     this.svgRenderer = new SVGRenderer(options);
     const svgContent = this.svgRenderer.renderCanvas(canvas);
-    
+
     // Sanitize SVG content
     const sanitizeResult = sanitizeExportContent(svgContent, 'svg');
     if (!sanitizeResult.safe) {
       console.warn('SVG export required sanitization:', sanitizeResult.removed);
     }
-    
+
     // Security audit
     const audit = auditExportSecurity(sanitizeResult.sanitized);
     if (audit.riskLevel === 'high') {
       throw new Error('SVG export failed security audit');
     }
-    
+
     return {
       id: `svg_${Date.now()}`,
       status: 'completed',
@@ -596,51 +623,59 @@ export class ExportEngine {
   /**
    *
    */
-  private async exportToPNG(canvas: CanvasData, options: ImageExportOptions): Promise<ExportResult> {
+  private async exportToPNG(
+    canvas: CanvasData,
+    options: ImageExportOptions
+  ): Promise<ExportResult> {
     // Convert SVG to PNG using Canvas API
     const svgContent = this.svgRenderer.renderCanvas(canvas);
-    
+
     return new Promise((resolve, reject) => {
       const img = new Image();
       const canvasEl = document.createElement('canvas');
       const ctx = canvasEl.getContext('2d');
-      
+
       if (!ctx) {
         reject(new Error('Could not get canvas context'));
         return;
       }
-      
+
       img.onload = () => {
         canvasEl.width = options.width || img.width;
         canvasEl.height = options.height || img.height;
-        
+
         // Set background color
         ctx.fillStyle = options.backgroundColor || '#ffffff';
         ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
-        
+
         // Draw SVG
         ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
-        
-        canvasEl.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error('Failed to create PNG blob'));
-            return;
-          }
-          
-          const url = URL.createObjectURL(blob);
-          resolve({
-            id: `png_${Date.now()}`,
-            status: 'completed',
-            format: 'png',
-            url,
-            filename: `canvas-export-${Date.now()}.png`,
-            size: blob.size,
-            createdAt: new Date().toISOString(),
-          });
-        }, 'image/png', options.quality || 0.9);
+
+        canvasEl.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to create PNG blob'));
+              return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            resolve({
+              id: `png_${Date.now()}`,
+              status: 'completed',
+              format: 'png',
+              url,
+              filename: `canvas-export-${Date.now()}.png`,
+              size: blob.size,
+              createdAt: new Date().toISOString(),
+            });
+          },
+          'image/png',
+          options.quality || 0.9
+        );
       };
-      
-      img.onerror = () => reject(new Error('Failed to load SVG for PNG conversion'));
+
+      img.onerror = () =>
+        reject(new Error('Failed to load SVG for PNG conversion'));
       img.src = `data:image/svg+xml;base64,${btoa(svgContent)}`;
     });
   }
@@ -648,10 +683,13 @@ export class ExportEngine {
   /**
    *
    */
-  private async exportToPDF(canvas: CanvasData, options: PdfExportOptions): Promise<ExportResult> {
+  private async exportToPDF(
+    canvas: CanvasData,
+    options: PdfExportOptions
+  ): Promise<ExportResult> {
     // Mock PDF export - in production, use a library like jsPDF or Puppeteer
     const content = `PDF Export of Canvas - ${canvas.metadata.id}`;
-    
+
     return {
       id: `pdf_${Date.now()}`,
       status: 'completed',
@@ -670,18 +708,21 @@ export class ExportEngine {
   /**
    *
    */
-  private async exportToCode(canvas: CanvasData, options: CodeExportOptions): Promise<ExportResult> {
+  private async exportToCode(
+    canvas: CanvasData,
+    options: CodeExportOptions
+  ): Promise<ExportResult> {
     let code: string;
-    
+
     if (options.format === 'jsx') {
       code = this.generateJSXComponent(canvas, options);
     } else {
       code = this.generateHTMLPage(canvas, options);
     }
-    
+
     // Sanitize code content
     const sanitizeResult = sanitizeExportContent(code, 'html');
-    
+
     return {
       id: `code_${Date.now()}`,
       status: 'completed',
@@ -701,23 +742,28 @@ export class ExportEngine {
   /**
    *
    */
-  private async exportToJSON(canvas: CanvasData, options: JsonExportOptions): Promise<ExportResult> {
+  private async exportToJSON(
+    canvas: CanvasData,
+    options: JsonExportOptions
+  ): Promise<ExportResult> {
     const exportData = {
       version: options.version,
       canvas: {
         id: canvas.metadata.id,
-        nodes: options.includePositions ? canvas.nodes : canvas.nodes.map(n => ({ ...n, position: undefined })),
+        nodes: options.includePositions
+          ? canvas.nodes
+          : canvas.nodes.map((n) => ({ ...n, position: undefined })),
         edges: canvas.edges,
         settings: canvas.settings,
         metadata: options.includeMetadata ? canvas.metadata : undefined,
       },
       exportedAt: new Date().toISOString(),
     };
-    
-    const jsonString = options.minify 
+
+    const jsonString = options.minify
       ? JSON.stringify(exportData)
       : JSON.stringify(exportData, null, 2);
-    
+
     return {
       id: `json_${Date.now()}`,
       status: 'completed',
@@ -732,10 +778,15 @@ export class ExportEngine {
   /**
    *
    */
-  private generateJSXComponent(canvas: CanvasData, options: CodeExportOptions): string {
+  private generateJSXComponent(
+    canvas: CanvasData,
+    options: CodeExportOptions
+  ): string {
     const componentName = options.componentName || 'CanvasExport';
-    const imports = options.includeStyles ? "import './canvas-styles.css';" : '';
-    
+    const imports = options.includeStyles
+      ? "import './canvas-styles.css';"
+      : '';
+
     return `${imports}
 import React from 'react';
 
@@ -762,8 +813,12 @@ export default ${componentName};`;
   /**
    *
    */
-  private generateHTMLPage(canvas: CanvasData, options: CodeExportOptions): string {
-    const styles = options.includeStyles ? `
+  private generateHTMLPage(
+    canvas: CanvasData,
+    options: CodeExportOptions
+  ): string {
+    const styles = options.includeStyles
+      ? `
 <style>
   .canvas-export {
     width: 100%;
@@ -776,7 +831,8 @@ export default ${componentName};`;
     max-width: 100%;
     max-height: 100%;
   }
-</style>` : '';
+</style>`
+      : '';
 
     return `<!DOCTYPE html>
 <html lang="en">

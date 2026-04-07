@@ -28,9 +28,9 @@ export interface PaginationProps {
 
 /**
  * Pagination component for navigating through pages
- * 
+ *
  * Pure Tailwind CSS implementation with customizable appearance.
- * 
+ *
  * @example
  * ```tsx
  * <Pagination
@@ -69,7 +69,10 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
       }
 
       const leftSiblingIndex = Math.max(currentPage - siblingCount, 1);
-      const rightSiblingIndex = Math.min(currentPage + siblingCount, totalPages);
+      const rightSiblingIndex = Math.min(
+        currentPage + siblingCount,
+        totalPages
+      );
 
       const shouldShowLeftDots = leftSiblingIndex > 2;
       const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
@@ -137,7 +140,12 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
     };
 
     const handlePageChange = (page: number) => {
-      if (!disabled && page >= 1 && page <= totalPages && page !== currentPage) {
+      if (
+        !disabled &&
+        page >= 1 &&
+        page <= totalPages &&
+        page !== currentPage
+      ) {
         onPageChange(page);
       }
     };
@@ -161,7 +169,11 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
       </svg>
     );
 
-    const DoubleArrowIcon = ({ direction }: { direction: 'left' | 'right' }) => (
+    const DoubleArrowIcon = ({
+      direction,
+    }: {
+      direction: 'left' | 'right';
+    }) => (
       <svg
         width="16"
         height="16"
@@ -181,7 +193,11 @@ export const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
     );
 
     return (
-      <nav ref={ref} aria-label="Pagination" className={cn('flex items-center gap-1', className)}>
+      <nav
+        ref={ref}
+        aria-label="Pagination"
+        className={cn('flex items-center gap-1', className)}
+      >
         {/* First page button */}
         {showFirstLast && (
           <button

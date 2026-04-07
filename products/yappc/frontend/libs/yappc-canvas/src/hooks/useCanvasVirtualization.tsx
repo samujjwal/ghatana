@@ -1,12 +1,12 @@
 /**
  * @file Canvas Virtualization Hook
  * Efficiently renders large canvas scenes by only rendering visible elements
- * 
+ *
  * @doc.type hook
  * @doc.purpose Optimize canvas performance for 1000+ elements
  * @doc.layer presentation
  * @doc.pattern PerformanceOptimization
- * 
+ *
  * @example
  * ```typescript
  * const { visibleElements, containerRef, scrollPosition } = useCanvasVirtualization({
@@ -146,7 +146,10 @@ class SpatialIndex {
   /**
    *
    */
-  private intersectsBounds(element: VirtualElement, bounds: ViewportBounds): boolean {
+  private intersectsBounds(
+    element: VirtualElement,
+    bounds: ViewportBounds
+  ): boolean {
     return (
       element.x < bounds.right &&
       element.x + element.width > bounds.left &&
@@ -163,14 +166,16 @@ class SpatialIndex {
 /**
  * Canvas Virtualization Hook
  * @doc.purpose Optimize rendering performance for large canvas scenes
- * 
+ *
  * Features:
  * - Spatial indexing for O(1) visibility queries
  * - Overscan rendering to prevent pop-in
  * - Efficient scroll position tracking
  * - Automatic re-rendering on scroll/resize
  */
-export function useCanvasVirtualization(config: VirtualizationConfig): VirtualizationResult {
+export function useCanvasVirtualization(
+  config: VirtualizationConfig
+): VirtualizationResult {
   const {
     elements,
     viewportWidth,
@@ -183,19 +188,22 @@ export function useCanvasVirtualization(config: VirtualizationConfig): Virtualiz
 
   const containerRef = useRef<HTMLDivElement>(null);
   const spatialIndexRef = useRef<SpatialIndex>(new SpatialIndex(200));
-  const [scrollPosition, setScrollPosition] = useState({ x: initialScrollX, y: initialScrollY });
+  const [scrollPosition, setScrollPosition] = useState({
+    x: initialScrollX,
+    y: initialScrollY,
+  });
   const [isVirtualizing, setIsVirtualizing] = useState(true);
 
   // Build spatial index when elements change
   useEffect(() => {
     const index = spatialIndexRef.current;
     index.clear();
-    
+
     // Batch insert for better performance
     const batchSize = 100;
     for (let i = 0; i < elements.length; i += batchSize) {
       const batch = elements.slice(i, i + batchSize);
-      batch.forEach(element => index.insert(element));
+      batch.forEach((element) => index.insert(element));
     }
   }, [elements]);
 
@@ -213,7 +221,7 @@ export function useCanvasVirtualization(config: VirtualizationConfig): Virtualiz
   // Query visible elements
   const visibleElements = useMemo(() => {
     if (!isVirtualizing) return elements;
-    
+
     // Use spatial index for fast query
     return spatialIndexRef.current.queryRange(viewportBounds);
   }, [elements, viewportBounds, isVirtualizing]);
@@ -221,15 +229,15 @@ export function useCanvasVirtualization(config: VirtualizationConfig): Virtualiz
   // Calculate hidden elements for debugging
   const hiddenElements = useMemo(() => {
     if (!isVirtualizing) return [];
-    
-    const visibleIds = new Set(visibleElements.map(e => e.id));
-    return elements.filter(e => !visibleIds.has(e.id));
+
+    const visibleIds = new Set(visibleElements.map((e) => e.id));
+    return elements.filter((e) => !visibleIds.has(e.id));
   }, [elements, visibleElements, isVirtualizing]);
 
   // Handle scroll events
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
-    
+
     const { scrollLeft, scrollTop } = containerRef.current;
     setScrollPosition({ x: scrollLeft, y: scrollTop });
   }, []);
@@ -245,7 +253,7 @@ export function useCanvasVirtualization(config: VirtualizationConfig): Virtualiz
 
   // Toggle virtualization (useful for debugging)
   const toggleVirtualization = useCallback(() => {
-    setIsVirtualizing(prev => !prev);
+    setIsVirtualizing((prev) => !prev);
   }, []);
 
   return {
@@ -281,7 +289,7 @@ interface VirtualizedCanvasProps {
 /**
  * Virtualized Canvas Component
  * @doc.purpose Render large canvas scenes efficiently
- * 
+ *
  * @example
  * ```tsx
  * <VirtualizedCanvas
@@ -329,7 +337,7 @@ export const VirtualizedCanvas: React.FC<VirtualizedCanvasProps> = ({
     >
       {/* Render only visible elements */}
       {visibleElements.map(renderElement)}
-      
+
       {/* Debug overlay */}
       {showDebugInfo && (
         <div
@@ -346,9 +354,16 @@ export const VirtualizedCanvas: React.FC<VirtualizedCanvasProps> = ({
             zIndex: 1000,
           }}
         >
-          <div>Elements: {visibleCount} / {totalElements}</div>
-          <div>Scroll: {Math.round(scrollPosition.x)}, {Math.round(scrollPosition.y)}</div>
-          <div>Rendering: {((visibleCount / totalElements) * 100).toFixed(1)}%</div>
+          <div>
+            Elements: {visibleCount} / {totalElements}
+          </div>
+          <div>
+            Scroll: {Math.round(scrollPosition.x)},{' '}
+            {Math.round(scrollPosition.y)}
+          </div>
+          <div>
+            Rendering: {((visibleCount / totalElements) * 100).toFixed(1)}%
+          </div>
         </div>
       )}
     </div>
@@ -391,7 +406,7 @@ export function useCanvasPerformance(): {
 
   const endMeasurement = useCallback(() => {
     const frameTime = performance.now() - startTimeRef.current;
-    setMetrics(prev => ({
+    setMetrics((prev) => ({
       ...prev,
       frameTime,
     }));
@@ -401,15 +416,18 @@ export function useCanvasPerformance(): {
     queryStartRef.current = performance.now();
   }, []);
 
-  const endQuery = useCallback((elementCount: number, visibleCount: number) => {
-    const queryTime = performance.now() - queryStartRef.current;
-    setMetrics({
-      frameTime: metrics.frameTime,
-      elementCount,
-      visibleCount,
-      queryTime,
-    });
-  }, [metrics.frameTime]);
+  const endQuery = useCallback(
+    (elementCount: number, visibleCount: number) => {
+      const queryTime = performance.now() - queryStartRef.current;
+      setMetrics({
+        frameTime: metrics.frameTime,
+        elementCount,
+        visibleCount,
+        queryTime,
+      });
+    },
+    [metrics.frameTime]
+  );
 
   return {
     metrics,

@@ -1,12 +1,7 @@
 import { z } from 'zod';
 
-import {
-  ShareToken,
-  UserPermission,
-} from '../schemas/permission-schemas';
-import type {
-  UserRole,
-  PermissionScope} from '../schemas/permission-schemas';
+import { ShareToken, UserPermission } from '../schemas/permission-schemas';
+import type { UserRole, PermissionScope } from '../schemas/permission-schemas';
 
 // Extended types for server implementation
 /**
@@ -60,21 +55,34 @@ export interface CreatePermissionRequest {
  */
 export interface CollaborationServer {
   // Permission management
-  checkPermission(userId: string, canvasId: string, action: string): Promise<boolean>;
+  checkPermission(
+    userId: string,
+    canvasId: string,
+    action: string
+  ): Promise<boolean>;
   createPermission(request: CreatePermissionRequest): Promise<CanvasPermission>;
-  updatePermission(permissionId: string, updates: Partial<CanvasPermission>): Promise<CanvasPermission>;
+  updatePermission(
+    permissionId: string,
+    updates: Partial<CanvasPermission>
+  ): Promise<CanvasPermission>;
   deletePermission(permissionId: string): Promise<void>;
   getCanvasPermissions(canvasId: string): Promise<CanvasPermission[]>;
   getUserPermissions(userId: string): Promise<CanvasPermission[]>;
-  
+
   // Share tokens
-  createShareToken(canvasId: string, permissions: PermissionScope, expiresAt?: Date): Promise<ExtendedShareToken>;
+  createShareToken(
+    canvasId: string,
+    permissions: PermissionScope,
+    expiresAt?: Date
+  ): Promise<ExtendedShareToken>;
   validateShareToken(token: string): Promise<ExtendedShareToken | null>;
   deleteShareToken(tokenId: string): Promise<void>;
-  
+
   // User management
   getActiveUsers(canvasId: string): Promise<string[]>;
-  getUserPresence(userId: string): Promise<{ status: 'online' | 'offline' | 'away'; lastSeen: Date }>;
+  getUserPresence(
+    userId: string
+  ): Promise<{ status: 'online' | 'offline' | 'away'; lastSeen: Date }>;
 }
 
 // Mock implementation for development
@@ -85,20 +93,28 @@ export class MockCollaborationServer implements CollaborationServer {
   private permissions = new Map<string, CanvasPermission>();
   private shareTokens = new Map<string, ExtendedShareToken>();
   private activeUsers = new Map<string, Set<string>>(); // canvasId -> Set<userId>
-  private userPresence = new Map<string, { status: 'online' | 'offline' | 'away'; lastSeen: Date }>();
+  private userPresence = new Map<
+    string,
+    { status: 'online' | 'offline' | 'away'; lastSeen: Date }
+  >();
 
   /**
    *
    */
-  async checkPermission(userId: string, canvasId: string, action: string): Promise<boolean> {
-    const userPermissions = Array.from(this.permissions.values())
-      .filter(p => p.userId === userId && p.canvasId === canvasId);
-    
+  async checkPermission(
+    userId: string,
+    canvasId: string,
+    action: string
+  ): Promise<boolean> {
+    const userPermissions = Array.from(this.permissions.values()).filter(
+      (p) => p.userId === userId && p.canvasId === canvasId
+    );
+
     if (userPermissions.length === 0) return false;
-    
+
     const permission = userPermissions[0];
     const scope = permission.permissions;
-    
+
     switch (action) {
       case 'view':
       case 'read':
@@ -125,7 +141,9 @@ export class MockCollaborationServer implements CollaborationServer {
   /**
    *
    */
-  async createPermission(request: CreatePermissionRequest): Promise<CanvasPermission> {
+  async createPermission(
+    request: CreatePermissionRequest
+  ): Promise<CanvasPermission> {
     const permission: CanvasPermission = {
       id: `perm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: request.userId,
@@ -139,7 +157,7 @@ export class MockCollaborationServer implements CollaborationServer {
       updatedAt: new Date().toISOString(),
       createdBy: request.requestedBy,
     };
-    
+
     this.permissions.set(permission.id, permission);
     return permission;
   }
@@ -147,18 +165,21 @@ export class MockCollaborationServer implements CollaborationServer {
   /**
    *
    */
-  async updatePermission(permissionId: string, updates: Partial<CanvasPermission>): Promise<CanvasPermission> {
+  async updatePermission(
+    permissionId: string,
+    updates: Partial<CanvasPermission>
+  ): Promise<CanvasPermission> {
     const existing = this.permissions.get(permissionId);
     if (!existing) {
       throw new Error(`Permission ${permissionId} not found`);
     }
-    
+
     const updated = {
       ...existing,
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    
+
     this.permissions.set(permissionId, updated);
     return updated;
   }
@@ -174,22 +195,29 @@ export class MockCollaborationServer implements CollaborationServer {
    *
    */
   async getCanvasPermissions(canvasId: string): Promise<CanvasPermission[]> {
-    return Array.from(this.permissions.values())
-      .filter(p => p.canvasId === canvasId);
+    return Array.from(this.permissions.values()).filter(
+      (p) => p.canvasId === canvasId
+    );
   }
 
   /**
    *
    */
   async getUserPermissions(userId: string): Promise<CanvasPermission[]> {
-    return Array.from(this.permissions.values())
-      .filter(p => p.userId === userId);
+    return Array.from(this.permissions.values()).filter(
+      (p) => p.userId === userId
+    );
   }
 
   /**
    *
    */
-  async createShareToken(canvasId: string, permissions: PermissionScope, expiresAt?: Date, createdBy = 'system'): Promise<ExtendedShareToken> {
+  async createShareToken(
+    canvasId: string,
+    permissions: PermissionScope,
+    expiresAt?: Date,
+    createdBy = 'system'
+  ): Promise<ExtendedShareToken> {
     const token: ExtendedShareToken = {
       id: `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       token: `st_${Math.random().toString(36).substr(2, 32)}`,
@@ -202,7 +230,7 @@ export class MockCollaborationServer implements CollaborationServer {
       currentUses: 0,
       isActive: true,
     };
-    
+
     this.shareTokens.set(token.id, token);
     return token;
   }
@@ -211,21 +239,22 @@ export class MockCollaborationServer implements CollaborationServer {
    *
    */
   async validateShareToken(token: string): Promise<ExtendedShareToken | null> {
-    const shareToken = Array.from(this.shareTokens.values())
-      .find(t => t.token === token);
-    
+    const shareToken = Array.from(this.shareTokens.values()).find(
+      (t) => t.token === token
+    );
+
     if (!shareToken || !shareToken.isActive) return null;
-    
+
     if (shareToken.expiresAt && new Date() > new Date(shareToken.expiresAt)) {
       shareToken.isActive = false;
       return null;
     }
-    
+
     if (shareToken.maxUses && shareToken.currentUses >= shareToken.maxUses) {
       shareToken.isActive = false;
       return null;
     }
-    
+
     shareToken.currentUses++;
     return shareToken;
   }
@@ -247,11 +276,15 @@ export class MockCollaborationServer implements CollaborationServer {
   /**
    *
    */
-  async getUserPresence(userId: string): Promise<{ status: 'online' | 'offline' | 'away'; lastSeen: Date }> {
-    return this.userPresence.get(userId) || { 
-      status: 'offline', 
-      lastSeen: new Date(Date.now() - 24 * 60 * 60 * 1000) 
-    };
+  async getUserPresence(
+    userId: string
+  ): Promise<{ status: 'online' | 'offline' | 'away'; lastSeen: Date }> {
+    return (
+      this.userPresence.get(userId) || {
+        status: 'offline',
+        lastSeen: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      }
+    );
   }
 
   // Helper methods
@@ -352,8 +385,14 @@ export class MockCollaborationServer implements CollaborationServer {
   /**
    *
    */
-  public setUserStatus(userId: string, status: 'online' | 'offline' | 'away'): void {
-    const current = this.userPresence.get(userId) || { status: 'offline', lastSeen: new Date() };
+  public setUserStatus(
+    userId: string,
+    status: 'online' | 'offline' | 'away'
+  ): void {
+    const current = this.userPresence.get(userId) || {
+      status: 'offline',
+      lastSeen: new Date(),
+    };
     this.userPresence.set(userId, { ...current, status, lastSeen: new Date() });
   }
 }

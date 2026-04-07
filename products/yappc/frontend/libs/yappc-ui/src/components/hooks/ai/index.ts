@@ -5,7 +5,4 @@
  */
 
 export { useAIInsights } from './useAIInsights';
-export type {
-  AIInsightsOptions,
-  UseAIInsightsResult,
-} from './useAIInsights';
+export type { AIInsightsOptions, UseAIInsightsResult } from './useAIInsights';

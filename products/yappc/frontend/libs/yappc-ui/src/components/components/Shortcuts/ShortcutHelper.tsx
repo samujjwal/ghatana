@@ -1,4 +1,1 @@
-export {
-  ShortcutHelper,
-  type ShortcutHelperProps,
-} from '@yappc/ui/shortcuts';
+export { ShortcutHelper, type ShortcutHelperProps } from '@yappc/ui/shortcuts';

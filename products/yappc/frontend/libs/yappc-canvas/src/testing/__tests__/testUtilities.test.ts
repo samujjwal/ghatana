@@ -314,7 +314,9 @@ describe('TestUtilitiesManager', () => {
       });
 
       // Random layout should have varied positions
-      const positions = fixture.nodes.map((n) => `${n.position.x},${n.position.y}`);
+      const positions = fixture.nodes.map(
+        (n) => `${n.position.x},${n.position.y}`
+      );
       const unique = new Set(positions);
       expect(unique.size).toBe(fixture.nodes.length);
     });
@@ -355,7 +357,9 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should mock useReactFlow hook', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       expect(useReactFlow).toBeDefined();
 
       const api = useReactFlow() as { getNodes: () => MockNode[] };
@@ -363,7 +367,8 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should mock useNodes hook', () => {
-      const useNodes = (globalThis as unknown as { useNodes: () => MockNode[] }).useNodes;
+      const useNodes = (globalThis as unknown as { useNodes: () => MockNode[] })
+        .useNodes;
       expect(useNodes).toBeDefined();
 
       const nodes = useNodes();
@@ -371,7 +376,8 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should mock useEdges hook', () => {
-      const useEdges = (globalThis as unknown as { useEdges: () => MockEdge[] }).useEdges;
+      const useEdges = (globalThis as unknown as { useEdges: () => MockEdge[] })
+        .useEdges;
       expect(useEdges).toBeDefined();
 
       const edges = useEdges();
@@ -379,7 +385,11 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should mock useViewport hook', () => {
-      const useViewport = (globalThis as unknown as { useViewport: () => { x: number; y: number; zoom: number } }).useViewport;
+      const useViewport = (
+        globalThis as unknown as {
+          useViewport: () => { x: number; y: number; zoom: number };
+        }
+      ).useViewport;
       expect(useViewport).toBeDefined();
 
       const viewport = useViewport();
@@ -389,7 +399,9 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should allow setting nodes', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       const api = useReactFlow() as {
         setNodes: (nodes: MockNode[]) => void;
         getNodes: () => MockNode[];
@@ -404,7 +416,9 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should allow adding nodes', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       const api = useReactFlow() as {
         addNodes: (nodes: MockNode[]) => void;
         getNodes: () => MockNode[];
@@ -418,7 +432,9 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should allow deleting elements', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       const api = useReactFlow() as {
         setNodes: (nodes: MockNode[]) => void;
         setEdges: (edges: MockEdge[]) => void;
@@ -443,7 +459,9 @@ describe('TestUtilitiesManager', () => {
     });
 
     it('should support viewport manipulation', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       const api = useReactFlow() as {
         zoomIn: () => void;
         zoomOut: () => void;
@@ -544,7 +562,8 @@ describe('Standalone Helper Functions', () => {
   describe('mockReactFlowHooks', () => {
     it('should setup mocks', () => {
       mockReactFlowHooks();
-      const useNodes = (globalThis as unknown as { useNodes: () => MockNode[] }).useNodes;
+      const useNodes = (globalThis as unknown as { useNodes: () => MockNode[] })
+        .useNodes;
       expect(useNodes).toBeDefined();
     });
   });
@@ -555,7 +574,9 @@ describe('Standalone Helper Functions', () => {
     });
 
     it('should reset global state', () => {
-      const useReactFlow = (globalThis as unknown as { useReactFlow: () => unknown }).useReactFlow;
+      const useReactFlow = (
+        globalThis as unknown as { useReactFlow: () => unknown }
+      ).useReactFlow;
       const api = useReactFlow() as {
         addNodes: (nodes: MockNode[]) => void;
         getNodes: () => MockNode[];

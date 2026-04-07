@@ -19,19 +19,19 @@ import type { NodeGroupData, GroupStatus } from '../components/NodeGroup';
 // ============================================================================
 
 export interface GroupingOptions {
-    label?: string;
-    description?: string;
-    status?: GroupStatus;
-    assignee?: string;
-    tags?: string[];
-    padding?: number; // Padding around grouped nodes
+  label?: string;
+  description?: string;
+  status?: GroupStatus;
+  assignee?: string;
+  tags?: string[];
+  padding?: number; // Padding around grouped nodes
 }
 
 export interface GroupBounds {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 // ============================================================================
@@ -46,38 +46,38 @@ export interface GroupBounds {
  * @returns New group node
  */
 export function createGroupFromNodes(
-    selectedNodes: Node[],
-    options: GroupingOptions = {}
+  selectedNodes: Node[],
+  options: GroupingOptions = {}
 ): Node<NodeGroupData> {
-    if (selectedNodes.length === 0) {
-        throw new Error('Cannot create group: no nodes selected');
-    }
+  if (selectedNodes.length === 0) {
+    throw new Error('Cannot create group: no nodes selected');
+  }
 
-    const bounds = calculateGroupBounds(selectedNodes, options.padding || 20);
-    const childIds = selectedNodes.map((n) => n.id);
+  const bounds = calculateGroupBounds(selectedNodes, options.padding || 20);
+  const childIds = selectedNodes.map((n) => n.id);
 
-    const groupId = `group-${Date.now()}`;
+  const groupId = `group-${Date.now()}`;
 
-    return {
-        id: groupId,
-        type: 'nodeGroup',
-        position: { x: bounds.x, y: bounds.y },
-        data: {
-            label: options.label || 'New Group',
-            description: options.description,
-            status: options.status || 'unknown',
-            children: childIds,
-            collapsed: false,
-            assignee: options.assignee,
-            tags: options.tags,
-        },
-        style: {
-            width: bounds.width,
-            height: bounds.height,
-        },
-        draggable: true,
-        selectable: true,
-    };
+  return {
+    id: groupId,
+    type: 'nodeGroup',
+    position: { x: bounds.x, y: bounds.y },
+    data: {
+      label: options.label || 'New Group',
+      description: options.description,
+      status: options.status || 'unknown',
+      children: childIds,
+      collapsed: false,
+      assignee: options.assignee,
+      tags: options.tags,
+    },
+    style: {
+      width: bounds.width,
+      height: bounds.height,
+    },
+    draggable: true,
+    selectable: true,
+  };
 }
 
 /**
@@ -88,35 +88,35 @@ export function createGroupFromNodes(
  * @returns Bounding box coordinates and dimensions
  */
 export function calculateGroupBounds(
-    nodes: Node[],
-    padding: number = 20
+  nodes: Node[],
+  padding: number = 20
 ): GroupBounds {
-    if (nodes.length === 0) {
-        return { x: 0, y: 0, width: 300, height: 150 };
-    }
+  if (nodes.length === 0) {
+    return { x: 0, y: 0, width: 300, height: 150 };
+  }
 
-    // Find min/max coordinates
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
+  // Find min/max coordinates
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
 
-    nodes.forEach((node) => {
-        const nodeWidth = (node.width as number) || 200;
-        const nodeHeight = (node.height as number) || 100;
+  nodes.forEach((node) => {
+    const nodeWidth = (node.width as number) || 200;
+    const nodeHeight = (node.height as number) || 100;
 
-        minX = Math.min(minX, node.position.x);
-        minY = Math.min(minY, node.position.y);
-        maxX = Math.max(maxX, node.position.x + nodeWidth);
-        maxY = Math.max(maxY, node.position.y + nodeHeight);
-    });
+    minX = Math.min(minX, node.position.x);
+    minY = Math.min(minY, node.position.y);
+    maxX = Math.max(maxX, node.position.x + nodeWidth);
+    maxY = Math.max(maxY, node.position.y + nodeHeight);
+  });
 
-    return {
-        x: minX - padding,
-        y: minY - padding,
-        width: maxX - minX + padding * 2,
-        height: maxY - minY + padding * 2,
-    };
+  return {
+    x: minX - padding,
+    y: minY - padding,
+    width: maxX - minX + padding * 2,
+    height: maxY - minY + padding * 2,
+  };
 }
 
 /**
@@ -127,21 +127,21 @@ export function calculateGroupBounds(
  * @returns Updated child nodes with new positions
  */
 export function updateChildNodePositions(
-    groupNode: Node<NodeGroupData>,
-    childNodes: Node[]
+  groupNode: Node<NodeGroupData>,
+  childNodes: Node[]
 ): Node[] {
-    const groupX = groupNode.position.x;
-    const groupY = groupNode.position.y;
+  const groupX = groupNode.position.x;
+  const groupY = groupNode.position.y;
 
-    return childNodes.map((node) => ({
-        ...node,
-        position: {
-            x: node.position.x - groupX,
-            y: node.position.y - groupY,
-        },
-        parentNode: groupNode.id,
-        extent: 'parent' as const,
-    }));
+  return childNodes.map((node) => ({
+    ...node,
+    position: {
+      x: node.position.x - groupX,
+      y: node.position.y - groupY,
+    },
+    parentNode: groupNode.id,
+    extent: 'parent' as const,
+  }));
 }
 
 /**
@@ -152,30 +152,30 @@ export function updateChildNodePositions(
  * @returns Updated nodes with children extracted
  */
 export function ungroupNodes(
-    groupNode: Node<NodeGroupData>,
-    allNodes: Node[]
+  groupNode: Node<NodeGroupData>,
+  allNodes: Node[]
 ): Node[] {
-    const childIds = groupNode.data.children || [];
-    const groupX = groupNode.position.x;
-    const groupY = groupNode.position.y;
+  const childIds = groupNode.data.children || [];
+  const groupX = groupNode.position.x;
+  const groupY = groupNode.position.y;
 
-    return allNodes
-        .filter((n) => n.id !== groupNode.id) // Remove group node
-        .map((node) => {
-            if (childIds.includes(node.id)) {
-                // Reset child node position to absolute coordinates
-                return {
-                    ...node,
-                    position: {
-                        x: node.position.x + groupX,
-                        y: node.position.y + groupY,
-                    },
-                    parentNode: undefined,
-                    extent: undefined,
-                };
-            }
-            return node;
-        });
+  return allNodes
+    .filter((n) => n.id !== groupNode.id) // Remove group node
+    .map((node) => {
+      if (childIds.includes(node.id)) {
+        // Reset child node position to absolute coordinates
+        return {
+          ...node,
+          position: {
+            x: node.position.x + groupX,
+            y: node.position.y + groupY,
+          },
+          parentNode: undefined,
+          extent: undefined,
+        };
+      }
+      return node;
+    });
 }
 
 /**
@@ -186,16 +186,16 @@ export function ungroupNodes(
  * @returns Updated group node
  */
 export function updateGroupStatus(
-    groupNode: Node<NodeGroupData>,
-    status: GroupStatus
+  groupNode: Node<NodeGroupData>,
+  status: GroupStatus
 ): Node<NodeGroupData> {
-    return {
-        ...groupNode,
-        data: {
-            ...groupNode.data,
-            status,
-        },
-    };
+  return {
+    ...groupNode,
+    data: {
+      ...groupNode.data,
+      status,
+    },
+  };
 }
 
 /**
@@ -206,23 +206,23 @@ export function updateGroupStatus(
  * @returns True if node is inside group bounds
  */
 export function isNodeInsideGroup(
-    node: Node,
-    groupNode: Node<NodeGroupData>
+  node: Node,
+  groupNode: Node<NodeGroupData>
 ): boolean {
-    const nodeWidth = (node.width as number) || 200;
-    const nodeHeight = (node.height as number) || 100;
-    const groupWidth = (groupNode.style?.width as number) || 300;
-    const groupHeight = (groupNode.style?.height as number) || 150;
+  const nodeWidth = (node.width as number) || 200;
+  const nodeHeight = (node.height as number) || 100;
+  const groupWidth = (groupNode.style?.width as number) || 300;
+  const groupHeight = (groupNode.style?.height as number) || 150;
 
-    const nodeCenterX = node.position.x + nodeWidth / 2;
-    const nodeCenterY = node.position.y + nodeHeight / 2;
+  const nodeCenterX = node.position.x + nodeWidth / 2;
+  const nodeCenterY = node.position.y + nodeHeight / 2;
 
-    return (
-        nodeCenterX >= groupNode.position.x &&
-        nodeCenterX <= groupNode.position.x + groupWidth &&
-        nodeCenterY >= groupNode.position.y &&
-        nodeCenterY <= groupNode.position.y + groupHeight
-    );
+  return (
+    nodeCenterX >= groupNode.position.x &&
+    nodeCenterX <= groupNode.position.x + groupWidth &&
+    nodeCenterY >= groupNode.position.y &&
+    nodeCenterY <= groupNode.position.y + groupHeight
+  );
 }
 
 /**
@@ -234,25 +234,25 @@ export function isNodeInsideGroup(
  * @returns Updated group node with new bounds
  */
 export function autoResizeGroup(
-    groupNode: Node<NodeGroupData>,
-    childNodes: Node[],
-    padding: number = 20
+  groupNode: Node<NodeGroupData>,
+  childNodes: Node[],
+  padding: number = 20
 ): Node<NodeGroupData> {
-    if (childNodes.length === 0) {
-        return groupNode;
-    }
+  if (childNodes.length === 0) {
+    return groupNode;
+  }
 
-    const bounds = calculateGroupBounds(childNodes, padding);
+  const bounds = calculateGroupBounds(childNodes, padding);
 
-    return {
-        ...groupNode,
-        position: { x: bounds.x, y: bounds.y },
-        style: {
-            ...groupNode.style,
-            width: bounds.width,
-            height: bounds.height,
-        },
-    };
+  return {
+    ...groupNode,
+    position: { x: bounds.x, y: bounds.y },
+    style: {
+      ...groupNode.style,
+      width: bounds.width,
+      height: bounds.height,
+    },
+  };
 }
 
 /**
@@ -263,11 +263,11 @@ export function autoResizeGroup(
  * @returns Child nodes of the group
  */
 export function getGroupChildren(
-    groupNode: Node<NodeGroupData>,
-    allNodes: Node[]
+  groupNode: Node<NodeGroupData>,
+  allNodes: Node[]
 ): Node[] {
-    const childIds = groupNode.data.children || [];
-    return allNodes.filter((n) => childIds.includes(n.id));
+  const childIds = groupNode.data.children || [];
+  return allNodes.filter((n) => childIds.includes(n.id));
 }
 
 /**
@@ -280,13 +280,13 @@ export function getGroupChildren(
  * @returns Updated edges
  */
 export function updateEdgesForGroup(
-    edges: Edge[],
-    groupNode: Node<NodeGroupData>,
-    childIds: string[]
+  edges: Edge[],
+  groupNode: Node<NodeGroupData>,
+  childIds: string[]
 ): Edge[] {
-    // For now, keep edges as-is
-    // Future: Could optionally redirect external edges to the group node
-    return edges;
+  // For now, keep edges as-is
+  // Future: Could optionally redirect external edges to the group node
+  return edges;
 }
 
 /**
@@ -297,10 +297,10 @@ export function updateEdgesForGroup(
  * @returns Array of selected node IDs
  */
 export function selectGroupChildren(
-    groupNode: Node<NodeGroupData>,
-    allNodes: Node[]
+  groupNode: Node<NodeGroupData>,
+  allNodes: Node[]
 ): string[] {
-    return groupNode.data.children || [];
+  return groupNode.data.children || [];
 }
 
 /**
@@ -309,24 +309,28 @@ export function selectGroupChildren(
  * @param selectedNodes - Nodes to group
  * @returns Validation result with error message if invalid
  */
-export function validateGrouping(
-    selectedNodes: Node[]
-): { valid: boolean; error?: string } {
-    if (selectedNodes.length === 0) {
-        return { valid: false, error: 'No nodes selected' };
-    }
+export function validateGrouping(selectedNodes: Node[]): {
+  valid: boolean;
+  error?: string;
+} {
+  if (selectedNodes.length === 0) {
+    return { valid: false, error: 'No nodes selected' };
+  }
 
-    if (selectedNodes.length === 1) {
-        return { valid: false, error: 'Cannot group a single node' };
-    }
+  if (selectedNodes.length === 1) {
+    return { valid: false, error: 'Cannot group a single node' };
+  }
 
-    // Check if any selected nodes are already groups
-    const hasGroupNodes = selectedNodes.some((n) => n.type === 'nodeGroup');
-    if (hasGroupNodes) {
-        return { valid: false, error: 'Cannot nest groups (selected nodes include a group)' };
-    }
+  // Check if any selected nodes are already groups
+  const hasGroupNodes = selectedNodes.some((n) => n.type === 'nodeGroup');
+  if (hasGroupNodes) {
+    return {
+      valid: false,
+      error: 'Cannot nest groups (selected nodes include a group)',
+    };
+  }
 
-    return { valid: true };
+  return { valid: true };
 }
 
 /**
@@ -336,30 +340,34 @@ export function validateGrouping(
  * @returns Suggested label
  */
 export function generateGroupLabel(childNodes: Node[]): string {
-    if (childNodes.length === 0) return 'New Group';
+  if (childNodes.length === 0) return 'New Group';
 
-    // Count node types
-    const typeCounts = childNodes.reduce((acc, node) => {
-        const type = node.type || 'default';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+  // Count node types
+  const typeCounts = childNodes.reduce(
+    (acc, node) => {
+      const type = node.type || 'default';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
-    // Find most common type
-    const dominantType = Object.entries(typeCounts)
-        .sort(([, a], [, b]) => b - a)[0]?.[0];
+  // Find most common type
+  const dominantType = Object.entries(typeCounts).sort(
+    ([, a], [, b]) => b - a
+  )[0]?.[0];
 
-    // Generate label based on dominant type
-    const typeLabels: Record<string, string> = {
-        database: 'Data Layer',
-        service: 'Service Layer',
-        api: 'API Module',
-        uiScreen: 'UI Module',
-        aiPrompt: 'AI Feature',
-        requirement: 'Requirements',
-        test: 'Test Suite',
-        code: 'Code Module',
-    };
+  // Generate label based on dominant type
+  const typeLabels: Record<string, string> = {
+    database: 'Data Layer',
+    service: 'Service Layer',
+    api: 'API Module',
+    uiScreen: 'UI Module',
+    aiPrompt: 'AI Feature',
+    requirement: 'Requirements',
+    test: 'Test Suite',
+    code: 'Code Module',
+  };
 
-    return typeLabels[dominantType] || `Group of ${childNodes.length} nodes`;
+  return typeLabels[dominantType] || `Group of ${childNodes.length} nodes`;
 }

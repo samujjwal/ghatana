@@ -20,7 +20,6 @@ import { cn } from '@ghatana/design-system';
 
 import { type PresenceUser, type PresenceLocation } from '../PresenceManager';
 
-
 // =============================================================================
 // Types
 // =============================================================================
@@ -37,7 +36,9 @@ export interface UserActivityIndicatorProps {
 // Location Icon
 // =============================================================================
 
-const LocationIcon: React.FC<{ type: PresenceLocation['type'] }> = ({ type }) => {
+const LocationIcon: React.FC<{ type: PresenceLocation['type'] }> = ({
+  type,
+}) => {
   const iconProps = { size: 14, className: 'text-zinc-400' };
 
   switch (type) {

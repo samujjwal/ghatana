@@ -1,6 +1,6 @@
 /**
  * Storybook stories for Tailwind CSS Button
- * 
+ *
  * Demonstrates all button variants, sizes, colors, and states.
  * Includes accessibility testing and interaction examples.
  */
@@ -134,14 +134,26 @@ export const OutlineColors: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
       <div className="flex gap-3">
-        <Button variant="outline" colorScheme="primary">Primary</Button>
-        <Button variant="outline" colorScheme="secondary">Secondary</Button>
-        <Button variant="outline" colorScheme="success">Success</Button>
+        <Button variant="outline" colorScheme="primary">
+          Primary
+        </Button>
+        <Button variant="outline" colorScheme="secondary">
+          Secondary
+        </Button>
+        <Button variant="outline" colorScheme="success">
+          Success
+        </Button>
       </div>
       <div className="flex gap-3">
-        <Button variant="outline" colorScheme="error">Error</Button>
-        <Button variant="outline" colorScheme="warning">Warning</Button>
-        <Button variant="outline" colorScheme="grey">Grey</Button>
+        <Button variant="outline" colorScheme="error">
+          Error
+        </Button>
+        <Button variant="outline" colorScheme="warning">
+          Warning
+        </Button>
+        <Button variant="outline" colorScheme="grey">
+          Grey
+        </Button>
       </div>
     </div>
   ),
@@ -160,8 +172,12 @@ export const States: Story = {
       </div>
       <div className="flex gap-3">
         <Button variant="outline">Normal</Button>
-        <Button variant="outline" disabled>Disabled</Button>
-        <Button variant="outline" isLoading>Loading</Button>
+        <Button variant="outline" disabled>
+          Disabled
+        </Button>
+        <Button variant="outline" isLoading>
+          Loading
+        </Button>
       </div>
     </div>
   ),
@@ -176,35 +192,75 @@ export const WithIcons: Story = {
       <div className="flex gap-3">
         <Button
           leftIcon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
             </svg>
           }
         >
           Add Item
         </Button>
-        
+
         <Button
           variant="outline"
           rightIcon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           }
         >
           Next
         </Button>
-        
+
         <Button
           variant="ghost"
           leftIcon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           }
           rightIcon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           }
         >
@@ -235,14 +291,10 @@ export const CustomStyles: Story = {
       <Button className="shadow-xl hover:scale-105 transform transition-transform">
         With Shadow & Scale
       </Button>
-      
-      <Button className="rounded-full">
-        Rounded Full
-      </Button>
-      
-      <Button className="uppercase tracking-wider">
-        Custom Text
-      </Button>
+
+      <Button className="rounded-full">Rounded Full</Button>
+
+      <Button className="uppercase tracking-wider">Custom Text</Button>
     </div>
   ),
 };
@@ -257,18 +309,20 @@ export const Accessibility: Story = {
       <p className="text-sm text-grey-600 mb-4">
         Press Tab to focus buttons, Space or Enter to activate.
       </p>
-      
+
       <div className="flex gap-3">
         <Button>Focusable 1</Button>
         <Button disabled>Disabled (Not Focusable)</Button>
         <Button>Focusable 2</Button>
       </div>
-      
-      <h3 className="text-lg font-semibold mb-2 mt-4">Focus Ring (WCAG 2.1 AA)</h3>
+
+      <h3 className="text-lg font-semibold mb-2 mt-4">
+        Focus Ring (WCAG 2.1 AA)
+      </h3>
       <p className="text-sm text-grey-600 mb-4">
         Focus ring is 2px, primary color, with 2px offset.
       </p>
-      
+
       <div className="flex gap-3">
         <Button variant="solid">Solid Focus</Button>
         <Button variant="outline">Outline Focus</Button>

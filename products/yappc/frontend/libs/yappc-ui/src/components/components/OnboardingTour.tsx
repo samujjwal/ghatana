@@ -32,7 +32,12 @@ export interface Tour {
   id: string;
   name: string;
   description: string;
-  category: 'getting-started' | 'canvas-basics' | 'advanced-features' | 'collaboration' | 'shortcuts';
+  category:
+    | 'getting-started'
+    | 'canvas-basics'
+    | 'advanced-features'
+    | 'collaboration'
+    | 'shortcuts';
   icon: string;
   estimatedDuration: number; // in minutes
   prerequisites?: string[];
@@ -106,7 +111,9 @@ export class OnboardingTourManager {
 
     // Check prerequisites
     if (tour.prerequisites) {
-      const unmetPrereqs = tour.prerequisites.filter(req => !this.completedTours.has(req));
+      const unmetPrereqs = tour.prerequisites.filter(
+        (req) => !this.completedTours.has(req)
+      );
       if (unmetPrereqs.length > 0) {
         console.warn(`Tour ${tourId} has unmet prerequisites:`, unmetPrereqs);
         return false;
@@ -129,7 +136,7 @@ export class OnboardingTourManager {
     if (!this.currentTour || !this.isActive) return;
 
     const currentStep = this.currentTour.steps[this.currentStepIndex];
-    
+
     // Execute after-step action
     if (currentStep.afterStep) {
       await currentStep.afterStep();
@@ -149,7 +156,8 @@ export class OnboardingTourManager {
    * Go to previous step
    */
   async previousStep(): Promise<void> {
-    if (!this.currentTour || !this.isActive || this.currentStepIndex <= 0) return;
+    if (!this.currentTour || !this.isActive || this.currentStepIndex <= 0)
+      return;
 
     this.currentStepIndex--;
     this.notifyListeners();
@@ -200,16 +208,18 @@ export class OnboardingTourManager {
    * Get all available tours
    */
   getAvailableTours(): Tour[] {
-    return Array.from(this.tours.values()).filter(tour => {
+    return Array.from(this.tours.values()).filter((tour) => {
       // Filter out completed tours unless they're repeatable
       if (this.completedTours.has(tour.id)) return false;
-      
+
       // Filter out tours with unmet prerequisites
       if (tour.prerequisites) {
-        const unmetPrereqs = tour.prerequisites.filter(req => !this.completedTours.has(req));
+        const unmetPrereqs = tour.prerequisites.filter(
+          (req) => !this.completedTours.has(req)
+        );
         if (unmetPrereqs.length > 0) return false;
       }
-      
+
       return true;
     });
   }
@@ -250,7 +260,7 @@ export class OnboardingTourManager {
     if (!this.currentTour || !this.isActive) return;
 
     const step = this.currentTour.steps[this.currentStepIndex];
-    
+
     // Execute before-step action
     if (step.beforeStep) {
       await step.beforeStep();
@@ -258,7 +268,7 @@ export class OnboardingTourManager {
 
     // Add delay if specified
     if (step.delay) {
-      await new Promise(resolve => setTimeout(resolve, step.delay));
+      await new Promise((resolve) => setTimeout(resolve, step.delay));
     }
 
     // Scroll target into view
@@ -284,7 +294,8 @@ export class OnboardingTourManager {
           {
             id: 'welcome',
             title: 'Welcome to Canvas',
-            content: 'Welcome! This tour will help you get started with creating interactive diagrams and workflows.',
+            content:
+              'Welcome! This tour will help you get started with creating interactive diagrams and workflows.',
             target: 'body',
             position: 'center',
             nextEnabled: true,
@@ -292,8 +303,10 @@ export class OnboardingTourManager {
           {
             id: 'canvas-area',
             title: 'Canvas Area',
-            content: 'This is your main canvas where you can add nodes, connections, and build your diagrams.',
-            target: '[data-testid="react-flow-wrapper"], [data-testid="rf__wrapper"]',
+            content:
+              'This is your main canvas where you can add nodes, connections, and build your diagrams.',
+            target:
+              '[data-testid="react-flow-wrapper"], [data-testid="rf__wrapper"]',
             position: 'top',
             highlightPadding: 20,
             nextEnabled: true,
@@ -301,7 +314,8 @@ export class OnboardingTourManager {
           {
             id: 'component-palette',
             title: 'Component Palette',
-            content: 'Use this palette to add different types of components to your canvas. Try dragging one onto the canvas!',
+            content:
+              'Use this palette to add different types of components to your canvas. Try dragging one onto the canvas!',
             target: '[data-testid="component-palette"]',
             position: 'right',
             action: 'hover',
@@ -310,7 +324,8 @@ export class OnboardingTourManager {
           {
             id: 'toolbar',
             title: 'Toolbar',
-            content: 'Access important tools and actions from the toolbar. You can save, export, and manage your canvas here.',
+            content:
+              'Access important tools and actions from the toolbar. You can save, export, and manage your canvas here.',
             target: '[data-testid="canvas-toolbar"]',
             position: 'bottom',
             nextEnabled: true,
@@ -318,23 +333,27 @@ export class OnboardingTourManager {
           {
             id: 'command-palette',
             title: 'Command Palette',
-            content: 'Press Cmd+K (or Ctrl+K) to open the command palette for quick access to all features.',
+            content:
+              'Press Cmd+K (or Ctrl+K) to open the command palette for quick access to all features.',
             target: 'body',
             position: 'center',
             beforeStep: () => {
               // Simulate opening command palette
-              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+              document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'k', metaKey: true })
+              );
             },
             delay: 1000,
             nextEnabled: true,
           },
         ],
       },
-      
+
       {
         id: 'canvas-basics',
         name: 'Canvas Basics',
-        description: 'Learn how to create and manipulate elements on the canvas',
+        description:
+          'Learn how to create and manipulate elements on the canvas',
         category: 'canvas-basics',
         icon: '🎨',
         estimatedDuration: 8,
@@ -343,7 +362,8 @@ export class OnboardingTourManager {
           {
             id: 'add-node',
             title: 'Adding Nodes',
-            content: 'Drag a component from the palette to the canvas to create a new node.',
+            content:
+              'Drag a component from the palette to the canvas to create a new node.',
             target: '[data-testid="palette-item-component"]',
             position: 'right',
             action: 'click',
@@ -352,7 +372,8 @@ export class OnboardingTourManager {
           {
             id: 'select-node',
             title: 'Selecting Elements',
-            content: 'Click on a node to select it. Selected nodes show handles for connections.',
+            content:
+              'Click on a node to select it. Selected nodes show handles for connections.',
             target: '.react-flow__node',
             position: 'top',
             action: 'click',
@@ -361,7 +382,8 @@ export class OnboardingTourManager {
           {
             id: 'connect-nodes',
             title: 'Connecting Nodes',
-            content: 'Drag from a node handle to another node to create connections.',
+            content:
+              'Drag from a node handle to another node to create connections.',
             target: '.react-flow__handle',
             position: 'top',
             nextEnabled: true,
@@ -369,7 +391,8 @@ export class OnboardingTourManager {
           {
             id: 'properties-panel',
             title: 'Properties Panel',
-            content: 'Edit node properties and settings in the properties panel.',
+            content:
+              'Edit node properties and settings in the properties panel.',
             target: '[data-testid="properties-panel"]',
             position: 'left',
             nextEnabled: true,
@@ -389,7 +412,8 @@ export class OnboardingTourManager {
           {
             id: 'share-canvas',
             title: 'Sharing Canvas',
-            content: 'Click the share button to invite others to collaborate on your canvas.',
+            content:
+              'Click the share button to invite others to collaborate on your canvas.',
             target: '[data-testid="share-button"]',
             position: 'bottom',
             nextEnabled: true,
@@ -397,7 +421,8 @@ export class OnboardingTourManager {
           {
             id: 'user-presence',
             title: 'User Presence',
-            content: 'See who else is viewing and editing the canvas with real-time cursors.',
+            content:
+              'See who else is viewing and editing the canvas with real-time cursors.',
             target: '[data-testid="user-presence"]',
             position: 'bottom',
             nextEnabled: true,
@@ -405,7 +430,8 @@ export class OnboardingTourManager {
           {
             id: 'comments',
             title: 'Comments',
-            content: 'Add comments to discuss specific parts of your canvas with collaborators.',
+            content:
+              'Add comments to discuss specific parts of your canvas with collaborators.',
             target: '[data-testid="comments-panel"]',
             position: 'left',
             nextEnabled: true,
@@ -424,7 +450,8 @@ export class OnboardingTourManager {
           {
             id: 'basic-shortcuts',
             title: 'Basic Shortcuts',
-            content: 'Use Cmd+C/Cmd+V to copy/paste, Cmd+Z/Cmd+Shift+Z for undo/redo.',
+            content:
+              'Use Cmd+C/Cmd+V to copy/paste, Cmd+Z/Cmd+Shift+Z for undo/redo.',
             target: 'body',
             position: 'center',
             nextEnabled: true,
@@ -432,7 +459,8 @@ export class OnboardingTourManager {
           {
             id: 'selection-shortcuts',
             title: 'Selection Shortcuts',
-            content: 'Use Cmd+A to select all elements, or hold Shift to multi-select.',
+            content:
+              'Use Cmd+A to select all elements, or hold Shift to multi-select.',
             target: 'body',
             position: 'center',
             nextEnabled: true,
@@ -441,7 +469,7 @@ export class OnboardingTourManager {
       },
     ];
 
-    tours.forEach(tour => this.registerTour(tour));
+    tours.forEach((tour) => this.registerTour(tour));
   }
 
   /**
@@ -449,7 +477,7 @@ export class OnboardingTourManager {
    */
   private notifyListeners(): void {
     const state = this.getCurrentState();
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(state);
       } catch (error) {
@@ -478,7 +506,10 @@ export class OnboardingTourManager {
    */
   private saveCompletedTours(): void {
     try {
-      localStorage.setItem('completed-tours', JSON.stringify(Array.from(this.completedTours)));
+      localStorage.setItem(
+        'completed-tours',
+        JSON.stringify(Array.from(this.completedTours))
+      );
     } catch (error) {
       console.error('Failed to save completed tours:', error);
     }
@@ -502,14 +533,19 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
 
   const currentStep = currentTour.steps[currentStepIndex];
   const totalSteps = currentTour.steps.length;
-  const progressPercent = Math.min(100, ((currentStepIndex + 1) / totalSteps) * 100);
-  const isDev = typeof import.meta !== 'undefined' && Boolean((import.meta as unknown).env?.DEV);
+  const progressPercent = Math.min(
+    100,
+    ((currentStepIndex + 1) / totalSteps) * 100
+  );
+  const isDev =
+    typeof import.meta !== 'undefined' &&
+    Boolean((import.meta as unknown).env?.DEV);
 
   return (
     <div
       className={clsx(
         'fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/60 px-4 py-10 backdrop-blur-sm',
-        className,
+        className
       )}
       data-testid="onboarding-tour"
     >
@@ -526,8 +562,12 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
 
         <div className="mb-4 flex items-start justify-between gap-4 pr-8">
           <div>
-            <p className="text-xs uppercase tracking-wide text-blue-600">{currentTour.name}</p>
-            <h3 className="mt-1 text-xl font-semibold text-gray-900">{currentStep.title}</h3>
+            <p className="text-xs uppercase tracking-wide text-blue-600">
+              {currentTour.name}
+            </p>
+            <h3 className="mt-1 text-xl font-semibold text-gray-900">
+              {currentStep.title}
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               Step {currentStepIndex + 1} of {totalSteps}
             </p>
@@ -548,7 +588,9 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
           {currentStep.action && currentStep.action !== 'none' && (
             <p className="text-sm font-medium text-blue-600">
               Suggested action: {currentStep.action}
-              {currentStep.actionTarget ? ` on ${currentStep.actionTarget}` : ''}
+              {currentStep.actionTarget
+                ? ` on ${currentStep.actionTarget}`
+                : ''}
             </p>
           )}
         </div>
@@ -604,7 +646,9 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
 
         {isDev && (
           <div className="mt-6 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3 text-xs text-gray-600">
-            <p className="mb-2 font-semibold text-gray-700">Developer helpers</p>
+            <p className="mb-2 font-semibold text-gray-700">
+              Developer helpers
+            </p>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -612,16 +656,24 @@ export const OnboardingTourUI: React.FC<OnboardingTourProps> = ({
                 onClick={() => {
                   try {
                     const stored = localStorage.getItem('completed-tours');
-                    const completed = stored ? new Set<string>(JSON.parse(stored)) : new Set<string>();
+                    const completed = stored
+                      ? new Set<string>(JSON.parse(stored))
+                      : new Set<string>();
                     completed.add('getting-started');
-                    localStorage.setItem('completed-tours', JSON.stringify(Array.from(completed)));
+                    localStorage.setItem(
+                      'completed-tours',
+                      JSON.stringify(Array.from(completed))
+                    );
                     window.dispatchEvent(
                       new CustomEvent('onboarding-tour:completed-dev', {
                         detail: { tourId: 'getting-started' },
-                      }),
+                      })
                     );
                   } catch (error) {
-                    console.error('Failed to mark getting-started tour complete (dev helper)', error);
+                    console.error(
+                      'Failed to mark getting-started tour complete (dev helper)',
+                      error
+                    );
                   }
                 }}
               >

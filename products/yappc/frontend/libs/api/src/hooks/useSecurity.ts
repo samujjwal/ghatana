@@ -12,7 +12,12 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import {
+  useQuery,
+  useMutation,
+  useSubscription,
+  useLazyQuery,
+} from '@apollo/client';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -127,14 +132,17 @@ export function useVulnerability(vulnerabilityId?: string) {
 export function useVulnerabilities(filters?: VulnerabilityFilters) {
   const [vulnerabilities, setVulnerabilities] = useAtom(vulnerabilitiesAtom);
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_VULNERABILITIES, {
-    variables: { filters, first: 50 },
-    onCompleted: (data) => {
-      if (data?.vulnerabilities?.nodes) {
-        setVulnerabilities(data.vulnerabilities.nodes);
-      }
-    },
-  });
+  const { data, loading, error, refetch, fetchMore } = useQuery(
+    GET_VULNERABILITIES,
+    {
+      variables: { filters, first: 50 },
+      onCompleted: (data) => {
+        if (data?.vulnerabilities?.nodes) {
+          setVulnerabilities(data.vulnerabilities.nodes);
+        }
+      },
+    }
+  );
 
   const loadMore = useCallback(async () => {
     if (!data?.vulnerabilities?.pageInfo?.hasNextPage) return;
@@ -144,7 +152,10 @@ export function useVulnerabilities(filters?: VulnerabilityFilters) {
       },
     });
     if (result.data?.vulnerabilities?.nodes) {
-      setVulnerabilities((prev) => [...prev, ...result.data.vulnerabilities.nodes]);
+      setVulnerabilities((prev) => [
+        ...prev,
+        ...result.data.vulnerabilities.nodes,
+      ]);
     }
   }, [data, fetchMore, setVulnerabilities]);
 
@@ -157,7 +168,9 @@ export function useVulnerabilities(filters?: VulnerabilityFilters) {
         setVulnerabilities((prev) => {
           const exists = prev.find((v) => v.id === update.id);
           if (exists) {
-            return prev.map((v) => (v.id === update.id ? { ...v, ...update } : v));
+            return prev.map((v) =>
+              v.id === update.id ? { ...v, ...update } : v
+            );
           }
           return [update, ...prev];
         });
@@ -220,7 +233,9 @@ export function useVulnerabilityMutations() {
 
   const updateVulnerability = useCallback(
     async (vulnId: string, input: Partial<VulnerabilityInput>) => {
-      const result = await update({ variables: { vulnerabilityId: vulnId, input } });
+      const result = await update({
+        variables: { vulnerabilityId: vulnId, input },
+      });
       if (result.data?.updateVulnerability) {
         const updated = result.data.updateVulnerability;
         setVulnerabilities((prev) =>
@@ -380,15 +395,18 @@ export function useSecurityScans(projectId?: string) {
 export function useCompliance(projectId?: string) {
   const [complianceStatus, setComplianceStatus] = useAtom(complianceStatusAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_COMPLIANCE_FRAMEWORKS, {
-    variables: { projectId },
-    skip: !projectId,
-    onCompleted: (data) => {
-      if (data?.complianceFrameworks) {
-        setComplianceStatus(data.complianceFrameworks);
-      }
-    },
-  });
+  const { data, loading, error, refetch } = useQuery(
+    GET_COMPLIANCE_FRAMEWORKS,
+    {
+      variables: { projectId },
+      skip: !projectId,
+      onCompleted: (data) => {
+        if (data?.complianceFrameworks) {
+          setComplianceStatus(data.complianceFrameworks);
+        }
+      },
+    }
+  );
 
   return {
     frameworks: complianceStatus || data?.complianceFrameworks || [],
@@ -584,7 +602,9 @@ export function useSecurityPolicies(projectId?: string) {
       const result = await update({ variables: { policyId, input } });
       if (result.data?.updateSecurityPolicy) {
         setPolicies((prev) =>
-          prev.map((p) => (p.id === policyId ? result.data.updateSecurityPolicy : p))
+          prev.map((p) =>
+            p.id === policyId ? result.data.updateSecurityPolicy : p
+          )
         );
         return result.data.updateSecurityPolicy;
       }
@@ -602,7 +622,12 @@ export function useSecurityPolicies(projectId?: string) {
   );
 
   const createPolicyException = useCallback(
-    async (policyId: string, reason: string, expiresAt?: string, scope?: string) => {
+    async (
+      policyId: string,
+      reason: string,
+      expiresAt?: string,
+      scope?: string
+    ) => {
       const result = await createException({
         variables: { policyId, reason, expiresAt, scope },
       });
@@ -727,14 +752,17 @@ export function useAuditLogs(filters?: {
 }) {
   const [logs, setLogs] = useAtom(auditLogsAtom);
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_AUDIT_LOGS, {
-    variables: { filters, first: 50 },
-    onCompleted: (data) => {
-      if (data?.auditLogs?.nodes) {
-        setLogs(data.auditLogs.nodes);
-      }
-    },
-  });
+  const { data, loading, error, refetch, fetchMore } = useQuery(
+    GET_AUDIT_LOGS,
+    {
+      variables: { filters, first: 50 },
+      onCompleted: (data) => {
+        if (data?.auditLogs?.nodes) {
+          setLogs(data.auditLogs.nodes);
+        }
+      },
+    }
+  );
 
   const loadMore = useCallback(async () => {
     if (!data?.auditLogs?.pageInfo?.hasNextPage) return;

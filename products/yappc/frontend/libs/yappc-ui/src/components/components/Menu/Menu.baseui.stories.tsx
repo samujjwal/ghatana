@@ -58,21 +58,56 @@ export const WithIcons: Story = {
 
     // Simple SVG icons
     const HomeIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+        />
       </svg>
     );
 
     const SettingsIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+        />
       </svg>
     );
 
     const LogoutIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+        />
       </svg>
     );
 
@@ -81,7 +116,9 @@ export const WithIcons: Story = {
         {...args}
         open={open}
         onOpenChange={setOpen}
-        trigger={<Button onClick={() => setOpen(!open)}>Menu with Icons</Button>}
+        trigger={
+          <Button onClick={() => setOpen(!open)}>Menu with Icons</Button>
+        }
       >
         <MenuItem icon={HomeIcon} text="Home" />
         <MenuItem icon={SettingsIcon} text="Settings" />
@@ -103,14 +140,34 @@ export const WithSecondaryText: Story = {
     const [open, setOpen] = useState(false);
 
     const UserIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+        />
       </svg>
     );
 
     const KeyIcon = (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
+        />
       </svg>
     );
 
@@ -121,14 +178,14 @@ export const WithSecondaryText: Story = {
         onOpenChange={setOpen}
         trigger={<Button onClick={() => setOpen(!open)}>Account Menu</Button>}
       >
-        <MenuItem 
-          icon={UserIcon} 
-          text="Profile" 
+        <MenuItem
+          icon={UserIcon}
+          text="Profile"
           secondaryText="View and edit your profile"
         />
-        <MenuItem 
-          icon={KeyIcon} 
-          text="Security" 
+        <MenuItem
+          icon={KeyIcon}
+          text="Security"
           secondaryText="Password and 2FA settings"
         />
       </Menu>
@@ -144,7 +201,9 @@ export const Shapes: Story = {
     open: false,
   },
   render: function Render(args) {
-    const [shape, setShape] = useState<'rounded' | 'square' | 'soft' | null>(null);
+    const [shape, setShape] = useState<'rounded' | 'square' | 'soft' | null>(
+      null
+    );
 
     return (
       <div className="flex gap-2">
@@ -152,7 +211,9 @@ export const Shapes: Story = {
           {...args}
           open={shape === 'rounded'}
           onOpenChange={(open) => setShape(open ? 'rounded' : null)}
-          trigger={<Button onClick={() => setShape('rounded')}>Rounded (6px)</Button>}
+          trigger={
+            <Button onClick={() => setShape('rounded')}>Rounded (6px)</Button>
+          }
           shape="rounded"
         >
           <MenuItem text="Option 1" />
@@ -176,7 +237,9 @@ export const Shapes: Story = {
           {...args}
           open={shape === 'square'}
           onOpenChange={(open) => setShape(open ? 'square' : null)}
-          trigger={<Button onClick={() => setShape('square')}>Square (2px)</Button>}
+          trigger={
+            <Button onClick={() => setShape('square')}>Square (2px)</Button>
+          }
           shape="square"
         >
           <MenuItem text="Option 1" />
@@ -224,7 +287,11 @@ export const Elevations: Story = {
           {...args}
           open={elevation === 2}
           onOpenChange={(open) => setElevation(open ? 2 : null)}
-          trigger={<Button onClick={() => setElevation(2)}>Elevation 2 (default)</Button>}
+          trigger={
+            <Button onClick={() => setElevation(2)}>
+              Elevation 2 (default)
+            </Button>
+          }
           elevation={2}
         >
           <MenuItem text="Medium shadow" />
@@ -296,7 +363,9 @@ export const DisabledItems: Story = {
         {...args}
         open={open}
         onOpenChange={setOpen}
-        trigger={<Button onClick={() => setOpen(!open)}>Menu with Disabled</Button>}
+        trigger={
+          <Button onClick={() => setOpen(!open)}>Menu with Disabled</Button>
+        }
       >
         <MenuItem text="Enabled Item" />
         <MenuItem text="Disabled Item" disabled />
@@ -332,7 +401,9 @@ export const WithClickHandlers: Story = {
           {...args}
           open={open}
           onOpenChange={setOpen}
-          trigger={<Button onClick={() => setOpen(!open)}>Select Option</Button>}
+          trigger={
+            <Button onClick={() => setOpen(!open)}>Select Option</Button>
+          }
         >
           <MenuItem text="Option A" onClick={() => handleClick('Option A')} />
           <MenuItem text="Option B" onClick={() => handleClick('Option B')} />
@@ -402,14 +473,15 @@ export const KeyboardNavigation: Story = {
           • ↑/↓ Arrow keys - Navigate items
           <br />
           • ENTER - Select item
-          <br />
-          • ESC - Close menu
+          <br />• ESC - Close menu
         </div>
         <Menu
           {...args}
           open={open}
           onOpenChange={setOpen}
-          trigger={<Button onClick={() => setOpen(!open)}>Keyboard Menu</Button>}
+          trigger={
+            <Button onClick={() => setOpen(!open)}>Keyboard Menu</Button>
+          }
         >
           <MenuItem text="First Item" />
           <MenuItem text="Second Item" />

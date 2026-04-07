@@ -196,10 +196,15 @@ describe('Feature 2.26: Compliance Mapping', () => {
 
       const tagId = Object.keys(updated.controlTags)[0];
 
-      updated = updateControlTag(updated, tagId, {
-        status: 'satisfied',
-        evidence: ['new-doc.pdf'],
-      }, 'user-2');
+      updated = updateControlTag(
+        updated,
+        tagId,
+        {
+          status: 'satisfied',
+          evidence: ['new-doc.pdf'],
+        },
+        'user-2'
+      );
 
       const tag = updated.controlTags[tagId];
       expect(tag.status).toBe('satisfied');
@@ -219,10 +224,15 @@ describe('Feature 2.26: Compliance Mapping', () => {
 
       const tagId = Object.keys(updated.controlTags)[0];
 
-      updated = updateControlTag(updated, tagId, {
-        status: 'satisfied',
-        evidence: ['doc.pdf'],
-      }, 'user-2');
+      updated = updateControlTag(
+        updated,
+        tagId,
+        {
+          status: 'satisfied',
+          evidence: ['doc.pdf'],
+        },
+        'user-2'
+      );
 
       expect(updated.auditLog).toHaveLength(2);
       expect(updated.auditLog[1].action).toBe('control-updated');

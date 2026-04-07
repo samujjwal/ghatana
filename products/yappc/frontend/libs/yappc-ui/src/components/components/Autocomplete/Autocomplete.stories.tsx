@@ -5,7 +5,6 @@ import { Autocomplete } from './Autocomplete';
 import type { AutocompleteOption } from './Autocomplete';
 import type { Meta, StoryObj } from '@storybook/react';
 
-
 const meta: Meta<typeof Autocomplete> = {
   title: 'Components/Autocomplete',
   component: Autocomplete,
@@ -371,7 +370,9 @@ export const FormValidation: Story = {
             e.preventDefault();
             setTouched(true);
             if (value) {
-              alert(`Selected: ${fruits.find((f) => f.value === value)?.label}`);
+              alert(
+                `Selected: ${fruits.find((f) => f.value === value)?.label}`
+              );
             }
           }}
         >
@@ -437,9 +438,9 @@ export const Playground: Story = {
     helperText: 'Start typing to filter options',
   },
   render: (args) => {
-    const [value, setValue] = React.useState<string | number | (string | number)[]>(
-      args.multiple ? [] : ''
-    );
+    const [value, setValue] = React.useState<
+      string | number | (string | number)[]
+    >(args.multiple ? [] : '');
 
     return (
       <div className="w-[400px]">

@@ -8,7 +8,6 @@ import { faker } from '../faker-shim';
 
 import { createProject } from './project.factory';
 
-
 /**
  *
  */
@@ -54,8 +53,9 @@ export function createTask(options: TaskFactoryOptions = {}): Task {
     title,
     description: options.description || faker.lorem.paragraph(),
     status:
-      (options.status === 'review' ? 'in_progress' : (options.status as unknown)) ||
-      'todo',
+      (options.status === 'review'
+        ? 'in_progress'
+        : (options.status as unknown)) || 'todo',
     assigneeId: assigneeId || undefined,
     dueDate: options.dueDate
       ? options.dueDate instanceof Date

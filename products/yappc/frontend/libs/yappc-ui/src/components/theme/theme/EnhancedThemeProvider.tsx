@@ -1,5 +1,8 @@
 import { CssBaseline } from '@mui/material';
-import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
+import {
+  createTheme,
+  ThemeProvider as MuiThemeProvider,
+} from '@mui/material/styles';
 import React, { useMemo } from 'react';
 
 import {
@@ -34,7 +37,10 @@ function MuiThemeConnector({ children }: { children: React.ReactNode }) {
   );
 }
 
-export interface EnhancedThemeProviderProps extends Omit<MultiLayerThemeProviderProps, 'baseThemeOptions'> {
+export interface EnhancedThemeProviderProps extends Omit<
+  MultiLayerThemeProviderProps,
+  'baseThemeOptions'
+> {
   children: React.ReactNode;
   mode?: 'light' | 'dark';
 }

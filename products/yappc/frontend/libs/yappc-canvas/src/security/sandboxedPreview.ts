@@ -1,19 +1,19 @@
 /**
  * Sandboxed Preview System
- * 
+ *
  * Provides secure preview rendering for untrusted HTML/markup with:
  * - Restrictive iframe sandbox attributes
  * - Content Security Policy (CSP) enforcement
  * - CSP violation logging and monitoring
  * - Optional proxy for external HTML sanitization
  * - Preview lifecycle management
- * 
+ *
  * Security Features:
  * - Isolated iframe environment with no same-origin access
  * - Disabled scripts, forms, popups, and plugins by default
  * - CSP headers: default-src 'none', img-src data:, style-src 'unsafe-inline'
  * - Violation reporting with detailed security event tracking
- * 
+ *
  * @module security/sandboxedPreview
  */
 
@@ -48,7 +48,7 @@ export interface CSPDirectives {
 /**
  * Sandbox attribute flags for iframe
  */
-export type SandboxAttribute = 
+export type SandboxAttribute =
   | 'allow-forms'
   | 'allow-modals'
   | 'allow-orientation-lock'
@@ -148,7 +148,7 @@ interface PreviewState {
 /**
  * Security event types
  */
-export type SecurityEventType = 
+export type SecurityEventType =
   | 'preview_created'
   | 'preview_destroyed'
   | 'csp_violation'
@@ -198,7 +198,7 @@ const DEFAULT_SANDBOX: SandboxAttribute[] = [
 
 /**
  * SandboxedPreviewManager
- * 
+ *
  * Manages sandboxed HTML preview rendering with security controls
  */
 export class SandboxedPreviewManager {
@@ -331,8 +331,10 @@ export class SandboxedPreviewManager {
       if (config.useProxy) {
         // Fetch through proxy
         const proxyUrl = config.proxyUrl ?? '/api/preview-proxy';
-        const response = await fetch(`${proxyUrl}?url=${encodeURIComponent(url)}`);
-        
+        const response = await fetch(
+          `${proxyUrl}?url=${encodeURIComponent(url)}`
+        );
+
         if (!response.ok) {
           throw new Error(`Proxy failed: ${response.statusText}`);
         }
@@ -392,7 +394,7 @@ export class SandboxedPreviewManager {
    */
   destroyPreview(previewId: string): boolean {
     const state = this.previews.get(previewId);
-    
+
     if (!state) {
       return false;
     }
@@ -404,7 +406,7 @@ export class SandboxedPreviewManager {
       type: 'preview_destroyed',
       previewId,
       timestamp: Date.now(),
-      details: { 
+      details: {
         lifetime: Date.now() - state.createdAt,
         violations: state.violations,
       },
@@ -438,19 +440,19 @@ export class SandboxedPreviewManager {
     let events = this.securityEvents;
 
     if (filter?.previewId) {
-      events = events.filter(e => e.previewId === filter.previewId);
+      events = events.filter((e) => e.previewId === filter.previewId);
     }
 
     if (filter?.type) {
-      events = events.filter(e => e.type === filter.type);
+      events = events.filter((e) => e.type === filter.type);
     }
 
     if (filter?.severity) {
-      events = events.filter(e => e.severity === filter.severity);
+      events = events.filter((e) => e.severity === filter.severity);
     }
 
     if (filter?.since !== undefined) {
-      events = events.filter(e => e.timestamp >= filter.since!);
+      events = events.filter((e) => e.timestamp >= filter.since!);
     }
 
     return events;
@@ -531,7 +533,7 @@ export class SandboxedPreviewManager {
    */
   private createIframe(config: Required<PreviewConfig>): HTMLIFrameElement {
     const iframe = document.createElement('iframe');
-    
+
     // Set sandbox attribute
     if (config.sandbox.length > 0) {
       iframe.setAttribute('sandbox', config.sandbox.join(' '));
@@ -541,14 +543,14 @@ export class SandboxedPreviewManager {
 
     // Set CSP via meta tag (will be injected into content)
     iframe.setAttribute('csp', this.buildCSPHeader(config.csp));
-    
+
     // Accessibility
     iframe.title = config.iframeTitle;
-    
+
     // Security attributes
     iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.setAttribute('loading', 'lazy');
-    
+
     // Styling
     iframe.style.border = 'none';
     iframe.style.width = '100%';
@@ -566,7 +568,7 @@ export class SandboxedPreviewManager {
     config: Required<PreviewConfig>
   ): void {
     const cspHeader = this.buildCSPHeader(config.csp);
-    
+
     // Inject CSP meta tag
     const wrappedContent = `
       <!DOCTYPE html>
@@ -588,7 +590,10 @@ export class SandboxedPreviewManager {
   /**
    *
    */
-  private setupViolationMonitoring(previewId: string, iframe: HTMLIFrameElement): void {
+  private setupViolationMonitoring(
+    previewId: string,
+    iframe: HTMLIFrameElement
+  ): void {
     // Listen for CSP violation events
     const handleViolation = (event: SecurityPolicyViolationEvent) => {
       const violation: CSPViolation = {
@@ -628,7 +633,10 @@ export class SandboxedPreviewManager {
     // Add listener to iframe's content window (when loaded)
     iframe.addEventListener('load', () => {
       try {
-        iframe.contentWindow?.addEventListener('securitypolicyviolation', handleViolation as EventListener);
+        iframe.contentWindow?.addEventListener(
+          'securitypolicyviolation',
+          handleViolation as EventListener
+        );
       } catch (error) {
         // Cross-origin restrictions may prevent this
         console.warn('Could not attach violation listener:', error);
@@ -639,12 +647,14 @@ export class SandboxedPreviewManager {
   /**
    *
    */
-  private calculateViolationSeverity(directive: string): CSPViolation['severity'] {
+  private calculateViolationSeverity(
+    directive: string
+  ): CSPViolation['severity'] {
     // Script violations are most severe
     if (directive.includes('script')) {
       return 'high';
     }
-    
+
     // Object/frame violations are medium
     if (directive.includes('object') || directive.includes('frame')) {
       return 'medium';
@@ -659,7 +669,7 @@ export class SandboxedPreviewManager {
    */
   private logSecurityEvent(event: SecurityEvent): void {
     this.securityEvents.push(event);
-    
+
     // Notify listeners
     for (const listener of this.eventListeners) {
       try {
@@ -688,7 +698,10 @@ export function createSandboxedPreviewManager(): SandboxedPreviewManager {
 /**
  * Validate preview configuration
  */
-export function validatePreviewConfig(config: PreviewConfig): { valid: boolean; errors: string[] } {
+export function validatePreviewConfig(config: PreviewConfig): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (config.maxContentSize !== undefined && config.maxContentSize <= 0) {

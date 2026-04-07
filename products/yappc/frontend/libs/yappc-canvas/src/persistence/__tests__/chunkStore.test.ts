@@ -47,7 +47,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
   }
 
   // Helper to create test elements
-  const createElement = (id: string, x: number, y: number, name: string): TestElement => ({
+  const createElement = (
+    id: string,
+    x: number,
+    y: number,
+    name: string
+  ): TestElement => ({
     id,
     x,
     y,
@@ -89,7 +94,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       expect(state.config.maxCachedChunks).toBe(50);
       expect(state.config.preloadPadding).toBe(2);
       expect(state.config.autoSave).toBe(false);
-      expect(state.config.autoSaveInterval).toBe(DEFAULT_CHUNK_CONFIG.autoSaveInterval);
+      expect(state.config.autoSaveInterval).toBe(
+        DEFAULT_CHUNK_CONFIG.autoSaveInterval
+      );
     });
   });
 
@@ -161,7 +168,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
 
   describe('Viewport Chunk Queries', () => {
     it('should find chunks in viewport without padding', () => {
-      const viewport: ViewportBounds = { x: 0, y: 0, width: 2000, height: 2000 };
+      const viewport: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 2000,
+        height: 2000,
+      };
       const chunkIds = getChunksInViewport(viewport, 1000, 0);
 
       expect(chunkIds).toHaveLength(9); // 3x3 grid
@@ -171,7 +183,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     });
 
     it('should find chunks in viewport with padding', () => {
-      const viewport: ViewportBounds = { x: 1000, y: 1000, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: 1000,
+        y: 1000,
+        width: 1000,
+        height: 1000,
+      };
       const chunkIds = getChunksInViewport(viewport, 1000, 1);
 
       // Viewport covers chunk_1_1 and chunk_2_2
@@ -183,7 +200,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     });
 
     it('should handle viewport at origin', () => {
-      const viewport: ViewportBounds = { x: 0, y: 0, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 1000,
+      };
       const chunkIds = getChunksInViewport(viewport, 1000, 0);
 
       expect(chunkIds).toContain('chunk_0_0');
@@ -191,7 +213,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     });
 
     it('should handle negative coordinates', () => {
-      const viewport: ViewportBounds = { x: -1000, y: -1000, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: -1000,
+        y: -1000,
+        width: 1000,
+        height: 1000,
+      };
       const chunkIds = getChunksInViewport(viewport, 1000, 0);
 
       expect(chunkIds).toContain('chunk_-1_-1');
@@ -291,9 +318,18 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       const state = createChunkStore<TestElement>({ maxElementsPerChunk: 2 });
 
       let newState = state;
-      newState = addElement(newState, createElement('e1', 100, 100, 'Element 1'));
-      newState = addElement(newState, createElement('e2', 200, 200, 'Element 2'));
-      newState = addElement(newState, createElement('e3', 300, 300, 'Element 3'));
+      newState = addElement(
+        newState,
+        createElement('e1', 100, 100, 'Element 1')
+      );
+      newState = addElement(
+        newState,
+        createElement('e2', 200, 200, 'Element 2')
+      );
+      newState = addElement(
+        newState,
+        createElement('e3', 300, 300, 'Element 3')
+      );
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('exceeding recommended maximum')
@@ -331,7 +367,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
         chunk.hydrated = true;
       });
 
-      const viewport: ViewportBounds = { x: 0, y: 0, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 1000,
+      };
       getElementsInViewport(state, viewport);
 
       expect(state.stats.cacheHits).toBeGreaterThan(0);
@@ -340,7 +381,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     it('should track cache misses for non-hydrated chunks', () => {
       const state = createChunkStore<TestElement>();
 
-      const viewport: ViewportBounds = { x: 0, y: 0, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 1000,
+      };
       getElementsInViewport(state, viewport);
 
       expect(state.stats.cacheMisses).toBeGreaterThan(0);
@@ -386,7 +432,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       const state = createChunkStore<TestElement>();
       const loader = vi.fn().mockRejectedValue(new Error('Load failed'));
 
-      await expect(hydrateChunk(state, 'chunk_0_0', loader)).rejects.toThrow('Load failed');
+      await expect(hydrateChunk(state, 'chunk_0_0', loader)).rejects.toThrow(
+        'Load failed'
+      );
       expect(state.loadingChunks.has('chunk_0_0')).toBe(false);
     });
 
@@ -399,7 +447,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       await hydrateChunk(state, 'chunk_2_2', loader);
 
       // Only 2 chunks should remain hydrated
-      const hydratedCount = Array.from(state.chunks.values()).filter((c) => c.hydrated).length;
+      const hydratedCount = Array.from(state.chunks.values()).filter(
+        (c) => c.hydrated
+      ).length;
       expect(hydratedCount).toBeLessThanOrEqual(2);
     });
 
@@ -411,7 +461,7 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       // Load 2 chunks (max capacity)
       await hydrateChunk(state, 'chunk_0_0', loader);
       await hydrateChunk(state, 'chunk_1_1', loader);
-      
+
       // Mark first chunk as dirty
       const chunk = state.chunks.get('chunk_0_0');
       if (chunk) {
@@ -426,7 +476,7 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Cannot evict dirty chunk')
       );
-      
+
       // The dirty chunk might get dehydrated anyway since we can't hold infinite chunks
       // but the warning should have been issued
       consoleSpy.mockRestore();
@@ -438,7 +488,12 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       const state = createChunkStore<TestElement>({ preloadPadding: 1 });
       const loader = vi.fn().mockResolvedValue([]);
 
-      const viewport: ViewportBounds = { x: 0, y: 0, width: 1000, height: 1000 };
+      const viewport: ViewportBounds = {
+        x: 0,
+        y: 0,
+        width: 1000,
+        height: 1000,
+      };
       await preloadViewport(state, viewport, loader);
 
       // Should load more than just viewport chunks due to padding
@@ -450,7 +505,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
   describe('Stream Loading', () => {
     it('should stream load document with progress', async () => {
       const state = createChunkStore<TestElement>();
-      const loader = vi.fn().mockResolvedValue([createElement('e1', 100, 100, 'Element 1')]);
+      const loader = vi
+        .fn()
+        .mockResolvedValue([createElement('e1', 100, 100, 'Element 1')]);
       const onProgress = vi.fn();
 
       const chunkIds = ['chunk_0_0', 'chunk_1_1', 'chunk_2_2'];
@@ -471,7 +528,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       const loader = vi.fn().mockResolvedValue([]);
 
       const chunkIds = ['chunk_0_0', 'chunk_1_1'];
-      await expect(streamLoadDocument(state, chunkIds, loader)).resolves.toBeDefined();
+      await expect(
+        streamLoadDocument(state, chunkIds, loader)
+      ).resolves.toBeDefined();
     });
   });
 
@@ -498,7 +557,9 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       expect(saver).toHaveBeenCalledTimes(2);
       expect(state.dirtyChunks.size).toBe(0);
       expect(state.stats.savesPerformed).toBe(2);
-      expect(Array.from(state.chunks.values()).every((c) => !c.dirty)).toBe(true);
+      expect(Array.from(state.chunks.values()).every((c) => !c.dirty)).toBe(
+        true
+      );
     });
 
     it('should increment version on save', async () => {
@@ -525,7 +586,10 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     });
 
     it('should start auto-save timer', () => {
-      const state = createChunkStore<TestElement>({ autoSave: true, autoSaveInterval: 1000 });
+      const state = createChunkStore<TestElement>({
+        autoSave: true,
+        autoSaveInterval: 1000,
+      });
       const saver = vi.fn().mockResolvedValue(undefined);
 
       startAutoSave(state, saver);
@@ -543,7 +607,10 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     });
 
     it('should trigger save on interval', async () => {
-      let state = createChunkStore<TestElement>({ autoSave: true, autoSaveInterval: 1000 });
+      let state = createChunkStore<TestElement>({
+        autoSave: true,
+        autoSaveInterval: 1000,
+      });
       state = addElement(state, createElement('e1', 500, 500, 'Element 1'));
 
       const saver = vi.fn().mockResolvedValue(undefined);
@@ -673,12 +740,17 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
       const exported = exportChunkStore(state);
       const imported = importChunkStore(exported);
 
-      const hydratedChunks = Array.from(imported.chunks.values()).filter((c) => c.hydrated);
+      const hydratedChunks = Array.from(imported.chunks.values()).filter(
+        (c) => c.hydrated
+      );
       expect(hydratedChunks.length).toBe(1);
     });
 
     it('should round-trip complex state', () => {
-      let state = createChunkStore<TestElement>({ chunkSize: 500, maxCachedChunks: 50 });
+      let state = createChunkStore<TestElement>({
+        chunkSize: 500,
+        maxCachedChunks: 50,
+      });
 
       // Add elements across multiple chunks
       for (let i = 0; i < 10; i++) {
@@ -711,10 +783,17 @@ describe('Feature 2.16: Large Model Paging - chunkStore', () => {
     it('should handle very large coordinates', () => {
       let state = createChunkStore<TestElement>();
 
-      state = addElement(state, createElement('e1', 100000, 100000, 'Far away'));
+      state = addElement(
+        state,
+        createElement('e1', 100000, 100000, 'Far away')
+      );
 
       expect(state.chunks.size).toBe(1);
-      const chunkId = getChunkIdForPosition(100000, 100000, state.config.chunkSize);
+      const chunkId = getChunkIdForPosition(
+        100000,
+        100000,
+        state.config.chunkSize
+      );
       expect(state.chunks.has(chunkId)).toBe(true);
     });
 

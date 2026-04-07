@@ -86,7 +86,10 @@ class SimpleSpan implements Span {
    *
    */
   setAttributes(attributes: Record<string, unknown>): void {
-    if (typeof window !== 'undefined' && (window as unknown).__CANVAS_TELEMETRY__) {
+    if (
+      typeof window !== 'undefined' &&
+      (window as unknown).__CANVAS_TELEMETRY__
+    ) {
       (window as unknown).__CANVAS_TELEMETRY__.push({
         type: 'attributes',
         span: this.name,
@@ -100,7 +103,10 @@ class SimpleSpan implements Span {
    *
    */
   setStatus(status: { code: SpanStatusCode; message?: string }): void {
-    if (typeof window !== 'undefined' && (window as unknown).__CANVAS_TELEMETRY__) {
+    if (
+      typeof window !== 'undefined' &&
+      (window as unknown).__CANVAS_TELEMETRY__
+    ) {
       (window as unknown).__CANVAS_TELEMETRY__.push({
         type: 'status',
         span: this.name,
@@ -114,7 +120,10 @@ class SimpleSpan implements Span {
    *
    */
   recordException(error: Error): void {
-    if (typeof window !== 'undefined' && (window as unknown).__CANVAS_TELEMETRY__) {
+    if (
+      typeof window !== 'undefined' &&
+      (window as unknown).__CANVAS_TELEMETRY__
+    ) {
       (window as unknown).__CANVAS_TELEMETRY__.push({
         type: 'exception',
         span: this.name,
@@ -133,7 +142,10 @@ class SimpleSpan implements Span {
    */
   end(): void {
     const duration = performance.now() - this.startTime;
-    if (typeof window !== 'undefined' && (window as unknown).__CANVAS_TELEMETRY__) {
+    if (
+      typeof window !== 'undefined' &&
+      (window as unknown).__CANVAS_TELEMETRY__
+    ) {
       (window as unknown).__CANVAS_TELEMETRY__.push({
         type: 'span_end',
         span: this.name,
@@ -283,7 +295,10 @@ export class CanvasPerformanceCollector {
  */
 export function tracedSync(
   operationName: CanvasTelemetryEvents,
-  getAttributes?: (target: unknown, ...args: unknown[]) => CanvasTelemetryAttributes
+  getAttributes?: (
+    target: unknown,
+    ...args: unknown[]
+  ) => CanvasTelemetryAttributes
 ) {
   return function (
     _target: unknown,
@@ -308,7 +323,10 @@ export function tracedSync(
  */
 export function tracedAsync(
   operationName: CanvasTelemetryEvents,
-  getAttributes?: (target: unknown, ...args: unknown[]) => CanvasTelemetryAttributes
+  getAttributes?: (
+    target: unknown,
+    ...args: unknown[]
+  ) => CanvasTelemetryAttributes
 ) {
   return function (
     _target: unknown,

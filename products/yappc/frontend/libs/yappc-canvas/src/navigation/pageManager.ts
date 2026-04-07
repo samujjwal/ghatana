@@ -143,7 +143,7 @@ export function createPage(
   };
 
   state.pages.set(page.id, page);
-  
+
   // Insert at specified order or append
   if (options?.order !== undefined && options.order < state.pageOrder.length) {
     state.pageOrder.splice(options.order, 0, page.id);
@@ -218,7 +218,8 @@ export function deletePage(state: PageManagerState, pageId: string): boolean {
   if (state.activePageId === pageId) {
     if (state.pageOrder.length > 0) {
       // Set next page as active, or previous if at end
-      const newActiveId = state.pageOrder[Math.min(index, state.pageOrder.length - 1)];
+      const newActiveId =
+        state.pageOrder[Math.min(index, state.pageOrder.length - 1)];
       setActivePage(state, newActiveId);
     } else {
       state.activePageId = null;
@@ -268,7 +269,10 @@ export function reorderPages(
 /**
  * Set active page
  */
-export function setActivePage(state: PageManagerState, pageId: string): boolean {
+export function setActivePage(
+  state: PageManagerState,
+  pageId: string
+): boolean {
   const page = state.pages.get(pageId);
   if (!page) return false;
 
@@ -384,7 +388,10 @@ export function createDeepLink(
 /**
  * Get deep link by ID
  */
-export function getDeepLink(state: PageManagerState, linkId: string): DeepLink | null {
+export function getDeepLink(
+  state: PageManagerState,
+  linkId: string
+): DeepLink | null {
   return state.deepLinks.get(linkId) || null;
 }
 
@@ -429,15 +436,23 @@ export function navigateToDeepLink(
 /**
  * Delete deep link
  */
-export function deleteDeepLink(state: PageManagerState, linkId: string): boolean {
+export function deleteDeepLink(
+  state: PageManagerState,
+  linkId: string
+): boolean {
   return state.deepLinks.delete(linkId);
 }
 
 /**
  * Get all deep links for a page
  */
-export function getDeepLinksForPage(state: PageManagerState, pageId: string): DeepLink[] {
-  return Array.from(state.deepLinks.values()).filter((link) => link.pageId === pageId);
+export function getDeepLinksForPage(
+  state: PageManagerState,
+  pageId: string
+): DeepLink[] {
+  return Array.from(state.deepLinks.values()).filter(
+    (link) => link.pageId === pageId
+  );
 }
 
 /**
@@ -475,7 +490,10 @@ export function createPortalLink(
 /**
  * Get portal link by ID
  */
-export function getPortalLink(state: PageManagerState, linkId: string): PortalLink | null {
+export function getPortalLink(
+  state: PageManagerState,
+  linkId: string
+): PortalLink | null {
   return state.portalLinks.get(linkId) || null;
 }
 
@@ -540,7 +558,10 @@ export function navigateToPortalLink(
 /**
  * Delete portal link
  */
-export function deletePortalLink(state: PageManagerState, linkId: string): boolean {
+export function deletePortalLink(
+  state: PageManagerState,
+  linkId: string
+): boolean {
   return state.portalLinks.delete(linkId);
 }
 
@@ -645,7 +666,7 @@ export function historyBack(state: PageManagerState): boolean {
 
   // Set page without adding to history
   const page = state.pages.get(pageId)!;
-  
+
   // Deactivate current
   if (state.activePageId) {
     const current = state.pages.get(state.activePageId);
@@ -672,7 +693,7 @@ export function historyForward(state: PageManagerState): boolean {
 
   // Set page without adding to history
   const page = state.pages.get(pageId)!;
-  
+
   // Deactivate current
   if (state.activePageId) {
     const current = state.pages.get(state.activePageId);
@@ -712,9 +733,10 @@ export function getPageCount(state: PageManagerState): number {
  */
 export function searchPages(state: PageManagerState, query: string): Page[] {
   const lowerQuery = query.toLowerCase();
-  return getAllPages(state).filter((page) =>
-    page.name.toLowerCase().includes(lowerQuery) ||
-    page.description?.toLowerCase().includes(lowerQuery)
+  return getAllPages(state).filter(
+    (page) =>
+      page.name.toLowerCase().includes(lowerQuery) ||
+      page.description?.toLowerCase().includes(lowerQuery)
   );
 }
 

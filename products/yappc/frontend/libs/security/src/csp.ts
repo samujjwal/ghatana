@@ -1,7 +1,7 @@
 /**
  * @file CSP (Content Security Policy) Middleware
  * Security headers implementation for YAPPC
- * 
+ *
  * @doc.type middleware
  * @doc.purpose Protect against XSS, data injection, and other attacks
  * @doc.layer infrastructure
@@ -28,13 +28,13 @@ export interface CSPConfig {
   frameSrc?: string[];
   workerSrc?: string[];
   manifestSrc?: string[];
-  
+
   // Additional options
   reportUri?: string;
   reportTo?: string;
   upgradeInsecureRequests?: boolean;
   blockAllMixedContent?: boolean;
-  
+
   // Nonce generation for inline scripts/styles
   generateNonce?: boolean;
 }
@@ -45,43 +45,35 @@ const defaultCSPConfig: CSPConfig = {
   scriptSrc: [
     "'self'",
     "'unsafe-inline'", // Required for BlockSuite/Monaco
-    "'unsafe-eval'",     // Required for Monaco editor
-    "blob:",             // Required for worker scripts
+    "'unsafe-eval'", // Required for Monaco editor
+    'blob:', // Required for worker scripts
   ],
   styleSrc: [
     "'self'",
-    "'unsafe-inline'",   // Required for dynamic styles
-    "https://fonts.googleapis.com",
+    "'unsafe-inline'", // Required for dynamic styles
+    'https://fonts.googleapis.com',
   ],
   imgSrc: [
     "'self'",
-    "data:",             // For base64 encoded images
-    "blob:",             // For canvas exports
-    "https:",            // For external images
+    'data:', // For base64 encoded images
+    'blob:', // For canvas exports
+    'https:', // For external images
   ],
-  fontSrc: [
-    "'self'",
-    "https://fonts.gstatic.com",
-    "data:",
-  ],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
   connectSrc: [
     "'self'",
-    "wss:",              // WebSocket connections
-    "https:",            // API calls
+    'wss:', // WebSocket connections
+    'https:', // API calls
   ],
-  mediaSrc: [
-    "'self'",
-    "blob:",
-    "https:",
-  ],
-  objectSrc: ["'none'"],  // Disable plugins
+  mediaSrc: ["'self'", 'blob:', 'https:'],
+  objectSrc: ["'none'"], // Disable plugins
   frameSrc: [
     "'self'",
-    "https:",            // For embeds
+    'https:', // For embeds
   ],
   workerSrc: [
     "'self'",
-    "blob:",             // For canvas/web workers
+    'blob:', // For canvas/web workers
   ],
   manifestSrc: ["'self'"],
   upgradeInsecureRequests: true,
@@ -98,67 +90,67 @@ const defaultCSPConfig: CSPConfig = {
  */
 function buildCSPHeader(config: CSPConfig): string {
   const directives: string[] = [];
-  
+
   if (config.defaultSrc) {
     directives.push(`default-src ${config.defaultSrc.join(' ')}`);
   }
-  
+
   if (config.scriptSrc) {
     directives.push(`script-src ${config.scriptSrc.join(' ')}`);
   }
-  
+
   if (config.styleSrc) {
     directives.push(`style-src ${config.styleSrc.join(' ')}`);
   }
-  
+
   if (config.imgSrc) {
     directives.push(`img-src ${config.imgSrc.join(' ')}`);
   }
-  
+
   if (config.fontSrc) {
     directives.push(`font-src ${config.fontSrc.join(' ')}`);
   }
-  
+
   if (config.connectSrc) {
     directives.push(`connect-src ${config.connectSrc.join(' ')}`);
   }
-  
+
   if (config.mediaSrc) {
     directives.push(`media-src ${config.mediaSrc.join(' ')}`);
   }
-  
+
   if (config.objectSrc) {
     directives.push(`object-src ${config.objectSrc.join(' ')}`);
   }
-  
+
   if (config.frameSrc) {
     directives.push(`frame-src ${config.frameSrc.join(' ')}`);
   }
-  
+
   if (config.workerSrc) {
     directives.push(`worker-src ${config.workerSrc.join(' ')}`);
   }
-  
+
   if (config.manifestSrc) {
     directives.push(`manifest-src ${config.manifestSrc.join(' ')}`);
   }
-  
+
   if (config.upgradeInsecureRequests) {
     directives.push('upgrade-insecure-requests');
   }
-  
+
   if (config.blockAllMixedContent) {
     directives.push('block-all-mixed-content');
   }
-  
+
   if (config.reportUri) {
     directives.push(`report-uri ${config.reportUri}`);
   }
-  
+
   if (config.reportTo) {
     directives.push(`report-to ${config.reportTo}`);
   }
-  
+
   return directives.join('; ');
 }
 
@@ -189,38 +181,43 @@ const securityHeadersPlugin: FastifyPluginAsync<{
   reportOnly?: boolean;
 }> = async (fastify, options) => {
   const cspConfig = { ...defaultCSPConfig, ...options.csp };
-  const headerName = options.reportOnly 
-    ? 'Content-Security-Policy-Report-Only' 
+  const headerName = options.reportOnly
+    ? 'Content-Security-Policy-Report-Only'
     : 'Content-Security-Policy';
-  
+
   // Add hook to set headers on all responses
   fastify.addHook('onSend', async (request, reply, payload) => {
     // Generate nonce for this request
     const nonce = generateNonce();
-    
+
     // Store nonce for use in templates
     request.cspNonce = nonce;
-    
+
     // Build CSP with nonce if enabled
     let cspHeader = buildCSPHeader(cspConfig);
     if (cspConfig.generateNonce) {
       cspHeader = cspHeader.replace(/'unsafe-inline'/g, `'nonce-${nonce}'`);
     }
-    
+
     // Set CSP header
     reply.header(headerName, cspHeader);
-    
+
     // Additional security headers
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'DENY');
     reply.header('X-XSS-Protection', '1; mode=block');
     reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-    reply.header('Permissions-Policy', 
-      'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()');
-    
+    reply.header(
+      'Permissions-Policy',
+      'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
+    );
+
     // HSTS (HTTPS Strict Transport Security)
-    reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-    
+    reply.header(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+
     return payload;
   });
 };
@@ -251,19 +248,22 @@ export function cspMiddleware(config: CSPConfig = defaultCSPConfig) {
   return (req: Request, res: Response, next: NextFunction) => {
     const nonce = generateNonce();
     (req as any).cspNonce = nonce;
-    
+
     let cspHeader = buildCSPHeader(config);
     if (config.generateNonce) {
       cspHeader = cspHeader.replace(/'unsafe-inline'/g, `'nonce-${nonce}'`);
     }
-    
+
     res.setHeader('Content-Security-Policy', cspHeader);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-    
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+
     next();
   };
 }
@@ -280,44 +280,15 @@ export const helmetConfig = {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
-        "blob:",
-      ],
-      styleSrc: [
-        "'self'",
-        "'unsafe-inline'",
-        "https://fonts.googleapis.com",
-      ],
-      imgSrc: [
-        "'self'",
-        "data:",
-        "blob:",
-        "https:",
-      ],
-      fontSrc: [
-        "'self'",
-        "https://fonts.gstatic.com",
-        "data:",
-      ],
-      connectSrc: [
-        "'self'",
-        "wss:",
-        "https:",
-      ],
-      mediaSrc: [
-        "'self'",
-        "blob:",
-        "https:",
-      ],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      connectSrc: ["'self'", 'wss:', 'https:'],
+      mediaSrc: ["'self'", 'blob:', 'https:'],
       objectSrc: ["'none'"],
       frameSrc: ["'self'"],
-      workerSrc: [
-        "'self'",
-        "blob:",
-      ],
+      workerSrc: ["'self'", 'blob:'],
       upgradeInsecureRequests: [],
     },
   },

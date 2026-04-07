@@ -9,7 +9,6 @@ import type { Meta, StoryObj } from '@storybook/react';
 // Small local noop used in stories when interactive callbacks are required
 const fn = () => () => {};
 
-
 import { Breadcrumbs } from './Breadcrumbs';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 
@@ -138,9 +137,6 @@ export const SingleItem: Story = {
  */
 export const TwoLevels: Story = {
   args: {
-    items: [
-      { label: 'DevSecOps', href: '/devsecops' },
-      { label: 'Settings' },
-    ],
+    items: [{ label: 'DevSecOps', href: '/devsecops' }, { label: 'Settings' }],
   },
 };

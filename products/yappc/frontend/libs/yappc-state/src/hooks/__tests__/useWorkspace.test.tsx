@@ -21,10 +21,10 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 function makeGqlResponse(data: unknown) {
-    return {
-        ok: true,
-        json: () => Promise.resolve({ data }),
-    } as Response;
+  return {
+    ok: true,
+    json: () => Promise.resolve({ data }),
+  } as Response;
 }
 
 // ---------------------------------------------------------------------------
@@ -32,19 +32,17 @@ function makeGqlResponse(data: unknown) {
 // ---------------------------------------------------------------------------
 
 function makeWrapper() {
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
-    const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-        <JotaiProvider>
-            <QueryClientProvider client={queryClient}>
-                {children}
-            </QueryClientProvider>
-        </JotaiProvider>
-    );
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <JotaiProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </JotaiProvider>
+  );
 
-    return { Wrapper, queryClient };
+  return { Wrapper, queryClient };
 }
 
 // ---------------------------------------------------------------------------
@@ -52,18 +50,18 @@ function makeWrapper() {
 // ---------------------------------------------------------------------------
 
 function makeWorkspace(overrides: Record<string, unknown> = {}) {
-    return {
-        id: 'ws-1',
-        name: 'My Workspace',
-        description: null,
-        ownerId: 'user-1',
-        isDefault: false,
-        aiSummary: null,
-        aiTags: [],
-        createdAt: '2025-01-01T00:00:00.000Z',
-        updatedAt: '2025-01-01T00:00:00.000Z',
-        ...overrides,
-    };
+  return {
+    id: 'ws-1',
+    name: 'My Workspace',
+    description: null,
+    ownerId: 'user-1',
+    isDefault: false,
+    aiSummary: null,
+    aiTags: [],
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -71,23 +69,23 @@ function makeWorkspace(overrides: Record<string, unknown> = {}) {
 // ---------------------------------------------------------------------------
 
 describe('useWorkspace — initial state', () => {
-    beforeEach(() => {
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [] }));
-    });
+  beforeEach(() => {
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [] }));
+  });
 
-    it('returns empty workspaces list before fetch resolves', async () => {
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+  it('returns empty workspaces list before fetch resolves', async () => {
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        expect(result.current.workspaces).toEqual([]);
-    });
+    expect(result.current.workspaces).toEqual([]);
+  });
 
-    it('currentWorkspace is null initially', () => {
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+  it('currentWorkspace is null initially', () => {
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        expect(result.current.currentWorkspace).toBeNull();
-    });
+    expect(result.current.currentWorkspace).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -95,29 +93,29 @@ describe('useWorkspace — initial state', () => {
 // ---------------------------------------------------------------------------
 
 describe('useWorkspace — fetching', () => {
-    it('populates workspaces after successful GraphQL response', async () => {
-        const ws = makeWorkspace();
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
+  it('populates workspaces after successful GraphQL response', async () => {
+    const ws = makeWorkspace();
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        await waitFor(() => {
-            expect(result.current.workspaces).toHaveLength(1);
-        });
-        expect(result.current.workspaces[0].id).toBe('ws-1');
+    await waitFor(() => {
+      expect(result.current.workspaces).toHaveLength(1);
     });
+    expect(result.current.workspaces[0].id).toBe('ws-1');
+  });
 
-    it('sets isLoading to false after fetch completes', async () => {
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [] }));
+  it('sets isLoading to false after fetch completes', async () => {
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [] }));
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
     });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -125,54 +123,54 @@ describe('useWorkspace — fetching', () => {
 // ---------------------------------------------------------------------------
 
 describe('useWorkspace — selectWorkspace', () => {
-    it('updates currentWorkspaceId when selectWorkspace is called', async () => {
-        const ws = makeWorkspace({ id: 'ws-42' });
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
+  it('updates currentWorkspaceId when selectWorkspace is called', async () => {
+    const ws = makeWorkspace({ id: 'ws-42' });
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
 
-        act(() => {
-            result.current.selectWorkspace('ws-42');
-        });
-
-        expect(result.current.currentWorkspaceId).toBe('ws-42');
+    act(() => {
+      result.current.selectWorkspace('ws-42');
     });
 
-    it('resolves currentWorkspace to the matching workspace object', async () => {
-        const ws = makeWorkspace({ id: 'ws-42', name: 'Selected' });
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
+    expect(result.current.currentWorkspaceId).toBe('ws-42');
+  });
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+  it('resolves currentWorkspace to the matching workspace object', async () => {
+    const ws = makeWorkspace({ id: 'ws-42', name: 'Selected' });
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
 
-        await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        act(() => {
-            result.current.selectWorkspace('ws-42');
-        });
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
 
-        await waitFor(() => {
-            expect(result.current.currentWorkspace?.name).toBe('Selected');
-        });
+    act(() => {
+      result.current.selectWorkspace('ws-42');
     });
 
-    it('clears currentWorkspace when selectWorkspace is called with null', async () => {
-        const ws = makeWorkspace({ id: 'ws-1' });
-        mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
-
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
-
-        await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
-
-        act(() => result.current.selectWorkspace('ws-1'));
-        act(() => result.current.selectWorkspace(null));
-
-        expect(result.current.currentWorkspaceId).toBeNull();
+    await waitFor(() => {
+      expect(result.current.currentWorkspace?.name).toBe('Selected');
     });
+  });
+
+  it('clears currentWorkspace when selectWorkspace is called with null', async () => {
+    const ws = makeWorkspace({ id: 'ws-1' });
+    mockFetch.mockResolvedValue(makeGqlResponse({ workspaces: [ws] }));
+
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
+
+    act(() => result.current.selectWorkspace('ws-1'));
+    act(() => result.current.selectWorkspace(null));
+
+    expect(result.current.currentWorkspaceId).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -180,56 +178,61 @@ describe('useWorkspace — selectWorkspace', () => {
 // ---------------------------------------------------------------------------
 
 describe('useWorkspace — createWorkspace', () => {
-    it('calls the mutation and adds the new workspace to state', async () => {
-        // Initial load returns empty list
-        const newWs = makeWorkspace({ id: 'ws-new', name: 'Brand New' });
-        mockFetch
-            .mockResolvedValueOnce(makeGqlResponse({ workspaces: [] }))
-            .mockResolvedValueOnce(makeGqlResponse({ createWorkspace: newWs }))
-            // Refetch after invalidation
-            .mockResolvedValue(makeGqlResponse({ workspaces: [newWs] }));
+  it('calls the mutation and adds the new workspace to state', async () => {
+    // Initial load returns empty list
+    const newWs = makeWorkspace({ id: 'ws-new', name: 'Brand New' });
+    mockFetch
+      .mockResolvedValueOnce(makeGqlResponse({ workspaces: [] }))
+      .mockResolvedValueOnce(makeGqlResponse({ createWorkspace: newWs }))
+      // Refetch after invalidation
+      .mockResolvedValue(makeGqlResponse({ workspaces: [newWs] }));
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-        await act(async () => {
-            await result.current.createWorkspace({ name: 'Brand New' });
-        });
-
-        await waitFor(() => {
-            expect(result.current.workspaces.some((w) => w.id === 'ws-new')).toBe(true);
-        });
+    await act(async () => {
+      await result.current.createWorkspace({ name: 'Brand New' });
     });
 
-    it('exposes isCreating=true while mutation is in flight', async () => {
-        let resolveMutation!: (value: unknown) => void;
-        const pendingPromise = new Promise((r) => { resolveMutation = r; });
-
-        mockFetch
-            .mockResolvedValueOnce(makeGqlResponse({ workspaces: [] }))
-            .mockReturnValueOnce(pendingPromise as unknown as Promise<Response>);
-
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
-
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-        act(() => {
-            void result.current.createWorkspace({ name: 'Pending' });
-        });
-
-        await waitFor(() => expect(result.current.isCreating).toBe(true));
-
-        // Resolve the pending mutation
-        act(() => {
-            resolveMutation({
-                ok: true,
-                json: () => Promise.resolve({ data: { createWorkspace: makeWorkspace() } }),
-            });
-        });
+    await waitFor(() => {
+      expect(result.current.workspaces.some((w) => w.id === 'ws-new')).toBe(
+        true
+      );
     });
+  });
+
+  it('exposes isCreating=true while mutation is in flight', async () => {
+    let resolveMutation!: (value: unknown) => void;
+    const pendingPromise = new Promise((r) => {
+      resolveMutation = r;
+    });
+
+    mockFetch
+      .mockResolvedValueOnce(makeGqlResponse({ workspaces: [] }))
+      .mockReturnValueOnce(pendingPromise as unknown as Promise<Response>);
+
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      void result.current.createWorkspace({ name: 'Pending' });
+    });
+
+    await waitFor(() => expect(result.current.isCreating).toBe(true));
+
+    // Resolve the pending mutation
+    act(() => {
+      resolveMutation({
+        ok: true,
+        json: () =>
+          Promise.resolve({ data: { createWorkspace: makeWorkspace() } }),
+      });
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -237,24 +240,26 @@ describe('useWorkspace — createWorkspace', () => {
 // ---------------------------------------------------------------------------
 
 describe('useWorkspace — deleteWorkspace', () => {
-    it('removes the deleted workspace from state', async () => {
-        const ws = makeWorkspace({ id: 'ws-1' });
-        mockFetch
-            .mockResolvedValueOnce(makeGqlResponse({ workspaces: [ws] }))
-            .mockResolvedValueOnce(makeGqlResponse({ deleteWorkspace: true }))
-            .mockResolvedValue(makeGqlResponse({ workspaces: [] }));
+  it('removes the deleted workspace from state', async () => {
+    const ws = makeWorkspace({ id: 'ws-1' });
+    mockFetch
+      .mockResolvedValueOnce(makeGqlResponse({ workspaces: [ws] }))
+      .mockResolvedValueOnce(makeGqlResponse({ deleteWorkspace: true }))
+      .mockResolvedValue(makeGqlResponse({ workspaces: [] }));
 
-        const { Wrapper } = makeWrapper();
-        const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useWorkspace(), { wrapper: Wrapper });
 
-        await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
+    await waitFor(() => expect(result.current.workspaces).toHaveLength(1));
 
-        await act(async () => {
-            await result.current.deleteWorkspace('ws-1');
-        });
-
-        await waitFor(() => {
-            expect(result.current.workspaces.find((w) => w.id === 'ws-1')).toBeUndefined();
-        });
+    await act(async () => {
+      await result.current.deleteWorkspace('ws-1');
     });
+
+    await waitFor(() => {
+      expect(
+        result.current.workspaces.find((w) => w.id === 'ws-1')
+      ).toBeUndefined();
+    });
+  });
 });

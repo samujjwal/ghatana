@@ -196,7 +196,11 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
               layout === 'horizontal' && 'pt-2',
               labelClassName
             )}
-            style={layout === 'horizontal' ? { width: labelWidth, flexShrink: 0 } : undefined}
+            style={
+              layout === 'horizontal'
+                ? { width: labelWidth, flexShrink: 0 }
+                : undefined
+            }
           >
             {label}
             {required && (
@@ -209,10 +213,7 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 
         {/* Input wrapper */}
         <div
-          className={cn(
-            'flex-1 flex flex-col gap-1',
-            inputWrapperClassName
-          )}
+          className={cn('flex-1 flex flex-col gap-1', inputWrapperClassName)}
         >
           {/* Input */}
           {enhancedChildren}
@@ -224,8 +225,18 @@ export const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
               className="text-xs text-red-600 dark:text-red-400 flex items-start gap-1"
               role="alert"
             >
-              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-4 h-4 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <span>{error}</span>
             </div>

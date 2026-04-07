@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Hook Exports
- * 
+ *
  * Centralized exports for all IDE hooks
- * 
+ *
  * @doc.type module
  * @doc.purpose Hook exports for IDE
  * @doc.layer product
@@ -13,7 +13,10 @@
 export { useCollaborativeEditing } from './useCollaborativeEditing';
 
 // UX Enhancement Hooks
-export { useKeyboardNavigation, useRovingTabIndex } from './useKeyboardNavigation';
+export {
+  useKeyboardNavigation,
+  useRovingTabIndex,
+} from './useKeyboardNavigation';
 export { useResponsiveDesign, useContainerQuery } from './useResponsiveDesign';
 
 // Re-export types

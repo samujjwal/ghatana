@@ -9,12 +9,26 @@
 /**
  * User role types
  */
-export type UserRole = 'Executive' | 'PM' | 'Developer' | 'Security' | 'DevOps' | 'QA';
+export type UserRole =
+  | 'Executive'
+  | 'PM'
+  | 'Developer'
+  | 'Security'
+  | 'DevOps'
+  | 'QA';
 
 /**
  * Navigation page identifiers
  */
-export type NavigationPage = 'dashboard' | 'phases' | 'persona' | 'reports' | 'settings' | 'canvas' | 'workflows' | 'task-board';
+export type NavigationPage =
+  | 'dashboard'
+  | 'phases'
+  | 'persona'
+  | 'reports'
+  | 'settings'
+  | 'canvas'
+  | 'workflows'
+  | 'task-board';
 
 /**
  * User information for display in the navigation bar

@@ -1,13 +1,17 @@
 /**
  * Cloud Topology & Infrastructure as Code (IaC) Import
- * 
+ *
  * Parses Terraform and CloudFormation configurations to visualize
  * cloud infrastructure topology, detect drift, and estimate costs.
- * 
+ *
  * @module devsecops/cloudTopology
  */
 
-import type { CanvasDocument, CanvasNode, CanvasEdge } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasNode,
+  CanvasEdge,
+} from '../types/canvas-document';
 
 /**
  * Supported IaC platforms
@@ -36,7 +40,12 @@ export type ResourceType =
 /**
  * Drift status
  */
-export type DriftStatus = 'in-sync' | 'drifted' | 'unknown' | 'missing' | 'extra';
+export type DriftStatus =
+  | 'in-sync'
+  | 'drifted'
+  | 'unknown'
+  | 'missing'
+  | 'extra';
 
 /**
  * Cloud resource definition
@@ -170,10 +179,10 @@ export function createTopologyConfig(
 
 /**
  * Parse Terraform configuration
- * 
+ *
  * @param hcl - Terraform HCL configuration string
  * @returns Parsed cloud topology
- * 
+ *
  * @example
  * ```typescript
  * const topology = parseTerraform(tfConfig);
@@ -297,7 +306,7 @@ export function parseTerraform(hcl: string): CloudTopology {
         if (depsMatch) {
           const deps = depsMatch[1]
             .split(',')
-            .map(d => d.trim().replace(/["\s]/g, ''));
+            .map((d) => d.trim().replace(/["\s]/g, ''));
           currentResource.dependsOn = deps;
         }
       }
@@ -313,8 +322,10 @@ export function parseTerraform(hcl: string): CloudTopology {
             const tagMatch = line.match(/tags\s*=\s*{([^}]*)}/);
             if (tagMatch) {
               const tagPairs = tagMatch[1].split(',');
-              tagPairs.forEach(pair => {
-                const [key, value] = pair.split('=').map(s => s.trim().replace(/"/g, ''));
+              tagPairs.forEach((pair) => {
+                const [key, value] = pair
+                  .split('=')
+                  .map((s) => s.trim().replace(/"/g, ''));
                 if (key && value) {
                   currentResource!.tags![key] = value;
                 }
@@ -336,7 +347,11 @@ export function parseTerraform(hcl: string): CloudTopology {
         }
       }
       // Parse simple key = value properties
-      else if (line.includes('=') && !line.includes('{') && !line.includes('[')) {
+      else if (
+        line.includes('=') &&
+        !line.includes('{') &&
+        !line.includes('[')
+      ) {
         const propMatch = line.match(/([a-z_]+)\s*=\s*(.+)/);
         if (propMatch) {
           const [, key, value] = propMatch;
@@ -382,7 +397,7 @@ export function parseTerraform(hcl: string): CloudTopology {
       id: 'module.default',
       name: 'default',
       source: 'local',
-      resources: topology.resources.map(r => r.id),
+      resources: topology.resources.map((r) => r.id),
     });
   }
 
@@ -391,10 +406,10 @@ export function parseTerraform(hcl: string): CloudTopology {
 
 /**
  * Parse CloudFormation template
- * 
+ *
  * @param template - CloudFormation template (JSON or YAML string)
  * @returns Parsed cloud topology
- * 
+ *
  * @example
  * ```typescript
  * const topology = parseCloudFormation(cfnTemplate);
@@ -439,26 +454,28 @@ function parseCloudFormationObject(
 
   // Parse resources
   if (cfn.Resources) {
-    Object.entries(cfn.Resources).forEach(([logicalId, resource]: [string, any]) => {
-      const resourceType = resource.Type || '';
-      const cloudResource: CloudResource = {
-        id: logicalId,
-        name: logicalId,
-        type: categorizeAWSResourceType(resourceType),
-        provider: 'aws',
-        resourceType,
-        dependsOn: Array.isArray(resource.DependsOn)
-          ? resource.DependsOn
-          : resource.DependsOn
-          ? [resource.DependsOn]
-          : [],
-        properties: resource.Properties || {},
-        tags: extractCFNTags(resource.Properties?.Tags),
-        metadata: {},
-      };
+    Object.entries(cfn.Resources).forEach(
+      ([logicalId, resource]: [string, any]) => {
+        const resourceType = resource.Type || '';
+        const cloudResource: CloudResource = {
+          id: logicalId,
+          name: logicalId,
+          type: categorizeAWSResourceType(resourceType),
+          provider: 'aws',
+          resourceType,
+          dependsOn: Array.isArray(resource.DependsOn)
+            ? resource.DependsOn
+            : resource.DependsOn
+              ? [resource.DependsOn]
+              : [],
+          properties: resource.Properties || {},
+          tags: extractCFNTags(resource.Properties?.Tags),
+          metadata: {},
+        };
 
-      topology.resources.push(cloudResource);
-    });
+        topology.resources.push(cloudResource);
+      }
+    );
   }
 
   // Parse outputs
@@ -489,7 +506,7 @@ function parseCloudFormationObject(
     id: 'module.cfn-stack',
     name: 'cfn-stack',
     source: 'cloudformation',
-    resources: topology.resources.map(r => r.id),
+    resources: topology.resources.map((r) => r.id),
   });
 
   return topology;
@@ -553,7 +570,7 @@ function parseCloudFormationYAML(
     id: 'module.cfn-stack',
     name: 'cfn-stack',
     source: 'cloudformation',
-    resources: topology.resources.map(r => r.id),
+    resources: topology.resources.map((r) => r.id),
   });
 
   return topology;
@@ -561,7 +578,7 @@ function parseCloudFormationYAML(
 
 /**
  * Convert cloud topology to canvas document
- * 
+ *
  * @param topology - Cloud topology
  * @param config - Visualization configuration
  * @returns Canvas document
@@ -590,7 +607,7 @@ export function topologyToCanvas(
     let maxHeightInRow = 0;
 
     resourceIds.forEach((resourceId, index) => {
-      const resource = topology.resources.find(r => r.id === resourceId);
+      const resource = topology.resources.find((r) => r.id === resourceId);
       if (!resource) return;
 
       // Wrap to next row after 4 resources
@@ -656,8 +673,8 @@ export function topologyToCanvas(
 
   // Create edges for dependencies
   if (config.showDependencies) {
-    topology.resources.forEach(resource => {
-      resource.dependsOn.forEach(depId => {
+    topology.resources.forEach((resource) => {
+      resource.dependsOn.forEach((depId) => {
         const edgeId = `edge-${depId}-${resource.id}`;
         const edge: CanvasEdge = {
           id: edgeId,
@@ -729,7 +746,7 @@ export function topologyToCanvas(
 
 /**
  * Detect drift between IaC and actual infrastructure
- * 
+ *
  * @param topology - Cloud topology
  * @param actualState - Actual infrastructure state (from cloud provider)
  * @returns Topology with drift information
@@ -740,7 +757,7 @@ export function detectDrift(
 ): CloudTopology {
   const updatedTopology = { ...topology };
 
-  updatedTopology.resources = topology.resources.map(resource => {
+  updatedTopology.resources = topology.resources.map((resource) => {
     const actual = actualState[resource.id];
 
     if (!actual) {
@@ -756,10 +773,14 @@ export function detectDrift(
       };
     }
 
-    const changes: Array<{ property: string; expected: unknown; actual: unknown }> = [];
+    const changes: Array<{
+      property: string;
+      expected: unknown;
+      actual: unknown;
+    }> = [];
 
     // Compare properties
-    Object.keys(resource.properties).forEach(key => {
+    Object.keys(resource.properties).forEach((key) => {
       if (resource.properties[key] !== actual[key]) {
         changes.push({
           property: key,
@@ -787,7 +808,7 @@ export function detectDrift(
 
 /**
  * Estimate costs for cloud resources
- * 
+ *
  * @param topology - Cloud topology
  * @param pricing - Pricing data (from cloud provider APIs)
  * @returns Topology with cost estimates
@@ -798,7 +819,7 @@ export function estimateCosts(
 ): CloudTopology {
   const updatedTopology = { ...topology };
 
-  updatedTopology.resources = topology.resources.map(resource => {
+  updatedTopology.resources = topology.resources.map((resource) => {
     const cost = pricing[resource.resourceType] || pricing[resource.type];
 
     return {
@@ -890,8 +911,7 @@ function categorizeResourceType(resourceType: string): ResourceType {
     type.includes('aks')
   )
     return 'container';
-  if (type.includes('lambda') || type.includes('function'))
-    return 'serverless';
+  if (type.includes('lambda') || type.includes('function')) return 'serverless';
 
   return 'other';
 }
@@ -903,7 +923,12 @@ function categorizeAWSResourceType(resourceType: string): ResourceType {
   const type = resourceType.toLowerCase();
 
   // Check specific types first before generic patterns
-  if (type.includes('rds') || type.includes('dynamodb') || type.includes('dbinstance')) return 'database';
+  if (
+    type.includes('rds') ||
+    type.includes('dynamodb') ||
+    type.includes('dbinstance')
+  )
+    return 'database';
   if (type.includes('lambda')) return 'serverless';
   if (type.includes('ecs') || type.includes('eks')) return 'container';
   if (type.includes('cloudwatch')) return 'monitoring';
@@ -940,7 +965,7 @@ function groupResources(
 ): Map<string, string[]> {
   const groups = new Map<string, string[]>();
 
-  topology.resources.forEach(resource => {
+  topology.resources.forEach((resource) => {
     let groupKey = 'default';
 
     switch (groupBy) {
@@ -951,7 +976,7 @@ function groupResources(
         groupKey = resource.type;
         break;
       case 'module':
-        const module = topology.modules.find(m =>
+        const module = topology.modules.find((m) =>
           m.resources.includes(resource.id)
         );
         groupKey = module?.name || 'default';
@@ -972,7 +997,9 @@ function groupResources(
 /**
  *
  */
-export function getResourceStyle(resource: CloudResource): Record<string, unknown> {
+export function getResourceStyle(
+  resource: CloudResource
+): Record<string, unknown> {
   const baseStyle = {
     borderRadius: 8,
     padding: 16,
@@ -1011,7 +1038,10 @@ export function getResourceStyle(resource: CloudResource): Record<string, unknow
   }
 
   // Type-based styling
-  const typeColors: Record<ResourceType, { bg: string; border: string; text: string }> = {
+  const typeColors: Record<
+    ResourceType,
+    { bg: string; border: string; text: string }
+  > = {
     compute: { bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' },
     storage: { bg: '#f0fdf4', border: '#22c55e', text: '#14532d' },
     network: { bg: '#fef3c7', border: '#f59e0b', text: '#78350f' },

@@ -11,7 +11,15 @@ import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { AlertCircle as ErrorIcon } from 'lucide-react';
 import React from 'react';
 
-import { Select as MuiSelect, FormControl, InputLabel, MenuItem, FormHelperText, type SelectProps as MuiSelectProps, type SelectChangeEvent } from '@ghatana/design-system';
+import {
+  Select as MuiSelect,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  FormHelperText,
+  type SelectProps as MuiSelectProps,
+  type SelectChangeEvent,
+} from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,
@@ -65,7 +73,10 @@ export interface SelectProps extends Omit<MuiSelectProps, 'onChange'> {
   /**
    * Change handler with typed event
    */
-  onChange?: (event: SelectChangeEvent<unknown>, child: React.ReactNode) => void;
+  onChange?: (
+    event: SelectChangeEvent<unknown>,
+    child: React.ReactNode
+  ) => void;
 }
 
 /** Map shape to Tailwind border-radius classes */
@@ -77,9 +88,12 @@ const shapeClasses: Record<string, string> = {
 
 /** Map validation state to Tailwind border colors */
 const validationClasses: Record<string, string> = {
-  success: 'border-green-500 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20',
-  error: 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20',
-  warning: 'border-yellow-500 focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20',
+  success:
+    'border-green-500 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/20',
+  error:
+    'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20',
+  warning:
+    'border-yellow-500 focus-within:border-yellow-500 focus-within:ring-2 focus-within:ring-yellow-500/20',
 };
 
 /**
@@ -119,68 +133,72 @@ const validationClasses: Record<string, string> = {
  * />
  * ```
  */
-export const Select = React.forwardRef<HTMLDivElement, SelectProps>((props, ref) => {
-  const {
-    shape = 'rounded',
-    options,
-    label,
-    helperText,
-    validationState,
-    error,
-    fullWidth = true,
-    ...rest
-  } = props;
+export const Select = React.forwardRef<HTMLDivElement, SelectProps>(
+  (props, ref) => {
+    const {
+      shape = 'rounded',
+      options,
+      label,
+      helperText,
+      validationState,
+      error,
+      fullWidth = true,
+      ...rest
+    } = props;
 
-  // Build helper text with validation icon
-  const helperContent = helperText ? (
-    <span style={{ display: 'flex', alignItems: 'center', gap: spacingSm }}>
-      {validationState === 'success' && (
-        <CheckCircleIcon
-          className="text-base text-green-600"
-          aria-hidden="true"
-        />
-      )}
-      {validationState === 'error' && (
-        <ErrorIcon className="text-base text-red-600" aria-hidden="true" />
-      )}
-      {validationState === 'warning' && (
-        <ErrorIcon className="text-base text-amber-600" aria-hidden="true" />
-      )}
-      {helperText}
-    </span>
-  ) : undefined;
+    // Build helper text with validation icon
+    const helperContent = helperText ? (
+      <span style={{ display: 'flex', alignItems: 'center', gap: spacingSm }}>
+        {validationState === 'success' && (
+          <CheckCircleIcon
+            className="text-base text-green-600"
+            aria-hidden="true"
+          />
+        )}
+        {validationState === 'error' && (
+          <ErrorIcon className="text-base text-red-600" aria-hidden="true" />
+        )}
+        {validationState === 'warning' && (
+          <ErrorIcon className="text-base text-amber-600" aria-hidden="true" />
+        )}
+        {helperText}
+      </span>
+    ) : undefined;
 
-  const selectClassName = [
-    'min-h-[44px] transition-all duration-200',
-    shapeClasses[shape] || shapeClasses.rounded,
-    validationState ? validationClasses[validationState] : '',
-    'contrast-more:border-2',
-  ].filter(Boolean).join(' ');
+    const selectClassName = [
+      'min-h-[44px] transition-all duration-200',
+      shapeClasses[shape] || shapeClasses.rounded,
+      validationState ? validationClasses[validationState] : '',
+      'contrast-more:border-2',
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-  return (
-    <FormControl
-      ref={ref}
-      fullWidth={fullWidth}
-      error={error || validationState === 'error'}
-      className={selectClassName}
-    >
-      {label && <InputLabel>{label}</InputLabel>}
-      <MuiSelect label={label} {...rest}>
-        {options.map((option) => (
-          <MenuItem
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-            className="min-h-[44px] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]"
-          >
-            {option.label}
-          </MenuItem>
-        ))}
-      </MuiSelect>
-      {helperContent && <FormHelperText>{helperContent}</FormHelperText>}
-    </FormControl>
-  );
-});
+    return (
+      <FormControl
+        ref={ref}
+        fullWidth={fullWidth}
+        error={error || validationState === 'error'}
+        className={selectClassName}
+      >
+        {label && <InputLabel>{label}</InputLabel>}
+        <MuiSelect label={label} {...rest}>
+          {options.map((option) => (
+            <MenuItem
+              key={option.value}
+              value={option.value}
+              disabled={option.disabled}
+              className="min-h-[44px] focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-[-2px]"
+            >
+              {option.label}
+            </MenuItem>
+          ))}
+        </MuiSelect>
+        {helperContent && <FormHelperText>{helperContent}</FormHelperText>}
+      </FormControl>
+    );
+  }
+);
 
 Select.displayName = 'Select';
 

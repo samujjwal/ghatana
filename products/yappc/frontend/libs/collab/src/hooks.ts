@@ -494,8 +494,13 @@ export function useDocumentCollaboration(
   const addComment = useCallback(
     (start: number, end: number, content: string) => {
       return (
-        collabRef.current?.addComment(start, end, content, userName, userColor) ||
-        ''
+        collabRef.current?.addComment(
+          start,
+          end,
+          content,
+          userName,
+          userColor
+        ) || ''
       );
     },
     [userName, userColor]
@@ -624,8 +629,12 @@ export interface CollaborationCursor {
   visible: boolean;
 }
 
-export function useCollaborationCursors(cursors: UserCursor[]): CollaborationCursor[] {
-  const [visibleCursors, setVisibleCursors] = useState<CollaborationCursor[]>([]);
+export function useCollaborationCursors(
+  cursors: UserCursor[]
+): CollaborationCursor[] {
+  const [visibleCursors, setVisibleCursors] = useState<CollaborationCursor[]>(
+    []
+  );
 
   useEffect(() => {
     const CURSOR_TIMEOUT = 5000; // Hide cursor after 5 seconds of inactivity

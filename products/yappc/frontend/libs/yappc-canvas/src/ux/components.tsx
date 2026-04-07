@@ -1,4 +1,19 @@
-import { Search as SearchIcon, X as CloseIcon, KeyboardArrowUp as ArrowUpIcon, ChevronDown as ArrowDownIcon, Play as PlayIcon, Settings as SettingsIcon, Accessibility as AccessibilityIcon, Keyboard as KeyboardIcon, Palette as PaletteIcon, Type as TextFieldsIcon, Eye as VisibilityIcon, VolumeUp as VolumeUpIcon, Gauge as SpeedIcon, Pointer as TouchAppIcon } from 'lucide-react';
+import {
+  Search as SearchIcon,
+  X as CloseIcon,
+  KeyboardArrowUp as ArrowUpIcon,
+  ChevronDown as ArrowDownIcon,
+  Play as PlayIcon,
+  Settings as SettingsIcon,
+  Accessibility as AccessibilityIcon,
+  Keyboard as KeyboardIcon,
+  Palette as PaletteIcon,
+  Type as TextFieldsIcon,
+  Eye as VisibilityIcon,
+  VolumeUp as VolumeUpIcon,
+  Gauge as SpeedIcon,
+  Pointer as TouchAppIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 import {
@@ -38,13 +53,14 @@ import {
 import {
   useCommandPalette,
   useAccessibility,
-  useKeyboardShortcuts
+  useKeyboardShortcuts,
 } from './hooks';
 import type {
   Command,
   CommandCategory,
   AccessibilityConfig,
-  KeyboardShortcut} from './hooks';
+  KeyboardShortcut,
+} from './hooks';
 
 // Command Palette Component
 /**
@@ -100,40 +116,46 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
   }, [open]);
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        selectNext();
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        selectPrevious();
-        break;
-      case 'Enter':
-        event.preventDefault();
-        executeSelected();
-        break;
-      case 'Escape':
-        event.preventDefault();
-        onClose();
-        break;
-    }
-  }, [selectNext, selectPrevious, executeSelected, onClose]);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          selectNext();
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          selectPrevious();
+          break;
+        case 'Enter':
+          event.preventDefault();
+          executeSelected();
+          break;
+        case 'Escape':
+          event.preventDefault();
+          onClose();
+          break;
+      }
+    },
+    [selectNext, selectPrevious, executeSelected, onClose]
+  );
 
   const getCategoryIcon = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
+    const category = categories.find((cat) => cat.id === categoryId);
     return category?.icon || '📁';
   };
 
-  const groupedCommands = filteredCommands.reduce((groups, command) => {
-    const category = command.category;
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(command);
-    return groups;
-  }, {} as Record<string, Command[]>);
+  const groupedCommands = filteredCommands.reduce(
+    (groups, command) => {
+      const category = command.category;
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(command);
+      return groups;
+    },
+    {} as Record<string, Command[]>
+  );
 
   return (
     <Dialog
@@ -168,10 +190,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               ),
               endAdornment: searchQuery && (
                 <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={() => setSearchQuery('')}
-                  >
+                  <IconButton size="small" onClick={() => setSearchQuery('')}>
                     <CloseIcon />
                   </IconButton>
                 </InputAdornment>
@@ -188,53 +207,63 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               </Typography>
             </Box>
           ) : (
-            Object.entries(groupedCommands).map(([categoryId, categoryCommands]) => (
-              <Box key={categoryId}>
-                <Box className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-solid border-gray-200 dark:border-gray-700">
-                  <Typography variant="caption" color="text.secondary" className="flex items-center gap-2">
-                    <span>{getCategoryIcon(categoryId)}</span>
-                    {categoryId.toUpperCase()}
-                  </Typography>
+            Object.entries(groupedCommands).map(
+              ([categoryId, categoryCommands]) => (
+                <Box key={categoryId}>
+                  <Box className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-solid border-gray-200 dark:border-gray-700">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      className="flex items-center gap-2"
+                    >
+                      <span>{getCategoryIcon(categoryId)}</span>
+                      {categoryId.toUpperCase()}
+                    </Typography>
+                  </Box>
+                  <List dense>
+                    {categoryCommands.map((command, index) => {
+                      const globalIndex = filteredCommands.indexOf(command);
+                      const isSelected = globalIndex === selectedIndex;
+
+                      return (
+                        <ListItem
+                          key={command.id}
+                          button
+                          selected={isSelected}
+                          onClick={() => command.action()}
+                          style={{
+                            backgroundColor: isSelected
+                              ? '#e3f2fd'
+                              : 'transparent',
+                            color: isSelected ? '#1565c0' : 'inherit',
+                          }}
+                        >
+                          <ListItemIcon>
+                            <span style={{ fontSize: '18px' }}>
+                              {command.icon || '⚡'}
+                            </span>
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={command.title}
+                            secondary={command.description}
+                          />
+                          <ListItemSecondaryAction>
+                            {command.shortcut && (
+                              <Chip
+                                label={command.shortcut}
+                                size="small"
+                                variant="outlined"
+                                className="text-[10px]"
+                              />
+                            )}
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
                 </Box>
-                <List dense>
-                  {categoryCommands.map((command, index) => {
-                    const globalIndex = filteredCommands.indexOf(command);
-                    const isSelected = globalIndex === selectedIndex;
-                    
-                    return (
-                      <ListItem
-                        key={command.id}
-                        button
-                        selected={isSelected}
-                        onClick={() => command.action()}
-                        style={{
-                          backgroundColor: isSelected ? '#e3f2fd' : 'transparent',
-                          color: isSelected ? '#1565c0' : 'inherit',
-                        }}
-                      >
-                        <ListItemIcon>
-                          <span style={{ fontSize: '18px' }}>{command.icon || '⚡'}</span>
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={command.title}
-                          secondary={command.description}
-                        />
-                        <ListItemSecondaryAction>
-                          {command.shortcut && (
-                            <Chip
-                              label={command.shortcut}
-                              size="small"
-                              variant="outlined"
-                              className="text-[10px]"
-                            />
-                          )}
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    );
-                  })}
-                </List>
-              </Box>
-            ))
+              )
+            )
           )}
         </Box>
 
@@ -289,11 +318,14 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
     initialConfig,
   });
 
-  const handleConfigChange = useCallback((updates: Partial<AccessibilityConfig>) => {
-    updateConfig(updates);
-    onConfigChange?.({ ...config, ...updates });
-    announce('Accessibility settings updated');
-  }, [config, updateConfig, onConfigChange, announce]);
+  const handleConfigChange = useCallback(
+    (updates: Partial<AccessibilityConfig>) => {
+      updateConfig(updates);
+      onConfigChange?.({ ...config, ...updates });
+      announce('Accessibility settings updated');
+    },
+    [config, updateConfig, onConfigChange, announce]
+  );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -306,7 +338,7 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
           </IconButton>
         }
       />
-      
+
       <DialogContent>
         {/* Screen Reader */}
         <Card className="mb-4">
@@ -315,22 +347,26 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
               <VolumeUpIcon />
               <Typography variant="h6">Screen Reader Support</Typography>
             </Box>
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.enableScreenReader}
-                  onChange={(e) => handleConfigChange({ enableScreenReader: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({ enableScreenReader: e.target.checked })
+                  }
                 />
               }
               label="Enable screen reader announcements"
             />
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.announceChanges}
-                  onChange={(e) => handleConfigChange({ announceChanges: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({ announceChanges: e.target.checked })
+                  }
                 />
               }
               label="Announce content changes"
@@ -345,22 +381,28 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
               <KeyboardIcon />
               <Typography variant="h6">Keyboard Navigation</Typography>
             </Box>
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.enableKeyboardNavigation}
-                  onChange={(e) => handleConfigChange({ enableKeyboardNavigation: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({
+                      enableKeyboardNavigation: e.target.checked,
+                    })
+                  }
                 />
               }
               label="Enable keyboard navigation"
             />
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.focusManagement}
-                  onChange={(e) => handleConfigChange({ focusManagement: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({ focusManagement: e.target.checked })
+                  }
                 />
               }
               label="Automatic focus management"
@@ -375,14 +417,16 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
               <VisibilityIcon />
               <Typography variant="h6">Visual Settings</Typography>
             </Box>
-            
+
             <Box className="flex gap-4 mb-4">
               <FormControl className="min-w-[120px]">
                 <InputLabel>Font Size</InputLabel>
                 <Select
                   value={config.fontSize}
                   label="Font Size"
-                  onChange={(e) => handleConfigChange({ fontSize: e.target.value as unknown })}
+                  onChange={(e) =>
+                    handleConfigChange({ fontSize: e.target.value as unknown })
+                  }
                 >
                   <MenuItem value="small">Small</MenuItem>
                   <MenuItem value="medium">Medium</MenuItem>
@@ -390,13 +434,17 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
                   <MenuItem value="extra-large">Extra Large</MenuItem>
                 </Select>
               </FormControl>
-              
+
               <FormControl className="min-w-[120px]">
                 <InputLabel>Color Scheme</InputLabel>
                 <Select
                   value={config.colorScheme}
                   label="Color Scheme"
-                  onChange={(e) => handleConfigChange({ colorScheme: e.target.value as unknown })}
+                  onChange={(e) =>
+                    handleConfigChange({
+                      colorScheme: e.target.value as unknown,
+                    })
+                  }
                 >
                   <MenuItem value="light">Light</MenuItem>
                   <MenuItem value="dark">Dark</MenuItem>
@@ -404,22 +452,28 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
                 </Select>
               </FormControl>
             </Box>
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.enableHighContrast}
-                  onChange={(e) => handleConfigChange({ enableHighContrast: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({ enableHighContrast: e.target.checked })
+                  }
                 />
               }
               label="High contrast mode"
             />
-            
+
             <FormControlLabel
               control={
                 <Switch
                   checked={config.enableReducedMotion}
-                  onChange={(e) => handleConfigChange({ enableReducedMotion: e.target.checked })}
+                  onChange={(e) =>
+                    handleConfigChange({
+                      enableReducedMotion: e.target.checked,
+                    })
+                  }
                 />
               }
               label="Reduce motion and animations"
@@ -437,13 +491,17 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
                   Clear All
                 </Button>
               </Box>
-              
+
               <List dense>
                 {announcements.slice(-5).map((announcement) => (
                   <ListItem key={announcement.id}>
                     <ListItemIcon>
                       <Badge
-                        color={announcement.priority === 'assertive' ? 'error' : 'info'}
+                        color={
+                          announcement.priority === 'assertive'
+                            ? 'error'
+                            : 'info'
+                        }
                         variant="dot"
                       >
                         <VolumeUpIcon />
@@ -451,7 +509,9 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
                     </ListItemIcon>
                     <ListItemText
                       primary={announcement.message}
-                      secondary={new Date(announcement.timestamp).toLocaleTimeString()}
+                      secondary={new Date(
+                        announcement.timestamp
+                      ).toLocaleTimeString()}
                     />
                   </ListItem>
                 ))}
@@ -462,9 +522,7 @@ export const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({
 
         {/* Action Buttons */}
         <Box className="flex gap-4 justify-end mt-6">
-          <Button onClick={resetConfig}>
-            Reset to Defaults
-          </Button>
+          <Button onClick={resetConfig}>Reset to Defaults</Button>
           <Button variant="contained" onClick={onClose}>
             Apply Settings
           </Button>
@@ -491,12 +549,13 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 }) => {
   const { getShortcutsByCategory, getShortcutString } = useKeyboardShortcuts();
 
-  const categories = [...new Set(shortcuts.map(s => s.category))];
+  const categories = [...new Set(shortcuts.map((s) => s.category))];
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const filteredShortcuts = selectedCategory === 'all' 
-    ? shortcuts 
-    : getShortcutsByCategory(selectedCategory);
+  const filteredShortcuts =
+    selectedCategory === 'all'
+      ? shortcuts
+      : getShortcutsByCategory(selectedCategory);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -509,7 +568,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
           </IconButton>
         }
       />
-      
+
       <DialogContent>
         <Box className="mb-6">
           <FormControl className="min-w-[200px]">
@@ -520,7 +579,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <MenuItem value="all">All Categories</MenuItem>
-              {categories.map(category => (
+              {categories.map((category) => (
                 <MenuItem key={category} value={category}>
                   {category.charAt(0).toUpperCase() + category.slice(1)}
                 </MenuItem>
@@ -550,7 +609,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
               </React.Fragment>
             ))}
           </List>
-          
+
           {filteredShortcuts.length === 0 && (
             <Box className="p-8 text-center">
               <Typography color="text.secondary">
@@ -562,8 +621,8 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 
         <Alert severity="info" className="mt-4">
           <Typography variant="body2">
-            Keyboard shortcuts help you work faster and more efficiently. 
-            Most shortcuts work globally, while some are context-specific.
+            Keyboard shortcuts help you work faster and more efficiently. Most
+            shortcuts work globally, while some are context-specific.
           </Typography>
         </Alert>
       </DialogContent>
@@ -590,7 +649,9 @@ export const UXSettings: React.FC<UXSettingsProps> = ({
   onAccessibilityChange,
   shortcuts = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'accessibility' | 'shortcuts'>('accessibility');
+  const [activeTab, setActiveTab] = useState<'accessibility' | 'shortcuts'>(
+    'accessibility'
+  );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -603,9 +664,9 @@ export const UXSettings: React.FC<UXSettingsProps> = ({
           </IconButton>
         }
       />
-      
+
       <DialogContent>
-        <Box className="mb-6 border-gray-200 dark:border-gray-700 border-b" >
+        <Box className="mb-6 border-gray-200 dark:border-gray-700 border-b">
           <Box className="flex gap-4">
             <Button
               variant={activeTab === 'accessibility' ? 'contained' : 'text'}

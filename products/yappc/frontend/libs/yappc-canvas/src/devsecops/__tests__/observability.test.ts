@@ -286,7 +286,11 @@ memory_usage_bytes{service="api"} 524288000
         },
       ];
 
-      const dashboard = createGrafanaDashboard('dash-1', 'System Metrics', panels);
+      const dashboard = createGrafanaDashboard(
+        'dash-1',
+        'System Metrics',
+        panels
+      );
 
       expect(dashboard.id).toBe('dash-1');
       expect(dashboard.title).toBe('System Metrics');
@@ -328,7 +332,13 @@ memory_usage_bytes{service="api"} 524288000
         metadata: { unit: 'percent', category: 'availability' },
       };
 
-      const slo = createSLO('High Availability', 'Keep service available', 99, 2592000000, sli);
+      const slo = createSLO(
+        'High Availability',
+        'Keep service available',
+        99,
+        2592000000,
+        sli
+      );
 
       expect(slo.name).toBe('High Availability');
       expect(slo.target).toBe(99);
@@ -348,7 +358,13 @@ memory_usage_bytes{service="api"} 524288000
         metadata: { unit: 'ms', category: 'latency' },
       };
 
-      const slo = createSLO('Low Latency', 'Keep latency low', 95, 2592000000, sli);
+      const slo = createSLO(
+        'Low Latency',
+        'Keep latency low',
+        95,
+        2592000000,
+        sli
+      );
 
       expect(slo.compliance).toBe(0); // 250 > 200, not compliant
       expect(slo.metadata.priority).toBe('critical'); // Non-compliant
@@ -473,30 +489,34 @@ memory_usage_bytes{service="api"} 524288000
       let overlay = createObservabilityOverlay('doc-123');
 
       const alert1 = createAlert('Alert 1', 'critical', 'Message', 'source');
-      
+
       // Small delay to ensure unique ID
-      await new Promise(resolve => setTimeout(resolve, 2));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2));
+
       const alert2 = createAlert('Alert 2', 'warning', 'Message', 'source');
 
       overlay = addAlert(overlay, alert1);
       overlay = addAlert(overlay, alert2);
-      
+
       // Verify both alerts are added with different IDs
       expect(overlay.alerts).toHaveLength(2);
       expect(alert1.id).not.toBe(alert2.id);
-      
+
       // Reassign the resolved overlay
       const resolvedOverlay = resolveAlert(overlay, alert1.id);
-      
+
       // Verify alert1 is resolved
-      const resolvedAlert1 = resolvedOverlay.alerts.find(a => a.id === alert1.id);
+      const resolvedAlert1 = resolvedOverlay.alerts.find(
+        (a) => a.id === alert1.id
+      );
       expect(resolvedAlert1?.status).toBe('resolved');
-      
+
       // Verify alert2 is still firing
-      const firingAlert2 = resolvedOverlay.alerts.find(a => a.id === alert2.id);
+      const firingAlert2 = resolvedOverlay.alerts.find(
+        (a) => a.id === alert2.id
+      );
       expect(firingAlert2?.status).toBe('firing');
-      
+
       const activeAlerts = getActiveAlerts(resolvedOverlay);
 
       expect(activeAlerts).toHaveLength(1);
@@ -573,7 +593,12 @@ memory_usage_bytes{service="api"} 524288000
 
       overlay = addHealthCheck(overlay, healthCheck);
 
-      const updated = updateHealthCheck(overlay, healthCheck.id, 'degraded', 500);
+      const updated = updateHealthCheck(
+        overlay,
+        healthCheck.id,
+        'degraded',
+        500
+      );
 
       const updatedCheck = updated.healthChecks.get(healthCheck.id);
       expect(updatedCheck?.status).toBe('degraded');
@@ -586,16 +611,16 @@ memory_usage_bytes{service="api"} 524288000
       const health1 = createHealthCheck('Service 1', [
         { name: 'Check', status: 'healthy' },
       ]);
-      
+
       // Small delay to ensure unique IDs
-      await new Promise(resolve => setTimeout(resolve, 2));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2));
+
       const health2 = createHealthCheck('Service 2', [
         { name: 'Check', status: 'unhealthy' },
       ]);
-      
-      await new Promise(resolve => setTimeout(resolve, 2));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 2));
+
       const health3 = createHealthCheck('Service 3', [
         { name: 'Check', status: 'degraded' },
       ]);
@@ -641,11 +666,15 @@ memory_usage_bytes{service="api"} 524288000
     });
 
     it('should have metrics for services', () => {
-      const apiMetrics = queryMetrics(overlay, 'cpu_usage', { service: 'api-service' });
+      const apiMetrics = queryMetrics(overlay, 'cpu_usage', {
+        service: 'api-service',
+      });
       expect(apiMetrics).toHaveLength(1);
       expect(apiMetrics[0].value).toBe(75);
 
-      const dbMetrics = queryMetrics(overlay, 'cpu_usage', { service: 'db-service' });
+      const dbMetrics = queryMetrics(overlay, 'cpu_usage', {
+        service: 'db-service',
+      });
       expect(dbMetrics).toHaveLength(1);
       expect(dbMetrics[0].value).toBe(45);
     });
@@ -662,7 +691,7 @@ memory_usage_bytes{service="api"} 524288000
 
       overlay = addAlert(overlay, alert);
 
-      const alerts = overlay.alerts.filter(a => a.elementId === 'node-1');
+      const alerts = overlay.alerts.filter((a) => a.elementId === 'node-1');
       expect(alerts).toHaveLength(1);
       expect(alerts[0].severity).toBe('critical');
     });

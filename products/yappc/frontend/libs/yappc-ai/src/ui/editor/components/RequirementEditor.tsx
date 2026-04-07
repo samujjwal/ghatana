@@ -9,7 +9,11 @@
 
 import React, { useState, useCallback } from 'react';
 
-import type { RequirementEditorProps, RequirementData, EditorState } from '../types';
+import type {
+  RequirementEditorProps,
+  RequirementData,
+  EditorState,
+} from '../types';
 
 import { RequirementDetail } from './RequirementDetail';
 import { RequirementForm } from './RequirementForm';
@@ -113,7 +117,9 @@ export function RequirementEditor({
   const modeClass = darkMode ? 'dark' : 'light';
 
   return (
-    <div className={`requirement-editor requirement-editor--${modeClass} ${className}`}>
+    <div
+      className={`requirement-editor requirement-editor--${modeClass} ${className}`}
+    >
       {/* Header */}
       <div className="requirement-editor__header">
         <h2 className="requirement-editor__title">

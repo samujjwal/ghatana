@@ -66,7 +66,15 @@ export interface ComponentMetadata {
  */
 export interface PropDefinition {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'select' | 'color' | 'token' | 'object' | 'array';
+  type:
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'select'
+    | 'color'
+    | 'token'
+    | 'object'
+    | 'array';
   label: string;
   description?: string;
   required?: boolean;
@@ -113,7 +121,9 @@ export class ComponentRegistry {
   /**
    * Get components by category
    */
-  static getByCategory(category: ComponentMetadata['category']): ComponentMetadata[] {
+  static getByCategory(
+    category: ComponentMetadata['category']
+  ): ComponentMetadata[] {
     return this.getAll().filter((comp) => comp.category === category);
   }
 
@@ -262,7 +272,12 @@ ComponentRegistry.registerMany([
     propDefinitions: [
       { name: 'children', type: 'string', label: 'Content', required: true },
       { name: 'color', type: 'token', label: 'Color', tokenCategory: 'color' },
-      { name: 'fontSize', type: 'token', label: 'Font Size', tokenCategory: 'typography' },
+      {
+        name: 'fontSize',
+        type: 'token',
+        label: 'Font Size',
+        tokenCategory: 'typography',
+      },
     ],
   },
 
@@ -292,7 +307,12 @@ ComponentRegistry.registerMany([
           { label: 'High', value: 3 },
         ],
       },
-      { name: 'backgroundColor', type: 'token', label: 'Background', tokenCategory: 'color' },
+      {
+        name: 'backgroundColor',
+        type: 'token',
+        label: 'Background',
+        tokenCategory: 'color',
+      },
     ],
   },
   {
@@ -317,7 +337,12 @@ ComponentRegistry.registerMany([
           { label: 'Horizontal', value: 'horizontal' },
         ],
       },
-      { name: 'spacing', type: 'token', label: 'Spacing', tokenCategory: 'spacing' },
+      {
+        name: 'spacing',
+        type: 'token',
+        label: 'Spacing',
+        tokenCategory: 'spacing',
+      },
     ],
   },
 

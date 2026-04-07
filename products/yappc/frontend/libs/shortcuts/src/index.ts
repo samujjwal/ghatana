@@ -1,11 +1,5 @@
-export {
-  CommandPalette,
-  useCommandPalette,
-} from './components/CommandPalette';
-export type {
-  Command,
-  CommandPaletteProps,
-} from './components/CommandPalette';
+export { CommandPalette, useCommandPalette } from './components/CommandPalette';
+export type { Command, CommandPaletteProps } from './components/CommandPalette';
 export { default as DefaultCommandPalette } from './components/CommandPalette';
 export { ShortcutHelper } from './components/ShortcutHelper';
 export type { ShortcutHelperProps } from './components/ShortcutHelper';

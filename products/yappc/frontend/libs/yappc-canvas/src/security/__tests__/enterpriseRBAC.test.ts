@@ -1,6 +1,6 @@
 /**
  * Tests for Enterprise RBAC & SCIM Integration
- * 
+ *
  * @see libs/canvas/src/security/enterpriseRBAC.ts
  */
 
@@ -788,7 +788,9 @@ describe.skip('Enterprise RBAC & SCIM Integration', () => {
     });
 
     it('should return null when updating non-existent mapping', () => {
-      const result = updateRoleMapping(state, 'non-existent', { priority: 100 });
+      const result = updateRoleMapping(state, 'non-existent', {
+        priority: 100,
+      });
 
       expect(result).toBeNull();
     });

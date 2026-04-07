@@ -23,7 +23,6 @@ import type {
   SonarQubeAdapter,
 } from './integration-adapter';
 
-
 /**
  * Mock Jira Adapter
  */
@@ -81,7 +80,9 @@ export class MockJiraAdapter implements JiraAdapter {
   async syncItem(itemId: string, externalId: string): Promise<JiraIntegration> {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const issueKey = externalId.startsWith('PROJ-') ? externalId : `PROJ-${Math.floor(Math.random() * 1000)}`;
+    const issueKey = externalId.startsWith('PROJ-')
+      ? externalId
+      : `PROJ-${Math.floor(Math.random() * 1000)}`;
 
     return {
       id: `jira-${itemId}`,
@@ -103,8 +104,12 @@ export class MockJiraAdapter implements JiraAdapter {
   /**
    *
    */
-  async syncItems(items: Array<{ itemId: string; externalId: string }>): Promise<JiraIntegration[]> {
-    return Promise.all(items.map((item) => this.syncItem(item.itemId, item.externalId)));
+  async syncItems(
+    items: Array<{ itemId: string; externalId: string }>
+  ): Promise<JiraIntegration[]> {
+    return Promise.all(
+      items.map((item) => this.syncItem(item.itemId, item.externalId))
+    );
   }
 
   /**
@@ -211,10 +216,21 @@ export class MockGitHubAdapter implements GitHubAdapter {
   /**
    *
    */
-  async syncItem(itemId: string, externalId: string): Promise<GitHubIntegration> {
+  async syncItem(
+    itemId: string,
+    externalId: string
+  ): Promise<GitHubIntegration> {
     const [owner, repo] = externalId.split('/');
-    const prs = await this.getPullRequests(owner || 'org', repo || 'repo', 'all');
-    const commits = await this.getCommits(owner || 'org', repo || 'repo', 'main');
+    const prs = await this.getPullRequests(
+      owner || 'org',
+      repo || 'repo',
+      'all'
+    );
+    const commits = await this.getCommits(
+      owner || 'org',
+      repo || 'repo',
+      'main'
+    );
 
     return {
       id: `github-${itemId}`,
@@ -232,8 +248,12 @@ export class MockGitHubAdapter implements GitHubAdapter {
   /**
    *
    */
-  async syncItems(items: Array<{ itemId: string; externalId: string }>): Promise<GitHubIntegration[]> {
-    return Promise.all(items.map((item) => this.syncItem(item.itemId, item.externalId)));
+  async syncItems(
+    items: Array<{ itemId: string; externalId: string }>
+  ): Promise<GitHubIntegration[]> {
+    return Promise.all(
+      items.map((item) => this.syncItem(item.itemId, item.externalId))
+    );
   }
 
   /**
@@ -252,13 +272,20 @@ export class MockGitHubAdapter implements GitHubAdapter {
   /**
    *
    */
-  async getPullRequests(owner: string, repo: string, state: 'open' | 'closed' | 'all' = 'all'): Promise<GitHubPullRequest[]> {
+  async getPullRequests(
+    owner: string,
+    repo: string,
+    state: 'open' | 'closed' | 'all' = 'all'
+  ): Promise<GitHubPullRequest[]> {
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     return Array.from({ length: 3 }, (_, i) => ({
       number: 100 + i,
       title: `Feature: Add new component #${100 + i}`,
-      state: ['open', 'closed', 'merged'][i % 3] as 'open' | 'closed' | 'merged',
+      state: ['open', 'closed', 'merged'][i % 3] as
+        | 'open'
+        | 'closed'
+        | 'merged',
       url: `https://github.com/${owner}/${repo}/pull/${100 + i}`,
       author: `developer${i + 1}`,
       createdAt: new Date(Date.now() - i * 86400000).toISOString(),
@@ -274,7 +301,11 @@ export class MockGitHubAdapter implements GitHubAdapter {
   /**
    *
    */
-  async getCommits(owner: string, repo: string, ref: string): Promise<GitHubCommit[]> {
+  async getCommits(
+    owner: string,
+    repo: string,
+    ref: string
+  ): Promise<GitHubCommit[]> {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     return Array.from({ length: 5 }, (_, i) => ({
@@ -289,7 +320,11 @@ export class MockGitHubAdapter implements GitHubAdapter {
   /**
    *
    */
-  async getIssues(owner: string, repo: string, state: 'open' | 'closed' | 'all' = 'all'): Promise<GitHubIssue[]> {
+  async getIssues(
+    owner: string,
+    repo: string,
+    state: 'open' | 'closed' | 'all' = 'all'
+  ): Promise<GitHubIssue[]> {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     return Array.from({ length: 2 }, (_, i) => ({
@@ -383,7 +418,10 @@ export class MockSonarQubeAdapter implements SonarQubeAdapter {
   /**
    *
    */
-  async syncItem(itemId: string, externalId: string): Promise<SonarQubeIntegration> {
+  async syncItem(
+    itemId: string,
+    externalId: string
+  ): Promise<SonarQubeIntegration> {
     const metrics = await this.getProjectMetrics(externalId);
 
     return {
@@ -402,14 +440,20 @@ export class MockSonarQubeAdapter implements SonarQubeAdapter {
   /**
    *
    */
-  async syncItems(items: Array<{ itemId: string; externalId: string }>): Promise<SonarQubeIntegration[]> {
-    return Promise.all(items.map((item) => this.syncItem(item.itemId, item.externalId)));
+  async syncItems(
+    items: Array<{ itemId: string; externalId: string }>
+  ): Promise<SonarQubeIntegration[]> {
+    return Promise.all(
+      items.map((item) => this.syncItem(item.itemId, item.externalId))
+    );
   }
 
   /**
    *
    */
-  async getProjectMetrics(projectKey: string): Promise<SonarQubeIntegration['metrics']> {
+  async getProjectMetrics(
+    projectKey: string
+  ): Promise<SonarQubeIntegration['metrics']> {
     await new Promise((resolve) => setTimeout(resolve, 400));
 
     return {
@@ -418,14 +462,18 @@ export class MockSonarQubeAdapter implements SonarQubeAdapter {
       vulnerabilities: Math.floor(Math.random() * 5),
       codeSmells: Math.floor(Math.random() * 50),
       technicalDebt: `${Math.floor(Math.random() * 10)}h`,
-      qualityGateStatus: ['OK', 'WARN', 'ERROR'][Math.floor(Math.random() * 3)] as 'OK' | 'WARN' | 'ERROR',
+      qualityGateStatus: ['OK', 'WARN', 'ERROR'][
+        Math.floor(Math.random() * 3)
+      ] as 'OK' | 'WARN' | 'ERROR',
     };
   }
 
   /**
    *
    */
-  async getQualityGateStatus(projectKey: string): Promise<'OK' | 'ERROR' | 'WARN'> {
+  async getQualityGateStatus(
+    projectKey: string
+  ): Promise<'OK' | 'ERROR' | 'WARN'> {
     const metrics = await this.getProjectMetrics(projectKey);
     return metrics.qualityGateStatus || 'OK';
   }
@@ -433,7 +481,10 @@ export class MockSonarQubeAdapter implements SonarQubeAdapter {
   /**
    *
    */
-  async getIssues(projectKey: string, type?: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL') {
+  async getIssues(
+    projectKey: string,
+    type?: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL'
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     const count = Math.floor(Math.random() * 20);
@@ -441,7 +492,9 @@ export class MockSonarQubeAdapter implements SonarQubeAdapter {
       total: count,
       items: Array.from({ length: Math.min(count, 5) }, (_, i) => ({
         key: `${projectKey}-issue-${i}`,
-        severity: ['MAJOR', 'MINOR', 'CRITICAL', 'INFO'][Math.floor(Math.random() * 4)],
+        severity: ['MAJOR', 'MINOR', 'CRITICAL', 'INFO'][
+          Math.floor(Math.random() * 4)
+        ],
         message: `${type || 'BUG'} found in component`,
         component: `src/components/Component${i}.tsx`,
       })),

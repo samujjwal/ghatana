@@ -9,7 +9,12 @@
 
 import React from 'react';
 
-import { Tabs as BaseTabs, Tab as BaseTab, Box, Badge } from '@ghatana/design-system';
+import {
+  Tabs as BaseTabs,
+  Tab as BaseTab,
+  Box,
+  Badge,
+} from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,
@@ -88,20 +93,35 @@ const tabSizeClasses: Record<string, string> = {
  * </Tabs>
  * ```
  */
-export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>((props, ref) => {
-  const { children, shape = 'rounded', size = 'medium', className, ...rest } = props;
+export const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
+  (props, ref) => {
+    const {
+      children,
+      shape = 'rounded',
+      size = 'medium',
+      className,
+      ...rest
+    } = props;
 
-  const tabsClassName = [
-    tabSizeClasses[size] || tabSizeClasses.medium,
-    className,
-  ].filter(Boolean).join(' ');
+    const tabsClassName = [
+      tabSizeClasses[size] || tabSizeClasses.medium,
+      className,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-  return (
-    <BaseTabs ref={ref} className={tabsClassName} size={size === 'small' ? 'sm' : size === 'large' ? 'lg' : 'md'} {...rest}>
-      {children}
-    </BaseTabs>
-  );
-});
+    return (
+      <BaseTabs
+        ref={ref}
+        className={tabsClassName}
+        size={size === 'small' ? 'sm' : size === 'large' ? 'lg' : 'md'}
+        {...rest}
+      >
+        {children}
+      </BaseTabs>
+    );
+  }
+);
 
 Tabs.displayName = 'Tabs';
 
@@ -140,7 +160,13 @@ export interface TabProps extends React.HTMLAttributes<HTMLDivElement> {
   /**
    * Badge color variant
    */
-  badgeColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+  badgeColor?:
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'success';
 
   /** Icon for the tab */
   icon?: React.ReactNode;
@@ -169,16 +195,28 @@ export const Tab = React.forwardRef<HTMLDivElement, TabProps>((props, ref) => {
     startIcon || endIcon || badgeCount !== undefined ? (
       <Box className="flex items-center gap-2">
         {startIcon && (
-          <Box component="span" className="flex items-center" aria-hidden="true">
+          <Box
+            component="span"
+            className="flex items-center"
+            aria-hidden="true"
+          >
             {startIcon}
           </Box>
         )}
         <Box component="span">{label}</Box>
         {badgeCount !== undefined && (
-          <Badge badgeContent={badgeCount} color={badgeColor} aria-label={`${badgeCount} items`} />
+          <Badge
+            badgeContent={badgeCount}
+            color={badgeColor}
+            aria-label={`${badgeCount} items`}
+          />
         )}
         {endIcon && (
-          <Box component="span" className="flex items-center" aria-hidden="true">
+          <Box
+            component="span"
+            className="flex items-center"
+            aria-hidden="true"
+          >
             {endIcon}
           </Box>
         )}
@@ -193,9 +231,19 @@ export const Tab = React.forwardRef<HTMLDivElement, TabProps>((props, ref) => {
     'contrast-more:font-black',
     'motion-reduce:transition-none',
     className,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  return <BaseTab ref={ref} label={customLabel} icon={icon} className={tabClassName} {...rest} />;
+  return (
+    <BaseTab
+      ref={ref}
+      label={customLabel}
+      icon={icon}
+      className={tabClassName}
+      {...rest}
+    />
+  );
 });
 
 Tab.displayName = 'Tab';
@@ -259,9 +307,7 @@ export const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`tab-${index}`}
       {...other}
     >
-      {(isActive || keepMounted) && (
-        <Box className="p-6">{children}</Box>
-      )}
+      {(isActive || keepMounted) && <Box className="p-6">{children}</Box>}
     </div>
   );
 };

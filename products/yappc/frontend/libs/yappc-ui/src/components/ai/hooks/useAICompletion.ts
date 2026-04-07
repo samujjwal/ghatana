@@ -51,7 +51,7 @@ export interface UseAICompletionResult extends AICompletionState {
 
 /**
  * Hook for AI-powered text completion with streaming and debouncing
- * 
+ *
  * Provides intelligent text completion features including:
  * - Real-time AI text generation with streaming support
  * - Automatic debouncing to reduce API calls
@@ -60,10 +60,10 @@ export interface UseAICompletionResult extends AICompletionState {
  * - Minimum length threshold for triggering
  * - Accept/reject completion flow
  * - Error handling and state management
- * 
+ *
  * Integrates with AI service providers (OpenAI, Anthropic, etc.) for code completion,
  * content generation, and assisted writing.
- * 
+ *
  * @param aiService - AI service instance implementing IAIService interface
  * @param options - Configuration options for completion behavior
  * @param options.debounceMs - Delay before triggering completion (default: 300ms)
@@ -71,7 +71,7 @@ export interface UseAICompletionResult extends AICompletionState {
  * @param options.stream - Enable streaming mode (default: false)
  * @param options.autoTrigger - Auto-trigger on input change (default: false)
  * @returns AI completion state and control functions
- * 
+ *
  * @example
  * ```tsx
  * function CodeEditor() {
@@ -91,13 +91,13 @@ export interface UseAICompletionResult extends AICompletionState {
  *     minLength: 10,
  *     stream: true
  *   });
- *   
+ *
  *   const [code, setCode] = useState('');
  *   const [cursor, setCursor] = useState(0);
- *   
+ *
  *   const handleInput = async (newCode: string) => {
  *     setCode(newCode);
- *     
+ *
  *     if (newCode.length >= 10) {
  *       await streamComplete(newCode, {
  *         temperature: 0.7,
@@ -105,13 +105,13 @@ export interface UseAICompletionResult extends AICompletionState {
  *       });
  *     }
  *   };
- *   
+ *
  *   const handleAccept = () => {
  *     const accepted = accept();
  *     setCode(code + accepted);
  *     reset();
  *   };
- *   
+ *
  *   return (
  *     <div>
  *       <CodeMirror

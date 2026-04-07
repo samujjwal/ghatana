@@ -13,15 +13,16 @@ export type Platform = 'web' | 'desktop' | 'mobile';
 export function detectPlatform(): Platform {
   // Check if running in Tauri
   const isTauri = window.__TAURI__ !== undefined;
-  
+
   // Check if running in Capacitor
   const isCapacitor = window.Capacitor !== undefined;
-  
+
   // Check if running on mobile device
-  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
-  
+  const isMobileDevice =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
   if (isTauri) {
     return 'desktop';
   } else if (isCapacitor || isMobileDevice) {

@@ -116,9 +116,20 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
       }}
     >
       {/* Header */}
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Data Binding</h4>
-        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+          Data Binding
+        </h4>
+        <label
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        >
           <input
             type="checkbox"
             checked={isEnabled}
@@ -133,11 +144,25 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
         <>
           {/* Data Source Selection */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 500 }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
               Data Source
             </label>
             {dataSources.length === 0 ? (
-              <div style={{ padding: 8, backgroundColor: '#fff3cd', borderRadius: 4, fontSize: 12 }}>
+              <div
+                style={{
+                  padding: 8,
+                  backgroundColor: '#fff3cd',
+                  borderRadius: 4,
+                  fontSize: 12,
+                }}
+              >
                 No data sources available. Add a data source node first.
               </div>
             ) : (
@@ -164,7 +189,14 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
 
           {/* Binding Mode */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 500 }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
               Binding Mode
             </label>
             <select
@@ -185,15 +217,24 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
             </select>
             <div style={{ marginTop: 4, fontSize: 11, color: '#666' }}>
               {mode === 'one-way' && 'Updates when data source changes'}
-              {mode === 'two-way' && 'Updates data source when component value changes'}
+              {mode === 'two-way' &&
+                'Updates data source when component value changes'}
               {mode === 'one-time' && 'Sets value once on initialization'}
-              {mode === 'expression' && 'Computed value using custom expression'}
+              {mode === 'expression' &&
+                'Computed value using custom expression'}
             </div>
           </div>
 
           {/* Field Path */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 500 }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: 4,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
               Field Path
             </label>
             <input
@@ -254,7 +295,13 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
               }}
             >
               <strong>Binding:</strong>{' '}
-              <code style={{ backgroundColor: '#fff', padding: '2px 6px', borderRadius: 2 }}>
+              <code
+                style={{
+                  backgroundColor: '#fff',
+                  padding: '2px 6px',
+                  borderRadius: 2,
+                }}
+              >
                 {source}.{path}
               </code>{' '}
               ({mode})
@@ -262,7 +309,14 @@ export const DataBindingEditor: React.FC<DataBindingEditorProps> = ({
           )}
         </>
       ) : (
-        <div style={{ padding: 16, textAlign: 'center', color: '#999', fontSize: 12 }}>
+        <div
+          style={{
+            padding: 16,
+            textAlign: 'center',
+            color: '#999',
+            fontSize: 12,
+          }}
+        >
           Data binding is disabled. Enable it to configure.
         </div>
       )}

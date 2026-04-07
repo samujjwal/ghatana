@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import type { ReactNode} from 'react';
+import type { ReactNode } from 'react';
 
 import { useForm } from './Form';
-
 
 /**
  *
@@ -29,21 +28,21 @@ export interface FormFieldRenderProps {
  * FormField component that connects form fields to the Form context
  */
 export const FormField = ({ name, children, validate }: FormFieldProps) => {
-  const { 
-    values, 
-    errors, 
-    touched, 
-    setFieldValue, 
-    setFieldError, 
-    setFieldTouched 
+  const {
+    values,
+    errors,
+    touched,
+    setFieldValue,
+    setFieldError,
+    setFieldTouched,
   } = useForm();
 
   // Get the field value
   const value = values[name];
-  
+
   // Get the field error
   const error = errors[name];
-  
+
   // Get the field touched state
   const isTouched = touched[name] || false;
 

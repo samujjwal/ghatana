@@ -1,19 +1,35 @@
 /**
  * @ghatana/yappc-ide - Integration Tests
- * 
+ *
  * Basic integration tests for IDE functionality
  */
 
 // Using Jest test globals (describe/it/expect/beforeEach) - originally written for Vitest
 
-import { createFile, createFolder, detectLanguage, isFile, isFolder } from '../utils/fileSystem';
-import { createTab, addTab, removeTab, setActiveTab, getActiveTab } from '../utils/tabManager';
+import {
+  createFile,
+  createFolder,
+  detectLanguage,
+  isFile,
+  isFolder,
+} from '../utils/fileSystem';
+import {
+  createTab,
+  addTab,
+  removeTab,
+  setActiveTab,
+  getActiveTab,
+} from '../utils/tabManager';
 import type { IDEFile, IDEFolder, IDETab } from '../types';
 
 describe('IDE Integration Tests', () => {
   describe('File System Utilities', () => {
     it('should create a file with UUID', () => {
-      const file = createFile('/src/index.ts', 'console.log("hello")', 'typescript');
+      const file = createFile(
+        '/src/index.ts',
+        'console.log("hello")',
+        'typescript'
+      );
 
       expect(file).toBeDefined();
       expect(file.id).toBeDefined();
@@ -139,7 +155,7 @@ describe('IDE Integration Tests', () => {
       expect(tabs[0].isDirty).toBe(false);
 
       // Simulate marking as dirty (would be done via hook in real app)
-      tabs = tabs.map(t => t.id === tab.id ? { ...t, isDirty: true } : t);
+      tabs = tabs.map((t) => (t.id === tab.id ? { ...t, isDirty: true } : t));
 
       expect(tabs[0].isDirty).toBe(true);
     });
@@ -148,7 +164,11 @@ describe('IDE Integration Tests', () => {
   describe('IDE State Integration', () => {
     it('should handle file creation workflow', () => {
       // Create a file
-      const file = createFile('/src/index.ts', 'console.log("hello")', 'typescript');
+      const file = createFile(
+        '/src/index.ts',
+        'console.log("hello")',
+        'typescript'
+      );
 
       // Create a tab for the file
       const tab = createTab(file.id, file.name);
@@ -168,7 +188,11 @@ describe('IDE Integration Tests', () => {
 
       // Create multiple files
       for (let i = 0; i < 3; i++) {
-        const file = createFile(`/src/file${i}.ts`, `content${i}`, 'typescript');
+        const file = createFile(
+          `/src/file${i}.ts`,
+          `content${i}`,
+          'typescript'
+        );
         files.push(file);
 
         const tab = createTab(file.id, file.name);

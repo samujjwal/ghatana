@@ -1,6 +1,6 @@
 /**
  * Theme version information
- * 
+ *
  * This file tracks theme versions and changes to help with migrations
  * and backward compatibility.
  */
@@ -31,9 +31,9 @@ export const themeVersions: ThemeVersion[] = [
       'Added theme testing utilities',
       'Improved accessibility with better contrast ratios',
       'Added theme versioning',
-      'Created theme migration guide'
+      'Created theme migration guide',
     ],
-    hasBreakingChanges: false
+    hasBreakingChanges: false,
   },
   {
     version: '1.0.0',
@@ -45,10 +45,10 @@ export const themeVersions: ThemeVersion[] = [
       'Custom color palette',
       'Typography scale',
       'Spacing system',
-      'Elevation/shadow system'
+      'Elevation/shadow system',
     ],
-    hasBreakingChanges: false
-  }
+    hasBreakingChanges: false,
+  },
 ];
 
 /**
@@ -64,22 +64,22 @@ export const currentVersion = themeVersions[0];
 export function isCompatibleVersion(requiredVersion: string): boolean {
   const current = parseVersion(currentVersion.version);
   const required = parseVersion(requiredVersion);
-  
+
   // Major version must match exactly
   if (current.major !== required.major) {
     return false;
   }
-  
+
   // Current minor version must be >= required minor version
   if (current.minor < required.minor) {
     return false;
   }
-  
+
   // If minor versions match, current patch must be >= required patch
   if (current.minor === required.minor && current.patch < required.patch) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -88,12 +88,16 @@ export function isCompatibleVersion(requiredVersion: string): boolean {
  * @param version - Semantic version string (e.g., "1.2.3")
  * @returns Object with major, minor, and patch numbers
  */
-function parseVersion(version: string): { major: number; minor: number; patch: number } {
+function parseVersion(version: string): {
+  major: number;
+  minor: number;
+  patch: number;
+} {
   const parts = version.split('.').map(Number);
   return {
     major: parts[0] || 0,
     minor: parts[1] || 0,
-    patch: parts[2] || 0
+    patch: parts[2] || 0,
   };
 }
 
@@ -108,25 +112,30 @@ export function getBreakingChanges(
   toVersion: string = currentVersion.version
 ): string[] {
   const breakingChanges: string[] = [];
-  
+
   // Find indices of versions
-  const fromIndex = themeVersions.findIndex(v => v.version === fromVersion);
-  const toIndex = themeVersions.findIndex(v => v.version === toVersion);
-  
+  const fromIndex = themeVersions.findIndex((v) => v.version === fromVersion);
+  const toIndex = themeVersions.findIndex((v) => v.version === toVersion);
+
   if (fromIndex === -1 || toIndex === -1) {
-    throw new Error(`Invalid version: ${fromIndex === -1 ? fromVersion : toVersion}`);
+    throw new Error(
+      `Invalid version: ${fromIndex === -1 ? fromVersion : toVersion}`
+    );
   }
-  
+
   // Iterate through versions between from and to (inclusive of toVersion)
-  const versionsToCheck = fromIndex < toIndex
-    ? themeVersions.slice(toIndex, fromIndex + 1).reverse()
-    : themeVersions.slice(fromIndex, toIndex + 1);
-  
-  versionsToCheck.forEach(version => {
+  const versionsToCheck =
+    fromIndex < toIndex
+      ? themeVersions.slice(toIndex, fromIndex + 1).reverse()
+      : themeVersions.slice(fromIndex, toIndex + 1);
+
+  versionsToCheck.forEach((version) => {
     if (version.hasBreakingChanges) {
-      breakingChanges.push(`Version ${version.version}: ${version.changes.join(', ')}`);
+      breakingChanges.push(
+        `Version ${version.version}: ${version.changes.join(', ')}`
+      );
     }
   });
-  
+
   return breakingChanges;
 }

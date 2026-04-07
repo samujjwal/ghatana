@@ -176,7 +176,9 @@ const STATUS_CONFIG: Record<AgentStatusType, StatusConfig> = {
 // Animated Dots
 // =============================================================================
 
-const ThinkingDots: React.FC<{ color?: string }> = ({ color = 'bg-current' }) => {
+const ThinkingDots: React.FC<{ color?: string }> = ({
+  color = 'bg-current',
+}) => {
   return (
     <div className="flex items-center gap-1">
       {[0, 1, 2].map((i) => (
@@ -290,9 +292,7 @@ const useDuration = (startTime?: Date) => {
   const formatted = useMemo(() => {
     const minutes = Math.floor(duration / 60);
     const seconds = duration % 60;
-    return minutes > 0
-      ? `${minutes}m ${seconds}s`
-      : `${seconds}s`;
+    return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
   }, [duration]);
 
   return formatted;
@@ -317,7 +317,9 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
 }) => {
   const config = STATUS_CONFIG[status];
   const Icon = config.icon;
-  const duration = useDuration(showDuration && config.animate ? startTime : undefined);
+  const duration = useDuration(
+    showDuration && config.animate ? startTime : undefined
+  );
 
   // Computed display message
   const displayMessage = useMemo(() => {
@@ -342,10 +344,16 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
         {/* Spinning icon for active states */}
         {config.animate ? (
           <motion.div
-            animate={{ rotate: status === 'processing' || status === 'searching' ? 360 : 0 }}
+            animate={{
+              rotate:
+                status === 'processing' || status === 'searching' ? 360 : 0,
+            }}
             transition={{
               duration: 1,
-              repeat: status === 'processing' || status === 'searching' ? Infinity : 0,
+              repeat:
+                status === 'processing' || status === 'searching'
+                  ? Infinity
+                  : 0,
               ease: 'linear',
             }}
           >
@@ -423,7 +431,8 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
                 'bg-white dark:bg-neutral-800'
               )}
             >
-              {config.animate && (status === 'processing' || status === 'searching') ? (
+              {config.animate &&
+              (status === 'processing' || status === 'searching') ? (
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{
@@ -449,10 +458,7 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
           <span className="font-medium text-neutral-900 dark:text-neutral-100">
             {agentName}
           </span>
-          <Badge
-            variant="outline"
-            className={cn('text-xs', config.color)}
-          >
+          <Badge variant="outline" className={cn('text-xs', config.color)}>
             {config.label}
           </Badge>
           {showDuration && config.animate && (
@@ -461,7 +467,9 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
         </div>
 
         {/* Message */}
-        <div className={cn('mt-1 flex items-center gap-1 text-sm', config.color)}>
+        <div
+          className={cn('mt-1 flex items-center gap-1 text-sm', config.color)}
+        >
           <span>{displayMessage}</span>
           {status === 'typing' && <TypingCursor />}
           {status === 'thinking' && <ThinkingDots color={config.pulseColor} />}
@@ -479,9 +487,7 @@ export const AgentStatusIndicator: React.FC<AgentStatusIndicatorProps> = ({
               />
             </div>
             <div className="mt-1 flex items-center justify-between text-xs text-neutral-500">
-              <span>
-                {step && totalSteps && `Step ${step}/${totalSteps}`}
-              </span>
+              <span>{step && totalSteps && `Step ${step}/${totalSteps}`}</span>
               <span>{Math.round(progress)}%</span>
             </div>
           </div>

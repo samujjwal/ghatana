@@ -82,7 +82,10 @@ export class HealthCheckService {
   /**
    * Register a custom health check
    */
-  registerHealthCheck(name: string, checkFn: () => Promise<ComponentHealth>): void {
+  registerHealthCheck(
+    name: string,
+    checkFn: () => Promise<ComponentHealth>
+  ): void {
     this.healthChecks.set(name, checkFn);
     this.invalidateCache();
   }
@@ -90,9 +93,11 @@ export class HealthCheckService {
   /**
    * Perform comprehensive health check
    */
-  async performHealthCheck(useCache: boolean = true): Promise<HealthCheckResult> {
+  async performHealthCheck(
+    useCache: boolean = true
+  ): Promise<HealthCheckResult> {
     const now = Date.now();
-    
+
     if (useCache && this.cachedResult && now < this.cacheExpiry) {
       return this.cachedResult;
     }
@@ -113,7 +118,7 @@ export class HealthCheckService {
         try {
           const result = await Promise.race([
             checkFn(),
-            this.timeoutPromise(5000, name) // 5 second timeout
+            this.timeoutPromise(5000, name), // 5 second timeout
           ]);
           components.push(result);
 
@@ -152,7 +157,7 @@ export class HealthCheckService {
 
       // Calculate overall system status
       const overallStatus = this.calculateOverallStatus(components);
-      
+
       // Collect system metrics
       const metrics = await this.collectSystemMetrics();
 
@@ -182,7 +187,7 @@ export class HealthCheckService {
    */
   async getSimpleHealth(): Promise<HealthStatus> {
     const overallStatus = this.cachedResult?.status || 'healthy';
-    
+
     return {
       status: overallStatus,
       timestamp: Date.now(),
@@ -230,7 +235,7 @@ export class HealthCheckService {
     // Canvas System Health
     this.registerHealthCheck('canvas', async () => {
       const startTime = Date.now();
-      
+
       try {
         // Check if canvas can create elements
         const testElement = document.createElement('div');
@@ -239,8 +244,11 @@ export class HealthCheckService {
         document.body.removeChild(testElement);
 
         // Check React Flow availability
-        const reactFlowAvailable = typeof window !== 'undefined' && 
-          document.querySelector('[data-testid="react-flow-wrapper"], [data-testid="rf__wrapper"]') !== null;
+        const reactFlowAvailable =
+          typeof window !== 'undefined' &&
+          document.querySelector(
+            '[data-testid="react-flow-wrapper"], [data-testid="rf__wrapper"]'
+          ) !== null;
 
         const latency = Date.now() - startTime;
 
@@ -267,7 +275,7 @@ export class HealthCheckService {
     // Storage Health
     this.registerHealthCheck('storage', async () => {
       const startTime = Date.now();
-      
+
       try {
         // Test localStorage
         const testKey = 'health_check_test';
@@ -304,7 +312,7 @@ export class HealthCheckService {
     // Network Health
     this.registerHealthCheck('network', async () => {
       const startTime = Date.now();
-      
+
       try {
         const online = navigator.onLine;
         const connection = (navigator as unknown).connection;
@@ -333,11 +341,13 @@ export class HealthCheckService {
     // Performance Health
     this.registerHealthCheck('performance', async () => {
       const startTime = Date.now();
-      
+
       try {
         const memory = (performance as unknown).memory;
-        const elements = document.querySelectorAll('.react-flow__node, .react-flow__edge');
-        
+        const elements = document.querySelectorAll(
+          '.react-flow__node, .react-flow__edge'
+        );
+
         // Simple performance test
         const iterations = 1000;
         const perfStart = performance.now();
@@ -346,7 +356,8 @@ export class HealthCheckService {
         }
         const perfTime = performance.now() - perfStart;
 
-        const status = perfTime < 10 ? 'healthy' : perfTime < 50 ? 'degraded' : 'unhealthy';
+        const status =
+          perfTime < 10 ? 'healthy' : perfTime < 50 ? 'degraded' : 'unhealthy';
 
         return {
           name: 'performance',
@@ -374,9 +385,11 @@ export class HealthCheckService {
   /**
    *
    */
-  private calculateOverallStatus(components: ComponentHealth[]): HealthStatus['status'] {
-    const unhealthy = components.filter(c => c.status === 'unhealthy').length;
-    const degraded = components.filter(c => c.status === 'degraded').length;
+  private calculateOverallStatus(
+    components: ComponentHealth[]
+  ): HealthStatus['status'] {
+    const unhealthy = components.filter((c) => c.status === 'unhealthy').length;
+    const degraded = components.filter((c) => c.status === 'degraded').length;
 
     if (unhealthy > 0) return 'unhealthy';
     if (degraded > 0) return 'degraded';
@@ -389,18 +402,22 @@ export class HealthCheckService {
   private async collectSystemMetrics(): Promise<HealthCheckResult['metrics']> {
     const memory = (performance as unknown).memory;
     const connection = (navigator as unknown).connection;
-    
+
     // Storage metrics
     const storageMetrics = this.getStorageMetrics();
-    
+
     // Performance metrics
-    const elements = document.querySelectorAll('.react-flow__node, .react-flow__edge');
-    
+    const elements = document.querySelectorAll(
+      '.react-flow__node, .react-flow__edge'
+    );
+
     return {
       memory: {
         used: memory?.usedJSHeapSize || 0,
         total: memory?.totalJSHeapSize || 0,
-        percentage: memory ? (memory.usedJSHeapSize / memory.totalJSHeapSize) * 100 : 0,
+        percentage: memory
+          ? (memory.usedJSHeapSize / memory.totalJSHeapSize) * 100
+          : 0,
       },
       performance: {
         fps: 60, // Mock - would be calculated from actual measurements
@@ -453,9 +470,15 @@ export class HealthCheckService {
   /**
    *
    */
-  private timeoutPromise(ms: number, componentName: string): Promise<ComponentHealth> {
+  private timeoutPromise(
+    ms: number,
+    componentName: string
+  ): Promise<ComponentHealth> {
     return new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`Health check timeout for ${componentName}`)), ms);
+      setTimeout(
+        () => reject(new Error(`Health check timeout for ${componentName}`)),
+        ms
+      );
     });
   }
 

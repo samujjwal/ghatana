@@ -224,9 +224,21 @@ const DEFAULT_REGIONS: Record<CloudProvider, Region[]> = {
 const DEFAULT_SCALING_OPTIONS: ScalingOption[] = [
   { id: 'starter', label: 'Starter', cpu: 0.5, memory: 512, estimatedCost: 0 },
   { id: 'basic', label: 'Basic', cpu: 1, memory: 1024, estimatedCost: 10 },
-  { id: 'standard', label: 'Standard', cpu: 2, memory: 2048, estimatedCost: 25 },
+  {
+    id: 'standard',
+    label: 'Standard',
+    cpu: 2,
+    memory: 2048,
+    estimatedCost: 25,
+  },
   { id: 'pro', label: 'Professional', cpu: 4, memory: 4096, estimatedCost: 50 },
-  { id: 'enterprise', label: 'Enterprise', cpu: 8, memory: 8192, estimatedCost: 100 },
+  {
+    id: 'enterprise',
+    label: 'Enterprise',
+    cpu: 8,
+    memory: 8192,
+    estimatedCost: 100,
+  },
 ];
 
 const PROVIDER_LABELS: Record<CloudProvider, string> = {
@@ -333,7 +345,12 @@ const EnvVariableRow: React.FC<EnvVariableRowProps> = ({
       onClick={onRemove}
       aria-label="Remove variable"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />
       </svg>
@@ -439,16 +456,10 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
     }
 
     if (values.autoScale) {
-      if (
-        values.minInstances === undefined ||
-        values.minInstances < 0
-      ) {
+      if (values.minInstances === undefined || values.minInstances < 0) {
         newErrors.minInstances = 'Min instances must be 0 or greater';
       }
-      if (
-        values.maxInstances === undefined ||
-        values.maxInstances < 1
-      ) {
+      if (values.maxInstances === undefined || values.maxInstances < 1) {
         newErrors.maxInstances = 'Max instances must be at least 1';
       }
       if (
@@ -616,7 +627,9 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
             id="provider"
             className="form-select"
             value={values.provider}
-            onChange={(e) => updateValue('provider', e.target.value as CloudProvider)}
+            onChange={(e) =>
+              updateValue('provider', e.target.value as CloudProvider)
+            }
             disabled={loading}
           >
             {Object.entries(PROVIDER_LABELS).map(([value, label]) => (
@@ -655,7 +668,9 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
             id="database"
             className="form-select"
             value={values.database}
-            onChange={(e) => updateValue('database', e.target.value as DatabaseType)}
+            onChange={(e) =>
+              updateValue('database', e.target.value as DatabaseType)
+            }
             disabled={loading}
           >
             {Object.entries(DATABASE_LABELS).map(([value, label]) => (
@@ -769,26 +784,26 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
           error={touched.environments ? errors.environments : undefined}
         >
           <div className="environment-toggles">
-            {(['development', 'staging', 'production'] as DeployEnvironment[]).map(
-              (env) => (
-                <label
-                  key={env}
-                  className={`environment-toggle ${
-                    values.environments.includes(env)
-                      ? 'environment-toggle--active'
-                      : ''
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={values.environments.includes(env)}
-                    onChange={() => toggleEnvironment(env)}
-                    disabled={loading}
-                  />
-                  <span>{env.charAt(0).toUpperCase() + env.slice(1)}</span>
-                </label>
-              )
-            )}
+            {(
+              ['development', 'staging', 'production'] as DeployEnvironment[]
+            ).map((env) => (
+              <label
+                key={env}
+                className={`environment-toggle ${
+                  values.environments.includes(env)
+                    ? 'environment-toggle--active'
+                    : ''
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={values.environments.includes(env)}
+                  onChange={() => toggleEnvironment(env)}
+                  disabled={loading}
+                />
+                <span>{env.charAt(0).toUpperCase() + env.slice(1)}</span>
+              </label>
+            ))}
           </div>
         </FormField>
       </section>
@@ -812,7 +827,9 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
             <input
               type="checkbox"
               checked={values.enableMonitoring}
-              onChange={(e) => updateValue('enableMonitoring', e.target.checked)}
+              onChange={(e) =>
+                updateValue('enableMonitoring', e.target.checked)
+              }
               disabled={loading}
             />
             <span>Enable monitoring & alerts</span>
@@ -847,8 +864,8 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
         <div className="env-variables-list">
           {envKeys.length === 0 ? (
             <p className="env-empty">
-              No environment variables defined. Click &quot;Add Variable&quot; to add
-              one.
+              No environment variables defined. Click &quot;Add Variable&quot;
+              to add one.
             </p>
           ) : (
             envKeys.map((key) => (
@@ -878,11 +895,7 @@ export const InfrastructureForm: React.FC<InfrastructureFormProps> = ({
 
       {/* Submit Button */}
       <div className="form-actions">
-        <button
-          type="submit"
-          className="form-submit-btn"
-          disabled={loading}
-        >
+        <button type="submit" className="form-submit-btn" disabled={loading}>
           {loading ? 'Processing...' : 'Continue'}
         </button>
       </div>

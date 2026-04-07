@@ -320,7 +320,9 @@ export class AccessAuditManager {
 
     // Check if requester and reviewer are different
     if (request.requestedBy === reviewedBy) {
-      throw new Error('Requester cannot approve their own request (dual control)');
+      throw new Error(
+        'Requester cannot approve their own request (dual control)'
+      );
     }
 
     // Check expiration
@@ -391,7 +393,9 @@ export class AccessAuditManager {
 
     // Check if request is still pending
     if (request.status !== 'pending') {
-      throw new Error(`Cannot deny approval for request with status: ${request.status}`);
+      throw new Error(
+        `Cannot deny approval for request with status: ${request.status}`
+      );
     }
 
     // Deny approval
@@ -675,7 +679,9 @@ export class AccessAuditManager {
    * Get audit log entries by snapshot
    */
   getAuditLogBySnapshot(snapshotId: string): AuditLogEntry[] {
-    return this.state.auditLog.filter((entry) => entry.snapshotId === snapshotId);
+    return this.state.auditLog.filter(
+      (entry) => entry.snapshotId === snapshotId
+    );
   }
 
   /**

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Memory Manager Component
- * 
+ *
  * Advanced memory monitoring and optimization for large workspaces.
  * Provides real-time memory tracking, cleanup, and optimization.
- * 
+ *
  * @doc.type component
  * @doc.purpose Memory management and optimization for IDE
  * @doc.layer product
@@ -49,7 +49,10 @@ export interface MemoryManagerProps {
   optimizationThreshold?: number;
   monitoringInterval?: number;
   onMemoryPressure?: (stats: MemoryStats) => void;
-  onOptimizationComplete?: (strategy: OptimizationStrategy, freedMemory: number) => void;
+  onOptimizationComplete?: (
+    strategy: OptimizationStrategy,
+    freedMemory: number
+  ) => void;
 }
 
 /**
@@ -135,11 +138,13 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
 
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [optimizationHistory, setOptimizationHistory] = useState<Array<{
-    timestamp: number;
-    strategy: string;
-    freedMemory: number;
-  }>>([]);
+  const [optimizationHistory, setOptimizationHistory] = useState<
+    Array<{
+      timestamp: number;
+      strategy: string;
+      freedMemory: number;
+    }>
+  >([]);
 
   const monitorRef = useRef<MemoryMonitor>(new MemoryMonitor());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -205,23 +210,25 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
         // Clear component caches
         if (typeof window !== 'undefined' && 'caches' in window) {
           const cacheNames = await caches.keys();
-          await Promise.all(cacheNames.map(name => caches.delete(name)));
+          await Promise.all(cacheNames.map((name) => caches.delete(name)));
         }
       },
     },
     {
       id: 'unload-inactive',
       name: 'Unload Inactive Components',
-      description: 'Unload components that haven\'t been used recently',
+      description: "Unload components that haven't been used recently",
       impact: 'high' as const,
       cost: 'high' as const,
       enabled: false,
       action: async () => {
         // This would integrate with component lifecycle management
         // For now, just trigger a cleanup event
-        window.dispatchEvent(new CustomEvent('memory-cleanup', {
-          detail: { type: 'unload-inactive' }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('memory-cleanup', {
+            detail: { type: 'unload-inactive' },
+          })
+        );
       },
     },
     {
@@ -233,40 +240,48 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
       enabled: false,
       action: async () => {
         // Trigger data compression
-        window.dispatchEvent(new CustomEvent('memory-cleanup', {
-          detail: { type: 'compress-data' }
-        }));
+        window.dispatchEvent(
+          new CustomEvent('memory-cleanup', {
+            detail: { type: 'compress-data' },
+          })
+        );
       },
     },
   ];
 
   // Run optimization strategy
-  const runOptimization = useCallback(async (strategy: OptimizationStrategy) => {
-    setIsOptimizing(true);
-    const beforeStats = calculateStats();
+  const runOptimization = useCallback(
+    async (strategy: OptimizationStrategy) => {
+      setIsOptimizing(true);
+      const beforeStats = calculateStats();
 
-    try {
-      await strategy.action();
+      try {
+        await strategy.action();
 
-      // Wait a moment for changes to take effect
-      await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait a moment for changes to take effect
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const afterStats = calculateStats();
-      const freedMemory = beforeStats.used - afterStats.used;
+        const afterStats = calculateStats();
+        const freedMemory = beforeStats.used - afterStats.used;
 
-      setOptimizationHistory(prev => [...prev, {
-        timestamp: Date.now(),
-        strategy: strategy.name,
-        freedMemory,
-      }]);
+        setOptimizationHistory((prev) => [
+          ...prev,
+          {
+            timestamp: Date.now(),
+            strategy: strategy.name,
+            freedMemory,
+          },
+        ]);
 
-      onOptimizationComplete?.(strategy, freedMemory);
-    } catch (error) {
-      console.error(`Optimization failed for ${strategy.name}:`, error);
-    } finally {
-      setIsOptimizing(false);
-    }
-  }, [calculateStats, onOptimizationComplete]);
+        onOptimizationComplete?.(strategy, freedMemory);
+      } catch (error) {
+        console.error(`Optimization failed for ${strategy.name}:`, error);
+      } finally {
+        setIsOptimizing(false);
+      }
+    },
+    [calculateStats, onOptimizationComplete]
+  );
 
   // Auto-optimization
   const runAutoOptimization = useCallback(async () => {
@@ -277,13 +292,15 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
     if (currentStats.percentage > optimizationThreshold) {
       // Run strategies in order of impact/cost ratio
       const strategies = optimizationStrategies
-        .filter(s => s.enabled)
+        .filter((s) => s.enabled)
         .sort((a, b) => {
-          const scoreA = a.impact === 'high' ? 3 : a.impact === 'medium' ? 2 : 1;
-          const scoreB = b.impact === 'high' ? 3 : b.impact === 'medium' ? 2 : 1;
+          const scoreA =
+            a.impact === 'high' ? 3 : a.impact === 'medium' ? 2 : 1;
+          const scoreB =
+            b.impact === 'high' ? 3 : b.impact === 'medium' ? 2 : 1;
           const costA = a.cost === 'low' ? 3 : a.cost === 'medium' ? 2 : 1;
           const costB = b.cost === 'low' ? 3 : b.cost === 'medium' ? 2 : 1;
-          return (scoreA / costA) - (scoreB / costB);
+          return scoreA / costA - scoreB / costB;
         });
 
       for (const strategy of strategies) {
@@ -291,7 +308,13 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
         await runOptimization(strategy);
       }
     }
-  }, [enableAutoOptimization, isOptimizing, optimizationThreshold, calculateStats, runOptimization]);
+  }, [
+    enableAutoOptimization,
+    isOptimizing,
+    optimizationThreshold,
+    calculateStats,
+    runOptimization,
+  ]);
 
   // Memory monitoring
   useEffect(() => {
@@ -305,7 +328,10 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
       monitorRef.current.record();
 
       // Trigger memory pressure callback
-      if (currentStats.pressure === 'high' || currentStats.pressure === 'critical') {
+      if (
+        currentStats.pressure === 'high' ||
+        currentStats.pressure === 'critical'
+      ) {
         onMemoryPressure?.(currentStats);
       }
 
@@ -323,7 +349,14 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [enableMonitoring, monitoringInterval, calculateStats, onMemoryPressure, enableAutoOptimization, runAutoOptimization]);
+  }, [
+    enableMonitoring,
+    monitoringInterval,
+    calculateStats,
+    onMemoryPressure,
+    enableAutoOptimization,
+    runAutoOptimization,
+  ]);
 
   // Format memory size
   const formatBytes = (bytes: number): string => {
@@ -337,20 +370,28 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
   // Get pressure color
   const getPressureColor = (pressure: string) => {
     switch (pressure) {
-      case 'critical': return 'text-red-600 dark:text-red-400';
-      case 'high': return 'text-orange-600 dark:text-orange-400';
-      case 'medium': return 'text-yellow-600 dark:text-yellow-400';
-      default: return 'text-green-600 dark:text-green-400';
+      case 'critical':
+        return 'text-red-600 dark:text-red-400';
+      case 'high':
+        return 'text-orange-600 dark:text-orange-400';
+      case 'medium':
+        return 'text-yellow-600 dark:text-yellow-400';
+      default:
+        return 'text-green-600 dark:text-green-400';
     }
   };
 
   // Get pressure background
   const getPressureBg = (pressure: string) => {
     switch (pressure) {
-      case 'critical': return 'bg-red-100 dark:bg-red-900/20';
-      case 'high': return 'bg-orange-100 dark:bg-orange-900/20';
-      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900/20';
-      default: return 'bg-green-100 dark:bg-green-900/20';
+      case 'critical':
+        return 'bg-red-100 dark:bg-red-900/20';
+      case 'high':
+        return 'bg-orange-100 dark:bg-orange-900/20';
+      case 'medium':
+        return 'bg-yellow-100 dark:bg-yellow-900/20';
+      default:
+        return 'bg-green-100 dark:bg-green-900/20';
     }
   };
 
@@ -359,7 +400,9 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
   }
 
   return (
-    <div className={`p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div
+      className={`p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -387,8 +430,12 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
       {/* Memory usage overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className={`p-3 rounded-lg ${getPressureBg(stats.pressure)}`}>
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Memory Usage</div>
-          <div className={`text-xl font-bold ${getPressureColor(stats.pressure)}`}>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Memory Usage
+          </div>
+          <div
+            className={`text-xl font-bold ${getPressureColor(stats.pressure)}`}
+          >
             {stats.percentage.toFixed(1)}%
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -397,9 +444,15 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
         </div>
 
         <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Trend</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Trend
+          </div>
           <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {stats.trend === 'increasing' ? '📈' : stats.trend === 'decreasing' ? '📉' : '➡️'}
+            {stats.trend === 'increasing'
+              ? '📈'
+              : stats.trend === 'decreasing'
+                ? '📉'
+                : '➡️'}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
             {stats.trend}
@@ -407,14 +460,20 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
         </div>
 
         <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pressure</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Pressure
+          </div>
           <div className="text-xl font-bold text-gray-900 dark:text-gray-100 capitalize">
             {stats.pressure}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {stats.pressure === 'critical' ? 'Immediate action required' :
-              stats.pressure === 'high' ? 'Optimization recommended' :
-                stats.pressure === 'medium' ? 'Monitor closely' : 'Normal'}
+            {stats.pressure === 'critical'
+              ? 'Immediate action required'
+              : stats.pressure === 'high'
+                ? 'Optimization recommended'
+                : stats.pressure === 'medium'
+                  ? 'Monitor closely'
+                  : 'Normal'}
           </div>
         </div>
       </div>
@@ -423,10 +482,15 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
       <div className="mb-4">
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <div
-            className={`h-2 rounded-full transition-all duration-500 ${stats.pressure === 'critical' ? 'bg-red-500' :
-              stats.pressure === 'high' ? 'bg-orange-500' :
-                stats.pressure === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-              }`}
+            className={`h-2 rounded-full transition-all duration-500 ${
+              stats.pressure === 'critical'
+                ? 'bg-red-500'
+                : stats.pressure === 'high'
+                  ? 'bg-orange-500'
+                  : stats.pressure === 'medium'
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500'
+            }`}
             style={{ width: `${Math.min(stats.percentage, 100)}%` }}
           />
         </div>
@@ -441,7 +505,7 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
               Optimization Strategies
             </h4>
             <div className="space-y-2">
-              {optimizationStrategies.map(strategy => (
+              {optimizationStrategies.map((strategy) => (
                 <div
                   key={strategy.id}
                   className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded"
@@ -455,10 +519,15 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 text-xs rounded ${strategy.impact === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
-                      strategy.impact === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                        'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                      }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded ${
+                        strategy.impact === 'high'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                          : strategy.impact === 'medium'
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                            : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                      }`}
+                    >
                       {strategy.impact}
                     </span>
                     <InteractiveButton
@@ -482,12 +551,18 @@ export const MemoryManager: React.FC<MemoryManagerProps> = ({
                 Recent Optimizations
               </h4>
               <div className="space-y-1">
-                {optimizationHistory.slice(-5).reverse().map((entry, index) => (
-                  <div key={index} className="text-xs text-gray-600 dark:text-gray-400">
-                    {new Date(entry.timestamp).toLocaleTimeString()} - {entry.strategy}:
-                    freed {formatBytes(entry.freedMemory)}
-                  </div>
-                ))}
+                {optimizationHistory
+                  .slice(-5)
+                  .reverse()
+                  .map((entry, index) => (
+                    <div
+                      key={index}
+                      className="text-xs text-gray-600 dark:text-gray-400"
+                    >
+                      {new Date(entry.timestamp).toLocaleTimeString()} -{' '}
+                      {entry.strategy}: freed {formatBytes(entry.freedMemory)}
+                    </div>
+                  ))}
               </div>
             </div>
           )}

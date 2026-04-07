@@ -1,6 +1,6 @@
 /**
  * Integrated DevSecOps Suite Demo
- * 
+ *
  * Demonstrates 4 production-ready features working together:
  * - Feature 2.22: CI/CD Pipeline Visualization
  * - Feature 2.23: SBOM Integration
@@ -8,20 +8,40 @@
  * - Feature 2.25: Runbook Automation
  */
 
-
 // Import all DevSecOps features
 import type { CanvasDocument } from '../types/canvas-document';
 
-import { parseTerraform, topologyToCanvas, estimateCosts, createTopologyConfig, type CostEstimate } from './cloudTopology';
-import { parseGitHubActions, pipelineToCanvas, createPipelineParserConfig } from './pipelineParser';
-import { parseCycloneDX, sbomToCanvas, detectVulnerabilities, checkLicenseCompliance, createSBOMConfig } from './sbomParser';
+import {
+  parseTerraform,
+  topologyToCanvas,
+  estimateCosts,
+  createTopologyConfig,
+  type CostEstimate,
+} from './cloudTopology';
+import {
+  parseGitHubActions,
+  pipelineToCanvas,
+  createPipelineParserConfig,
+} from './pipelineParser';
+import {
+  parseCycloneDX,
+  sbomToCanvas,
+  detectVulnerabilities,
+  checkLicenseCompliance,
+  createSBOMConfig,
+} from './sbomParser';
 
-import { parseAnsiblePlaybook, runbookToCanvas, analyzeRunbook, requestApproval, createRunbookConfig } from './index';
-
+import {
+  parseAnsiblePlaybook,
+  runbookToCanvas,
+  analyzeRunbook,
+  requestApproval,
+  createRunbookConfig,
+} from './index';
 
 /**
  * Comprehensive DevSecOps Demo Scenario
- * 
+ *
  * This demo showcases a complete end-to-end workflow for a modern cloud-native application:
  * 1. CI/CD: Automated build, test, and deployment pipeline
  * 2. Security: SBOM analysis with vulnerability scanning
@@ -60,7 +80,11 @@ export function generateDemoScenario(): DemoScenario {
         'runs-on': 'ubuntu-latest',
         steps: [
           { name: 'Checkout code', uses: 'actions/checkout@v3' },
-          { name: 'Setup Node.js', uses: 'actions/setup-node@v3', with: { 'node-version': '18' } },
+          {
+            name: 'Setup Node.js',
+            uses: 'actions/setup-node@v3',
+            with: { 'node-version': '18' },
+          },
           { name: 'Install dependencies', run: 'npm ci' },
           { name: 'Run linter', run: 'npm run lint' },
           { name: 'Run tests', run: 'npm test' },
@@ -71,7 +95,10 @@ export function generateDemoScenario(): DemoScenario {
         'runs-on': 'ubuntu-latest',
         needs: ['build'],
         steps: [
-          { name: 'Generate SBOM', run: 'syft . -o cyclonedx-json > sbom.json' },
+          {
+            name: 'Generate SBOM',
+            run: 'syft . -o cyclonedx-json > sbom.json',
+          },
           { name: 'Scan vulnerabilities', run: 'grype sbom:sbom.json' },
           { name: 'Check license compliance', run: 'licensee sbom.json' },
         ],
@@ -81,7 +108,10 @@ export function generateDemoScenario(): DemoScenario {
         needs: ['security'],
         environment: 'staging',
         steps: [
-          { name: 'Configure AWS', uses: 'aws-actions/configure-aws-credentials@v2' },
+          {
+            name: 'Configure AWS',
+            uses: 'aws-actions/configure-aws-credentials@v2',
+          },
           { name: 'Terraform plan', run: 'terraform plan -out=tfplan' },
           { name: 'Terraform apply', run: 'terraform apply tfplan' },
           { name: 'Deploy services', run: 'kubectl apply -f k8s/' },
@@ -94,7 +124,10 @@ export function generateDemoScenario(): DemoScenario {
         environment: 'production',
         steps: [
           { name: 'Approve deployment', uses: 'trstringer/manual-approval@v1' },
-          { name: 'Deploy to production', run: 'ansible-playbook deploy-prod.yml' },
+          {
+            name: 'Deploy to production',
+            run: 'ansible-playbook deploy-prod.yml',
+          },
           { name: 'Verify deployment', run: 'npm run test:integration' },
         ],
       },
@@ -102,7 +135,10 @@ export function generateDemoScenario(): DemoScenario {
   };
 
   const pipeline = parseGitHubActions(JSON.stringify(pipelineYaml, null, 2));
-  const pipelineCanvas = pipelineToCanvas(pipeline, createPipelineParserConfig({ layout: 'horizontal' }));
+  const pipelineCanvas = pipelineToCanvas(
+    pipeline,
+    createPipelineParserConfig({ layout: 'horizontal' })
+  );
 
   // 3. SBOM: Security Analysis
   const sbomData = {
@@ -171,8 +207,15 @@ export function generateDemoScenario(): DemoScenario {
 
   const sbom = parseCycloneDX(sbomData);
   const enrichedSbom = detectVulnerabilities(sbom, {});
-  const compliance = checkLicenseCompliance(enrichedSbom, ['MIT', 'Apache-2.0', 'BSD-3-Clause'], []);
-  const sbomCanvas = sbomToCanvas(enrichedSbom, { layout: 'tree', highlightCritical: true });
+  const compliance = checkLicenseCompliance(
+    enrichedSbom,
+    ['MIT', 'Apache-2.0', 'BSD-3-Clause'],
+    []
+  );
+  const sbomCanvas = sbomToCanvas(enrichedSbom, {
+    layout: 'tree',
+    highlightCritical: true,
+  });
 
   // 4. Infrastructure: AWS Terraform
   const terraformHcl = `
@@ -246,16 +289,19 @@ export function generateDemoScenario(): DemoScenario {
   `;
 
   const topology = parseTerraform(terraformHcl);
-  const infrastructureCanvas = topologyToCanvas(topology, createTopologyConfig({ layout: 'hierarchical' }));
-  
+  const infrastructureCanvas = topologyToCanvas(
+    topology,
+    createTopologyConfig({ layout: 'hierarchical' })
+  );
+
   // Create pricing data for cost estimation (CostEstimate format)
   const pricingData: Record<string, CostEstimate> = {
-    'aws_instance': { monthly: 60.67, hourly: 0.0832, currency: 'USD' },
-    'aws_db_instance': { monthly: 99.28, hourly: 0.136, currency: 'USD' },
-    'aws_elasticache_cluster': { monthly: 99.28, hourly: 0.136, currency: 'USD' },
-    'aws_ecs_service': { monthly: 88.88, hourly: 0.1218, currency: 'USD' },
-    'aws_s3_bucket': { monthly: 23.00, hourly: 0.0315, currency: 'USD' },
-    'aws_lb': { monthly: 16.43, hourly: 0.0225, currency: 'USD' },
+    aws_instance: { monthly: 60.67, hourly: 0.0832, currency: 'USD' },
+    aws_db_instance: { monthly: 99.28, hourly: 0.136, currency: 'USD' },
+    aws_elasticache_cluster: { monthly: 99.28, hourly: 0.136, currency: 'USD' },
+    aws_ecs_service: { monthly: 88.88, hourly: 0.1218, currency: 'USD' },
+    aws_s3_bucket: { monthly: 23.0, hourly: 0.0315, currency: 'USD' },
+    aws_lb: { monthly: 16.43, hourly: 0.0225, currency: 'USD' },
   };
   const topologyWithCosts = estimateCosts(topology, pricingData);
 
@@ -265,32 +311,73 @@ export function generateDemoScenario(): DemoScenario {
       name: 'Deploy E-Commerce Platform',
       hosts: 'production',
       tasks: [
-        { name: 'Pull latest images', command: 'docker pull ecommerce/api:latest' },
+        {
+          name: 'Pull latest images',
+          command: 'docker pull ecommerce/api:latest',
+        },
         { name: 'Update database schema', command: 'flyway migrate' },
-        { name: 'Deploy API service', command: 'kubectl apply -f api-deployment.yaml' },
-        { name: 'Deploy Product service', command: 'kubectl apply -f product-service.yaml' },
-        { name: 'Deploy Order service', command: 'kubectl apply -f order-service.yaml' },
-        { name: 'Deploy User service', command: 'kubectl apply -f user-service.yaml' },
-        { name: 'Wait for services', command: 'kubectl wait --for=condition=available deployment --all' },
-        { name: 'Run health checks', command: 'curl -f https://api.ecommerce.com/health' },
-        { name: 'Enable production traffic', command: 'kubectl patch service api -p "{\\"spec\\": {\\"type\\": \\"LoadBalancer\\"}}"' },
-        { name: 'Notify team', command: 'slack-notify "Production deployment complete"' },
+        {
+          name: 'Deploy API service',
+          command: 'kubectl apply -f api-deployment.yaml',
+        },
+        {
+          name: 'Deploy Product service',
+          command: 'kubectl apply -f product-service.yaml',
+        },
+        {
+          name: 'Deploy Order service',
+          command: 'kubectl apply -f order-service.yaml',
+        },
+        {
+          name: 'Deploy User service',
+          command: 'kubectl apply -f user-service.yaml',
+        },
+        {
+          name: 'Wait for services',
+          command: 'kubectl wait --for=condition=available deployment --all',
+        },
+        {
+          name: 'Run health checks',
+          command: 'curl -f https://api.ecommerce.com/health',
+        },
+        {
+          name: 'Enable production traffic',
+          command:
+            'kubectl patch service api -p "{\\"spec\\": {\\"type\\": \\"LoadBalancer\\"}}"',
+        },
+        {
+          name: 'Notify team',
+          command: 'slack-notify "Production deployment complete"',
+        },
       ],
     },
   ];
 
-  const runbook = parseAnsiblePlaybook(JSON.stringify(deploymentPlaybook, null, 2));
+  const runbook = parseAnsiblePlaybook(
+    JSON.stringify(deploymentPlaybook, null, 2)
+  );
   const runbookAnalysis = analyzeRunbook(runbook);
-  
+
   // Add approval gate for production deployment
-  const criticalStep = runbook.steps.find(s => s.name === 'Enable production traffic');
+  const criticalStep = runbook.steps.find(
+    (s) => s.name === 'Enable production traffic'
+  );
   if (criticalStep) {
-    const runbookWithApproval = requestApproval(runbook, criticalStep.id, ['tech-lead', 'ops-lead'], 2);
-    const runbookCanvas = runbookToCanvas(runbookWithApproval, createRunbookConfig({ layout: 'sequential' }));
+    const runbookWithApproval = requestApproval(
+      runbook,
+      criticalStep.id,
+      ['tech-lead', 'ops-lead'],
+      2
+    );
+    const runbookCanvas = runbookToCanvas(
+      runbookWithApproval,
+      createRunbookConfig({ layout: 'sequential' })
+    );
 
     return {
       name: 'E-Commerce Platform DevSecOps',
-      description: 'Complete end-to-end deployment with security scanning and automated operations',
+      description:
+        'Complete end-to-end deployment with security scanning and automated operations',
       pipeline: pipelineCanvas,
       sbom: sbomCanvas,
       infrastructure: infrastructureCanvas,
@@ -308,11 +395,15 @@ export function generateDemoScenario(): DemoScenario {
   }
 
   // Fallback without approval
-  const runbookCanvas = runbookToCanvas(runbook, createRunbookConfig({ layout: 'sequential' }));
-  
+  const runbookCanvas = runbookToCanvas(
+    runbook,
+    createRunbookConfig({ layout: 'sequential' })
+  );
+
   return {
     name: 'E-Commerce Platform DevSecOps',
-    description: 'Complete end-to-end deployment with security scanning and automated operations',
+    description:
+      'Complete end-to-end deployment with security scanning and automated operations',
     pipeline: pipelineCanvas,
     sbom: sbomCanvas,
     infrastructure: infrastructureCanvas,
@@ -361,11 +452,15 @@ ${scenario.description}
 - **License Compliance**: All dependencies use approved licenses
 
 **Critical Issues**:
-${scenario.metrics.vulnerabilities.critical > 0 ? `
+${
+  scenario.metrics.vulnerabilities.critical > 0
+    ? `
 - ⚠️  ${scenario.metrics.vulnerabilities.critical} critical vulnerability detected
 - **Recommendation**: Update axios to latest version (0.21.1 → 1.6.0)
 - **Impact**: SSRF vulnerability could allow unauthorized data access
-` : '✅ No critical vulnerabilities detected'}
+`
+    : '✅ No critical vulnerabilities detected'
+}
 
 **Assessment**: ${scenario.metrics.vulnerabilities.critical > 0 ? 'IMMEDIATE ACTION REQUIRED' : 'Security posture is good'}
 
@@ -401,23 +496,30 @@ ${scenario.metrics.vulnerabilities.critical > 0 ? `
 5. **[APPROVAL GATE]** Enable production traffic
 6. Notify team
 
-**Assessment**: ${scenario.metrics.runbookRisk === 'high' || scenario.metrics.runbookRisk === 'critical' 
-  ? 'High-risk deployment requires careful approval and monitoring'
-  : 'Standard deployment with appropriate safety controls'}
+**Assessment**: ${
+    scenario.metrics.runbookRisk === 'high' ||
+    scenario.metrics.runbookRisk === 'critical'
+      ? 'High-risk deployment requires careful approval and monitoring'
+      : 'Standard deployment with appropriate safety controls'
+  }
 
 ---
 
 ## Recommendations
 
 ### Immediate Actions (Critical)
-${scenario.metrics.vulnerabilities.critical > 0 ? `
+${
+  scenario.metrics.vulnerabilities.critical > 0
+    ? `
 1. ⚠️  **Update axios dependency** to resolve CVE-2021-3749
 2. Run penetration testing before production deployment
 3. Enable runtime security monitoring (Falco/Sysdig)
-` : `
+`
+    : `
 1. ✅ Security posture is acceptable for production deployment
 2. Continue monitoring for new vulnerabilities
-`}
+`
+}
 
 ### Short-term Improvements
 1. Add observability stack (Prometheus, Grafana, Jaeger)
@@ -454,21 +556,25 @@ ${scenario.metrics.vulnerabilities.critical > 0 ? `
  */
 export function runDemo() {
   console.log('🚀 Generating DevSecOps Demo Scenario...\n');
-  
+
   const scenario = generateDemoScenario();
-  
+
   console.log(`📋 Scenario: ${scenario.name}`);
   console.log(`📝 Description: ${scenario.description}\n`);
-  
+
   console.log('📊 Metrics:');
   console.log(`  Pipeline Stages: ${scenario.metrics.pipelineStages}`);
-  console.log(`  Vulnerabilities: ${scenario.metrics.vulnerabilities.total} (${scenario.metrics.vulnerabilities.critical} critical)`);
-  console.log(`  Infrastructure Cost: $${scenario.metrics.infrastructureCost.toFixed(2)}/month`);
+  console.log(
+    `  Vulnerabilities: ${scenario.metrics.vulnerabilities.total} (${scenario.metrics.vulnerabilities.critical} critical)`
+  );
+  console.log(
+    `  Infrastructure Cost: $${scenario.metrics.infrastructureCost.toFixed(2)}/month`
+  );
   console.log(`  Runbook Risk: ${scenario.metrics.runbookRisk}\n`);
-  
+
   console.log('📄 Generating comprehensive report...\n');
   const report = generateDevSecOpsReport(scenario);
   console.log(report);
-  
+
   return scenario;
 }

@@ -62,9 +62,15 @@ describe('AuthService constructor', () => {
   });
 
   it('accepts a custom baseUrl', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse({ ...SAMPLE_USER, ...SAMPLE_TOKENS, user: SAMPLE_USER })
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        makeFetchResponse({
+          ...SAMPLE_USER,
+          ...SAMPLE_TOKENS,
+          user: SAMPLE_USER,
+        })
+      );
     const svc = new AuthService({ baseUrl: 'https://custom.api' });
     await svc.login({ email: 'x@x.com', password: 'pw' });
     expect(fetchMock).toHaveBeenCalledWith(
@@ -84,7 +90,10 @@ describe('AuthService.login()', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(payload));
 
     const svc = new AuthService({ baseUrl: '/api' });
-    const result = await svc.login({ email: 'alice@example.com', password: 'pw' });
+    const result = await svc.login({
+      email: 'alice@example.com',
+      password: 'pw',
+    });
 
     expect(result.user.email).toBe('alice@example.com');
     expect(result.accessToken).toBe('access-tok');
@@ -92,9 +101,11 @@ describe('AuthService.login()', () => {
   });
 
   it('sends POST to /auth/login', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse({ user: SAMPLE_USER, ...SAMPLE_TOKENS })
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        makeFetchResponse({ user: SAMPLE_USER, ...SAMPLE_TOKENS })
+      );
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.login({ email: 'a@b.com', password: 'pass' });
 
@@ -109,9 +120,9 @@ describe('AuthService.login()', () => {
       makeFetchResponse({ message: 'Internal server error' }, 500)
     );
     const svc = new AuthService({ baseUrl: '/api' });
-    await expect(svc.login({ email: 'a@b.com', password: 'bad' })).rejects.toThrow(
-      'Internal server error'
-    );
+    await expect(
+      svc.login({ email: 'a@b.com', password: 'bad' })
+    ).rejects.toThrow('Internal server error');
   });
 });
 
@@ -125,19 +136,28 @@ describe('AuthService.register()', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(payload));
 
     const svc = new AuthService({ baseUrl: '/api' });
-    const result = await svc.register({ name: 'Alice', email: 'alice@example.com', password: 'pw' });
+    const result = await svc.register({
+      name: 'Alice',
+      email: 'alice@example.com',
+      password: 'pw',
+    });
 
     expect(result.user.id).toBe('u1');
     expect(result.refreshToken).toBe('refresh-tok');
   });
 
   it('sends POST to /auth/register', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse({ user: SAMPLE_USER, ...SAMPLE_TOKENS })
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        makeFetchResponse({ user: SAMPLE_USER, ...SAMPLE_TOKENS })
+      );
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.register({ name: 'B', email: 'b@c.com', password: 'pw2' });
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/register', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/register',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 });
 
@@ -193,24 +213,24 @@ describe('HTTP 403 handling', () => {
 describe('Token injection', () => {
   it('injects Authorization header when auth_token is in localStorage', async () => {
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('stored-jwt');
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse(SAMPLE_USER)
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(makeFetchResponse(SAMPLE_USER));
 
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.me();
 
     const calledConfig = fetchMock.mock.calls[0]![1] as RequestInit;
-    expect((calledConfig.headers as Record<string, string>)['Authorization']).toBe(
-      'Bearer stored-jwt'
-    );
+    expect(
+      (calledConfig.headers as Record<string, string>)['Authorization']
+    ).toBe('Bearer stored-jwt');
   });
 
   it('omits Authorization header when no token stored', async () => {
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse(SAMPLE_USER)
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(makeFetchResponse(SAMPLE_USER));
 
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.me();
@@ -227,7 +247,9 @@ describe('Token injection', () => {
 
 describe('AuthService.me()', () => {
   it('returns User on success', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(SAMPLE_USER));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse(SAMPLE_USER)
+    );
 
     const svc = new AuthService({ baseUrl: '/api' });
     const user = await svc.me();
@@ -236,10 +258,15 @@ describe('AuthService.me()', () => {
   });
 
   it('sends GET to /auth/me', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(SAMPLE_USER));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(makeFetchResponse(SAMPLE_USER));
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.me();
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', expect.objectContaining({ method: 'GET' }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/me',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });
 
@@ -249,7 +276,10 @@ describe('AuthService.me()', () => {
 
 describe('AuthService.refreshToken()', () => {
   it('returns new tokens on success', async () => {
-    const payload: RefreshTokenResponse = { ...SAMPLE_TOKENS, accessToken: 'new-access' };
+    const payload: RefreshTokenResponse = {
+      ...SAMPLE_TOKENS,
+      accessToken: 'new-access',
+    };
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(payload));
 
     const svc = new AuthService({ baseUrl: '/api' });
@@ -264,10 +294,15 @@ describe('AuthService.refreshToken()', () => {
 
 describe('AuthService.logout()', () => {
   it('calls /auth/logout with POST', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(null));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(makeFetchResponse(null));
     const svc = new AuthService({ baseUrl: '/api' });
     await svc.logout({ refreshToken: 'tok' });
-    expect(fetchMock).toHaveBeenCalledWith('/api/auth/logout', expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/logout',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 
   it('works without a refreshToken argument', async () => {

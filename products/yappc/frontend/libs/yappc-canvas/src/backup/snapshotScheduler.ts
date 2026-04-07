@@ -1,6 +1,6 @@
 /**
  * Snapshot Cadence - Backup scheduling system
- * 
+ *
  * Implements automated backup scheduling with full/diff backup support,
  * metadata indexing, and checksum verification.
  */
@@ -361,33 +361,43 @@ export class SnapshotScheduler {
 
     if (filter) {
       if (filter.type) {
-        snapshots = snapshots.filter(s => s.metadata.type === filter.type);
+        snapshots = snapshots.filter((s) => s.metadata.type === filter.type);
       }
 
       if (filter.startDate) {
-        snapshots = snapshots.filter(s => s.metadata.timestamp >= filter.startDate!);
+        snapshots = snapshots.filter(
+          (s) => s.metadata.timestamp >= filter.startDate!
+        );
       }
 
       if (filter.endDate) {
-        snapshots = snapshots.filter(s => s.metadata.timestamp <= filter.endDate!);
+        snapshots = snapshots.filter(
+          (s) => s.metadata.timestamp <= filter.endDate!
+        );
       }
 
       if (filter.tags && filter.tags.length > 0) {
-        snapshots = snapshots.filter(s =>
-          s.metadata.tags?.some(tag => filter.tags!.includes(tag))
+        snapshots = snapshots.filter((s) =>
+          s.metadata.tags?.some((tag) => filter.tags!.includes(tag))
         );
       }
 
       if (filter.createdBy) {
-        snapshots = snapshots.filter(s => s.metadata.createdBy === filter.createdBy);
+        snapshots = snapshots.filter(
+          (s) => s.metadata.createdBy === filter.createdBy
+        );
       }
 
       if (filter.verified !== undefined) {
-        snapshots = snapshots.filter(s => s.metadata.verified === filter.verified);
+        snapshots = snapshots.filter(
+          (s) => s.metadata.verified === filter.verified
+        );
       }
     }
 
-    return snapshots.sort((a, b) => b.metadata.timestamp - a.metadata.timestamp);
+    return snapshots.sort(
+      (a, b) => b.metadata.timestamp - a.metadata.timestamp
+    );
   }
 
   /**
@@ -396,7 +406,7 @@ export class SnapshotScheduler {
   deleteSnapshot(id: string): boolean {
     // Check if snapshot has dependents (diffs)
     const dependents = Array.from(this.snapshots.values()).filter(
-      s => s.metadata.parentId === id
+      (s) => s.metadata.parentId === id
     );
 
     if (dependents.length > 0) {
@@ -522,20 +532,26 @@ export class SnapshotScheduler {
   getStatistics(): BackupStatistics {
     const snapshots = Array.from(this.snapshots.values());
 
-    const fullBackups = snapshots.filter(s => s.metadata.type === 'full').length;
-    const diffBackups = snapshots.filter(s => s.metadata.type === 'diff').length;
+    const fullBackups = snapshots.filter(
+      (s) => s.metadata.type === 'full'
+    ).length;
+    const diffBackups = snapshots.filter(
+      (s) => s.metadata.type === 'diff'
+    ).length;
     const totalSize = snapshots.reduce((sum, s) => sum + s.metadata.size, 0);
-    const verifiedSnapshots = snapshots.filter(s => s.metadata.verified).length;
+    const verifiedSnapshots = snapshots.filter(
+      (s) => s.metadata.verified
+    ).length;
     const failedVerifications = snapshots.filter(
-      s => s.metadata.verifiedAt && !s.metadata.verified
+      (s) => s.metadata.verifiedAt && !s.metadata.verified
     ).length;
 
-    const lastBackup = snapshots.sort((a, b) => 
-      b.metadata.timestamp - a.metadata.timestamp
+    const lastBackup = snapshots.sort(
+      (a, b) => b.metadata.timestamp - a.metadata.timestamp
     )[0];
 
     const nextBackup = Array.from(this.schedules.values())
-      .filter(s => s.active)
+      .filter((s) => s.active)
       .sort((a, b) => a.nextRun - b.nextRun)[0];
 
     return {
@@ -628,7 +644,7 @@ export class SnapshotScheduler {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash.toString(16);
@@ -661,8 +677,12 @@ export class SnapshotScheduler {
     const oldNodes = new Set(oldData.nodes?.map((n: unknown) => n.id) || []);
     const newNodes = new Set(newData.nodes?.map((n: unknown) => n.id) || []);
 
-    const addedNodes = Array.from(newNodes).filter(id => !oldNodes.has(id)) as string[];
-    const removedNodes = Array.from(oldNodes).filter(id => !newNodes.has(id)) as string[];
+    const addedNodes = Array.from(newNodes).filter(
+      (id) => !oldNodes.has(id)
+    ) as string[];
+    const removedNodes = Array.from(oldNodes).filter(
+      (id) => !newNodes.has(id)
+    ) as string[];
     const modifiedNodes: string[] = [];
 
     // Check for modifications
@@ -678,11 +698,19 @@ export class SnapshotScheduler {
     }
 
     // Calculate edge changes
-    const oldEdges = new Set(oldData.edges?.map((e: unknown) => `${e.source}-${e.target}`) || []);
-    const newEdges = new Set(newData.edges?.map((e: unknown) => `${e.source}-${e.target}`) || []);
+    const oldEdges = new Set(
+      oldData.edges?.map((e: unknown) => `${e.source}-${e.target}`) || []
+    );
+    const newEdges = new Set(
+      newData.edges?.map((e: unknown) => `${e.source}-${e.target}`) || []
+    );
 
-    const addedEdges = Array.from(newEdges).filter(id => !oldEdges.has(id)) as string[];
-    const removedEdges = Array.from(oldEdges).filter(id => !newEdges.has(id)) as string[];
+    const addedEdges = Array.from(newEdges).filter(
+      (id) => !oldEdges.has(id)
+    ) as string[];
+    const removedEdges = Array.from(oldEdges).filter(
+      (id) => !newEdges.has(id)
+    ) as string[];
 
     return {
       addedNodes,
@@ -708,11 +736,13 @@ export class SnapshotScheduler {
    */
   private getLastSnapshot(type?: BackupType): Snapshot | undefined {
     const snapshots = type
-      ? Array.from(this.snapshots.values()).filter(s => s.metadata.type === type)
+      ? Array.from(this.snapshots.values()).filter(
+          (s) => s.metadata.type === type
+        )
       : Array.from(this.snapshots.values());
 
-    return snapshots.sort((a, b) => 
-      b.metadata.timestamp - a.metadata.timestamp
+    return snapshots.sort(
+      (a, b) => b.metadata.timestamp - a.metadata.timestamp
     )[0];
   }
 
@@ -720,8 +750,9 @@ export class SnapshotScheduler {
    * Cleanup old snapshots based on retention policy
    */
   private cleanupOldSnapshots(): void {
-    const snapshots = Array.from(this.snapshots.values())
-      .sort((a, b) => b.metadata.timestamp - a.metadata.timestamp);
+    const snapshots = Array.from(this.snapshots.values()).sort(
+      (a, b) => b.metadata.timestamp - a.metadata.timestamp
+    );
 
     // Remove by max count
     if (this.config.maxBackups && snapshots.length > this.config.maxBackups) {
@@ -729,7 +760,7 @@ export class SnapshotScheduler {
       for (const snapshot of toRemove) {
         // Only remove if no dependents
         const dependents = Array.from(this.snapshots.values()).filter(
-          s => s.metadata.parentId === snapshot.metadata.id
+          (s) => s.metadata.parentId === snapshot.metadata.id
         );
         if (dependents.length === 0) {
           this.snapshots.delete(snapshot.metadata.id);
@@ -744,7 +775,7 @@ export class SnapshotScheduler {
         if (snapshot.metadata.timestamp < cutoff) {
           // Only remove if no dependents
           const dependents = Array.from(this.snapshots.values()).filter(
-            s => s.metadata.parentId === snapshot.metadata.id
+            (s) => s.metadata.parentId === snapshot.metadata.id
           );
           if (dependents.length === 0) {
             this.snapshots.delete(snapshot.metadata.id);
@@ -758,6 +789,8 @@ export class SnapshotScheduler {
 /**
  * Create snapshot scheduler
  */
-export function createSnapshotScheduler(config?: Partial<ScheduleConfig>): SnapshotScheduler {
+export function createSnapshotScheduler(
+  config?: Partial<ScheduleConfig>
+): SnapshotScheduler {
   return new SnapshotScheduler(config);
 }

@@ -291,19 +291,19 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     // Handle row selection
     const handleRowSelect = (row: unknown, index: number) => {
       if (!selectable || !onSelectionChange) return;
-      
+
       const id = getRowId(row, index);
       const newSelected = isRowSelected(row, index)
         ? selected.filter((s) => s !== id)
         : [...selected, id];
-      
+
       onSelectionChange(newSelected);
     };
 
     // Handle select all
     const handleSelectAll = () => {
       if (!selectable || !onSelectionChange) return;
-      
+
       const displayData = getDisplayData();
       if (selected.length === displayData.length) {
         // Deselect all
@@ -318,12 +318,12 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     // Handle row expansion
     const handleRowExpand = (row: unknown, index: number) => {
       if (!expandable || !onExpansionChange) return;
-      
+
       const id = getRowId(row, index);
       const newExpanded = isRowExpanded(row, index)
         ? expanded.filter((e) => e !== id)
         : [...expanded, id];
-      
+
       onExpansionChange(newExpanded);
     };
 
@@ -338,17 +338,22 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     const total = totalRows ?? data.length;
     const totalPages = Math.ceil(total / pageSize);
     const displayData = getDisplayData();
-    const allSelected = selectable && selected.length === displayData.length && displayData.length > 0;
-    const someSelected = selectable && selected.length > 0 && selected.length < displayData.length;
+    const allSelected =
+      selectable &&
+      selected.length === displayData.length &&
+      displayData.length > 0;
+    const someSelected =
+      selectable && selected.length > 0 && selected.length < displayData.length;
 
     // Get cell value
     const getCellValue = (column: TableColumn, row: unknown, index: number) => {
       if (column.render) {
-        const value = typeof column.accessor === 'function'
-          ? column.accessor(row, index)
-          : column.accessor
-          ? row[column.accessor]
-          : undefined;
+        const value =
+          typeof column.accessor === 'function'
+            ? column.accessor(row, index)
+            : column.accessor
+              ? row[column.accessor]
+              : undefined;
         return column.render(value, row, index);
       }
 
@@ -384,8 +389,10 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     // Variant-specific classes
     const variantClasses = {
       default: '',
-      striped: '[&_tbody_tr:nth-child(even)]:bg-grey-50 dark:[&_tbody_tr:nth-child(even)]:bg-grey-900/20',
-      bordered: 'border border-grey-200 dark:border-grey-700 [&_td]:border-b [&_td]:border-grey-200 dark:[&_td]:border-grey-700',
+      striped:
+        '[&_tbody_tr:nth-child(even)]:bg-grey-50 dark:[&_tbody_tr:nth-child(even)]:bg-grey-900/20',
+      bordered:
+        'border border-grey-200 dark:border-grey-700 [&_td]:border-b [&_td]:border-grey-200 dark:[&_td]:border-grey-700',
     };
 
     // Container wrapper for scrollable table
@@ -406,7 +413,9 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
         <div className="flex items-center justify-center p-8 bg-white dark:bg-grey-900 rounded-lg">
           <div className="text-center">
             <div className="mb-4 text-4xl">⏳</div>
-            <div className="text-sm text-grey-600 dark:text-grey-400">Loading...</div>
+            <div className="text-sm text-grey-600 dark:text-grey-400">
+              Loading...
+            </div>
           </div>
         </div>
       );
@@ -427,7 +436,14 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
       <table
         ref={ref}
         className={tableClasses}
-        style={maxHeight ? { '--table-max-height': typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight } as React.CSSProperties : undefined}
+        style={
+          maxHeight
+            ? ({
+                '--table-max-height':
+                  typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight,
+              } as React.CSSProperties)
+            : undefined
+        }
       >
         <thead
           className={cn(
@@ -450,9 +466,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                 />
               </th>
             )}
-            {expandable && (
-              <th className={cn(cellPadding, 'w-12')} />
-            )}
+            {expandable && <th className={cn(cellPadding, 'w-12')} />}
             {columns.map((column) => {
               const align = column.headerAlign || column.align || 'left';
               const isSorted = sortBy === column.id;
@@ -464,12 +478,19 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                     cellPadding,
                     'font-semibold text-sm text-grey-700 dark:text-grey-300',
                     alignClasses[align],
-                    column.sortable && 'cursor-pointer select-none hover:bg-grey-100 dark:hover:bg-grey-700'
+                    column.sortable &&
+                      'cursor-pointer select-none hover:bg-grey-100 dark:hover:bg-grey-700'
                   )}
                   style={{ width: column.width }}
                   onClick={() => handleSortClick(column)}
                 >
-                  <div className={cn('flex items-center gap-1', align === 'center' && 'justify-center', align === 'right' && 'justify-end')}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-1',
+                      align === 'center' && 'justify-center',
+                      align === 'right' && 'justify-end'
+                    )}
+                  >
                     <span>{column.label}</span>
                     {column.sortable && (
                       <span className="inline-flex flex-col text-xs opacity-50">
@@ -489,14 +510,15 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
           {displayData.map((row, rowIndex) => {
             const isSelected = isRowSelected(row, rowIndex);
             const isExpanded = isRowExpanded(row, rowIndex);
-            
+
             return (
               <React.Fragment key={rowIndex}>
                 <tr
                   className={cn(
                     'border-b border-grey-200 dark:border-grey-700',
                     'bg-white dark:bg-grey-900',
-                    hover && 'hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors',
+                    hover &&
+                      'hover:bg-grey-50 dark:hover:bg-grey-800 transition-colors',
                     onRowClick && 'cursor-pointer',
                     isSelected && 'bg-primary-50 dark:bg-primary-900/20',
                     getRowClassName(row, rowIndex)
@@ -504,7 +526,10 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                   onClick={() => onRowClick?.(row, rowIndex)}
                 >
                   {selectable && (
-                    <td className={cn(cellPadding)} onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className={cn(cellPadding)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <input
                         type="checkbox"
                         checked={isSelected}
@@ -514,7 +539,10 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                     </td>
                   )}
                   {expandable && (
-                    <td className={cn(cellPadding)} onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className={cn(cellPadding)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <button
                         type="button"
                         onClick={() => handleRowExpand(row, rowIndex)}
@@ -526,37 +554,44 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
                     </td>
                   )}
                   {columns.map((column) => {
-                const align = column.align || 'left';
-                const value = getCellValue(column, row, rowIndex);
+                    const align = column.align || 'left';
+                    const value = getCellValue(column, row, rowIndex);
 
-                return (
-                  <td
-                    key={column.id}
-                    className={cn(
-                      cellPadding,
-                      'text-sm text-grey-900 dark:text-grey-100',
-                      alignClasses[align]
-                    )}
-                  >
-                    {value}
-                  </td>
-                );
-              })}
-            </tr>
-            
-            {/* Expanded row content */}
-            {expandable && isExpanded && renderExpanded && (
-              <tr className="bg-grey-50 dark:bg-grey-800/50">
-                <td
-                  colSpan={columns.length + (selectable ? 1 : 0) + (expandable ? 1 : 0)}
-                  className={cn(cellPadding, 'border-b border-grey-200 dark:border-grey-700')}
-                >
-                  {renderExpanded(row, rowIndex)}
-                </td>
-              </tr>
-            )}
-          </React.Fragment>
-          );
+                    return (
+                      <td
+                        key={column.id}
+                        className={cn(
+                          cellPadding,
+                          'text-sm text-grey-900 dark:text-grey-100',
+                          alignClasses[align]
+                        )}
+                      >
+                        {value}
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* Expanded row content */}
+                {expandable && isExpanded && renderExpanded && (
+                  <tr className="bg-grey-50 dark:bg-grey-800/50">
+                    <td
+                      colSpan={
+                        columns.length +
+                        (selectable ? 1 : 0) +
+                        (expandable ? 1 : 0)
+                      }
+                      className={cn(
+                        cellPadding,
+                        'border-b border-grey-200 dark:border-grey-700'
+                      )}
+                    >
+                      {renderExpanded(row, rowIndex)}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
           })}
         </tbody>
       </table>
@@ -569,7 +604,9 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
         {paginated && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-grey-200 dark:border-grey-700 bg-white dark:bg-grey-900">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-grey-700 dark:text-grey-300">Rows per page:</span>
+              <span className="text-sm text-grey-700 dark:text-grey-300">
+                Rows per page:
+              </span>
               <select
                 value={pageSize}
                 onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
@@ -585,7 +622,8 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
 
             <div className="flex items-center gap-4">
               <span className="text-sm text-grey-700 dark:text-grey-300">
-                {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)} of {total}
+                {page * pageSize + 1}-{Math.min((page + 1) * pageSize, total)}{' '}
+                of {total}
               </span>
 
               <div className="flex gap-1">
@@ -649,7 +687,11 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     );
 
     if (maxHeight) {
-      return <div className={containerClasses}>{paginated ? tableWithPagination : tableContent}</div>;
+      return (
+        <div className={containerClasses}>
+          {paginated ? tableWithPagination : tableContent}
+        </div>
+      );
     }
 
     return paginated ? tableWithPagination : tableContent;

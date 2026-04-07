@@ -11,7 +11,13 @@ import { TrendingDown as TrendingDownIcon } from 'lucide-react';
 import { TrendingUp as TrendingUpIcon } from 'lucide-react';
 import type React from 'react';
 
-import { Box, Card, CardContent, LinearProgress, Typography } from '@ghatana/design-system';
+import {
+  Box,
+  Card,
+  CardContent,
+  LinearProgress,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { KPICardProps } from './types';
 
@@ -67,7 +73,11 @@ export const KPICard: React.FC<KPICardProps> = ({
       }}
     >
       <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="flex-start"
+        >
           <Typography as="h2" fontWeight={700} component="div">
             {value}
             {unit}
@@ -92,7 +102,8 @@ export const KPICard: React.FC<KPICardProps> = ({
             <LinearProgress
               variant="determinate"
               value={Math.min(progress, 100)}
-              className="mt-4 h-[8px]" />
+              className="mt-4 h-[8px]"
+            />
             <Typography
               as="span"
               color="text.secondary"

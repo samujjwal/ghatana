@@ -8,8 +8,8 @@ import {
   createCollabSecurityManager,
   type SecurityEvent,
   type CollabPayloadSchema,
-
-  CollabSecurityManager} from '../collabSecurity';
+  CollabSecurityManager,
+} from '../collabSecurity';
 
 describe('CollabSecurityManager', () => {
   describe('Rate Limiting', () => {
@@ -172,7 +172,9 @@ describe('CollabSecurityManager', () => {
       const result = manager.validatePayload(payload);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.code === 'STRING_TOO_LONG')).toBe(true);
+      expect(result.errors.some((e) => e.code === 'STRING_TOO_LONG')).toBe(
+        true
+      );
     });
 
     it('should warn about large arrays', () => {
@@ -320,8 +322,11 @@ describe('CollabSecurityManager', () => {
 
     it('should disconnect after multiple violations', () => {
       // Create separate manager instances to avoid token refill timing issues
-      const mgr = createCollabSecurityManager({ burstCapacity: 0, refillRate: 0 });
-      
+      const mgr = createCollabSecurityManager({
+        burstCapacity: 0,
+        refillRate: 0,
+      });
+
       // Force 3 rate limit violations
       mgr.checkRateLimit('user1'); // Violation 1
       mgr.checkRateLimit('user1'); // Violation 2
@@ -336,12 +341,12 @@ describe('CollabSecurityManager', () => {
     it('should log connection closed event', () => {
       // Trigger multiple rate limit violations
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1'); // Violation 1
       mgr.checkRateLimit('user1'); // Violation 2
       mgr.checkRateLimit('user1'); // Violation 3
-      
+
       mgr.handleViolation('user1', 'rate_limit');
 
       const events = mgr.getSecurityEvents({ type: 'connection_closed' });
@@ -350,7 +355,7 @@ describe('CollabSecurityManager', () => {
 
     it('should not count violations older than 1 minute', async () => {
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1'); // Violation 1
 
@@ -409,26 +414,26 @@ describe('CollabSecurityManager', () => {
 
     it('should filter events by severity', () => {
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       // Trigger rate limit events (medium severity)
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1');
-      
+
       // Trigger connection closed (high severity)
       mgr.handleViolation('user1', 'rate_limit');
 
       const highSeverity = mgr.getSecurityEvents({ severity: 'high' });
       expect(highSeverity.length).toBeGreaterThan(0);
-      
+
       const mediumSeverity = mgr.getSecurityEvents({ severity: 'medium' });
       expect(mediumSeverity.length).toBeGreaterThan(0);
     });
 
     it('should filter events by time', () => {
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       mgr.checkRateLimit('user1');
       const firstEventTime = Date.now();
       mgr.checkRateLimit('user1'); // Event 1 at firstEventTime
@@ -440,7 +445,7 @@ describe('CollabSecurityManager', () => {
 
       const all = mgr.getSecurityEvents();
       const recent = mgr.getSecurityEvents({ since: firstEventTime + 5000 });
-      
+
       // Should have fewer events when filtered by time
       expect(recent.length).toBeLessThanOrEqual(all.length);
 
@@ -449,7 +454,7 @@ describe('CollabSecurityManager', () => {
 
     it('should clear security events', () => {
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1'); // Rate limit event
       expect(mgr.getSecurityEvents()).not.toHaveLength(0);
@@ -515,7 +520,7 @@ describe('CollabSecurityManager', () => {
 
     it('should count security events', () => {
       const mgr = createCollabSecurityManager({ burstCapacity: 1 });
-      
+
       mgr.checkRateLimit('user1');
       mgr.checkRateLimit('user1'); // Rate limit event
       mgr.checkRateLimit('user2');

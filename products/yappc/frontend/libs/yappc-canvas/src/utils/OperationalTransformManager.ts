@@ -5,7 +5,6 @@ import type {
   ConflictResolution,
 } from '../hooks/useAdvancedCollaboration';
 
-
 /**
  *
  */
@@ -26,7 +25,7 @@ export class NodeInsertOperation implements TransformOperation {
   constructor(
     private node: Node,
     protected index: number
-  ) { }
+  ) {}
 
   /**
    *
@@ -77,7 +76,7 @@ export class NodeDeleteOperation implements TransformOperation {
     private nodeId: string,
     protected index: number,
     private deletedNode?: Node
-  ) { }
+  ) {}
 
   /**
    *
@@ -143,7 +142,7 @@ export class NodeUpdateOperation implements TransformOperation {
     private nodeId: string,
     private updates: Partial<Node>,
     private previousState?: Partial<Node>
-  ) { }
+  ) {}
 
   /**
    *

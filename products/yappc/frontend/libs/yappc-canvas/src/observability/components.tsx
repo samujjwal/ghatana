@@ -1,4 +1,22 @@
-import { LayoutDashboard as DashboardIcon, Gauge as SpeedIcon, Cpu as MemoryIcon, AlertCircle as ErrorIcon, AlertTriangle as WarningIcon, Info as InfoIcon, Activity as TimelineIcon, Bug as BugReportIcon, RefreshCw as RefreshIcon, Download as DownloadIcon, XCircle as ClearIcon, Play as PlayIcon, Stop as StopIcon, ChevronDown as ExpandMoreIcon, Eye as VisibilityIcon, Code as CodeIcon, CheckCircle as CheckCircleIcon } from 'lucide-react';
+import {
+  LayoutDashboard as DashboardIcon,
+  Gauge as SpeedIcon,
+  Cpu as MemoryIcon,
+  AlertCircle as ErrorIcon,
+  AlertTriangle as WarningIcon,
+  Info as InfoIcon,
+  Activity as TimelineIcon,
+  Bug as BugReportIcon,
+  RefreshCw as RefreshIcon,
+  Download as DownloadIcon,
+  XCircle as ClearIcon,
+  Play as PlayIcon,
+  Stop as StopIcon,
+  ChevronDown as ExpandMoreIcon,
+  Eye as VisibilityIcon,
+  Code as CodeIcon,
+  CheckCircle as CheckCircleIcon,
+} from 'lucide-react';
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
 import {
@@ -48,11 +66,9 @@ import {
   useDebug,
   PerformanceMetric,
   UserAction,
-  ErrorEvent
+  ErrorEvent,
 } from './hooks';
-import type {
-  SystemHealth,
-  DebugLog} from './hooks';
+import type { SystemHealth, DebugLog } from './hooks';
 
 // Performance dashboard component
 /**
@@ -135,21 +151,31 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
     );
   }, [getMetrics, selectedCategory, timeRange]);
 
-  const getHealthColor = (status: SystemHealth['status']): 'success' | 'warning' | 'error' | 'primary' => {
+  const getHealthColor = (
+    status: SystemHealth['status']
+  ): 'success' | 'warning' | 'error' | 'primary' => {
     switch (status) {
-      case 'healthy': return 'success';
-      case 'degraded': return 'warning';
-      case 'critical': return 'error';
-      default: return 'primary';
+      case 'healthy':
+        return 'success';
+      case 'degraded':
+        return 'warning';
+      case 'critical':
+        return 'error';
+      default:
+        return 'primary';
     }
   };
 
   const formatMetricValue = (value: number, unit: string) => {
     if (unit === 'ms') {
-      return value < 1000 ? `${value.toFixed(1)}ms` : `${(value / 1000).toFixed(2)}s`;
+      return value < 1000
+        ? `${value.toFixed(1)}ms`
+        : `${(value / 1000).toFixed(2)}s`;
     }
     if (unit === 'bytes' || unit === 'MB') {
-      return value < 1024 ? `${value.toFixed(1)}B` : `${(value / 1024).toFixed(1)}KB`;
+      return value < 1024
+        ? `${value.toFixed(1)}B`
+        : `${(value / 1024).toFixed(1)}KB`;
     }
     return `${value} ${unit}`;
   };
@@ -163,7 +189,9 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
 
         <Box className="flex flex-wrap gap-2">
           <FormControl size="small" className="min-w-[140px]">
-            <InputLabel id="performance-time-range-label">Time Range</InputLabel>
+            <InputLabel id="performance-time-range-label">
+              Time Range
+            </InputLabel>
             <Select
               labelId="performance-time-range-label"
               value={timeRange}
@@ -322,8 +350,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
         >
           {isRecording
             ? `Recording metrics • ${metricsCount} events collected • Last flush: ${lastFlush || 'Never'}`
-            : 'Metrics recording is paused'
-          }
+            : 'Metrics recording is paused'}
         </Alert>
       </Box>
 
@@ -391,7 +418,10 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
 export interface DebugConsoleProps {
   canvasData?: CanvasData;
   onCanvasInspect?: (inspection: Record<string, unknown>) => void;
-  onCanvasValidate?: (validation: { isValid: boolean; issues: string[] }) => void;
+  onCanvasValidate?: (validation: {
+    isValid: boolean;
+    issues: string[];
+  }) => void;
 }
 
 export const DebugConsole: React.FC<DebugConsoleProps> = ({
@@ -424,7 +454,7 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
 
   const filteredLogs = useMemo(() => {
     if (selectedLogLevel === 'all') return logs;
-    return logs.filter(log => log.level === selectedLogLevel);
+    return logs.filter((log) => log.level === selectedLogLevel);
   }, [logs, selectedLogLevel]);
 
   const handleInspectCanvas = useCallback(() => {
@@ -435,7 +465,9 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
 
     const inspection = inspectCanvas(canvasData);
     onCanvasInspect?.(inspection);
-    info('Canvas inspection completed', { nodeCount: inspection.metadata.nodeCount });
+    info('Canvas inspection completed', {
+      nodeCount: inspection.metadata.nodeCount,
+    });
   }, [canvasData, inspectCanvas, onCanvasInspect, warn, info]);
 
   const handleValidateCanvas = useCallback(() => {
@@ -456,21 +488,31 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
 
   const getLogIcon = (level: DebugLog['level']) => {
     switch (level) {
-      case 'error': return <ErrorIcon color="error" />;
-      case 'warn': return <WarningIcon color="warning" />;
-      case 'info': return <InfoIcon color="info" />;
-      case 'debug': return <BugReportIcon color="action" />;
-      default: return <InfoIcon />;
+      case 'error':
+        return <ErrorIcon color="error" />;
+      case 'warn':
+        return <WarningIcon color="warning" />;
+      case 'info':
+        return <InfoIcon color="info" />;
+      case 'debug':
+        return <BugReportIcon color="action" />;
+      default:
+        return <InfoIcon />;
     }
   };
 
   const getLogColor = (level: DebugLog['level']) => {
     switch (level) {
-      case 'error': return 'error.main';
-      case 'warn': return 'warning.main';
-      case 'info': return 'info.main';
-      case 'debug': return 'text.secondary';
-      default: return 'text.primary';
+      case 'error':
+        return 'error.main';
+      case 'warn':
+        return 'warning.main';
+      case 'info':
+        return 'info.main';
+      case 'debug':
+        return 'text.secondary';
+      default:
+        return 'text.primary';
     }
   };
 
@@ -486,7 +528,12 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
 
         <Box className="flex gap-4 items-center">
           <FormControlLabel
-            control={<Switch checked={isEnabled} onChange={isEnabled ? disable : enable} />}
+            control={
+              <Switch
+                checked={isEnabled}
+                onChange={isEnabled ? disable : enable}
+              />
+            }
             label="Debug Enabled"
           />
 
@@ -509,7 +556,10 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
             Clear
           </Button>
 
-          <Button onClick={() => setShowExportDialog(true)} startIcon={<DownloadIcon />}>
+          <Button
+            onClick={() => setShowExportDialog(true)}
+            startIcon={<DownloadIcon />}
+          >
             Export
           </Button>
         </Box>
@@ -540,11 +590,13 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
               <Button
                 variant="outlined"
                 startIcon={<CodeIcon />}
-                onClick={() => debug('Canvas state snapshot', {
-                  nodeCount: canvasData.nodes.length,
-                  edgeCount: canvasData.edges.length,
-                  viewport: canvasData.viewport,
-                })}
+                onClick={() =>
+                  debug('Canvas state snapshot', {
+                    nodeCount: canvasData.nodes.length,
+                    edgeCount: canvasData.edges.length,
+                    viewport: canvasData.viewport,
+                  })
+                }
               >
                 Log State
               </Button>
@@ -560,15 +612,16 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
           <List className="overflow-auto max-h-[600px]">
             {filteredLogs.map((log) => (
               <ListItem key={log.id} divider>
-                <ListItemIcon>
-                  {getLogIcon(log.level)}
-                </ListItemIcon>
+                <ListItemIcon>{getLogIcon(log.level)}</ListItemIcon>
                 <ListItemText
                   primary={
                     <Box className="flex items-center gap-2">
                       <Typography
                         variant="body2"
-                        style={{ color: getLogColor(log.level), fontWeight: 500 }}
+                        style={{
+                          color: getLogColor(log.level),
+                          fontWeight: 500,
+                        }}
                       >
                         {log.message}
                       </Typography>
@@ -583,7 +636,8 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
                         <Accordion>
                           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Typography variant="caption">
-                              Context ({Object.keys(log.context).length} properties)
+                              Context ({Object.keys(log.context).length}{' '}
+                              properties)
                             </Typography>
                           </AccordionSummary>
                           <AccordionDetails>
@@ -596,7 +650,9 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
                       {log.stack && (
                         <Accordion>
                           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="caption">Stack Trace</Typography>
+                            <Typography variant="caption">
+                              Stack Trace
+                            </Typography>
                           </AccordionSummary>
                           <AccordionDetails>
                             <pre style={{ fontSize: '10px', overflow: 'auto' }}>
@@ -616,7 +672,8 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
             <Box className="text-center py-8">
               <Typography color="text.secondary">
                 No logs available
-                {selectedLogLevel !== 'all' && ` for level: ${selectedLogLevel}`}
+                {selectedLogLevel !== 'all' &&
+                  ` for level: ${selectedLogLevel}`}
               </Typography>
             </Box>
           )}
@@ -624,7 +681,12 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
       </Card>
 
       {/* Export Dialog */}
-      <Dialog open={showExportDialog} onClose={() => setShowExportDialog(false)} maxWidth="md" fullWidth>
+      <Dialog
+        open={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Export Debug Logs</DialogTitle>
         <DialogContent>
           <TextField
@@ -644,7 +706,9 @@ export const DebugConsole: React.FC<DebugConsoleProps> = ({
           <Button
             variant="contained"
             onClick={() => {
-              const blob = new Blob([exportLogs()], { type: 'application/json' });
+              const blob = new Blob([exportLogs()], {
+                type: 'application/json',
+              });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;

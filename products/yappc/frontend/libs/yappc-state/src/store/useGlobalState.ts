@@ -63,7 +63,9 @@ import type { AtomKey } from './StateManager';
  * const [count, setCount] = useGlobalState('counter')
  * setCount(count + 1)
  */
-export function useGlobalState<T>(key: AtomKey): [T, (value: T | ((prev: T) => T)) => void] {
+export function useGlobalState<T>(
+  key: AtomKey
+): [T, (value: T | ((prev: T) => T)) => void] {
   const atom = StateManager.getAtom<T>(key);
 
   if (!atom) {
@@ -72,7 +74,9 @@ export function useGlobalState<T>(key: AtomKey): [T, (value: T | ((prev: T) => T
     );
   }
 
-  return useAtom(atom as unknown as WritableAtom<T, [T | ((prev: T) => T)], void>);
+  return useAtom(
+    atom as unknown as WritableAtom<T, [T | ((prev: T) => T)], void>
+  );
 }
 
 /**
@@ -85,9 +89,7 @@ export function useGlobalStateValue<T>(key: AtomKey): T {
   const atom = StateManager.getAtom<T>(key);
 
   if (!atom) {
-    throw new Error(
-      `[useGlobalStateValue] Atom with key "${key}" not found`
-    );
+    throw new Error(`[useGlobalStateValue] Atom with key "${key}" not found`);
   }
 
   return useAtomValue(atom);
@@ -100,16 +102,18 @@ export function useGlobalStateValue<T>(key: AtomKey): T {
  * const setCount = useSetGlobalState('counter')
  * setCount(10)
  */
-export function useSetGlobalState<T>(key: AtomKey): (value: T | ((prev: T) => T)) => void {
+export function useSetGlobalState<T>(
+  key: AtomKey
+): (value: T | ((prev: T) => T)) => void {
   const atom = StateManager.getAtom<T>(key);
 
   if (!atom) {
-    throw new Error(
-      `[useSetGlobalState] Atom with key "${key}" not found`
-    );
+    throw new Error(`[useSetGlobalState] Atom with key "${key}" not found`);
   }
 
-  return useSetAtom(atom as unknown as WritableAtom<T, [T | ((prev: T) => T)], void>);
+  return useSetAtom(
+    atom as unknown as WritableAtom<T, [T | ((prev: T) => T)], void>
+  );
 }
 
 /**
@@ -123,12 +127,12 @@ export function useResetGlobalState(key: AtomKey): () => void {
   const atom = StateManager.getAtom(key);
 
   if (!atom) {
-    throw new Error(
-      `[useResetGlobalState] Atom with key "${key}" not found`
-    );
+    throw new Error(`[useResetGlobalState] Atom with key "${key}" not found`);
   }
 
-  const setAtom = useSetAtom(atom as unknown as WritableAtom<unknown, [unknown], void>);
+  const setAtom = useSetAtom(
+    atom as unknown as WritableAtom<unknown, [unknown], void>
+  );
 
   return useCallback(() => {
     setAtom(RESET);
@@ -202,7 +206,7 @@ export function useArrayGlobalState<T>(key: AtomKey): [
     update: (index: number, item: T) => void;
     clear: () => void;
     filter: (predicate: (item: T) => boolean) => void;
-  }
+  },
 ] {
   const [value, setValue] = useGlobalState<T[]>(key);
 
@@ -248,13 +252,15 @@ export function useArrayGlobalState<T>(key: AtomKey): [
  * const [user, { update, reset }] = useObjectGlobalState('user')
  * update({ name: 'John' }) // merge update
  */
-export function useObjectGlobalState<T extends Record<string, unknown>>(key: AtomKey): [
+export function useObjectGlobalState<T extends Record<string, unknown>>(
+  key: AtomKey
+): [
   T,
   {
     update: (partial: Partial<T>) => void;
     set: (newValue: T) => void;
     reset: () => void;
-  }
+  },
 ] {
   const [value, setValue] = useGlobalState<T>(key);
   const resetFn = useResetGlobalState(key);

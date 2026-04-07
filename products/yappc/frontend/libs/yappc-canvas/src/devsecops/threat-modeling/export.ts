@@ -1,6 +1,6 @@
 /**
  * Threat Model Export
- * 
+ *
  * Export threat models to various formats (YAML, CSV, JSON, Markdown).
  */
 
@@ -40,19 +40,23 @@ function exportToYAML(state: ThreatModelState): string {
     `    min_severity: ${state.config.minSeverity}`,
     '',
     '  elements:',
-    ...state.elements.map(e => `    - id: ${e.id}\n      type: ${e.type}\n      name: ${e.name}`),
+    ...state.elements.map(
+      (e) => `    - id: ${e.id}\n      type: ${e.type}\n      name: ${e.name}`
+    ),
     '',
     '  threats:',
-    ...state.threats.map(t => [
-      `    - id: ${t.id}`,
-      `      title: ${t.title}`,
-      `      category: ${t.category}`,
-      `      severity: ${t.severity}`,
-      `      status: ${t.status}`,
-      `      score: ${calculateThreatScore(t)}`,
-    ].join('\n')),
+    ...state.threats.map((t) =>
+      [
+        `    - id: ${t.id}`,
+        `      title: ${t.title}`,
+        `      category: ${t.category}`,
+        `      severity: ${t.severity}`,
+        `      status: ${t.status}`,
+        `      score: ${calculateThreatScore(t)}`,
+      ].join('\n')
+    ),
   ];
-  
+
   return yaml.join('\n');
 }
 
@@ -60,8 +64,16 @@ function exportToYAML(state: ThreatModelState): string {
  *
  */
 function exportToCSV(state: ThreatModelState): string {
-  const headers = ['ID', 'Title', 'Category', 'Severity', 'Status', 'Score', 'Affected Elements'];
-  const rows = state.threats.map(t => [
+  const headers = [
+    'ID',
+    'Title',
+    'Category',
+    'Severity',
+    'Status',
+    'Score',
+    'Affected Elements',
+  ];
+  const rows = state.threats.map((t) => [
     t.id,
     `"${t.title}"`,
     t.category,
@@ -70,8 +82,8 @@ function exportToCSV(state: ThreatModelState): string {
     calculateThreatScore(t).toString(),
     `"${t.affectedElements.join(', ')}"`,
   ]);
-  
-  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+  return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
 
 /**
@@ -102,16 +114,21 @@ function exportToMarkdown(state: ThreatModelState): string {
     '## Threats',
     '',
   ];
-  
+
   // Group by severity
-  const severities: Array<'critical' | 'high' | 'medium' | 'low' | 'info'> = 
-    ['critical', 'high', 'medium', 'low', 'info'];
-  
+  const severities: Array<'critical' | 'high' | 'medium' | 'low' | 'info'> = [
+    'critical',
+    'high',
+    'medium',
+    'low',
+    'info',
+  ];
+
   for (const severity of severities) {
-    const threats = state.threats.filter(t => t.severity === severity);
+    const threats = state.threats.filter((t) => t.severity === severity);
     if (threats.length > 0) {
       lines.push(`### ${severity.toUpperCase()} (${threats.length})`, '');
-      
+
       for (const threat of threats) {
         lines.push(
           `#### ${threat.title}`,
@@ -125,7 +142,7 @@ function exportToMarkdown(state: ThreatModelState): string {
           `**Description:** ${threat.description}`,
           ''
         );
-        
+
         if (threat.mitigations.length > 0) {
           lines.push('**Mitigations:**', '');
           for (const mitigation of threat.mitigations) {
@@ -137,11 +154,11 @@ function exportToMarkdown(state: ThreatModelState): string {
             );
           }
         }
-        
+
         lines.push('---', '');
       }
     }
   }
-  
+
   return lines.join('\n');
 }

@@ -92,7 +92,7 @@ export class ComplianceReportService {
    *
    * @param prisma - Prisma client for database access
    */
-  constructor(private prisma: PrismaClient) { }
+  constructor(private prisma: PrismaClient) {}
 
   /**
    * Generates a compliance report for an assessment.
@@ -153,9 +153,8 @@ export class ComplianceReportService {
       }
 
       if (config.includeMetrics) {
-        sections.recommendations = this.generateRecommendationsSection(
-          assessment
-        );
+        sections.recommendations =
+          this.generateRecommendationsSection(assessment);
       }
 
       // Create report object
@@ -187,7 +186,8 @@ export class ComplianceReportService {
       return report;
     } catch (error) {
       throw new Error(
-        `Failed to generate report: ${error instanceof Error ? error.message : 'unknown error'
+        `Failed to generate report: ${
+          error instanceof Error ? error.message : 'unknown error'
         }`
       );
     }
@@ -282,10 +282,13 @@ export class ComplianceReportService {
       reportId2,
       timestamp1: report1.generatedAt,
       timestamp2: report2.generatedAt,
-      complianceScoreTrend: metrics2.overallComplianceScore - metrics1.overallComplianceScore,
+      complianceScoreTrend:
+        metrics2.overallComplianceScore - metrics1.overallComplianceScore,
       findingsTrend: metrics2.findingsCount - metrics1.findingsCount,
-      remediationTrend: metrics2.remediationCompletionRate - metrics1.remediationCompletionRate,
-      criticalFindingsTrend: metrics2.criticalFindingsCount - metrics1.criticalFindingsCount,
+      remediationTrend:
+        metrics2.remediationCompletionRate - metrics1.remediationCompletionRate,
+      criticalFindingsTrend:
+        metrics2.criticalFindingsCount - metrics1.criticalFindingsCount,
     };
   }
 
@@ -335,9 +338,9 @@ export class ComplianceReportService {
 
     const remediationPlan = assessment.remediationPlan;
     const totalSteps = remediationPlan?.steps?.length || 0;
-    const completedSteps = remediationPlan?.steps?.filter(
-      (s: unknown) => s.status === 'completed'
-    ).length || 0;
+    const completedSteps =
+      remediationPlan?.steps?.filter((s: unknown) => s.status === 'completed')
+        .length || 0;
 
     return {
       totalControls: controls.length,
@@ -414,10 +417,12 @@ export class ComplianceReportService {
     return {
       title: 'Detailed Findings',
       content: `A total of ${findings.length} findings were identified during the assessment.`,
-      subsections: Array.from(bySeverity.entries()).map(([severity, count]) => ({
-        title: `${severity.charAt(0).toUpperCase() + severity.slice(1)} Findings`,
-        content: `${count} finding(s)`,
-      })),
+      subsections: Array.from(bySeverity.entries()).map(
+        ([severity, count]) => ({
+          title: `${severity.charAt(0).toUpperCase() + severity.slice(1)} Findings`,
+          content: `${count} finding(s)`,
+        })
+      ),
     };
   }
 
@@ -474,7 +479,8 @@ export class ComplianceReportService {
   private generateRecommendationsSection(assessment: unknown): ReportSection {
     return {
       title: 'Recommendations',
-      content: 'Based on the assessment findings, the following recommendations are proposed to improve compliance posture.',
+      content:
+        'Based on the assessment findings, the following recommendations are proposed to improve compliance posture.',
       subsections: [
         {
           title: 'Priority Actions',
@@ -482,7 +488,8 @@ export class ComplianceReportService {
         },
         {
           title: 'Process Improvements',
-          content: 'Implement automated controls for recurring compliance checks',
+          content:
+            'Implement automated controls for recurring compliance checks',
         },
       ],
     };
@@ -568,4 +575,3 @@ export class ComplianceReportService {
     return `compliance-report-${assessmentId}-${timestamp}.${format}`;
   }
 }
-

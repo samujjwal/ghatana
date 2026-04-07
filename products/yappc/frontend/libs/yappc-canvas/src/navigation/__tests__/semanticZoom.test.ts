@@ -96,9 +96,7 @@ describe('semanticZoom', () => {
       const config = createSemanticZoomConfig();
       const lodConfig: LODConfig = {
         elementType: 'edge',
-        thresholds: [
-          { minZoom: 0.5, level: 'visible', render: true },
-        ],
+        thresholds: [{ minZoom: 0.5, level: 'visible', render: true }],
       };
 
       registerLODConfig(config, lodConfig);
@@ -204,9 +202,7 @@ describe('semanticZoom', () => {
       const renderFn = vi.fn((zoom: number) => zoom > 1.0);
       const lodConfig: LODConfig = {
         elementType: 'label',
-        thresholds: [
-          { minZoom: 0.5, level: 'visible', render: renderFn },
-        ],
+        thresholds: [{ minZoom: 0.5, level: 'visible', render: renderFn }],
       };
 
       registerLODConfig(config, lodConfig);
@@ -221,9 +217,7 @@ describe('semanticZoom', () => {
       const renderFn = vi.fn((zoom: number) => zoom > 1.0);
       const lodConfig: LODConfig = {
         elementType: 'label',
-        thresholds: [
-          { minZoom: 0.5, level: 'visible', render: renderFn },
-        ],
+        thresholds: [{ minZoom: 0.5, level: 'visible', render: renderFn }],
       };
 
       registerLODConfig(config, lodConfig);
@@ -297,9 +291,7 @@ describe('semanticZoom', () => {
       };
       const labelLOD: LODConfig = {
         elementType: 'label',
-        thresholds: [
-          { minZoom: 1.5, level: 'visible', render: true },
-        ],
+        thresholds: [{ minZoom: 1.5, level: 'visible', render: true }],
       };
 
       registerLODConfig(config, nodeLOD);
@@ -337,7 +329,13 @@ describe('semanticZoom', () => {
 
     it('should create nested scene with parent and portal', () => {
       const data = { nodes: [], edges: [] };
-      const scene = createNestedScene('scene-2', 'Detail', 'scene-1', data, 'portal-1');
+      const scene = createNestedScene(
+        'scene-2',
+        'Detail',
+        'scene-1',
+        data,
+        'portal-1'
+      );
 
       expect(scene.parentId).toBe('scene-1');
       expect(scene.portalElementId).toBe('portal-1');
@@ -508,7 +506,9 @@ describe('semanticZoom', () => {
   describe('Async Scene Loading', () => {
     it('should load scene from loader', async () => {
       const state = createDrillDownState();
-      const sceneData = createNestedScene('scene-1', 'Loaded', null, { test: true });
+      const sceneData = createNestedScene('scene-1', 'Loaded', null, {
+        test: true,
+      });
       const loader = vi.fn(async () => sceneData);
 
       const result = await loadNestedScene(state, 'scene-1', loader);
@@ -548,7 +548,9 @@ describe('semanticZoom', () => {
         throw new Error('Load failed');
       });
 
-      await expect(loadNestedScene(state, 'scene-1', loader)).rejects.toThrow('Load failed');
+      await expect(loadNestedScene(state, 'scene-1', loader)).rejects.toThrow(
+        'Load failed'
+      );
       expect(state.loading.has('scene-1')).toBe(false);
     });
   });

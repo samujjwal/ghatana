@@ -10,7 +10,6 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { TextField } from './TextField.enhanced';
 
-
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
   const theme = createTheme();
@@ -25,17 +24,25 @@ describe.skip('TextField.enhanced', () => {
     });
 
     it('renders with placeholder', () => {
-      renderWithTheme(<TextField label="Email" placeholder="you@example.com" />);
-      expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument();
+      renderWithTheme(
+        <TextField label="Email" placeholder="you@example.com" />
+      );
+      expect(
+        screen.getByPlaceholderText('you@example.com')
+      ).toBeInTheDocument();
     });
 
     it('renders with helper text', () => {
-      renderWithTheme(<TextField label="Password" helperText="At least 8 characters" />);
+      renderWithTheme(
+        <TextField label="Password" helperText="At least 8 characters" />
+      );
       expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
     });
 
     it('renders with initial value', () => {
-      renderWithTheme(<TextField label="Name" value="John Doe" onChange={() => {}} />);
+      renderWithTheme(
+        <TextField label="Name" value="John Doe" onChange={() => {}} />
+      );
       const input = screen.getByLabelText('Name') as HTMLInputElement;
       expect(input.value).toBe('John Doe');
     });
@@ -70,7 +77,9 @@ describe.skip('TextField.enhanced', () => {
       );
       expect(screen.getByText('Username is available')).toBeInTheDocument();
       // Check for success icon
-      const container = screen.getByLabelText('Username').closest('.MuiFormControl-root');
+      const container = screen
+        .getByLabelText('Username')
+        .closest('.MuiFormControl-root');
       expect(container).toBeInTheDocument();
     });
 
@@ -96,7 +105,9 @@ describe.skip('TextField.enhanced', () => {
           helperText="Consider a stronger password"
         />
       );
-      expect(screen.getByText('Consider a stronger password')).toBeInTheDocument();
+      expect(
+        screen.getByText('Consider a stronger password')
+      ).toBeInTheDocument();
     });
   });
 
@@ -116,7 +127,9 @@ describe.skip('TextField.enhanced', () => {
 
     it('updates character count on input', async () => {
       const user = userEvent.setup();
-      renderWithTheme(<TextField label="Bio" showCharacterCount maxLength={100} />);
+      renderWithTheme(
+        <TextField label="Bio" showCharacterCount maxLength={100} />
+      );
 
       const input = screen.getByLabelText('Bio');
       await user.type(input, 'Test');
@@ -148,7 +161,9 @@ describe.skip('TextField.enhanced', () => {
     });
 
     it('hides clear button when no value', () => {
-      renderWithTheme(<TextField label="Search" clearable value="" onChange={() => {}} />);
+      renderWithTheme(
+        <TextField label="Search" clearable value="" onChange={() => {}} />
+      );
       const clearButton = screen.queryByLabelText('Clear input');
       expect(clearButton).not.toBeInTheDocument();
     });
@@ -158,7 +173,13 @@ describe.skip('TextField.enhanced', () => {
       const user = userEvent.setup();
 
       renderWithTheme(
-        <TextField label="Search" clearable value="test" onChange={() => {}} onClear={handleClear} />
+        <TextField
+          label="Search"
+          clearable
+          value="test"
+          onChange={() => {}}
+          onClear={handleClear}
+        />
       );
 
       const clearButton = screen.getByLabelText('Clear input');
@@ -169,7 +190,9 @@ describe.skip('TextField.enhanced', () => {
 
     it('clears value when clear button clicked', async () => {
       const user = userEvent.setup();
-      const { container } = renderWithTheme(<TextField label="Search" clearable />);
+      const { container } = renderWithTheme(
+        <TextField label="Search" clearable />
+      );
 
       const input = screen.getByLabelText('Search') as HTMLInputElement;
       await user.type(input, 'test');
@@ -187,7 +210,12 @@ describe.skip('TextField.enhanced', () => {
 
   describe('Icons', () => {
     it('renders with start icon', () => {
-      renderWithTheme(<TextField label="Search" startIcon={<SearchIcon data-testid="search-icon" />} />);
+      renderWithTheme(
+        <TextField
+          label="Search"
+          startIcon={<SearchIcon data-testid="search-icon" />}
+        />
+      );
       expect(screen.getByTestId('search-icon')).toBeInTheDocument();
     });
 
@@ -203,7 +231,11 @@ describe.skip('TextField.enhanced', () => {
       const EndIcon = () => <span>→</span>;
 
       renderWithTheme(
-        <TextField label="Input" endIcon={<EndIcon />} onEndIconClick={handleClick} />
+        <TextField
+          label="Input"
+          endIcon={<EndIcon />}
+          onEndIconClick={handleClick}
+        />
       );
 
       const iconButton = screen.getByLabelText('Action');
@@ -289,7 +321,9 @@ describe.skip('TextField.enhanced', () => {
   describe('Full Width', () => {
     it('renders full width input', () => {
       renderWithTheme(<TextField label="Full Width" fullWidth />);
-      const container = screen.getByLabelText('Full Width').closest('.MuiTextField-root');
+      const container = screen
+        .getByLabelText('Full Width')
+        .closest('.MuiTextField-root');
       expect(container).toHaveClass('MuiFormControl-fullWidth');
     });
   });
@@ -302,14 +336,18 @@ describe.skip('TextField.enhanced', () => {
     });
 
     it('associates helper text with input', () => {
-      renderWithTheme(<TextField label="Password" helperText="At least 8 characters" />);
+      renderWithTheme(
+        <TextField label="Password" helperText="At least 8 characters" />
+      );
       const input = screen.getByLabelText('Password');
       const helperTextId = input.getAttribute('aria-describedby');
       expect(helperTextId).toBeTruthy();
     });
 
     it('sets aria-invalid when error', () => {
-      renderWithTheme(<TextField label="Email" error helperText="Invalid email" />);
+      renderWithTheme(
+        <TextField label="Email" error helperText="Invalid email" />
+      );
       const input = screen.getByLabelText('Email');
       expect(input).toHaveAttribute('aria-invalid', 'true');
     });

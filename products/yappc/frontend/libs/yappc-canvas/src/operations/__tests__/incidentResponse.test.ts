@@ -400,7 +400,11 @@ describe('IncidentResponseManager', () => {
       const rotation = manager.createRotation({
         name: 'Engineering Rotation',
         description: 'Primary on-call rotation',
-        teamMembers: ['alice@example.com', 'bob@example.com', 'charlie@example.com'],
+        teamMembers: [
+          'alice@example.com',
+          'bob@example.com',
+          'charlie@example.com',
+        ],
         shiftDuration: 7 * 24 * 60 * 60 * 1000, // 1 week
       });
 
@@ -890,7 +894,9 @@ describe('IncidentResponseManager', () => {
       // Manually set old resolved time
       const incident = manager.getIncident(oldIncident.id);
       if (incident) {
-        incident.resolvedTime = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000);
+        incident.resolvedTime = new Date(
+          Date.now() - 100 * 24 * 60 * 60 * 1000
+        );
       }
 
       const removed = manager.cleanupOldIncidents();
@@ -971,7 +977,7 @@ describe('IncidentResponseManager', () => {
       });
 
       // Add small delay to ensure measurable time difference
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       manager.updateIncidentStatus(
         incident.id,
@@ -996,7 +1002,7 @@ describe('IncidentResponseManager', () => {
       });
 
       // Add small delay to ensure measurable time difference
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       manager.updateIncidentStatus(
         incident.id,
@@ -1142,7 +1148,9 @@ describe('Incident Response Helper Functions', () => {
 
       const result = validateEscalationPolicy(policy);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Policy must have at least one escalation level');
+      expect(result.errors).toContain(
+        'Policy must have at least one escalation level'
+      );
     });
 
     it('should detect wrong level ordering', () => {
@@ -1165,7 +1173,9 @@ describe('Incident Response Helper Functions', () => {
 
       const result = validateEscalationPolicy(policy);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Escalation levels must be in ascending order');
+      expect(result.errors).toContain(
+        'Escalation levels must be in ascending order'
+      );
     });
 
     it('should detect duplicate levels', () => {

@@ -76,7 +76,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
       };
 
       const updated = registerPolicy(store, policy);
-      expect(() => registerPolicy(updated, policy)).toThrow("Policy with ID 'policy-1' already exists");
+      expect(() => registerPolicy(updated, policy)).toThrow(
+        "Policy with ID 'policy-1' already exists"
+      );
     });
 
     it('should allow multiple policies with different IDs', () => {
@@ -117,7 +119,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
     });
 
     it('should throw error for non-existent policy', () => {
-      expect(() => setActivePolicy(store, 'confidential', 'invalid')).toThrow("Policy 'invalid' not found");
+      expect(() => setActivePolicy(store, 'confidential', 'invalid')).toThrow(
+        "Policy 'invalid' not found"
+      );
     });
 
     it('should throw error for sensitivity mismatch', () => {
@@ -476,10 +480,18 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
 
       const bundle = {
         data,
-        policy: { id: 'p1', name: 'Test', sensitivity: 'confidential' as const },
+        policy: {
+          id: 'p1',
+          name: 'Test',
+          sensitivity: 'confidential' as const,
+        },
         context,
         signature: signResult,
-        metadata: { exportedAt: Date.now(), format: 'json' as const, version: '1.0.0' },
+        metadata: {
+          exportedAt: Date.now(),
+          format: 'json' as const,
+          version: '1.0.0',
+        },
       };
 
       expect(verifySignature(bundle, config)).toBe(true);
@@ -504,10 +516,18 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
       // Create bundle with tampered data
       const bundle = {
         data: { content: 'tampered' },
-        policy: { id: 'p1', name: 'Test', sensitivity: 'confidential' as const },
+        policy: {
+          id: 'p1',
+          name: 'Test',
+          sensitivity: 'confidential' as const,
+        },
         context,
         signature: signResult,
-        metadata: { exportedAt: Date.now(), format: 'json' as const, version: '1.0.0' },
+        metadata: {
+          exportedAt: Date.now(),
+          format: 'json' as const,
+          version: '1.0.0',
+        },
       };
 
       expect(verifySignature(bundle, config)).toBe(false);
@@ -530,7 +550,11 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
         data: { content: 'test' },
         policy: { id: 'p1', name: 'Test', sensitivity: 'internal' as const },
         context,
-        metadata: { exportedAt: Date.now(), format: 'json' as const, version: '1.0.0' },
+        metadata: {
+          exportedAt: Date.now(),
+          format: 'json' as const,
+          version: '1.0.0',
+        },
       };
 
       expect(verifySignature(bundle, config)).toBe(false);
@@ -617,7 +641,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
         sensitivity: 'public', // No policy registered for 'public'
       };
 
-      expect(() => secureExport(store, {}, context)).toThrow("No active policy found for sensitivity level 'public'");
+      expect(() => secureExport(store, {}, context)).toThrow(
+        "No active policy found for sensitivity level 'public'"
+      );
     });
 
     it('should respect format restrictions', () => {
@@ -639,7 +665,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
         sensitivity: 'internal',
       };
 
-      expect(() => secureExport(updated, {}, context)).toThrow("Policy 'csv-only' does not support format 'json'");
+      expect(() => secureExport(updated, {}, context)).toThrow(
+        "Policy 'csv-only' does not support format 'json'"
+      );
     });
 
     it('should create audit trail entries', () => {
@@ -749,7 +777,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
       const trail = getExportAuditTrail(updated, 'EXP-001');
 
       expect(trail.length).toBeGreaterThan(0);
-      expect(trail.every((entry) => entry.details.exportId === 'EXP-001')).toBe(true);
+      expect(trail.every((entry) => entry.details.exportId === 'EXP-001')).toBe(
+        true
+      );
     });
 
     it('should get policies for sensitivity level', () => {
@@ -788,11 +818,15 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
     });
 
     it('should throw error when updating non-existent policy', () => {
-      expect(() => updatePolicy(store, 'invalid', { name: 'Test' })).toThrow("Policy 'invalid' not found");
+      expect(() => updatePolicy(store, 'invalid', { name: 'Test' })).toThrow(
+        "Policy 'invalid' not found"
+      );
     });
 
     it('should prevent ID changes in updates', () => {
-      expect(() => updatePolicy(store, 'test-policy', { id: 'new-id' })).toThrow('Cannot change policy ID');
+      expect(() =>
+        updatePolicy(store, 'test-policy', { id: 'new-id' })
+      ).toThrow('Cannot change policy ID');
     });
 
     it('should remove inactive policy', () => {
@@ -808,7 +842,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
     });
 
     it('should throw error when removing non-existent policy', () => {
-      expect(() => removePolicy(store, 'invalid')).toThrow("Policy 'invalid' not found");
+      expect(() => removePolicy(store, 'invalid')).toThrow(
+        "Policy 'invalid' not found"
+      );
     });
   });
 
@@ -861,7 +897,9 @@ describe.skip('Feature 2.33: Policy-driven Export', () => {
       expect(pruned.auditLog.length).toBeLessThan(originalCount);
       // All remaining entries should be recent (within 7 days)
       const cutoffTime = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      expect(pruned.auditLog.every((entry) => entry.timestamp >= cutoffTime)).toBe(true);
+      expect(
+        pruned.auditLog.every((entry) => entry.timestamp >= cutoffTime)
+      ).toBe(true);
     });
 
     it('should keep recent entries when pruning', () => {

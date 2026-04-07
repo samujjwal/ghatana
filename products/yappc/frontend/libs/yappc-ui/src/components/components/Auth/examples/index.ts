@@ -1,12 +1,12 @@
 /**
  * Authentication Examples Module
- * 
+ *
  * Complete collection of production-ready authentication examples including:
  * - Login and registration pages
  * - Protected dashboards
  * - Router configuration
  * - Application setup
- * 
+ *
  * @doc.type module
  * @doc.purpose Authentication examples
  * @doc.layer ui
@@ -38,7 +38,12 @@ export {
   ProtectedEditorPage,
 } from './RouterExample';
 
-export { App, initializeApp, setupDevEnvironment, setupProductionEnvironment } from './AppExample';
+export {
+  App,
+  initializeApp,
+  setupDevEnvironment,
+  setupProductionEnvironment,
+} from './AppExample';
 export type { AppProps } from './AppExample';
 
 // =============================================================================
@@ -47,29 +52,29 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Quick Start - Complete Application
- * 
+ *
  * 1. Install dependencies:
  * ```bash
  * pnpm add @yappc/ui @yappc/canvas @yappc/api jotai react-router-dom zod
  * ```
- * 
+ *
  * 2. Create main.tsx:
  * ```tsx
  * import { createRoot } from 'react-dom/client';
  * import { App, initializeApp } from '@yappc/ui';
  * import './index.css';
- * 
+ *
  * initializeApp();
- * 
+ *
  * const root = createRoot(document.getElementById('root')!);
  * root.render(<App />);
  * ```
- * 
+ *
  * 3. Configure environment (.env):
  * ```bash
  * VITE_API_BASE_URL=http://localhost:3000
  * ```
- * 
+ *
  * 4. Start dev server:
  * ```bash
  * pnpm dev
@@ -78,12 +83,12 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Custom Login Page
- * 
+ *
  * ```tsx
  * import { LoginPage } from '@yappc/ui';
  * import { Route } from 'react-router-dom';
  * import { MyLogo } from './components/MyLogo';
- * 
+ *
  * function Routes() {
  *   return (
  *     <Route
@@ -105,11 +110,11 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Custom Protected Dashboard
- * 
+ *
  * ```tsx
  * import { DashboardPage } from '@yappc/ui';
  * import { Route } from 'react-router-dom';
- * 
+ *
  * function Routes() {
  *   return (
  *     <Route
@@ -129,13 +134,13 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Using Router Configuration
- * 
+ *
  * ```tsx
  * import { RouterProvider } from 'react-router-dom';
  * import { Provider as JotaiProvider } from 'jotai';
  * import { ToastProvider } from '@yappc/ui';
  * import { router } from '@yappc/ui';
- * 
+ *
  * function App() {
  *   return (
  *     <JotaiProvider>
@@ -150,22 +155,22 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example HOC Pattern for Protection
- * 
+ *
  * ```tsx
  * import { withProtectedRoute } from '@yappc/ui';
  * import { MyDashboard } from './components/MyDashboard';
- * 
+ *
  * // Protect with authentication only
  * export const ProtectedDashboard = withProtectedRoute(MyDashboard, {
  *   requiredRoles: ['user'],
  * });
- * 
+ *
  * // Protect with admin role
  * export const AdminDashboard = withProtectedRoute(MyDashboard, {
  *   requiredRoles: ['admin'],
  *   unauthorizedRedirectTo: '/403',
  * });
- * 
+ *
  * // Protect with permissions
  * export const EditorDashboard = withProtectedRoute(MyDashboard, {
  *   requiredPermissions: ['write', 'edit'],
@@ -175,15 +180,15 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Custom Router with Protection
- * 
+ *
  * ```tsx
  * import { createBrowserRouter } from 'react-router-dom';
  * import { ProtectedRoute } from '@yappc/ui';
  * import { useAuth } from '@yappc/canvas';
- * 
+ *
  * const AppLayout = () => {
  *   const { user, isAuthenticated, isLoading } = useAuth();
- *   
+ *
  *   return (
  *     <ProtectedRoute
  *       isAuthenticated={isAuthenticated}
@@ -198,7 +203,7 @@ export type { AppProps } from './AppExample';
  *     </ProtectedRoute>
  *   );
  * };
- * 
+ *
  * export const router = createBrowserRouter([
  *   { path: '/login', element: <LoginPage /> },
  *   {
@@ -215,12 +220,12 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Environment Configuration
- * 
+ *
  * Create `.env` file:
  * ```bash
  * # Required
  * VITE_API_BASE_URL=https://api.yourapp.com
- * 
+ *
  * # Optional
  * VITE_APP_NAME=YourApp
  * VITE_APP_VERSION=1.0.0
@@ -228,7 +233,7 @@ export type { AppProps } from './AppExample';
  * VITE_ENABLE_SOCIAL_LOGIN=false
  * VITE_TOKEN_STORAGE=localStorage
  * ```
- * 
+ *
  * Access in code:
  * ```tsx
  * const apiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -238,13 +243,13 @@ export type { AppProps } from './AppExample';
 
 /**
  * @example Testing Setup
- * 
+ *
  * ```tsx
  * import { render, screen } from '@testing-library/react';
  * import { Provider as JotaiProvider } from 'jotai';
  * import { ToastProvider } from '@yappc/ui';
  * import { LoginPage } from '@yappc/ui';
- * 
+ *
  * describe('LoginPage', () => {
  *   it('renders login form', () => {
  *     render(
@@ -254,7 +259,7 @@ export type { AppProps } from './AppExample';
  *         </ToastProvider>
  *       </JotaiProvider>
  *     );
- *     
+ *
  *     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
  *     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
  *   });
@@ -268,23 +273,23 @@ export type { AppProps } from './AppExample';
 
 /**
  * Best Practices for Authentication Implementation
- * 
+ *
  * 1. **State Management**
  *    - Use useAuth hook for authentication state
  *    - Persist tokens securely (httpOnly cookies recommended)
  *    - Clear sensitive data on logout
- * 
+ *
  * 2. **Route Protection**
  *    - Always protect sensitive routes with ProtectedRoute
  *    - Use role-based access control (RBAC) for granular permissions
  *    - Provide clear error messages for unauthorized access
- * 
+ *
  * 3. **User Experience**
  *    - Show loading states during authentication
  *    - Preserve return path for redirects after login
  *    - Provide clear feedback with toast notifications
  *    - Validate input on client-side before submission
- * 
+ *
  * 4. **Security**
  *    - Use HTTPS in production
  *    - Implement CSRF protection
@@ -292,19 +297,19 @@ export type { AppProps } from './AppExample';
  *    - Validate all user input
  *    - Use strong password requirements
  *    - Implement session timeout
- * 
+ *
  * 5. **Performance**
  *    - Lazy load non-critical routes
  *    - Minimize re-renders with proper memoization
  *    - Use code splitting for large pages
  *    - Cache static assets
- * 
+ *
  * 6. **Testing**
  *    - Test authentication flows end-to-end
  *    - Test role-based access control
  *    - Test error scenarios
  *    - Test accessibility
- * 
+ *
  * 7. **Monitoring**
  *    - Log authentication events
  *    - Monitor failed login attempts

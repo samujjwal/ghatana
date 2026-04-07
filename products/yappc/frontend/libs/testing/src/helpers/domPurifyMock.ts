@@ -4,14 +4,23 @@
  */
 export interface TestDOMPurify {
   sanitize: (content: string, options?: unknown) => string;
-  addHook: (hookName: string, callback: (node: unknown, data?: unknown) => void) => void;
+  addHook: (
+    hookName: string,
+    callback: (node: unknown, data?: unknown) => void
+  ) => void;
 }
 
 export const createTestDOMPurify = (): TestDOMPurify => {
-  const hooks = new Map<string, Array<(node: unknown, data?: unknown) => void>>();
+  const hooks = new Map<
+    string,
+    Array<(node: unknown, data?: unknown) => void>
+  >();
 
   return {
-    addHook: (hookName: string, callback: (node: unknown, data?: unknown) => void) => {
+    addHook: (
+      hookName: string,
+      callback: (node: unknown, data?: unknown) => void
+    ) => {
       if (!hooks.has(hookName)) hooks.set(hookName, []);
       hooks.get(hookName)!.push(callback);
     },
@@ -26,11 +35,16 @@ export const createTestDOMPurify = (): TestDOMPurify => {
       sanitized = sanitized.replace(/vbscript:/gi, '');
 
       if (opts.ALLOWED_TAGS && Array.isArray(opts.ALLOWED_TAGS)) {
-        const allowedTags = opts.ALLOWED_TAGS.map((t: string) => t.toLowerCase());
-        sanitized = sanitized.replace(/<(\/?)([\w-]+)[^>]*>/g, (match, slash, tagName) => {
-          if (allowedTags.includes(tagName.toLowerCase())) return match;
-          return '';
-        });
+        const allowedTags = opts.ALLOWED_TAGS.map((t: string) =>
+          t.toLowerCase()
+        );
+        sanitized = sanitized.replace(
+          /<(\/?)([\w-]+)[^>]*>/g,
+          (match, slash, tagName) => {
+            if (allowedTags.includes(tagName.toLowerCase())) return match;
+            return '';
+          }
+        );
       }
 
       return sanitized;

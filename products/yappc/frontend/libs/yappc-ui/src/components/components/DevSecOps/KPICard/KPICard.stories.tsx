@@ -6,7 +6,6 @@
  * @module DevSecOps/KPICard/stories
  */
 
-
 import { KPICard } from './KPICard';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 

@@ -22,7 +22,8 @@ import type {
   ProcessNode,
   DecisionNode,
   DatabaseNode,
-  UIButton} from './component-registry';
+  UIButton,
+} from './component-registry';
 
 describe('Phase 8: Component Schema Registry', () => {
   beforeEach(() => {
@@ -54,8 +55,11 @@ describe('Phase 8: Component Schema Registry', () => {
         parse: (data: unknown) => data,
         safeParse: (data: unknown) => ({ success: true, data }),
       };
-      
-      componentSchemaRegistry.registerSchema('custom-type', customSchema as unknown);
+
+      componentSchemaRegistry.registerSchema(
+        'custom-type',
+        customSchema as unknown
+      );
       const retrievedSchema = componentSchemaRegistry.getSchema('custom-type');
       expect(retrievedSchema).toBe(customSchema);
     });
@@ -212,12 +216,14 @@ describe('Phase 8: Component Schema Registry', () => {
           falseLabel: 'Stop',
         },
       };
-      
+
       const component = createComponent('decision', overrides as unknown);
 
       expect(component.type).toBe('decision');
       expect((component as DecisionNode).data.label).toBe('Custom Decision');
-      expect((component as DecisionNode).data.question).toBe('Custom question?');
+      expect((component as DecisionNode).data.question).toBe(
+        'Custom question?'
+      );
       expect((component as DecisionNode).data.trueLabel).toBe('Proceed');
       expect((component as DecisionNode).data.falseLabel).toBe('Stop');
     });
@@ -325,7 +331,7 @@ describe('Phase 8: Component Schema Registry', () => {
       };
 
       const stats = getValidationStats(canvas);
-      
+
       expect(stats.nodes.total).toBe(3);
       expect(stats.nodes.valid).toBe(2); // Two valid nodes
       expect(stats.nodes.invalid).toBe(1); // One invalid node
@@ -338,7 +344,7 @@ describe('Phase 8: Component Schema Registry', () => {
   describe('Canvas API Validator', () => {
     test('should create validator with production config', () => {
       const validator = createCanvasAPIValidator(PRODUCTION_VALIDATION_CONFIG);
-      
+
       expect(validator).toHaveProperty('validateCreate');
       expect(validator).toHaveProperty('validateUpdate');
       expect(validator).toHaveProperty('validateImport');
@@ -347,7 +353,7 @@ describe('Phase 8: Component Schema Registry', () => {
 
     test('should validate create operation', () => {
       const validator = createCanvasAPIValidator(PRODUCTION_VALIDATION_CONFIG);
-      
+
       const validData = {
         id: 'process-1',
         type: 'process',
@@ -367,7 +373,7 @@ describe('Phase 8: Component Schema Registry', () => {
 
     test('should validate batch operations', () => {
       const validator = createCanvasAPIValidator(PRODUCTION_VALIDATION_CONFIG);
-      
+
       const operations = [
         {
           type: 'create' as const,
@@ -397,8 +403,17 @@ describe('Phase 8: Component Schema Registry', () => {
 
   describe('Default Data', () => {
     test('should provide default data for all component types', () => {
-      const types = ['process', 'decision', 'database', 'group', 'service', 'ui-button', 'ui-card', 'ui-textfield'];
-      
+      const types = [
+        'process',
+        'decision',
+        'database',
+        'group',
+        'service',
+        'ui-button',
+        'ui-card',
+        'ui-textfield',
+      ];
+
       for (const type of types) {
         const defaultData = componentSchemaRegistry.getDefaultData(type);
         expect(defaultData).toBeDefined();
@@ -412,9 +427,14 @@ describe('Phase 8: Component Schema Registry', () => {
         data: { custom: 'value' },
       });
 
-      (componentSchemaRegistry as unknown).setDefaultData('custom', customFactory);
-      const defaultData = (componentSchemaRegistry as unknown).getDefaultData('custom');
-      
+      (componentSchemaRegistry as unknown).setDefaultData(
+        'custom',
+        customFactory
+      );
+      const defaultData = (componentSchemaRegistry as unknown).getDefaultData(
+        'custom'
+      );
+
       expect(defaultData).toBeDefined();
       expect(defaultData?.type).toBe('custom');
       expect((defaultData as unknown)?.data.custom).toBe('value');
@@ -425,7 +445,7 @@ describe('Phase 8: Component Schema Registry', () => {
     test('should handle malformed data gracefully', () => {
       const malformedData = null;
       const result = validateComponent('process', malformedData);
-      
+
       expect(result.success).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -443,10 +463,10 @@ describe('Phase 8: Component Schema Registry', () => {
           tags: [],
         },
       };
-      
+
       // Create circular reference
       circularData.self = circularData;
-      
+
       // Should not crash
       const result = validateComponent('process', circularData);
       // May succeed or fail depending on Zod handling, but shouldn't crash
@@ -483,7 +503,9 @@ describe('Phase 8: Component Schema Registry', () => {
 
       const result = validateImportData(importData);
       expect(result.warnings.length).toBeGreaterThan(0);
-      expect(result.warnings.some(w => w.includes('non-existent target node'))).toBe(true);
+      expect(
+        result.warnings.some((w) => w.includes('non-existent target node'))
+      ).toBe(true);
     });
   });
 });

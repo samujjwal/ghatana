@@ -1,8 +1,8 @@
 /**
  * Terminal Component
- * 
+ *
  * Log streaming terminal with ANSI color support.
- * 
+ *
  * @module ui/components
  */
 
@@ -36,7 +36,7 @@ export interface TerminalProps {
 
 /**
  * Terminal Component
- * 
+ *
  * @example
  * ```tsx
  * <Terminal
@@ -103,7 +103,9 @@ export const Terminal: React.FC<TerminalProps> = ({
   const displayLines = lines.slice(-maxLines);
 
   return (
-    <div className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}>
+    <div
+      className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-800 border-b border-zinc-700">
         <div className="flex items-center gap-2">
@@ -115,7 +117,9 @@ export const Terminal: React.FC<TerminalProps> = ({
           <span className="text-sm text-zinc-400 ml-2">{title}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">{displayLines.length} lines</span>
+          <span className="text-xs text-zinc-500">
+            {displayLines.length} lines
+          </span>
           {onClear && (
             <button
               onClick={onClear}
@@ -139,7 +143,10 @@ export const Terminal: React.FC<TerminalProps> = ({
             <div className="text-zinc-600 italic">No output</div>
           ) : (
             displayLines.map((line) => (
-              <div key={line.id} className={`${getLineColor(line.type)} whitespace-pre-wrap`}>
+              <div
+                key={line.id}
+                className={`${getLineColor(line.type)} whitespace-pre-wrap`}
+              >
                 {showTimestamps && line.timestamp && (
                   <span className="text-zinc-600 mr-2">
                     [{formatTimestamp(line.timestamp)}]
@@ -157,7 +164,8 @@ export const Terminal: React.FC<TerminalProps> = ({
         <button
           onClick={() => {
             if (containerRef.current) {
-              containerRef.current.scrollTop = containerRef.current.scrollHeight;
+              containerRef.current.scrollTop =
+                containerRef.current.scrollHeight;
             }
           }}
           className="absolute bottom-4 right-4 px-3 py-1 bg-violet-600 text-white text-xs rounded-full shadow-lg hover:bg-violet-700 transition-colors"

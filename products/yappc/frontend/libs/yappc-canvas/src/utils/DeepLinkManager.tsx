@@ -32,7 +32,7 @@ export interface DeepLinkConfig {
  */
 export function parseDeepLink(search: string): DeepLinkParams {
   const params = new URLSearchParams(search);
-  
+
   return {
     canvasId: params.get('canvas') || undefined,
     nodeId: params.get('node') || undefined,
@@ -46,16 +46,21 @@ export function parseDeepLink(search: string): DeepLinkParams {
 /**
  * Generate deep link URL from parameters
  */
-export function generateDeepLink(params: DeepLinkParams, basePath = '/canvas'): string {
+export function generateDeepLink(
+  params: DeepLinkParams,
+  basePath = '/canvas'
+): string {
   const searchParams = new URLSearchParams();
-  
+
   if (params.canvasId) searchParams.set('canvas', params.canvasId);
   if (params.nodeId) searchParams.set('node', params.nodeId);
   if (params.x !== undefined) searchParams.set('x', params.x.toString());
   if (params.y !== undefined) searchParams.set('y', params.y.toString());
-  if (params.zoom !== undefined) searchParams.set('zoom', params.zoom.toString());
-  if (params.mode && params.mode !== 'view') searchParams.set('mode', params.mode);
-  
+  if (params.zoom !== undefined)
+    searchParams.set('zoom', params.zoom.toString());
+  if (params.mode && params.mode !== 'view')
+    searchParams.set('mode', params.mode);
+
   const query = searchParams.toString();
   return `${basePath}${query ? `?${query}` : ''}`;
 }
@@ -72,66 +77,78 @@ export function useDeepLink(config: DeepLinkConfig = {}) {
   const currentParams = parseDeepLink(location.search);
 
   // Navigate to deep link
-  const navigateToDeepLink = useCallback((params: DeepLinkParams) => {
-    const url = generateDeepLink(params, basePath);
-    navigate(url);
-    onNavigate?.(params);
-  }, [navigate, basePath, onNavigate]);
+  const navigateToDeepLink = useCallback(
+    (params: DeepLinkParams) => {
+      const url = generateDeepLink(params, basePath);
+      navigate(url);
+      onNavigate?.(params);
+    },
+    [navigate, basePath, onNavigate]
+  );
 
   // Update URL without navigation
-  const updateDeepLink = useCallback((params: Partial<DeepLinkParams>) => {
-    const newParams = { ...currentParams, ...params };
-    const url = generateDeepLink(newParams, basePath);
-    navigate(url, { replace: true });
-  }, [currentParams, basePath, navigate]);
+  const updateDeepLink = useCallback(
+    (params: Partial<DeepLinkParams>) => {
+      const newParams = { ...currentParams, ...params };
+      const url = generateDeepLink(newParams, basePath);
+      navigate(url, { replace: true });
+    },
+    [currentParams, basePath, navigate]
+  );
 
   // Handle URL changes
   useEffect(() => {
     const params = parseDeepLink(location.search);
-    
+
     // Validate parameters
     if (params.canvasId && !/^[a-zA-Z0-9_-]+$/.test(params.canvasId)) {
       onInvalidLink?.('Invalid canvas ID format');
       return;
     }
-    
+
     if (params.nodeId && !/^[a-zA-Z0-9_-]+$/.test(params.nodeId)) {
       onInvalidLink?.('Invalid node ID format');
       return;
     }
-    
+
     if (params.zoom !== undefined && (params.zoom < 0.1 || params.zoom > 5)) {
       onInvalidLink?.('Zoom level out of range (0.1-5)');
       return;
     }
-    
+
     onNavigate?.(params);
   }, [location.search, onNavigate, onInvalidLink]);
 
   // Generate shareable link
-  const generateShareableLink = useCallback((params: DeepLinkParams) => {
-    const fullUrl = `${window.location.origin}${generateDeepLink(params, basePath)}`;
-    return fullUrl;
-  }, [basePath]);
+  const generateShareableLink = useCallback(
+    (params: DeepLinkParams) => {
+      const fullUrl = `${window.location.origin}${generateDeepLink(params, basePath)}`;
+      return fullUrl;
+    },
+    [basePath]
+  );
 
   // Copy link to clipboard
-  const copyLinkToClipboard = useCallback(async (params: DeepLinkParams) => {
-    const link = generateShareableLink(params);
-    
-    try {
-      await navigator.clipboard.writeText(link);
-      return true;
-    } catch (error) {
-      // Fallback for older browsers
-      const textarea = document.createElement('textarea');
-      textarea.value = link;
-      document.body.appendChild(textarea);
-      textarea.select();
-      const success = document.execCommand('copy');
-      document.body.removeChild(textarea);
-      return success;
-    }
-  }, [generateShareableLink]);
+  const copyLinkToClipboard = useCallback(
+    async (params: DeepLinkParams) => {
+      const link = generateShareableLink(params);
+
+      try {
+        await navigator.clipboard.writeText(link);
+        return true;
+      } catch (error) {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = link;
+        document.body.appendChild(textarea);
+        textarea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return success;
+      }
+    },
+    [generateShareableLink]
+  );
 
   return {
     currentParams,
@@ -155,16 +172,16 @@ export interface DeepLinkShareProps {
 /**
  *
  */
-export function DeepLinkShare({ 
-  params, 
+export function DeepLinkShare({
+  params,
   className = '',
   showCopyButton = true,
-  onCopy 
+  onCopy,
 }: DeepLinkShareProps) {
   const { generateShareableLink, copyLinkToClipboard } = useDeepLink();
-  
+
   const link = generateShareableLink(params);
-  
+
   const handleCopy = async () => {
     const success = await copyLinkToClipboard(params);
     onCopy?.(success);
@@ -179,7 +196,7 @@ export function DeepLinkShare({
         className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50"
         data-testid="deep-link-input"
       />
-      
+
       {showCopyButton && (
         <button
           onClick={handleCopy}

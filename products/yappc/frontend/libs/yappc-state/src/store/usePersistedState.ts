@@ -12,7 +12,6 @@ import { StatePersistence } from './StatePersistence';
 import type { StorageType } from './StatePersistence';
 import { getStateSync } from './StateSync';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -191,9 +190,13 @@ export function usePersistedObject<T extends Record<string, unknown>>(
     update: (partial: Partial<T>) => void;
     set: (value: T) => void;
     reset: () => void;
-  }
+  },
 ] {
-  const [state, setState, reset] = usePersistedState(key, defaultValue, options);
+  const [state, setState, reset] = usePersistedState(
+    key,
+    defaultValue,
+    options
+  );
 
   const update = useCallback(
     (partial: Partial<T>) => {
@@ -231,9 +234,13 @@ export function usePersistedArray<T>(
     update: (index: number, item: T) => void;
     clear: () => void;
     set: (items: T[]) => void;
-  }
+  },
 ] {
-  const [state, setState, reset] = usePersistedState(key, defaultValue, options);
+  const [state, setState, reset] = usePersistedState(
+    key,
+    defaultValue,
+    options
+  );
 
   const push = useCallback(
     (item: T) => {

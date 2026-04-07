@@ -5,7 +5,15 @@
  * @doc.pattern Integration Test
  */
 
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from 'vitest';
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { createApp } from '../index';
@@ -46,7 +54,9 @@ function createTestJWT(claims: {
   tenantId: string;
   email?: string;
 }): string {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64');
+  const header = Buffer.from(
+    JSON.stringify({ alg: 'HS256', typ: 'JWT' })
+  ).toString('base64');
   const payload = Buffer.from(
     JSON.stringify({
       sub: claims.userId,
@@ -56,7 +66,9 @@ function createTestJWT(claims: {
       exp: Math.floor(Date.now() / 1000) + 3600,
     })
   ).toString('base64');
-  const signature = Buffer.from(`${header}.${payload}secret`).toString('base64');
+  const signature = Buffer.from(`${header}.${payload}secret`).toString(
+    'base64'
+  );
   return `${header}.${payload}.${signature}`;
 }
 
@@ -195,7 +207,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('GET /api/v1/workspaces lists user workspaces', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       const mockWorkspaces = [
         { id: 'ws-1', name: 'Workspace 1', tenantId: 'tenant-456' },
@@ -230,7 +245,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('GET /api/v1/workspaces/:id returns workspace with auth check', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockWorkspace = {
         id: 'workspace-789',
         tenantId: 'tenant-456',
@@ -253,7 +271,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('enforces workspace membership - blocks user from accessing other user workspaces', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       // Mock workspace owned by different user
       const mockWorkspace = {
@@ -277,9 +298,14 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('DELETE /api/v1/workspaces/:id requires ownership', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
-      fixture.db.workspace.delete.mockResolvedValueOnce({ id: 'workspace-789' });
+      fixture.db.workspace.delete.mockResolvedValueOnce({
+        id: 'workspace-789',
+      });
 
       const response = await fixture.app.inject({
         method: 'DELETE',
@@ -294,7 +320,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
 
   describe('Project Routes (/api/v1/projects)', () => {
     it('POST /api/v1/projects creates project in workspace', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockProject = {
         id: 'project-123',
         workspaceId: 'workspace-789',
@@ -323,7 +352,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('GET /api/v1/projects/:id returns full project with canvas and metadata', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockProject = {
         id: 'project-123',
         workspaceId: 'workspace-789',
@@ -352,7 +384,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('PUT /api/v1/projects/:id updates project metadata', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockProject = {
         id: 'project-123',
         name: 'Updated Project',
@@ -380,7 +415,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
 
   describe('Canvas Routes (/api/v1/projects/:id/canvas)', () => {
     it('PUT /api/v1/projects/:id/canvas updates canvas content', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const canvasContent = {
         elements: [{ id: 'elem-1', type: 'component', props: {} }],
         layout: {},
@@ -410,7 +448,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('POST /api/v1/projects/:id/canvas/versions creates version snapshot', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockVersion = {
         id: 'version-456',
         canvasId: 'canvas-1',
@@ -430,7 +471,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('GET /api/v1/projects/:id/canvas/versions returns all versions', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
       const mockVersions = [
         { id: 'v3', label: 'v3', createdAt: new Date('2026-04-02') },
         { id: 'v2', label: 'v2', createdAt: new Date('2026-04-01') },
@@ -493,7 +537,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
 
   describe('GraphQL Parity (/graphql)', () => {
     it('POST /graphql executes query with schema', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       const response = await fixture.app.inject({
         method: 'POST',
@@ -511,7 +558,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('GraphQL mutation response matches REST POST semantics', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       // REST: Create workspace
       const restResponse = await fixture.app.inject({
@@ -527,7 +577,8 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
         url: '/graphql',
         headers: { authorization: `Bearer ${token}` },
         payload: {
-          query: 'mutation { createWorkspace(name: "Test Workspace") { id name } }',
+          query:
+            'mutation { createWorkspace(name: "Test Workspace") { id name } }',
         },
       });
 
@@ -539,13 +590,19 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
 
   describe('Proxy to Java Backend (/api/v1/proxy/*)', () => {
     it('forwards request headers to upstream', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       // Mock upstream server behavior
       const response = await fixture.app.inject({
         method: 'GET',
         url: '/api/v1/agents',
-        headers: { authorization: `Bearer ${token}`, 'x-custom-header': 'test-value' },
+        headers: {
+          authorization: `Bearer ${token}`,
+          'x-custom-header': 'test-value',
+        },
       });
 
       // Proxy should forward to Java backend
@@ -554,7 +611,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('forwards request body to upstream', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       const payload = { query: 'test' };
 
@@ -570,7 +630,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('maps upstream 500 errors to 503 or sanitized response', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       // Mock upstream returning error
       const response = await fixture.app.inject({
@@ -583,14 +646,19 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
       // Should not expose internal Java errors
       if (response.statusCode === 500) {
         const body = JSON.parse(response.body);
-        expect(body.message).not.toContain('NullPointerException' || 'Stack trace');
+        expect(body.message).not.toContain(
+          'NullPointerException' || 'Stack trace'
+        );
       }
     });
   });
 
   describe('Metric Collection', () => {
     it('records request duration metric', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       await fixture.app.inject({
         method: 'GET',
@@ -609,7 +677,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('counts requests by method and path', async () => {
-      const token = createTestJWT({ userId: 'user-123', tenantId: 'tenant-456' });
+      const token = createTestJWT({
+        userId: 'user-123',
+        tenantId: 'tenant-456',
+      });
 
       // Hit GET /api/v1/workspaces twice
       await fixture.app.inject({
@@ -637,8 +708,14 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
 
   describe('Workspace/Project Permissions', () => {
     it('blocks user from accessing workspace they do not own', async () => {
-      const userAToken = createTestJWT({ userId: 'user-a', tenantId: 'tenant-1' });
-      const userBToken = createTestJWT({ userId: 'user-b', tenantId: 'tenant-1' });
+      const userAToken = createTestJWT({
+        userId: 'user-a',
+        tenantId: 'tenant-1',
+      });
+      const userBToken = createTestJWT({
+        userId: 'user-b',
+        tenantId: 'tenant-1',
+      });
 
       // Mock User A creates workspace
       fixture.db.workspace.create.mockResolvedValueOnce({
@@ -666,7 +743,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('allows workspace members with sufficient role to edit canvas', async () => {
-      const token = createTestJWT({ userId: 'user-editor', tenantId: 'tenant-1' });
+      const token = createTestJWT({
+        userId: 'user-editor',
+        tenantId: 'tenant-1',
+      });
 
       // Mock workspace with user-editor as editor
       fixture.db.workspace.findUnique.mockResolvedValueOnce({
@@ -687,7 +767,10 @@ describe('YAPPC API Routes (Real HTTP Integration)', () => {
     });
 
     it('blocks non-owner from deleting workspace', async () => {
-      const editorToken = createTestJWT({ userId: 'user-editor', tenantId: 'tenant-1' });
+      const editorToken = createTestJWT({
+        userId: 'user-editor',
+        tenantId: 'tenant-1',
+      });
 
       const response = await fixture.app.inject({
         method: 'DELETE',

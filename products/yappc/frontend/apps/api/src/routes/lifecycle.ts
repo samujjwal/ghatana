@@ -133,14 +133,16 @@ const LIFECYCLE_PHASE_ORDER: LifecyclePhaseId[] = LIFECYCLE_PHASES.map(
   (phase) => phase.id
 );
 
-const LIFECYCLE_PHASES_BY_ID: Record<LifecyclePhaseId, LifecyclePhaseDefinition> =
-  LIFECYCLE_PHASES.reduce(
-    (accumulator, phase) => ({
-      ...accumulator,
-      [phase.id]: phase,
-    }),
-    {} as Record<LifecyclePhaseId, LifecyclePhaseDefinition>
-  );
+const LIFECYCLE_PHASES_BY_ID: Record<
+  LifecyclePhaseId,
+  LifecyclePhaseDefinition
+> = LIFECYCLE_PHASES.reduce(
+  (accumulator, phase) => ({
+    ...accumulator,
+    [phase.id]: phase,
+  }),
+  {} as Record<LifecyclePhaseId, LifecyclePhaseDefinition>
+);
 
 // ============================================================================
 // Utilities
@@ -280,12 +282,16 @@ function buildTransitionTimingPrediction(
     Math.ceil(readinessGap / 10) * 2 +
     extraBlockers * 4;
 
-  const completionRatio = requiredCount === 0 ? 1 : completedCount / requiredCount;
+  const completionRatio =
+    requiredCount === 0 ? 1 : completedCount / requiredCount;
   const predictionConfidence = Math.max(
     0.3,
     Math.min(
       0.95,
-      0.45 + completionRatio * 0.35 - preview.blockers.length * 0.04 + (preview.readiness / 100) * 0.15
+      0.45 +
+        completionRatio * 0.35 -
+        preview.blockers.length * 0.04 +
+        (preview.readiness / 100) * 0.15
     )
   );
 
@@ -356,7 +362,9 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       },
     });
 
-    const completedArtifacts = approvedArtifacts.map((artifact) => artifact.type);
+    const completedArtifacts = approvedArtifacts.map(
+      (artifact) => artifact.type
+    );
     const preview = buildNextPhasePreview(normalizedPhase, completedArtifacts);
     const timingPrediction = buildTransitionTimingPrediction(
       normalizedPhase,
@@ -413,7 +421,7 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Get phase details
     const currentPhase = isLifecyclePhaseId(project.lifecyclePhase || 'INTENT')
-      ? (project.lifecyclePhase || 'INTENT')
+      ? project.lifecyclePhase || 'INTENT'
       : 'INTENT';
     const phaseInfo = LIFECYCLE_PHASES_BY_ID[currentPhase];
 
@@ -446,66 +454,80 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
    * POST /lifecycle/projects/:id/transition
    * Transition a project to the next lifecycle phase
    */
-  fastify.post('/projects/:id/transition', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
-    const { id: projectId } = request.params as { id: string };
-    const body = request.body as unknown;
+  fastify.post(
+    '/projects/:id/transition',
+    { preHandler: requirePermission('workflow', 'update') },
+    async (request, reply) => {
+      const { id: projectId } = request.params as { id: string };
+      const body = request.body as unknown;
 
-    if (!validateProjectId(projectId)) {
-      return reply.status(400).send({
-        error: 'Invalid projectId. Must be a non-empty string.',
-        received: projectId,
+      if (!validateProjectId(projectId)) {
+        return reply.status(400).send({
+          error: 'Invalid projectId. Must be a non-empty string.',
+          received: projectId,
+        });
+      }
+
+      const prisma = getPrismaClient();
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
       });
-    }
 
-    const prisma = getPrismaClient();
-    const project = await prisma.project.findUnique({ where: { id: projectId } });
+      if (!project) {
+        return reply.status(404).send({ error: 'Project not found' });
+      }
 
-    if (!project) {
-      return reply.status(404).send({ error: 'Project not found' });
-    }
+      const currentPhase = project.lifecyclePhase || 'INTENT';
+      const targetPhase = body.targetPhase;
+      const phaseOrder = [
+        'INTENT',
+        'SHAPE',
+        'VALIDATE',
+        'GENERATE',
+        'RUN',
+        'OBSERVE',
+        'IMPROVE',
+      ];
+      const currentIndex = phaseOrder.indexOf(currentPhase);
+      const targetIndex = phaseOrder.indexOf(targetPhase);
 
-    const currentPhase = project.lifecyclePhase || 'INTENT';
-    const targetPhase = body.targetPhase;
-    const phaseOrder = ['INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'IMPROVE'];
-    const currentIndex = phaseOrder.indexOf(currentPhase);
-    const targetIndex = phaseOrder.indexOf(targetPhase);
+      if (targetIndex === -1) {
+        return reply.status(400).send({
+          error: 'Invalid target phase',
+          validPhases: phaseOrder,
+        });
+      }
 
-    if (targetIndex === -1) {
-      return reply.status(400).send({
-        error: 'Invalid target phase',
-        validPhases: phaseOrder,
+      const updatedProject = await prisma.project.update({
+        where: { id: projectId },
+        data: { lifecyclePhase: targetPhase },
       });
-    }
 
-    const updatedProject = await prisma.project.update({
-      where: { id: projectId },
-      data: { lifecyclePhase: targetPhase },
-    });
-
-    await prisma.lifecycleActivityLog.create({
-      data: {
-        projectId,
-        userId: body.userId || 'system',
-        action: 'PHASE_TRANSITIONED',
-        description: `Transitioned from ${currentPhase} to ${targetPhase}`,
-        metadata: {
-          fromPhase: currentPhase,
-          toPhase: targetPhase,
-          fromStage: currentIndex,
-          toStage: targetIndex,
-          reason: body.reason || 'Manual transition',
+      await prisma.lifecycleActivityLog.create({
+        data: {
+          projectId,
+          userId: body.userId || 'system',
+          action: 'PHASE_TRANSITIONED',
+          description: `Transitioned from ${currentPhase} to ${targetPhase}`,
+          metadata: {
+            fromPhase: currentPhase,
+            toPhase: targetPhase,
+            fromStage: currentIndex,
+            toStage: targetIndex,
+            reason: body.reason || 'Manual transition',
+          },
         },
-      },
-    });
+      });
 
-    return {
-      success: true,
-      projectId: updatedProject.id,
-      previousPhase: currentPhase,
-      currentPhase: targetPhase,
-      transitionedAt: new Date(),
-    };
-  });
+      return {
+        success: true,
+        projectId: updatedProject.id,
+        previousPhase: currentPhase,
+        currentPhase: targetPhase,
+        transitionedAt: new Date(),
+      };
+    }
+  );
 
   /**
    * POST /lifecycle/gates/validate
@@ -631,55 +653,67 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     return artifact;
   });
 
-  fastify.post('/artifacts', { preHandler: requirePermission('workflow', 'create') }, async (request, reply) => {
-    const prisma = getPrismaClient();
-    const body = request.body as unknown;
+  fastify.post(
+    '/artifacts',
+    { preHandler: requirePermission('workflow', 'create') },
+    async (request, reply) => {
+      const prisma = getPrismaClient();
+      const body = request.body as unknown;
 
-    const artifact = await prisma.lifecycleArtifact.create({
-      data: {
-        projectId: body.projectId,
-        title: body.title,
-        type: body.type,
-        description: body.description,
-        content: body.content,
-        status: body.status || 'draft',
-        phase: body.phase || 'INTENT',
-        fowStage: body.fowStage || 1,
-        createdBy: body.createdBy || 'system',
-        linkedArtifacts: body.linkedArtifacts || [],
-      },
-    });
+      const artifact = await prisma.lifecycleArtifact.create({
+        data: {
+          projectId: body.projectId,
+          title: body.title,
+          type: body.type,
+          description: body.description,
+          content: body.content,
+          status: body.status || 'draft',
+          phase: body.phase || 'INTENT',
+          fowStage: body.fowStage || 1,
+          createdBy: body.createdBy || 'system',
+          linkedArtifacts: body.linkedArtifacts || [],
+        },
+      });
 
-    return reply.status(201).send(artifact);
-  });
+      return reply.status(201).send(artifact);
+    }
+  );
 
-  fastify.patch('/artifacts/:artifactId', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
-    const { artifactId } = request.params as { artifactId: string };
-    const body = request.body as unknown;
-    const prisma = getPrismaClient();
-    const artifact = await prisma.lifecycleArtifact.update({
-      where: { id: artifactId },
-      data: {
-        title: body.title,
-        description: body.description,
-        content: body.content,
-        status: body.status,
-      },
-    });
+  fastify.patch(
+    '/artifacts/:artifactId',
+    { preHandler: requirePermission('workflow', 'update') },
+    async (request, reply) => {
+      const { artifactId } = request.params as { artifactId: string };
+      const body = request.body as unknown;
+      const prisma = getPrismaClient();
+      const artifact = await prisma.lifecycleArtifact.update({
+        where: { id: artifactId },
+        data: {
+          title: body.title,
+          description: body.description,
+          content: body.content,
+          status: body.status,
+        },
+      });
 
-    return artifact;
-  });
+      return artifact;
+    }
+  );
 
-  fastify.delete('/artifacts/:artifactId', { preHandler: requirePermission('workflow', 'delete') }, async (request, reply) => {
-    const { artifactId } = request.params as { artifactId: string };
+  fastify.delete(
+    '/artifacts/:artifactId',
+    { preHandler: requirePermission('workflow', 'delete') },
+    async (request, reply) => {
+      const { artifactId } = request.params as { artifactId: string };
 
-    const prisma = getPrismaClient();
-    await prisma.lifecycleArtifact.delete({
-      where: { id: artifactId },
-    });
+      const prisma = getPrismaClient();
+      await prisma.lifecycleArtifact.delete({
+        where: { id: artifactId },
+      });
 
-    return reply.status(204).send();
-  });
+      return reply.status(204).send();
+    }
+  );
 
   // ========================================================================
   // Evidence (using ActivityLog as a proxy)
@@ -867,31 +901,35 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     };
   });
 
-  fastify.post('/tasks/:taskId/execute', { preHandler: requirePermission('workflow', 'update') }, async (request, reply) => {
-    const { taskId } = request.params as { taskId: string };
-    const body = request.body as unknown;
+  fastify.post(
+    '/tasks/:taskId/execute',
+    { preHandler: requirePermission('workflow', 'update') },
+    async (request, reply) => {
+      const { taskId } = request.params as { taskId: string };
+      const body = request.body as unknown;
 
-    // Simulate task execution
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Simulate task execution
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    return {
-      taskId,
-      status: 'completed',
-      steps: [
-        { id: '1', status: 'completed', output: 'Context analyzed' },
-        { id: '2', status: 'completed', output: 'Content generated' },
-        { id: '3', status: 'completed', output: 'Validation passed' },
-      ],
-      artifacts: [
-        { id: 'new-art', title: 'Generated Artifact', type: 'Document' },
-      ],
-      logs: [
-        'Task execution started',
-        'Processing inputs...',
-        'Task completed successfully',
-      ],
-    };
-  });
+      return {
+        taskId,
+        status: 'completed',
+        steps: [
+          { id: '1', status: 'completed', output: 'Context analyzed' },
+          { id: '2', status: 'completed', output: 'Content generated' },
+          { id: '3', status: 'completed', output: 'Validation passed' },
+        ],
+        artifacts: [
+          { id: 'new-art', title: 'Generated Artifact', type: 'Document' },
+        ],
+        logs: [
+          'Task execution started',
+          'Processing inputs...',
+          'Task completed successfully',
+        ],
+      };
+    }
+  );
 
   // ========================================================================
   // AI Recommendations
@@ -969,31 +1007,35 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
     }));
   });
 
-  fastify.post('/projects/:projectId/audit', { preHandler: requireRole('ADMIN') }, async (request, reply) => {
-    const { projectId } = request.params as { projectId: string };
-    const body = request.body as unknown;
+  fastify.post(
+    '/projects/:projectId/audit',
+    { preHandler: requireRole('ADMIN') },
+    async (request, reply) => {
+      const { projectId } = request.params as { projectId: string };
+      const body = request.body as unknown;
 
-    // Validate projectId
-    if (!validateProjectId(projectId)) {
-      return reply.status(400).send({
-        error: 'Invalid projectId. Must be a non-empty string.',
-        received: projectId,
+      // Validate projectId
+      if (!validateProjectId(projectId)) {
+        return reply.status(400).send({
+          error: 'Invalid projectId. Must be a non-empty string.',
+          received: projectId,
+        });
+      }
+
+      const prisma = getPrismaClient();
+      const log = await prisma.lifecycleActivityLog.create({
+        data: {
+          projectId,
+          userId: body.userId || 'system',
+          action: body.type || body.action,
+          description: body.description,
+          metadata: body.metadata || {},
+        },
       });
+
+      return reply.status(201).send(log);
     }
-
-    const prisma = getPrismaClient();
-    const log = await prisma.lifecycleActivityLog.create({
-      data: {
-        projectId,
-        userId: body.userId || 'system',
-        action: body.type || body.action,
-        description: body.description,
-        metadata: body.metadata || {},
-      },
-    });
-
-    return reply.status(201).send(log);
-  });
+  );
 
   // ========================================================================
   // Persona Derivation (Universal Endpoint)

@@ -8,8 +8,8 @@ import {
   createAssetHandler,
   type AssetHandlerConfig,
   type AssetMetadata,
-
-  AssetHandler} from '../assetHandler';
+  AssetHandler,
+} from '../assetHandler';
 
 describe('AssetHandler', () => {
   let handler: AssetHandler;
@@ -33,7 +33,9 @@ describe('AssetHandler', () => {
     it('should generate signed URL', () => {
       const result = handler.generateSignedUrl('asset-123');
 
-      expect(result.url).toContain('https://assets.example.com/assets/asset-123');
+      expect(result.url).toContain(
+        'https://assets.example.com/assets/asset-123'
+      );
       expect(result.url).toContain('signature=');
       expect(result.url).toContain('expires=');
       expect(result.signature).toBeDefined();
@@ -44,15 +46,17 @@ describe('AssetHandler', () => {
     it('should generate URL with custom TTL', () => {
       const ttl = 7200; // 2 hours
       const before = Date.now() + ttl * 1000;
-      
+
       const result = handler.generateSignedUrl('asset-123', { ttl });
-      
+
       expect(result.expiresAt).toBeGreaterThanOrEqual(before - 100);
       expect(result.expiresAt).toBeLessThanOrEqual(before + 100);
     });
 
     it('should include user ID in signature', () => {
-      const result = handler.generateSignedUrl('asset-123', { userId: 'user-456' });
+      const result = handler.generateSignedUrl('asset-123', {
+        userId: 'user-456',
+      });
 
       expect(result.url).toContain('user=user-456');
     });
@@ -103,8 +107,11 @@ describe('AssetHandler', () => {
 
     it('should reject invalid signature', () => {
       const signed = handler.generateSignedUrl('asset-123');
-      const tamperedUrl = signed.url.replace(/signature=[^&]+/, 'signature=invalid');
-      
+      const tamperedUrl = signed.url.replace(
+        /signature=[^&]+/,
+        'signature=invalid'
+      );
+
       const result = handler.verifySignedUrl(tamperedUrl);
 
       expect(result.valid).toBe(false);
@@ -120,7 +127,9 @@ describe('AssetHandler', () => {
     });
 
     it('should reject user mismatch', () => {
-      const signed = handler.generateSignedUrl('asset-123', { userId: 'user-1' });
+      const signed = handler.generateSignedUrl('asset-123', {
+        userId: 'user-1',
+      });
       const result = handler.verifySignedUrl(signed.url, { userId: 'user-2' });
 
       expect(result.valid).toBe(false);
@@ -129,7 +138,10 @@ describe('AssetHandler', () => {
 
     it('should log access attempts', () => {
       const signed = handler.generateSignedUrl('asset-123');
-      handler.verifySignedUrl(signed.url, { userId: 'user-1', ipAddress: '192.168.1.1' });
+      handler.verifySignedUrl(signed.url, {
+        userId: 'user-1',
+        ipAddress: '192.168.1.1',
+      });
 
       const logs = handler.getAccessLogs({ assetId: 'asset-123' });
       expect(logs.length).toBeGreaterThanOrEqual(1);
@@ -161,10 +173,14 @@ describe('AssetHandler', () => {
         uploadAllowlist: ['cdn.example.com', 'storage.example.com'],
       });
 
-      const result1 = handlerWithAllowlist.validateUploadUrl('https://cdn.example.com/file.jpg');
+      const result1 = handlerWithAllowlist.validateUploadUrl(
+        'https://cdn.example.com/file.jpg'
+      );
       expect(result1.valid).toBe(true);
 
-      const result2 = handlerWithAllowlist.validateUploadUrl('https://evil.com/file.jpg');
+      const result2 = handlerWithAllowlist.validateUploadUrl(
+        'https://evil.com/file.jpg'
+      );
       expect(result2.valid).toBe(false);
       expect(result2.reason).toContain('not in allowlist');
 
@@ -177,16 +193,24 @@ describe('AssetHandler', () => {
         uploadAllowlist: ['*.example.com'],
       });
 
-      const result1 = handlerWithWildcard.validateUploadUrl('https://cdn.example.com/file.jpg');
+      const result1 = handlerWithWildcard.validateUploadUrl(
+        'https://cdn.example.com/file.jpg'
+      );
       expect(result1.valid).toBe(true);
 
-      const result2 = handlerWithWildcard.validateUploadUrl('https://storage.example.com/file.jpg');
+      const result2 = handlerWithWildcard.validateUploadUrl(
+        'https://storage.example.com/file.jpg'
+      );
       expect(result2.valid).toBe(true);
 
-      const result3 = handlerWithWildcard.validateUploadUrl('https://example.com/file.jpg');
+      const result3 = handlerWithWildcard.validateUploadUrl(
+        'https://example.com/file.jpg'
+      );
       expect(result3.valid).toBe(true);
 
-      const result4 = handlerWithWildcard.validateUploadUrl('https://evil.com/file.jpg');
+      const result4 = handlerWithWildcard.validateUploadUrl(
+        'https://evil.com/file.jpg'
+      );
       expect(result4.valid).toBe(false);
 
       handlerWithWildcard.destroy();
@@ -201,7 +225,11 @@ describe('AssetHandler', () => {
 
   describe('Upload Validation', () => {
     it('should validate allowed image upload', () => {
-      const result = handler.validateUpload('photo.jpg', 'image/jpeg', 5 * 1024 * 1024);
+      const result = handler.validateUpload(
+        'photo.jpg',
+        'image/jpeg',
+        5 * 1024 * 1024
+      );
 
       expect(result.valid).toBe(true);
       expect(result.contentType).toBe('image/jpeg');
@@ -209,35 +237,55 @@ describe('AssetHandler', () => {
     });
 
     it('should reject disallowed content type', () => {
-      const result = handler.validateUpload('script.js', 'application/javascript', 1024);
+      const result = handler.validateUpload(
+        'script.js',
+        'application/javascript',
+        1024
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toContain('not allowed');
     });
 
     it('should reject oversized upload', () => {
-      const result = handler.validateUpload('huge.jpg', 'image/jpeg', 20 * 1024 * 1024);
+      const result = handler.validateUpload(
+        'huge.jpg',
+        'image/jpeg',
+        20 * 1024 * 1024
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toContain('exceeds maximum');
     });
 
     it('should validate video upload', () => {
-      const result = handler.validateUpload('video.mp4', 'video/mp4', 50 * 1024 * 1024);
+      const result = handler.validateUpload(
+        'video.mp4',
+        'video/mp4',
+        50 * 1024 * 1024
+      );
 
       expect(result.valid).toBe(true);
       expect(result.assetType).toBe('video');
     });
 
     it('should validate audio upload', () => {
-      const result = handler.validateUpload('song.mp3', 'audio/mpeg', 5 * 1024 * 1024);
+      const result = handler.validateUpload(
+        'song.mp3',
+        'audio/mpeg',
+        5 * 1024 * 1024
+      );
 
       expect(result.valid).toBe(true);
       expect(result.assetType).toBe('audio');
     });
 
     it('should validate document upload', () => {
-      const result = handler.validateUpload('doc.pdf', 'application/pdf', 10 * 1024 * 1024);
+      const result = handler.validateUpload(
+        'doc.pdf',
+        'application/pdf',
+        10 * 1024 * 1024
+      );
 
       expect(result.valid).toBe(true);
       expect(result.assetType).toBe('document');
@@ -249,7 +297,11 @@ describe('AssetHandler', () => {
         maxSizes: { image: 1024 * 1024 }, // 1MB
       });
 
-      const result = customHandler.validateUpload('large.jpg', 'image/jpeg', 2 * 1024 * 1024);
+      const result = customHandler.validateUpload(
+        'large.jpg',
+        'image/jpeg',
+        2 * 1024 * 1024
+      );
       expect(result.valid).toBe(false);
 
       customHandler.destroy();
@@ -288,14 +340,18 @@ describe('AssetHandler', () => {
         storagePath: '/uploads/test.jpg',
       });
 
-      const updated = handler.updateMetadata('asset-123', { filename: 'renamed.jpg' });
+      const updated = handler.updateMetadata('asset-123', {
+        filename: 'renamed.jpg',
+      });
 
       expect(updated).toBe(true);
       expect(handler.getMetadata('asset-123')!.filename).toBe('renamed.jpg');
     });
 
     it('should return false when updating non-existent asset', () => {
-      const updated = handler.updateMetadata('non-existent', { filename: 'test.jpg' });
+      const updated = handler.updateMetadata('non-existent', {
+        filename: 'test.jpg',
+      });
       expect(updated).toBe(false);
     });
 
@@ -368,13 +424,13 @@ describe('AssetHandler', () => {
     it('should filter by type', () => {
       const images = handler.listAssets({ type: 'image' });
       expect(images.length).toBe(2);
-      expect(images.every(a => a.type === 'image')).toBe(true);
+      expect(images.every((a) => a.type === 'image')).toBe(true);
     });
 
     it('should filter by uploader', () => {
       const user1Assets = handler.listAssets({ uploadedBy: 'user-1' });
       expect(user1Assets.length).toBe(2);
-      expect(user1Assets.every(a => a.uploadedBy === 'user-1')).toBe(true);
+      expect(user1Assets.every((a) => a.uploadedBy === 'user-1')).toBe(true);
     });
 
     it('should filter by upload time', () => {
@@ -390,7 +446,9 @@ describe('AssetHandler', () => {
       });
 
       expect(filtered.length).toBe(2);
-      expect(filtered.every(a => a.type === 'image' && a.uploadedBy === 'user-1')).toBe(true);
+      expect(
+        filtered.every((a) => a.type === 'image' && a.uploadedBy === 'user-1')
+      ).toBe(true);
     });
   });
 
@@ -406,12 +464,12 @@ describe('AssetHandler', () => {
     it('should filter logs by asset', () => {
       const signed1 = handler.generateSignedUrl('asset-1');
       const signed2 = handler.generateSignedUrl('asset-2');
-      
+
       handler.verifySignedUrl(signed1.url);
       handler.verifySignedUrl(signed2.url);
 
       const logs = handler.getAccessLogs({ assetId: 'asset-1' });
-      expect(logs.every(l => l.assetId === 'asset-1')).toBe(true);
+      expect(logs.every((l) => l.assetId === 'asset-1')).toBe(true);
     });
 
     it('should filter logs by user', () => {
@@ -419,7 +477,7 @@ describe('AssetHandler', () => {
       handler.verifySignedUrl(signed.url, { userId: 'user-1' });
 
       const logs = handler.getAccessLogs({ userId: 'user-1' });
-      expect(logs.every(l => l.userId === 'user-1')).toBe(true);
+      expect(logs.every((l) => l.userId === 'user-1')).toBe(true);
     });
 
     it('should filter logs by granted status', () => {
@@ -427,7 +485,7 @@ describe('AssetHandler', () => {
       handler.verifySignedUrl(signed.url);
 
       const denied = handler.getAccessLogs({ granted: false });
-      expect(denied.every(l => !l.granted)).toBe(true);
+      expect(denied.every((l) => !l.granted)).toBe(true);
     });
 
     it('should filter logs by time', () => {
@@ -436,7 +494,7 @@ describe('AssetHandler', () => {
       handler.verifySignedUrl(signed.url);
 
       const recent = handler.getAccessLogs({ since: before });
-      expect(recent.every(l => l.timestamp >= before)).toBe(true);
+      expect(recent.every((l) => l.timestamp >= before)).toBe(true);
     });
 
     it('should clear access logs', () => {
@@ -514,7 +572,7 @@ describe('AssetHandler', () => {
   describe('Cleanup', () => {
     it('should cleanup expired assets', () => {
       const now = Date.now();
-      
+
       handler.storeMetadata({
         id: 'expired-1',
         type: 'image',
@@ -540,7 +598,7 @@ describe('AssetHandler', () => {
       });
 
       const cleaned = handler.cleanup();
-      
+
       expect(cleaned).toBe(1);
       expect(handler.getMetadata('expired-1')).toBeUndefined();
       expect(handler.getMetadata('active-1')).toBeDefined();
@@ -559,7 +617,7 @@ describe('AssetHandler', () => {
       });
 
       const cleaned = handler.cleanup();
-      
+
       expect(cleaned).toBe(0);
       expect(handler.getMetadata('permanent-1')).toBeDefined();
     });

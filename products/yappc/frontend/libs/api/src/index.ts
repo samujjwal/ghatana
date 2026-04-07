@@ -56,7 +56,11 @@ export interface GraphQLProviderProps {
 }
 
 export function GraphQLProvider({ children }: GraphQLProviderProps) {
-  return createElement(ApolloProvider, { client: getGraphQLClient() }, children);
+  return createElement(
+    ApolloProvider,
+    { client: getGraphQLClient() },
+    children
+  );
 }
 
 // =============================================================================
@@ -125,7 +129,7 @@ export { aiClient } from './ai';
 // ============================================================================
 // DEPRECATION WARNING
 // ============================================================================
- 
+
 console.warn(
   '[DEPRECATED] @ghatana/yappc-api is deprecated. Use @yappc/api instead. ' +
     'See: docs/NAMING_CONVENTIONS.md'

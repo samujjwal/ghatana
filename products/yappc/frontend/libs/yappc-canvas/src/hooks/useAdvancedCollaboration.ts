@@ -176,7 +176,7 @@ export interface UseAdvancedCollaborationReturn {
 
 /**
  * Hook for advanced real-time collaboration with conflict resolution and operational transforms
- * 
+ *
  * Provides enterprise-grade collaboration features including:
  * - Operational Transform (OT) for concurrent editing without conflicts
  * - Automatic and manual conflict resolution strategies
@@ -186,9 +186,9 @@ export interface UseAdvancedCollaborationReturn {
  * - Change notifications and activity feed
  * - Yjs CRDT with WebSocket and IndexedDB persistence
  * - Latency monitoring and conflict statistics
- * 
+ *
  * Extends basic collaboration with advanced features for professional multi-user editing.
- * 
+ *
  * @param canvasId - Unique identifier for the canvas/document being edited
  * @param userId - Current user's unique identifier
  * @param options - Configuration options for collaboration behavior
@@ -198,7 +198,7 @@ export interface UseAdvancedCollaborationReturn {
  * @param options.conflictResolution - Resolution strategy: 'automatic' | 'manual' (default: 'automatic')
  * @param options.presenceTimeout - Timeout in ms for marking users offline (default: 30000)
  * @returns Advanced collaboration state and operations
- * 
+ *
  * @example
  * ```tsx
  * function AdvancedCollaborativeEditor() {
@@ -218,7 +218,7 @@ export interface UseAdvancedCollaborationReturn {
  *     enableVersionHistory: true,
  *     conflictResolution: 'automatic'
  *   });
- *   
+ *
  *   useEffect(() => {
  *     const unsubscribe = subscribeToChanges((change) => {
  *       console.log('Change by:', change.author, change.operation);
@@ -226,7 +226,7 @@ export interface UseAdvancedCollaborationReturn {
  *     });
  *     return unsubscribe;
  *   }, [subscribeToChanges]);
- *   
+ *
  *   const handleNodeUpdate = (nodeId, updates) => {
  *     applyTransform({
  *       operation: 'update',
@@ -235,7 +235,7 @@ export interface UseAdvancedCollaborationReturn {
  *       data: updates
  *     });
  *   };
- *   
+ *
  *   return (
  *     <div>
  *       <CollaborationBar

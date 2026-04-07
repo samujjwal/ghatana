@@ -1,15 +1,15 @@
 /**
  * Virtual Viewport System
- * 
+ *
  * Implements viewport-based virtualization to render only visible elements,
  * dramatically improving performance for large canvases (1000+ nodes).
- * 
+ *
  * Features:
  * - Spatial indexing with quad-tree structure
  * - Viewport frustum culling
  * - Margin-based prefetching for smooth panning
  * - Performance monitoring and metrics
- * 
+ *
  * @module rendering/virtualViewport
  */
 
@@ -84,21 +84,21 @@ export const DEFAULT_VIEWPORT_CONFIG: VirtualViewportConfig = {
 
 /**
  * Create a virtual viewport manager
- * 
+ *
  * @example
  * ```ts
  * const viewport = createVirtualViewport({
  *   margin: 200,
  *   useSpatialIndex: true,
  * });
- * 
+ *
  * // Update viewport bounds
  * viewport.updateViewport({
  *   x: 0, y: 0,
  *   width: 1920, height: 1080,
  *   zoom: 1,
  * });
- * 
+ *
  * // Get visible elements
  * const visible = viewport.getVisibleElements(elements);
  * ```
@@ -107,11 +107,15 @@ export function createVirtualViewport(
   config: Partial<VirtualViewportConfig> = {}
 ) {
   const cfg = { ...DEFAULT_VIEWPORT_CONFIG, ...config };
-  
+
   let currentViewport: ViewportBounds = {
-    x: 0, y: 0, width: 0, height: 0, zoom: 1,
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    zoom: 1,
   };
-  
+
   let spatialIndex: QuadTreeNode | null = null;
   let lastUpdateTime = 0;
   const stats: ViewportStats = {
@@ -130,7 +134,7 @@ export function createVirtualViewport(
     if (now - lastUpdateTime < cfg.updateThrottle) {
       return; // Throttle updates
     }
-    
+
     currentViewport = { ...viewport };
     lastUpdateTime = now;
   }
@@ -141,7 +145,7 @@ export function createVirtualViewport(
   function buildSpatialIndex(elements: CanvasElement[]): QuadTreeNode {
     // Calculate root bounds
     const rootBounds = calculateBounds(elements);
-    
+
     // Build quad-tree recursively
     return buildQuadTree(elements, rootBounds, 0);
   }
@@ -187,30 +191,46 @@ export function createVirtualViewport(
 
     // Build child nodes
     node.children = [
-      buildQuadTree(quadrants[0], {
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width / 2,
-        height: bounds.height / 2,
-      }, level + 1),
-      buildQuadTree(quadrants[1], {
-        x: midX,
-        y: bounds.y,
-        width: bounds.width / 2,
-        height: bounds.height / 2,
-      }, level + 1),
-      buildQuadTree(quadrants[2], {
-        x: bounds.x,
-        y: midY,
-        width: bounds.width / 2,
-        height: bounds.height / 2,
-      }, level + 1),
-      buildQuadTree(quadrants[3], {
-        x: midX,
-        y: midY,
-        width: bounds.width / 2,
-        height: bounds.height / 2,
-      }, level + 1),
+      buildQuadTree(
+        quadrants[0],
+        {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width / 2,
+          height: bounds.height / 2,
+        },
+        level + 1
+      ),
+      buildQuadTree(
+        quadrants[1],
+        {
+          x: midX,
+          y: bounds.y,
+          width: bounds.width / 2,
+          height: bounds.height / 2,
+        },
+        level + 1
+      ),
+      buildQuadTree(
+        quadrants[2],
+        {
+          x: bounds.x,
+          y: midY,
+          width: bounds.width / 2,
+          height: bounds.height / 2,
+        },
+        level + 1
+      ),
+      buildQuadTree(
+        quadrants[3],
+        {
+          x: midX,
+          y: midY,
+          width: bounds.width / 2,
+          height: bounds.height / 2,
+        },
+        level + 1
+      ),
     ];
 
     return node;
@@ -253,7 +273,7 @@ export function createVirtualViewport(
    */
   function getVisibleElements(elements: CanvasElement[]): CanvasElement[] {
     const startTime = performance.now();
-    
+
     stats.totalElements = elements.length;
 
     // Calculate viewport with margin
@@ -276,7 +296,7 @@ export function createVirtualViewport(
       visible = queryQuadTree(spatialIndex, viewportWithMargin);
     } else {
       // Brute force check
-      visible = elements.filter(el => {
+      visible = elements.filter((el) => {
         const bounds = getElementBounds(el);
         return boundsIntersect(bounds, viewportWithMargin);
       });
@@ -284,8 +304,10 @@ export function createVirtualViewport(
 
     // Apply max visible limit
     if (visible.length > cfg.maxVisibleNodes) {
-      visible = prioritizeElements(visible, currentViewport)
-        .slice(0, cfg.maxVisibleNodes);
+      visible = prioritizeElements(visible, currentViewport).slice(
+        0,
+        cfg.maxVisibleNodes
+      );
     }
 
     stats.visibleElements = visible.length;
@@ -299,9 +321,7 @@ export function createVirtualViewport(
   /**
    * Get visibility results with metadata
    */
-  function getVisibilityResults(
-    elements: CanvasElement[]
-  ): VisibilityResult[] {
+  function getVisibilityResults(elements: CanvasElement[]): VisibilityResult[] {
     const viewportWithMargin: Bounds = {
       x: currentViewport.x - cfg.margin,
       y: currentViewport.y - cfg.margin,
@@ -309,13 +329,13 @@ export function createVirtualViewport(
       height: currentViewport.height + cfg.margin * 2,
     };
 
-    return elements.map(el => {
+    return elements.map((el) => {
       const bounds = getElementBounds(el);
       const isVisible = boundsIntersect(bounds, viewportWithMargin);
       const distance = isVisible
         ? 0
         : calculateDistanceFromViewport(bounds, currentViewport);
-      
+
       return {
         elementId: el.id,
         isVisible,
@@ -453,21 +473,21 @@ function calculatePriority(
 ): number {
   const bounds = getElementBounds(element);
   const distance = calculateDistanceFromViewport(bounds, viewport);
-  
+
   // Priority factors:
   // 1. Distance from viewport (closer = higher priority)
   // 2. Element size (larger = higher priority)
   // 3. Element type (some types more important)
-  
+
   const sizeFactor = (bounds.width * bounds.height) / 10000;
   const distanceFactor = distance / 1000;
-  
+
   return distanceFactor - sizeFactor;
 }
 
 /**
  * Create a simple visibility checker
- * 
+ *
  * @example
  * ```ts
  * const checker = createVisibilityChecker();
@@ -485,9 +505,12 @@ export function createVisibilityChecker() {
         height: viewport.height,
       });
     },
-    
-    getVisibleCount(elements: CanvasElement[], viewport: ViewportBounds): number {
-      return elements.filter(el => this.isVisible(el, viewport)).length;
+
+    getVisibleCount(
+      elements: CanvasElement[],
+      viewport: ViewportBounds
+    ): number {
+      return elements.filter((el) => this.isVisible(el, viewport)).length;
     },
   };
 }
@@ -510,7 +533,7 @@ export const VirtualViewportUtils = {
   calculateOptimalMargin(velocity: Point, zoom: number): number {
     const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2);
     // Larger margin for faster panning
-    return Math.max(100, Math.min(500, speed * 10 / zoom));
+    return Math.max(100, Math.min(500, (speed * 10) / zoom));
   },
 
   /**

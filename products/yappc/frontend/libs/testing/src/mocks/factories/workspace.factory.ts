@@ -8,7 +8,6 @@ import { faker } from '../faker-shim';
 
 import { createUser } from './user.factory';
 
-
 /**
  *
  */

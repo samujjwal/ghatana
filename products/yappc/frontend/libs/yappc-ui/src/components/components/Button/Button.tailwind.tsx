@@ -1,36 +1,36 @@
 /**
  * Tailwind CSS Button Component
- * 
+ *
  * Custom button implementation using Tailwind CSS utilities.
  * Built following Base UI philosophy - provides presentation (styling),
  * uses native HTML <button> element for behavior and accessibility.
- * 
+ *
  * This component will eventually replace the MUI Button once migration is complete.
  * For now, it coexists as Button.tailwind.tsx.
- * 
+ *
  * @example
  * ```tsx
  * // Solid primary button (default)
  * <Button>Click me</Button>
- * 
+ *
  * // Outline variant
  * <Button variant="outline">Outline button</Button>
- * 
+ *
  * // Ghost variant (hover effect only)
  * <Button variant="ghost">Ghost button</Button>
- * 
+ *
  * // Different sizes
  * <Button size="sm">Small</Button>
  * <Button size="md">Medium</Button>
  * <Button size="lg">Large</Button>
- * 
+ *
  * // Disabled state
  * <Button disabled>Disabled</Button>
- * 
+ *
  * // Custom className (overrides/extends)
  * <Button className="shadow-xl hover:scale-105">Custom styles</Button>
  * ```
- * 
+ *
  * @see {@link https://base-ui.com Base UI Documentation}
  * @see {@link BASE_UI_TAILWIND_MIGRATION_PLAN.md Migration Plan}
  */
@@ -44,55 +44,61 @@ import { cn } from '../../utils/cn';
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
    * Visual style variant of the button
-   * 
+   *
    * - `solid`: Filled background with primary color (default)
    * - `outline`: Border with transparent background
    * - `ghost`: No border/background, hover effect only
    * - `link`: Styled as a link (underline on hover)
-   * 
+   *
    * @default 'solid'
    */
   variant?: 'solid' | 'outline' | 'ghost' | 'link';
-  
+
   /**
    * Size variant of the button
-   * 
+   *
    * - `sm`: Small (px-3 py-1.5, text-sm)
    * - `md`: Medium (px-4 py-2, text-base) - default
    * - `lg`: Large (px-6 py-3, text-lg)
-   * 
+   *
    * @default 'md'
    */
   size?: 'sm' | 'md' | 'lg';
-  
+
   /**
    * Color scheme of the button
-   * 
+   *
    * Uses design tokens from @ghatana/yappc-shared-ui-core/tokens
-   * 
+   *
    * @default 'primary'
    */
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
-  
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
+
   /**
    * Render button with full width
-   * 
+   *
    * @default false
    */
   fullWidth?: boolean;
-  
+
   /**
    * Loading state (shows spinner, disables interaction)
-   * 
+   *
    * @default false
    */
   isLoading?: boolean;
-  
+
   /**
    * Icon to display before button text
    */
   leftIcon?: React.ReactNode;
-  
+
   /**
    * Icon to display after button text
    */
@@ -101,9 +107,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 /**
  * Tailwind Button Component
- * 
+ *
  * Accessible button component built with Tailwind CSS utilities.
- * 
+ *
  * Features:
  * - Semantic HTML (<button> element)
  * - Full keyboard support (Space/Enter)
@@ -132,7 +138,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const isDisabled = disabled || isLoading;
-    
+
     return (
       <button
         ref={ref}
@@ -145,14 +151,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           'transition-colors duration-200',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          
+
           // Size variants
           {
             'px-3 py-1.5 text-sm gap-1.5': size === 'sm',
             'px-4 py-2 text-base gap-2': size === 'md',
             'px-6 py-3 text-lg gap-2.5': size === 'lg',
           },
-          
+
           // Variant + Color combinations
           {
             // Solid variant
@@ -168,7 +174,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant === 'solid' && colorScheme === 'warning',
             'bg-grey-500 text-white hover:bg-grey-600':
               variant === 'solid' && colorScheme === 'grey',
-            
+
             // Outline variant
             'border-2 border-primary-500 text-primary-500 hover:bg-primary-50 active:bg-primary-100':
               variant === 'outline' && colorScheme === 'primary',
@@ -182,7 +188,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant === 'outline' && colorScheme === 'warning',
             'border-2 border-grey-500 text-grey-700 hover:bg-grey-50':
               variant === 'outline' && colorScheme === 'grey',
-            
+
             // Ghost variant
             'text-primary-500 hover:bg-primary-50 active:bg-primary-100':
               variant === 'ghost' && colorScheme === 'primary',
@@ -196,7 +202,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant === 'ghost' && colorScheme === 'warning',
             'text-grey-700 hover:bg-grey-50':
               variant === 'ghost' && colorScheme === 'grey',
-            
+
             // Link variant
             'text-primary-500 hover:underline active:text-primary-700':
               variant === 'link' && colorScheme === 'primary',
@@ -211,10 +217,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             'text-grey-700 hover:underline':
               variant === 'link' && colorScheme === 'grey',
           },
-          
+
           // Full width
           fullWidth && 'w-full',
-          
+
           // Custom className (overrides/extends)
           className
         )}
@@ -244,13 +250,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
-        
+
         {/* Left icon */}
         {leftIcon && !isLoading && leftIcon}
-        
+
         {/* Button text */}
         {children}
-        
+
         {/* Right icon */}
         {rightIcon && rightIcon}
       </button>

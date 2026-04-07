@@ -85,35 +85,45 @@ const RULE_DEFINITIONS: RuleDefinition[] = [
     type: 'minLength',
     label: 'Minimum Length',
     description: 'Minimum number of characters',
-    params: [{ name: 'min', type: 'number', placeholder: 'Enter minimum length' }],
+    params: [
+      { name: 'min', type: 'number', placeholder: 'Enter minimum length' },
+    ],
     defaultMessage: 'Must be at least {0} characters',
   },
   {
     type: 'maxLength',
     label: 'Maximum Length',
     description: 'Maximum number of characters',
-    params: [{ name: 'max', type: 'number', placeholder: 'Enter maximum length' }],
+    params: [
+      { name: 'max', type: 'number', placeholder: 'Enter maximum length' },
+    ],
     defaultMessage: 'Must be at most {0} characters',
   },
   {
     type: 'min',
     label: 'Minimum Value',
     description: 'Minimum numeric value',
-    params: [{ name: 'min', type: 'number', placeholder: 'Enter minimum value' }],
+    params: [
+      { name: 'min', type: 'number', placeholder: 'Enter minimum value' },
+    ],
     defaultMessage: 'Must be at least {0}',
   },
   {
     type: 'max',
     label: 'Maximum Value',
     description: 'Maximum numeric value',
-    params: [{ name: 'max', type: 'number', placeholder: 'Enter maximum value' }],
+    params: [
+      { name: 'max', type: 'number', placeholder: 'Enter maximum value' },
+    ],
     defaultMessage: 'Must be at most {0}',
   },
   {
     type: 'pattern',
     label: 'Pattern (Regex)',
     description: 'Must match regular expression',
-    params: [{ name: 'pattern', type: 'string', placeholder: 'Enter regex pattern' }],
+    params: [
+      { name: 'pattern', type: 'string', placeholder: 'Enter regex pattern' },
+    ],
     defaultMessage: 'Invalid format',
   },
   {
@@ -162,8 +172,13 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
     onChange(updatedRules.length > 0 ? { rules: updatedRules } : undefined);
   };
 
-  const handleUpdateRule = (index: number, updates: Partial<ValidationRule>) => {
-    const updatedRules = rules.map((rule, i) => (i === index ? { ...rule, ...updates } : rule));
+  const handleUpdateRule = (
+    index: number,
+    updates: Partial<ValidationRule>
+  ) => {
+    const updatedRules = rules.map((rule, i) =>
+      i === index ? { ...rule, ...updates } : rule
+    );
     setRules(updatedRules);
     onChange({ rules: updatedRules });
   };
@@ -183,7 +198,9 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
     >
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Validation Rules</h4>
+        <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+          Validation Rules
+        </h4>
         <p style={{ margin: '4px 0 0', fontSize: 11, color: '#666' }}>
           Add rules to validate user input
         </p>
@@ -198,7 +215,14 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
           borderRadius: 4,
         }}
       >
-        <label style={{ display: 'block', marginBottom: 8, fontSize: 12, fontWeight: 500 }}>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: 8,
+            fontSize: 12,
+            fontWeight: 500,
+          }}
+        >
           Add Validation Rule
         </label>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -268,10 +292,20 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                 }}
               >
                 {/* Rule Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 8,
+                  }}
+                >
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{ruleDef.label}</div>
-                    <div style={{ fontSize: 11, color: '#666' }}>{ruleDef.description}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                      {ruleDef.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#666' }}>
+                      {ruleDef.description}
+                    </div>
                   </div>
                   <button
                     onClick={() => handleRemoveRule(index)}
@@ -294,7 +328,13 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                   <div style={{ marginBottom: 8 }}>
                     {ruleDef.params.map((param, paramIndex) => (
                       <div key={param.name} style={{ marginBottom: 8 }}>
-                        <label style={{ display: 'block', marginBottom: 4, fontSize: 11 }}>
+                        <label
+                          style={{
+                            display: 'block',
+                            marginBottom: 4,
+                            fontSize: 11,
+                          }}
+                        >
                           {param.name}
                         </label>
                         <input
@@ -303,7 +343,9 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
                           onChange={(e) => {
                             const newParams = [...(rule.params || [])];
                             newParams[paramIndex] =
-                              param.type === 'number' ? Number(e.target.value) : e.target.value;
+                              param.type === 'number'
+                                ? Number(e.target.value)
+                                : e.target.value;
                             handleUpdateRule(index, { params: newParams });
                           }}
                           placeholder={param.placeholder}
@@ -322,13 +364,17 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
 
                 {/* Error Message */}
                 <div>
-                  <label style={{ display: 'block', marginBottom: 4, fontSize: 11 }}>
+                  <label
+                    style={{ display: 'block', marginBottom: 4, fontSize: 11 }}
+                  >
                     Error Message
                   </label>
                   <input
                     type="text"
                     value={rule.message || ruleDef.defaultMessage}
-                    onChange={(e) => handleUpdateRule(index, { message: e.target.value })}
+                    onChange={(e) =>
+                      handleUpdateRule(index, { message: e.target.value })
+                    }
                     placeholder="Enter error message"
                     style={{
                       width: '100%',
@@ -357,7 +403,8 @@ export const ValidationRuleEditor: React.FC<ValidationRuleEditorProps> = ({
             color: '#2e7d32',
           }}
         >
-          ✓ {rules.length} validation rule{rules.length !== 1 ? 's' : ''} configured
+          ✓ {rules.length} validation rule{rules.length !== 1 ? 's' : ''}{' '}
+          configured
         </div>
       )}
     </div>

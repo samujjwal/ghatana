@@ -46,12 +46,12 @@ export const Variants: Story = {
         <div className="text-sm font-medium mb-2">Text</div>
         <Skeleton variant="text" width={200} />
       </div>
-      
+
       <div>
         <div className="text-sm font-medium mb-2">Circular (Avatar)</div>
         <Skeleton variant="circular" width={40} height={40} />
       </div>
-      
+
       <div>
         <div className="text-sm font-medium mb-2">Rectangular (Image)</div>
         <Skeleton variant="rectangular" width={300} height={200} />
@@ -114,9 +114,14 @@ export const Card: Story = {
           <Skeleton variant="text" width="40%" height={12} />
         </div>
       </div>
-      
-      <Skeleton variant="rectangular" width="100%" height={200} className="mb-4" />
-      
+
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        height={200}
+        className="mb-4"
+      />
+
       <Skeleton variant="text" width="100%" className="mb-2" />
       <Skeleton variant="text" width="100%" className="mb-2" />
       <Skeleton variant="text" width="70%" />
@@ -155,7 +160,7 @@ export const Table: Story = {
         <Skeleton variant="text" width="50%" height={14} />
         <Skeleton variant="text" width="40%" height={14} />
       </div>
-      
+
       {/* Rows */}
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="grid grid-cols-3 gap-4 mb-3">
@@ -179,19 +184,19 @@ export const Form: Story = {
         <Skeleton variant="text" width={100} height={14} className="mb-2" />
         <Skeleton variant="rectangular" width="100%" height={40} />
       </div>
-      
+
       {/* Field 2 */}
       <div>
         <Skeleton variant="text" width={120} height={14} className="mb-2" />
         <Skeleton variant="rectangular" width="100%" height={40} />
       </div>
-      
+
       {/* Field 3 */}
       <div>
         <Skeleton variant="text" width={80} height={14} className="mb-2" />
         <Skeleton variant="rectangular" width="100%" height={80} />
       </div>
-      
+
       {/* Button */}
       <Skeleton variant="rectangular" width={120} height={40} />
     </div>
@@ -206,7 +211,7 @@ export const BlogPost: Story = {
     <div className="max-w-2xl">
       {/* Title */}
       <Skeleton variant="text" width="80%" height={32} className="mb-4" />
-      
+
       {/* Meta */}
       <div className="flex items-center gap-3 mb-6">
         <Skeleton variant="circular" width={40} height={40} />
@@ -215,10 +220,15 @@ export const BlogPost: Story = {
           <Skeleton variant="text" width={80} height={12} />
         </div>
       </div>
-      
+
       {/* Featured image */}
-      <Skeleton variant="rectangular" width="100%" height={400} className="mb-6" />
-      
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        height={400}
+        className="mb-6"
+      />
+
       {/* Content */}
       <div className="space-y-2">
         <Skeleton variant="text" width="100%" />
@@ -240,7 +250,12 @@ export const NoAnimation: Story = {
     <div className="flex flex-col gap-4">
       <Skeleton variant="text" width={200} animation={false} />
       <Skeleton variant="circular" width={40} height={40} animation={false} />
-      <Skeleton variant="rectangular" width={300} height={200} animation={false} />
+      <Skeleton
+        variant="rectangular"
+        width={300}
+        height={200}
+        animation={false}
+      />
     </div>
   ),
 };
@@ -258,18 +273,28 @@ export const DarkMode: Story = {
         <Skeleton variant="text" width={200} />
         <Skeleton variant="circular" width={40} height={40} />
         <Skeleton variant="rectangular" width={300} height={200} />
-        
+
         <div className="border border-grey-700 rounded-lg p-4 w-80">
           <div className="flex items-center gap-3 mb-4">
             <Skeleton variant="circular" width={40} height={40} />
             <div className="flex-1">
-              <Skeleton variant="text" width="60%" height={16} className="mb-2" />
+              <Skeleton
+                variant="text"
+                width="60%"
+                height={16}
+                className="mb-2"
+              />
               <Skeleton variant="text" width="40%" height={12} />
             </div>
           </div>
-          
-          <Skeleton variant="rectangular" width="100%" height={200} className="mb-4" />
-          
+
+          <Skeleton
+            variant="rectangular"
+            width="100%"
+            height={200}
+            className="mb-4"
+          />
+
           <Skeleton variant="text" width="100%" className="mb-2" />
           <Skeleton variant="text" width="100%" className="mb-2" />
           <Skeleton variant="text" width="70%" />

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Collaboration History Component
- * 
+ *
  * History and session management for collaborative editing
  * with change tracking, version control, and activity timeline.
- * 
+ *
  * @doc.type component
  * @doc.purpose Collaboration history and session management
  * @doc.layer product
@@ -15,7 +15,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 /**
  * History event types
  */
-export type HistoryEventType = 
+export type HistoryEventType =
   | 'user-joined'
   | 'user-left'
   | 'file-created'
@@ -173,7 +173,7 @@ const HistoryEventItem: React.FC<HistoryEventItemProps> = ({
   return (
     <div className="flex items-start gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <EventIcon type={event.type} userColor={event.userColor} />
-      
+
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {showUser && (
@@ -207,7 +207,7 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, onExpand }) => {
   const formatDuration = useCallback((startTime: number, endTime?: number) => {
     const end = endTime || Date.now();
     const duration = end - startTime;
-    
+
     if (duration < 60000) {
       return '< 1m';
     } else if (duration < 3600000) {
@@ -229,15 +229,26 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, onExpand }) => {
             Session {formatDate(session.startTime)}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatDuration(session.startTime, session.endTime)} • {session.participants.length} participants
+            {formatDuration(session.startTime, session.endTime)} •{' '}
+            {session.participants.length} participants
           </p>
         </div>
         <button
           onClick={onExpand}
           className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       </div>
@@ -245,19 +256,27 @@ const SessionCard: React.FC<SessionCardProps> = ({ session, onExpand }) => {
       <div className="grid grid-cols-2 gap-4 text-xs">
         <div>
           <div className="text-gray-500 dark:text-gray-400">Changes</div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">{session.totalChanges}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {session.totalChanges}
+          </div>
         </div>
         <div>
           <div className="text-gray-500 dark:text-gray-400">Conflicts</div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">{session.conflictsResolved}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {session.conflictsResolved}
+          </div>
         </div>
         <div>
           <div className="text-gray-500 dark:text-gray-400">Files Created</div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">{session.filesCreated}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {session.filesCreated}
+          </div>
         </div>
         <div>
           <div className="text-gray-500 dark:text-gray-400">Files Deleted</div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">{session.filesDeleted}</div>
+          <div className="font-medium text-gray-900 dark:text-gray-100">
+            {session.filesDeleted}
+          </div>
         </div>
       </div>
     </div>
@@ -278,76 +297,82 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
 
   // Mock data - in real implementation, this would come from the collaboration service
-  const mockEvents: HistoryEvent[] = useMemo(() => [
-    {
-      id: '1',
-      type: 'session-started',
-      timestamp: Date.now() - 3600000,
-      userId: 'user1',
-      userName: 'John Doe',
-      userColor: '#3B82F6',
-      data: { description: 'Started collaboration session' },
-    },
-    {
-      id: '2',
-      type: 'user-joined',
-      timestamp: Date.now() - 3500000,
-      userId: 'user2',
-      userName: 'Jane Smith',
-      userColor: '#10B981',
-      data: { description: 'Joined the session' },
-    },
-    {
-      id: '3',
-      type: 'file-created',
-      timestamp: Date.now() - 3400000,
-      userId: 'user1',
-      userName: 'John Doe',
-      userColor: '#3B82F6',
-      data: { fileName: 'src/components/NewComponent.tsx' },
-    },
-    {
-      id: '4',
-      type: 'content-changed',
-      timestamp: Date.now() - 3300000,
-      userId: 'user2',
-      userName: 'Jane Smith',
-      userColor: '#10B981',
-      data: { fileName: 'src/utils/helpers.ts', changes: 5 },
-    },
-    {
-      id: '5',
-      type: 'conflict-resolved',
-      timestamp: Date.now() - 3200000,
-      userId: 'user1',
-      userName: 'John Doe',
-      userColor: '#3B82F6',
-      data: { conflictId: 'conflict-1' },
-    },
-  ], []);
+  const mockEvents: HistoryEvent[] = useMemo(
+    () => [
+      {
+        id: '1',
+        type: 'session-started',
+        timestamp: Date.now() - 3600000,
+        userId: 'user1',
+        userName: 'John Doe',
+        userColor: '#3B82F6',
+        data: { description: 'Started collaboration session' },
+      },
+      {
+        id: '2',
+        type: 'user-joined',
+        timestamp: Date.now() - 3500000,
+        userId: 'user2',
+        userName: 'Jane Smith',
+        userColor: '#10B981',
+        data: { description: 'Joined the session' },
+      },
+      {
+        id: '3',
+        type: 'file-created',
+        timestamp: Date.now() - 3400000,
+        userId: 'user1',
+        userName: 'John Doe',
+        userColor: '#3B82F6',
+        data: { fileName: 'src/components/NewComponent.tsx' },
+      },
+      {
+        id: '4',
+        type: 'content-changed',
+        timestamp: Date.now() - 3300000,
+        userId: 'user2',
+        userName: 'Jane Smith',
+        userColor: '#10B981',
+        data: { fileName: 'src/utils/helpers.ts', changes: 5 },
+      },
+      {
+        id: '5',
+        type: 'conflict-resolved',
+        timestamp: Date.now() - 3200000,
+        userId: 'user1',
+        userName: 'John Doe',
+        userColor: '#3B82F6',
+        data: { conflictId: 'conflict-1' },
+      },
+    ],
+    []
+  );
 
-  const mockSessions: CollaborationSession[] = useMemo(() => [
-    {
-      id: 'session-1',
-      startTime: Date.now() - 3600000,
-      endTime: Date.now() - 1800000,
-      participants: ['John Doe', 'Jane Smith', 'Bob Wilson'],
-      totalChanges: 47,
-      conflictsResolved: 3,
-      filesCreated: 5,
-      filesDeleted: 1,
-    },
-    {
-      id: 'session-2',
-      startTime: Date.now() - 86400000,
-      endTime: Date.now() - 82800000,
-      participants: ['John Doe', 'Alice Brown'],
-      totalChanges: 23,
-      conflictsResolved: 1,
-      filesCreated: 2,
-      filesDeleted: 0,
-    },
-  ], []);
+  const mockSessions: CollaborationSession[] = useMemo(
+    () => [
+      {
+        id: 'session-1',
+        startTime: Date.now() - 3600000,
+        endTime: Date.now() - 1800000,
+        participants: ['John Doe', 'Jane Smith', 'Bob Wilson'],
+        totalChanges: 47,
+        conflictsResolved: 3,
+        filesCreated: 5,
+        filesDeleted: 1,
+      },
+      {
+        id: 'session-2',
+        startTime: Date.now() - 86400000,
+        endTime: Date.now() - 82800000,
+        participants: ['John Doe', 'Alice Brown'],
+        totalChanges: 23,
+        conflictsResolved: 1,
+        filesCreated: 2,
+        filesDeleted: 0,
+      },
+    ],
+    []
+  );
 
   const events = mockEvents.slice(0, maxEvents);
   const sessions = mockSessions;
@@ -380,7 +405,9 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
   }, []);
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-lg shadow-lg ${className}`}>
+    <div
+      className={`bg-white dark:bg-gray-900 rounded-lg shadow-lg ${className}`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <div>
@@ -397,8 +424,18 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
             className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
             title="Export history"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
           </button>
           <button
@@ -406,8 +443,18 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
             className="p-2 text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
             title="Clear history"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>
@@ -420,9 +467,10 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
             onClick={() => setActiveTab('events')}
             className={`
               px-4 py-2 text-sm font-medium transition-colors
-              ${activeTab === 'events'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              ${
+                activeTab === 'events'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }
             `}
           >
@@ -434,9 +482,10 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
             onClick={() => setActiveTab('sessions')}
             className={`
               px-4 py-2 text-sm font-medium transition-colors
-              ${activeTab === 'sessions'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              ${
+                activeTab === 'sessions'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }
             `}
           >
@@ -457,11 +506,8 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {events.map(event => (
-                  <HistoryEventItem
-                    key={event.id}
-                    event={event}
-                  />
+                {events.map((event) => (
+                  <HistoryEventItem key={event.id} event={event} />
                 ))}
               </div>
             )}
@@ -477,13 +523,15 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
                 <p>No sessions recorded yet</p>
               </div>
             ) : (
-              sessions.map(session => (
+              sessions.map((session) => (
                 <SessionCard
                   key={session.id}
                   session={session}
-                  onExpand={() => setExpandedSession(
-                    expandedSession === session.id ? null : session.id
-                  )}
+                  onExpand={() =>
+                    setExpandedSession(
+                      expandedSession === session.id ? null : session.id
+                    )
+                  }
                 />
               ))
             )}
@@ -497,9 +545,7 @@ export const CollaborationHistory: React.FC<CollaborationHistoryProps> = ({
           <div>
             {events.length} events • {sessions.length} sessions
           </div>
-          <div>
-            Last updated: {new Date().toLocaleTimeString()}
-          </div>
+          <div>Last updated: {new Date().toLocaleTimeString()}</div>
         </div>
       </div>
     </div>

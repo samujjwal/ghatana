@@ -266,7 +266,7 @@ export class RoadmapPlanningManager {
    *
    */
   createStrategicGoal(
-    data: Omit<StrategicGoal, 'id' | 'createdAt' | 'status'>,
+    data: Omit<StrategicGoal, 'id' | 'createdAt' | 'status'>
   ): StrategicGoal {
     const goal: StrategicGoal = {
       ...data,
@@ -303,7 +303,11 @@ export class RoadmapPlanningManager {
   /**
    *
    */
-  updateGoalMetric(goalId: string, metricName: string, currentValue: number): void {
+  updateGoalMetric(
+    goalId: string,
+    metricName: string,
+    currentValue: number
+  ): void {
     const goal = this.goals.get(goalId);
     if (!goal) return;
 
@@ -331,7 +335,9 @@ export class RoadmapPlanningManager {
   /**
    *
    */
-  createInitiative(data: Omit<Initiative, 'id' | 'createdAt' | 'updatedAt'>): Initiative {
+  createInitiative(
+    data: Omit<Initiative, 'id' | 'createdAt' | 'updatedAt'>
+  ): Initiative {
     const initiative: Initiative = {
       ...data,
       id: `init-${Date.now()}-${++this.initiativeCounter}`,
@@ -362,7 +368,7 @@ export class RoadmapPlanningManager {
    */
   getInitiativesByGoal(goalId: string): Initiative[] {
     return Array.from(this.initiatives.values()).filter((i) =>
-      i.goalIds.includes(goalId),
+      i.goalIds.includes(goalId)
     );
   }
 
@@ -370,14 +376,18 @@ export class RoadmapPlanningManager {
    *
    */
   getInitiativesByStatus(status: InitiativeStatus): Initiative[] {
-    return Array.from(this.initiatives.values()).filter((i) => i.status === status);
+    return Array.from(this.initiatives.values()).filter(
+      (i) => i.status === status
+    );
   }
 
   /**
    *
    */
   getInitiativesByPriority(priority: InitiativePriority): Initiative[] {
-    return Array.from(this.initiatives.values()).filter((i) => i.priority === priority);
+    return Array.from(this.initiatives.values()).filter(
+      (i) => i.priority === priority
+    );
   }
 
   /**
@@ -435,7 +445,7 @@ export class RoadmapPlanningManager {
    */
   getMilestonesByInitiative(initiativeId: string): Milestone[] {
     return Array.from(this.milestones.values()).filter(
-      (m) => m.initiativeId === initiativeId,
+      (m) => m.initiativeId === initiativeId
     );
   }
 
@@ -452,7 +462,7 @@ export class RoadmapPlanningManager {
           m.status !== 'completed' &&
           m.status !== 'missed' &&
           m.targetDate <= futureDate &&
-          m.targetDate >= new Date(),
+          m.targetDate >= new Date()
       )
       .sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
   }
@@ -461,7 +471,9 @@ export class RoadmapPlanningManager {
    *
    */
   getAtRiskMilestones(): Milestone[] {
-    return Array.from(this.milestones.values()).filter((m) => m.status === 'at-risk');
+    return Array.from(this.milestones.values()).filter(
+      (m) => m.status === 'at-risk'
+    );
   }
 
   /**
@@ -512,9 +524,7 @@ export class RoadmapPlanningManager {
   /**
    *
    */
-  createDependency(
-    data: Omit<Dependency, 'id' | 'createdAt'>,
-  ): Dependency {
+  createDependency(data: Omit<Dependency, 'id' | 'createdAt'>): Dependency {
     const dependency: Dependency = {
       ...data,
       id: `dep-${Date.now()}-${++this.dependencyCounter}`,
@@ -537,7 +547,7 @@ export class RoadmapPlanningManager {
    */
   getDependenciesFor(itemId: string): Dependency[] {
     return Array.from(this.dependencies.values()).filter(
-      (d) => d.sourceId === itemId || d.targetId === itemId,
+      (d) => d.sourceId === itemId || d.targetId === itemId
     );
   }
 
@@ -546,7 +556,7 @@ export class RoadmapPlanningManager {
    */
   getBlockedBy(itemId: string): Dependency[] {
     return Array.from(this.dependencies.values()).filter(
-      (d) => d.targetId === itemId && d.type === 'blocks',
+      (d) => d.targetId === itemId && d.type === 'blocks'
     );
   }
 
@@ -586,7 +596,7 @@ export class RoadmapPlanningManager {
    */
   getAllTimeframes(): Timeframe[] {
     return Array.from(this.timeframes.values()).sort(
-      (a, b) => a.startDate.getTime() - b.startDate.getTime(),
+      (a, b) => a.startDate.getTime() - b.startDate.getTime()
     );
   }
 
@@ -596,7 +606,7 @@ export class RoadmapPlanningManager {
   getCurrentTimeframe(): Timeframe | undefined {
     const now = new Date();
     return Array.from(this.timeframes.values()).find(
-      (t) => t.startDate <= now && t.endDate >= now,
+      (t) => t.startDate <= now && t.endDate >= now
     );
   }
 
@@ -618,7 +628,7 @@ export class RoadmapPlanningManager {
    *
    */
   createRiskAssessment(
-    data: Omit<RiskAssessment, 'id' | 'identifiedDate'>,
+    data: Omit<RiskAssessment, 'id' | 'identifiedDate'>
   ): RiskAssessment {
     const risk: RiskAssessment = {
       ...data,
@@ -642,7 +652,7 @@ export class RoadmapPlanningManager {
    */
   getRisksByInitiative(initiativeId: string): RiskAssessment[] {
     return Array.from(this.risks.values()).filter(
-      (r) => r.initiativeId === initiativeId,
+      (r) => r.initiativeId === initiativeId
     );
   }
 
@@ -651,17 +661,16 @@ export class RoadmapPlanningManager {
    */
   getHighRisks(): RiskAssessment[] {
     return Array.from(this.risks.values()).filter(
-      (r) => (r.level === 'high' || r.level === 'critical') && r.status !== 'mitigated',
+      (r) =>
+        (r.level === 'high' || r.level === 'critical') &&
+        r.status !== 'mitigated'
     );
   }
 
   /**
    *
    */
-  updateRiskStatus(
-    id: string,
-    status: RiskAssessment['status'],
-  ): void {
+  updateRiskStatus(id: string, status: RiskAssessment['status']): void {
     const risk = this.risks.get(id);
     if (risk) {
       risk.status = status;
@@ -707,7 +716,7 @@ export class RoadmapPlanningManager {
    */
   getStakeholdersByInitiative(initiativeId: string): Stakeholder[] {
     return Array.from(this.stakeholders.values()).filter((s) =>
-      s.initiativeIds.includes(initiativeId),
+      s.initiativeIds.includes(initiativeId)
     );
   }
 
@@ -715,7 +724,9 @@ export class RoadmapPlanningManager {
    *
    */
   getHighInfluenceStakeholders(): Stakeholder[] {
-    return Array.from(this.stakeholders.values()).filter((s) => s.influence === 'high');
+    return Array.from(this.stakeholders.values()).filter(
+      (s) => s.influence === 'high'
+    );
   }
 
   /**
@@ -802,7 +813,8 @@ export class RoadmapPlanningManager {
       if (timeframe) {
         items = items.filter(
           (item) =>
-            item.startDate <= timeframe.endDate && item.endDate >= timeframe.startDate,
+            item.startDate <= timeframe.endDate &&
+            item.endDate >= timeframe.startDate
         );
       }
     }
@@ -829,10 +841,12 @@ export class RoadmapPlanningManager {
       if (timeframe) {
         timeframeName = timeframe.name;
         initiatives = initiatives.filter((i) =>
-          timeframe.initiativeIds.includes(i.id),
+          timeframe.initiativeIds.includes(i.id)
         );
         const initiativeIds = new Set(initiatives.map((i) => i.id));
-        milestones = milestones.filter((m) => initiativeIds.has(m.initiativeId));
+        milestones = milestones.filter((m) =>
+          initiativeIds.has(m.initiativeId)
+        );
         risks = risks.filter((r) => initiativeIds.has(r.initiativeId));
       }
     }
@@ -868,18 +882,22 @@ export class RoadmapPlanningManager {
       risksByLevel[risk.level]++;
     }
 
-    const completedMilestones = milestones.filter((m) => m.status === 'completed').length;
+    const completedMilestones = milestones.filter(
+      (m) => m.status === 'completed'
+    ).length;
     const upcomingMilestones = milestones.filter(
       (m) =>
         m.status !== 'completed' &&
         m.status !== 'missed' &&
-        m.targetDate > new Date(),
+        m.targetDate > new Date()
     ).length;
-    const atRiskMilestones = milestones.filter((m) => m.status === 'at-risk').length;
+    const atRiskMilestones = milestones.filter(
+      (m) => m.status === 'at-risk'
+    ).length;
 
     const totalProgress = initiatives.reduce(
       (sum, init) => sum + this.calculateInitiativeProgress(init.id),
-      0,
+      0
     );
     const averageProgress =
       initiatives.length > 0 ? totalProgress / initiatives.length : 0;
@@ -887,7 +905,8 @@ export class RoadmapPlanningManager {
     const now = new Date();
     const onTrackInitiatives = initiatives.filter((init) => {
       if (init.status === 'completed') return true;
-      if (init.status === 'cancelled' || init.status === 'on-hold') return false;
+      if (init.status === 'cancelled' || init.status === 'on-hold')
+        return false;
       const progress = this.calculateInitiativeProgress(init.id);
       const timeElapsed = now.getTime() - init.startDate.getTime();
       const totalTime = init.targetDate.getTime() - init.startDate.getTime();
@@ -904,14 +923,19 @@ export class RoadmapPlanningManager {
       return progress < expectedProgress - 10;
     }).length;
 
-    const totalBudget = initiatives.reduce((sum, init) => sum + (init.budget || 0), 0);
+    const totalBudget = initiatives.reduce(
+      (sum, init) => sum + (init.budget || 0),
+      0
+    );
     const spentBudget = initiatives.reduce((sum, init) => {
       if (!init.budget || !init.actualEffort) return sum;
-      const estimatedCost = (init.actualEffort / init.estimatedEffort) * init.budget;
+      const estimatedCost =
+        (init.actualEffort / init.estimatedEffort) * init.budget;
       return sum + estimatedCost;
     }, 0);
 
-    const budgetUtilization = totalBudget > 0 ? (spentBudget / totalBudget) * 100 : undefined;
+    const budgetUtilization =
+      totalBudget > 0 ? (spentBudget / totalBudget) * 100 : undefined;
 
     return {
       timeframe: timeframeName,
@@ -946,7 +970,7 @@ export class RoadmapPlanningManager {
       if (initiative.actualEffort && initiative.estimatedEffort) {
         return Math.min(
           100,
-          (initiative.actualEffort / initiative.estimatedEffort) * 100,
+          (initiative.actualEffort / initiative.estimatedEffort) * 100
         );
       }
       return 0;
@@ -963,7 +987,8 @@ export class RoadmapPlanningManager {
     if (goal.metrics.length === 0) return 0;
 
     const totalProgress = goal.metrics.reduce((sum, metric) => {
-      const progress = metric.target > 0 ? (metric.current / metric.target) * 100 : 0;
+      const progress =
+        metric.target > 0 ? (metric.current / metric.target) * 100 : 0;
       return sum + Math.min(100, progress);
     }, 0);
 
@@ -1066,7 +1091,7 @@ export function isOverdue(targetDate: Date): boolean {
 export function calculateBurnRate(
   estimatedEffort: number,
   actualEffort: number,
-  daysElapsed: number,
+  daysElapsed: number
 ): number {
   if (daysElapsed === 0) return 0;
   return actualEffort / daysElapsed;
@@ -1079,7 +1104,7 @@ export function estimateCompletionDate(
   startDate: Date,
   estimatedEffort: number,
   actualEffort: number,
-  burnRate: number,
+  burnRate: number
 ): Date | null {
   if (burnRate === 0) return null;
   const remainingEffort = estimatedEffort - actualEffort;
@@ -1103,7 +1128,7 @@ export function formatTimeframe(timeframe: Timeframe): string {
  */
 export function calculateCriticalPath(
   milestones: Milestone[],
-  dependencies: Dependency[],
+  dependencies: Dependency[]
 ): string[] {
   // Simple critical path calculation (can be enhanced with more sophisticated algorithm)
   const milestoneMap = new Map(milestones.map((m) => [m.id, m]));
@@ -1125,7 +1150,7 @@ export function calculateCriticalPath(
 
   // Start with the milestone with the latest target date
   const sorted = [...milestones].sort(
-    (a, b) => b.targetDate.getTime() - a.targetDate.getTime(),
+    (a, b) => b.targetDate.getTime() - a.targetDate.getTime()
   );
 
   if (sorted.length > 0) {
@@ -1145,7 +1170,7 @@ export function calculateCriticalPath(
       if (depMilestones.length === 0) break;
 
       currentMilestone = depMilestones.sort(
-        (a, b) => b.targetDate.getTime() - a.targetDate.getTime(),
+        (a, b) => b.targetDate.getTime() - a.targetDate.getTime()
       )[0];
 
       if (currentMilestone) {
@@ -1160,9 +1185,7 @@ export function calculateCriticalPath(
 /**
  *
  */
-export function prioritizeInitiatives(
-  initiatives: Initiative[],
-): Initiative[] {
+export function prioritizeInitiatives(initiatives: Initiative[]): Initiative[] {
   const priorityScore: Record<InitiativePriority, number> = {
     critical: 4,
     high: 3,
@@ -1185,14 +1208,17 @@ export function prioritizeInitiatives(
  */
 export function identifyBottlenecks(
   milestones: Milestone[],
-  dependencies: Dependency[],
+  dependencies: Dependency[]
 ): string[] {
   // Find milestones that are blocking multiple others
   const blockingCount = new Map<string, number>();
 
   for (const dep of dependencies) {
     if (dep.type === 'blocks') {
-      blockingCount.set(dep.sourceId, (blockingCount.get(dep.sourceId) || 0) + 1);
+      blockingCount.set(
+        dep.sourceId,
+        (blockingCount.get(dep.sourceId) || 0) + 1
+      );
     }
   }
 

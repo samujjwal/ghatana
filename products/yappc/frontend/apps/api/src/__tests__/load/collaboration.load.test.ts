@@ -61,11 +61,17 @@ function percentile(sortedValues: number[], target: number): number {
     return 0;
   }
 
-  const index = Math.max(0, Math.ceil((target / 100) * sortedValues.length) - 1);
+  const index = Math.max(
+    0,
+    Math.ceil((target / 100) * sortedValues.length) - 1
+  );
   return sortedValues[index] ?? 0;
 }
 
-function buildSyntheticOperations(userCount: number, totalOperations: number): SyntheticOperation[] {
+function buildSyntheticOperations(
+  userCount: number,
+  totalOperations: number
+): SyntheticOperation[] {
   const operations: SyntheticOperation[] = [];
 
   for (let index = 0; index < totalOperations; index += 1) {
@@ -140,7 +146,9 @@ function measureBroadcastFanout(
     latencySamplesMs.push(performance.now() - startedAt);
   }
 
-  const sortedLatencies = [...latencySamplesMs].sort((left, right) => left - right);
+  const sortedLatencies = [...latencySamplesMs].sort(
+    (left, right) => left - right
+  );
 
   return {
     totalDeliveries: operations.length * (room.collaborators.size - 1),
@@ -161,7 +169,9 @@ describe('collaboration load validation', () => {
       (count, socket) => count + socket.messages.length,
       0
     );
-    const conflictRate = operations.filter((operation) => operation.conflict).length / operations.length;
+    const conflictRate =
+      operations.filter((operation) => operation.conflict).length /
+      operations.length;
 
     expect(room.collaborators.size).toBe(USER_COUNT);
     expect(metrics.totalDeliveries).toBe(TOTAL_OPERATIONS * (USER_COUNT - 1));

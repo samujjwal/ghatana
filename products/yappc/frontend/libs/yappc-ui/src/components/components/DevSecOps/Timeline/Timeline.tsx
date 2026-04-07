@@ -9,11 +9,16 @@
 import { Flag as FlagIcon } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 
-import { Box, LinearProgress, Surface as Paper, Tooltip, Typography } from '@ghatana/design-system';
+import {
+  Box,
+  LinearProgress,
+  Surface as Paper,
+  Tooltip,
+  Typography,
+} from '@ghatana/design-system';
 
 import type { TimelineProps } from './types';
 import { TimelineUtils } from './utils';
-
 
 const ROW_HEIGHT = 48;
 const HEADER_HEIGHT = 60;
@@ -37,7 +42,7 @@ const HEADER_HEIGHT = 60;
  * />
  * ```
  */
- 
+
 export function Timeline({
   items,
   milestones = [],
@@ -101,7 +106,12 @@ export function Timeline({
     return (
       <Box className="w-full p-4">
         <LinearProgress />
-        <Typography as="p" className="text-sm" color="text.secondary" className="mt-4 text-center">
+        <Typography
+          as="p"
+          className="text-sm"
+          color="text.secondary"
+          className="mt-4 text-center"
+        >
           Loading timeline...
         </Typography>
       </Box>
@@ -116,7 +126,9 @@ export function Timeline({
     >
       {/* Header with date labels */}
       <Box
-        className="sticky top-[0px] z-[2] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" style={{ borderBottom: '2', height: HEADER_HEIGHT }} >
+        className="sticky top-[0px] z-[2] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+        style={{ borderBottom: '2', height: HEADER_HEIGHT }}
+      >
         <svg width="100%" height={HEADER_HEIGHT}>
           {/* Major ticks */}
           {grid.majorTicks.map((tick, i) => (
@@ -158,7 +170,7 @@ export function Timeline({
       </Box>
 
       {/* Timeline content */}
-      <Box className="relative" style={{ minHeight: 'timelineHeight' }} >
+      <Box className="relative" style={{ minHeight: 'timelineHeight' }}>
         <svg width="100%" height={timelineHeight}>
           {/* Grid lines */}
           {grid.majorTicks.map((tick, i) => (
@@ -195,7 +207,10 @@ export function Timeline({
             <Tooltip key={`milestone-${i}`} title={pos.label} placement="top">
               <g
                 onClick={() => onMilestoneClick?.(pos.milestone)}
-                style={{ cursor: onMilestoneClick ? 'pointer' : 'default', left: 'pos.x - 12' }}
+                style={{
+                  cursor: onMilestoneClick ? 'pointer' : 'default',
+                  left: 'pos.x - 12',
+                }}
               >
                 <line
                   x1={pos.x}
@@ -205,8 +220,7 @@ export function Timeline({
                   stroke="var(--ds-warning-500, #f59e0b)"
                   strokeWidth={2}
                 />
-                <FlagIcon
-                  className="absolute top-[8px] text-amber-600 text-2xl" />
+                <FlagIcon className="absolute top-[8px] text-amber-600 text-2xl" />
               </g>
             </Tooltip>
           ))}
@@ -227,7 +241,8 @@ export function Timeline({
               }}
             >
               <Typography
-                as="span" className="text-xs text-gray-500"
+                as="span"
+                className="text-xs text-gray-500"
                 className="font-medium whitespace-nowrap overflow-hidden text-ellipsis text-white"
               >
                 {pos.label}

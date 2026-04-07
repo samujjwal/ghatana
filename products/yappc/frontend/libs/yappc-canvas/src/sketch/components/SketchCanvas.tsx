@@ -12,7 +12,14 @@
 
 import type { KonvaEventObject } from 'konva/lib/Node';
 import type { Stage as StageType } from 'konva/lib/Stage';
-import React, { useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { Stage, Layer, Line, Rect, Ellipse, Arrow } from 'react-konva';
 
 import { useSketchTools } from '../hooks/useSketchTools';
@@ -76,7 +83,6 @@ export interface SketchCanvasRef {
   /** Clear all elements */
   clear: () => void;
 }
-
 
 /**
  * Main sketch canvas component for freehand drawing and whiteboarding.
@@ -346,7 +352,14 @@ export const SketchCanvas = forwardRef<SketchCanvasRef, SketchCanvasProps>(
           return (
             <Line
               key={element.id}
-              points={data.points || [data.x, data.y, data.x + data.width, data.y + data.height]}
+              points={
+                data.points || [
+                  data.x,
+                  data.y,
+                  data.x + data.width,
+                  data.y + data.height,
+                ]
+              }
               stroke={data.stroke}
               strokeWidth={data.strokeWidth}
               lineCap="round"
@@ -358,7 +371,14 @@ export const SketchCanvas = forwardRef<SketchCanvasRef, SketchCanvasProps>(
           return (
             <Arrow
               key={element.id}
-              points={data.points || [data.x, data.y, data.x + data.width, data.y + data.height]}
+              points={
+                data.points || [
+                  data.x,
+                  data.y,
+                  data.x + data.width,
+                  data.y + data.height,
+                ]
+              }
               stroke={data.stroke}
               strokeWidth={data.strokeWidth}
               fill={data.stroke}
@@ -416,7 +436,9 @@ export const SketchCanvas = forwardRef<SketchCanvasRef, SketchCanvasProps>(
                 lineCap="round"
                 lineJoin="round"
                 globalCompositeOperation={
-                  currentStroke.tool === 'eraser' ? 'destination-out' : 'source-over'
+                  currentStroke.tool === 'eraser'
+                    ? 'destination-out'
+                    : 'source-over'
                 }
               />
             )}
@@ -448,15 +470,17 @@ export const SketchCanvas = forwardRef<SketchCanvasRef, SketchCanvasProps>(
               />
             )}
 
-            {currentShape && (currentShape.type === 'line' || currentShape.type === 'arrow') && (
-              <Line
-                points={currentShape.points || []}
-                stroke={currentShape.stroke}
-                strokeWidth={currentShape.strokeWidth}
-                dash={[5, 5]}
-                lineCap="round"
-              />
-            )}
+            {currentShape &&
+              (currentShape.type === 'line' ||
+                currentShape.type === 'arrow') && (
+                <Line
+                  points={currentShape.points || []}
+                  stroke={currentShape.stroke}
+                  strokeWidth={currentShape.strokeWidth}
+                  dash={[5, 5]}
+                  lineCap="round"
+                />
+              )}
           </Layer>
         </Stage>
       </div>

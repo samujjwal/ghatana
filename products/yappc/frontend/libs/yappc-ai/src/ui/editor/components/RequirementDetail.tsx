@@ -76,7 +76,9 @@ export function RequirementDetail({
   const modeClass = darkMode ? 'dark' : 'light';
 
   return (
-    <div className={`requirement-detail requirement-detail--${modeClass} ${className}`}>
+    <div
+      className={`requirement-detail requirement-detail--${modeClass} ${className}`}
+    >
       {/* Header */}
       <div className="requirement-detail__header">
         <div className="requirement-detail__title-section">
@@ -86,10 +88,14 @@ export function RequirementDetail({
 
         {/* Badges */}
         <div className="requirement-detail__badges">
-          <span className={`requirement-detail__priority requirement-detail__priority--${getPriorityColor()}`}>
+          <span
+            className={`requirement-detail__priority requirement-detail__priority--${getPriorityColor()}`}
+          >
             {requirement.priority}
           </span>
-          <span className={`requirement-detail__status requirement-detail__status--${getStatusColor()}`}>
+          <span
+            className={`requirement-detail__status requirement-detail__status--${getStatusColor()}`}
+          >
             {requirement.status}
           </span>
         </div>
@@ -99,7 +105,9 @@ export function RequirementDetail({
       {requirement.description && (
         <div className="requirement-detail__section">
           <h4 className="requirement-detail__section-title">Description</h4>
-          <p className="requirement-detail__description">{requirement.description}</p>
+          <p className="requirement-detail__description">
+            {requirement.description}
+          </p>
         </div>
       )}
 
@@ -107,7 +115,9 @@ export function RequirementDetail({
       {requirement.componentId && (
         <div className="requirement-detail__section">
           <h4 className="requirement-detail__section-title">Component</h4>
-          <p className="requirement-detail__component">{requirement.componentId}</p>
+          <p className="requirement-detail__component">
+            {requirement.componentId}
+          </p>
         </div>
       )}
 
@@ -128,10 +138,16 @@ export function RequirementDetail({
       {/* Actions */}
       {!readOnly && (
         <div className="requirement-detail__actions">
-          <button className="requirement-detail__button requirement-detail__button--primary" onClick={onEdit}>
+          <button
+            className="requirement-detail__button requirement-detail__button--primary"
+            onClick={onEdit}
+          >
             Edit
           </button>
-          <button className="requirement-detail__button requirement-detail__button--danger" onClick={onDelete}>
+          <button
+            className="requirement-detail__button requirement-detail__button--danger"
+            onClick={onDelete}
+          >
             Delete
           </button>
         </div>

@@ -101,7 +101,10 @@ const verticalSizeClasses: Record<DrawerSize, string> = {
 /**
  * Position class mappings (placement and animation)
  */
-const positionClasses: Record<DrawerPosition, { container: string; enter: string; exit: string }> = {
+const positionClasses: Record<
+  DrawerPosition,
+  { container: string; enter: string; exit: string }
+> = {
   left: {
     container: 'left-0 top-0 bottom-0',
     enter: 'data-[state=open]:animate-slide-in-from-left',
@@ -126,14 +129,14 @@ const positionClasses: Record<DrawerPosition, { container: string; enter: string
 
 /**
  * Drawer - Slide-in panel component for navigation or content
- * 
+ *
  * Built on Base UI Dialog with slide animations. Can appear from any side
  * of the screen.
- * 
+ *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * 
+ *
  * <Drawer
  *   open={open}
  *   onOpenChange={setOpen}
@@ -143,7 +146,7 @@ const positionClasses: Record<DrawerPosition, { container: string; enter: string
  *   <p>Drawer content goes here</p>
  * </Drawer>
  * ```
- * 
+ *
  * @example
  * ```tsx
  * <Drawer
@@ -177,7 +180,9 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
     ref
   ) => {
     const isHorizontal = position === 'left' || position === 'right';
-    const sizeClasses = isHorizontal ? horizontalSizeClasses[size] : verticalSizeClasses[size];
+    const sizeClasses = isHorizontal
+      ? horizontalSizeClasses[size]
+      : verticalSizeClasses[size];
     const positionConfig = positionClasses[position];
 
     return (
@@ -190,7 +195,9 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
               'data-[state=open]:animate-in data-[state=open]:fade-in-0',
               'data-[state=closed]:animate-out data-[state=closed]:fade-out-0'
             )}
-            onClick={closeOnBackdropClick ? () => onOpenChange?.(false) : undefined}
+            onClick={
+              closeOnBackdropClick ? () => onOpenChange?.(false) : undefined
+            }
           />
         )}
 
@@ -235,7 +242,12 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </BaseDialog.Close>
                 )}
@@ -244,13 +256,17 @@ export const Drawer = React.forwardRef<HTMLDivElement, DrawerProps>(
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              <BaseDialog.Description className="sr-only">Drawer content</BaseDialog.Description>
+              <BaseDialog.Description className="sr-only">
+                Drawer content
+              </BaseDialog.Description>
               {children}
             </div>
 
             {/* Footer */}
             {footer && (
-              <div className="px-6 py-4 border-t border-grey-200 dark:border-grey-700">{footer}</div>
+              <div className="px-6 py-4 border-t border-grey-200 dark:border-grey-700">
+                {footer}
+              </div>
             )}
           </BaseDialog.Popup>
         </BaseDialog.Portal>

@@ -48,11 +48,14 @@ export interface ShortcutConflict {
  * Normalize key combination string for consistent matching
  */
 function normalizeKeys(keys: string): string {
-  const parts = keys.toLowerCase().split('+').map(k => k.trim());
+  const parts = keys
+    .toLowerCase()
+    .split('+')
+    .map((k) => k.trim());
   const modifiers: Set<string> = new Set();
   let mainKey = '';
 
-  parts.forEach(part => {
+  parts.forEach((part) => {
     // Normalize cmd/meta to unified 'meta'
     if (part === 'cmd' || part === 'command' || part === 'meta') {
       modifiers.add('meta');
@@ -90,12 +93,12 @@ function getEventModifiers(event: KeyboardEvent): Set<string> {
 function matchesShortcut(event: KeyboardEvent, keys: string): boolean {
   const normalized = normalizeKeys(keys);
   const mods = getEventModifiers(event);
-  
+
   const keyParts = normalized.split('+');
   const expectedMods = new Set<string>();
   let expectedKey = '';
 
-  keyParts.forEach(part => {
+  keyParts.forEach((part) => {
     if (['ctrl', 'alt', 'shift', 'meta'].includes(part)) {
       expectedMods.add(part);
     } else {
@@ -133,7 +136,7 @@ export class ShortcutRegistry {
     }
 
     const normalized = normalizeKeys(shortcut.keys);
-    
+
     this.shortcuts.set(shortcut.id, {
       ...shortcut,
       enabled: shortcut.enabled ?? true,
@@ -217,7 +220,7 @@ export class ShortcutRegistry {
    * Get shortcuts by category
    */
   getByCategory(category: string): KeyboardShortcut[] {
-    return this.getAll().filter(s => s.category === category);
+    return this.getAll().filter((s) => s.category === category);
   }
 
   /**
@@ -231,8 +234,10 @@ export class ShortcutRegistry {
     for (const [keys, ids] of this.keyMap.entries()) {
       if (ids.size > 1) {
         const shortcuts = Array.from(ids)
-          .map(id => this.shortcuts.get(id))
-          .filter((s): s is KeyboardShortcut => s !== undefined && s.enabled !== false);
+          .map((id) => this.shortcuts.get(id))
+          .filter(
+            (s): s is KeyboardShortcut => s !== undefined && s.enabled !== false
+          );
 
         if (shortcuts.length > 1) {
           conflicts.push({ keys, shortcuts });
@@ -260,11 +265,12 @@ export class ShortcutRegistry {
 
     // Get enabled shortcuts matching this key combination
     const matchingShortcuts = Array.from(ids)
-      .map(id => this.shortcuts.get(id))
-      .filter((s): s is KeyboardShortcut => 
-        s !== undefined && 
-        s.enabled !== false &&
-        matchesShortcut(event, s.keys)
+      .map((id) => this.shortcuts.get(id))
+      .filter(
+        (s): s is KeyboardShortcut =>
+          s !== undefined &&
+          s.enabled !== false &&
+          matchesShortcut(event, s.keys)
       )
       .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
@@ -272,7 +278,7 @@ export class ShortcutRegistry {
 
     // Execute highest priority shortcut
     const shortcut = matchingShortcuts[0];
-    
+
     if (shortcut.preventDefault) {
       event.preventDefault();
       event.stopPropagation();
@@ -348,9 +354,9 @@ export function useKeyboardShortcuts(
   useEffect(() => {
     if (!enabled) return;
 
-    const ids = shortcuts.map(s => s.id);
+    const ids = shortcuts.map((s) => s.id);
 
-    shortcuts.forEach(shortcut => {
+    shortcuts.forEach((shortcut) => {
       try {
         registryRef.current.register(shortcut);
       } catch (error) {
@@ -363,7 +369,7 @@ export function useKeyboardShortcuts(
     setConflicts(registryRef.current.detectConflicts());
 
     return () => {
-      ids.forEach(id => registryRef.current.unregister(id));
+      ids.forEach((id) => registryRef.current.unregister(id));
     };
   }, [shortcuts, enabled]);
 
@@ -394,16 +400,16 @@ export const CANVAS_SHORTCUTS = {
   PAN_DOWN: { keys: 'shift+down', description: 'Pan canvas down' },
   PAN_LEFT: { keys: 'shift+left', description: 'Pan canvas left' },
   PAN_RIGHT: { keys: 'shift+right', description: 'Pan canvas right' },
-  
+
   // Zoom
   ZOOM_IN: { keys: 'ctrl+=', description: 'Zoom in' },
   ZOOM_OUT: { keys: 'ctrl+-', description: 'Zoom out' },
   ZOOM_FIT: { keys: 'ctrl+0', description: 'Fit to screen' },
-  
+
   // Selection
   SELECT_ALL: { keys: 'ctrl+a', description: 'Select all' },
   DESELECT: { keys: 'escape', description: 'Clear selection' },
-  
+
   // Editing
   UNDO: { keys: 'ctrl+z', description: 'Undo' },
   REDO: { keys: 'ctrl+shift+z', description: 'Redo' },
@@ -411,17 +417,17 @@ export const CANVAS_SHORTCUTS = {
   COPY: { keys: 'ctrl+c', description: 'Copy' },
   PASTE: { keys: 'ctrl+v', description: 'Paste' },
   DELETE: { keys: 'delete', description: 'Delete selection' },
-  
+
   // Document
   SAVE: { keys: 'ctrl+s', description: 'Save' },
   EXPORT: { keys: 'ctrl+e', description: 'Export' },
-  
+
   // Layout
   ALIGN_LEFT: { keys: 'ctrl+shift+l', description: 'Align left' },
   ALIGN_RIGHT: { keys: 'ctrl+shift+r', description: 'Align right' },
   ALIGN_TOP: { keys: 'ctrl+shift+t', description: 'Align top' },
   ALIGN_BOTTOM: { keys: 'ctrl+shift+b', description: 'Align bottom' },
-  
+
   // Layers
   BRING_FORWARD: { keys: 'ctrl+]', description: 'Bring forward' },
   SEND_BACKWARD: { keys: 'ctrl+[', description: 'Send backward' },

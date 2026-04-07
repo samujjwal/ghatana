@@ -27,7 +27,9 @@ export class TimelineUtils {
    * @param value - Date-compatible input
    * @returns Valid Date instance or null if input is invalid
    */
-  static parseDate(value: Date | string | number | null | undefined): Date | null {
+  static parseDate(
+    value: Date | string | number | null | undefined
+  ): Date | null {
     if (value == null) {
       return null;
     }
@@ -60,7 +62,14 @@ export class TimelineUtils {
     );
 
     // Minimum days to display based on view mode
-    const minDays = viewMode === 'day' ? 7 : viewMode === 'week' ? 30 : viewMode === 'month' ? 90 : 365;
+    const minDays =
+      viewMode === 'day'
+        ? 7
+        : viewMode === 'week'
+          ? 30
+          : viewMode === 'month'
+            ? 90
+            : 365;
     const displayDays = Math.max(totalDays, minDays);
 
     const pixelsPerDay = width / displayDays;
@@ -89,7 +98,8 @@ export class TimelineUtils {
     }
 
     const daysSinceStart =
-      (normalizedDate.getTime() - scale.startDate.getTime()) / (1000 * 60 * 60 * 24);
+      (normalizedDate.getTime() - scale.startDate.getTime()) /
+      (1000 * 60 * 60 * 24);
     return daysSinceStart * scale.pixelsPerDay;
   }
 
@@ -108,9 +118,21 @@ export class TimelineUtils {
 
     // Set interval based on view mode
     const majorInterval =
-      viewMode === 'day' ? 1 : viewMode === 'week' ? 7 : viewMode === 'month' ? 30 : 90;
+      viewMode === 'day'
+        ? 1
+        : viewMode === 'week'
+          ? 7
+          : viewMode === 'month'
+            ? 30
+            : 90;
     const minorInterval =
-      viewMode === 'day' ? 0.5 : viewMode === 'week' ? 1 : viewMode === 'month' ? 7 : 30;
+      viewMode === 'day'
+        ? 0.5
+        : viewMode === 'week'
+          ? 1
+          : viewMode === 'month'
+            ? 7
+            : 30;
 
     // Generate major ticks
     while (currentDate <= endDate) {
@@ -123,7 +145,9 @@ export class TimelineUtils {
       });
 
       // Add days based on interval
-      currentDate = new Date(currentDate.getTime() + majorInterval * 24 * 60 * 60 * 1000);
+      currentDate = new Date(
+        currentDate.getTime() + majorInterval * 24 * 60 * 60 * 1000
+      );
     }
 
     // Generate minor ticks (if space allows)
@@ -138,7 +162,9 @@ export class TimelineUtils {
           isMajor: false,
         });
 
-        currentDate = new Date(currentDate.getTime() + minorInterval * 24 * 60 * 60 * 1000);
+        currentDate = new Date(
+          currentDate.getTime() + minorInterval * 24 * 60 * 60 * 1000
+        );
       }
     }
 

@@ -35,7 +35,8 @@ describe('RateLimitResolver', () => {
   beforeEach(() => {
     // GIVEN: Fresh mocks and resolver instance
     mockPrisma = new PrismaClient() as jest.Mocked<PrismaClient>;
-    mockRateLimitService = new RateLimitingService() as jest.Mocked<RateLimitingService>;
+    mockRateLimitService =
+      new RateLimitingService() as jest.Mocked<RateLimitingService>;
 
     resolver = new RateLimitResolver(mockRateLimitService, mockPrisma);
 
@@ -225,11 +226,7 @@ describe('RateLimitResolver', () => {
         // WHEN: Request upgrade
         // THEN: Should throw error
         await expect(
-          resolver.Mutation.requestUpgrade(
-            {},
-            { requestedTier: 'pro' },
-            {}
-          )
+          resolver.Mutation.requestUpgrade({}, { requestedTier: 'pro' }, {})
         ).rejects.toThrow('User not authenticated');
       });
     });
@@ -357,9 +354,7 @@ describe('RateLimitResolver', () => {
     it('should handle database errors gracefully', async () => {
       // GIVEN: Database error
       (mockPrisma.rateLimitConfig as unknown) = {
-        findUnique: jest
-          .fn()
-          .mockRejectedValue(new Error('Database error')),
+        findUnique: jest.fn().mockRejectedValue(new Error('Database error')),
       };
 
       // WHEN: Query config
@@ -370,4 +365,3 @@ describe('RateLimitResolver', () => {
     });
   });
 });
-

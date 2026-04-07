@@ -6,7 +6,10 @@ import type { StackProps as GlobalStackProps, StackGap } from '@yappc/ui';
 
 export type { GlobalStackProps as StackProps };
 
-export interface LegacyStackProps extends Omit<GlobalStackProps, 'gap' | 'align' | 'justify' | 'wrap'> {
+export interface LegacyStackProps extends Omit<
+  GlobalStackProps,
+  'gap' | 'align' | 'justify' | 'wrap'
+> {
   spacing?: string;
   align?: string;
   alignItems?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
@@ -27,7 +30,10 @@ function mapSpacing(spacing?: string): StackGap | undefined {
   return spacing;
 }
 
-function mapAlign(align?: string, alignItems?: LegacyStackProps['alignItems']): GlobalStackProps['align'] {
+function mapAlign(
+  align?: string,
+  alignItems?: LegacyStackProps['alignItems']
+): GlobalStackProps['align'] {
   if (alignItems) {
     return alignItems;
   }
@@ -47,7 +53,10 @@ function mapAlign(align?: string, alignItems?: LegacyStackProps['alignItems']): 
   }
 }
 
-function mapJustify(justify?: string, justifyContent?: LegacyStackProps['justifyContent']): GlobalStackProps['justify'] {
+function mapJustify(
+  justify?: string,
+  justifyContent?: LegacyStackProps['justifyContent']
+): GlobalStackProps['justify'] {
   if (justifyContent) {
     return justifyContent;
   }
@@ -85,28 +94,30 @@ function mapWrap(wrap?: string | boolean): GlobalStackProps['wrap'] {
   }
 }
 
-export const Stack = React.forwardRef<HTMLElement, LegacyStackProps>((props, ref) => {
-  const {
-    spacing,
-    align,
-    alignItems,
-    justify,
-    justifyContent,
-    wrap,
-    className,
-    ...rest
-  } = props;
+export const Stack = React.forwardRef<HTMLElement, LegacyStackProps>(
+  (props, ref) => {
+    const {
+      spacing,
+      align,
+      alignItems,
+      justify,
+      justifyContent,
+      wrap,
+      className,
+      ...rest
+    } = props;
 
-  return React.createElement(GlobalStack, {
-    ref,
-    gap: mapSpacing(spacing),
-    align: mapAlign(align, alignItems),
-    justify: mapJustify(justify, justifyContent),
-    wrap: mapWrap(wrap),
-    className,
-    ...rest,
-  });
-});
+    return React.createElement(GlobalStack, {
+      ref,
+      gap: mapSpacing(spacing),
+      align: mapAlign(align, alignItems),
+      justify: mapJustify(justify, justifyContent),
+      wrap: mapWrap(wrap),
+      className,
+      ...rest,
+    });
+  }
+);
 
 Stack.displayName = 'Stack';
 

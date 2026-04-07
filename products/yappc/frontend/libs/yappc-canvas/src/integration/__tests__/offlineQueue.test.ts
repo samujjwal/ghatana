@@ -22,7 +22,7 @@ describe('OfflineQueue', () => {
       removeItem: (key: string) => {
         delete storage[key];
       },
-      clear: () => Object.keys(storage).forEach(key => delete storage[key]),
+      clear: () => Object.keys(storage).forEach((key) => delete storage[key]),
       key: (index: number) => Object.keys(storage)[index] || null,
       length: Object.keys(storage).length,
     };
@@ -61,17 +61,42 @@ describe('OfflineQueue', () => {
         enablePersistence: false,
       });
 
-      smallQueue.enqueue({ documentId: 'doc-1', operation: 'update', data: {}, maxRetries: 3 });
-      smallQueue.enqueue({ documentId: 'doc-2', operation: 'update', data: {}, maxRetries: 3 });
+      smallQueue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: {},
+        maxRetries: 3,
+      });
+      smallQueue.enqueue({
+        documentId: 'doc-2',
+        operation: 'update',
+        data: {},
+        maxRetries: 3,
+      });
 
       expect(() => {
-        smallQueue.enqueue({ documentId: 'doc-3', operation: 'update', data: {}, maxRetries: 3 });
+        smallQueue.enqueue({
+          documentId: 'doc-3',
+          operation: 'update',
+          data: {},
+          maxRetries: 3,
+        });
       }).toThrow('Queue full');
     });
 
     it('should generate unique IDs', () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: {}, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-2', operation: 'update', data: {}, maxRetries: 3 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: {},
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-2',
+        operation: 'update',
+        data: {},
+        maxRetries: 3,
+      });
 
       const operations = queue.getAll();
       expect(operations[0].id).not.toBe(operations[1].id);
@@ -80,9 +105,24 @@ describe('OfflineQueue', () => {
 
   describe('Queue Management', () => {
     beforeEach(() => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-2', operation: 'update', data: { b: 2 }, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { c: 3 }, maxRetries: 3 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-2',
+        operation: 'update',
+        data: { b: 2 },
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { c: 3 },
+        maxRetries: 3,
+      });
     });
 
     it('should get all operations', () => {
@@ -93,7 +133,7 @@ describe('OfflineQueue', () => {
     it('should filter by document', () => {
       const doc1Ops = queue.getByDocument('doc-1');
       expect(doc1Ops).toHaveLength(2);
-      expect(doc1Ops.every(op => op.documentId === 'doc-1')).toBe(true);
+      expect(doc1Ops.every((op) => op.documentId === 'doc-1')).toBe(true);
     });
 
     it('should clear specific document queue', () => {
@@ -111,25 +151,40 @@ describe('OfflineQueue', () => {
 
   describe('Replay Operations', () => {
     it('should replay queued operations successfully', async () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { b: 2 }, maxRetries: 3 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { b: 2 },
+        maxRetries: 3,
+      });
 
       const mockPush = vi.fn().mockResolvedValue({ success: true });
       const results = await queue.replay(mockPush);
 
       expect(results).toHaveLength(2);
-      expect(results.every(r => r.success)).toBe(true);
+      expect(results.every((r) => r.success)).toBe(true);
       expect(queue.size()).toBe(0); // Queue cleared after successful replay
     });
 
     it('should handle replay failures', async () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-
-      const mockPush = vi.fn().mockResolvedValue({ 
-        success: false, 
-        error: { message: 'Server error' } 
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
       });
-      
+
+      const mockPush = vi.fn().mockResolvedValue({
+        success: false,
+        error: { message: 'Server error' },
+      });
+
       const results = await queue.replay(mockPush);
 
       expect(results).toHaveLength(1);
@@ -138,10 +193,15 @@ describe('OfflineQueue', () => {
     });
 
     it('should remove operations after max retries', async () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 2 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 2,
+      });
 
       const mockPush = vi.fn().mockResolvedValue({ success: false, error: {} });
-      
+
       // Retry 3 times (initial + 2 retries)
       await queue.replay(mockPush);
       await queue.replay(mockPush);
@@ -151,9 +211,24 @@ describe('OfflineQueue', () => {
     });
 
     it('should batch operations by document', async () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { b: 2 }, maxRetries: 3 });
-      queue.enqueue({ documentId: 'doc-2', operation: 'update', data: { c: 3 }, maxRetries: 3 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { b: 2 },
+        maxRetries: 3,
+      });
+      queue.enqueue({
+        documentId: 'doc-2',
+        operation: 'update',
+        data: { c: 3 },
+        maxRetries: 3,
+      });
 
       const mockPush = vi.fn().mockResolvedValue({ success: true });
       await queue.replay(mockPush);
@@ -165,11 +240,11 @@ describe('OfflineQueue', () => {
   describe('Conflict Detection', () => {
     it('should detect conflicts with server changes', () => {
       const queuedTime = Date.now();
-      queue.enqueue({ 
-        documentId: 'doc-1', 
-        operation: 'update', 
-        data: { a: 1 }, 
-        maxRetries: 3 
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
       });
 
       const serverChanges: CanvasChange[] = [
@@ -189,7 +264,12 @@ describe('OfflineQueue', () => {
     });
 
     it('should not detect conflicts for different documents', () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
 
       const serverChanges: CanvasChange[] = [
         {
@@ -231,7 +311,11 @@ describe('OfflineQueue', () => {
         version: 2,
       };
 
-      const resolved = queue.resolveConflict(queuedOp, serverChange, 'server-wins');
+      const resolved = queue.resolveConflict(
+        queuedOp,
+        serverChange,
+        'server-wins'
+      );
       expect(resolved).toEqual(serverChange);
     });
 
@@ -257,7 +341,11 @@ describe('OfflineQueue', () => {
         version: 2,
       };
 
-      const resolved = queue.resolveConflict(queuedOp, serverChange, 'last-write-wins');
+      const resolved = queue.resolveConflict(
+        queuedOp,
+        serverChange,
+        'last-write-wins'
+      );
       expect(resolved.timestamp).toBe(3000);
     });
 
@@ -294,19 +382,29 @@ describe('OfflineQueue', () => {
 
   describe('Persistence', () => {
     it('should persist queue to localStorage', () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-      
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
+
       const stored = localStorage.getItem('test-queue');
       expect(stored).toBeTruthy();
-      
+
       const parsed = JSON.parse(stored!);
       expect(parsed).toHaveLength(1);
       expect(parsed[0].documentId).toBe('doc-1');
     });
 
     it('should load queue from localStorage', () => {
-      queue.enqueue({ documentId: 'doc-1', operation: 'update', data: { a: 1 }, maxRetries: 3 });
-      
+      queue.enqueue({
+        documentId: 'doc-1',
+        operation: 'update',
+        data: { a: 1 },
+        maxRetries: 3,
+      });
+
       // Create new queue instance
       const newQueue = new OfflineQueue({
         maxQueueSize: 100,
@@ -314,7 +412,7 @@ describe('OfflineQueue', () => {
         enablePersistence: true,
         storageKey: 'test-queue',
       });
-      
+
       expect(newQueue.size()).toBe(1);
     });
   });

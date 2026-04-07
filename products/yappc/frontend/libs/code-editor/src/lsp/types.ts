@@ -1,9 +1,9 @@
 /**
  * LSP Types
- * 
+ *
  * Core type definitions for Language Server Protocol client.
  * Extracted to prevent circular dependencies.
- * 
+ *
  * @doc.type types
  * @doc.purpose LSP type definitions
  * @doc.layer code-editor/lsp

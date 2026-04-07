@@ -6,9 +6,17 @@ import type { SwitchProps as GlobalSwitchProps } from '@yappc/ui';
 
 export type { GlobalSwitchProps as SwitchProps };
 
-type LegacyColor = 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+type LegacyColor =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'grey';
 
-type LegacyProps = Omit<GlobalSwitchProps, 'tone'> & { colorScheme?: LegacyColor };
+type LegacyProps = Omit<GlobalSwitchProps, 'tone'> & {
+  colorScheme?: LegacyColor;
+};
 
 const toneMap: Record<LegacyColor, GlobalSwitchProps['tone']> = {
   primary: 'primary',
@@ -19,15 +27,17 @@ const toneMap: Record<LegacyColor, GlobalSwitchProps['tone']> = {
   grey: 'neutral',
 };
 
-export const Switch = React.forwardRef<HTMLButtonElement, LegacyProps>((props, ref) => {
-  const { colorScheme = 'primary', ...rest } = props;
+export const Switch = React.forwardRef<HTMLButtonElement, LegacyProps>(
+  (props, ref) => {
+    const { colorScheme = 'primary', ...rest } = props;
 
-  return React.createElement(GlobalSwitch, {
-    ref,
-    tone: toneMap[colorScheme] ?? 'primary',
-    ...rest,
-  });
-});
+    return React.createElement(GlobalSwitch, {
+      ref,
+      tone: toneMap[colorScheme] ?? 'primary',
+      ...rest,
+    });
+  }
+);
 
 Switch.displayName = 'Switch';
 

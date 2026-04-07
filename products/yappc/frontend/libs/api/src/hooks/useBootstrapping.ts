@@ -19,7 +19,6 @@ import {
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
-
 import {
   sessionAtom,
   conversationHistoryAtom,
@@ -106,18 +105,21 @@ export function useBootstrapSession(sessionId: string | undefined) {
 
   const runBootstrapSessionQuery = useQuery as unknown as (
     query: unknown,
-    options: unknown,
+    options: unknown
   ) => BootstrapSessionQueryState;
-  
-  const { data, loading, error, refetch } = runBootstrapSessionQuery(GET_BOOTSTRAP_SESSION, {
-    variables: { id: sessionId },
-    skip: !sessionId,
-    onCompleted: (queryData: BootstrapSessionQueryResult) => {
-      if (queryData?.bootstrapSession) {
-        setSession(queryData.bootstrapSession);
-      }
-    },
-  });
+
+  const { data, loading, error, refetch } = runBootstrapSessionQuery(
+    GET_BOOTSTRAP_SESSION,
+    {
+      variables: { id: sessionId },
+      skip: !sessionId,
+      onCompleted: (queryData: BootstrapSessionQueryResult) => {
+        if (queryData?.bootstrapSession) {
+          setSession(queryData.bootstrapSession);
+        }
+      },
+    }
+  );
 
   return {
     session: data?.bootstrapSession,
@@ -167,21 +169,22 @@ export function useBootstrapSessions(options?: {
 
   const runBootstrapSessionsQuery = useQuery as unknown as (
     query: unknown,
-    options: unknown,
+    options: unknown
   ) => BootstrapSessionsQueryState;
 
-  const { data, loading, error, fetchMore, refetch } = runBootstrapSessionsQuery(LIST_BOOTSTRAP_SESSIONS, {
-    variables: {
-      filter,
-      pagination: { first: pageSize },
-    },
-    notifyOnNetworkStatusChange: true,
-  });
+  const { data, loading, error, fetchMore, refetch } =
+    runBootstrapSessionsQuery(LIST_BOOTSTRAP_SESSIONS, {
+      variables: {
+        filter,
+        pagination: { first: pageSize },
+      },
+      notifyOnNetworkStatusChange: true,
+    });
 
   const loadMore = useCallback(() => {
     if (!data?.bootstrapSessions?.pageInfo?.hasNextPage) return;
 
-      void fetchMore({
+    void fetchMore({
       variables: {
         pagination: {
           first: pageSize,
@@ -222,7 +225,9 @@ export function useCreateBootstrapSession() {
   type BootstrapSessionsCache = {
     modify: (config: {
       fields: {
-        bootstrapSessions: (existing?: { edges: Array<unknown> }) => { edges: Array<unknown> };
+        bootstrapSessions: (existing?: { edges: Array<unknown> }) => {
+          edges: Array<unknown>;
+        };
       };
     }) => void;
   };
@@ -233,35 +238,43 @@ export function useCreateBootstrapSession() {
       onCompleted: (data?: CreateBootstrapSessionMutationResult) => void;
       update: (
         cache: BootstrapSessionsCache,
-        result: { data?: CreateBootstrapSessionMutationResult },
+        result: { data?: CreateBootstrapSessionMutationResult }
       ) => void;
-    },
+    }
   ) => [
-    (args: { variables: { input: CreateBootstrapSessionInput } }) => Promise<{ data?: CreateBootstrapSessionMutationResult }>,
+    (args: {
+      variables: { input: CreateBootstrapSessionInput };
+    }) => Promise<{ data?: CreateBootstrapSessionMutationResult }>,
     CreateBootstrapSessionMutationState,
   ];
-  
-  const [createSession, { loading, error }] = runCreateBootstrapSessionMutation(CREATE_BOOTSTRAP_SESSION, {
-    onCompleted: (data) => {
-      if (data?.createBootstrapSession?.session) {
-        setSession(data.createBootstrapSession.session);
-      }
-    },
-    update: (cache, { data }) => {
-      // Add to sessions list cache
-      cache.modify({
-        fields: {
-          bootstrapSessions: (existing = { edges: [] }) => ({
-            ...existing,
-            edges: [
-              { node: data?.createBootstrapSession?.session, __typename: 'BootstrapSessionEdge' },
-              ...existing.edges,
-            ],
-          }),
-        },
-      });
-    },
-  });
+
+  const [createSession, { loading, error }] = runCreateBootstrapSessionMutation(
+    CREATE_BOOTSTRAP_SESSION,
+    {
+      onCompleted: (data) => {
+        if (data?.createBootstrapSession?.session) {
+          setSession(data.createBootstrapSession.session);
+        }
+      },
+      update: (cache, { data }) => {
+        // Add to sessions list cache
+        cache.modify({
+          fields: {
+            bootstrapSessions: (existing = { edges: [] }) => ({
+              ...existing,
+              edges: [
+                {
+                  node: data?.createBootstrapSession?.session,
+                  __typename: 'BootstrapSessionEdge',
+                },
+                ...existing.edges,
+              ],
+            }),
+          },
+        });
+      },
+    }
+  );
 
   const create = useCallback(
     async (input: CreateBootstrapSessionInput) => {
@@ -288,13 +301,17 @@ export function useUpdateBootstrapSession() {
   };
 
   const runUpdateBootstrapSessionMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: { id: string; input: UpdateBootstrapSessionInput } }) => Promise<{ data?: UpdateBootstrapSessionMutationResult }>,
+    (args: {
+      variables: { id: string; input: UpdateBootstrapSessionInput };
+    }) => Promise<{ data?: UpdateBootstrapSessionMutationResult }>,
     UpdateBootstrapSessionMutationState,
   ];
 
-  const [updateSession, { loading, error }] = runUpdateBootstrapSessionMutation(UPDATE_BOOTSTRAP_SESSION);
+  const [updateSession, { loading, error }] = runUpdateBootstrapSessionMutation(
+    UPDATE_BOOTSTRAP_SESSION
+  );
 
   const update = useCallback(
     async (id: string, input: UpdateBootstrapSessionInput) => {
@@ -334,22 +351,32 @@ export function useDeleteBootstrapSession() {
       update: (
         cache: DeleteBootstrapSessionCache,
         result: { data?: DeleteBootstrapSessionMutationResult },
-        context: { variables?: { id?: string } },
+        context: { variables?: { id?: string } }
       ) => void;
-    },
+    }
   ) => [
-    (args: { variables: { id: string } }) => Promise<{ data?: DeleteBootstrapSessionMutationResult }>,
+    (args: {
+      variables: { id: string };
+    }) => Promise<{ data?: DeleteBootstrapSessionMutationResult }>,
     DeleteBootstrapSessionMutationState,
   ];
 
-  const [deleteSession, { loading, error }] = runDeleteBootstrapSessionMutation(DELETE_BOOTSTRAP_SESSION, {
-    update: (cache, { data }, { variables }) => {
-      if (data?.deleteBootstrapSession?.success && variables?.id) {
-        cache.evict({ id: cache.identify({ __typename: 'BootstrapSession', id: variables.id }) });
-        cache.gc();
-      }
-    },
-  });
+  const [deleteSession, { loading, error }] = runDeleteBootstrapSessionMutation(
+    DELETE_BOOTSTRAP_SESSION,
+    {
+      update: (cache, { data }, { variables }) => {
+        if (data?.deleteBootstrapSession?.success && variables?.id) {
+          cache.evict({
+            id: cache.identify({
+              __typename: 'BootstrapSession',
+              id: variables.id,
+            }),
+          });
+          cache.gc();
+        }
+      },
+    }
+  );
 
   const remove = useCallback(
     async (id: string) => {
@@ -375,9 +402,11 @@ export function useConversation(sessionId: string) {
     [key: string]: unknown;
   };
 
-  const [conversationHistory, setConversationHistoryValue] = useAtom(conversationHistoryAtom as never);
+  const [conversationHistory, setConversationHistoryValue] = useAtom(
+    conversationHistoryAtom as never
+  );
   const setConversationHistory = setConversationHistoryValue as (
-    value: unknown[] | ((prev: ConversationTurn[]) => ConversationTurn[]),
+    value: unknown[] | ((prev: ConversationTurn[]) => ConversationTurn[])
   ) => void;
   const addTurnValue = useSetAtom(addConversationTurnAction as never);
   const addTurn = addTurnValue as (turn: unknown) => void;
@@ -426,39 +455,51 @@ export function useConversation(sessionId: string) {
 
   const runConversationHistoryQuery = useQuery as unknown as (
     query: unknown,
-    options: unknown,
+    options: unknown
   ) => ConversationHistoryQueryState;
 
   const runConversationMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: Record<string, unknown> }) => Promise<{ data?: SendConversationMessageResult }>,
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: SendConversationMessageResult }>,
     MutationState,
   ];
 
   const runRegenerateMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: Record<string, unknown> }) => Promise<{ data?: RegenerateConversationResult }>,
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: RegenerateConversationResult }>,
     MutationState,
   ];
 
   const runConversationSubscription = useSubscription as unknown as (
     subscription: unknown,
-    options: unknown,
+    options: unknown
   ) => ConversationSubscriptionState;
 
-  const { data, loading: historyLoading } = runConversationHistoryQuery(GET_CONVERSATION_HISTORY, {
-    variables: { sessionId, pagination: { first: 100 } },
-    skip: !sessionId,
-    onCompleted: (queryData: ConversationHistoryQueryResult) => {
-      const turns = queryData?.conversationHistory?.edges?.map((edge) => edge.node) ?? [];
-      setConversationHistory(turns);
-    },
-  });
+  const { data, loading: historyLoading } = runConversationHistoryQuery(
+    GET_CONVERSATION_HISTORY,
+    {
+      variables: { sessionId, pagination: { first: 100 } },
+      skip: !sessionId,
+      onCompleted: (queryData: ConversationHistoryQueryResult) => {
+        const turns =
+          queryData?.conversationHistory?.edges?.map((edge) => edge.node) ?? [];
+        setConversationHistory(turns);
+      },
+    }
+  );
 
-  const [sendMessage, { loading: sending }] = runConversationMutation(SEND_CONVERSATION_MESSAGE);
-  const [regenerateResponse, { loading: regenerating }] = runRegenerateMutation(REGENERATE_AI_RESPONSE);
+  const [sendMessage, { loading: sending }] = runConversationMutation(
+    SEND_CONVERSATION_MESSAGE
+  );
+  const [regenerateResponse, { loading: regenerating }] = runRegenerateMutation(
+    REGENERATE_AI_RESPONSE
+  );
 
   const send = useCallback(
     async (input: ConversationMessageInput) => {
@@ -542,7 +583,7 @@ export function useAIThinking(sessionId: string) {
 
   const runAIThinkingSubscription = useSubscription as unknown as (
     subscription: unknown,
-    options: unknown,
+    options: unknown
   ) => AIThinkingSubscriptionState;
 
   const { data } = runAIThinkingSubscription(SUBSCRIBE_TO_AI_THINKING, {
@@ -649,13 +690,13 @@ export function useCanvas(sessionId: string) {
   const nodes = useAtomValue(canvasNodesAtom as never);
   const setNodesValue = useSetAtom(canvasNodesAtom as never);
   const setNodes = setNodesValue as (
-    value: CanvasNode[] | ((prev: CanvasNode[]) => CanvasNode[]),
+    value: CanvasNode[] | ((prev: CanvasNode[]) => CanvasNode[])
   ) => void;
 
   const edges = useAtomValue(canvasEdgesAtom as never);
   const setEdgesValue = useSetAtom(canvasEdgesAtom as never);
   const setEdges = setEdgesValue as (
-    value: CanvasEdge[] | ((prev: CanvasEdge[]) => CanvasEdge[]),
+    value: CanvasEdge[] | ((prev: CanvasEdge[]) => CanvasEdge[])
   ) => void;
 
   const addNodeValue = useSetAtom(addCanvasNodeAction as never);
@@ -671,19 +712,21 @@ export function useCanvas(sessionId: string) {
 
   const runCanvasQuery = useQuery as unknown as (
     query: unknown,
-    options: unknown,
+    options: unknown
   ) => CanvasQueryState;
 
   const runCanvasMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: Record<string, unknown> }) => Promise<{ data?: unknown }>,
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: unknown }>,
     CanvasMutationState,
   ];
 
   const runCanvasSubscription = useSubscription as unknown as (
     subscription: unknown,
-    options: unknown,
+    options: unknown
   ) => CanvasSubscriptionState;
 
   const { loading } = runCanvasQuery(GET_CANVAS_STATE, {
@@ -698,33 +741,33 @@ export function useCanvas(sessionId: string) {
   });
 
   const [addNodeMutationValue] = runCanvasMutation(ADD_CANVAS_NODE);
-  const addNodeMutation = addNodeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: AddNodeMutationResult }>;
+  const addNodeMutation = addNodeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: AddNodeMutationResult }>;
   const [updateNodeMutationValue] = runCanvasMutation(UPDATE_CANVAS_NODE);
-  const updateNodeMutation = updateNodeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: UpdateNodeMutationResult }>;
+  const updateNodeMutation = updateNodeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: UpdateNodeMutationResult }>;
   const [deleteNodeMutationValue] = runCanvasMutation(DELETE_CANVAS_NODE);
-  const deleteNodeMutation = deleteNodeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: DeleteNodeMutationResult }>;
+  const deleteNodeMutation = deleteNodeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: DeleteNodeMutationResult }>;
   const [addEdgeMutationValue] = runCanvasMutation(ADD_CANVAS_EDGE);
-  const addEdgeMutation = addEdgeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: AddEdgeMutationResult }>;
+  const addEdgeMutation = addEdgeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: AddEdgeMutationResult }>;
   const [deleteEdgeMutationValue] = runCanvasMutation(DELETE_CANVAS_EDGE);
-  const deleteEdgeMutation = deleteEdgeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: DeleteEdgeMutationResult }>;
+  const deleteEdgeMutation = deleteEdgeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: DeleteEdgeMutationResult }>;
   const [undoMutationValue] = runCanvasMutation(UNDO_CANVAS_ACTION);
-  const undoMutation = undoMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: UndoMutationResult }>;
+  const undoMutation = undoMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: UndoMutationResult }>;
   const [redoMutationValue] = runCanvasMutation(REDO_CANVAS_ACTION);
-  const redoMutation = redoMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: RedoMutationResult }>;
+  const redoMutation = redoMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: RedoMutationResult }>;
 
   const addCanvasNode = useCallback(
     async (input: AddCanvasNodeInput) => {
@@ -740,7 +783,9 @@ export function useCanvas(sessionId: string) {
 
   const updateCanvasNode = useCallback(
     async (nodeId: string, input: UpdateCanvasNodeInput) => {
-      const result = await updateNodeMutation({ variables: { sessionId, nodeId, input } });
+      const result = await updateNodeMutation({
+        variables: { sessionId, nodeId, input },
+      });
       const updatedNode = result.data?.updateCanvasNode?.node;
       if (updatedNode) {
         updateNode(updatedNode);
@@ -752,7 +797,9 @@ export function useCanvas(sessionId: string) {
 
   const deleteCanvasNode = useCallback(
     async (nodeId: string) => {
-      const result = await deleteNodeMutation({ variables: { sessionId, nodeId } });
+      const result = await deleteNodeMutation({
+        variables: { sessionId, nodeId },
+      });
       if (result.data?.deleteCanvasNode?.success) {
         removeNode(nodeId);
       }
@@ -775,7 +822,9 @@ export function useCanvas(sessionId: string) {
 
   const deleteCanvasEdge = useCallback(
     async (edgeId: string) => {
-      const result = await deleteEdgeMutation({ variables: { sessionId, edgeId } });
+      const result = await deleteEdgeMutation({
+        variables: { sessionId, edgeId },
+      });
       if (result.data?.deleteCanvasEdge?.success) {
         setEdges((prev) => prev.filter((e) => e.id !== edgeId));
       }
@@ -822,7 +871,8 @@ export function useCanvas(sessionId: string) {
           if (change.edge) setEdges((prev) => [...prev, change.edge]);
           break;
         case 'EDGE_DELETED':
-          if (change.edge?.id) setEdges((prev) => prev.filter((e) => e.id !== change.edge.id));
+          if (change.edge?.id)
+            setEdges((prev) => prev.filter((e) => e.id !== change.edge.id));
           break;
       }
     },
@@ -885,47 +935,59 @@ export function useValidation(sessionId: string) {
 
   const validationReport = useAtomValue(validationReportAtom as never);
   const setValidationReportValue = useSetAtom(validationReportAtom as never);
-  const setValidationReport = setValidationReportValue as (report: ValidationReport) => void;
+  const setValidationReport = setValidationReportValue as (
+    report: ValidationReport
+  ) => void;
 
   const runValidationQuery = useQuery as unknown as (
     query: unknown,
-    options: unknown,
+    options: unknown
   ) => ValidationQueryState;
 
   const runValidationMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: Record<string, unknown> }) => Promise<{ data?: unknown }>,
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: unknown }>,
     ValidationMutationState,
   ];
 
   const runValidationSubscription = useSubscription as unknown as (
     subscription: unknown,
-    options: unknown,
+    options: unknown
   ) => ValidationSubscriptionState;
 
-  const { loading: reportLoading, refetch } = runValidationQuery(GET_VALIDATION_REPORT, {
-    variables: { sessionId },
-    skip: !sessionId,
-    onCompleted: (queryData: ValidationQueryResult) => {
-      if (queryData?.validationReport) {
-        setValidationReport(queryData.validationReport);
-      }
-    },
-  });
+  const { loading: reportLoading, refetch } = runValidationQuery(
+    GET_VALIDATION_REPORT,
+    {
+      variables: { sessionId },
+      skip: !sessionId,
+      onCompleted: (queryData: ValidationQueryResult) => {
+        if (queryData?.validationReport) {
+          setValidationReport(queryData.validationReport);
+        }
+      },
+    }
+  );
 
-  const [validateMutationValue, { loading: validating }] = runValidationMutation(VALIDATE_SESSION);
-  const validateMutation = validateMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: ValidateMutationResult }>;
-  const [autoFixMutationValue, { loading: fixing }] = runValidationMutation(AUTO_FIX_VALIDATION_ISSUES);
-  const autoFixMutation = autoFixMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: AutoFixMutationResult }>;
+  const [validateMutationValue, { loading: validating }] =
+    runValidationMutation(VALIDATE_SESSION);
+  const validateMutation = validateMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: ValidateMutationResult }>;
+  const [autoFixMutationValue, { loading: fixing }] = runValidationMutation(
+    AUTO_FIX_VALIDATION_ISSUES
+  );
+  const autoFixMutation = autoFixMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: AutoFixMutationResult }>;
 
   const validate = useCallback(
     async (options?: ValidationOptions) => {
-      const result = await validateMutation({ variables: { sessionId, options } });
+      const result = await validateMutation({
+        variables: { sessionId, options },
+      });
       const report = result.data?.validateSession;
       if (report) {
         setValidationReport(report);
@@ -937,7 +999,9 @@ export function useValidation(sessionId: string) {
 
   const autoFix = useCallback(
     async (issueIds: string[]) => {
-      const result = await autoFixMutation({ variables: { sessionId, issueIds } });
+      const result = await autoFixMutation({
+        variables: { sessionId, issueIds },
+      });
       const fixResult = result.data?.autoFixValidationIssues;
       if (fixResult) {
         // Revalidate after fixing
@@ -977,17 +1041,29 @@ export function useValidation(sessionId: string) {
 /**
  * Hook for fetching AI suggestions
  */
-export function useAISuggestions(sessionId: string, context: AISuggestionContext) {
+export function useAISuggestions(
+  sessionId: string,
+  context: AISuggestionContext
+) {
   type AISuggestion = { [key: string]: unknown };
   type AISuggestionsQueryResult = { aiSuggestions?: AISuggestion[] };
-  type AISuggestionsQueryState = { data?: AISuggestionsQueryResult; loading: boolean; error?: unknown };
-  const runAISuggestionsLazyQuery = useLazyQuery as unknown as (query: unknown) => [
+  type AISuggestionsQueryState = {
+    data?: AISuggestionsQueryResult;
+    loading: boolean;
+    error?: unknown;
+  };
+  const runAISuggestionsLazyQuery = useLazyQuery as unknown as (
+    query: unknown
+  ) => [
     (options: unknown) => Promise<{ data?: AISuggestionsQueryResult }>,
     AISuggestionsQueryState,
   ];
 
-  const [getSuggestionsValue, { data, loading, error }] = runAISuggestionsLazyQuery(GET_AI_SUGGESTIONS);
-  const getSuggestions = getSuggestionsValue as (options: unknown) => Promise<{ data?: AISuggestionsQueryResult }>;
+  const [getSuggestionsValue, { data, loading, error }] =
+    runAISuggestionsLazyQuery(GET_AI_SUGGESTIONS);
+  const getSuggestions = getSuggestionsValue as (
+    options: unknown
+  ) => Promise<{ data?: AISuggestionsQueryResult }>;
 
   const fetchSuggestions = useCallback(() => {
     return getSuggestions({ variables: { sessionId, context } });
@@ -1008,32 +1084,60 @@ export function useAISuggestions(sessionId: string, context: AISuggestionContext
 /**
  * Hook for session templates
  */
-export function useSessionTemplates(options?: { category?: string; search?: string }) {
+export function useSessionTemplates(options?: {
+  category?: string;
+  search?: string;
+}) {
   type SessionTemplate = { [key: string]: unknown };
   type SessionTemplatesQueryResult = { sessionTemplates?: SessionTemplate[] };
-  type SessionTemplatesQueryState = { data?: SessionTemplatesQueryResult; loading: boolean; error?: unknown; refetch: () => Promise<unknown> };
+  type SessionTemplatesQueryState = {
+    data?: SessionTemplatesQueryResult;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
   type ApplyTemplateMutationResult = { applySessionTemplate?: unknown };
   type TemplateMutationState = { loading: boolean };
-  const runSessionTemplatesQuery = useQuery as unknown as (query: unknown, options: unknown) => SessionTemplatesQueryState;
-  const runApplyTemplateMutation = useMutation as unknown as (mutation: unknown) => [(args: { variables: Record<string, unknown> }) => Promise<{ data?: ApplyTemplateMutationResult }>, TemplateMutationState];
+  const runSessionTemplatesQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => SessionTemplatesQueryState;
+  const runApplyTemplateMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: ApplyTemplateMutationResult }>,
+    TemplateMutationState,
+  ];
 
-  const { data, loading, error, refetch } = runSessionTemplatesQuery(GET_SESSION_TEMPLATES, {
-    variables: options,
-  });
+  const { data, loading, error, refetch } = runSessionTemplatesQuery(
+    GET_SESSION_TEMPLATES,
+    {
+      variables: options,
+    }
+  );
 
-  const [applyTemplateValue, { loading: applying }] = runApplyTemplateMutation(APPLY_SESSION_TEMPLATE);
-  const applyTemplate = applyTemplateValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: ApplyTemplateMutationResult }>;
+  const [applyTemplateValue, { loading: applying }] = runApplyTemplateMutation(
+    APPLY_SESSION_TEMPLATE
+  );
+  const applyTemplate = applyTemplateValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: ApplyTemplateMutationResult }>;
 
   const apply = useCallback(
     async (sessionId: string, templateId: string) => {
-      const result = await applyTemplate({ variables: { sessionId, templateId } });
+      const result = await applyTemplate({
+        variables: { sessionId, templateId },
+      });
       return result.data?.applySessionTemplate;
     },
     [applyTemplate]
   );
 
   return {
-    templates: (data?.sessionTemplates as unknown as any[] ?? []) as unknown[],
+    templates: ((data?.sessionTemplates as unknown as any[]) ??
+      []) as unknown[],
     loading,
     error,
     refetch,
@@ -1052,9 +1156,19 @@ export function useSessionTemplates(options?: { category?: string; search?: stri
 export function useExportSession() {
   type ExportSessionMutationResult = { exportSession?: unknown };
   type ExportMutationState = { loading: boolean; error?: unknown };
-  const runExportMutation = useMutation as unknown as (mutation: unknown) => [(args: { variables: Record<string, unknown> }) => Promise<{ data?: ExportSessionMutationResult }>, ExportMutationState];
-  const [exportMutationValue, { loading, error }] = runExportMutation(EXPORT_SESSION);
-  const exportMutation = exportMutationValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: ExportSessionMutationResult }>;
+  const runExportMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: ExportSessionMutationResult }>,
+    ExportMutationState,
+  ];
+  const [exportMutationValue, { loading, error }] =
+    runExportMutation(EXPORT_SESSION);
+  const exportMutation = exportMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: ExportSessionMutationResult }>;
 
   const exportSession = useCallback(
     async (sessionId: string, format: 'json' | 'yaml' | 'pdf' | 'markdown') => {
@@ -1073,12 +1187,26 @@ export function useExportSession() {
 export function useImportSession() {
   type ImportSessionMutationResult = { importSession?: unknown };
   type ImportMutationState = { loading: boolean; error?: unknown };
-  const runImportMutation = useMutation as unknown as (mutation: unknown) => [(args: { variables: Record<string, unknown> }) => Promise<{ data?: ImportSessionMutationResult }>, ImportMutationState];
-  const [importMutationValue, { loading, error }] = runImportMutation(IMPORT_SESSION);
-  const importMutation = importMutationValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: ImportSessionMutationResult }>;
+  const runImportMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: ImportSessionMutationResult }>,
+    ImportMutationState,
+  ];
+  const [importMutationValue, { loading, error }] =
+    runImportMutation(IMPORT_SESSION);
+  const importMutation = importMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: ImportSessionMutationResult }>;
 
   const importSession = useCallback(
-    async (file: File, format: 'json' | 'yaml' | 'yappc', conflictResolution?: string) => {
+    async (
+      file: File,
+      format: 'json' | 'yaml' | 'yappc',
+      conflictResolution?: string
+    ) => {
       const result = await importMutation({
         variables: {
           input: { file, format, conflictResolution },
@@ -1101,21 +1229,43 @@ export function useImportSession() {
  */
 export function useCollaborators(sessionId: string) {
   type Collaborator = { id: string; [key: string]: unknown };
-  type InviteCollaboratorMutationResult = { inviteCollaborator?: { collaborator?: Collaborator } };
-  type RemoveCollaboratorMutationResult = { removeCollaborator?: { success?: boolean } };
+  type InviteCollaboratorMutationResult = {
+    inviteCollaborator?: { collaborator?: Collaborator };
+  };
+  type RemoveCollaboratorMutationResult = {
+    removeCollaborator?: { success?: boolean };
+  };
   type UpdateRoleMutationResult = { updateCollaboratorRole?: unknown };
   type CollaboratorMutationState = { loading: boolean };
-  const runCollaboratorMutation = useMutation as unknown as (mutation: unknown) => [(args: { variables: Record<string, unknown> }) => Promise<{ data?: unknown }>, CollaboratorMutationState];
+  const runCollaboratorMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: unknown }>,
+    CollaboratorMutationState,
+  ];
   const collaboratorsValue = useAtomValue(collaboratorsAtom as never);
   const collaborators = collaboratorsValue as never as Collaborator[];
   const setCollaboratorsValue = useSetAtom(collaboratorsAtom as never);
-  const setCollaborators = setCollaboratorsValue as (value: Collaborator[] | ((prev: Collaborator[]) => Collaborator[])) => void;
-  const [inviteMutationValue, { loading: inviting }] = runCollaboratorMutation(INVITE_COLLABORATOR);
-  const inviteMutation = inviteMutationValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: InviteCollaboratorMutationResult }>;
-  const [removeMutationValue, { loading: removing }] = runCollaboratorMutation(REMOVE_COLLABORATOR);
-  const removeMutation = removeMutationValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: RemoveCollaboratorMutationResult }>;
-  const [updateRoleMutationValue, { loading: updatingRole }] = runCollaboratorMutation(UPDATE_COLLABORATOR_ROLE);
-  const updateRoleMutation = updateRoleMutationValue as (args: { variables: Record<string, unknown> }) => Promise<{ data?: UpdateRoleMutationResult }>;
+  const setCollaborators = setCollaboratorsValue as (
+    value: Collaborator[] | ((prev: Collaborator[]) => Collaborator[])
+  ) => void;
+  const [inviteMutationValue, { loading: inviting }] =
+    runCollaboratorMutation(INVITE_COLLABORATOR);
+  const inviteMutation = inviteMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: InviteCollaboratorMutationResult }>;
+  const [removeMutationValue, { loading: removing }] =
+    runCollaboratorMutation(REMOVE_COLLABORATOR);
+  const removeMutation = removeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: RemoveCollaboratorMutationResult }>;
+  const [updateRoleMutationValue, { loading: updatingRole }] =
+    runCollaboratorMutation(UPDATE_COLLABORATOR_ROLE);
+  const updateRoleMutation = updateRoleMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: UpdateRoleMutationResult }>;
 
   const invite = useCallback(
     async (input: InviteCollaboratorInput) => {
@@ -1131,7 +1281,9 @@ export function useCollaborators(sessionId: string) {
 
   const remove = useCallback(
     async (collaboratorId: string) => {
-      const result = await removeMutation({ variables: { sessionId, collaboratorId } });
+      const result = await removeMutation({
+        variables: { sessionId, collaboratorId },
+      });
       if (result.data?.removeCollaborator?.success) {
         setCollaborators((prev) => prev.filter((c) => c.id !== collaboratorId));
       }
@@ -1145,7 +1297,9 @@ export function useCollaborators(sessionId: string) {
       const result = await updateRoleMutation({
         variables: { sessionId, collaboratorId, role },
       });
-      const updated = result.data?.updateCollaboratorRole?.collaborator as Collaborator | undefined;
+      const updated = result.data?.updateCollaboratorRole?.collaborator as
+        | Collaborator
+        | undefined;
       if (updated) {
         setCollaborators((prev) =>
           prev.map((c) => (c.id === collaboratorId ? { ...c, role } : c))
@@ -1158,12 +1312,18 @@ export function useCollaborators(sessionId: string) {
 
   // Subscribe to collaborator presence
   type CollaboratorPresencePayload = {
-    collaboratorPresence?: { userId?: string; status?: unknown; cursor?: unknown };
+    collaboratorPresence?: {
+      userId?: string;
+      status?: unknown;
+      cursor?: unknown;
+    };
   };
-  type CollaboratorPresenceSubscriptionState = { data?: CollaboratorPresencePayload };
+  type CollaboratorPresenceSubscriptionState = {
+    data?: CollaboratorPresencePayload;
+  };
   const runCollaboratorPresenceSubscription = useSubscription as unknown as (
     subscription: unknown,
-    options: unknown,
+    options: unknown
   ) => CollaboratorPresenceSubscriptionState;
 
   runCollaboratorPresenceSubscription(SUBSCRIBE_TO_COLLABORATOR_PRESENCE, {
@@ -1205,16 +1365,19 @@ export function useFinalizeBootstrap() {
   type FinalizeMutationResult = { finalizeBootstrap?: unknown };
   type FinalizeMutationState = { loading: boolean; error?: unknown };
   const runFinalizeMutation = useMutation as unknown as (
-    mutation: unknown,
+    mutation: unknown
   ) => [
-    (args: { variables: Record<string, unknown> }) => Promise<{ data?: FinalizeMutationResult }>,
+    (args: {
+      variables: Record<string, unknown>;
+    }) => Promise<{ data?: FinalizeMutationResult }>,
     FinalizeMutationState,
   ];
 
-  const [finalizeMutationValue, { loading, error }] = runFinalizeMutation(FINALIZE_BOOTSTRAP);
-  const finalizeMutation = finalizeMutationValue as (
-    args: { variables: Record<string, unknown> },
-  ) => Promise<{ data?: FinalizeMutationResult }>;
+  const [finalizeMutationValue, { loading, error }] =
+    runFinalizeMutation(FINALIZE_BOOTSTRAP);
+  const finalizeMutation = finalizeMutationValue as (args: {
+    variables: Record<string, unknown>;
+  }) => Promise<{ data?: FinalizeMutationResult }>;
 
   const finalize = useCallback(
     async (sessionId: string) => {

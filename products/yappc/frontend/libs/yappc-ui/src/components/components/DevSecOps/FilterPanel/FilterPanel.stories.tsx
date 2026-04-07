@@ -5,14 +5,21 @@
  */
 
 import { Filter as FilterListIcon } from 'lucide-react';
-import { Box, Button, Surface as Paper, Typography, InteractiveList as List, ListItem, ListItemText } from '@ghatana/design-system';
+import {
+  Box,
+  Button,
+  Surface as Paper,
+  Typography,
+  InteractiveList as List,
+  ListItem,
+  ListItemText,
+} from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { FilterPanel } from './FilterPanel';
 
 import type { Meta, StoryObj } from '@storybook/react';
 import type { ItemFilter } from '@yappc/core/types/devsecops';
-
 
 const meta: Meta<typeof FilterPanel> = {
   title: 'DevSecOps/FilterPanel',
@@ -52,7 +59,9 @@ const mockTags = [
 /**
  * Interactive wrapper for stories
  */
-function InteractiveWrapper(props: Omit<React.ComponentProps<typeof FilterPanel>, 'filters' | 'onChange'>) {
+function InteractiveWrapper(
+  props: Omit<React.ComponentProps<typeof FilterPanel>, 'filters' | 'onChange'>
+) {
   const [filters, setFilters] = useState<ItemFilter>({});
 
   return (
@@ -124,7 +133,8 @@ export const WithActiveFilters: Story = {
             • Priority: {filters.priority?.join(', ')}
           </Typography>
           <Typography as="p" className="text-sm">
-            • Phases: {filters.phaseIds?.map(id => mockPhaseLabels[id]).join(', ')}
+            • Phases:{' '}
+            {filters.phaseIds?.map((id) => mockPhaseLabels[id]).join(', ')}
           </Typography>
           <Typography as="p" className="text-sm">
             • Tags: {filters.tags?.join(', ')}
@@ -168,7 +178,9 @@ export const DrawerVariant: Story = {
           <Typography as="p" className="text-sm font-medium" gutterBottom>
             Active Filters:
           </Typography>
-          <pre style={{ fontSize: '12px' }}>{JSON.stringify(filters, null, 2)}</pre>
+          <pre style={{ fontSize: '12px' }}>
+            {JSON.stringify(filters, null, 2)}
+          </pre>
         </Paper>
       </Box>
     );
@@ -187,10 +199,7 @@ export const StatusAndPriorityOnly: Story = {
  */
 export const WithPhasesOnly: Story = {
   render: () => (
-    <InteractiveWrapper
-      phaseIds={mockPhaseIds}
-      phaseLabels={mockPhaseLabels}
-    />
+    <InteractiveWrapper phaseIds={mockPhaseIds} phaseLabels={mockPhaseLabels} />
   ),
 };
 
@@ -210,25 +219,83 @@ export const FullFeaturedExample: Story = {
 
     // Mock data
     const allItems = [
-      { id: '1', title: 'Implement auth', status: 'in-progress', priority: 'high', phase: 'phase-3', tags: ['backend', 'security'] },
-      { id: '2', title: 'Design UI', status: 'not-started', priority: 'medium', phase: 'phase-2', tags: ['frontend', 'ui/ux'] },
-      { id: '3', title: 'Write tests', status: 'in-progress', priority: 'low', phase: 'phase-3', tags: ['testing'] },
-      { id: '4', title: 'API integration', status: 'in-review', priority: 'high', phase: 'phase-3', tags: ['backend', 'api'] },
-      { id: '5', title: 'Deploy to prod', status: 'blocked', priority: 'critical', phase: 'phase-5', tags: ['backend'] },
-      { id: '6', title: 'Performance tune', status: 'completed', priority: 'medium', phase: 'phase-4', tags: ['performance', 'backend'] },
+      {
+        id: '1',
+        title: 'Implement auth',
+        status: 'in-progress',
+        priority: 'high',
+        phase: 'phase-3',
+        tags: ['backend', 'security'],
+      },
+      {
+        id: '2',
+        title: 'Design UI',
+        status: 'not-started',
+        priority: 'medium',
+        phase: 'phase-2',
+        tags: ['frontend', 'ui/ux'],
+      },
+      {
+        id: '3',
+        title: 'Write tests',
+        status: 'in-progress',
+        priority: 'low',
+        phase: 'phase-3',
+        tags: ['testing'],
+      },
+      {
+        id: '4',
+        title: 'API integration',
+        status: 'in-review',
+        priority: 'high',
+        phase: 'phase-3',
+        tags: ['backend', 'api'],
+      },
+      {
+        id: '5',
+        title: 'Deploy to prod',
+        status: 'blocked',
+        priority: 'critical',
+        phase: 'phase-5',
+        tags: ['backend'],
+      },
+      {
+        id: '6',
+        title: 'Performance tune',
+        status: 'completed',
+        priority: 'medium',
+        phase: 'phase-4',
+        tags: ['performance', 'backend'],
+      },
     ];
 
     // Filter items
     const filteredItems = allItems.filter((item) => {
-      if (filters.status?.length && !filters.status.includes(item.status as unknown)) return false;
-      if (filters.priority?.length && !filters.priority.includes(item.priority as unknown)) return false;
-      if (filters.phaseIds?.length && !filters.phaseIds.includes(item.phase)) return false;
-      if (filters.tags?.length && !filters.tags.some(tag => item.tags.includes(tag))) return false;
+      if (
+        filters.status?.length &&
+        !filters.status.includes(item.status as unknown)
+      )
+        return false;
+      if (
+        filters.priority?.length &&
+        !filters.priority.includes(item.priority as unknown)
+      )
+        return false;
+      if (filters.phaseIds?.length && !filters.phaseIds.includes(item.phase))
+        return false;
+      if (
+        filters.tags?.length &&
+        !filters.tags.some((tag) => item.tags.includes(tag))
+      )
+        return false;
       return true;
     });
 
     return (
-      <Box className="p-6 grid gap-6" style={{ gridTemplateColumns: '280px 1fr' }} >
+      <Box
+        className="p-6 grid gap-6"
+        style={{ gridTemplateColumns: '280px 1fr' }}
+      >
         <Box>
           <FilterPanel
             filters={filters}
@@ -278,7 +345,11 @@ export const MobileResponsive: Story = {
     return (
       <Box className="p-4 max-w-[375px] mx-auto bg-gray-100 dark:bg-gray-800 min-h-screen">
         <Paper className="p-4 mb-4">
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Typography as="h6">Items</Typography>
             <Button
               variant="outlined"
@@ -287,12 +358,14 @@ export const MobileResponsive: Story = {
               onClick={() => setOpen(true)}
             >
               Filters
-              {(filters.status?.length || 0) + (filters.priority?.length || 0) > 0 && (
+              {(filters.status?.length || 0) + (filters.priority?.length || 0) >
+                0 && (
                 <Box
                   component="span"
                   className="ml-2 rounded-full inline-flex items-center justify-center text-xs bg-blue-600 text-white w-[20px] h-[20px]"
                 >
-                  {(filters.status?.length || 0) + (filters.priority?.length || 0)}
+                  {(filters.status?.length || 0) +
+                    (filters.priority?.length || 0)}
                 </Box>
               )}
             </Button>
@@ -310,7 +383,12 @@ export const MobileResponsive: Story = {
           availableTags={mockTags}
         />
 
-        <Typography as="p" className="text-sm" color="text.secondary" className="mt-4">
+        <Typography
+          as="p"
+          className="text-sm"
+          color="text.secondary"
+          className="mt-4"
+        >
           This demonstrates the drawer variant optimized for mobile devices
         </Typography>
       </Box>
@@ -334,8 +412,14 @@ export const EmptyState: Story = {
           availableTags={[]}
         />
 
-        <Typography as="p" className="text-sm" color="text.secondary" className="mt-4">
-          Only status and priority filters are available when no phases or tags are provided
+        <Typography
+          as="p"
+          className="text-sm"
+          color="text.secondary"
+          className="mt-4"
+        >
+          Only status and priority filters are available when no phases or tags
+          are provided
         </Typography>
       </Box>
     );

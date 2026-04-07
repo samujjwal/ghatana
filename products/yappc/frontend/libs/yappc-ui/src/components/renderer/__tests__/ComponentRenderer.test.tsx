@@ -10,7 +10,6 @@ import { ComponentRenderer } from './ComponentRenderer';
 
 import type { ComponentSchema } from './ComponentRenderer';
 
-
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
   const theme = createTheme();
@@ -301,7 +300,9 @@ describe.skip('ComponentRenderer', () => {
           children: `Test ${type}`,
         };
 
-        const { unmount } = renderWithTheme(<ComponentRenderer schema={schema} />);
+        const { unmount } = renderWithTheme(
+          <ComponentRenderer schema={schema} />
+        );
         expect(screen.getByText(`Test ${type}`)).toBeInTheDocument();
         unmount();
       });
@@ -488,7 +489,9 @@ describe.skip('ComponentRenderer', () => {
         children: 'Test',
       };
 
-      renderWithTheme(<ComponentRenderer schema={schema} options={{ errorBoundary: true }} />);
+      renderWithTheme(
+        <ComponentRenderer schema={schema} options={{ errorBoundary: true }} />
+      );
       expect(screen.getByText('Test')).toBeInTheDocument();
     });
 
@@ -499,7 +502,9 @@ describe.skip('ComponentRenderer', () => {
         children: 'Test',
       };
 
-      renderWithTheme(<ComponentRenderer schema={schema} options={{ strict: true }} />);
+      renderWithTheme(
+        <ComponentRenderer schema={schema} options={{ strict: true }} />
+      );
       expect(screen.getByText('Test')).toBeInTheDocument();
     });
   });

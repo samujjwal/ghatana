@@ -190,21 +190,35 @@ export const Contained: Story = {
 export const AllSizes: Story = {
   render: () => (
     <Stack spacing={2} alignItems="flex-start">
-      <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+      <Typography
+        as="span"
+        className="text-xs text-gray-500"
+        color="text.secondary"
+      >
         Small (36px minimum) - Use sparingly for dense UIs
       </Typography>
       <Button variant="solid" size="sm">
         Small Button
       </Button>
 
-      <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-4">
+      <Typography
+        as="span"
+        className="text-xs text-gray-500"
+        color="text.secondary"
+        className="mt-4"
+      >
         Medium (44px minimum) - Recommended for accessibility
       </Typography>
       <Button variant="solid" size="md">
         Medium Button
       </Button>
 
-      <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-4">
+      <Typography
+        as="span"
+        className="text-xs text-gray-500"
+        color="text.secondary"
+        className="mt-4"
+      >
         Large (48px minimum) - For prominent actions
       </Typography>
       <Button variant="solid" size="lg">
@@ -310,7 +324,13 @@ export const AllShapes: Story = {
   render: () => (
     <Stack spacing={2} alignItems="flex-start">
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           Square: borderRadiusSm (4px)
         </Typography>
         <Button variant="solid" shape="square">
@@ -319,7 +339,13 @@ export const AllShapes: Story = {
       </Box>
 
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           Rounded: borderRadiusMd (8px) - Default
         </Typography>
         <Button variant="solid" shape="rounded">
@@ -328,7 +354,13 @@ export const AllShapes: Story = {
       </Box>
 
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           Pill: borderRadiusFull (9999px)
         </Typography>
         <Button variant="solid" shape="pill">
@@ -389,7 +421,13 @@ export const WithElevation: Story = {
   render: () => (
     <Stack spacing={2} alignItems="flex-start">
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           variant="flat"
         </Typography>
         <Button variant="solid" variant="flat">
@@ -398,7 +436,13 @@ export const WithElevation: Story = {
       </Box>
 
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           variant="raised" - Default
         </Typography>
         <Button variant="solid" variant="raised">
@@ -407,7 +451,13 @@ export const WithElevation: Story = {
       </Box>
 
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           elevation={4}
         </Typography>
         <Button variant="solid" elevation={4}>
@@ -416,7 +466,13 @@ export const WithElevation: Story = {
       </Box>
 
       <Box>
-        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" gutterBottom>
+        <Typography
+          as="span"
+          className="text-xs text-gray-500"
+          color="text.secondary"
+          display="block"
+          gutterBottom
+        >
           elevation={8}
         </Typography>
         <Button variant="solid" elevation={8}>
@@ -472,16 +528,25 @@ export const ButtonGroup: Story = {
   name: 'Example: Button Group',
   render: () => (
     <Stack direction="row" spacing={0}>
-      <Button variant="outlined" shape="square" className="rounded-[4px 0 0 4px]">
+      <Button
+        variant="outlined"
+        shape="square"
+        className="rounded-[4px 0 0 4px]"
+      >
         Left
       </Button>
-      <Button variant="outlined" shape="square" className="rounded-none border-l-0">
+      <Button
+        variant="outlined"
+        shape="square"
+        className="rounded-none border-l-0"
+      >
         Center
       </Button>
       <Button
         variant="outlined"
         shape="square"
-        className="border-l-0 rounded-[0 4px 4px 0px]" >
+        className="border-l-0 rounded-[0 4px 4px 0px]"
+      >
         Right
       </Button>
     </Stack>
@@ -515,7 +580,8 @@ export const AccessibilityDemo: Story = {
           Touch Targets (WCAG 2.1)
         </Typography>
         <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-          Medium and Large buttons meet the 44px minimum touch target requirement
+          Medium and Large buttons meet the 44px minimum touch target
+          requirement
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <Button variant="solid" size="sm">
@@ -541,7 +607,11 @@ export const AccessibilityDemo: Story = {
           <Button variant="solid" aria-label="Save your document changes">
             Save
           </Button>
-          <Button variant="solid" tone="danger" aria-label="Permanently delete this item">
+          <Button
+            variant="solid"
+            tone="danger"
+            aria-label="Permanently delete this item"
+          >
             Delete
           </Button>
         </Stack>

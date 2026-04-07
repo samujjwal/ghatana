@@ -8,8 +8,8 @@ import {
   createRetentionManager,
   type RetentionPolicy,
   type RetentionSnapshot,
-
-  RetentionManager} from '../retentionManager';
+  RetentionManager,
+} from '../retentionManager';
 
 describe('RetentionManager', () => {
   let manager: RetentionManager;
@@ -214,7 +214,7 @@ describe('RetentionManager', () => {
     it('should filter by age (olderThan)', () => {
       const now = Date.now();
       const snapshots = manager.listSnapshots();
-      
+
       const cutoff = snapshots[0].createdAt - 100;
       const oldSnapshots = manager.listSnapshots({ olderThan: cutoff });
       expect(oldSnapshots.length).toBe(1);
@@ -224,7 +224,7 @@ describe('RetentionManager', () => {
     it('should filter by age (newerThan)', () => {
       const now = Date.now();
       const snapshots = manager.listSnapshots();
-      
+
       const cutoff = snapshots[1].createdAt + 100;
       const newSnapshots = manager.listSnapshots({ newerThan: cutoff });
       expect(newSnapshots.length).toBe(1);
@@ -393,7 +393,11 @@ describe('RetentionManager', () => {
     });
 
     it('should not transition non-existent snapshot', () => {
-      const transitioned = manager.transitionTier('non-existent', 'warm', 'Test');
+      const transitioned = manager.transitionTier(
+        'non-existent',
+        'warm',
+        'Test'
+      );
       expect(transitioned).toBe(false);
     });
 
@@ -444,7 +448,7 @@ describe('RetentionManager', () => {
 
   describe('Automatic Tier Transitions', () => {
     it('should transition hot to warm after retention period', () => {
-      const sevenDaysAgo = Date.now() - (8 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -462,7 +466,7 @@ describe('RetentionManager', () => {
     });
 
     it('should transition warm to cold after retention period', () => {
-      const ninetyOneDaysAgo = Date.now() - (91 * 24 * 60 * 60 * 1000);
+      const ninetyOneDaysAgo = Date.now() - 91 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -483,7 +487,7 @@ describe('RetentionManager', () => {
     });
 
     it('should archive cold snapshots after retention period', () => {
-      const ninetyOneDaysAgo = Date.now() - (91 * 24 * 60 * 60 * 1000);
+      const ninetyOneDaysAgo = Date.now() - 91 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -504,7 +508,7 @@ describe('RetentionManager', () => {
     });
 
     it('should delete soft deleted snapshots past recovery window', () => {
-      const eightDaysAgo = Date.now() - (8 * 24 * 60 * 60 * 1000);
+      const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -528,7 +532,7 @@ describe('RetentionManager', () => {
     it('should not transition when auto-transition disabled', () => {
       manager.updatePolicy('default', { enableAutoTransition: false });
 
-      const sevenDaysAgo = Date.now() - (8 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -546,7 +550,7 @@ describe('RetentionManager', () => {
       manager.updatePolicy('default', { minSnapshots: 2 });
 
       // Register only 1 snapshot
-      const oldDate = Date.now() - (400 * 24 * 60 * 60 * 1000);
+      const oldDate = Date.now() - 400 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',
@@ -695,9 +699,9 @@ describe('RetentionManager', () => {
 
       const stats = manager.getStatistics();
 
-      const hotStats = stats.byTier.find(t => t.tier === 'hot');
-      const warmStats = stats.byTier.find(t => t.tier === 'warm');
-      const coldStats = stats.byTier.find(t => t.tier === 'cold');
+      const hotStats = stats.byTier.find((t) => t.tier === 'hot');
+      const warmStats = stats.byTier.find((t) => t.tier === 'warm');
+      const coldStats = stats.byTier.find((t) => t.tier === 'cold');
 
       expect(hotStats!.count).toBe(1);
       expect(warmStats!.count).toBe(1);
@@ -718,7 +722,7 @@ describe('RetentionManager', () => {
     });
 
     it('should count pending deletions', () => {
-      const eightDaysAgo = Date.now() - (8 * 24 * 60 * 60 * 1000);
+      const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
 
       manager.softDelete('snap-1');
 
@@ -735,7 +739,7 @@ describe('RetentionManager', () => {
     it('should use default policy for untagged snapshots', () => {
       manager.registerSnapshot({
         id: 'snap-1',
-        createdAt: Date.now() - (8 * 24 * 60 * 60 * 1000),
+        createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
         size: 1024,
         type: 'full',
       });
@@ -759,7 +763,7 @@ describe('RetentionManager', () => {
         tags: ['important'],
       });
 
-      const eightDaysAgo = Date.now() - (8 * 24 * 60 * 60 * 1000);
+      const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
 
       manager.registerSnapshot({
         id: 'snap-1',

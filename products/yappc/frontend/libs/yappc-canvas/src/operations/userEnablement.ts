@@ -426,7 +426,10 @@ export class UserEnablementManager {
    * Create a new onboarding flow
    */
   createOnboardingFlow(
-    input: Omit<OnboardingFlow, 'id' | 'createdAt' | 'updatedAt' | 'completionRate' | 'averageRating'>
+    input: Omit<
+      OnboardingFlow,
+      'id' | 'createdAt' | 'updatedAt' | 'completionRate' | 'averageRating'
+    >
   ): OnboardingFlow {
     const flow: OnboardingFlow = {
       ...input,
@@ -465,7 +468,9 @@ export class UserEnablementManager {
   /**
    * Get flows by target audience
    */
-  getFlowsByAudience(audience: OnboardingFlow['targetAudience']): OnboardingFlow[] {
+  getFlowsByAudience(
+    audience: OnboardingFlow['targetAudience']
+  ): OnboardingFlow[] {
     return Array.from(this.onboardingFlows.values()).filter(
       (f) => f.targetAudience === audience || f.targetAudience === 'all'
     );
@@ -520,7 +525,11 @@ export class UserEnablementManager {
   /**
    * Complete onboarding step
    */
-  completeStep(progressId: string, stepId: string, score?: number): OnboardingProgress | undefined {
+  completeStep(
+    progressId: string,
+    stepId: string,
+    score?: number
+  ): OnboardingProgress | undefined {
     for (const [userId, progressList] of this.onboardingProgress.entries()) {
       const progress = progressList.find((p) => p.id === progressId);
       if (progress) {
@@ -573,7 +582,10 @@ export class UserEnablementManager {
             .filter((p) => p.flowId === flow.id && p.rating !== undefined);
 
           if (allProgress.length > 0) {
-            const sum = allProgress.reduce((acc, p) => acc + (p.rating ?? 0), 0);
+            const sum = allProgress.reduce(
+              (acc, p) => acc + (p.rating ?? 0),
+              0
+            );
             flow.averageRating = sum / allProgress.length;
           }
         }
@@ -589,7 +601,12 @@ export class UserEnablementManager {
   /**
    * Create a new tutorial
    */
-  createTutorial(input: Omit<Tutorial, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'completions'>): Tutorial {
+  createTutorial(
+    input: Omit<
+      Tutorial,
+      'id' | 'createdAt' | 'updatedAt' | 'views' | 'completions'
+    >
+  ): Tutorial {
     const tutorial: Tutorial = {
       ...input,
       id: `tutorial-${Date.now()}-${this.tutorialCounter++}`,
@@ -625,21 +642,27 @@ export class UserEnablementManager {
    * Get tutorials by category
    */
   getTutorialsByCategory(category: string): Tutorial[] {
-    return Array.from(this.tutorials.values()).filter((t) => t.category === category);
+    return Array.from(this.tutorials.values()).filter(
+      (t) => t.category === category
+    );
   }
 
   /**
    * Get tutorials by difficulty
    */
   getTutorialsByDifficulty(difficulty: Tutorial['difficulty']): Tutorial[] {
-    return Array.from(this.tutorials.values()).filter((t) => t.difficulty === difficulty);
+    return Array.from(this.tutorials.values()).filter(
+      (t) => t.difficulty === difficulty
+    );
   }
 
   /**
    * Search tutorials by tags
    */
   searchTutorialsByTags(tags: string[]): Tutorial[] {
-    return Array.from(this.tutorials.values()).filter((t) => tags.some((tag) => t.tags.includes(tag)));
+    return Array.from(this.tutorials.values()).filter((t) =>
+      tags.some((tag) => t.tags.includes(tag))
+    );
   }
 
   /**
@@ -673,7 +696,10 @@ export class UserEnablementManager {
   /**
    * Complete tutorial lesson
    */
-  completeLesson(progressId: string, lessonId: string): TutorialProgress | undefined {
+  completeLesson(
+    progressId: string,
+    lessonId: string
+  ): TutorialProgress | undefined {
     for (const progressList of this.tutorialProgress.values()) {
       const progress = progressList.find((p) => p.id === progressId);
       if (progress) {
@@ -684,7 +710,9 @@ export class UserEnablementManager {
 
         const tutorial = this.tutorials.get(progress.tutorialId);
         if (tutorial) {
-          const currentIndex = tutorial.lessons.findIndex((l) => l.id === lessonId);
+          const currentIndex = tutorial.lessons.findIndex(
+            (l) => l.id === lessonId
+          );
           const nextLesson = tutorial.lessons[currentIndex + 1];
           if (nextLesson) {
             progress.currentLessonId = nextLesson.id;
@@ -709,7 +737,9 @@ export class UserEnablementManager {
       const progress = progressList.find((p) => p.id === progressId);
       if (progress) {
         progress.exerciseScores.set(exerciseId, score);
-        progress.totalScore = Array.from(progress.exerciseScores.values()).reduce((sum, s) => sum + s, 0);
+        progress.totalScore = Array.from(
+          progress.exerciseScores.values()
+        ).reduce((sum, s) => sum + s, 0);
         progress.lastActivityAt = new Date();
         return;
       }
@@ -754,14 +784,19 @@ export class UserEnablementManager {
    * Get all help categories
    */
   getAllHelpCategories(): HelpCategory[] {
-    return Array.from(this.helpCategories.values()).sort((a, b) => a.order - b.order);
+    return Array.from(this.helpCategories.values()).sort(
+      (a, b) => a.order - b.order
+    );
   }
 
   /**
    * Create help article
    */
   createHelpArticle(
-    input: Omit<HelpArticle, 'id' | 'createdAt' | 'updatedAt' | 'views' | 'helpful' | 'notHelpful'>
+    input: Omit<
+      HelpArticle,
+      'id' | 'createdAt' | 'updatedAt' | 'views' | 'helpful' | 'notHelpful'
+    >
   ): HelpArticle {
     const article: HelpArticle = {
       ...input,
@@ -799,7 +834,9 @@ export class UserEnablementManager {
    * Get articles by category
    */
   getArticlesByCategory(categoryId: string): HelpArticle[] {
-    return Array.from(this.helpArticles.values()).filter((a) => a.category === categoryId && a.published);
+    return Array.from(this.helpArticles.values()).filter(
+      (a) => a.category === categoryId && a.published
+    );
   }
 
   /**
@@ -818,7 +855,9 @@ export class UserEnablementManager {
       const matchedTerms: string[] = [];
 
       // Title match (highest weight)
-      const titleMatch = queryTerms.filter((term) => article.title.toLowerCase().includes(term));
+      const titleMatch = queryTerms.filter((term) =>
+        article.title.toLowerCase().includes(term)
+      );
       score += titleMatch.length * 10;
       matchedTerms.push(...titleMatch);
 
@@ -830,26 +869,32 @@ export class UserEnablementManager {
       matchedTerms.push(...searchMatch);
 
       // Content match
-      const contentMatch = queryTerms.filter((term) => article.content.toLowerCase().includes(term));
+      const contentMatch = queryTerms.filter((term) =>
+        article.content.toLowerCase().includes(term)
+      );
       score += contentMatch.length * 2;
       matchedTerms.push(...contentMatch);
 
       // Tags match
-      const tagMatch = queryTerms.filter((term) => article.tags.some((tag) => tag.toLowerCase().includes(term)));
+      const tagMatch = queryTerms.filter((term) =>
+        article.tags.some((tag) => tag.toLowerCase().includes(term))
+      );
       score += tagMatch.length * 3;
       matchedTerms.push(...tagMatch);
 
       if (score > 0) {
         // Generate excerpt
-        const firstMatch = queryTerms.find((term) => article.content.toLowerCase().includes(term));
+        const firstMatch = queryTerms.find((term) =>
+          article.content.toLowerCase().includes(term)
+        );
         let excerpt = '';
         if (firstMatch) {
           const index = article.content.toLowerCase().indexOf(firstMatch);
           const start = Math.max(0, index - 50);
           const end = Math.min(article.content.length, index + 100);
-          excerpt = `...${  article.content.slice(start, end)  }...`;
+          excerpt = `...${article.content.slice(start, end)}...`;
         } else {
-          excerpt = `${article.content.slice(0, 150)  }...`;
+          excerpt = `${article.content.slice(0, 150)}...`;
         }
 
         results.push({
@@ -861,13 +906,20 @@ export class UserEnablementManager {
       }
     }
 
-    return results.sort((a, b) => b.score - a.score).slice(0, this.config.searchIndexSize);
+    return results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, this.config.searchIndexSize);
   }
 
   /**
    * Submit help feedback
    */
-  submitHelpFeedback(userId: string, articleId: string, helpful: boolean, comment?: string): HelpFeedback {
+  submitHelpFeedback(
+    userId: string,
+    articleId: string,
+    helpful: boolean,
+    comment?: string
+  ): HelpFeedback {
     const feedback: HelpFeedback = {
       id: `feedback-${Date.now()}-${this.feedbackCounter++}`,
       userId,
@@ -983,7 +1035,9 @@ export class UserEnablementManager {
             output += '**Parameters**:\n\n';
             for (const param of api.parameters) {
               const optional = param.optional ? ' (optional)' : '';
-              const defaultVal = param.defaultValue ? ` = ${param.defaultValue}` : '';
+              const defaultVal = param.defaultValue
+                ? ` = ${param.defaultValue}`
+                : '';
               output += `- \`${param.name}\`: \`${param.type}\`${optional}${defaultVal} - ${param.description}\n`;
             }
             output += '\n';
@@ -1087,7 +1141,8 @@ export class UserEnablementManager {
         totalOnboarding++;
         if (progress.completedAt) {
           completedOnboarding++;
-          totalOnboardingTime += progress.completedAt.getTime() - progress.startedAt.getTime();
+          totalOnboardingTime +=
+            progress.completedAt.getTime() - progress.startedAt.getTime();
         }
       }
     }
@@ -1125,10 +1180,18 @@ export class UserEnablementManager {
     return {
       totalUsers: allUsers.size,
       activeUsers: activeUsers.size,
-      onboardingCompletionRate: totalOnboarding > 0 ? completedOnboarding / totalOnboarding : 0,
-      averageOnboardingTime: completedOnboarding > 0 ? totalOnboardingTime / completedOnboarding / (1000 * 60) : 0, // minutes
-      tutorialCompletionRate: totalTutorials > 0 ? completedTutorials / totalTutorials : 0,
-      helpArticleViews: Array.from(this.helpArticles.values()).reduce((sum, a) => sum + a.views, 0),
+      onboardingCompletionRate:
+        totalOnboarding > 0 ? completedOnboarding / totalOnboarding : 0,
+      averageOnboardingTime:
+        completedOnboarding > 0
+          ? totalOnboardingTime / completedOnboarding / (1000 * 60)
+          : 0, // minutes
+      tutorialCompletionRate:
+        totalTutorials > 0 ? completedTutorials / totalTutorials : 0,
+      helpArticleViews: Array.from(this.helpArticles.values()).reduce(
+        (sum, a) => sum + a.views,
+        0
+      ),
       topSearchTerms: [], // Would need to track search queries
       mostViewedArticles,
       userSatisfaction: totalRatings > 0 ? ratingSum / totalRatings : 0,
@@ -1143,7 +1206,9 @@ export class UserEnablementManager {
    * Clean up old progress data
    */
   cleanupOldProgress(): { onboardingRemoved: number; tutorialRemoved: number } {
-    const cutoffDate = new Date(Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000);
+    const cutoffDate = new Date(
+      Date.now() - this.config.retentionDays * 24 * 60 * 60 * 1000
+    );
 
     let onboardingRemoved = 0;
     for (const [userId, progressList] of this.onboardingProgress.entries()) {
@@ -1208,7 +1273,10 @@ export class UserEnablementManager {
 /**
  * Calculate onboarding completion percentage
  */
-export function calculateOnboardingCompletion(progress: OnboardingProgress, flow: OnboardingFlow): number {
+export function calculateOnboardingCompletion(
+  progress: OnboardingProgress,
+  flow: OnboardingFlow
+): number {
   if (flow.steps.length === 0) return 0;
   return (progress.completedSteps.length / flow.steps.length) * 100;
 }
@@ -1216,7 +1284,10 @@ export function calculateOnboardingCompletion(progress: OnboardingProgress, flow
 /**
  * Calculate tutorial completion percentage
  */
-export function calculateTutorialCompletion(progress: TutorialProgress, tutorial: Tutorial): number {
+export function calculateTutorialCompletion(
+  progress: TutorialProgress,
+  tutorial: Tutorial
+): number {
   if (tutorial.lessons.length === 0) return 0;
   return (progress.completedLessons.length / tutorial.lessons.length) * 100;
 }
@@ -1224,7 +1295,10 @@ export function calculateTutorialCompletion(progress: TutorialProgress, tutorial
 /**
  * Calculate estimated time remaining for onboarding
  */
-export function calculateEstimatedTimeRemaining(progress: OnboardingProgress, flow: OnboardingFlow): number {
+export function calculateEstimatedTimeRemaining(
+  progress: OnboardingProgress,
+  flow: OnboardingFlow
+): number {
   const completedStepIds = new Set(progress.completedSteps);
   const remainingSteps = flow.steps.filter((s) => !completedStepIds.has(s.id));
   return remainingSteps.reduce((sum, step) => sum + step.duration, 0);
@@ -1245,12 +1319,18 @@ export function formatDuration(seconds: number): string {
 /**
  * Validate quiz answer
  */
-export function validateQuizAnswer(question: QuizQuestion, userAnswer: string | string[]): boolean {
+export function validateQuizAnswer(
+  question: QuizQuestion,
+  userAnswer: string | string[]
+): boolean {
   if (Array.isArray(question.correctAnswer)) {
     if (!Array.isArray(userAnswer)) return false;
     const correct = new Set(question.correctAnswer);
     const user = new Set(userAnswer);
-    return correct.size === user.size && Array.from(correct).every((a) => user.has(a));
+    return (
+      correct.size === user.size &&
+      Array.from(correct).every((a) => user.has(a))
+    );
   }
   return question.correctAnswer === userAnswer;
 }
@@ -1269,7 +1349,20 @@ export function generateSearchTerms(content: string, title: string): string[] {
     .forEach((w) => terms.add(w));
 
   // Add content words (filtered)
-  const stopWords = new Set(['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']);
+  const stopWords = new Set([
+    'the',
+    'and',
+    'or',
+    'but',
+    'in',
+    'on',
+    'at',
+    'to',
+    'for',
+    'of',
+    'with',
+    'by',
+  ]);
   content
     .toLowerCase()
     .replace(/[^\w\s]/g, ' ')
@@ -1284,7 +1377,10 @@ export function generateSearchTerms(content: string, title: string): string[] {
 /**
  * Calculate help article relevance score
  */
-export function calculateRelevanceScore(article: HelpArticle, query: string): number {
+export function calculateRelevanceScore(
+  article: HelpArticle,
+  query: string
+): number {
   const lowerQuery = query.toLowerCase();
   const queryTerms = lowerQuery.split(/\s+/).filter((t) => t.length > 2);
 
@@ -1297,7 +1393,8 @@ export function calculateRelevanceScore(article: HelpArticle, query: string): nu
 
   // Tag match
   queryTerms.forEach((term) => {
-    if (article.tags.some((tag) => tag.toLowerCase().includes(term))) score += 5;
+    if (article.tags.some((tag) => tag.toLowerCase().includes(term)))
+      score += 5;
   });
 
   // Content match
@@ -1306,12 +1403,15 @@ export function calculateRelevanceScore(article: HelpArticle, query: string): nu
   });
 
   // Boost recent articles
-  const daysSinceUpdate = (Date.now() - article.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
+  const daysSinceUpdate =
+    (Date.now() - article.updatedAt.getTime()) / (1000 * 60 * 60 * 24);
   if (daysSinceUpdate < 30) score *= 1.2;
 
   // Boost helpful articles
   const helpfulnessRatio =
-    article.helpful + article.notHelpful > 0 ? article.helpful / (article.helpful + article.notHelpful) : 0.5;
+    article.helpful + article.notHelpful > 0
+      ? article.helpful / (article.helpful + article.notHelpful)
+      : 0.5;
   score *= 0.8 + helpfulnessRatio * 0.4;
 
   return score;

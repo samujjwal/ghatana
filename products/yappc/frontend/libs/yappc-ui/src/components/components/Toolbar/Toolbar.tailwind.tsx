@@ -5,7 +5,13 @@ import { cn } from '../../utils/cn';
 /**
  * Justification options for Toolbar content alignment
  */
-export type ToolbarJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+export type ToolbarJustify =
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'between'
+  | 'around'
+  | 'evenly';
 
 /**
  * Gap size between Toolbar items
@@ -104,10 +110,10 @@ const paddingClasses: Record<ToolbarPadding, string> = {
 
 /**
  * Toolbar - Flex container component for AppBar content and actions
- * 
+ *
  * A simple layout component that provides consistent spacing and alignment
  * for AppBar content. Commonly used as a child of AppBar.
- * 
+ *
  * @example
  * ```tsx
  * <AppBar>
@@ -117,7 +123,7 @@ const paddingClasses: Record<ToolbarPadding, string> = {
  *   </Toolbar>
  * </AppBar>
  * ```
- * 
+ *
  * @example
  * ```tsx
  * <Toolbar justify="center" gap="lg">

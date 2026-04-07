@@ -15,7 +15,6 @@ import { useDataSource } from '../../hooks/useDataSource';
 import { useForm } from '../../hooks/useForm';
 import { validators } from '../../utils/validation';
 
-
 // ============================================================================
 // Mock Server Setup
 // ============================================================================
@@ -60,7 +59,11 @@ interface BenchmarkResult {
   averageTime: number;
 }
 
-function benchmark(name: string, fn: () => void | Promise<void>, iterations: number = 1000): Promise<BenchmarkResult> {
+function benchmark(
+  name: string,
+  fn: () => void | Promise<void>,
+  iterations: number = 1000
+): Promise<BenchmarkResult> {
   return new Promise(async (resolve) => {
     const start = performance.now();
 
@@ -151,9 +154,21 @@ describe.skip('Performance Benchmarks', () => {
 
     it('should handle middleware efficiently', async () => {
       // Add middleware
-      const middleware1 = (eventName: string, payload: unknown, next: () => void) => next();
-      const middleware2 = (eventName: string, payload: unknown, next: () => void) => next();
-      const middleware3 = (eventName: string, payload: unknown, next: () => void) => next();
+      const middleware1 = (
+        eventName: string,
+        payload: unknown,
+        next: () => void
+      ) => next();
+      const middleware2 = (
+        eventName: string,
+        payload: unknown,
+        next: () => void
+      ) => next();
+      const middleware3 = (
+        eventName: string,
+        payload: unknown,
+        next: () => void
+      ) => next();
 
       eventBus.use(middleware1);
       eventBus.use(middleware2);
@@ -308,9 +323,16 @@ describe.skip('Performance Benchmarks', () => {
             password: [validators.required(), validators.minLength(8)],
             confirmPassword: [
               validators.required(),
-              validators.match('password', (name) => result.current.values.password),
+              validators.match(
+                'password',
+                (name) => result.current.values.password
+              ),
             ],
-            age: [validators.required(), validators.min(18), validators.max(120)],
+            age: [
+              validators.required(),
+              validators.min(18),
+              validators.max(120),
+            ],
             phone: [validators.required(), validators.phone()],
             website: [validators.url()],
           },
@@ -374,7 +396,9 @@ describe.skip('Performance Benchmarks', () => {
         });
 
         // Wait for data load
-        await waitFor(() => expect(result.current.dataSource.isLoading).toBe(false));
+        await waitFor(() =>
+          expect(result.current.dataSource.isLoading).toBe(false)
+        );
 
         // Fill form
         act(() => {
@@ -397,7 +421,8 @@ describe.skip('Performance Benchmarks', () => {
         workflowTimes.push(end - start);
       }
 
-      const avgTime = workflowTimes.reduce((a, b) => a + b, 0) / workflowTimes.length;
+      const avgTime =
+        workflowTimes.reduce((a, b) => a + b, 0) / workflowTimes.length;
       const minTime = Math.min(...workflowTimes);
       const maxTime = Math.max(...workflowTimes);
 

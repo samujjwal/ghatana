@@ -70,10 +70,10 @@ export interface AdapterResult<T> {
 /**
  * Mermaid diagram types
  */
-export type MermaidDiagramType = 
-  | 'flowchart' 
-  | 'sequenceDiagram' 
-  | 'classDiagram' 
+export type MermaidDiagramType =
+  | 'flowchart'
+  | 'sequenceDiagram'
+  | 'classDiagram'
   | 'stateDiagram'
   | 'erDiagram'
   | 'gantt'
@@ -159,12 +159,16 @@ export function exportToMermaid(
       case 'note':
         // Mermaid doesn't have native note shape, use rectangle with comment
         nodeDef = `    ${nodeId}["${escapeMermaidLabel(node.label)}"]`;
-        warnings.push(`Node "${node.id}" type "note" approximated as rectangle`);
+        warnings.push(
+          `Node "${node.id}" type "note" approximated as rectangle`
+        );
         supportedNodes++;
         break;
       default:
         nodeDef = `    ${nodeId}["${escapeMermaidLabel(node.label)}"]`;
-        unsupportedFeatures.push(`Node type "${node.type}" not fully supported`);
+        unsupportedFeatures.push(
+          `Node type "${node.type}" not fully supported`
+        );
         break;
     }
 
@@ -209,7 +213,9 @@ export function exportToMermaid(
     // Handle arrow types
     if (edge.arrowType === 'none') {
       arrow = arrow.replace('>', '');
-      warnings.push(`Edge "${edge.id}" no-arrow style may not render correctly`);
+      warnings.push(
+        `Edge "${edge.id}" no-arrow style may not render correctly`
+      );
     } else if (edge.arrowType === 'diamond') {
       arrow = arrow.replace('-->', '-->o');
       supportedEdges++;
@@ -231,7 +237,8 @@ export function exportToMermaid(
   // Calculate coverage
   const totalElements = document.nodes.length + document.edges.length;
   const supportedElements = supportedNodes + supportedEdges;
-  const coverage = totalElements > 0 ? (supportedElements / totalElements) * 100 : 100;
+  const coverage =
+    totalElements > 0 ? (supportedElements / totalElements) * 100 : 100;
 
   return {
     data: mermaid,
@@ -268,7 +275,10 @@ export function importFromPlantUML(
   const edges: CanvasEdge[] = [];
 
   // Parse PlantUML
-  const lines = plantuml.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith("'"));
+  const lines = plantuml
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("'"));
 
   let currentY = 0;
   let currentX = 0;
@@ -280,7 +290,9 @@ export function importFromPlantUML(
     if (line.startsWith('@start') || line.startsWith('@end')) continue;
 
     // Parse relationships (edges) first - must have arrow operators
-    const edgeMatch = line.match(/^(\w+)\s*(-->|->|\.\.>|-\.\->)\s*(?:"([^"]+)")?\s*(\w+)$/);
+    const edgeMatch = line.match(
+      /^(\w+)\s*(-->|->|\.\.>|-\.\->)\s*(?:"([^"]+)")?\s*(\w+)$/
+    );
     if (edgeMatch) {
       const [, source, arrow, label, target] = edgeMatch;
 
@@ -311,7 +323,7 @@ export function importFromPlantUML(
     const nodeMatch = line.match(/^(\w+)\s*(?:\[(.+?)\])?(?:\s*<<(.+?)>>)?/);
     if (nodeMatch) {
       const [, id, label, stereotype] = nodeMatch;
-      
+
       // Determine node type from stereotype or syntax
       let type: CanvasNode['type'] = 'rectangle';
       if (stereotype?.includes('database') || line.includes('database')) {
@@ -412,7 +424,7 @@ export function exportToC4(document: CanvasDocument): AdapterResult<string> {
   const unsupportedFeatures: string[] = [];
 
   let c4 = 'workspace {\n';
-  
+
   if (document.metadata?.title) {
     c4 += `  name "${document.metadata.title}"\n`;
   }
@@ -426,11 +438,11 @@ export function exportToC4(document: CanvasDocument): AdapterResult<string> {
     const tech = (node.data?.technology as string) || '';
 
     c4 += `    ${sanitizeC4Id(node.id)} = ${elementType.toLowerCase()} "${node.label}"`;
-    
+
     if (node.data?.description) {
       c4 += ` "${node.data.description}"`;
     }
-    
+
     if (tech) {
       c4 += ` "${tech}"`;
     }
@@ -443,7 +455,7 @@ export function exportToC4(document: CanvasDocument): AdapterResult<string> {
   // Export edges as relationships
   for (const edge of document.edges) {
     c4 += `    ${sanitizeC4Id(edge.source)} -> ${sanitizeC4Id(edge.target)}`;
-    
+
     if (edge.label) {
       c4 += ` "${edge.label}"`;
     }
@@ -479,14 +491,19 @@ export function importFromC4(c4: string): AdapterResult<CanvasDocument> {
   const nodes: CanvasNode[] = [];
   const edges: CanvasEdge[] = [];
 
-  const lines = c4.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('//'));
+  const lines = c4
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith('//'));
 
   let currentY = 0;
   const spacing = 200;
 
   for (const line of lines) {
     // Parse element definitions
-    const elementMatch = line.match(/(\w+)\s*=\s*(person|system|container|component)\s+"([^"]+)"(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/i);
+    const elementMatch = line.match(
+      /(\w+)\s*=\s*(person|system|container|component)\s+"([^"]+)"(?:\s+"([^"]+)")?(?:\s+"([^"]+)")?/i
+    );
     if (elementMatch) {
       const [, id, type, name, description, technology] = elementMatch;
 
@@ -557,18 +574,22 @@ export function validateC4RoundTrip(
 
   // Check node count
   if (original.nodes.length !== reimported.nodes.length) {
-    differences.push(`Node count mismatch: ${original.nodes.length} vs ${reimported.nodes.length}`);
+    differences.push(
+      `Node count mismatch: ${original.nodes.length} vs ${reimported.nodes.length}`
+    );
   }
 
   // Check edge count
   if (original.edges.length !== reimported.edges.length) {
-    differences.push(`Edge count mismatch: ${original.edges.length} vs ${reimported.edges.length}`);
+    differences.push(
+      `Edge count mismatch: ${original.edges.length} vs ${reimported.edges.length}`
+    );
   }
 
   // Check node labels
   const originalLabels = new Set(original.nodes.map((n) => n.label));
   const reimportedLabels = new Set(reimported.nodes.map((n) => n.label));
-  
+
   for (const label of originalLabels) {
     if (!reimportedLabels.has(label)) {
       differences.push(`Missing node label: "${label}"`);
@@ -576,9 +597,13 @@ export function validateC4RoundTrip(
   }
 
   // Check edge connections
-  const originalEdges = new Set(original.edges.map((e) => `${e.source}-${e.target}`));
-  const reimportedEdges = new Set(reimported.edges.map((e) => `${e.source}-${e.target}`));
-  
+  const originalEdges = new Set(
+    original.edges.map((e) => `${e.source}-${e.target}`)
+  );
+  const reimportedEdges = new Set(
+    reimported.edges.map((e) => `${e.source}-${e.target}`)
+  );
+
   for (const edge of originalEdges) {
     if (!reimportedEdges.has(edge)) {
       differences.push(`Missing edge: ${edge}`);
@@ -586,14 +611,15 @@ export function validateC4RoundTrip(
   }
 
   // Calculate fidelity score
-  const totalChecks = 
-    original.nodes.length + 
-    original.edges.length + 
-    originalLabels.size + 
+  const totalChecks =
+    original.nodes.length +
+    original.edges.length +
+    originalLabels.size +
     originalEdges.size;
-  
+
   const passedChecks = totalChecks - differences.length;
-  const fidelityScore = totalChecks > 0 ? (passedChecks / totalChecks) * 100 : 100;
+  const fidelityScore =
+    totalChecks > 0 ? (passedChecks / totalChecks) * 100 : 100;
 
   return {
     isValid: differences.length === 0,
@@ -632,7 +658,13 @@ export function getFormatCapabilities(format: 'mermaid' | 'plantuml' | 'c4') {
       export: true,
       import: false,
       roundTrip: false,
-      supportedNodeTypes: ['rectangle', 'ellipse', 'diamond', 'cylinder', 'hexagon'],
+      supportedNodeTypes: [
+        'rectangle',
+        'ellipse',
+        'diamond',
+        'cylinder',
+        'hexagon',
+      ],
       supportedEdgeTypes: ['solid', 'dashed'],
       expectedCoverage: 92,
       features: [
@@ -651,7 +683,13 @@ export function getFormatCapabilities(format: 'mermaid' | 'plantuml' | 'c4') {
       export: false,
       import: true,
       roundTrip: false,
-      supportedNodeTypes: ['rectangle', 'ellipse', 'cylinder', 'diamond', 'note'],
+      supportedNodeTypes: [
+        'rectangle',
+        'ellipse',
+        'cylinder',
+        'diamond',
+        'note',
+      ],
       supportedEdgeTypes: ['solid', 'dashed'],
       expectedCoverage: 95,
       features: [

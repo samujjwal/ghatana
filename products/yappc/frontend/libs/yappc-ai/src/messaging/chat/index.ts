@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-chat
- * 
+ *
  * Real-time chat library for YAPPC.
  * Provides chat components and hooks for team messaging.
- * 
+ *
  * @module chat
  */
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Comment System Schemas - Phase 6 Implementation  
+// Comment System Schemas - Phase 6 Implementation
 export const CommentStatusSchema = z.enum(['active', 'resolved', 'deleted']);
 
 export const CommentMentionSchema = z.object({
@@ -93,10 +93,12 @@ export const CreateCommentRequestSchema = z.object({
   mentions: z.array(CommentMentionSchema).default([]),
   attachments: z.array(CommentAttachmentSchema).default([]),
   // Position-based comment
-  position: z.object({
-    x: z.number(),
-    y: z.number(),
-  }).optional(),
+  position: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+    })
+    .optional(),
   // Element-based comment
   elementType: z.enum(['node', 'edge']).optional(),
   elementId: z.string().optional(),
@@ -184,11 +186,15 @@ export const isThreadComment = (comment: Comment): comment is ThreadComment => {
   return comment.parentId !== null && comment.parentId !== undefined;
 };
 
-export const isPositionedComment = (comment: Comment): comment is PositionedComment => {
+export const isPositionedComment = (
+  comment: Comment
+): comment is PositionedComment => {
   return 'position' in comment && comment.position !== undefined;
 };
 
-export const isElementComment = (comment: Comment): comment is ElementComment => {
+export const isElementComment = (
+  comment: Comment
+): comment is ElementComment => {
   return 'elementType' in comment && 'elementId' in comment;
 };
 
@@ -212,13 +218,16 @@ export const extractMentions = (content: string): CommentMention[] => {
   return mentions;
 };
 
-export const formatCommentContent = (content: string, mentions: CommentMention[]): string => {
+export const formatCommentContent = (
+  content: string,
+  mentions: CommentMention[]
+): string => {
   let formattedContent = content;
-  
+
   // Replace mentions with formatted text (from end to start to preserve positions)
   mentions
     .sort((a, b) => b.position.start - a.position.start)
-    .forEach(mention => {
+    .forEach((mention) => {
       const before = formattedContent.slice(0, mention.position.start);
       const after = formattedContent.slice(mention.position.end);
       formattedContent = `${before}<span class="mention" data-user-id="${mention.userId}">@${mention.displayName}</span>${after}`;

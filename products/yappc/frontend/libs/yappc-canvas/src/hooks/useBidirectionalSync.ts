@@ -1,16 +1,16 @@
 /**
  * useBidirectionalSync Hook
- * 
+ *
  * React hook for managing bidirectional synchronization between
  * visual UI builder and Monaco code editor.
- * 
+ *
  * Features:
  * - 🔄 Automatic sync management
  * - 🎯 Conflict detection and resolution
  * - 📊 Sync history tracking
  * - ⚡ Debounced updates
  * - 👥 Collaborative support
- * 
+ *
  * @doc.type hook
  * @doc.purpose Bidirectional sync React hook
  * @doc.layer product
@@ -19,7 +19,11 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-import { BidirectionalSyncCoordinator, type SyncEvent, type SyncConfig } from '../sync/BidirectionalSyncCoordinator';
+import {
+  BidirectionalSyncCoordinator,
+  type SyncEvent,
+  type SyncConfig,
+} from '../sync/BidirectionalSyncCoordinator';
 
 /**
  * Sync state
@@ -50,37 +54,49 @@ export function useBidirectionalSync(config?: Partial<SyncConfig>) {
     coordinatorRef.current = new BidirectionalSyncCoordinator(config);
 
     // Setup event listeners
-    const unsubscribeVisualToCode = coordinatorRef.current.on('visual-to-code', (event) => {
-      setSyncState((prev) => ({
-        ...prev,
-        lastSyncTime: event.timestamp,
-        syncHistory: [...prev.syncHistory, event].slice(-50), // Keep last 50
-      }));
-    });
+    const unsubscribeVisualToCode = coordinatorRef.current.on(
+      'visual-to-code',
+      (event) => {
+        setSyncState((prev) => ({
+          ...prev,
+          lastSyncTime: event.timestamp,
+          syncHistory: [...prev.syncHistory, event].slice(-50), // Keep last 50
+        }));
+      }
+    );
 
-    const unsubscribeCodeToVisual = coordinatorRef.current.on('code-to-visual', (event) => {
-      setSyncState((prev) => ({
-        ...prev,
-        lastSyncTime: event.timestamp,
-        syncHistory: [...prev.syncHistory, event].slice(-50),
-      }));
-    });
+    const unsubscribeCodeToVisual = coordinatorRef.current.on(
+      'code-to-visual',
+      (event) => {
+        setSyncState((prev) => ({
+          ...prev,
+          lastSyncTime: event.timestamp,
+          syncHistory: [...prev.syncHistory, event].slice(-50),
+        }));
+      }
+    );
 
-    const unsubscribeConflict = coordinatorRef.current.on('conflict', (event) => {
-      setSyncState((prev) => ({
-        ...prev,
-        conflictCount: prev.conflictCount + 1,
-        syncHistory: [...prev.syncHistory, event].slice(-50),
-      }));
-    });
+    const unsubscribeConflict = coordinatorRef.current.on(
+      'conflict',
+      (event) => {
+        setSyncState((prev) => ({
+          ...prev,
+          conflictCount: prev.conflictCount + 1,
+          syncHistory: [...prev.syncHistory, event].slice(-50),
+        }));
+      }
+    );
 
-    const unsubscribeResolved = coordinatorRef.current.on('resolved', (event) => {
-      setSyncState((prev) => ({
-        ...prev,
-        resolvedConflictCount: prev.resolvedConflictCount + 1,
-        syncHistory: [...prev.syncHistory, event].slice(-50),
-      }));
-    });
+    const unsubscribeResolved = coordinatorRef.current.on(
+      'resolved',
+      (event) => {
+        setSyncState((prev) => ({
+          ...prev,
+          resolvedConflictCount: prev.resolvedConflictCount + 1,
+          syncHistory: [...prev.syncHistory, event].slice(-50),
+        }));
+      }
+    );
 
     return () => {
       unsubscribeVisualToCode();
@@ -94,9 +110,12 @@ export function useBidirectionalSync(config?: Partial<SyncConfig>) {
   /**
    * Sync visual changes to code
    */
-  const syncVisualToCode = useCallback((visualData: unknown, debounce = true) => {
-    coordinatorRef.current?.syncVisualToCode(visualData, debounce);
-  }, []);
+  const syncVisualToCode = useCallback(
+    (visualData: unknown, debounce = true) => {
+      coordinatorRef.current?.syncVisualToCode(visualData, debounce);
+    },
+    []
+  );
 
   /**
    * Sync code changes to visual
@@ -108,9 +127,12 @@ export function useBidirectionalSync(config?: Partial<SyncConfig>) {
   /**
    * Resolve conflict
    */
-  const resolveConflict = useCallback((conflictId: string, preferredSource: 'visual' | 'code') => {
-    coordinatorRef.current?.resolveConflict(conflictId, preferredSource);
-  }, []);
+  const resolveConflict = useCallback(
+    (conflictId: string, preferredSource: 'visual' | 'code') => {
+      coordinatorRef.current?.resolveConflict(conflictId, preferredSource);
+    },
+    []
+  );
 
   /**
    * Get sync history

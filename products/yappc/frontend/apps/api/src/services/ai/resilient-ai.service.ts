@@ -1,9 +1,9 @@
 /**
  * AI Service Resilience Implementation
- * 
+ *
  * Provides circuit breaker pattern, fallback mechanisms, streaming responses,
  * and comprehensive error handling for AI services.
- * 
+ *
  * @doc.type service
  * @doc.purpose AI service resilience and reliability
  * @doc.layer product
@@ -123,7 +123,9 @@ export class CircuitBreaker extends EventEmitter {
 
     // Check if circuit is open and should remain open
     if (this.state.state === 'OPEN' && now < this.state.nextAttemptTime) {
-      throw new Error(`Circuit breaker is OPEN for ${this.provider.name}. Next attempt at ${new Date(this.state.nextAttemptTime)}`);
+      throw new Error(
+        `Circuit breaker is OPEN for ${this.provider.name}. Next attempt at ${new Date(this.state.nextAttemptTime)}`
+      );
     }
 
     // Transition from OPEN to HALF_OPEN
@@ -145,10 +147,11 @@ export class CircuitBreaker extends EventEmitter {
 
   private onSuccess(): void {
     this.state.failureCount = 0;
-    
+
     if (this.state.state === 'HALF_OPEN') {
       this.state.successCount++;
-      if (this.state.successCount >= 3) { // Require 3 successes to close
+      if (this.state.successCount >= 3) {
+        // Require 3 successes to close
         this.state.state = 'CLOSED';
         this.emit('state_change', 'CLOSED', this.provider.name);
       }
@@ -200,7 +203,8 @@ export class AICache {
   private maxSize: number;
   private ttl: number;
 
-  constructor(maxSize: number = 1000, ttl: number = 300000) { // 5 minutes default TTL
+  constructor(maxSize: number = 1000, ttl: number = 300000) {
+    // 5 minutes default TTL
     this.cache = new Map();
     this.maxSize = maxSize;
     this.ttl = ttl;
@@ -218,7 +222,7 @@ export class AICache {
   get(request: AIRequest): AIResponse | null {
     const key = this.generateKey(request);
     const cached = this.cache.get(key);
-    
+
     if (!cached) {
       return null;
     }
@@ -231,13 +235,13 @@ export class AICache {
     // Move to end (LRU)
     this.cache.delete(key);
     this.cache.set(key, cached);
-    
+
     return { ...cached.response, fromCache: true };
   }
 
   set(request: AIRequest, response: AIResponse): void {
     const key = this.generateKey(request);
-    
+
     // Remove oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value;
@@ -297,10 +301,14 @@ export class RateLimiter {
     // Clean old requests
     const oneHourAgo = now - 3600000;
     const oneMinuteAgo = now - 60000;
-    const recentRequests = providerRequests.filter(timestamp => timestamp > oneHourAgo);
+    const recentRequests = providerRequests.filter(
+      (timestamp) => timestamp > oneHourAgo
+    );
 
     // Check per-minute limit
-    const minuteRequests = recentRequests.filter(timestamp => timestamp > oneMinuteAgo);
+    const minuteRequests = recentRequests.filter(
+      (timestamp) => timestamp > oneMinuteAgo
+    );
     if (minuteRequests.length >= limits.perMinute) {
       return false;
     }
@@ -317,7 +325,10 @@ export class RateLimiter {
     return true;
   }
 
-  getRemainingRequests(provider: string): { perMinute: number; perHour: number } {
+  getRemainingRequests(provider: string): {
+    perMinute: number;
+    perHour: number;
+  } {
     const limits = this.limits.get(provider);
     if (!limits) {
       return { perMinute: Infinity, perHour: Infinity };
@@ -328,9 +339,13 @@ export class RateLimiter {
 
     const oneHourAgo = now - 3600000;
     const oneMinuteAgo = now - 60000;
-    const recentRequests = providerRequests.filter(timestamp => timestamp > oneHourAgo);
+    const recentRequests = providerRequests.filter(
+      (timestamp) => timestamp > oneHourAgo
+    );
 
-    const minuteRequests = recentRequests.filter(timestamp => timestamp > oneMinuteAgo);
+    const minuteRequests = recentRequests.filter(
+      (timestamp) => timestamp > oneMinuteAgo
+    );
 
     return {
       perMinute: Math.max(0, limits.perMinute - minuteRequests.length),
@@ -348,7 +363,10 @@ export class FallbackProvider {
   private circuitBreakers: Map<string, CircuitBreaker>;
   private rateLimiter: RateLimiter;
 
-  constructor(providers: AIProvider[], circuitBreakerConfig: CircuitBreakerConfig) {
+  constructor(
+    providers: AIProvider[],
+    circuitBreakerConfig: CircuitBreakerConfig
+  ) {
     this.providers = providers.sort((a, b) => {
       // Sort by priority (lower index = higher priority)
       const priorityOrder = ['openai', 'anthropic', 'local'];
@@ -362,8 +380,15 @@ export class FallbackProvider {
 
     // Initialize circuit breakers and rate limits
     for (const provider of this.providers) {
-      this.circuitBreakers.set(provider.name, new CircuitBreaker(provider, circuitBreakerConfig));
-      this.rateLimiter.setLimit(provider.name, provider.rateLimit.requestsPerMinute, provider.rateLimit.requestsPerHour);
+      this.circuitBreakers.set(
+        provider.name,
+        new CircuitBreaker(provider, circuitBreakerConfig)
+      );
+      this.rateLimiter.setLimit(
+        provider.name,
+        provider.rateLimit.requestsPerMinute,
+        provider.rateLimit.requestsPerHour
+      );
     }
   }
 
@@ -376,7 +401,7 @@ export class FallbackProvider {
       }
 
       const circuitBreaker = this.circuitBreakers.get(provider.name)!;
-      
+
       // Check rate limit
       const canProceed = await this.rateLimiter.checkLimit(provider.name);
       if (!canProceed) {
@@ -417,7 +442,7 @@ export class FallbackProvider {
       }
 
       const circuitBreaker = this.circuitBreakers.get(provider.name)!;
-      
+
       // Check rate limit
       const canProceed = await this.rateLimiter.checkLimit(provider.name);
       if (!canProceed) {
@@ -443,7 +468,10 @@ export class FallbackProvider {
     return this.createSafeFallbackResponse(request, lastError);
   }
 
-  private async makeRequest(provider: AIProvider, request: AIRequest): Promise<AIResponse> {
+  private async makeRequest(
+    provider: AIProvider,
+    request: AIRequest
+  ): Promise<AIResponse> {
     const startTime = Date.now();
 
     const controller = new AbortController();
@@ -452,8 +480,9 @@ export class FallbackProvider {
     try {
       // Build request body in OpenAI chat-completion format.
       // Anthropic and other providers are normalised to this schema at the gateway layer.
-      const model = request.options?.model
-          ?? (provider.name === 'anthropic' ? 'claude-3-opus-20240229' : 'gpt-4');
+      const model =
+        request.options?.model ??
+        (provider.name === 'anthropic' ? 'claude-3-opus-20240229' : 'gpt-4');
 
       const body = {
         model,
@@ -464,7 +493,7 @@ export class FallbackProvider {
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${provider.apiKey}`,
+        Authorization: `Bearer ${provider.apiKey}`,
       };
       if (provider.name === 'anthropic') {
         headers['anthropic-version'] = '2023-06-01';
@@ -480,20 +509,26 @@ export class FallbackProvider {
       if (!response.ok) {
         const errorBody = await response.text().catch(() => '');
         throw new Error(
-            `Provider ${provider.name} returned HTTP ${response.status}: ${errorBody}`
+          `Provider ${provider.name} returned HTTP ${response.status}: ${errorBody}`
         );
       }
 
-      const data = await response.json() as Record<string, unknown>;
+      const data = (await response.json()) as Record<string, unknown>;
       const latency = Date.now() - startTime;
 
       // Normalise OpenAI and Anthropic response shapes
-      const choices = data['choices'] as Array<Record<string, unknown>> | undefined;
-      const anthropicContent = data['content'] as Array<Record<string, unknown>> | undefined;
+      const choices = data['choices'] as
+        | Array<Record<string, unknown>>
+        | undefined;
+      const anthropicContent = data['content'] as
+        | Array<Record<string, unknown>>
+        | undefined;
       const content: string =
-          (choices?.[0]?.['message'] as Record<string, string> | undefined)?.['content']
-          ?? (anthropicContent?.[0]?.['text'] as string | undefined)
-          ?? '';
+        (choices?.[0]?.['message'] as Record<string, string> | undefined)?.[
+          'content'
+        ] ??
+        (anthropicContent?.[0]?.['text'] as string | undefined) ??
+        '';
 
       const usage = data['usage'] as Record<string, number> | undefined;
 
@@ -503,14 +538,16 @@ export class FallbackProvider {
         provider: provider.name,
         content,
         usage: {
-          promptTokens:      usage?.['prompt_tokens'] ?? usage?.['input_tokens']  ?? 0,
-          completionTokens:  usage?.['completion_tokens'] ?? usage?.['output_tokens'] ?? 0,
-          totalTokens:       usage?.['total_tokens'] ?? 0,
+          promptTokens:
+            usage?.['prompt_tokens'] ?? usage?.['input_tokens'] ?? 0,
+          completionTokens:
+            usage?.['completion_tokens'] ?? usage?.['output_tokens'] ?? 0,
+          totalTokens: usage?.['total_tokens'] ?? 0,
         },
         model: (data['model'] as string | undefined) ?? model,
         finishReason:
-            (choices?.[0]?.['finish_reason'] as string | undefined)
-            ?? (data['stop_reason'] as string | undefined),
+          (choices?.[0]?.['finish_reason'] as string | undefined) ??
+          (data['stop_reason'] as string | undefined),
         timestamp: Date.now(),
         latency,
         fromCache: false,
@@ -521,12 +558,16 @@ export class FallbackProvider {
     }
   }
 
-  private createSafeFallbackResponse(request: AIRequest, error?: Error | null): AIResponse {
+  private createSafeFallbackResponse(
+    request: AIRequest,
+    error?: Error | null
+  ): AIResponse {
     return {
       id: crypto.randomUUID(),
       requestId: request.id,
       provider: 'fallback',
-      content: 'I apologize, but I\'m currently experiencing technical difficulties. Please try again in a few moments.',
+      content:
+        "I apologize, but I'm currently experiencing technical difficulties. Please try again in a few moments.",
       model: 'fallback',
       timestamp: Date.now(),
       latency: 0,
@@ -546,7 +587,9 @@ export class FallbackProvider {
   getRateLimitStatus(): Record<string, { perMinute: number; perHour: number }> {
     const status: Record<string, { perMinute: number; perHour: number }> = {};
     for (const provider of this.providers) {
-      status[provider.name] = this.rateLimiter.getRemainingRequests(provider.name);
+      status[provider.name] = this.rateLimiter.getRemainingRequests(
+        provider.name
+      );
     }
     return status;
   }
@@ -561,9 +604,15 @@ export class StreamingAIService extends EventEmitter {
   private cache: AICache;
   private activeStreams: Map<string, AbortController>;
 
-  constructor(providers: AIProvider[], circuitBreakerConfig: CircuitBreakerConfig) {
+  constructor(
+    providers: AIProvider[],
+    circuitBreakerConfig: CircuitBreakerConfig
+  ) {
     super();
-    this.fallbackProvider = new FallbackProvider(providers, circuitBreakerConfig);
+    this.fallbackProvider = new FallbackProvider(
+      providers,
+      circuitBreakerConfig
+    );
     this.cache = new AICache();
     this.activeStreams = new Map();
   }
@@ -577,8 +626,9 @@ export class StreamingAIService extends EventEmitter {
     }
 
     // Execute with fallback
-    const response = await this.fallbackProvider.executeRequestWithFallback(request);
-    
+    const response =
+      await this.fallbackProvider.executeRequestWithFallback(request);
+
     // Cache successful responses
     if (!response.fromFallback) {
       this.cache.set(request, response);
@@ -588,7 +638,9 @@ export class StreamingAIService extends EventEmitter {
     return response;
   }
 
-  async executeStreamingRequest(request: AIRequest): Promise<AsyncIterable<AIStreamChunk>> {
+  async executeStreamingRequest(
+    request: AIRequest
+  ): Promise<AsyncIterable<AIStreamChunk>> {
     const abortController = new AbortController();
     this.activeStreams.set(request.id, abortController);
 
@@ -601,15 +653,21 @@ export class StreamingAIService extends EventEmitter {
     }
   }
 
-  private async *createStream(request: AIRequest, signal: AbortSignal): AsyncIterable<AIStreamChunk> {
+  private async *createStream(
+    request: AIRequest,
+    signal: AbortSignal
+  ): AsyncIterable<AIStreamChunk> {
     const startTime = Date.now();
     let content = '';
     let chunkIndex = 0;
 
     try {
       // Simulate streaming response
-      const words = `Streaming response from ${request.provider} for: ${request.prompt}`.split(' ');
-      
+      const words =
+        `Streaming response from ${request.provider} for: ${request.prompt}`.split(
+          ' '
+        );
+
       for (const word of words) {
         // Check for abort
         if (signal.aborted) {
@@ -619,7 +677,7 @@ export class StreamingAIService extends EventEmitter {
         // Small fixed inter-chunk delay to prevent event-loop starvation.
         // TODO: Replace this simulated word-by-word stream with a real SSE/streaming
         //       connection to the provider once streaming endpoints are integrated.
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
         const delta = word + ' ';
         content += delta;
@@ -658,7 +716,6 @@ export class StreamingAIService extends EventEmitter {
 
       this.cache.set(request, response);
       this.emit('stream_completed', request, response);
-
     } finally {
       this.activeStreams.delete(request.id);
     }
@@ -688,7 +745,7 @@ export class StreamingAIService extends EventEmitter {
       providerHealth: Object.fromEntries(
         Object.entries(providerHealth).map(([name, state]) => [
           name,
-          state.state === 'CLOSED' ? 100 : state.state === 'HALF_OPEN' ? 50 : 0
+          state.state === 'CLOSED' ? 100 : state.state === 'HALF_OPEN' ? 50 : 0,
         ])
       ),
     };

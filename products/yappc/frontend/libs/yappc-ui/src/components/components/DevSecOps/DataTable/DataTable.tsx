@@ -22,7 +22,6 @@ import { useMemo, useState } from 'react';
 
 import { Box, Surface as Paper, Typography } from '@ghatana/design-system';
 
-
 import type { Item } from '@yappc/core/types/devsecops';
 
 import type { DataTableProps, DataTableColumn, SortConfig } from './types';
@@ -104,7 +103,9 @@ export function DataTable<T = Item>({
     const newConfig: SortConfig = {
       column: columnId,
       direction:
-        sortConfig?.column === columnId && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+        sortConfig?.column === columnId && sortConfig.direction === 'asc'
+          ? 'desc'
+          : 'asc',
     };
 
     onSortChange?.(newConfig);
@@ -119,7 +120,9 @@ export function DataTable<T = Item>({
     }
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     if (onPaginationChange && paginationConfig) {
       onPaginationChange({
@@ -221,7 +224,9 @@ export function DataTable<T = Item>({
   const isAllSelected =
     selectionMode === 'multiple' &&
     processedData.length > 0 &&
-    processedData.every((row) => selectedRows.includes(DataTableUtils.getRowId(row)));
+    processedData.every((row) =>
+      selectedRows.includes(DataTableUtils.getRowId(row))
+    );
 
   return (
     <Paper className={className}>

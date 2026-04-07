@@ -23,7 +23,8 @@ export class RBACUtils {
    */
   static authorize(context: AuthorizationContext): AuthorizationDecision {
     const matchingPermissions = context.permissions.filter(
-      perm => perm.resource === context.resource && perm.action === context.action
+      (perm) =>
+        perm.resource === context.resource && perm.action === context.action
     );
 
     if (matchingPermissions.length > 0) {
@@ -49,8 +50,8 @@ export class RBACUtils {
   static getPermissionsFromRoles(roles: Role[]): Permission[] {
     const permissionsMap = new Map<string, Permission>();
 
-    roles.forEach(role => {
-      role.permissions.forEach(permission => {
+    roles.forEach((role) => {
+      role.permissions.forEach((permission) => {
         permissionsMap.set(permission.id, permission);
       });
     });
@@ -65,7 +66,7 @@ export class RBACUtils {
    * @returns True if user has role
    */
   static hasRole(roles: Role[], roleId: string): boolean {
-    return roles.some(role => role.id === roleId);
+    return roles.some((role) => role.id === roleId);
   }
 
   /**
@@ -75,7 +76,7 @@ export class RBACUtils {
    * @returns True if user has any of the roles
    */
   static hasAnyRole(roles: Role[], roleIds: string[]): boolean {
-    return roleIds.some(roleId => roles.some(role => role.id === roleId));
+    return roleIds.some((roleId) => roles.some((role) => role.id === roleId));
   }
 
   /**
@@ -85,7 +86,7 @@ export class RBACUtils {
    * @returns True if user has all of the roles
    */
   static hasAllRoles(roles: Role[], roleIds: string[]): boolean {
-    return roleIds.every(roleId => roles.some(role => role.id === roleId));
+    return roleIds.every((roleId) => roles.some((role) => role.id === roleId));
   }
 
   /**
@@ -95,7 +96,11 @@ export class RBACUtils {
    * @param permissions - Permissions for role
    * @returns Created role
    */
-  static createRole(name: string, description: string, permissions: Permission[]): Role {
+  static createRole(
+    name: string,
+    description: string,
+    permissions: Permission[]
+  ): Role {
     return {
       id: `role-${Date.now()}`,
       name,
@@ -112,7 +117,7 @@ export class RBACUtils {
    * @returns Modified role
    */
   static addPermissionToRole(role: Role, permission: Permission): Role {
-    if (role.permissions.some(p => p.id === permission.id)) {
+    if (role.permissions.some((p) => p.id === permission.id)) {
       return role;
     }
 
@@ -131,7 +136,7 @@ export class RBACUtils {
   static removePermissionFromRole(role: Role, permissionId: string): Role {
     return {
       ...role,
-      permissions: role.permissions.filter(p => p.id !== permissionId),
+      permissions: role.permissions.filter((p) => p.id !== permissionId),
     };
   }
 
@@ -142,7 +147,11 @@ export class RBACUtils {
    * @param action - Action to perform
    * @returns True if access is allowed
    */
-  static checkACLAccess(acl: AccessControlList, userId: string, action: string): boolean {
+  static checkACLAccess(
+    acl: AccessControlList,
+    userId: string,
+    action: string
+  ): boolean {
     // Owner has full access
     if (acl.ownerId === userId) {
       return true;
@@ -155,7 +164,10 @@ export class RBACUtils {
     }
 
     // Check public access
-    if (acl.publicAccess === 'write' || (acl.publicAccess === 'read' && action === 'read')) {
+    if (
+      acl.publicAccess === 'write' ||
+      (acl.publicAccess === 'read' && action === 'read')
+    ) {
       return true;
     }
 
@@ -169,7 +181,11 @@ export class RBACUtils {
    * @param action - Action to grant
    * @returns Modified ACL
    */
-  static grantAccess(acl: AccessControlList, userId: string, action: string): AccessControlList {
+  static grantAccess(
+    acl: AccessControlList,
+    userId: string,
+    action: string
+  ): AccessControlList {
     const userPermissions = acl.userPermissions[userId] || [];
 
     if (!userPermissions.includes(action)) {
@@ -192,8 +208,14 @@ export class RBACUtils {
    * @param action - Action to revoke
    * @returns Modified ACL
    */
-  static revokeAccess(acl: AccessControlList, userId: string, action: string): AccessControlList {
-    const userPermissions = (acl.userPermissions[userId] || []).filter(a => a !== action);
+  static revokeAccess(
+    acl: AccessControlList,
+    userId: string,
+    action: string
+  ): AccessControlList {
+    const userPermissions = (acl.userPermissions[userId] || []).filter(
+      (a) => a !== action
+    );
 
     return {
       ...acl,

@@ -159,7 +159,7 @@ export class CRDTCore {
   public createOperation(
     type: 'insert' | 'delete' | 'update' | 'move',
     targetId: string,
-    data: unknown,
+    data: unknown
   ): CRDTOperation {
     this.incrementVectorClock(this.state.vectorClock);
 
@@ -250,15 +250,24 @@ export class CRDTCore {
   /**
    *
    */
-  private canApplyOperation(operation: CRDTOperation, existing: CRDTValue): boolean {
-    const comparison = this.compareVectorClocks(operation.vectorClock, existing.vectorClock);
+  private canApplyOperation(
+    operation: CRDTOperation,
+    existing: CRDTValue
+  ): boolean {
+    const comparison = this.compareVectorClocks(
+      operation.vectorClock,
+      existing.vectorClock
+    );
     return comparison !== 2;
   }
 
   /**
    *
    */
-  private detectConflict(operation: CRDTOperation, existing: CRDTValue): Conflict {
+  private detectConflict(
+    operation: CRDTOperation,
+    existing: CRDTValue
+  ): Conflict {
     return {
       id: `conflict-${Date.now()}`,
       type: 'concurrent-update',
@@ -311,7 +320,10 @@ export class CRDTCore {
         continue;
       }
 
-      const comparison = this.compareVectorClocks(localValue.vectorClock, remoteValue.vectorClock);
+      const comparison = this.compareVectorClocks(
+        localValue.vectorClock,
+        remoteValue.vectorClock
+      );
       if (comparison === 2) {
         const resolution = this.resolveConflict(localValue, remoteValue);
         conflicts.push(resolution.conflict);
@@ -340,16 +352,20 @@ export class CRDTCore {
    */
   private resolveConflict(
     local: CRDTValue,
-    remote: CRDTValue,
+    remote: CRDTValue
   ): { conflict: Conflict; resolvedValue: CRDTValue } {
     let resolvedValue = this.cloneValue(local);
 
     switch (this.config.mergeStrategy) {
       case 'last-write-wins':
-        resolvedValue = this.cloneValue(local.timestamp > remote.timestamp ? local : remote);
+        resolvedValue = this.cloneValue(
+          local.timestamp > remote.timestamp ? local : remote
+        );
         break;
       case 'first-write-wins':
-        resolvedValue = this.cloneValue(local.timestamp < remote.timestamp ? local : remote);
+        resolvedValue = this.cloneValue(
+          local.timestamp < remote.timestamp ? local : remote
+        );
         break;
       case 'merge':
         if (
@@ -367,12 +383,16 @@ export class CRDTCore {
             timestamp: Math.max(local.timestamp, remote.timestamp),
           };
         } else {
-          resolvedValue = this.cloneValue(remote.timestamp >= local.timestamp ? remote : local);
+          resolvedValue = this.cloneValue(
+            remote.timestamp >= local.timestamp ? remote : local
+          );
         }
         break;
       case 'custom':
       default:
-        resolvedValue = this.cloneValue(remote.timestamp >= local.timestamp ? remote : local);
+        resolvedValue = this.cloneValue(
+          remote.timestamp >= local.timestamp ? remote : local
+        );
         break;
     }
 
@@ -505,7 +525,9 @@ export class CRDTCore {
    *
    */
   public getStatistics(): CRDTStatistics {
-    const resolvedConflicts = Array.from(this.conflicts.values()).filter((conflict) => conflict.resolved).length;
+    const resolvedConflicts = Array.from(this.conflicts.values()).filter(
+      (conflict) => conflict.resolved
+    ).length;
 
     return {
       totalOperations: this.operationLog.length,
@@ -552,7 +574,11 @@ export class CRDTCore {
           id: string;
           replicaId: string;
           values: Array<[string, CRDTValue]>;
-          vectorClock: { id: string; values: Array<[string, number]>; timestamp: number };
+          vectorClock: {
+            id: string;
+            values: Array<[string, number]>;
+            timestamp: number;
+          };
           timestamp: number;
         };
       };

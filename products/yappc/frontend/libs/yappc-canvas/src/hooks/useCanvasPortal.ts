@@ -6,13 +6,12 @@ import { canvasStateAtom } from '../state/canvas-atoms';
 import type { CanvasState } from '../state/canvas-atoms';
 import type { PortalElement, DrillDownContext } from '../types/portal-types';
 
-
 // Re-export types for backward compatibility
 export type { PortalElement, DrillDownContext };
 
 /**
  * Hook for managing hierarchical canvas navigation with portal drill-down
- * 
+ *
  * Provides comprehensive portal element functionality including:
  * - Nested canvas navigation with breadcrumb history
  * - Enter/exit portal transitions with state preservation
@@ -20,11 +19,11 @@ export type { PortalElement, DrillDownContext };
  * - Breadcrumb path for hierarchical navigation
  * - Canvas stack management for back navigation
  * - Portal element creation and management
- * 
+ *
  * Implements Phase 5 requirements for nested canvas drill-down. Works with React Flow
  * to manage nodes/edges across canvas levels. Gracefully handles test environments
  * where React Flow may not be available.
- * 
+ *
  * @returns Object containing:
  *   - canvasStack: Array of canvas IDs representing navigation history
  *   - currentCanvasId: ID of the currently visible canvas
@@ -34,7 +33,7 @@ export type { PortalElement, DrillDownContext };
  *   - exitPortal: Function to navigate back to parent canvas
  *   - createPortal: Function to create new portal element
  *   - isPortalElement: Function to check if node is a portal
- * 
+ *
  * @example
  * ```tsx
  * function HierarchicalCanvas() {
@@ -46,13 +45,13 @@ export type { PortalElement, DrillDownContext };
  *     createPortal,
  *     isPortalElement
  *   } = useCanvasPortal();
- *   
+ *
  *   const handleNodeClick = (node) => {
  *     if (isPortalElement(node)) {
  *       enterPortal(node.id, `Nested: ${node.data.label}`);
  *     }
  *   };
- *   
+ *
  *   const handleCreatePortal = () => {
  *     const portalId = createPortal({
  *       position: { x: 100, y: 100 },
@@ -60,12 +59,12 @@ export type { PortalElement, DrillDownContext };
  *     });
  *     console.log('Created portal:', portalId);
  *   };
- *   
+ *
  *   return (
  *     <div>
  *       <nav>
  *         {breadcrumbPath.map((crumb, i) => (
- *           <button 
+ *           <button
  *             key={crumb.id}
  *             onClick={() => i < breadcrumbPath.length - 1 && exitPortal()}
  *           >
@@ -73,11 +72,11 @@ export type { PortalElement, DrillDownContext };
  *           </button>
  *         ))}
  *       </nav>
- *       
+ *
  *       <ReactFlow
  *         onNodeClick={(_, node) => handleNodeClick(node)}
  *       />
- *       
+ *
  *       <button onClick={handleCreatePortal}>Add Portal</button>
  *       {breadcrumbPath.length > 1 && (
  *         <button onClick={exitPortal}>← Back</button>
@@ -93,8 +92,8 @@ export function useCanvasPortal() {
   // the hook can be tested without the React Flow provider/zustand store.
   let getNodes: () => Node[] = () => [];
   let getEdges: () => Edge[] = () => [];
-  let setNodes: (updater: unknown) => void = () => { };
-  let setEdges: (updater: unknown) => void = () => { };
+  let setNodes: (updater: unknown) => void = () => {};
+  let setEdges: (updater: unknown) => void = () => {};
 
   // Capture the initial module reference so we can detect test-time replacements
   // of the module's exported useReactFlow function (tests sometimes assign a
@@ -102,7 +101,6 @@ export function useCanvasPortal() {
   // pick it up when performing operations and use the mocked functions.
   let initialUseReactFlow: unknown = undefined;
   try {
-
     const rf = require('@xyflow/react');
     initialUseReactFlow = rf.useReactFlow;
     if (rf && typeof rf.useReactFlow === 'function') {
@@ -122,9 +120,12 @@ export function useCanvasPortal() {
 
   const tryRefreshFromTestMock = () => {
     try {
-
       const rf = require('@xyflow/react');
-      if (rf && typeof rf.useReactFlow === 'function' && rf.useReactFlow !== initialUseReactFlow) {
+      if (
+        rf &&
+        typeof rf.useReactFlow === 'function' &&
+        rf.useReactFlow !== initialUseReactFlow
+      ) {
         try {
           const hook = rf.useReactFlow();
           getNodes = hook.getNodes || getNodes;
@@ -143,143 +144,163 @@ export function useCanvasPortal() {
   const [drillDownContext, setDrillDownContext] = useState<DrillDownContext>({
     canvasStack: [],
     currentCanvasId: 'root',
-    breadcrumbPath: [{ id: 'root', label: 'Main Canvas' }]
+    breadcrumbPath: [{ id: 'root', label: 'Main Canvas' }],
   });
 
   /**
    * Create a new portal element that links to a sub-canvas
    */
-  const createPortal = useCallback((
-    parentCanvasId: string,
-    targetCanvasId: string,
-    position: { x: number; y: number },
-    label: string,
-    connectionPoint: 'entry' | 'exit' = 'entry'
-  ): PortalElement => {
-    const portalId = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const createPortal = useCallback(
+    (
+      parentCanvasId: string,
+      targetCanvasId: string,
+      position: { x: number; y: number },
+      label: string,
+      connectionPoint: 'entry' | 'exit' = 'entry'
+    ): PortalElement => {
+      const portalId = `portal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    return {
-      id: portalId,
-      type: 'portal',
-      parentCanvasId,
-      targetCanvasId,
-      position,
-      data: {
-        label,
-        connectionPoint,
-        description: `Portal to ${label}`,
-      }
-    };
-  }, []);
+      return {
+        id: portalId,
+        type: 'portal',
+        parentCanvasId,
+        targetCanvasId,
+        position,
+        data: {
+          label,
+          connectionPoint,
+          description: `Portal to ${label}`,
+        },
+      };
+    },
+    []
+  );
 
   /**
    * Add a portal element to the current canvas
    */
-  const addPortal = useCallback((
-    targetCanvasId: string,
-    position: { x: number; y: number },
-    label: string,
-    connectionPoint: 'entry' | 'exit' = 'entry'
-  ) => {
-    const portal = createPortal(
-      drillDownContext.currentCanvasId,
-      targetCanvasId,
-      position,
-      label,
-      connectionPoint
-    );
-
-    const newNode: Node = {
-      id: portal.id,
-      type: 'portal',
-      position: portal.position,
-      data: {
-        ...portal.data,
-        onDrillDown: () => drillDown(targetCanvasId, label),
+  const addPortal = useCallback(
+    (
+      targetCanvasId: string,
+      position: { x: number; y: number },
+      label: string,
+      connectionPoint: 'entry' | 'exit' = 'entry'
+    ) => {
+      const portal = createPortal(
+        drillDownContext.currentCanvasId,
         targetCanvasId,
-        portalType: connectionPoint
-      }
-    };
+        position,
+        label,
+        connectionPoint
+      );
 
-    // Allow tests to swap in mocked @xyflow/react functions after render
-    tryRefreshFromTestMock();
-    setNodes((nodes: unknown) => [...nodes, newNode]);
+      const newNode: Node = {
+        id: portal.id,
+        type: 'portal',
+        position: portal.position,
+        data: {
+          ...portal.data,
+          onDrillDown: () => drillDown(targetCanvasId, label),
+          targetCanvasId,
+          portalType: connectionPoint,
+        },
+      };
 
-    // Update canvas state to track portals
-    setCanvasState((prev: CanvasState) => ({
-      ...prev,
-      portals: {
-        ...prev.portals,
-        [portal.id]: portal
-      }
-    }));
+      // Allow tests to swap in mocked @xyflow/react functions after render
+      tryRefreshFromTestMock();
+      setNodes((nodes: unknown) => [...nodes, newNode]);
 
-    return portal;
-  }, [drillDownContext.currentCanvasId, setNodes, setCanvasState]);
+      // Update canvas state to track portals
+      setCanvasState((prev: CanvasState) => ({
+        ...prev,
+        portals: {
+          ...prev.portals,
+          [portal.id]: portal,
+        },
+      }));
+
+      return portal;
+    },
+    [drillDownContext.currentCanvasId, setNodes, setCanvasState]
+  );
 
   /**
    * Navigate into a sub-canvas (drill down)
    */
-  const drillDown = useCallback((targetCanvasId: string, label: string) => {
-    // Save current canvas state
-    const currentNodes = getNodes();
-    const currentEdges = getEdges();
+  const drillDown = useCallback(
+    (targetCanvasId: string, label: string) => {
+      // Save current canvas state
+      const currentNodes = getNodes();
+      const currentEdges = getEdges();
 
-    tryRefreshFromTestMock();
-    setCanvasState((prev: CanvasState) => ({
-      ...prev,
-      canvasHistory: {
-        ...prev.canvasHistory,
-        [drillDownContext.currentCanvasId]: {
-          nodes: currentNodes,
-          edges: currentEdges,
-          viewport: prev.viewport
-        }
+      tryRefreshFromTestMock();
+      setCanvasState((prev: CanvasState) => ({
+        ...prev,
+        canvasHistory: {
+          ...prev.canvasHistory,
+          [drillDownContext.currentCanvasId]: {
+            nodes: currentNodes,
+            edges: currentEdges,
+            viewport: prev.viewport,
+          },
+        },
+      }));
+
+      // Update drill-down context
+      const newBreadcrumbPath = [
+        ...drillDownContext.breadcrumbPath,
+        { id: targetCanvasId, label },
+      ];
+
+      setDrillDownContext({
+        canvasStack: [
+          ...drillDownContext.canvasStack,
+          drillDownContext.currentCanvasId,
+        ],
+        currentCanvasId: targetCanvasId,
+        parentCanvasId: drillDownContext.currentCanvasId,
+        breadcrumbPath: newBreadcrumbPath,
+      });
+
+      // Load target canvas state or create empty canvas
+      const targetCanvasState = canvasState.canvasHistory?.[targetCanvasId];
+      if (targetCanvasState) {
+        tryRefreshFromTestMock();
+        setNodes(targetCanvasState.nodes);
+        setEdges(targetCanvasState.edges);
+      } else {
+        // Create new empty canvas with exit portal back to parent
+        const exitPortal: Node = {
+          id: `exit-portal-${targetCanvasId}`,
+          type: 'portal',
+          position: { x: 50, y: 50 },
+          data: {
+            label: 'Back to Parent',
+            connectionPoint: 'exit',
+            onDrillDown: () => drillUp(),
+            targetCanvasId: drillDownContext.currentCanvasId,
+            portalType: 'exit',
+          },
+        };
+
+        tryRefreshFromTestMock();
+        setNodes([exitPortal]);
+        setEdges([]);
       }
-    }));
 
-    // Update drill-down context
-    const newBreadcrumbPath = [
-      ...drillDownContext.breadcrumbPath,
-      { id: targetCanvasId, label }
-    ];
-
-    setDrillDownContext({
-      canvasStack: [...drillDownContext.canvasStack, drillDownContext.currentCanvasId],
-      currentCanvasId: targetCanvasId,
-      parentCanvasId: drillDownContext.currentCanvasId,
-      breadcrumbPath: newBreadcrumbPath
-    });
-
-    // Load target canvas state or create empty canvas
-    const targetCanvasState = canvasState.canvasHistory?.[targetCanvasId];
-    if (targetCanvasState) {
-      tryRefreshFromTestMock();
-      setNodes(targetCanvasState.nodes);
-      setEdges(targetCanvasState.edges);
-    } else {
-      // Create new empty canvas with exit portal back to parent
-      const exitPortal: Node = {
-        id: `exit-portal-${targetCanvasId}`,
-        type: 'portal',
-        position: { x: 50, y: 50 },
-        data: {
-          label: 'Back to Parent',
-          connectionPoint: 'exit',
-          onDrillDown: () => drillUp(),
-          targetCanvasId: drillDownContext.currentCanvasId,
-          portalType: 'exit'
-        }
-      };
-
-      tryRefreshFromTestMock();
-      setNodes([exitPortal]);
-      setEdges([]);
-    }
-
-    // Update URL for deep linking
-    updateUrlForCanvas(targetCanvasId, newBreadcrumbPath);
-  }, [getNodes, getEdges, setNodes, setEdges, drillDownContext, canvasState, setCanvasState]);
+      // Update URL for deep linking
+      updateUrlForCanvas(targetCanvasId, newBreadcrumbPath);
+    },
+    [
+      getNodes,
+      getEdges,
+      setNodes,
+      setEdges,
+      drillDownContext,
+      canvasState,
+      setCanvasState,
+    ]
+  );
 
   /**
    * Navigate back to parent canvas (drill up)
@@ -302,13 +323,14 @@ export function useCanvasPortal() {
         [drillDownContext.currentCanvasId]: {
           nodes: currentNodes,
           edges: currentEdges,
-          viewport: prev.viewport
-        }
-      }
+          viewport: prev.viewport,
+        },
+      },
     }));
 
     // Get parent canvas ID
-    const parentCanvasId = drillDownContext.canvasStack[drillDownContext.canvasStack.length - 1];
+    const parentCanvasId =
+      drillDownContext.canvasStack[drillDownContext.canvasStack.length - 1];
     const newCanvasStack = drillDownContext.canvasStack.slice(0, -1);
     const newBreadcrumbPath = drillDownContext.breadcrumbPath.slice(0, -1);
 
@@ -316,7 +338,7 @@ export function useCanvasPortal() {
       canvasStack: newCanvasStack,
       currentCanvasId: parentCanvasId,
       parentCanvasId: newCanvasStack[newCanvasStack.length - 1],
-      breadcrumbPath: newBreadcrumbPath
+      breadcrumbPath: newBreadcrumbPath,
     });
 
     // Load parent canvas state
@@ -329,81 +351,112 @@ export function useCanvasPortal() {
 
     // Update URL
     updateUrlForCanvas(parentCanvasId, newBreadcrumbPath);
-  }, [getNodes, getEdges, setNodes, setEdges, drillDownContext, canvasState, setCanvasState]);
+  }, [
+    getNodes,
+    getEdges,
+    setNodes,
+    setEdges,
+    drillDownContext,
+    canvasState,
+    setCanvasState,
+  ]);
 
   /**
    * Navigate to a specific canvas by ID (used for breadcrumb navigation)
    */
-  const navigateToCanvas = useCallback((canvasId: string) => {
-    const targetIndex = drillDownContext.breadcrumbPath.findIndex(item => item.id === canvasId);
+  const navigateToCanvas = useCallback(
+    (canvasId: string) => {
+      const targetIndex = drillDownContext.breadcrumbPath.findIndex(
+        (item) => item.id === canvasId
+      );
 
-    if (targetIndex === -1) {
-      console.warn(`Canvas ${canvasId} not found in breadcrumb path`);
-      return;
-    }
-
-    if (targetIndex === drillDownContext.breadcrumbPath.length - 1) {
-      // Already on target canvas
-      return;
-    }
-
-    // Save current canvas state
-    tryRefreshFromTestMock();
-    const currentNodes = getNodes();
-    const currentEdges = getEdges();
-
-    setCanvasState((prev: CanvasState) => ({
-      ...prev,
-      canvasHistory: {
-        ...prev.canvasHistory,
-        [drillDownContext.currentCanvasId]: {
-          nodes: currentNodes,
-          edges: currentEdges,
-          viewport: prev.viewport
-        }
+      if (targetIndex === -1) {
+        console.warn(`Canvas ${canvasId} not found in breadcrumb path`);
+        return;
       }
-    }));
 
-    // Update context to target canvas
-    const newBreadcrumbPath = drillDownContext.breadcrumbPath.slice(0, targetIndex + 1);
-    const newCanvasStack = drillDownContext.canvasStack.slice(0, targetIndex);
+      if (targetIndex === drillDownContext.breadcrumbPath.length - 1) {
+        // Already on target canvas
+        return;
+      }
 
-    setDrillDownContext({
-      canvasStack: newCanvasStack,
-      currentCanvasId: canvasId,
-      parentCanvasId: newCanvasStack[newCanvasStack.length - 1],
-      breadcrumbPath: newBreadcrumbPath
-    });
-
-    // Load target canvas state
-    const targetCanvasState = canvasState.canvasHistory?.[canvasId];
-    if (targetCanvasState) {
+      // Save current canvas state
       tryRefreshFromTestMock();
-      setNodes(targetCanvasState.nodes);
-      setEdges(targetCanvasState.edges);
-    }
+      const currentNodes = getNodes();
+      const currentEdges = getEdges();
 
-    // Update URL
-    updateUrlForCanvas(canvasId, newBreadcrumbPath);
-  }, [getNodes, getEdges, setNodes, setEdges, drillDownContext, canvasState, setCanvasState]);
+      setCanvasState((prev: CanvasState) => ({
+        ...prev,
+        canvasHistory: {
+          ...prev.canvasHistory,
+          [drillDownContext.currentCanvasId]: {
+            nodes: currentNodes,
+            edges: currentEdges,
+            viewport: prev.viewport,
+          },
+        },
+      }));
+
+      // Update context to target canvas
+      const newBreadcrumbPath = drillDownContext.breadcrumbPath.slice(
+        0,
+        targetIndex + 1
+      );
+      const newCanvasStack = drillDownContext.canvasStack.slice(0, targetIndex);
+
+      setDrillDownContext({
+        canvasStack: newCanvasStack,
+        currentCanvasId: canvasId,
+        parentCanvasId: newCanvasStack[newCanvasStack.length - 1],
+        breadcrumbPath: newBreadcrumbPath,
+      });
+
+      // Load target canvas state
+      const targetCanvasState = canvasState.canvasHistory?.[canvasId];
+      if (targetCanvasState) {
+        tryRefreshFromTestMock();
+        setNodes(targetCanvasState.nodes);
+        setEdges(targetCanvasState.edges);
+      }
+
+      // Update URL
+      updateUrlForCanvas(canvasId, newBreadcrumbPath);
+    },
+    [
+      getNodes,
+      getEdges,
+      setNodes,
+      setEdges,
+      drillDownContext,
+      canvasState,
+      setCanvasState,
+    ]
+  );
 
   /**
    * Update browser URL for deep linking support
    */
-  const updateUrlForCanvas = useCallback((canvasId: string, breadcrumbPath: Array<{ id: string; label: string }>) => {
-    const pathSegments = breadcrumbPath.map(item => item.id).join('/');
-    const newUrl = `/canvas/${pathSegments}`;
+  const updateUrlForCanvas = useCallback(
+    (
+      canvasId: string,
+      breadcrumbPath: Array<{ id: string; label: string }>
+    ) => {
+      const pathSegments = breadcrumbPath.map((item) => item.id).join('/');
+      const newUrl = `/canvas/${pathSegments}`;
 
-    // Update URL without page reload
-    window.history.pushState({ canvasId, breadcrumbPath }, '', newUrl);
-  }, []);
+      // Update URL without page reload
+      window.history.pushState({ canvasId, breadcrumbPath }, '', newUrl);
+    },
+    []
+  );
 
   /**
    * Get all portals in the current canvas
    */
   const getPortals = useCallback((): PortalElement[] => {
     return Object.values(canvasState.portals || {}).filter(
-      (portal: PortalElement) => portal.parentCanvasId === drillDownContext.currentCanvasId
+      (portal: PortalElement) =>
+        portal.parentCanvasId === drillDownContext.currentCanvasId
     );
   }, [canvasState.portals, drillDownContext.currentCanvasId]);
 
@@ -418,7 +471,11 @@ export function useCanvasPortal() {
   } => {
     const errors: string[] = [];
     const warnings: string[] = [];
-    const errorsDetailed: Array<{ code: string; message: string; path?: string[] }> = [];
+    const errorsDetailed: Array<{
+      code: string;
+      message: string;
+      path?: string[];
+    }> = [];
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
 
@@ -429,7 +486,11 @@ export function useCanvasPortal() {
         if (!errors.includes('Circular reference detected')) {
           errors.push('Circular reference detected');
         }
-        errorsDetailed.push({ code: 'CIRCULAR_REFERENCE', message: msg, path: [...path, canvasId] });
+        errorsDetailed.push({
+          code: 'CIRCULAR_REFERENCE',
+          message: msg,
+          path: [...path, canvasId],
+        });
         // Debug: surface the message during test runs to help narrow failures
         // (left intentionally non-verbose; safe for CI)
 
@@ -466,7 +527,9 @@ export function useCanvasPortal() {
     const allCanvasIds = new Set([
       'root',
       ...Object.keys(canvasState.canvasHistory || {}),
-      ...Object.values(canvasState.portals || {}).map((p: PortalElement) => p.targetCanvasId)
+      ...Object.values(canvasState.portals || {}).map(
+        (p: PortalElement) => p.targetCanvasId
+      ),
     ]);
 
     const reachableCanvases = new Set(['root']);
@@ -489,7 +552,11 @@ export function useCanvasPortal() {
       if (!reachableCanvases.has(canvasId)) {
         const w = `Orphaned canvas detected: ${canvasId} is not reachable from root`;
         warnings.push(w);
-        errorsDetailed.push({ code: 'ORPHANED_CANVAS', message: w, path: [canvasId] });
+        errorsDetailed.push({
+          code: 'ORPHANED_CANVAS',
+          message: w,
+          path: [canvasId],
+        });
       }
     }
 
@@ -517,7 +584,7 @@ export function useCanvasPortal() {
 
     // Utilities
     validateCanvasReferences,
-    updateUrlForCanvas
+    updateUrlForCanvas,
   };
 }
 

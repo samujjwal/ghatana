@@ -9,7 +9,6 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { Button } from './Button.enhanced';
 
-
 // Helper to render with theme
 const renderWithTheme = (ui: React.ReactElement) => {
   const theme = createTheme();

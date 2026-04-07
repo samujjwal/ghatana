@@ -1,9 +1,9 @@
 /**
  * useLSP Hook
- * 
+ *
  * React hook for integrating Language Server Protocol with Monaco editors.
  * Provides automatic LSP server management, diagnostics, and code intelligence.
- * 
+ *
  * Features:
  * - 🎣 Easy React integration with hooks
  * - 🔌 Automatic LSP server lifecycle management
@@ -11,7 +11,7 @@
  * - 🎯 Auto-completion and IntelliSense
  * - 📈 Performance monitoring
  * - 🧼 Automatic cleanup on unmount
- * 
+ *
  * @doc.type hook
  * @doc.purpose LSP React hook
  * @doc.layer product
@@ -21,10 +21,7 @@
 import type * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-import { 
-  type LSPClientManager, 
-  createLSPClientManager,
-} from '../index';
+import { type LSPClientManager, createLSPClientManager } from '../index';
 import type {
   LSPClientConfig,
   LSPDiagnostic,
@@ -121,12 +118,12 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
   useEffect(() => {
     const initializeLSP = async () => {
       try {
-        setState(prev => ({ ...prev, isInitialized: true, error: null }));
+        setState((prev) => ({ ...prev, isInitialized: true, error: null }));
 
         // Convert server config to LSP format
         const lspConfig: LSPClientConfig = {
           workspaceRoot,
-          servers: servers.map(server => ({
+          servers: servers.map((server) => ({
             id: server.id,
             name: server.name,
             languages: server.languages,
@@ -155,10 +152,10 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
 
         managerRef.current = manager;
 
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isReady: true,
-          activeServers: servers.map(s => s.id),
+          activeServers: servers.map((s) => s.id),
           diagnostics: manager.getAllDiagnostics(),
           metrics: manager.getMetrics(),
         }));
@@ -166,16 +163,15 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
         // Setup metrics monitoring
         if (enableMetrics) {
           metricsIntervalRef.current = setInterval(() => {
-            setState(prev => ({
+            setState((prev) => ({
               ...prev,
               metrics: manager.getMetrics(),
             }));
           }, 5000);
         }
-
       } catch (error) {
         console.error('Failed to initialize LSP:', error);
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           error: error instanceof Error ? error.message : 'Unknown error',
         }));
@@ -192,7 +188,13 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
         managerRef.current.dispose();
       }
     };
-  }, [workspaceRoot, servers, enableDiagnostics, enableCompletion, enableMetrics]);
+  }, [
+    workspaceRoot,
+    servers,
+    enableDiagnostics,
+    enableCompletion,
+    enableMetrics,
+  ]);
 
   // Actions
   const getDiagnostics = useCallback((uri: string): LSPDiagnostic[] => {
@@ -200,17 +202,20 @@ export function useLSP(config: UseLSPConfig): UseLSPReturn {
     return managerRef.current.getDiagnostics(uri);
   }, []);
 
-  const getServerMetrics = useCallback((serverId: string): LSPClientMetrics | undefined => {
-    if (!managerRef.current) return undefined;
-    return managerRef.current.getServerMetrics(serverId);
-  }, []);
+  const getServerMetrics = useCallback(
+    (serverId: string): LSPClientMetrics | undefined => {
+      if (!managerRef.current) return undefined;
+      return managerRef.current.getServerMetrics(serverId);
+    },
+    []
+  );
 
   const restartServer = useCallback(async (serverId: string): Promise<void> => {
     if (!managerRef.current) return;
-    
+
     try {
       await managerRef.current.restartServer(serverId);
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         metrics: managerRef.current!.getMetrics(),
       }));
@@ -281,14 +286,20 @@ export function useEnhancedLSP(
         clearTimeout(autoRestartTimeoutRef.current);
       }
     };
-  }, [enableAutoRestart, autoRestartDelay, baseHook.error, baseHook.activeServers, baseHook.restartServer]);
+  }, [
+    enableAutoRestart,
+    autoRestartDelay,
+    baseHook.error,
+    baseHook.activeServers,
+    baseHook.restartServer,
+  ]);
 
   // Additional actions
   const clearDiagnostics = useCallback(() => {
     const manager = baseHook.getManager();
     if (manager) {
       // Clear all diagnostics by setting empty map
-      baseHook.setState?.(prev => ({ ...prev, diagnostics: new Map() }));
+      baseHook.setState?.((prev) => ({ ...prev, diagnostics: new Map() }));
     }
   }, [baseHook.getManager]);
 
@@ -298,13 +309,21 @@ export function useEnhancedLSP(
     let info = 0;
     let hints = 0;
 
-    baseHook.diagnostics.forEach(diagnostics => {
-      diagnostics.forEach(diag => {
+    baseHook.diagnostics.forEach((diagnostics) => {
+      diagnostics.forEach((diag) => {
         switch (diag.severity) {
-          case 'error': errors++; break;
-          case 'warning': warnings++; break;
-          case 'info': info++; break;
-          case 'hint': hints++; break;
+          case 'error':
+            errors++;
+            break;
+          case 'warning':
+            warnings++;
+            break;
+          case 'info':
+            info++;
+            break;
+          case 'hint':
+            hints++;
+            break;
         }
       });
     });
@@ -325,14 +344,17 @@ export function useEnhancedLSP(
  */
 export function useLSPDiagnosticsPanel(lspHook: UseLSPReturn) {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'errors' | 'warnings' | 'info' | 'hints'>('all');
+  const [filter, setFilter] = useState<
+    'all' | 'errors' | 'warnings' | 'info' | 'hints'
+  >('all');
 
   // Filter diagnostics based on selected file and filter type
   const filteredDiagnostics = React.useMemo(() => {
-    const diagnostics: Array<{ uri: string; diagnostics: LSPDiagnostic[] }> = [];
+    const diagnostics: Array<{ uri: string; diagnostics: LSPDiagnostic[] }> =
+      [];
 
     lspHook.diagnostics.forEach((diags, uri) => {
-      const filteredDiags = diags.filter(diag => {
+      const filteredDiags = diags.filter((diag) => {
         if (selectedFile && uri !== selectedFile) return false;
         if (filter !== 'all' && diag.severity !== filter) return false;
         return true;
@@ -360,6 +382,9 @@ export function useLSPDiagnosticsPanel(lspHook: UseLSPReturn) {
     setFilter,
     filteredDiagnostics,
     fileList,
-    diagnosticCount: filteredDiagnostics.reduce((sum, { diagnostics }) => sum + diagnostics.length, 0),
+    diagnosticCount: filteredDiagnostics.reduce(
+      (sum, { diagnostics }) => sum + diagnostics.length,
+      0
+    ),
   };
 }

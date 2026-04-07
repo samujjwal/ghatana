@@ -1,6 +1,6 @@
 /**
  * Test Observability - Test Suite
- * 
+ *
  * Comprehensive tests for test observability utilities.
  */
 
@@ -13,8 +13,8 @@ import {
   type TestFailure,
   type PerformanceMetrics,
   type InvestigationGuide,
-
-  TestObservabilityManager} from '../testObservability';
+  TestObservabilityManager,
+} from '../testObservability';
 
 describe('TestObservabilityManager', () => {
   describe('Initialization', () => {
@@ -137,7 +137,7 @@ describe('TestObservabilityManager', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
       const futureTime = Date.now();
       await new Promise((resolve) => setTimeout(resolve, 10));
-      
+
       manager.info('New message');
 
       const recentLogs = manager.getLogs({ since: futureTime });
@@ -307,7 +307,11 @@ describe('TestObservabilityManager', () => {
 
       const recorded = manager.getFailure('timeout-test');
       expect(recorded?.investigationGuide).toBeDefined();
-      expect(recorded?.investigationGuide?.some((line) => line.includes('Timeout Error'))).toBe(true);
+      expect(
+        recorded?.investigationGuide?.some((line) =>
+          line.includes('Timeout Error')
+        )
+      ).toBe(true);
     });
 
     it('should generate guide for element not found error', () => {
@@ -323,11 +327,17 @@ describe('TestObservabilityManager', () => {
 
       const recorded = manager.getFailure('selector-test');
       expect(recorded?.investigationGuide).toBeDefined();
-      expect(recorded?.investigationGuide?.some((line) => line.includes('Element Not Found'))).toBe(true);
+      expect(
+        recorded?.investigationGuide?.some((line) =>
+          line.includes('Element Not Found')
+        )
+      ).toBe(true);
     });
 
     it('should not generate guide when disabled', () => {
-      manager = createTestObservabilityManager({ autoInvestigationGuides: false });
+      manager = createTestObservabilityManager({
+        autoInvestigationGuides: false,
+      });
 
       const failure: TestFailure = {
         testName: 'timeout-test',
@@ -463,7 +473,9 @@ describe('TestObservabilityManager', () => {
 
       const generated = manager.generateInvestigationGuide(failure);
       expect(generated).toBeDefined();
-      expect(generated?.some((line) => line.includes('Custom Error'))).toBe(true);
+      expect(generated?.some((line) => line.includes('Custom Error'))).toBe(
+        true
+      );
     });
 
     it('should match guides by message', () => {
@@ -531,7 +543,7 @@ describe('TestObservabilityManager', () => {
 
     it('should export report as JSON', () => {
       const manager = createTestObservabilityManager(); // Fresh instance
-      
+
       manager.info('Test log');
       manager.recordFailure({
         testName: 'test-1',

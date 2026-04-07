@@ -29,13 +29,16 @@ export const Default: Story = {
   render: () => (
     <Accordion>
       <AccordionItem value="item-1" title="What is Base UI?">
-        Base UI is a library of headless UI components for building accessible web applications and design systems.
+        Base UI is a library of headless UI components for building accessible
+        web applications and design systems.
       </AccordionItem>
       <AccordionItem value="item-2" title="Why use Accordion?">
-        Accordions help organize and hide complex content, improving readability and user experience.
+        Accordions help organize and hide complex content, improving readability
+        and user experience.
       </AccordionItem>
       <AccordionItem value="item-3" title="How does it work?">
-        Click on any section header to expand or collapse its content. Only one section can be open at a time by default.
+        Click on any section header to expand or collapse its content. Only one
+        section can be open at a time by default.
       </AccordionItem>
     </Accordion>
   ),
@@ -130,8 +133,18 @@ export const CustomIcons: Story = {
         value="item-1"
         title="Plus/Minus Icon"
         icon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
         }
       >
@@ -141,8 +154,18 @@ export const CustomIcons: Story = {
         value="item-2"
         title="Arrow Icon"
         icon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         }
       >
@@ -153,7 +176,11 @@ export const CustomIcons: Story = {
         title="Custom SVG"
         icon={
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
           </svg>
         }
       >
@@ -176,15 +203,19 @@ export const LongContent: Story = {
         <div className="space-y-4">
           {Array.from({ length: 10 }).map((_, i) => (
             <p key={i}>
-              This is paragraph {i + 1} of the long content section. The accordion panel will expand to accommodate all
-              content with a smooth transition.
+              This is paragraph {i + 1} of the long content section. The
+              accordion panel will expand to accommodate all content with a
+              smooth transition.
             </p>
           ))}
         </div>
       </AccordionItem>
       <AccordionItem value="item-3" title="Medium Content">
         <p>This section has a moderate amount of content.</p>
-        <p className="mt-2">It demonstrates how different content lengths look in the same accordion.</p>
+        <p className="mt-2">
+          It demonstrates how different content lengths look in the same
+          accordion.
+        </p>
       </AccordionItem>
     </Accordion>
   ),
@@ -196,27 +227,35 @@ export const LongContent: Story = {
 export const FAQ: Story = {
   render: () => (
     <div className="max-w-3xl">
-      <h2 className="text-2xl font-bold mb-4 text-grey-900 dark:text-white">Frequently Asked Questions</h2>
+      <h2 className="text-2xl font-bold mb-4 text-grey-900 dark:text-white">
+        Frequently Asked Questions
+      </h2>
       <Accordion>
-        <AccordionItem value="q1" title="How do I install the component library?">
+        <AccordionItem
+          value="q1"
+          title="How do I install the component library?"
+        >
           <p>You can install the library using npm or pnpm:</p>
           <pre className="bg-grey-100 dark:bg-grey-800 p-3 rounded mt-2">
             <code>pnpm add @ghatana/yappc-ui</code>
           </pre>
         </AccordionItem>
         <AccordionItem value="q2" title="Is the library TypeScript-compatible?">
-          Yes, the library is written in TypeScript and includes full type definitions for all components.
+          Yes, the library is written in TypeScript and includes full type
+          definitions for all components.
         </AccordionItem>
         <AccordionItem value="q3" title="Does it support dark mode?">
-          Yes, all components automatically adapt to dark mode using Tailwind CSS dark mode utilities.
+          Yes, all components automatically adapt to dark mode using Tailwind
+          CSS dark mode utilities.
         </AccordionItem>
         <AccordionItem value="q4" title="Can I customize the styling?">
-          Absolutely! Components accept className props and use Tailwind CSS, so you can easily override styles or add
-          custom classes.
+          Absolutely! Components accept className props and use Tailwind CSS, so
+          you can easily override styles or add custom classes.
         </AccordionItem>
         <AccordionItem value="q5" title="What about accessibility?">
-          All components are built on Base UI primitives, ensuring WCAG 2.1 AA compliance with proper ARIA attributes,
-          keyboard navigation, and screen reader support.
+          All components are built on Base UI primitives, ensuring WCAG 2.1 AA
+          compliance with proper ARIA attributes, keyboard navigation, and
+          screen reader support.
         </AccordionItem>
       </Accordion>
     </div>
@@ -365,7 +404,8 @@ export const KeyboardAccessible: Story = {
   render: () => (
     <div>
       <p className="mb-4 text-sm text-grey-600 dark:text-grey-400">
-        Try navigating with keyboard: Tab to focus headers, Enter/Space to expand/collapse
+        Try navigating with keyboard: Tab to focus headers, Enter/Space to
+        expand/collapse
       </p>
       <Accordion>
         <AccordionItem value="item-1" title="Keyboard Navigation">
@@ -377,11 +417,12 @@ export const KeyboardAccessible: Story = {
           </ul>
         </AccordionItem>
         <AccordionItem value="item-2" title="ARIA Attributes">
-          This component uses proper ARIA attributes for accessibility, including aria-expanded and semantic button
-          elements.
+          This component uses proper ARIA attributes for accessibility,
+          including aria-expanded and semantic button elements.
         </AccordionItem>
         <AccordionItem value="item-3" title="Focus Management">
-          Focus indicators are clearly visible and keyboard navigation follows logical tab order.
+          Focus indicators are clearly visible and keyboard navigation follows
+          logical tab order.
         </AccordionItem>
       </Accordion>
     </div>
@@ -399,13 +440,16 @@ export const DarkMode: Story = {
     <div className="dark">
       <Accordion>
         <AccordionItem value="item-1" title="Dark Mode Support">
-          This accordion automatically adapts to dark mode with appropriate colors for backgrounds, text, and borders.
+          This accordion automatically adapts to dark mode with appropriate
+          colors for backgrounds, text, and borders.
         </AccordionItem>
         <AccordionItem value="item-2" title="Theme Integration">
-          All colors use theme tokens that switch seamlessly between light and dark modes.
+          All colors use theme tokens that switch seamlessly between light and
+          dark modes.
         </AccordionItem>
         <AccordionItem value="item-3" title="Accessibility">
-          Color contrast ratios are maintained in both light and dark modes for WCAG compliance.
+          Color contrast ratios are maintained in both light and dark modes for
+          WCAG compliance.
         </AccordionItem>
       </Accordion>
     </div>

@@ -33,7 +33,7 @@ export interface DataTableProps<T = unknown> {
 
 /**
  * DataTable component with sorting, filtering, and pagination
- * 
+ *
  * @example
  * ```tsx
  * <DataTable
@@ -69,12 +69,13 @@ export function DataTable<T extends Record<string, unknown>>({
   // Filtering
   const filteredData = useMemo(() => {
     if (!filterable || !filterText) return data;
-    
-    return data.filter(row =>
-      columns.some(col => {
-        const value = typeof col.accessor === 'function'
-          ? col.accessor(row)
-          : row[col.accessor];
+
+    return data.filter((row) =>
+      columns.some((col) => {
+        const value =
+          typeof col.accessor === 'function'
+            ? col.accessor(row)
+            : row[col.accessor];
         return String(value).toLowerCase().includes(filterText.toLowerCase());
       })
     );
@@ -83,18 +84,20 @@ export function DataTable<T extends Record<string, unknown>>({
   // Sorting
   const sortedData = useMemo(() => {
     if (!sortColumn) return filteredData;
-    
+
     return [...filteredData].sort((a, b) => {
-      const column = columns.find(col => col.id === sortColumn);
+      const column = columns.find((col) => col.id === sortColumn);
       if (!column) return 0;
-      
-      const aValue = typeof column.accessor === 'function'
-        ? column.accessor(a)
-        : a[column.accessor];
-      const bValue = typeof column.accessor === 'function'
-        ? column.accessor(b)
-        : b[column.accessor];
-      
+
+      const aValue =
+        typeof column.accessor === 'function'
+          ? column.accessor(a)
+          : a[column.accessor];
+      const bValue =
+        typeof column.accessor === 'function'
+          ? column.accessor(b)
+          : b[column.accessor];
+
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -104,7 +107,7 @@ export function DataTable<T extends Record<string, unknown>>({
   // Pagination
   const paginatedData = useMemo(() => {
     if (!paginated) return sortedData;
-    
+
     const start = (currentPage - 1) * pageSize;
     const end = start + pageSize;
     return sortedData.slice(start, end);
@@ -114,7 +117,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const handleSort = (columnId: string) => {
     if (sortColumn === columnId) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortColumn(columnId);
       setSortDirection('asc');
@@ -129,8 +132,8 @@ export function DataTable<T extends Record<string, unknown>>({
       newSelected.add(index);
     }
     setSelectedRows(newSelected);
-    
-    const selectedData = Array.from(newSelected).map(i => sortedData[i]);
+
+    const selectedData = Array.from(newSelected).map((i) => sortedData[i]);
     onSelectionChange?.(selectedData);
   };
 
@@ -139,7 +142,9 @@ export function DataTable<T extends Record<string, unknown>>({
       setSelectedRows(new Set());
       onSelectionChange?.([]);
     } else {
-      const allIndices = paginatedData.map((_, i) => (currentPage - 1) * pageSize + i);
+      const allIndices = paginatedData.map(
+        (_, i) => (currentPage - 1) * pageSize + i
+      );
       setSelectedRows(new Set(allIndices));
       onSelectionChange?.(paginatedData);
     }
@@ -174,11 +179,23 @@ export function DataTable<T extends Record<string, unknown>>({
   };
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
+    );
   }
 
   if (paginatedData.length === 0) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-secondary, #757575)' }}>{emptyMessage}</div>;
+    return (
+      <div
+        style={{
+          padding: '2rem',
+          textAlign: 'center',
+          color: 'var(--color-text-secondary, #757575)',
+        }}
+      >
+        {emptyMessage}
+      </div>
+    );
   }
 
   return (
@@ -207,28 +224,38 @@ export function DataTable<T extends Record<string, unknown>>({
               <th style={{ ...thStyle, width: '50px' }}>
                 <input
                   type="checkbox"
-                  checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
+                  checked={
+                    selectedRows.size === paginatedData.length &&
+                    paginatedData.length > 0
+                  }
                   onChange={handleSelectAll}
                 />
               </th>
             )}
-            {columns.map(column => (
+            {columns.map((column) => (
               <th
                 key={column.id}
                 style={{
                   ...thStyle,
                   width: column.width,
                   textAlign: column.align || 'left',
-                  cursor: sortable && column.sortable !== false ? 'pointer' : 'default',
+                  cursor:
+                    sortable && column.sortable !== false
+                      ? 'pointer'
+                      : 'default',
                 }}
-                onClick={() => sortable && column.sortable !== false && handleSort(column.id)}
+                onClick={() =>
+                  sortable && column.sortable !== false && handleSort(column.id)
+                }
               >
                 {column.header}
-                {sortable && column.sortable !== false && sortColumn === column.id && (
-                  <span style={{ marginLeft: '0.5rem' }}>
-                    {sortDirection === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
+                {sortable &&
+                  column.sortable !== false &&
+                  sortColumn === column.id && (
+                    <span style={{ marginLeft: '0.5rem' }}>
+                      {sortDirection === 'asc' ? '↑' : '↓'}
+                    </span>
+                  )}
               </th>
             ))}
           </tr>
@@ -241,16 +268,26 @@ export function DataTable<T extends Record<string, unknown>>({
                 key={rowIndex}
                 style={{
                   ...rowStyle,
-                  backgroundColor: selectedRows.has(actualIndex) ? 'var(--color-primary-light, #e3f2fd)' : 'transparent',
+                  backgroundColor: selectedRows.has(actualIndex)
+                    ? 'var(--color-primary-light, #e3f2fd)'
+                    : 'transparent',
                 }}
                 onClick={() => onRowClick?.(row)}
                 onMouseEnter={(e) => {
                   if (onRowClick) {
-                    e.currentTarget.style.backgroundColor = selectedRows.has(actualIndex) ? 'var(--color-primary-lighter, #bbdefb)' : 'var(--color-grey-100, #f5f5f5)';
+                    e.currentTarget.style.backgroundColor = selectedRows.has(
+                      actualIndex
+                    )
+                      ? 'var(--color-primary-lighter, #bbdefb)'
+                      : 'var(--color-grey-100, #f5f5f5)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = selectedRows.has(actualIndex) ? 'var(--color-primary-light, #e3f2fd)' : 'transparent';
+                  e.currentTarget.style.backgroundColor = selectedRows.has(
+                    actualIndex
+                  )
+                    ? 'var(--color-primary-light, #e3f2fd)'
+                    : 'transparent';
                 }}
               >
                 {selectable && (
@@ -263,11 +300,12 @@ export function DataTable<T extends Record<string, unknown>>({
                     />
                   </td>
                 )}
-                {columns.map(column => {
-                  const value = typeof column.accessor === 'function'
-                    ? column.accessor(row)
-                    : row[column.accessor];
-                  
+                {columns.map((column) => {
+                  const value =
+                    typeof column.accessor === 'function'
+                      ? column.accessor(row)
+                      : row[column.accessor];
+
                   return (
                     <td
                       key={column.id}
@@ -284,9 +322,16 @@ export function DataTable<T extends Record<string, unknown>>({
       </table>
 
       {paginated && totalPages > 1 && (
-        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+        <div
+          style={{
+            marginTop: '1rem',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '0.5rem',
+          }}
+        >
           <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
             style={{
               padding: '0.5rem 1rem',
@@ -298,11 +343,17 @@ export function DataTable<T extends Record<string, unknown>>({
           >
             Previous
           </button>
-          <span style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center' }}>
+          <span
+            style={{
+              padding: '0.5rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
             Page {currentPage} of {totalPages}
           </span>
           <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
             style={{
               padding: '0.5rem 1rem',

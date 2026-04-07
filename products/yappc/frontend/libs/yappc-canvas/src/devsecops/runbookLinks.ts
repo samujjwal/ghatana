@@ -40,7 +40,12 @@ export type IncidentStatus =
 /**
  * SLO metric types
  */
-export type MetricType = 'availability' | 'latency' | 'error-rate' | 'throughput' | 'custom';
+export type MetricType =
+  | 'availability'
+  | 'latency'
+  | 'error-rate'
+  | 'throughput'
+  | 'custom';
 
 /**
  * Runbook metadata
@@ -67,7 +72,13 @@ export interface Runbook {
 export interface IncidentEvent {
   id: string;
   timestamp: Date;
-  type: 'detected' | 'escalated' | 'acknowledged' | 'updated' | 'resolved' | 'closed';
+  type:
+    | 'detected'
+    | 'escalated'
+    | 'acknowledged'
+    | 'updated'
+    | 'resolved'
+    | 'closed';
   actor: string;
   description: string;
   severity?: IncidentSeverity;
@@ -204,7 +215,10 @@ export function createRunbookManager(): RunbookManagerState {
 /**
  * Add runbook
  */
-export function addRunbook(state: RunbookManagerState, runbook: Runbook): RunbookManagerState {
+export function addRunbook(
+  state: RunbookManagerState,
+  runbook: Runbook
+): RunbookManagerState {
   const newRunbooks = new Map(state.runbooks);
   newRunbooks.set(runbook.id, runbook);
 
@@ -217,7 +231,10 @@ export function addRunbook(state: RunbookManagerState, runbook: Runbook): Runboo
 /**
  * Get runbook by ID
  */
-export function getRunbook(state: RunbookManagerState, id: string): Runbook | undefined {
+export function getRunbook(
+  state: RunbookManagerState,
+  id: string
+): Runbook | undefined {
   return state.runbooks.get(id);
 }
 
@@ -248,7 +265,10 @@ export function updateRunbook(
 /**
  * Remove runbook
  */
-export function removeRunbook(state: RunbookManagerState, id: string): RunbookManagerState {
+export function removeRunbook(
+  state: RunbookManagerState,
+  id: string
+): RunbookManagerState {
   const newRunbooks = new Map(state.runbooks);
   newRunbooks.delete(id);
 
@@ -286,7 +306,10 @@ export function linkRunbookToNode(
 /**
  * Unlink runbook from node
  */
-export function unlinkRunbookFromNode(state: RunbookManagerState, linkId: string): RunbookManagerState {
+export function unlinkRunbookFromNode(
+  state: RunbookManagerState,
+  linkId: string
+): RunbookManagerState {
   const newLinks = new Map(state.links);
   newLinks.delete(linkId);
 
@@ -299,10 +322,15 @@ export function unlinkRunbookFromNode(state: RunbookManagerState, linkId: string
 /**
  * Get runbooks for node
  */
-export function getRunbooksForNode(state: RunbookManagerState, nodeId: string): Runbook[] {
-  const links = Array.from(state.links.values()).filter(link => link.nodeId === nodeId);
+export function getRunbooksForNode(
+  state: RunbookManagerState,
+  nodeId: string
+): Runbook[] {
+  const links = Array.from(state.links.values()).filter(
+    (link) => link.nodeId === nodeId
+  );
   const runbooks = links
-    .map(link => state.runbooks.get(link.runbookId))
+    .map((link) => state.runbooks.get(link.runbookId))
     .filter((rb): rb is Runbook => rb !== undefined);
 
   // Sort by priority: primary > secondary > reference
@@ -312,7 +340,7 @@ export function getRunbooksForNode(state: RunbookManagerState, nodeId: string): 
   );
 
   return sortedLinks
-    .map(link => state.runbooks.get(link.runbookId))
+    .map((link) => state.runbooks.get(link.runbookId))
     .filter((rb): rb is Runbook => rb !== undefined);
 }
 
@@ -325,11 +353,11 @@ export function searchRunbooks(
   type?: RunbookType
 ): Runbook[] {
   const lowerQuery = query.toLowerCase();
-  return Array.from(state.runbooks.values()).filter(runbook => {
+  return Array.from(state.runbooks.values()).filter((runbook) => {
     const matchesQuery =
       runbook.title.toLowerCase().includes(lowerQuery) ||
       runbook.description.toLowerCase().includes(lowerQuery) ||
-      runbook.tags.some(tag => tag.toLowerCase().includes(lowerQuery));
+      runbook.tags.some((tag) => tag.toLowerCase().includes(lowerQuery));
 
     const matchesType = !type || runbook.type === type;
 
@@ -356,7 +384,10 @@ export function createIncident(
 /**
  * Get incident
  */
-export function getIncident(state: RunbookManagerState, id: string): Incident | undefined {
+export function getIncident(
+  state: RunbookManagerState,
+  id: string
+): Incident | undefined {
   return state.incidents.get(id);
 }
 
@@ -387,7 +418,10 @@ export function updateIncidentStatus(
     ...incident,
     status,
     timeline: [...incident.timeline, event],
-    endTime: status === 'closed' || status === 'resolved' ? new Date() : incident.endTime,
+    endTime:
+      status === 'closed' || status === 'resolved'
+        ? new Date()
+        : incident.endTime,
   });
 
   return {
@@ -431,16 +465,16 @@ export function getIncidentsForNode(
     limit?: number;
   }
 ): Incident[] {
-  let incidents = Array.from(state.incidents.values()).filter(incident =>
+  let incidents = Array.from(state.incidents.values()).filter((incident) =>
     incident.nodeIds.includes(nodeId)
   );
 
   if (options?.status) {
-    incidents = incidents.filter(i => i.status === options.status);
+    incidents = incidents.filter((i) => i.status === options.status);
   }
 
   if (options?.severity) {
-    incidents = incidents.filter(i => i.severity === options.severity);
+    incidents = incidents.filter((i) => i.severity === options.severity);
   }
 
   // Sort by start time (newest first)
@@ -458,14 +492,17 @@ export function getIncidentsForNode(
  */
 export function getActiveIncidents(state: RunbookManagerState): Incident[] {
   return Array.from(state.incidents.values()).filter(
-    incident => incident.status !== 'closed' && incident.status !== 'resolved'
+    (incident) => incident.status !== 'closed' && incident.status !== 'resolved'
   );
 }
 
 /**
  * Add SLO metric
  */
-export function addMetric(state: RunbookManagerState, metric: SLOMetric): RunbookManagerState {
+export function addMetric(
+  state: RunbookManagerState,
+  metric: SLOMetric
+): RunbookManagerState {
   const newMetrics = new Map(state.metrics);
   newMetrics.set(metric.id, metric);
 
@@ -502,9 +539,13 @@ export function updateMetric(
 /**
  * Get metrics for node
  */
-export function getMetricsForNode(state: RunbookManagerState, nodeId: string): SLOMetric[] {
-  return Array.from(state.metrics.values()).filter(metric =>
-    metric.id.startsWith(nodeId) || metric.metadata.nodeId === nodeId
+export function getMetricsForNode(
+  state: RunbookManagerState,
+  nodeId: string
+): SLOMetric[] {
+  return Array.from(state.metrics.values()).filter(
+    (metric) =>
+      metric.id.startsWith(nodeId) || metric.metadata.nodeId === nodeId
   );
 }
 
@@ -523,8 +564,11 @@ export function isSLOBreached(metric: SLOMetric): boolean {
 /**
  * Get SLO health status
  */
-export function getSLOHealth(metric: SLOMetric): 'healthy' | 'warning' | 'critical' {
-  const isLowerBetter = metric.type === 'latency' || metric.type === 'error-rate';
+export function getSLOHealth(
+  metric: SLOMetric
+): 'healthy' | 'warning' | 'critical' {
+  const isLowerBetter =
+    metric.type === 'latency' || metric.type === 'error-rate';
 
   if (isSLOBreached(metric)) {
     // For latency/error-rate: higher values are worse
@@ -569,14 +613,17 @@ export function getPlaybook(
 /**
  * Search playbook templates
  */
-export function searchPlaybooks(state: RunbookManagerState, query: string): PlaybookTemplate[] {
+export function searchPlaybooks(
+  state: RunbookManagerState,
+  query: string
+): PlaybookTemplate[] {
   const lowerQuery = query.toLowerCase();
   return Array.from(state.playbooks.values()).filter(
-    playbook =>
+    (playbook) =>
       playbook.name.toLowerCase().includes(lowerQuery) ||
       playbook.description.toLowerCase().includes(lowerQuery) ||
       playbook.scenario.toLowerCase().includes(lowerQuery) ||
-      playbook.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+      playbook.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
   );
 }
 
@@ -623,7 +670,7 @@ export function getCurrentEscalationLevel(
   let currentLevel = escalationPath[0];
   for (const level of escalationPath) {
     const cumulativeTime = escalationPath
-      .filter(l => l.level <= level.level)
+      .filter((l) => l.level <= level.level)
       .reduce((sum, l) => sum + l.escalateAfter, 0);
 
     if (incidentMinutes >= cumulativeTime) {
@@ -675,7 +722,8 @@ export function getIncidentStatistics(state: RunbookManagerState): {
 
     if (incident.endTime) {
       const resolutionTime =
-        (incident.endTime.getTime() - incident.startTime.getTime()) / (1000 * 60);
+        (incident.endTime.getTime() - incident.startTime.getTime()) /
+        (1000 * 60);
       totalResolutionTime += resolutionTime;
       resolvedCount++;
     }
@@ -686,7 +734,8 @@ export function getIncidentStatistics(state: RunbookManagerState): {
     active: getActiveIncidents(state).length,
     bySeverity,
     byStatus,
-    averageResolutionTime: resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
+    averageResolutionTime:
+      resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
     mttr: resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
   };
 }
@@ -719,7 +768,7 @@ export function getRunbookStatistics(state: RunbookManagerState): {
     byType[runbook.type]++;
   }
 
-  const uniqueNodes = new Set(links.map(link => link.nodeId));
+  const uniqueNodes = new Set(links.map((link) => link.nodeId));
 
   return {
     total: runbooks.length,
@@ -760,11 +809,11 @@ export function importRunbookData(
   data: ReturnType<typeof exportRunbookData>
 ): RunbookManagerState {
   return {
-    runbooks: new Map(data.runbooks.map(rb => [rb.id, rb])),
-    incidents: new Map(data.incidents.map(inc => [inc.id, inc])),
-    metrics: new Map(data.metrics.map(m => [m.id, m])),
-    links: new Map(data.links.map(l => [l.id, l])),
-    playbooks: new Map(data.playbooks.map(pb => [pb.id, pb])),
+    runbooks: new Map(data.runbooks.map((rb) => [rb.id, rb])),
+    incidents: new Map(data.incidents.map((inc) => [inc.id, inc])),
+    metrics: new Map(data.metrics.map((m) => [m.id, m])),
+    links: new Map(data.links.map((l) => [l.id, l])),
+    playbooks: new Map(data.playbooks.map((pb) => [pb.id, pb])),
     escalationPaths: new Map(Object.entries(data.escalationPaths)),
   };
 }

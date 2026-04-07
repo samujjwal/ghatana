@@ -168,7 +168,7 @@ describe('ShortcutRegistry', () => {
 
       const testCategory = registry.getByCategory('test');
       expect(testCategory).toHaveLength(2);
-      expect(testCategory.every(s => s.category === 'test')).toBe(true);
+      expect(testCategory.every((s) => s.category === 'test')).toBe(true);
     });
   });
 
@@ -459,7 +459,7 @@ describe('CANVAS_SHORTCUTS', () => {
   });
 
   it('should have descriptions for all shortcuts', () => {
-    Object.values(CANVAS_SHORTCUTS).forEach(shortcut => {
+    Object.values(CANVAS_SHORTCUTS).forEach((shortcut) => {
       expect(shortcut.description).toBeTruthy();
       expect(shortcut.keys).toBeTruthy();
     });

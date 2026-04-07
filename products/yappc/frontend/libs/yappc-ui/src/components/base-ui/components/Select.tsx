@@ -52,7 +52,11 @@ export interface SelectGroupProps {
   className?: string;
 }
 
-export const SelectGroup: React.FC<SelectGroupProps> = ({ label, children, className }) => {
+export const SelectGroup: React.FC<SelectGroupProps> = ({
+  label,
+  children,
+  className,
+}) => {
   return (
     <BaseSelect.Group className={cn('py-1', className)}>
       {label && (
@@ -76,7 +80,13 @@ export interface SelectProps {
   error?: string;
   helperText?: string;
   size?: 'sm' | 'md' | 'lg';
-  colorScheme?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'grey';
+  colorScheme?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'grey';
   children: React.ReactNode;
   className?: string;
   labelClassName?: string;
@@ -161,7 +171,11 @@ export const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           >
             <BaseSelect.Value className="block truncate pr-10">
               {(selectedValue) =>
-                selectedValue ? selectedValue : <span className="text-grey-400">{placeholder}</span>
+                selectedValue ? (
+                  selectedValue
+                ) : (
+                  <span className="text-grey-400">{placeholder}</span>
+                )
               }
             </BaseSelect.Value>
             <BaseSelect.Icon className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">

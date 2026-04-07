@@ -1,8 +1,8 @@
 /**
  * Markdown Editor Component
- * 
+ *
  * Rich text editor with markdown support and live preview.
- * 
+ *
  * @module ui/components
  */
 
@@ -31,25 +31,43 @@ export interface MarkdownEditorProps {
 function markdownToHtml(markdown: string): string {
   const html = markdown
     // Headers
-    .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>')
+    .replace(
+      /^### (.*$)/gm,
+      '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>'
+    )
+    .replace(
+      /^## (.*$)/gm,
+      '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>'
+    )
     .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-4 mb-2">$1</h1>')
     // Bold and italic
     .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     // Code blocks
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="bg-zinc-800 p-3 rounded my-2 overflow-x-auto"><code>$2</code></pre>')
+    .replace(
+      /```(\w*)\n([\s\S]*?)```/g,
+      '<pre class="bg-zinc-800 p-3 rounded my-2 overflow-x-auto"><code>$2</code></pre>'
+    )
     // Inline code
-    .replace(/`([^`]+)`/g, '<code class="bg-zinc-800 px-1 rounded text-violet-400">$1</code>')
+    .replace(
+      /`([^`]+)`/g,
+      '<code class="bg-zinc-800 px-1 rounded text-violet-400">$1</code>'
+    )
     // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-violet-400 hover:underline">$1</a>')
+    .replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" class="text-violet-400 hover:underline">$1</a>'
+    )
     // Lists
     .replace(/^\* (.*$)/gm, '<li class="ml-4">$1</li>')
     .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
     .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
     // Blockquotes
-    .replace(/^> (.*$)/gm, '<blockquote class="border-l-4 border-zinc-600 pl-4 italic text-zinc-400">$1</blockquote>')
+    .replace(
+      /^> (.*$)/gm,
+      '<blockquote class="border-l-4 border-zinc-600 pl-4 italic text-zinc-400">$1</blockquote>'
+    )
     // Horizontal rule
     .replace(/^---$/gm, '<hr class="border-zinc-700 my-4" />')
     // Paragraphs
@@ -62,7 +80,7 @@ function markdownToHtml(markdown: string): string {
 
 /**
  * Markdown Editor Component
- * 
+ *
  * @example
  * ```tsx
  * <MarkdownEditor
@@ -124,7 +142,9 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   ];
 
   return (
-    <div className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}>
+    <div
+      className={`rounded-lg border border-zinc-700 overflow-hidden ${className}`}
+    >
       {/* Toolbar */}
       {!readOnly && (
         <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 border-b border-zinc-700">

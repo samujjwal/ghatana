@@ -1,9 +1,9 @@
 /**
  * Monitoring Infrastructure for Canvas Application
- * 
+ *
  * Provides Prometheus-compatible metrics exporters, performance tracking,
  * and alerting utilities for canvas rendering, collaboration, and exports.
- * 
+ *
  * Features:
  * - FPS and render latency tracking
  * - Collaboration latency metrics
@@ -11,7 +11,7 @@
  * - Prometheus metric exposition format
  * - Alert threshold checking
  * - Dashboard data structures for Grafana
- * 
+ *
  * @module monitoring
  */
 
@@ -423,8 +423,20 @@ export function recordRenderMetrics(
     [],
     'Render time in milliseconds'
   );
-  recordGauge(state, 'canvas_node_count', metrics.nodeCount, [], 'Number of nodes');
-  recordGauge(state, 'canvas_edge_count', metrics.edgeCount, [], 'Number of edges');
+  recordGauge(
+    state,
+    'canvas_node_count',
+    metrics.nodeCount,
+    [],
+    'Number of nodes'
+  );
+  recordGauge(
+    state,
+    'canvas_edge_count',
+    metrics.edgeCount,
+    [],
+    'Number of edges'
+  );
   recordCounter(
     state,
     'canvas_dropped_frames_total',
@@ -546,14 +558,18 @@ function exportHistogram(metric: HistogramMetric): string {
   for (const bucket of metric.buckets) {
     const le = bucket.le === Infinity ? '+Inf' : bucket.le.toString();
     const bucketLabels = labels
-      ? `${labels.slice(0, -1)  },le="${le}"}`
+      ? `${labels.slice(0, -1)},le="${le}"}`
       : `{le="${le}"}`;
-    lines.push(`${metric.name}_bucket${bucketLabels} ${bucket.count} ${metric.timestamp}`);
+    lines.push(
+      `${metric.name}_bucket${bucketLabels} ${bucket.count} ${metric.timestamp}`
+    );
   }
 
   // Sum and count
   lines.push(`${metric.name}_sum${labels} ${metric.sum} ${metric.timestamp}`);
-  lines.push(`${metric.name}_count${labels} ${metric.count} ${metric.timestamp}`);
+  lines.push(
+    `${metric.name}_count${labels} ${metric.count} ${metric.timestamp}`
+  );
 
   return lines.join('\n');
 }
@@ -568,14 +584,18 @@ function exportSummary(metric: SummaryMetric): string {
   // Quantiles
   for (const q of metric.quantiles) {
     const quantileLabels = labels
-      ? `${labels.slice(0, -1)  },quantile="${q.quantile}"}`
+      ? `${labels.slice(0, -1)},quantile="${q.quantile}"}`
       : `{quantile="${q.quantile}"}`;
-    lines.push(`${metric.name}${quantileLabels} ${q.value} ${metric.timestamp}`);
+    lines.push(
+      `${metric.name}${quantileLabels} ${q.value} ${metric.timestamp}`
+    );
   }
 
   // Sum and count
   lines.push(`${metric.name}_sum${labels} ${metric.sum} ${metric.timestamp}`);
-  lines.push(`${metric.name}_count${labels} ${metric.count} ${metric.timestamp}`);
+  lines.push(
+    `${metric.name}_count${labels} ${metric.count} ${metric.timestamp}`
+  );
 
   return lines.join('\n');
 }
@@ -630,7 +650,10 @@ export function addAlertThreshold(
 /**
  * Remove alert threshold
  */
-export function removeAlertThreshold(state: MonitoringState, metricName: string): boolean {
+export function removeAlertThreshold(
+  state: MonitoringState,
+  metricName: string
+): boolean {
   return state.thresholds.delete(metricName);
 }
 

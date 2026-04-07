@@ -128,19 +128,25 @@ export const SettingsExample: Story = {
       analytics: false,
     });
 
-    const updateSetting = (key: keyof typeof settings) => (e: React.ChangeEvent) => {
-      setSettings({ ...settings, [key]: (e.target as HTMLInputElement).checked });
-    };
+    const updateSetting =
+      (key: keyof typeof settings) => (e: React.ChangeEvent) => {
+        setSettings({
+          ...settings,
+          [key]: (e.target as HTMLInputElement).checked,
+        });
+      };
 
     return (
       <div className="w-96 p-6 bg-white rounded-lg border border-grey-200">
         <h2 className="text-xl font-bold mb-4">Preferences</h2>
-        
+
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between py-2 border-b border-grey-100">
             <div>
               <p className="font-medium">Push Notifications</p>
-              <p className="text-sm text-grey-600">Receive notifications on your device</p>
+              <p className="text-sm text-grey-600">
+                Receive notifications on your device
+              </p>
             </div>
             <Switch
               checked={settings.notifications}
@@ -164,7 +170,9 @@ export const SettingsExample: Story = {
           <div className="flex items-center justify-between py-2 border-b border-grey-100">
             <div>
               <p className="font-medium">Auto-save</p>
-              <p className="text-sm text-grey-600">Automatically save your work</p>
+              <p className="text-sm text-grey-600">
+                Automatically save your work
+              </p>
             </div>
             <Switch
               checked={settings.autoSave}

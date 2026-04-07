@@ -221,9 +221,7 @@ describe('Feature 2.31: Screen Reader Enhancements', () => {
 
       expect(updated.announcementQueue).toHaveLength(1);
       const announcement = updated.announcementQueue[0];
-      expect(announcement.message).toBe(
-        'Alice created a node: New Node'
-      );
+      expect(announcement.message).toBe('Alice created a node: New Node');
       expect(announcement.politeness).toBe('polite');
       expect(announcement.category).toBe('collaboration');
     });
@@ -241,9 +239,7 @@ describe('Feature 2.31: Screen Reader Enhancements', () => {
       const updated = announceCollaborativeEdit(state, event);
 
       const announcement = updated.announcementQueue[0];
-      expect(announcement.message).toBe(
-        'Bob updated an edge: Connection'
-      );
+      expect(announcement.message).toBe('Bob updated an edge: Connection');
     });
 
     it('should announce collaborative deletion', () => {
@@ -317,9 +313,9 @@ describe('Feature 2.31: Screen Reader Enhancements', () => {
     it('should filter shortcuts by category', () => {
       const navigationShortcuts = getKeyboardShortcutHelp(state, 'navigation');
 
-      expect(navigationShortcuts.every((s) => s.category === 'navigation')).toBe(
-        true
-      );
+      expect(
+        navigationShortcuts.every((s) => s.category === 'navigation')
+      ).toBe(true);
       expect(navigationShortcuts.some((s) => s.keys === 'Tab')).toBe(true);
     });
 

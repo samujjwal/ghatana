@@ -1,8 +1,8 @@
 /**
  * OAuth Login Button Component
- * 
+ *
  * Pre-styled button for OAuth provider login.
- * 
+ *
  * @module auth/oauth/components
  */
 
@@ -11,19 +11,19 @@ import React from 'react';
 export interface OAuthButtonProps {
   /** Provider name (google, github, microsoft) */
   provider: 'google' | 'github' | 'microsoft';
-  
+
   /** Click handler */
   onClick: () => void;
-  
+
   /** Loading state */
   isLoading?: boolean;
-  
+
   /** Disabled state */
   disabled?: boolean;
-  
+
   /** Custom className */
   className?: string;
-  
+
   /** Button text (default: "Continue with {Provider}") */
   children?: React.ReactNode;
 }
@@ -89,9 +89,9 @@ const providerStyles = {
 
 /**
  * OAuth Login Button
- * 
+ *
  * Pre-styled button for OAuth provider authentication.
- * 
+ *
  * @example
  * ```tsx
  * <OAuthButton

@@ -1,13 +1,22 @@
 import { Plus as AddIcon } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom';
 
-import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@ghatana/design-system';const WorkspacePage = () => {
-  const { workspaceId } = useParams<{ workspaceId: string }>()
-  const navigate = useNavigate()
+import {
+  Box,
+  Typography,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+} from '@ghatana/design-system';
+const WorkspacePage = () => {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const navigate = useNavigate();
 
   const handleCreateProject = () => {
-    navigate(`/workspaces/${workspaceId}/projects/new`)
-  }
+    navigate(`/workspaces/${workspaceId}/projects/new`);
+  };
 
   return (
     <Box className="grow p-6">
@@ -58,7 +67,7 @@ import { Box, Typography, Button, Grid, Card, CardContent, CardActions } from '@
         </Grid>
       </Grid>
     </Box>
-  )
-}
+  );
+};
 
-export default WorkspacePage
+export default WorkspacePage;

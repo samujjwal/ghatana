@@ -50,7 +50,10 @@ export class VirtualScrollUtils {
 
     if (isFixedHeight) {
       const itemHeightNum = itemHeight;
-      const startIndex = Math.max(0, Math.floor(scrollTop / itemHeightNum) - overscan);
+      const startIndex = Math.max(
+        0,
+        Math.floor(scrollTop / itemHeightNum) - overscan
+      );
       const endIndex = Math.min(
         itemCount - 1,
         Math.ceil((scrollTop + containerHeight) / itemHeightNum) + overscan
@@ -143,7 +146,10 @@ export class VirtualScrollUtils {
    * @param containerHeight - Height of the container
    * @returns Maximum scroll position
    */
-  static calculateMaxScroll(totalHeight: number, containerHeight: number): number {
+  static calculateMaxScroll(
+    totalHeight: number,
+    containerHeight: number
+  ): number {
     return Math.max(0, totalHeight - containerHeight);
   }
 }

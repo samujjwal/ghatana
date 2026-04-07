@@ -44,7 +44,11 @@ export type EnvironmentStatus =
 /**
  * Environment type classification
  */
-export type EnvironmentType = 'development' | 'staging' | 'production' | 'custom';
+export type EnvironmentType =
+  | 'development'
+  | 'staging'
+  | 'production'
+  | 'custom';
 
 /**
  * Resource summary for an environment
@@ -141,26 +145,46 @@ const getStatusLabel = (status: EnvironmentStatus): string => {
 const getEnvironmentIcon = (type: EnvironmentType): React.ReactNode => {
   const icons: Record<EnvironmentType, React.ReactNode> = {
     development: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="16 18 22 12 16 6" />
         <polyline points="8 6 2 12 8 18" />
       </svg>
     ),
     staging: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <path d="M12 8v8" />
         <path d="M8 12h8" />
       </svg>
     ),
     production: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <path d="M12 6v6l4 2" />
       </svg>
     ),
     custom: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="3" />
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
       </svg>
@@ -268,8 +292,16 @@ const Tab: React.FC<TabProps> = ({
       </div>
 
       {environment.locked && (
-        <div className="env-tab-lock" title={environment.lockReason || 'Locked'}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div
+          className="env-tab-lock"
+          title={environment.lockReason || 'Locked'}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
@@ -283,7 +315,12 @@ const Tab: React.FC<TabProps> = ({
           onClick={handleSettingsClick}
           aria-label={`Settings for ${environment.name}`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="12" r="1" />
             <circle cx="12" cy="5" r="1" />
             <circle cx="12" cy="19" r="1" />
@@ -325,15 +362,19 @@ export const EnvironmentTabs: React.FC<EnvironmentTabsProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!tabsRef.current?.contains(document.activeElement)) return;
 
-      const currentIndex = environments.findIndex((env) => env.id === activeEnvironment);
+      const currentIndex = environments.findIndex(
+        (env) => env.id === activeEnvironment
+      );
       let newIndex = currentIndex;
 
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
-        newIndex = currentIndex > 0 ? currentIndex - 1 : environments.length - 1;
+        newIndex =
+          currentIndex > 0 ? currentIndex - 1 : environments.length - 1;
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
-        newIndex = currentIndex < environments.length - 1 ? currentIndex + 1 : 0;
+        newIndex =
+          currentIndex < environments.length - 1 ? currentIndex + 1 : 0;
       } else if (e.key === 'Home') {
         e.preventDefault();
         newIndex = 0;
@@ -388,7 +429,12 @@ export const EnvironmentTabs: React.FC<EnvironmentTabsProps> = ({
             onClick={onAddEnvironment}
             aria-label="Add environment"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>

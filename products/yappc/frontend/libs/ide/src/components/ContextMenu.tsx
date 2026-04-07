@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Context Menu Component
- * 
+ *
  * Context menu for file operations with keyboard navigation.
  * Integrates with advanced file operations hook.
- * 
+ *
  * @doc.type component
  * @doc.purpose Context menu for file operations
  * @doc.layer product
@@ -20,18 +20,18 @@ import type { IDEFile, IDEFolder } from '../types';
  */
 export type ContextMenuItem =
   | {
-    separator: true;
-  }
+      separator: true;
+    }
   | {
-    id: string;
-    label: string;
-    icon?: string;
-    shortcut?: string;
-    action: () => void;
-    submenu?: ContextMenuItem[];
-    disabled?: boolean;
-    separator?: false;
-  };
+      id: string;
+      label: string;
+      icon?: string;
+      shortcut?: string;
+      action: () => void;
+      submenu?: ContextMenuItem[];
+      disabled?: boolean;
+      separator?: false;
+    };
 
 /**
  * Context Menu Props
@@ -61,7 +61,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Filter out separators for navigation
-  const navigableItems = items.filter(item => !item.separator);
+  const navigableItems = items.filter((item) => !item.separator);
   const navigableIndexMap = items.reduce((map, item, index) => {
     if (!item.separator) {
       map.push(index);
@@ -70,70 +70,76 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   }, [] as number[]);
 
   // Handle keyboard navigation
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!visible) return;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!visible) return;
 
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        setSelectedIndex(prev => {
-          const nextIndex = prev < navigableItems.length - 1 ? prev + 1 : 0;
-          const actualIndex = navigableIndexMap[nextIndex];
-          itemRefs.current[actualIndex]?.focus();
-          return nextIndex;
-        });
-        break;
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex((prev) => {
+            const nextIndex = prev < navigableItems.length - 1 ? prev + 1 : 0;
+            const actualIndex = navigableIndexMap[nextIndex];
+            itemRefs.current[actualIndex]?.focus();
+            return nextIndex;
+          });
+          break;
 
-      case 'ArrowUp':
-        event.preventDefault();
-        setSelectedIndex(prev => {
-          const prevIndex = prev > 0 ? prev - 1 : navigableItems.length - 1;
-          const actualIndex = navigableIndexMap[prevIndex];
-          itemRefs.current[actualIndex]?.focus();
-          return prevIndex;
-        });
-        break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex((prev) => {
+            const prevIndex = prev > 0 ? prev - 1 : navigableItems.length - 1;
+            const actualIndex = navigableIndexMap[prevIndex];
+            itemRefs.current[actualIndex]?.focus();
+            return prevIndex;
+          });
+          break;
 
-      case 'Enter':
-      case ' ':
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < navigableItems.length) {
-          const item = navigableItems[selectedIndex];
-          if (!item.disabled) {
-            item.action();
-            onClose();
+        case 'Enter':
+        case ' ':
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < navigableItems.length) {
+            const item = navigableItems[selectedIndex];
+            if (!item.disabled) {
+              item.action();
+              onClose();
+            }
           }
-        }
-        break;
+          break;
 
-      case 'Escape':
-        event.preventDefault();
-        onClose();
-        break;
+        case 'Escape':
+          event.preventDefault();
+          onClose();
+          break;
 
-      case 'ArrowRight':
-        event.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < navigableItems.length) {
-          const item = navigableItems[selectedIndex];
-          if (item.submenu && item.submenu.length > 0) {
-            // Handle submenu expansion
+        case 'ArrowRight':
+          event.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < navigableItems.length) {
+            const item = navigableItems[selectedIndex];
+            if (item.submenu && item.submenu.length > 0) {
+              // Handle submenu expansion
+            }
           }
-        }
-        break;
+          break;
 
-      case 'ArrowLeft':
-        event.preventDefault();
-        // Handle submenu collapse
-        break;
-    }
-  }, [visible, selectedIndex, navigableItems, navigableIndexMap, onClose]);
+        case 'ArrowLeft':
+          event.preventDefault();
+          // Handle submenu collapse
+          break;
+      }
+    },
+    [visible, selectedIndex, navigableItems, navigableIndexMap, onClose]
+  );
 
   // Handle click outside
-  const handleClickOutside = useCallback((event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      onClose();
-    }
-  }, [onClose]);
+  const handleClickOutside = useCallback(
+    (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   // Position menu within viewport
   const positionMenu = useCallback(() => {
@@ -212,22 +218,28 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         }
 
         const isNavigable = !item.separator;
-        const navigableIndex = isNavigable ? navigableIndexMap.indexOf(index) : -1;
+        const navigableIndex = isNavigable
+          ? navigableIndexMap.indexOf(index)
+          : -1;
         const isSelected = navigableIndex === selectedIndex;
 
         return (
           <div
             key={item.id}
-            ref={el => { itemRefs.current[index] = el; }}
+            ref={(el) => {
+              itemRefs.current[index] = el;
+            }}
             className={`
               flex items-center gap-2 px-3 py-2 text-sm cursor-pointer
-              ${item.disabled
-                ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ${
+                item.disabled
+                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }
-              ${isSelected && !item.disabled
-                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                : ''
+              ${
+                isSelected && !item.disabled
+                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                  : ''
               }
             `}
             onClick={() => {
@@ -279,28 +291,25 @@ export function useFileContextMenu(
     items: [],
   });
 
-  const {
-    bulkRename,
-    bulkDelete,
-  } = useAdvancedFileOperations();
+  const { bulkRename, bulkDelete } = useAdvancedFileOperations();
 
-  const showContextMenu = useCallback((
-    event: React.MouseEvent,
-    items: IDEFile[] | IDEFolder[]
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const showContextMenu = useCallback(
+    (event: React.MouseEvent, items: IDEFile[] | IDEFolder[]) => {
+      event.preventDefault();
+      event.stopPropagation();
 
-    setContextMenu({
-      visible: true,
-      x: event.clientX,
-      y: event.clientY,
-      items,
-    });
-  }, []);
+      setContextMenu({
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        items,
+      });
+    },
+    []
+  );
 
   const hideContextMenu = useCallback(() => {
-    setContextMenu(prev => ({ ...prev, visible: false }));
+    setContextMenu((prev) => ({ ...prev, visible: false }));
   }, []);
 
   const contextMenuItems: ContextMenuItem[] = [

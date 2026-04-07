@@ -180,15 +180,9 @@ async function gqlFetch<T>(
 export function useCopilot() {
   const queryClient = useQueryClient();
 
-  const [session, setSession] = useAtom(
-    copilotSessionAtom
-  );
-  const setLoading = useSetAtom(
-    copilotLoadingAtom
-  );
-  const [error, setError] = useAtom(
-    copilotErrorAtom
-  );
+  const [session, setSession] = useAtom(copilotSessionAtom);
+  const setLoading = useSetAtom(copilotLoadingAtom);
+  const [error, setError] = useAtom(copilotErrorAtom);
   const appendMessage = useSetAtom(appendCopilotMessageAtom);
   const clearSession = useSetAtom(clearCopilotSessionAtom);
 
@@ -298,15 +292,9 @@ export function useCopilot() {
  * ```
  */
 export function useAIInsights(projectId?: string | null) {
-  const setInsights = useSetAtom(
-    aiInsightsAtom
-  );
-  const setLoading = useSetAtom(
-    aiInsightsLoadingAtom
-  );
-  const insights = useAtomValue(
-    aiInsightsAtom
-  );
+  const setInsights = useSetAtom(aiInsightsAtom);
+  const setLoading = useSetAtom(aiInsightsLoadingAtom);
+  const insights = useAtomValue(aiInsightsAtom);
   const dismiss = useSetAtom(dismissInsightAtom);
 
   const fetchQuery = useQuery({
@@ -353,12 +341,8 @@ export function useAIInsights(projectId?: string | null) {
  * ```
  */
 export function useAIPredictions(projectId?: string | null) {
-  const setPredictions = useSetAtom(
-    aiPredictionsAtom
-  );
-  const predictions = useAtomValue(
-    aiPredictionsAtom
-  );
+  const setPredictions = useSetAtom(aiPredictionsAtom);
+  const predictions = useAtomValue(aiPredictionsAtom);
 
   const fetchQuery = useQuery({
     queryKey: ['aiPredictions', projectId],

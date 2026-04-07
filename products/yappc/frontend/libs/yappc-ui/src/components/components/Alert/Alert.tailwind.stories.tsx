@@ -57,15 +57,9 @@ export const Default: Story = {
 export const Severities: Story = {
   render: () => (
     <div className="space-y-4">
-      <Alert severity="info">
-        This is an info alert — check it out!
-      </Alert>
-      <Alert severity="success">
-        This is a success alert — nice job!
-      </Alert>
-      <Alert severity="warning">
-        This is a warning alert — be careful!
-      </Alert>
+      <Alert severity="info">This is an info alert — check it out!</Alert>
+      <Alert severity="success">This is a success alert — nice job!</Alert>
+      <Alert severity="warning">This is a warning alert — be careful!</Alert>
       <Alert severity="error">
         This is an error alert — something went wrong!
       </Alert>
@@ -80,32 +74,62 @@ export const Variants: Story = {
   render: () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">Standard (default)</h3>
+        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">
+          Standard (default)
+        </h3>
         <div className="space-y-3">
-          <Alert severity="info" variant="standard">Info standard variant</Alert>
-          <Alert severity="success" variant="standard">Success standard variant</Alert>
-          <Alert severity="warning" variant="standard">Warning standard variant</Alert>
-          <Alert severity="error" variant="standard">Error standard variant</Alert>
+          <Alert severity="info" variant="standard">
+            Info standard variant
+          </Alert>
+          <Alert severity="success" variant="standard">
+            Success standard variant
+          </Alert>
+          <Alert severity="warning" variant="standard">
+            Warning standard variant
+          </Alert>
+          <Alert severity="error" variant="standard">
+            Error standard variant
+          </Alert>
         </div>
       </div>
 
       <div>
-        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">Filled</h3>
+        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">
+          Filled
+        </h3>
         <div className="space-y-3">
-          <Alert severity="info" variant="filled">Info filled variant</Alert>
-          <Alert severity="success" variant="filled">Success filled variant</Alert>
-          <Alert severity="warning" variant="filled">Warning filled variant</Alert>
-          <Alert severity="error" variant="filled">Error filled variant</Alert>
+          <Alert severity="info" variant="filled">
+            Info filled variant
+          </Alert>
+          <Alert severity="success" variant="filled">
+            Success filled variant
+          </Alert>
+          <Alert severity="warning" variant="filled">
+            Warning filled variant
+          </Alert>
+          <Alert severity="error" variant="filled">
+            Error filled variant
+          </Alert>
         </div>
       </div>
 
       <div>
-        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">Outlined</h3>
+        <h3 className="text-sm font-medium mb-3 text-grey-700 dark:text-grey-300">
+          Outlined
+        </h3>
         <div className="space-y-3">
-          <Alert severity="info" variant="outlined">Info outlined variant</Alert>
-          <Alert severity="success" variant="outlined">Success outlined variant</Alert>
-          <Alert severity="warning" variant="outlined">Warning outlined variant</Alert>
-          <Alert severity="error" variant="outlined">Error outlined variant</Alert>
+          <Alert severity="info" variant="outlined">
+            Info outlined variant
+          </Alert>
+          <Alert severity="success" variant="outlined">
+            Success outlined variant
+          </Alert>
+          <Alert severity="warning" variant="outlined">
+            Warning outlined variant
+          </Alert>
+          <Alert severity="error" variant="outlined">
+            Error outlined variant
+          </Alert>
         </div>
       </div>
     </div>
@@ -151,17 +175,31 @@ export const Closable: Story = {
           </Alert>
         )}
         {show2 && (
-          <Alert severity="success" title="Success" onClose={() => setShow2(false)}>
+          <Alert
+            severity="success"
+            title="Success"
+            onClose={() => setShow2(false)}
+          >
             This alert has both a title and a close button.
           </Alert>
         )}
         {show3 && (
-          <Alert severity="warning" variant="filled" onClose={() => setShow3(false)}>
+          <Alert
+            severity="warning"
+            variant="filled"
+            onClose={() => setShow3(false)}
+          >
             Filled variant with close button.
           </Alert>
         )}
         {!show1 && !show2 && !show3 && (
-          <Button onClick={() => { setShow1(true); setShow2(true); setShow3(true); }}>
+          <Button
+            onClick={() => {
+              setShow1(true);
+              setShow2(true);
+              setShow3(true);
+            }}
+          >
             Reset Alerts
           </Button>
         )}
@@ -179,7 +217,11 @@ export const WithActions: Story = {
       <Alert
         severity="info"
         title="New update available"
-        action={<Button size="sm" variant="outline">Update Now</Button>}
+        action={
+          <Button size="sm" variant="outline">
+            Update Now
+          </Button>
+        }
       >
         A new version of the application is ready to install.
       </Alert>
@@ -188,7 +230,9 @@ export const WithActions: Story = {
         title="Storage almost full"
         action={
           <div className="flex gap-2">
-            <Button size="sm" variant="outline">Manage</Button>
+            <Button size="sm" variant="outline">
+              Manage
+            </Button>
             <Button size="sm">Upgrade</Button>
           </div>
         }
@@ -234,8 +278,18 @@ export const CustomIcons: Story = {
       <Alert
         severity="info"
         icon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
         }
       >
@@ -244,17 +298,24 @@ export const CustomIcons: Story = {
       <Alert
         severity="success"
         icon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         }
       >
         Alert with custom checkmark icon
       </Alert>
-      <Alert
-        severity="warning"
-        icon="⚡"
-      >
+      <Alert severity="warning" icon="⚡">
         Alert with emoji icon
       </Alert>
     </div>
@@ -268,7 +329,8 @@ export const LongContent: Story = {
   render: () => (
     <Alert severity="info" title="Terms and Conditions">
       <p>
-        By using this service, you agree to our terms and conditions. This includes but is not limited to:
+        By using this service, you agree to our terms and conditions. This
+        includes but is not limited to:
       </p>
       <ul className="list-disc list-inside mt-2 space-y-1">
         <li>Accepting our privacy policy</li>
@@ -276,9 +338,7 @@ export const LongContent: Story = {
         <li>Compliance with community guidelines</li>
         <li>Responsibility for account security</li>
       </ul>
-      <p className="mt-2">
-        Please read the full terms before continuing.
-      </p>
+      <p className="mt-2">Please read the full terms before continuing.</p>
     </Alert>
   ),
 };
@@ -300,9 +360,15 @@ export const RichContent: Story = {
       </Alert>
       <Alert severity="warning" title="Deprecated Feature">
         <p>
-          The <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">oldMethod()</code> is deprecated
-          and will be removed in v3.0. Please migrate to{' '}
-          <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">newMethod()</code>.
+          The{' '}
+          <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
+            oldMethod()
+          </code>{' '}
+          is deprecated and will be removed in v3.0. Please migrate to{' '}
+          <code className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded">
+            newMethod()
+          </code>
+          .
         </p>
       </Alert>
     </div>

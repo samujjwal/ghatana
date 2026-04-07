@@ -3,7 +3,11 @@
  * YAPPC UI - Lifecycle Stage Navigation
  */
 
-import { LifecycleStage, type LifecycleStageId, LIFECYCLE_STAGES } from './LifecycleStage';
+import {
+  LifecycleStage,
+  type LifecycleStageId,
+  LIFECYCLE_STAGES,
+} from './LifecycleStage';
 
 export interface StageNavigationProps {
   projectId: string;
@@ -24,10 +28,10 @@ export interface StageNavigationProps {
 
 /**
  * StageNavigation Component
- * 
+ *
  * Provides lifecycle stage navigation with advance/go-back controls,
  * stage-specific actions, and gate information.
- * 
+ *
  * @example
  * ```tsx
  * <StageNavigation
@@ -57,11 +61,11 @@ export function StageNavigation({
   blockReason,
   className = '',
 }: StageNavigationProps) {
-  const currentIndex = LIFECYCLE_STAGES.findIndex(s => s.id === currentStage);
+  const currentIndex = LIFECYCLE_STAGES.findIndex((s) => s.id === currentStage);
   const nextStage = LIFECYCLE_STAGES[currentIndex + 1]?.id;
   const prevStage = LIFECYCLE_STAGES[currentIndex - 1]?.id;
 
-  const stageInfo = LIFECYCLE_STAGES.find(s => s.id === currentStage);
+  const stageInfo = LIFECYCLE_STAGES.find((s) => s.id === currentStage);
 
   return (
     <div className={`stage-navigation ${className}`}>
@@ -89,16 +93,22 @@ export function StageNavigation({
       <div className="stage-navigation__details">
         <div className="stage-navigation__current">
           <span className="stage-navigation__current-label">Current Stage</span>
-          <span className="stage-navigation__current-value">{stageInfo?.label}</span>
-          <p className="stage-navigation__current-description">{stageInfo?.description}</p>
+          <span className="stage-navigation__current-value">
+            {stageInfo?.label}
+          </span>
+          <p className="stage-navigation__current-description">
+            {stageInfo?.description}
+          </p>
         </div>
 
         {/* Stage Progress */}
         <div className="stage-navigation__progress">
           <div className="stage-navigation__progress-bar">
-            <div 
+            <div
               className="stage-navigation__progress-fill"
-              style={{ width: `${((currentIndex + 1) / LIFECYCLE_STAGES.length) * 100}%` }}
+              style={{
+                width: `${((currentIndex + 1) / LIFECYCLE_STAGES.length) * 100}%`,
+              }}
             />
           </div>
           <span className="stage-navigation__progress-text">
@@ -115,7 +125,11 @@ export function StageNavigation({
             className="stage-navigation__btn stage-navigation__btn--back"
             onClick={onGoBack}
             disabled={!canGoBack}
-            title={!canGoBack ? 'Cannot go back from current stage' : `Return to ${prevStage}`}
+            title={
+              !canGoBack
+                ? 'Cannot go back from current stage'
+                : `Return to ${prevStage}`
+            }
           >
             <BackIcon />
             <span>Back to {prevStage}</span>
@@ -160,10 +174,12 @@ export function StageNavigation({
         <div className="stage-navigation__blocked">
           <h4 className="stage-navigation__blocked-title">Blocked Stages</h4>
           <ul className="stage-navigation__blocked-list">
-            {blockedStages.map(stage => (
+            {blockedStages.map((stage) => (
               <li key={stage} className="stage-navigation__blocked-item">
                 <BlockIcon />
-                <span>{LIFECYCLE_STAGES.find(s => s.id === stage)?.label || stage}</span>
+                <span>
+                  {LIFECYCLE_STAGES.find((s) => s.id === stage)?.label || stage}
+                </span>
               </li>
             ))}
           </ul>
@@ -174,28 +190,20 @@ export function StageNavigation({
       <div className="stage-navigation__actions">
         <h4 className="stage-navigation__actions-title">Stage Actions</h4>
         <div className="stage-navigation__actions-grid">
-          <StageAction 
+          <StageAction
             icon="📋"
             label="View Tasks"
             count={12}
             onClick={() => {}}
           />
-          <StageAction 
-            icon="📊"
-            label="Metrics"
-            onClick={() => {}}
-          />
-          <StageAction 
+          <StageAction icon="📊" label="Metrics" onClick={() => {}} />
+          <StageAction
             icon="📄"
             label="Artifacts"
             count={5}
             onClick={() => {}}
           />
-          <StageAction 
-            icon="🔄"
-            label="History"
-            onClick={() => {}}
-          />
+          <StageAction icon="🔄" label="History" onClick={() => {}} />
         </div>
       </div>
     </div>
@@ -226,7 +234,13 @@ function StageAction({ icon, label, count, onClick }: StageActionProps) {
 function BackIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="stage-navigation__icon">
-      <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M19 12H5M12 19l-7-7 7-7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -234,24 +248,49 @@ function BackIcon() {
 function ForwardIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="stage-navigation__icon">
-      <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path
+        d="M5 12h14M12 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="stage-navigation__icon stage-navigation__icon--success">
-      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="stage-navigation__icon stage-navigation__icon--success"
+    >
+      <path
+        d="M20 6L9 17l-5-5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function BlockIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="stage-navigation__icon stage-navigation__icon--blocked">
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-      <path d="M4.93 4.93l14.14 14.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="stage-navigation__icon stage-navigation__icon--blocked"
+    >
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M4.93 4.93l14.14 14.14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

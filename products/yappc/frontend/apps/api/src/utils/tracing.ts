@@ -21,22 +21,25 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
 // OTLP Exporter Configuration
 const traceExporter = new OTLPTraceExporter({
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318/v1/traces',
-    headers: {},
+  url:
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
+    'http://localhost:4318/v1/traces',
+  headers: {},
 });
 
 // Resource attributes
 const resource = resourceFromAttributes({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'yappc-api',
-    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
-    [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.NODE_ENV || 'development',
+  [SemanticResourceAttributes.SERVICE_NAME]: 'yappc-api',
+  [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
+  [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]:
+    process.env.NODE_ENV || 'development',
 });
 
 // Initialize OpenTelemetry SDK without auto-instrumentations
 const sdk = new NodeSDK({
-    resource,
-    traceExporter,
-    instrumentations: [],
+  resource,
+  traceExporter,
+  instrumentations: [],
 });
 
 // Get tracer for manual instrumentation
@@ -46,25 +49,25 @@ const tracer = trace.getTracer('yappc-api', '1.0.0');
  * Start OpenTelemetry tracing
  */
 export function startTracing() {
-    try {
-        sdk.start();
-        console.log('✅ OpenTelemetry tracing initialized');
-        console.log(`📊 Exporting traces to: ${traceExporter.url}`);
-    } catch (error) {
-        console.error('❌ Failed to initialize OpenTelemetry tracing:', error);
-    }
+  try {
+    sdk.start();
+    console.log('✅ OpenTelemetry tracing initialized');
+    console.log(`📊 Exporting traces to: ${traceExporter.url}`);
+  } catch (error) {
+    console.error('❌ Failed to initialize OpenTelemetry tracing:', error);
+  }
 }
 
 /**
  * Shutdown OpenTelemetry tracing gracefully
  */
 export async function shutdownTracing() {
-    try {
-        await sdk.shutdown();
-        console.log('✅ OpenTelemetry tracing shut down');
-    } catch (error) {
-        console.error('❌ Failed to shutdown OpenTelemetry tracing:', error);
-    }
+  try {
+    await sdk.shutdown();
+    console.log('✅ OpenTelemetry tracing shut down');
+  } catch (error) {
+    console.error('❌ Failed to shutdown OpenTelemetry tracing:', error);
+  }
 }
 
 /**
@@ -79,69 +82,80 @@ export async function shutdownTracing() {
  * This avoids ESM/CommonJS issues with auto-instrumentation packages.
  */
 export function instrumentFastify(app: FastifyInstance) {
-    // Skip instrumentation for health/metrics endpoints
-    const skipPaths = ['/health', '/metrics', '/readiness', '/liveness'];
+  // Skip instrumentation for health/metrics endpoints
+  const skipPaths = ['/health', '/metrics', '/readiness', '/liveness'];
 
-    app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-        // Skip instrumentation for monitoring endpoints
-        if (skipPaths.some((path) => request.url.startsWith(path))) {
-            return;
-        }
+  app.addHook(
+    'onRequest',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // Skip instrumentation for monitoring endpoints
+      if (skipPaths.some((path) => request.url.startsWith(path))) {
+        return;
+      }
 
-        // Create a span for the incoming request
-        const span = tracer.startSpan(`${request.method} ${request.url}`, {
-            attributes: {
-                'http.method': request.method,
-                'http.url': request.url,
-                'http.target': request.url,
-                'http.host': request.hostname,
-                'http.scheme': request.protocol,
-            },
+      // Create a span for the incoming request
+      const span = tracer.startSpan(`${request.method} ${request.url}`, {
+        attributes: {
+          'http.method': request.method,
+          'http.url': request.url,
+          'http.target': request.url,
+          'http.host': request.hostname,
+          'http.scheme': request.protocol,
+        },
+      });
+
+      // Store span and start time in request for later use
+      (request as unknown).span = span;
+      (request as unknown).spanStartTime = Date.now();
+
+      // Set up context for the request
+      return context.with(trace.setSpan(context.active(), span), () => {
+        // Continue with the request
+      });
+    }
+  );
+
+  app.addHook(
+    'onResponse',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const span = (request as unknown).span;
+      if (!span) return;
+
+      // Record response information
+      const duration = Date.now() - (request as unknown).spanStartTime;
+      span.setAttributes({
+        'http.status_code': reply.statusCode,
+        'http.response_content_length': reply.getHeader('content-length') || 0,
+        'http.duration_ms': duration,
+      });
+
+      // Set span status based on HTTP status code
+      if (reply.statusCode >= 400) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: `HTTP ${reply.statusCode}`,
         });
+      } else {
+        span.setStatus({ code: SpanStatusCode.OK });
+      }
 
-        // Store span and start time in request for later use
-        (request as unknown).span = span;
-        (request as unknown).spanStartTime = Date.now();
+      // End the span
+      span.end();
+    }
+  );
 
-        // Set up context for the request
-        return context.with(trace.setSpan(context.active(), span), () => {
-            // Continue with the request
-        });
-    });
+  app.addHook(
+    'onError',
+    async (request: FastifyRequest, reply: FastifyReply, error: Error) => {
+      const span = (request as unknown).span;
+      if (!span) return;
 
-    app.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
-        const span = (request as unknown).span;
-        if (!span) return;
-
-        // Record response information
-        const duration = Date.now() - (request as unknown).spanStartTime;
-        span.setAttributes({
-            'http.status_code': reply.statusCode,
-            'http.response_content_length': reply.getHeader('content-length') || 0,
-            'http.duration_ms': duration,
-        });
-
-        // Set span status based on HTTP status code
-        if (reply.statusCode >= 400) {
-            span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${reply.statusCode}` });
-        } else {
-            span.setStatus({ code: SpanStatusCode.OK });
-        }
-
-        // End the span
-        span.end();
-    });
-
-    app.addHook('onError', async (request: FastifyRequest, reply: FastifyReply, error: Error) => {
-        const span = (request as unknown).span;
-        if (!span) return;
-
-        // Record error information
-        span.recordException(error);
-        span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
-    });
+      // Record error information
+      span.recordException(error);
+      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+    }
+  );
 }
 
 // Export SDK and tracer for advanced use cases
 export { sdk, tracer };
-

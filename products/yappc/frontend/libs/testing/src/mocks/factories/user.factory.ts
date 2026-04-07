@@ -6,7 +6,6 @@ import type { User } from '@yappc/core/types';
 
 import { faker } from '../faker-shim';
 
-
 /**
  *
  */

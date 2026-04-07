@@ -31,8 +31,10 @@ import type {
  * Provides common functionality for all agent types.
  * Subclasses must implement the `executeTask` method.
  */
-export abstract class BaseAgent<TInput = unknown, TOutput = unknown>
-  implements IAgent<TInput, TOutput> {
+export abstract class BaseAgent<
+  TInput = unknown,
+  TOutput = unknown,
+> implements IAgent<TInput, TOutput> {
   public readonly id: string;
   public readonly name: string;
   public readonly capabilities: AgentCapability[];
@@ -254,7 +256,7 @@ export abstract class BaseAgent<TInput = unknown, TOutput = unknown>
         // Exponential backoff
         const backoffMs = this._config.retryStrategy?.exponential
           ? (this._config.retryStrategy?.backoffMs ?? 1000) *
-          Math.pow(2, task.retryCount)
+            Math.pow(2, task.retryCount)
           : (this._config.retryStrategy?.backoffMs ?? 1000);
 
         await new Promise((resolve) => setTimeout(resolve, backoffMs));

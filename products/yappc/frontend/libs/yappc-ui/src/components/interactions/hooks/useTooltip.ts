@@ -191,9 +191,9 @@ export function useTooltip(
      */
     arrowProps: showArrow
       ? {
-        ref: arrowRef,
-        'data-placement': placement,
-      }
+          ref: arrowRef,
+          'data-placement': placement,
+        }
       : null,
 
     /**

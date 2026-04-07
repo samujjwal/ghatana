@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Collaboration Settings Component
- * 
+ *
  * Settings interface for collaboration features including
  * permissions, visibility options, and conflict resolution.
- * 
+ *
  * @doc.type component
  * @doc.purpose Collaboration settings interface for IDE
  * @doc.layer product
@@ -102,7 +102,9 @@ const PermissionBadge: React.FC<PermissionBadgeProps> = ({
 
   return (
     <div className="flex flex-col">
-      <span className={`px-2 py-1 text-xs rounded font-medium ${getLevelColor(level)}`}>
+      <span
+        className={`px-2 py-1 text-xs rounded font-medium ${getLevelColor(level)}`}
+      >
         {level.charAt(0).toUpperCase() + level.slice(1)}
       </span>
       <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -133,7 +135,8 @@ const UserPermissionItem: React.FC<UserPermissionItemProps> = ({
           {permission.userName}
         </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          Added {new Date(permission.grantedAt).toLocaleDateString()} by {permission.grantedBy}
+          Added {new Date(permission.grantedAt).toLocaleDateString()} by{' '}
+          {permission.grantedBy}
         </div>
       </div>
       <PermissionBadge
@@ -146,8 +149,18 @@ const UserPermissionItem: React.FC<UserPermissionItemProps> = ({
         className="p-1 text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors"
         title="Remove user"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </button>
     </div>
@@ -165,7 +178,9 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
   const { settings, updateSettings, activeUsers } = useCollaborativeEditing();
 
   // Local state
-  const [activeTab, setActiveTab] = useState<'general' | 'permissions' | 'advanced'>('general');
+  const [activeTab, setActiveTab] = useState<
+    'general' | 'permissions' | 'advanced'
+  >('general');
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([
     {
       userId: 'user1',
@@ -183,26 +198,33 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
     },
   ]);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [invitePermission, setInvitePermission] = useState<PermissionLevel>('edit');
+  const [invitePermission, setInvitePermission] =
+    useState<PermissionLevel>('edit');
 
   // Handle settings update
-  const handleSettingChange = useCallback(<K extends keyof CollaborationSettingsType>(
-    key: K,
-    value: CollaborationSettingsType[K]
-  ) => {
-    updateSettings({ [key]: value });
-  }, [updateSettings]);
+  const handleSettingChange = useCallback(
+    <K extends keyof CollaborationSettingsType>(
+      key: K,
+      value: CollaborationSettingsType[K]
+    ) => {
+      updateSettings({ [key]: value });
+    },
+    [updateSettings]
+  );
 
   // Handle permission change
-  const handlePermissionChange = useCallback((userId: string, level: PermissionLevel) => {
-    setUserPermissions(prev => prev.map(p =>
-      p.userId === userId ? { ...p, permission: level } : p
-    ));
-  }, []);
+  const handlePermissionChange = useCallback(
+    (userId: string, level: PermissionLevel) => {
+      setUserPermissions((prev) =>
+        prev.map((p) => (p.userId === userId ? { ...p, permission: level } : p))
+      );
+    },
+    []
+  );
 
   // Handle user removal
   const handleUserRemove = useCallback((userId: string) => {
-    setUserPermissions(prev => prev.filter(p => p.userId !== userId));
+    setUserPermissions((prev) => prev.filter((p) => p.userId !== userId));
   }, []);
 
   // Handle user invitation
@@ -217,7 +239,7 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
       grantedBy: 'me',
     };
 
-    setUserPermissions(prev => [...prev, newPermission]);
+    setUserPermissions((prev) => [...prev, newPermission]);
     setInviteEmail('');
   }, [inviteEmail, invitePermission]);
 
@@ -235,8 +257,18 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
             onClick={onClose}
             className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -247,15 +279,18 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
             { id: 'general', label: 'General' },
             { id: 'permissions', label: 'Permissions' },
             { id: 'advanced', label: 'Advanced' },
-          ].map(tab => (
+          ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as 'general' | 'permissions' | 'advanced')}
+              onClick={() =>
+                setActiveTab(tab.id as 'general' | 'permissions' | 'advanced')
+              }
               className={`
                 px-4 py-2 text-sm font-medium transition-colors
-                ${activeTab === tab.id
-                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ${
+                  activeTab === tab.id
+                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }
               `}
             >
@@ -281,7 +316,9 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings.showCursors}
-                    onChange={(e) => handleSettingChange('showCursors', e.target.checked)}
+                    onChange={(e) =>
+                      handleSettingChange('showCursors', e.target.checked)
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </label>
@@ -293,7 +330,9 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings.showSelections}
-                    onChange={(e) => handleSettingChange('showSelections', e.target.checked)}
+                    onChange={(e) =>
+                      handleSettingChange('showSelections', e.target.checked)
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </label>
@@ -305,7 +344,9 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings.showAvatars}
-                    onChange={(e) => handleSettingChange('showAvatars', e.target.checked)}
+                    onChange={(e) =>
+                      handleSettingChange('showAvatars', e.target.checked)
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </label>
@@ -317,7 +358,12 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   <input
                     type="checkbox"
                     checked={settings.enableTypingIndicators}
-                    onChange={(e) => handleSettingChange('enableTypingIndicators', e.target.checked)}
+                    onChange={(e) =>
+                      handleSettingChange(
+                        'enableTypingIndicators',
+                        e.target.checked
+                      )
+                    }
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </label>
@@ -336,7 +382,12 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                     <input
                       type="checkbox"
                       checked={settings.autoResolveConflicts}
-                      onChange={(e) => handleSettingChange('autoResolveConflicts', e.target.checked)}
+                      onChange={(e) =>
+                        handleSettingChange(
+                          'autoResolveConflicts',
+                          e.target.checked
+                        )
+                      }
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </label>
@@ -347,7 +398,12 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                     </label>
                     <select
                       value={settings.conflictResolutionStrategy}
-                      onChange={(e) => handleSettingChange('conflictResolutionStrategy', e.target.value as 'latest-wins' | 'manual' | 'merge')}
+                      onChange={(e) =>
+                        handleSettingChange(
+                          'conflictResolutionStrategy',
+                          e.target.value as 'latest-wins' | 'manual' | 'merge'
+                        )
+                      }
                       className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                     >
                       <option value="latest-wins">Latest Wins</option>
@@ -379,7 +435,11 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   />
                   <select
                     value={invitePermission}
-                    onChange={(e) => setInvitePermission(e.target.value as 'read' | 'comment' | 'edit' | 'admin')}
+                    onChange={(e) =>
+                      setInvitePermission(
+                        e.target.value as 'read' | 'comment' | 'edit' | 'admin'
+                      )
+                    }
                     className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                   >
                     <option value="read">Read</option>
@@ -398,7 +458,7 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
 
               {/* User list */}
               <div className="space-y-2">
-                {userPermissions.map(permission => (
+                {userPermissions.map((permission) => (
                   <UserPermissionItem
                     key={permission.userId}
                     permission={permission}
@@ -415,8 +475,11 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                     Currently Active ({activeUsers.length})
                   </h3>
                   <div className="space-y-2">
-                    {activeUsers.map(user => (
-                      <div key={user.userId} className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                    {activeUsers.map((user) => (
+                      <div
+                        key={user.userId}
+                        className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                      >
                         <div
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: user.userColor }}
@@ -425,9 +488,11 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                           {user.userName}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {user.activity === 'typing' ? 'Typing...' :
-                            user.activity === 'selecting' ? 'Selecting...' :
-                              'Idle'}
+                          {user.activity === 'typing'
+                            ? 'Typing...'
+                            : user.activity === 'selecting'
+                              ? 'Selecting...'
+                              : 'Idle'}
                         </span>
                       </div>
                     ))}
@@ -469,7 +534,13 @@ export const CollaborationSettings: React.FC<CollaborationSettingsProps> = ({
                   <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                     <div>Workspace ID: {workspaceId || 'N/A'}</div>
                     <div>Active Users: {activeUsers.length}</div>
-                    <div>Session Duration: {Math.floor((Date.now() - (Date.now() - 3600000)) / 60000)} minutes</div>
+                    <div>
+                      Session Duration:{' '}
+                      {Math.floor(
+                        (Date.now() - (Date.now() - 3600000)) / 60000
+                      )}{' '}
+                      minutes
+                    </div>
                     <div>WebSocket Status: Connected</div>
                   </div>
                 </div>

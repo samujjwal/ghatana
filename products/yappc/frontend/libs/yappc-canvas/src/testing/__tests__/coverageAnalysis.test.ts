@@ -114,7 +114,12 @@ describe('CoverageAnalyzer', () => {
         ...mockCoverageData,
         'src/__tests__/index.test.ts': {
           path: 'src/__tests__/index.test.ts',
-          metrics: { statements: 100, branches: 100, functions: 100, lines: 100 },
+          metrics: {
+            statements: 100,
+            branches: 100,
+            functions: 100,
+            lines: 100,
+          },
           uncoveredLines: [],
           uncoveredBranches: [],
           totalStatements: 50,
@@ -124,7 +129,9 @@ describe('CoverageAnalyzer', () => {
 
       const result = analyzer.analyze(dataWithTests);
 
-      expect(result.fileCoverage.find((f) => f.path.includes('__tests__'))).toBeUndefined();
+      expect(
+        result.fileCoverage.find((f) => f.path.includes('__tests__'))
+      ).toBeUndefined();
     });
   });
 
@@ -199,8 +206,12 @@ describe('CoverageAnalyzer', () => {
     it('should track critical path statistics', () => {
       const result = analyzer.analyze(mockCoverageData);
 
-      expect(result.summary.criticalPathsAboveThreshold).toBeGreaterThanOrEqual(0);
-      expect(result.summary.criticalPathsBelowThreshold).toBeGreaterThanOrEqual(0);
+      expect(result.summary.criticalPathsAboveThreshold).toBeGreaterThanOrEqual(
+        0
+      );
+      expect(result.summary.criticalPathsBelowThreshold).toBeGreaterThanOrEqual(
+        0
+      );
     });
 
     it('should identify critical paths correctly', () => {
@@ -485,7 +496,12 @@ describe('CoverageAnalyzer', () => {
       const perfectData = {
         'src/perfect.ts': {
           path: 'src/perfect.ts',
-          metrics: { statements: 100, branches: 100, functions: 100, lines: 100 },
+          metrics: {
+            statements: 100,
+            branches: 100,
+            functions: 100,
+            lines: 100,
+          },
           uncoveredLines: [],
           uncoveredBranches: [],
           totalStatements: 100,

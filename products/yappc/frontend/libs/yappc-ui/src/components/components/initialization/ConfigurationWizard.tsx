@@ -25,7 +25,13 @@
  * ```
  */
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 
 // ============================================================================
 // Types
@@ -153,7 +159,9 @@ export interface ConfigurationWizardProps {
 // Context
 // ============================================================================
 
-export const WizardContext = React.createContext<WizardContextValue | null>(null);
+export const WizardContext = React.createContext<WizardContextValue | null>(
+  null
+);
 
 export const useWizard = (): WizardContextValue => {
   const context = React.useContext(WizardContext);
@@ -187,7 +195,10 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   return (
     <div className="wizard-step-indicator">
       {steps.map((step, index) => {
-        const state = stepStates[step.id] || { visited: false, completed: false };
+        const state = stepStates[step.id] || {
+          visited: false,
+          completed: false,
+        };
         const isActive = index === currentStep;
         const isPast = index < currentStep;
         const canNavigate =
@@ -198,7 +209,9 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
           isActive && 'wizard-step-item--active',
           isPast && 'wizard-step-item--past',
           state.completed && 'wizard-step-item--completed',
-          state.errors && Object.keys(state.errors).length > 0 && 'wizard-step-item--error',
+          state.errors &&
+            Object.keys(state.errors).length > 0 &&
+            'wizard-step-item--error',
           canNavigate && 'wizard-step-item--clickable',
         ]
           .filter(Boolean)
@@ -361,31 +374,33 @@ export const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({
 
   // State
   const [currentStep, setCurrentStep] = useState(initialStep);
-  const [stepStates, setStepStates] = useState<Record<string, WizardStepState>>(() => {
-    // Initialize from localStorage if persisting
-    if (persistData && typeof window !== 'undefined') {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        try {
-          return JSON.parse(stored);
-        } catch {
-          // Invalid JSON, ignore
+  const [stepStates, setStepStates] = useState<Record<string, WizardStepState>>(
+    () => {
+      // Initialize from localStorage if persisting
+      if (persistData && typeof window !== 'undefined') {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch {
+            // Invalid JSON, ignore
+          }
         }
       }
-    }
 
-    // Initialize from initialData
-    const states: Record<string, WizardStepState> = {};
-    steps.forEach((step) => {
-      states[step.id] = {
-        id: step.id,
-        visited: false,
-        completed: false,
-        data: initialData[step.id] || {},
-      };
-    });
-    return states;
-  });
+      // Initialize from initialData
+      const states: Record<string, WizardStepState> = {};
+      steps.forEach((step) => {
+        states[step.id] = {
+          id: step.id,
+          visited: false,
+          completed: false,
+          data: initialData[step.id] || {},
+        };
+      });
+      return states;
+    }
+  );
 
   const [isValidating, setIsValidating] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -419,7 +434,10 @@ export const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({
   }, [currentStep]);
 
   // Get all collected data
-  const getAllData = useCallback((): Record<string, Record<string, unknown>> => {
+  const getAllData = useCallback((): Record<
+    string,
+    Record<string, unknown>
+  > => {
     const data: Record<string, Record<string, unknown>> = {};
     Object.entries(stepStates).forEach(([stepId, state]) => {
       if (state.data) {
@@ -537,7 +555,11 @@ export const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({
     (index: number) => {
       if (index >= 0 && index < visibleSteps.length) {
         const targetState = stepStates[visibleSteps[index].id];
-        if (targetState?.visited || targetState?.completed || index < currentStep) {
+        if (
+          targetState?.visited ||
+          targetState?.completed ||
+          index < currentStep
+        ) {
           setCurrentStep(index);
           onStepChange?.(index, visibleSteps[index].id);
         }
@@ -635,18 +657,21 @@ export const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({
           </div>
 
           {/* Validation Errors */}
-          {currentState?.errors && Object.keys(currentState.errors).length > 0 && (
-            <div className="wizard-errors">
-              <div className="wizard-errors-title">
-                Please fix the following errors:
+          {currentState?.errors &&
+            Object.keys(currentState.errors).length > 0 && (
+              <div className="wizard-errors">
+                <div className="wizard-errors-title">
+                  Please fix the following errors:
+                </div>
+                <ul className="wizard-errors-list">
+                  {Object.entries(currentState.errors).map(
+                    ([field, message]) => (
+                      <li key={field}>{message}</li>
+                    )
+                  )}
+                </ul>
               </div>
-              <ul className="wizard-errors-list">
-                {Object.entries(currentState.errors).map(([field, message]) => (
-                  <li key={field}>{message}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )}
 
           {/* Validation Warnings */}
           {currentState?.warnings &&
@@ -654,9 +679,11 @@ export const ConfigurationWizard: React.FC<ConfigurationWizardProps> = ({
               <div className="wizard-warnings">
                 <div className="wizard-warnings-title">Warnings:</div>
                 <ul className="wizard-warnings-list">
-                  {Object.entries(currentState.warnings).map(([field, message]) => (
-                    <li key={field}>{message}</li>
-                  ))}
+                  {Object.entries(currentState.warnings).map(
+                    ([field, message]) => (
+                      <li key={field}>{message}</li>
+                    )
+                  )}
                 </ul>
               </div>
             )}

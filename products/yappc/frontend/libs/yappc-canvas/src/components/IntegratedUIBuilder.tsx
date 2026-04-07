@@ -1,9 +1,9 @@
 /**
  * Integrated UI Builder Component
- * 
+ *
  * Visual UI builder integrated with Monaco editor for synchronized
  * code and visual editing with real-time bidirectional sync.
- * 
+ *
  * Features:
  * - 🎨 Visual component builder
  * - 🔄 Bidirectional sync with Monaco editor
@@ -11,7 +11,7 @@
  * - 🎯 Property inspector and styling
  * - 👥 Collaborative editing support
  * - ⚡ Real-time preview
- * 
+ *
  * @doc.type component
  * @doc.purpose Integrated UI builder with code editor
  * @doc.layer product
@@ -71,12 +71,7 @@ export const IntegratedUIBuilder: React.FC<{
   initialComponents?: UIComponent[];
   onComponentsChange?: (components: UIComponent[]) => void;
   onCodeChange?: (code: string) => void;
-}> = ({
-  config,
-  initialComponents = [],
-  onComponentsChange,
-  onCodeChange,
-}) => {
+}> = ({ config, initialComponents = [], onComponentsChange, onCodeChange }) => {
   const [canvasState, setCanvasState] = useState<CanvasState>({
     components: initialComponents,
     zoom: 1,
@@ -84,7 +79,8 @@ export const IntegratedUIBuilder: React.FC<{
     panY: 0,
   });
 
-  const [selectedComponent, setSelectedComponent] = useState<UIComponent | null>(null);
+  const [selectedComponent, setSelectedComponent] =
+    useState<UIComponent | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [files] = useState<FileTab[]>([
     {
@@ -105,7 +101,10 @@ export const IntegratedUIBuilder: React.FC<{
    * Convert components to code
    */
   const generateCode = useCallback((components: UIComponent[]): string => {
-    const generateComponentCode = (component: UIComponent, indent = 0): string => {
+    const generateComponentCode = (
+      component: UIComponent,
+      indent = 0
+    ): string => {
       const spaces = ' '.repeat(indent);
       const propsStr = Object.entries(component.props)
         .map(([key, value]) => {
@@ -143,24 +142,27 @@ export const IntegratedUIBuilder: React.FC<{
   /**
    * Handle component selection
    */
-  const handleComponentSelect = useCallback((componentId: string) => {
-    const findComponent = (components: UIComponent[]): UIComponent | null => {
-      for (const component of components) {
-        if (component.id === componentId) {
-          return component;
+  const handleComponentSelect = useCallback(
+    (componentId: string) => {
+      const findComponent = (components: UIComponent[]): UIComponent | null => {
+        for (const component of components) {
+          if (component.id === componentId) {
+            return component;
+          }
+          if (component.children) {
+            const found = findComponent(component.children);
+            if (found) return found;
+          }
         }
-        if (component.children) {
-          const found = findComponent(component.children);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
+        return null;
+      };
 
-    const component = findComponent(canvasState.components);
-    setSelectedComponent(component || null);
-    setCanvasState((prev) => ({ ...prev, selectedComponentId: componentId }));
-  }, [canvasState.components]);
+      const component = findComponent(canvasState.components);
+      setSelectedComponent(component || null);
+      setCanvasState((prev) => ({ ...prev, selectedComponentId: componentId }));
+    },
+    [canvasState.components]
+  );
 
   /**
    * Handle component property change
@@ -268,13 +270,18 @@ export const IntegratedUIBuilder: React.FC<{
             }}
             draggable
             onDragEnd={(e) => {
-              handleComponentDrag(component.id, e.clientX - (canvasRef.current?.offsetLeft || 0), e.clientY - (canvasRef.current?.offsetTop || 0));
+              handleComponentDrag(
+                component.id,
+                e.clientX - (canvasRef.current?.offsetLeft || 0),
+                e.clientY - (canvasRef.current?.offsetTop || 0)
+              );
             }}
           >
             <div className="p-2 text-sm font-semibold text-gray-700">
               {component.name}
             </div>
-            {component.children && renderCanvasComponents(component.children, x, y)}
+            {component.children &&
+              renderCanvasComponents(component.children, x, y)}
           </div>
         );
       });
@@ -363,7 +370,11 @@ export const IntegratedUIBuilder: React.FC<{
                   type="text"
                   value={selectedComponent.name}
                   onChange={(e) =>
-                    handlePropertyChange(selectedComponent.id, 'name', e.target.value)
+                    handlePropertyChange(
+                      selectedComponent.id,
+                      'name',
+                      e.target.value
+                    )
                   }
                   className="w-full px-2 py-1 bg-gray-700 text-white rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -388,25 +399,27 @@ export const IntegratedUIBuilder: React.FC<{
                   Props
                 </label>
                 <div className="space-y-2">
-                  {Object.entries(selectedComponent.props).map(([key, value]) => (
-                    <div key={key}>
-                      <label className="block text-xs text-gray-500 mb-1">
-                        {key}
-                      </label>
-                      <input
-                        type="text"
-                        value={String(value)}
-                        onChange={(e) =>
-                          handlePropertyChange(
-                            selectedComponent.id,
-                            key,
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-2 py-1 bg-gray-700 text-white rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  ))}
+                  {Object.entries(selectedComponent.props).map(
+                    ([key, value]) => (
+                      <div key={key}>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          {key}
+                        </label>
+                        <input
+                          type="text"
+                          value={String(value)}
+                          onChange={(e) =>
+                            handlePropertyChange(
+                              selectedComponent.id,
+                              key,
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-2 py-1 bg-gray-700 text-white rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
 

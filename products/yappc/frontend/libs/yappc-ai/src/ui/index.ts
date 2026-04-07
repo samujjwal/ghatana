@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ai-ui
- * 
+ *
  * AI user interface components for YAPPC.
  * Consolidates requirements UI and editor components.
- * 
+ *
  * @module @ghatana/yappc-ai-ui
  */
 

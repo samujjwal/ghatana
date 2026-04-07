@@ -4,19 +4,13 @@
  */
 
 // Voice command handling
-export {
-  useVoiceCommands,
-  VOICE_COMMAND_HELP,
-} from './useVoiceCommands';
+export { useVoiceCommands, VOICE_COMMAND_HELP } from './useVoiceCommands';
 
 // Voice UI
 export { VoiceOverlay, voiceOverlayStyles } from './VoiceOverlay';
 
 // Intent processing
-export {
-  defaultVoiceActions,
-  executeVoiceCommand,
-} from './voiceIntents';
+export { defaultVoiceActions, executeVoiceCommand } from './voiceIntents';
 
 // Types from voice commands
 export type {

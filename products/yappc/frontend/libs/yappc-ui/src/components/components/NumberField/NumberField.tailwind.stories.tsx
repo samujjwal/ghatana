@@ -400,7 +400,9 @@ export const FormExample: Story = {
         return;
       }
       setError('');
-      alert(`Booking: ${adults} adults, ${children} children, ${rooms} room(s)`);
+      alert(
+        `Booking: ${adults} adults, ${children} children, ${rooms} room(s)`
+      );
     };
 
     return (
@@ -447,7 +449,9 @@ export const FormExample: Story = {
         />
 
         {error && (
-          <div className="rounded-md bg-error-50 p-3 text-sm text-error-700">{error}</div>
+          <div className="rounded-md bg-error-50 p-3 text-sm text-error-700">
+            {error}
+          </div>
         )}
 
         <div className="rounded-md bg-grey-50 p-3">
@@ -491,9 +495,13 @@ export const Accessibility: Story = {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-grey-200 bg-grey-50 p-4">
-          <h3 className="mb-2 font-semibold text-grey-900">Accessibility Features:</h3>
+          <h3 className="mb-2 font-semibold text-grey-900">
+            Accessibility Features:
+          </h3>
           <ul className="space-y-1 text-sm text-grey-700">
-            <li>• Keyboard navigation (Up/Down arrows to increment/decrement)</li>
+            <li>
+              • Keyboard navigation (Up/Down arrows to increment/decrement)
+            </li>
             <li>• Proper label association</li>
             <li>• ARIA attributes for screen readers</li>
             <li>• Min/max boundaries announced</li>

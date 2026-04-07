@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Collaboration Status Bar Component
- * 
+ *
  * Status bar showing active collaborators, connection status,
  * and quick access to collaboration features.
- * 
+ *
  * @doc.type component
  * @doc.purpose Collaboration status bar for IDE
  * @doc.layer product
@@ -12,7 +12,11 @@
 
 import React, { useState, useCallback } from 'react';
 
-import { useCollaborativeEditing, generateUserAvatar, type UserPresence } from '../hooks/useCollaborativeEditing';
+import {
+  useCollaborativeEditing,
+  generateUserAvatar,
+  type UserPresence,
+} from '../hooks/useCollaborativeEditing';
 
 /**
  * Collaboration status bar props
@@ -73,7 +77,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
         alt={user.userName}
         className="w-full h-full rounded-full border-2 border-white shadow-sm"
       />
-      
+
       {/* Status indicator */}
       {showStatus && (
         <div className="absolute -bottom-0 -right-0">
@@ -100,9 +104,13 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
         <div className="font-semibold">{user.userName}</div>
         <div className="text-gray-300">
-          {user.activity === 'typing' ? 'Typing...' : 
-           user.activity === 'selecting' ? 'Selecting...' : 
-           user.activity === 'idle' ? 'Idle' : 'Online'}
+          {user.activity === 'typing'
+            ? 'Typing...'
+            : user.activity === 'selecting'
+              ? 'Selecting...'
+              : user.activity === 'idle'
+                ? 'Idle'
+                : 'Online'}
         </div>
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900" />
       </div>
@@ -138,10 +146,10 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-      <span className={`text-xs ${getStatusColor()}`}>
-        {getStatusText()}
-      </span>
+      <div
+        className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+      />
+      <span className={`text-xs ${getStatusColor()}`}>{getStatusText()}</span>
     </div>
   );
 };
@@ -157,11 +165,8 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
   showConflicts = true,
   className = '',
 }) => {
-  const {
-    getUsersInFile,
-    getConflictsInFile,
-    isCollaborating,
-  } = useCollaborativeEditing();
+  const { getUsersInFile, getConflictsInFile, isCollaborating } =
+    useCollaborativeEditing();
 
   const [showUserList, setShowUserList] = useState(false);
   const [isConnected] = useState(true); // Would come from WebSocket service
@@ -185,11 +190,13 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
   }
 
   return (
-    <div className={`
+    <div
+      className={`
       flex items-center gap-4 px-3 py-1 bg-gray-100 dark:bg-gray-800 
       border-t border-gray-200 dark:border-gray-700 text-xs
       ${className}
-    `}>
+    `}
+    >
       {/* Connection status */}
       {showConnectionStatus && (
         <div
@@ -208,7 +215,7 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
           </span>
           <div className="flex items-center gap-1">
             {/* Show up to 3 avatars */}
-            {usersInCurrentFile.slice(0, 3).map(user => (
+            {usersInCurrentFile.slice(0, 3).map((user) => (
               <UserAvatar
                 key={user.userId}
                 user={user}
@@ -216,7 +223,7 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
                 onClick={() => handleUserClick(user)}
               />
             ))}
-            
+
             {/* More users indicator */}
             {usersInCurrentFile.length > 3 && (
               <div
@@ -241,7 +248,8 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
         >
           <div className="w-2 h-2 bg-red-500 rounded-full" />
           <span className="text-red-600 dark:text-red-400">
-            {conflictsInCurrentFile.length} conflict{conflictsInCurrentFile.length > 1 ? 's' : ''}
+            {conflictsInCurrentFile.length} conflict
+            {conflictsInCurrentFile.length > 1 ? 's' : ''}
           </span>
         </div>
       )}
@@ -252,9 +260,24 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
         className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         title="Collaboration settings"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
         </svg>
       </button>
 
@@ -267,7 +290,7 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
             </h3>
           </div>
           <div className="max-h-48 overflow-y-auto">
-            {usersInCurrentFile.map(user => (
+            {usersInCurrentFile.map((user) => (
               <div
                 key={user.userId}
                 className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
@@ -279,9 +302,13 @@ export const CollaborationStatusBar: React.FC<CollaborationStatusBarProps> = ({
                     {user.userName}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {user.activity === 'typing' ? 'Typing...' : 
-                     user.activity === 'selecting' ? 'Selecting...' : 
-                     user.activity === 'idle' ? 'Idle' : 'Online'}
+                    {user.activity === 'typing'
+                      ? 'Typing...'
+                      : user.activity === 'selecting'
+                        ? 'Selecting...'
+                        : user.activity === 'idle'
+                          ? 'Idle'
+                          : 'Online'}
                   </div>
                 </div>
               </div>

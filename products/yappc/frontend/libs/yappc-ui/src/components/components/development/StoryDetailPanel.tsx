@@ -90,7 +90,11 @@ export interface StoryDetailPanelProps {
   onClose: () => void;
   onUpdate?: (story: Story, updates: Partial<Story>) => void;
   onTaskToggle?: (story: Story, taskId: string, completed: boolean) => void;
-  onCriteriaToggle?: (story: Story, criteriaId: string, completed: boolean) => void;
+  onCriteriaToggle?: (
+    story: Story,
+    criteriaId: string,
+    completed: boolean
+  ) => void;
   onAddComment?: (story: Story, comment: string) => void;
   onAddTask?: (story: Story, title: string) => void;
   onDelete?: (story: Story) => void;
@@ -100,7 +104,10 @@ export interface StoryDetailPanelProps {
 // Constants
 // ============================================================================
 
-const TYPE_CONFIG: Record<StoryType, { icon: string; color: string; bg: string }> = {
+const TYPE_CONFIG: Record<
+  StoryType,
+  { icon: string; color: string; bg: string }
+> = {
   feature: { icon: '✨', color: '#10B981', bg: '#D1FAE5' },
   bug: { icon: '🐛', color: '#EF4444', bg: '#FEE2E2' },
   chore: { icon: '🔧', color: '#6B7280', bg: '#F3F4F6' },
@@ -114,7 +121,10 @@ const STATUS_CONFIG: Record<StoryStatus, { label: string; color: string }> = {
   done: { label: 'Done', color: '#10B981' },
 };
 
-const PRIORITY_CONFIG: Record<StoryPriority, { label: string; color: string; bg: string }> = {
+const PRIORITY_CONFIG: Record<
+  StoryPriority,
+  { label: string; color: string; bg: string }
+> = {
   low: { label: 'Low', color: '#6B7280', bg: '#F3F4F6' },
   medium: { label: 'Medium', color: '#3B82F6', bg: '#EFF6FF' },
   high: { label: 'High', color: '#F59E0B', bg: '#FEF3C7' },
@@ -180,8 +190,14 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
   const [isAddingTask, setIsAddingTask] = useState(false);
 
   const typeConfig = useMemo(() => TYPE_CONFIG[story.type], [story.type]);
-  const statusConfig = useMemo(() => STATUS_CONFIG[story.status], [story.status]);
-  const priorityConfig = useMemo(() => PRIORITY_CONFIG[story.priority], [story.priority]);
+  const statusConfig = useMemo(
+    () => STATUS_CONFIG[story.status],
+    [story.status]
+  );
+  const priorityConfig = useMemo(
+    () => PRIORITY_CONFIG[story.priority],
+    [story.priority]
+  );
 
   const taskProgress = useMemo(() => {
     if (story.tasks.length === 0) return 0;
@@ -191,7 +207,9 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
 
   const criteriaProgress = useMemo(() => {
     if (story.acceptanceCriteria.length === 0) return 0;
-    const completed = story.acceptanceCriteria.filter((c) => c.completed).length;
+    const completed = story.acceptanceCriteria.filter(
+      (c) => c.completed
+    ).length;
     return Math.round((completed / story.acceptanceCriteria.length) * 100);
   }, [story.acceptanceCriteria]);
 
@@ -285,7 +303,10 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
           <div className="meta-row">
             <span
               className="priority-badge"
-              style={{ color: priorityConfig.color, background: priorityConfig.bg }}
+              style={{
+                color: priorityConfig.color,
+                background: priorityConfig.bg,
+              }}
             >
               {priorityConfig.label}
             </span>
@@ -308,9 +329,11 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                 key={statusKey}
                 type="button"
                 className={`status-option ${isActive ? 'status-option--active' : ''}`}
-                style={{
-                  '--status-color': config.color,
-                } as React.CSSProperties}
+                style={
+                  {
+                    '--status-color': config.color,
+                  } as React.CSSProperties
+                }
                 onClick={() => handleStatusChange(statusKey)}
               >
                 {config.label}
@@ -385,7 +408,10 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                       <span
                         key={label.id}
                         className="label"
-                        style={{ background: label.color + '20', color: label.color }}
+                        style={{
+                          background: label.color + '20',
+                          color: label.color,
+                        }}
                       >
                         {label.name}
                       </span>
@@ -398,12 +424,16 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
               <section className="section">
                 <div className="section-header">
                   <h3 className="section-title">
-                    Tasks ({story.tasks.filter((t) => t.completed).length}/{story.tasks.length})
+                    Tasks ({story.tasks.filter((t) => t.completed).length}/
+                    {story.tasks.length})
                   </h3>
                   <span className="progress-text">{taskProgress}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${taskProgress}%` }} />
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${taskProgress}%` }}
+                  />
                 </div>
                 <ul className="tasks-list">
                   {story.tasks.map((task) => (
@@ -412,9 +442,13 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                         <input
                           type="checkbox"
                           checked={task.completed}
-                          onChange={(e) => handleTaskToggle(task.id, e.target.checked)}
+                          onChange={(e) =>
+                            handleTaskToggle(task.id, e.target.checked)
+                          }
                         />
-                        <span className={`task-title ${task.completed ? 'task-title--completed' : ''}`}>
+                        <span
+                          className={`task-title ${task.completed ? 'task-title--completed' : ''}`}
+                        >
                           {task.title}
                         </span>
                       </label>
@@ -432,7 +466,11 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                       autoFocus
                       onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                     />
-                    <button type="button" className="add-task-btn" onClick={handleAddTask}>
+                    <button
+                      type="button"
+                      className="add-task-btn"
+                      onClick={handleAddTask}
+                    >
                       Add
                     </button>
                     <button
@@ -458,13 +496,17 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
               <section className="section">
                 <div className="section-header">
                   <h3 className="section-title">
-                    Acceptance Criteria ({story.acceptanceCriteria.filter((c) => c.completed).length}/
-                    {story.acceptanceCriteria.length})
+                    Acceptance Criteria (
+                    {story.acceptanceCriteria.filter((c) => c.completed).length}
+                    /{story.acceptanceCriteria.length})
                   </h3>
                   <span className="progress-text">{criteriaProgress}%</span>
                 </div>
                 <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${criteriaProgress}%` }} />
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${criteriaProgress}%` }}
+                  />
                 </div>
                 <ul className="criteria-list">
                   {story.acceptanceCriteria.map((criteria) => (
@@ -473,9 +515,13 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                         <input
                           type="checkbox"
                           checked={criteria.completed}
-                          onChange={(e) => handleCriteriaToggle(criteria.id, e.target.checked)}
+                          onChange={(e) =>
+                            handleCriteriaToggle(criteria.id, e.target.checked)
+                          }
                         />
-                        <span className={`criteria-text ${criteria.completed ? 'criteria-text--completed' : ''}`}>
+                        <span
+                          className={`criteria-text ${criteria.completed ? 'criteria-text--completed' : ''}`}
+                        >
                           {criteria.description}
                         </span>
                       </label>
@@ -500,9 +546,13 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                           <span className="resource-icon">
                             {RESOURCE_ICONS[resource.type]}
                           </span>
-                          <span className="resource-title">{resource.title}</span>
+                          <span className="resource-title">
+                            {resource.title}
+                          </span>
                           {resource.status && (
-                            <span className="resource-status">{resource.status}</span>
+                            <span className="resource-status">
+                              {resource.status}
+                            </span>
                           )}
                         </a>
                       </li>
@@ -515,16 +565,22 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
               <section className="section section--meta">
                 <div className="meta-item">
                   <span className="meta-label">Created</span>
-                  <span className="meta-value">{formatDate(story.createdAt)}</span>
+                  <span className="meta-value">
+                    {formatDate(story.createdAt)}
+                  </span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Updated</span>
-                  <span className="meta-value">{formatDate(story.updatedAt)}</span>
+                  <span className="meta-value">
+                    {formatDate(story.updatedAt)}
+                  </span>
                 </div>
                 {story.dueDate && (
                   <div className="meta-item">
                     <span className="meta-label">Due Date</span>
-                    <span className="meta-value">{formatDate(story.dueDate)}</span>
+                    <span className="meta-value">
+                      {formatDate(story.dueDate)}
+                    </span>
                   </div>
                 )}
                 <div className="meta-item">
@@ -553,7 +609,9 @@ export const StoryDetailPanel: React.FC<StoryDetailPanelProps> = ({
                     <div className="activity-content">
                       <div className="activity-header">
                         <span className="activity-user">{item.userName}</span>
-                        <span className="activity-time">{formatTimeAgo(item.timestamp)}</span>
+                        <span className="activity-time">
+                          {formatTimeAgo(item.timestamp)}
+                        </span>
                       </div>
                       <p className="activity-text">{item.content}</p>
                     </div>

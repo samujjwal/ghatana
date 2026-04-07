@@ -122,7 +122,9 @@ describe('PropertyTransformer', () => {
   describe('isTokenReference', () => {
     it('should identify token references', () => {
       expect(PropertyTransformer.isTokenReference('$color.primary')).toBe(true);
-      expect(PropertyTransformer.isTokenReference('$typography.fontSize.large')).toBe(true);
+      expect(
+        PropertyTransformer.isTokenReference('$typography.fontSize.large')
+      ).toBe(true);
     });
 
     it('should reject non-token values', () => {
@@ -135,15 +137,23 @@ describe('PropertyTransformer', () => {
 
   describe('getTokenPath', () => {
     it('should extract token path', () => {
-      expect(PropertyTransformer.getTokenPath('$color.primary.500')).toBe('color.primary.500');
-      expect(PropertyTransformer.getTokenPath('$typography.fontSize')).toBe('typography.fontSize');
+      expect(PropertyTransformer.getTokenPath('$color.primary.500')).toBe(
+        'color.primary.500'
+      );
+      expect(PropertyTransformer.getTokenPath('$typography.fontSize')).toBe(
+        'typography.fontSize'
+      );
     });
   });
 
   describe('createTokenReference', () => {
     it('should create token reference', () => {
-      expect(PropertyTransformer.createTokenReference('color.primary.500')).toBe('$color.primary.500');
-      expect(PropertyTransformer.createTokenReference('spacing.md')).toBe('$spacing.md');
+      expect(
+        PropertyTransformer.createTokenReference('color.primary.500')
+      ).toBe('$color.primary.500');
+      expect(PropertyTransformer.createTokenReference('spacing.md')).toBe(
+        '$spacing.md'
+      );
     });
   });
 

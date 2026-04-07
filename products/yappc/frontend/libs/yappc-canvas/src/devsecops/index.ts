@@ -1,14 +1,14 @@
 /**
  * DevSecOps Runbook Module
- * 
+ *
  * Production-grade runbook execution and automation system.
- * 
+ *
  * @module @ghatana/yappc-canvas/devsecops
- * 
+ *
  * @example
  * ```typescript
- * import { 
- *   parseAnsiblePlaybook, 
+ * import {
+ *   parseAnsiblePlaybook,
  *   parseTerraformPlan,
  *   runbookToCanvas,
  *   executeStep,
@@ -16,13 +16,13 @@
  *   requestApproval,
  *   processApproval
  * } from '@yappc/canvas/devsecops';
- * 
+ *
  * // Parse a playbook
  * const runbook = parseAnsiblePlaybook(yamlContent);
- * 
+ *
  * // Convert to canvas for visualization
  * const canvas = runbookToCanvas(runbook, config);
- * 
+ *
  * // Execute with approvals
  * const withApproval = requestApproval(runbook, stepId, approvers, 2);
  * const approved = processApproval(withApproval, approvalId, user, true);

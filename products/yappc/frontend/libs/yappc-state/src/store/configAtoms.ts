@@ -8,18 +8,18 @@ export const selectedTaskIdAtom = atom<string | null>(null);
 
 // Filter state
 export const domainFilterAtom = atom<{
-    search: string;
-    category?: string;
-    tags?: string[];
+  search: string;
+  category?: string;
+  tags?: string[];
 }>({
-    search: '',
+  search: '',
 });
 
 export const workflowFilterAtom = atom<{
-    search: string;
-    category?: string;
+  search: string;
+  category?: string;
 }>({
-    search: '',
+  search: '',
 });
 
 // UI state
@@ -27,21 +27,13 @@ export const configPanelOpenAtom = atom(false);
 export const configViewModeAtom = atom<'list' | 'grid' | 'detail'>('list');
 
 // Derived atoms for current selections
-export const selectedDomainAtom = atom(
-    (get) => get(selectedDomainIdAtom)
-);
+export const selectedDomainAtom = atom((get) => get(selectedDomainIdAtom));
 
-export const selectedWorkflowAtom = atom(
-    (get) => get(selectedWorkflowIdAtom)
-);
+export const selectedWorkflowAtom = atom((get) => get(selectedWorkflowIdAtom));
 
-export const selectedPhaseAtom = atom(
-    (get) => get(selectedPhaseIdAtom)
-);
+export const selectedPhaseAtom = atom((get) => get(selectedPhaseIdAtom));
 
-export const selectedTaskAtom = atom(
-    (get) => get(selectedTaskIdAtom)
-);
+export const selectedTaskAtom = atom((get) => get(selectedTaskIdAtom));
 
 // Config loading state
 export const configLoadingAtom = atom(false);

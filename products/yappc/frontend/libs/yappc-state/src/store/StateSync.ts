@@ -59,7 +59,8 @@ export class StateSync {
   private channel: BroadcastChannel | null = null;
   private listeners = new Map<AtomKey, Set<(value: unknown) => void>>();
   private tabId: string;
-  private options: Required<Omit<SyncOptions, 'onConflict'>> & Pick<SyncOptions, 'onConflict'>;
+  private options: Required<Omit<SyncOptions, 'onConflict'>> &
+    Pick<SyncOptions, 'onConflict'>;
   private lastUpdates = new Map<AtomKey, number>();
 
   /**
@@ -226,7 +227,10 @@ export class StateSync {
   /**
    * Subscribe to state changes for an atom
    */
-  subscribe<TValue = unknown>(atomKey: AtomKey, listener: (value: TValue) => void): () => void {
+  subscribe<TValue = unknown>(
+    atomKey: AtomKey,
+    listener: (value: TValue) => void
+  ): () => void {
     if (!this.listeners.has(atomKey)) {
       this.listeners.set(atomKey, new Set());
     }

@@ -132,7 +132,10 @@ export type RegistryFilter<T> = (entry: RegistryEntry<T>) => boolean;
  * @doc.layer product
  * @doc.pattern Strategy
  */
-export type RegistryComparator<T> = (a: RegistryEntry<T>, b: RegistryEntry<T>) => number;
+export type RegistryComparator<T> = (
+  a: RegistryEntry<T>,
+  b: RegistryEntry<T>
+) => number;
 
 /**
  * Search query for registry lookups.

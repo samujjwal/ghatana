@@ -238,7 +238,9 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
       const verification = verifyChainIntegrity(updated);
       expect(verification.valid).toBe(false);
       expect(verification.issues.length).toBeGreaterThan(0);
-      expect(verification.issues.some((i) => i.issueType === 'hash_mismatch')).toBe(true);
+      expect(
+        verification.issues.some((i) => i.issueType === 'hash_mismatch')
+      ).toBe(true);
     });
 
     it('should detect content tampering', () => {
@@ -263,7 +265,9 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
 
       const verification = verifyChainIntegrity(updated);
       expect(verification.valid).toBe(false);
-      expect(verification.issues.some((i) => i.issueType === 'hash_mismatch')).toBe(true);
+      expect(
+        verification.issues.some((i) => i.issueType === 'hash_mismatch')
+      ).toBe(true);
     });
 
     it('should detect signature tampering', () => {
@@ -288,7 +292,9 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
 
       const verification = verifyChainIntegrity(updated);
       expect(verification.valid).toBe(false);
-      expect(verification.issues.some((i) => i.issueType === 'signature_invalid')).toBe(true);
+      expect(
+        verification.issues.some((i) => i.issueType === 'signature_invalid')
+      ).toBe(true);
     });
 
     it('should detect sequence gaps', () => {
@@ -322,7 +328,9 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
 
       const verification = verifyChainIntegrity(updated);
       expect(verification.valid).toBe(false);
-      expect(verification.issues.some((i) => i.issueType === 'sequence_gap')).toBe(true);
+      expect(
+        verification.issues.some((i) => i.issueType === 'sequence_gap')
+      ).toBe(true);
     });
 
     it('should detect timestamp anomalies', () => {
@@ -353,7 +361,9 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
       };
 
       const verification = verifyChainIntegrity(updated);
-      expect(verification.issues.some((i) => i.issueType === 'timestamp_anomaly')).toBe(true);
+      expect(
+        verification.issues.some((i) => i.issueType === 'timestamp_anomaly')
+      ).toBe(true);
     });
   });
 
@@ -592,7 +602,11 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
 
       const bundle = exportAuditLedger(ledger, options, 'admin-1');
       expect(bundle.entries.length).toBeGreaterThan(0);
-      expect(bundle.entries.every((e) => e.severity === 'error' || e.severity === 'critical')).toBe(true);
+      expect(
+        bundle.entries.every(
+          (e) => e.severity === 'error' || e.severity === 'critical'
+        )
+      ).toBe(true);
     });
 
     it('should include integrity proof', () => {
@@ -606,8 +620,12 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
       expect(bundle.integrity).toBeDefined();
       expect(bundle.integrity.chainValid).toBe(true);
       expect(bundle.integrity.signature).toBeDefined();
-      expect(bundle.integrity.firstEntryHash).toBe(ledger.entries[0].contentHash);
-      expect(bundle.integrity.lastEntryHash).toBe(ledger.entries[ledger.entries.length - 1].contentHash);
+      expect(bundle.integrity.firstEntryHash).toBe(
+        ledger.entries[0].contentHash
+      );
+      expect(bundle.integrity.lastEntryHash).toBe(
+        ledger.entries[ledger.entries.length - 1].contentHash
+      );
     });
 
     it('should exclude signatures when requested', () => {
@@ -728,7 +746,11 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
         eventTypes: ['create', 'delete'],
       });
       expect(results).toHaveLength(2);
-      expect(results.every((e) => e.eventType === 'create' || e.eventType === 'delete')).toBe(true);
+      expect(
+        results.every(
+          (e) => e.eventType === 'create' || e.eventType === 'delete'
+        )
+      ).toBe(true);
     });
 
     it('should search by actors', () => {
@@ -744,7 +766,11 @@ describe('Feature 2.34: Audit Trail Hardening', () => {
         minSeverity: 'warning',
       });
       expect(results.length).toBeGreaterThan(0);
-      expect(results.every((e) => ['warning', 'error', 'critical'].includes(e.severity))).toBe(true);
+      expect(
+        results.every((e) =>
+          ['warning', 'error', 'critical'].includes(e.severity)
+        )
+      ).toBe(true);
     });
 
     it('should search by time range', () => {

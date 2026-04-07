@@ -283,18 +283,22 @@ describe('Selector Standardization', () => {
     });
 
     it('should reject selector exceeding max length', () => {
-      const longSelector = `canvas-${  'a'.repeat(150)}`;
+      const longSelector = `canvas-${'a'.repeat(150)}`;
       const result = validateSelector(longSelector);
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes('maximum length'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('maximum length'))).toBe(
+        true
+      );
     });
 
     it('should reject selector with disallowed characters', () => {
       const result = validateSelector('canvas-node@test#123');
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes('disallowed characters'))).toBe(true);
+      expect(
+        result.errors.some((e) => e.includes('disallowed characters'))
+      ).toBe(true);
     });
 
     it('should warn about non-lowercase selectors', () => {
@@ -335,7 +339,9 @@ describe('Selector Standardization', () => {
       const result = validateSelector('canvas-node-test-123', customRules); // 20 characters > 15
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes('maximum length'))).toBe(true);
+      expect(result.errors.some((e) => e.includes('maximum length'))).toBe(
+        true
+      );
     });
   });
 
@@ -350,7 +356,9 @@ describe('Selector Standardization', () => {
       const newManager = registerSelector(manager, 'canvas-node-test', pattern);
 
       expect(newManager.registeredSelectors.size).toBe(1);
-      expect(newManager.registeredSelectors.get('canvas-node-test')).toEqual(pattern);
+      expect(newManager.registeredSelectors.get('canvas-node-test')).toEqual(
+        pattern
+      );
     });
 
     it('should throw on invalid selector registration', () => {
@@ -374,21 +382,23 @@ describe('Selector Standardization', () => {
       const newManager = registerSelector(manager, 'canvas-node-test', pattern);
 
       expect(newManager.validationCache.has('canvas-node-test')).toBe(true);
-      expect(newManager.validationCache.get('canvas-node-test')?.valid).toBe(true);
+      expect(newManager.validationCache.get('canvas-node-test')?.valid).toBe(
+        true
+      );
     });
 
     it('should register multiple selectors', () => {
-      let newManager = registerSelector(
-        manager,
-        'canvas-node-test1',
-        { prefix: 'canvas', component: 'node', id: 'test1' }
-      );
+      let newManager = registerSelector(manager, 'canvas-node-test1', {
+        prefix: 'canvas',
+        component: 'node',
+        id: 'test1',
+      });
 
-      newManager = registerSelector(
-        newManager,
-        'canvas-node-test2',
-        { prefix: 'canvas', component: 'node', id: 'test2' }
-      );
+      newManager = registerSelector(newManager, 'canvas-node-test2', {
+        prefix: 'canvas',
+        component: 'node',
+        id: 'test2',
+      });
 
       expect(newManager.registeredSelectors.size).toBe(2);
     });
@@ -651,7 +661,10 @@ describe('Selector Standardization', () => {
     });
 
     it('should work with custom rules', () => {
-      const customRules = { ...DEFAULT_SELECTOR_RULES, enforceLowercase: false };
+      const customRules = {
+        ...DEFAULT_SELECTOR_RULES,
+        enforceLowercase: false,
+      };
       expect(followsConvention('canvas-node-TestNode', customRules)).toBe(true);
     });
   });
@@ -694,7 +707,7 @@ describe('Selector Standardization', () => {
     });
 
     it('should truncate long selectors', () => {
-      const longSelector = `canvas-${  'a'.repeat(150)}`;
+      const longSelector = `canvas-${'a'.repeat(150)}`;
       const fixed = suggestSelectorFix(longSelector);
 
       expect(fixed.length).toBeLessThanOrEqual(128);
@@ -709,7 +722,10 @@ describe('Selector Standardization', () => {
 
     it('should work with custom rules', () => {
       const customRules = { ...DEFAULT_SELECTOR_RULES, maxLength: 20 };
-      const fixed = suggestSelectorFix('canvas-node-very-long-test-id', customRules);
+      const fixed = suggestSelectorFix(
+        'canvas-node-very-long-test-id',
+        customRules
+      );
 
       expect(fixed.length).toBeLessThanOrEqual(20);
     });

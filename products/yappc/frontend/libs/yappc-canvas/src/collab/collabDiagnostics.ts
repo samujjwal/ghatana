@@ -18,7 +18,11 @@
 /**
  * Session status
  */
-export type SessionStatus = 'connected' | 'disconnected' | 'reconnecting' | 'error';
+export type SessionStatus =
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'error';
 
 /**
  * Error severity level
@@ -343,14 +347,18 @@ export class CollabDiagnosticsManager {
    * Get sessions by user
    */
   getSessionsByUser(userId: string): SessionInfo[] {
-    return Array.from(this.state.sessions.values()).filter((s) => s.userId === userId);
+    return Array.from(this.state.sessions.values()).filter(
+      (s) => s.userId === userId
+    );
   }
 
   /**
    * Get sessions by room
    */
   getSessionsByRoom(roomId: string): SessionInfo[] {
-    return Array.from(this.state.sessions.values()).filter((s) => s.roomId === roomId);
+    return Array.from(this.state.sessions.values()).filter(
+      (s) => s.roomId === roomId
+    );
   }
 
   // ==================== Error Tracking ====================
@@ -438,7 +446,9 @@ export class CollabDiagnosticsManager {
    */
   isErrorRateExceeded(): boolean {
     const oneMinuteAgo = Date.now() - 60000;
-    const recentErrors = this.state.errors.filter((e) => e.timestamp >= oneMinuteAgo);
+    const recentErrors = this.state.errors.filter(
+      (e) => e.timestamp >= oneMinuteAgo
+    );
     return recentErrors.length > this.state.config.errorRateThreshold;
   }
 
@@ -554,7 +564,9 @@ export class CollabDiagnosticsManager {
   /**
    * Get connection quality for session
    */
-  getConnectionQuality(sessionId: string): ConnectionQualityMetrics | undefined {
+  getConnectionQuality(
+    sessionId: string
+  ): ConnectionQualityMetrics | undefined {
     return this.state.qualityMetrics.get(sessionId);
   }
 
@@ -634,7 +646,8 @@ export class CollabDiagnosticsManager {
     // Calculate averages
     const avgLatency =
       qualityMetrics.length > 0
-        ? qualityMetrics.reduce((sum, m) => sum + m.latency, 0) / qualityMetrics.length
+        ? qualityMetrics.reduce((sum, m) => sum + m.latency, 0) /
+          qualityMetrics.length
         : 0;
 
     const avgPacketLoss =

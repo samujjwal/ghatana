@@ -13,7 +13,7 @@ describe('Button', () => {
   it('calls onClick when clicked', () => {
     const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
-    
+
     fireEvent.click(screen.getByText('Click me'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -25,8 +25,12 @@ describe('Button', () => {
 
   it('does not call onClick when disabled', () => {
     const handleClick = vi.fn();
-    render(<Button disabled onClick={handleClick}>Click me</Button>);
-    
+    render(
+      <Button disabled onClick={handleClick}>
+        Click me
+      </Button>
+    );
+
     fireEvent.click(screen.getByText('Click me'));
     expect(handleClick).not.toHaveBeenCalled();
   });
@@ -72,14 +76,11 @@ describe('Button', () => {
 
   it('has proper accessibility attributes', () => {
     render(
-      <Button 
-        aria-label="Submit form"
-        aria-describedby="form-description"
-      >
+      <Button aria-label="Submit form" aria-describedby="form-description">
         Submit
       </Button>
     );
-    
+
     const button = screen.getByRole('button', { name: /submit/i });
     expect(button).toHaveAttribute('aria-label', 'Submit form');
     expect(button).toHaveAttribute('aria-describedby', 'form-description');
@@ -100,7 +101,7 @@ describe('Button', () => {
   it('has visible focus indicator', () => {
     render(<Button>Focus me</Button>);
     const button = screen.getByText('Focus me');
-    
+
     act(() => {
       button.focus();
     });

@@ -11,7 +11,13 @@ import { CheckCircle as CheckCircleIcon } from 'lucide-react';
 import { AlertCircle as ErrorIcon } from 'lucide-react';
 import React from 'react';
 
-import { TextField as BaseTextField, InputAdornment, IconButton, FormHelperText, type TextFieldProps as BaseTextFieldProps } from '@ghatana/design-system';
+import {
+  TextField as BaseTextField,
+  InputAdornment,
+  IconButton,
+  FormHelperText,
+  type TextFieldProps as BaseTextFieldProps,
+} from '@ghatana/design-system';
 import {
   borderRadiusSm,
   borderRadiusMd,
@@ -89,9 +95,12 @@ const shapeClasses: Record<string, string> = {
 };
 
 const validationClasses: Record<string, string> = {
-  success: 'border-green-500 focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200',
-  error: 'border-red-500 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-200',
-  warning: 'border-yellow-500 focus-within:border-yellow-600 focus-within:ring-2 focus-within:ring-yellow-200',
+  success:
+    'border-green-500 focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200',
+  error:
+    'border-red-500 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-200',
+  warning:
+    'border-yellow-500 focus-within:border-yellow-600 focus-within:ring-2 focus-within:ring-yellow-200',
 };
 
 /**
@@ -137,171 +146,186 @@ const validationClasses: Record<string, string> = {
  * />
  * ```
  */
-export const TextField = React.forwardRef<HTMLDivElement, TextFieldProps>((props, ref) => {
-  const {
-    shape = 'rounded',
-    startIcon,
-    endIcon,
-    onEndIconClick,
-    showCharacterCount = false,
-    maxLength,
-    validationState,
-    clearable = false,
-    onClear,
-    value,
-    InputProps: inputPropsProp,
-    helperText,
-    onChange,
-    ...rest
-  } = props;
+export const TextField = React.forwardRef<HTMLDivElement, TextFieldProps>(
+  (props, ref) => {
+    const {
+      shape = 'rounded',
+      startIcon,
+      endIcon,
+      onEndIconClick,
+      showCharacterCount = false,
+      maxLength,
+      validationState,
+      clearable = false,
+      onClear,
+      value,
+      InputProps: inputPropsProp,
+      helperText,
+      onChange,
+      ...rest
+    } = props;
 
-  const [internalValue, setInternalValue] = React.useState(value || '');
+    const [internalValue, setInternalValue] = React.useState(value || '');
 
-  React.useEffect(() => {
-    setInternalValue(value || '');
-  }, [value]);
+    React.useEffect(() => {
+      setInternalValue(value || '');
+    }, [value]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = event.target.value;
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = event.target.value;
 
-    // Enforce max length
-    if (maxLength && newValue.length > maxLength) {
-      return;
-    }
+      // Enforce max length
+      if (maxLength && newValue.length > maxLength) {
+        return;
+      }
 
-    setInternalValue(newValue);
-    onChange?.(event);
-  };
+      setInternalValue(newValue);
+      onChange?.(event);
+    };
 
-  const handleClear = () => {
-    setInternalValue('');
-    onClear?.();
-  };
+    const handleClear = () => {
+      setInternalValue('');
+      onClear?.();
+    };
 
-  // Build adornments
-  const startAdornment = startIcon ? (
-    <InputAdornment position="start">
-      <span aria-hidden="true">{startIcon}</span>
-    </InputAdornment>
-  ) : undefined;
+    // Build adornments
+    const startAdornment = startIcon ? (
+      <InputAdornment position="start">
+        <span aria-hidden="true">{startIcon}</span>
+      </InputAdornment>
+    ) : undefined;
 
-  const buildEndAdornment = () => {
-    const elements: React.ReactNode[] = [];
+    const buildEndAdornment = () => {
+      const elements: React.ReactNode[] = [];
 
-    // Validation icon
-    if (validationState === 'success') {
-      elements.push(
-        <CheckCircleIcon
-          key="success-icon"
-          tone="success"
-          size={16}
-          aria-hidden="true"
-        />
-      );
-    } else if (validationState === 'error') {
-      elements.push(
-        <ErrorIcon key="error-icon" tone="danger" size={16} aria-hidden="true" />
-      );
-    } else if (validationState === 'warning') {
-      elements.push(
-        <ErrorIcon key="warning-icon" tone="warning" size={16} aria-hidden="true" />
-      );
-    }
+      // Validation icon
+      if (validationState === 'success') {
+        elements.push(
+          <CheckCircleIcon
+            key="success-icon"
+            tone="success"
+            size={16}
+            aria-hidden="true"
+          />
+        );
+      } else if (validationState === 'error') {
+        elements.push(
+          <ErrorIcon
+            key="error-icon"
+            tone="danger"
+            size={16}
+            aria-hidden="true"
+          />
+        );
+      } else if (validationState === 'warning') {
+        elements.push(
+          <ErrorIcon
+            key="warning-icon"
+            tone="warning"
+            size={16}
+            aria-hidden="true"
+          />
+        );
+      }
 
-    // Clear button
-    if (clearable && internalValue) {
-      elements.push(
-        <IconButton
-          key="clear-button"
-          aria-label="Clear input"
-          onClick={handleClear}
-          edge="end"
-          size="sm"
-        >
-          ×
-        </IconButton>
-      );
-    }
-
-    // Custom end icon
-    if (endIcon) {
-      if (onEndIconClick) {
+      // Clear button
+      if (clearable && internalValue) {
         elements.push(
           <IconButton
-            key="end-icon"
-            aria-label="Action"
-            onClick={onEndIconClick}
+            key="clear-button"
+            aria-label="Clear input"
+            onClick={handleClear}
             edge="end"
             size="sm"
           >
-            {endIcon}
+            ×
           </IconButton>
         );
-      } else {
-        elements.push(
-          <span key="end-icon" aria-hidden="true">
-            {endIcon}
-          </span>
-        );
       }
-    }
 
-    return elements.length > 0 ? (
-      <InputAdornment position="end">{elements}</InputAdornment>
-    ) : undefined;
-  };
+      // Custom end icon
+      if (endIcon) {
+        if (onEndIconClick) {
+          elements.push(
+            <IconButton
+              key="end-icon"
+              aria-label="Action"
+              onClick={onEndIconClick}
+              edge="end"
+              size="sm"
+            >
+              {endIcon}
+            </IconButton>
+          );
+        } else {
+          elements.push(
+            <span key="end-icon" aria-hidden="true">
+              {endIcon}
+            </span>
+          );
+        }
+      }
 
-  // Character count helper text
-  const characterCountText = showCharacterCount && maxLength ? (
-    <span>
-      {String(internalValue).length}/{maxLength}
-    </span>
-  ) : null;
+      return elements.length > 0 ? (
+        <InputAdornment position="end">{elements}</InputAdornment>
+      ) : undefined;
+    };
 
-  const combinedHelperText = (
-    <>
-      {helperText}
-      {characterCountText && (
-        <>
-          {helperText && ' '}
-          {characterCountText}
-        </>
-      )}
-    </>
-  );
+    // Character count helper text
+    const characterCountText =
+      showCharacterCount && maxLength ? (
+        <span>
+          {String(internalValue).length}/{maxLength}
+        </span>
+      ) : null;
 
-  const inputProps = {
-    ...inputPropsProp,
-    startAdornment,
-    endAdornment: buildEndAdornment(),
-  };
+    const combinedHelperText = (
+      <>
+        {helperText}
+        {characterCountText && (
+          <>
+            {helperText && ' '}
+            {characterCountText}
+          </>
+        )}
+      </>
+    );
 
-  const fieldClassName = [
-    'min-h-[44px] transition-[border-color,box-shadow] duration-200',
-    shapeClasses[shape] || shapeClasses.rounded,
-    validationState ? validationClasses[validationState] : '',
-    'contrast-more:border-2',
-    rest.className,
-  ].filter(Boolean).join(' ');
+    const inputProps = {
+      ...inputPropsProp,
+      startAdornment,
+      endAdornment: buildEndAdornment(),
+    };
 
-  return (
-    <BaseTextField
-      ref={ref}
-      value={internalValue}
-      onChange={handleChange}
-      InputProps={inputProps}
-      helperText={combinedHelperText || undefined}
-      error={validationState === 'error'}
-      className={fieldClassName}
-      inputProps={{
-        ...inputPropsProp?.inputProps,
-        maxLength,
-        'aria-invalid': validationState === 'error' ? true : undefined,
-      }}
-      {...rest}
-    />
-  );
-});
+    const fieldClassName = [
+      'min-h-[44px] transition-[border-color,box-shadow] duration-200',
+      shapeClasses[shape] || shapeClasses.rounded,
+      validationState ? validationClasses[validationState] : '',
+      'contrast-more:border-2',
+      rest.className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    return (
+      <BaseTextField
+        ref={ref}
+        value={internalValue}
+        onChange={handleChange}
+        InputProps={inputProps}
+        helperText={combinedHelperText || undefined}
+        error={validationState === 'error'}
+        className={fieldClassName}
+        inputProps={{
+          ...inputPropsProp?.inputProps,
+          maxLength,
+          'aria-invalid': validationState === 'error' ? true : undefined,
+        }}
+        {...rest}
+      />
+    );
+  }
+);
 
 TextField.displayName = 'TextField';
 

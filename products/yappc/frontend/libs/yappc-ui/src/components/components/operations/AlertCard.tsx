@@ -59,7 +59,10 @@ export interface AlertCardProps {
 // ============================================================================
 
 const getSeverityConfig = (severity: AlertSeverity) => {
-  const configs: Record<AlertSeverity, { icon: string; color: string; bg: string }> = {
+  const configs: Record<
+    AlertSeverity,
+    { icon: string; color: string; bg: string }
+  > = {
     critical: { icon: '🔴', color: '#DC2626', bg: 'rgba(220, 38, 38, 0.1)' },
     high: { icon: '🟠', color: '#EA580C', bg: 'rgba(234, 88, 12, 0.1)' },
     medium: { icon: '🟡', color: '#CA8A04', bg: 'rgba(202, 138, 4, 0.1)' },
@@ -154,23 +157,25 @@ export const AlertCard: React.FC<AlertCardProps> = ({
             </span>
             <span className="alert-source">{alert.source}</span>
           </div>
-          <span className="alert-time">{formatRelativeTime(alert.firedAt)}</span>
+          <span className="alert-time">
+            {formatRelativeTime(alert.firedAt)}
+          </span>
         </div>
 
         {/* Title & Description */}
         <h4 className="alert-title">{alert.title}</h4>
-        {!compact && (
-          <p className="alert-description">{alert.description}</p>
-        )}
+        {!compact && <p className="alert-description">{alert.description}</p>}
 
         {/* Labels */}
         {!compact && Object.keys(alert.labels).length > 0 && (
           <div className="alert-labels">
-            {Object.entries(alert.labels).slice(0, 3).map(([key, value]) => (
-              <span key={key} className="alert-label">
-                {key}: {value}
-              </span>
-            ))}
+            {Object.entries(alert.labels)
+              .slice(0, 3)
+              .map(([key, value]) => (
+                <span key={key} className="alert-label">
+                  {key}: {value}
+                </span>
+              ))}
             {Object.keys(alert.labels).length > 3 && (
               <span className="alert-label alert-label--more">
                 +{Object.keys(alert.labels).length - 3} more

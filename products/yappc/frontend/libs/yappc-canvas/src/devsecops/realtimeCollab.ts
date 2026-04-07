@@ -1,6 +1,6 @@
 /**
  * Real-Time Collaboration System
- * 
+ *
  * Supports:
  * - WebSocket-based synchronization
  * - Operational Transformation (OT) for conflict resolution
@@ -9,7 +9,11 @@
  * - Change history and undo/redo synchronization
  */
 
-import type { CanvasDocument, CanvasNode, CanvasEdge } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasNode,
+  CanvasEdge,
+} from '../types/canvas-document';
 
 // Types
 
@@ -138,7 +142,9 @@ export interface ConflictResolution {
 /**
  * Create a new collaboration session
  */
-export function createCollaborationSession(documentId: string): CollaborationSession {
+export function createCollaborationSession(
+  documentId: string
+): CollaborationSession {
   return {
     id: `session-${Date.now()}`,
     documentId,
@@ -278,9 +284,13 @@ export function applyOperation(
   operation: Operation
 ): OperationResult {
   // Get concurrent operations (operations with higher client seq from same user, or from other users)
-  const concurrentOps = session.operations.filter(op => 
-    (op.userId === operation.userId && op.clientSeq > operation.clientSeq) ||
-    (op.userId !== operation.userId && (!op.serverSeq || !operation.serverSeq || op.serverSeq >= operation.serverSeq))
+  const concurrentOps = session.operations.filter(
+    (op) =>
+      (op.userId === operation.userId && op.clientSeq > operation.clientSeq) ||
+      (op.userId !== operation.userId &&
+        (!op.serverSeq ||
+          !operation.serverSeq ||
+          op.serverSeq >= operation.serverSeq))
   );
 
   // Transform operation against concurrent operations
@@ -420,8 +430,8 @@ export function resolveConflict(
 ): ConflictResolution {
   if (strategy === 'latest-wins') {
     // Most recent operation wins
-    const latest = [operation, ...conflictingOps].sort((a, b) => 
-      b.timestamp.getTime() - a.timestamp.getTime()
+    const latest = [operation, ...conflictingOps].sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
     )[0];
 
     return {
@@ -433,10 +443,13 @@ export function resolveConflict(
 
   if (strategy === 'merge') {
     // Merge all operations
-    const mergedData = conflictingOps.reduce((acc, op) => ({
-      ...acc,
-      ...op.data,
-    }), operation.data);
+    const mergedData = conflictingOps.reduce(
+      (acc, op) => ({
+        ...acc,
+        ...op.data,
+      }),
+      operation.data
+    );
 
     return {
       operation,
@@ -447,7 +460,7 @@ export function resolveConflict(
         data: mergedData,
         metadata: {
           ...operation.metadata,
-          conflicts: conflictingOps.map(op => op.id),
+          conflicts: conflictingOps.map((op) => op.id),
         },
       },
     };
@@ -464,9 +477,11 @@ export function resolveConflict(
 /**
  * Get active collaborators (not idle/away/offline)
  */
-export function getActiveCollaborators(session: CollaborationSession): Collaborator[] {
+export function getActiveCollaborators(
+  session: CollaborationSession
+): Collaborator[] {
   const now = new Date().getTime();
-  return Array.from(session.collaborators.values()).filter(collab => {
+  return Array.from(session.collaborators.values()).filter((collab) => {
     const idleTime = now - collab.lastActivity.getTime();
     return idleTime < 30000 && collab.status === 'active'; // 30 seconds
   });
@@ -484,7 +499,7 @@ export function updateCollaboratorStatus(
 
   updatedCollaborators.forEach((collab, userId) => {
     const idleTime = now - collab.lastActivity.getTime();
-    
+
     let status: CollaboratorStatus = 'active';
     if (idleTime > idleTimeout * 2) {
       status = 'away';
@@ -514,7 +529,7 @@ export function getElementHistory(
   elementId: string
 ): Operation[] {
   return session.operations
-    .filter(op => op.elementId === elementId)
+    .filter((op) => op.elementId === elementId)
     .sort((a, b) => (a.serverSeq || 0) - (b.serverSeq || 0));
 }
 
@@ -526,7 +541,7 @@ export function getOperationsSince(
   sinceSeq: number
 ): Operation[] {
   return session.operations
-    .filter(op => (op.serverSeq || 0) > sinceSeq)
+    .filter((op) => (op.serverSeq || 0) > sinceSeq)
     .sort((a, b) => (a.serverSeq || 0) - (b.serverSeq || 0));
 }
 
@@ -557,10 +572,23 @@ export function compactHistory(
  */
 export function generateCollaboratorColor(userId: string): string {
   const colors = [
-    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-    '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-    '#ec4899', '#f43f5e',
+    '#ef4444',
+    '#f97316',
+    '#f59e0b',
+    '#eab308',
+    '#84cc16',
+    '#22c55e',
+    '#10b981',
+    '#14b8a6',
+    '#06b6d4',
+    '#0ea5e9',
+    '#3b82f6',
+    '#6366f1',
+    '#8b5cf6',
+    '#a855f7',
+    '#d946ef',
+    '#ec4899',
+    '#f43f5e',
   ];
 
   // Hash user ID to get consistent color
@@ -598,7 +626,7 @@ export function broadcastOperation(
   excludeUserId?: string
 ): Collaborator[] {
   return Array.from(session.collaborators.values()).filter(
-    collab => collab.id !== excludeUserId && collab.status === 'active'
+    (collab) => collab.id !== excludeUserId && collab.status === 'active'
   );
 }
 
@@ -609,18 +637,16 @@ export function selectionsOverlap(
   selection1: string[],
   selection2: string[]
 ): boolean {
-  return selection1.some(id => selection2.includes(id));
+  return selection1.some((id) => selection2.includes(id));
 }
 
 /**
  * Merge selections from multiple users
  */
-export function mergeSelections(
-  session: CollaborationSession
-): string[] {
+export function mergeSelections(session: CollaborationSession): string[] {
   const allSelections: string[] = [];
-  
-  session.collaborators.forEach(collab => {
+
+  session.collaborators.forEach((collab) => {
     if (collab.selection) {
       allSelections.push(...collab.selection);
     }
@@ -638,7 +664,7 @@ export function getElementCollaborators(
   elementId: string
 ): Collaborator[] {
   return Array.from(session.collaborators.values()).filter(
-    collab => 
+    (collab) =>
       collab.cursor?.elementId === elementId ||
       collab.selection?.includes(elementId)
   );
@@ -656,11 +682,11 @@ export function getCollaborationStats(session: CollaborationSession): {
   averageLatency: number;
 } {
   const activeCount = Array.from(session.collaborators.values()).filter(
-    c => c.status === 'active'
+    (c) => c.status === 'active'
   ).length;
 
   const idleCount = Array.from(session.collaborators.values()).filter(
-    c => c.status === 'idle' || c.status === 'away'
+    (c) => c.status === 'idle' || c.status === 'away'
   ).length;
 
   const operationsPerUser: Record<string, number> = {};
@@ -671,14 +697,16 @@ export function getCollaborationStats(session: CollaborationSession): {
   // Calculate average operation latency (time between operations)
   const latencies: number[] = [];
   for (let i = 1; i < session.operations.length; i++) {
-    const latency = session.operations[i].timestamp.getTime() - 
-                    session.operations[i - 1].timestamp.getTime();
+    const latency =
+      session.operations[i].timestamp.getTime() -
+      session.operations[i - 1].timestamp.getTime();
     latencies.push(latency);
   }
 
-  const averageLatency = latencies.length > 0
-    ? latencies.reduce((sum, l) => sum + l, 0) / latencies.length
-    : 0;
+  const averageLatency =
+    latencies.length > 0
+      ? latencies.reduce((sum, l) => sum + l, 0) / latencies.length
+      : 0;
 
   return {
     totalCollaborators: session.collaborators.size,

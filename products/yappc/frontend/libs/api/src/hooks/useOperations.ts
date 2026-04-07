@@ -12,7 +12,12 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
 
-import { useQuery, useMutation, useSubscription, useLazyQuery } from '@apollo/client';
+import {
+  useQuery,
+  useMutation,
+  useSubscription,
+  useLazyQuery,
+} from '@apollo/client';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useMemo, useEffect } from 'react';
 import { useState } from 'react';
@@ -100,7 +105,9 @@ export function useIncident(incidentId?: string) {
     onData: ({ data }) => {
       if (data?.data?.incidentUpdates) {
         setActiveIncident((prev) =>
-          prev ? { ...prev, ...data.data.incidentUpdates } : data.data.incidentUpdates
+          prev
+            ? { ...prev, ...data.data.incidentUpdates }
+            : data.data.incidentUpdates
         );
       }
     },
@@ -156,7 +163,9 @@ export function useIncidents(filters?: {
         setIncidents((prev) => {
           const exists = prev.find((i) => i.id === update.id);
           if (exists) {
-            return prev.map((i) => (i.id === update.id ? { ...i, ...update } : i));
+            return prev.map((i) =>
+              i.id === update.id ? { ...i, ...update } : i
+            );
           }
           return [update, ...prev];
         });
@@ -205,7 +214,9 @@ export function useIncidentMutations() {
       const result = await update({ variables: { incidentId, input } });
       if (result.data?.updateIncident) {
         setIncidents((prev) =>
-          prev.map((i) => (i.id === incidentId ? result.data.updateIncident : i))
+          prev.map((i) =>
+            i.id === incidentId ? result.data.updateIncident : i
+          )
         );
         setActiveIncident((prev) =>
           prev?.id === incidentId ? result.data.updateIncident : prev
@@ -222,7 +233,9 @@ export function useIncidentMutations() {
       const result = await acknowledge({ variables: { incidentId, message } });
       if (result.data?.acknowledgeIncident) {
         const updated = result.data.acknowledgeIncident;
-        setIncidents((prev) => prev.map((i) => (i.id === incidentId ? updated : i)));
+        setIncidents((prev) =>
+          prev.map((i) => (i.id === incidentId ? updated : i))
+        );
         setActiveIncident((prev) => (prev?.id === incidentId ? updated : prev));
         return updated;
       }
@@ -238,7 +251,9 @@ export function useIncidentMutations() {
       });
       if (result.data?.resolveIncident) {
         const updated = result.data.resolveIncident;
-        setIncidents((prev) => prev.map((i) => (i.id === incidentId ? updated : i)));
+        setIncidents((prev) =>
+          prev.map((i) => (i.id === incidentId ? updated : i))
+        );
         setActiveIncident((prev) => (prev?.id === incidentId ? updated : prev));
         return updated;
       }
@@ -267,7 +282,10 @@ export function useIncidentMutations() {
           if (prev?.id !== incidentId) return prev;
           return {
             ...prev,
-            timeline: [...(prev.timeline || []), result.data.addIncidentTimelineEntry],
+            timeline: [
+              ...(prev.timeline || []),
+              result.data.addIncidentTimelineEntry,
+            ],
           };
         });
         return result.data.addIncidentTimelineEntry;
@@ -461,7 +479,9 @@ export function useDashboardMutations() {
       const result = await update({ variables: { dashboardId, input } });
       if (result.data?.updateDashboard) {
         setDashboards((prev) =>
-          prev.map((d) => (d.id === dashboardId ? result.data.updateDashboard : d))
+          prev.map((d) =>
+            d.id === dashboardId ? result.data.updateDashboard : d
+          )
         );
         setActiveDashboard((prev) =>
           prev?.id === dashboardId ? result.data.updateDashboard : prev
@@ -501,7 +521,11 @@ export function useDashboardMutations() {
   );
 
   const updateDashboardWidget = useCallback(
-    async (dashboardId: string, widgetId: string, updates: Partial<WidgetInput>) => {
+    async (
+      dashboardId: string,
+      widgetId: string,
+      updates: Partial<WidgetInput>
+    ) => {
       const result = await updateWidget({
         variables: { dashboardId, widgetId, updates },
       });
@@ -700,14 +724,16 @@ export function useLogStream(filters?: {
   level?: string[];
   search?: string;
 }) {
-  const [logs, setLogs] = useState<Array<{
-    id: string;
-    timestamp: string;
-    level: string;
-    message: string;
-    service: string;
-    metadata?: Record<string, unknown>;
-  }>>([]);
+  const [logs, setLogs] = useState<
+    Array<{
+      id: string;
+      timestamp: string;
+      level: string;
+      message: string;
+      service: string;
+      metadata?: Record<string, unknown>;
+    }>
+  >([]);
 
   useSubscription(LOG_STREAM_SUBSCRIPTION, {
     variables: { filters },

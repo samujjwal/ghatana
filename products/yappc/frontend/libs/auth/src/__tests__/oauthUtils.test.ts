@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OAuthUtils } from '../oauth/utils.js';
-import type { OAuthProvider, OAuthToken, TokenResponse, UserInfoResponse } from '../oauth/types.js';
+import type {
+  OAuthProvider,
+  OAuthToken,
+  TokenResponse,
+  UserInfoResponse,
+} from '../oauth/types.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -25,7 +30,11 @@ const BASE_TOKEN: OAuthToken = {
   issuedAt: Date.now() - 1000, // issued 1 second ago
 };
 
-function makeFetchResponse(body: unknown, ok = true, statusText = 'OK'): Response {
+function makeFetchResponse(
+  body: unknown,
+  ok = true,
+  statusText = 'OK'
+): Response {
   return {
     ok,
     status: ok ? 200 : 400,
@@ -72,7 +81,8 @@ describe('OAuthUtils.generateState()', () => {
 
 describe('OAuthUtils.parseAuthorizationResponse()', () => {
   it('parses code and state from callback URL', () => {
-    const url = 'https://app.example.com/callback?code=auth-code&state=csrf-state';
+    const url =
+      'https://app.example.com/callback?code=auth-code&state=csrf-state';
     const result = OAuthUtils.parseAuthorizationResponse(url);
     expect(result.code).toBe('auth-code');
     expect(result.state).toBe('csrf-state');
@@ -81,7 +91,8 @@ describe('OAuthUtils.parseAuthorizationResponse()', () => {
   });
 
   it('parses error and errorDescription when present', () => {
-    const url = 'https://app.example.com/callback?error=access_denied&error_description=User+denied&state=s';
+    const url =
+      'https://app.example.com/callback?error=access_denied&error_description=User+denied&state=s';
     const result = OAuthUtils.parseAuthorizationResponse(url);
     expect(result.error).toBe('access_denied');
     expect(result.errorDescription).toBe('User denied');
@@ -106,7 +117,9 @@ describe('OAuthUtils.exchangeCodeForToken()', () => {
       refresh_token: 'new-refresh',
       scope: 'openid email',
     };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(tokenResponse));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse(tokenResponse)
+    );
 
     const token = await OAuthUtils.exchangeCodeForToken(PROVIDER, 'auth-code');
     expect(token.accessToken).toBe('new-access');
@@ -116,10 +129,12 @@ describe('OAuthUtils.exchangeCodeForToken()', () => {
   });
 
   it('throws when the token endpoint returns non-ok', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse({}, false, 'Bad Request'));
-    await expect(OAuthUtils.exchangeCodeForToken(PROVIDER, 'bad-code')).rejects.toThrow(
-      'Token exchange failed'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse({}, false, 'Bad Request')
     );
+    await expect(
+      OAuthUtils.exchangeCodeForToken(PROVIDER, 'bad-code')
+    ).rejects.toThrow('Token exchange failed');
   });
 });
 
@@ -133,7 +148,9 @@ describe('OAuthUtils.refreshAccessToken()', () => {
       expires_in: 3600,
       scope: 'openid email',
     };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(tokenResponse));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse(tokenResponse)
+    );
 
     const token = await OAuthUtils.refreshAccessToken(PROVIDER, 'old-refresh');
     expect(token.accessToken).toBe('refreshed-access');
@@ -149,15 +166,21 @@ describe('OAuthUtils.refreshAccessToken()', () => {
       refresh_token: 'brand-new-refresh',
       scope: 'openid',
     };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(tokenResponse));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse(tokenResponse)
+    );
 
     const token = await OAuthUtils.refreshAccessToken(PROVIDER, 'old-refresh');
     expect(token.refreshToken).toBe('brand-new-refresh');
   });
 
   it('throws when token endpoint returns non-ok', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse({}, false, 'Unauthorized'));
-    await expect(OAuthUtils.refreshAccessToken(PROVIDER, 'tok')).rejects.toThrow('Token refresh failed');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse({}, false, 'Unauthorized')
+    );
+    await expect(
+      OAuthUtils.refreshAccessToken(PROVIDER, 'tok')
+    ).rejects.toThrow('Token refresh failed');
   });
 });
 
@@ -171,7 +194,9 @@ describe('OAuthUtils.fetchUserInfo()', () => {
       name: 'Bob',
       picture: 'https://example.com/avatar.png',
     };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse(userInfoResponse));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse(userInfoResponse)
+    );
 
     const user = await OAuthUtils.fetchUserInfo(PROVIDER, BASE_TOKEN);
     expect(user.id).toBe('user-1');
@@ -182,9 +207,11 @@ describe('OAuthUtils.fetchUserInfo()', () => {
   });
 
   it('sends Authorization header with token type and access token', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      makeFetchResponse({ id: 'u', email: 'e@e.com', name: 'E' })
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        makeFetchResponse({ id: 'u', email: 'e@e.com', name: 'E' })
+      );
     await OAuthUtils.fetchUserInfo(PROVIDER, BASE_TOKEN);
     expect(fetchMock).toHaveBeenCalledWith(
       PROVIDER.userInfoUrl,
@@ -195,14 +222,22 @@ describe('OAuthUtils.fetchUserInfo()', () => {
   });
 
   it('throws when user info endpoint returns non-ok', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeFetchResponse({}, false, 'Forbidden'));
-    await expect(OAuthUtils.fetchUserInfo(PROVIDER, BASE_TOKEN)).rejects.toThrow('User info fetch failed');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse({}, false, 'Forbidden')
+    );
+    await expect(
+      OAuthUtils.fetchUserInfo(PROVIDER, BASE_TOKEN)
+    ).rejects.toThrow('User info fetch failed');
   });
 });
 
 describe('OAuthUtils.isTokenExpired()', () => {
   it('returns false for a fresh token', () => {
-    const token: OAuthToken = { ...BASE_TOKEN, issuedAt: Date.now(), expiresIn: 3600 };
+    const token: OAuthToken = {
+      ...BASE_TOKEN,
+      issuedAt: Date.now(),
+      expiresIn: 3600,
+    };
     expect(OAuthUtils.isTokenExpired(token)).toBe(false);
   });
 
@@ -218,7 +253,11 @@ describe('OAuthUtils.isTokenExpired()', () => {
 
 describe('OAuthUtils.isTokenExpiringSoon()', () => {
   it('returns false for a token with plenty of time left', () => {
-    const token: OAuthToken = { ...BASE_TOKEN, issuedAt: Date.now(), expiresIn: 3600 };
+    const token: OAuthToken = {
+      ...BASE_TOKEN,
+      issuedAt: Date.now(),
+      expiresIn: 3600,
+    };
     expect(OAuthUtils.isTokenExpiringSoon(token)).toBe(false);
   });
 
@@ -243,7 +282,10 @@ describe('OAuthUtils token storage (localStorage)', () => {
   it('storeToken calls localStorage.setItem with JSON', () => {
     const setMock = vi.spyOn(Storage.prototype, 'setItem');
     OAuthUtils.storeToken(BASE_TOKEN, 'my_token');
-    expect(setMock).toHaveBeenCalledWith('my_token', JSON.stringify(BASE_TOKEN));
+    expect(setMock).toHaveBeenCalledWith(
+      'my_token',
+      JSON.stringify(BASE_TOKEN)
+    );
   });
 
   it('storeToken uses default key "oauth_token"', () => {
@@ -258,7 +300,9 @@ describe('OAuthUtils token storage (localStorage)', () => {
   });
 
   it('retrieveToken returns parsed token', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(JSON.stringify(BASE_TOKEN));
+    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(
+      JSON.stringify(BASE_TOKEN)
+    );
     const retrieved = OAuthUtils.retrieveToken('my_token');
     expect(retrieved?.accessToken).toBe('access-123');
   });

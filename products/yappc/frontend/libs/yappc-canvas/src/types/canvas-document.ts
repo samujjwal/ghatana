@@ -59,7 +59,12 @@ export type CanvasElementType =
 /**
  * Layer identifier for hierarchical canvas organization
  */
-export type CanvasLayer = 'architecture' | 'design' | 'component' | 'page' | 'custom';
+export type CanvasLayer =
+  | 'architecture'
+  | 'design'
+  | 'component'
+  | 'page'
+  | 'custom';
 
 /**
  * Designer-specific element data (for @ghatana/yappc-designer compatibility)
@@ -75,7 +80,14 @@ export interface DesignerElementData {
  * Supports 7 built-in trait types with validation and options
  */
 export interface PageBuilderTrait {
-  readonly type: 'text' | 'number' | 'select' | 'checkbox' | 'color' | 'button' | 'content';
+  readonly type:
+    | 'text'
+    | 'number'
+    | 'select'
+    | 'checkbox'
+    | 'color'
+    | 'button'
+    | 'content';
   readonly name: string;
   readonly label: string;
   readonly value: unknown;

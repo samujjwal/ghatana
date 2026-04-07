@@ -7,7 +7,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { AutoLayoutEngine } from './AutoLayoutEngine';
-import type { LayoutElement, LayoutEdge, LayoutConfig, LayoutResult } from './AutoLayoutEngine';
+import type {
+  LayoutElement,
+  LayoutEdge,
+  LayoutConfig,
+  LayoutResult,
+} from './AutoLayoutEngine';
 
 describe('AutoLayoutEngine', () => {
   describe('Layout Algorithm Selection', () => {
@@ -119,8 +124,8 @@ describe('AutoLayoutEngine', () => {
       const result = AutoLayoutEngine.gridLayout(elements, {});
 
       const positions = Object.values(result.positions);
-      const xValues = positions.map(p => p.x);
-      const yValues = positions.map(p => p.y);
+      const xValues = positions.map((p) => p.x);
+      const yValues = positions.map((p) => p.y);
 
       const width = Math.max(...xValues) - Math.min(...xValues);
       const height = Math.max(...yValues) - Math.min(...yValues);
@@ -138,7 +143,11 @@ describe('AutoLayoutEngine', () => {
       const edges: LayoutEdge[] = [{ source: '1', target: '2' }];
 
       const config: LayoutConfig = { spacing: 200 };
-      const result = AutoLayoutEngine.hierarchicalLayout(elements, edges, config);
+      const result = AutoLayoutEngine.hierarchicalLayout(
+        elements,
+        edges,
+        config
+      );
 
       const pos1 = result.positions['1'];
       const pos2 = result.positions['2'];

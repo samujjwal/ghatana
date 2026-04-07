@@ -364,9 +364,9 @@ describe('AccessAuditManager', () => {
         requireApproval: false,
       });
 
-      expect(noApprovalManager.isApprovalGranted('snapshot-1', 'production')).toBe(
-        true
-      );
+      expect(
+        noApprovalManager.isApprovalGranted('snapshot-1', 'production')
+      ).toBe(true);
     });
 
     it('should clear expired approval requests', () => {
@@ -498,8 +498,18 @@ describe('AccessAuditManager', () => {
     });
 
     it('should get audit log by action', () => {
-      manager.logRestoreStart('snapshot-1', 'production', 'user-1', 'requester');
-      manager.logRestoreComplete('snapshot-1', 'production', 'user-1', 'requester');
+      manager.logRestoreStart(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
+      manager.logRestoreComplete(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
       manager.logRestoreStart('snapshot-2', 'staging', 'user-2', 'requester');
 
       const starts = manager.getAuditLogByAction('restore_start');
@@ -510,8 +520,19 @@ describe('AccessAuditManager', () => {
     });
 
     it('should get audit log by actor', () => {
-      manager.logRestoreStart('snapshot-1', 'production', 'user-1', 'requester');
-      manager.logAudit('restore_complete', 'user-1', 'requester', 'snapshot-1', 'production');
+      manager.logRestoreStart(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
+      manager.logAudit(
+        'restore_complete',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
       manager.logRestoreStart('snapshot-2', 'staging', 'user-2', 'requester');
 
       const user1Log = manager.getAuditLogByActor('user-1');
@@ -522,8 +543,19 @@ describe('AccessAuditManager', () => {
     });
 
     it('should get audit log by snapshot', () => {
-      manager.logRestoreStart('snapshot-1', 'production', 'user-1', 'requester');
-      manager.logAudit('restore_complete', 'user-1', 'requester', 'snapshot-1', 'production');
+      manager.logRestoreStart(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
+      manager.logAudit(
+        'restore_complete',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
       manager.logRestoreStart('snapshot-2', 'staging', 'user-2', 'requester');
 
       const snapshot1Log = manager.getAuditLogBySnapshot('snapshot-1');
@@ -537,10 +569,21 @@ describe('AccessAuditManager', () => {
       const now = Date.now();
       vi.setSystemTime(now);
 
-      manager.logRestoreStart('snapshot-1', 'production', 'user-1', 'requester');
+      manager.logRestoreStart(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
 
       vi.setSystemTime(now + 1000);
-      manager.logAudit('restore_complete', 'user-1', 'requester', 'snapshot-1', 'production');
+      manager.logAudit(
+        'restore_complete',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
 
       vi.setSystemTime(now + 2000);
       manager.logRestoreStart('snapshot-2', 'staging', 'user-2', 'requester');
@@ -553,8 +596,19 @@ describe('AccessAuditManager', () => {
     });
 
     it('should clear audit log', () => {
-      manager.logRestoreStart('snapshot-1', 'production', 'user-1', 'requester');
-      manager.logAudit('restore_complete', 'user-1', 'requester', 'snapshot-1', 'production');
+      manager.logRestoreStart(
+        'snapshot-1',
+        'production',
+        'user-1',
+        'requester'
+      );
+      manager.logAudit(
+        'restore_complete',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
 
       const count = manager.clearAuditLog();
       expect(count).toBe(2);
@@ -568,10 +622,34 @@ describe('AccessAuditManager', () => {
         maxAuditLogEntries: 3,
       });
 
-      smallManager.logAudit('restore_start', 'user-1', 'requester', 'snapshot-1', 'production');
-      smallManager.logAudit('restore_complete', 'user-1', 'requester', 'snapshot-1', 'production');
-      smallManager.logAudit('restore_start', 'user-2', 'requester', 'snapshot-2', 'staging');
-      smallManager.logAudit('restore_complete', 'user-2', 'requester', 'snapshot-2', 'staging');
+      smallManager.logAudit(
+        'restore_start',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
+      smallManager.logAudit(
+        'restore_complete',
+        'user-1',
+        'requester',
+        'snapshot-1',
+        'production'
+      );
+      smallManager.logAudit(
+        'restore_start',
+        'user-2',
+        'requester',
+        'snapshot-2',
+        'staging'
+      );
+      smallManager.logAudit(
+        'restore_complete',
+        'user-2',
+        'requester',
+        'snapshot-2',
+        'staging'
+      );
 
       const log = smallManager.getAuditLog();
       expect(log).toHaveLength(3);
@@ -668,7 +746,7 @@ describe('AccessAuditManager', () => {
     it('should handle custom delivery handler', async () => {
       // Use real timers for this test to allow async operations
       vi.useRealTimers();
-      
+
       const deliveryHandler = vi.fn().mockResolvedValue(true);
 
       const customManager = new AccessAuditManager({
@@ -701,13 +779,15 @@ describe('AccessAuditManager', () => {
 
       const updated = customManager.getAlert(alert.id);
       expect(updated?.deliveryStatus.email).toBe('sent');
-      
+
       // Restore fake timers for subsequent tests
       vi.useFakeTimers();
     });
 
     it('should handle delivery handler failure', async () => {
-      const deliveryHandler = vi.fn().mockRejectedValue(new Error('Delivery failed'));
+      const deliveryHandler = vi
+        .fn()
+        .mockRejectedValue(new Error('Delivery failed'));
 
       const customManager = new AccessAuditManager({
         alertConfig: {
@@ -754,7 +834,13 @@ describe('AccessAuditManager', () => {
     });
 
     it('should get alerts by priority', () => {
-      manager.sendAlert('info', 'Info Alert', 'Info', 'restore_start', 'user-1');
+      manager.sendAlert(
+        'info',
+        'Info Alert',
+        'Info',
+        'restore_start',
+        'user-1'
+      );
       manager.sendAlert(
         'warning',
         'Warning Alert',
@@ -795,7 +881,13 @@ describe('AccessAuditManager', () => {
 
     it('should clear all alerts', () => {
       manager.sendAlert('info', 'Test 1', 'Test', 'restore_start', 'user-1');
-      manager.sendAlert('warning', 'Test 2', 'Test', 'restore_approve', 'user-2');
+      manager.sendAlert(
+        'warning',
+        'Test 2',
+        'Test',
+        'restore_approve',
+        'user-2'
+      );
 
       const count = manager.clearAlerts();
       expect(count).toBe(2);

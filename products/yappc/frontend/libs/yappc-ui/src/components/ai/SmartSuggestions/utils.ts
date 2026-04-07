@@ -80,7 +80,7 @@ export async function fetchSuggestionsForType(
     typeof promptFn === 'function' ? promptFn(context, selection) : '';
 
   // aiService is intentionally opaque in this helper to avoid cross-package type deps
-   
+
   const svc = aiService as {
     complete: (...args: unknown[]) => Promise<unknown>;
   };
@@ -115,7 +115,6 @@ export async function fetchAllSuggestions(
   const out: Suggestion[] = [];
   const seen = new Set<string>();
   for (const t of types) {
-     
     const res = await fetchSuggestionsForType(
       aiService,
       t,

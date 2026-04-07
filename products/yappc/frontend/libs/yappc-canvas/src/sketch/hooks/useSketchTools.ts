@@ -11,7 +11,13 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import type { SketchTool, SketchToolConfig, StrokeData, ShapeData, Point } from '../types';
+import type {
+  SketchTool,
+  SketchToolConfig,
+  StrokeData,
+  ShapeData,
+  Point,
+} from '../types';
 import { simplifyPoints } from '../utils/smoothStroke';
 
 /**
@@ -92,7 +98,11 @@ export function useSketchTools({
   const handlePointerDown = useCallback(
     (point: Point) => {
       // Skip for non-drawing tools
-      if (activeTool === 'select' || activeTool === 'sticky' || activeTool === 'text') {
+      if (
+        activeTool === 'select' ||
+        activeTool === 'sticky' ||
+        activeTool === 'text'
+      ) {
         return;
       }
 
@@ -101,7 +111,11 @@ export function useSketchTools({
       pointsBufferRef.current = [point.x, point.y];
 
       // Handle stroke-based tools
-      if (activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser') {
+      if (
+        activeTool === 'pen' ||
+        activeTool === 'highlighter' ||
+        activeTool === 'eraser'
+      ) {
         setCurrentStroke({
           id: generateId('stroke'),
           points: [point.x, point.y],
@@ -142,7 +156,11 @@ export function useSketchTools({
       }
 
       // Handle stroke-based tools
-      if (activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser') {
+      if (
+        activeTool === 'pen' ||
+        activeTool === 'highlighter' ||
+        activeTool === 'eraser'
+      ) {
         pointsBufferRef.current.push(point.x, point.y);
 
         // Throttle updates for performance (update every 4 points)
@@ -202,7 +220,12 @@ export function useSketchTools({
     setIsDrawing(false);
 
     // Complete stroke
-    if (currentStroke && (activeTool === 'pen' || activeTool === 'highlighter' || activeTool === 'eraser')) {
+    if (
+      currentStroke &&
+      (activeTool === 'pen' ||
+        activeTool === 'highlighter' ||
+        activeTool === 'eraser')
+    ) {
       // Simplify points for storage efficiency
       const simplifiedPoints = simplifyPoints(pointsBufferRef.current, 2);
       const finalStroke: StrokeData = {
@@ -232,7 +255,14 @@ export function useSketchTools({
     // Reset refs
     startPointRef.current = null;
     pointsBufferRef.current = [];
-  }, [isDrawing, currentStroke, currentShape, activeTool, onStrokeComplete, onShapeComplete]);
+  }, [
+    isDrawing,
+    currentStroke,
+    currentShape,
+    activeTool,
+    onStrokeComplete,
+    onShapeComplete,
+  ]);
 
   const cancelDrawing = useCallback(() => {
     setIsDrawing(false);

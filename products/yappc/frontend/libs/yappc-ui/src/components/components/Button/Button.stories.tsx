@@ -34,7 +34,8 @@ const meta = {
     },
     fullWidth: {
       control: 'boolean',
-      description: 'If true, the button takes up the full width of its container',
+      description:
+        'If true, the button takes up the full width of its container',
     },
     isLoading: {
       control: 'boolean',

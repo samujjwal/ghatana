@@ -84,7 +84,10 @@ export type {
 
 // Hooks
 export { useSketchTools } from './hooks/useSketchTools';
-export type { UseSketchToolsParams, UseSketchToolsResult } from './hooks/useSketchTools';
+export type {
+  UseSketchToolsParams,
+  UseSketchToolsResult,
+} from './hooks/useSketchTools';
 
 export { useSketchKeyboard } from './hooks/useSketchKeyboard';
 export type { UseSketchKeyboardParams } from './hooks/useSketchKeyboard';

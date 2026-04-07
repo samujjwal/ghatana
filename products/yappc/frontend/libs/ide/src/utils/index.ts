@@ -1,8 +1,8 @@
 /**
  * @ghatana/yappc-ide - Utility Exports
- * 
+ *
  * Centralized exports for all IDE utilities
- * 
+ *
  * @doc.type module
  * @doc.purpose Utility exports for IDE
  * @doc.layer product

@@ -1,9 +1,9 @@
 /**
  * @ghatana/yappc-ide - Smart Code Generation System
- * 
+ *
  * Intelligent code generation with AI-powered templates,
  * context-aware suggestions, and automated scaffolding.
- * 
+ *
  * @doc.type component
  * @doc.purpose Smart code generation for IDE
  * @doc.layer product
@@ -18,7 +18,7 @@ import { useToastNotifications } from './Toast';
 /**
  * Code generation template types
  */
-export type GenerationType = 
+export type GenerationType =
   | 'component'
   | 'api-endpoint'
   | 'database-model'
@@ -104,7 +104,8 @@ export const CodeGeneration: React.FC<CodeGenerationProps> = ({
   className = '',
 }) => {
   const [templates, setTemplates] = useState<GenerationTemplate[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<GenerationTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<GenerationTemplate | null>(null);
   const [parameters, setParameters] = useState<Record<string, unknown>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [results, setResults] = useState<GenerationResult[]>([]);
@@ -132,7 +133,7 @@ export const CodeGeneration: React.FC<CodeGenerationProps> = ({
             type: 'string',
             description: 'Name of the component',
             required: true,
-            validation: { pattern: '^[A-Z][a-zA-Z0-9]*$' }
+            validation: { pattern: '^[A-Z][a-zA-Z0-9]*$' },
           },
           {
             id: 'withProps',
@@ -140,7 +141,7 @@ export const CodeGeneration: React.FC<CodeGenerationProps> = ({
             type: 'boolean',
             description: 'Generate with props interface',
             required: false,
-            defaultValue: false
+            defaultValue: false,
           },
           {
             id: 'withHooks',
@@ -148,8 +149,8 @@ export const CodeGeneration: React.FC<CodeGenerationProps> = ({
             type: 'boolean',
             description: 'Include common React hooks',
             required: false,
-            defaultValue: false
-          }
+            defaultValue: false,
+          },
         ],
         template: `import React from 'react';
 
@@ -167,7 +168,7 @@ const \${1:ComponentName}: React.FC<\${1:ComponentName}Props> = (\${3:props}) =>
 };
 
 export default \${1:ComponentName};`,
-        tags: ['react', 'component', 'typescript']
+        tags: ['react', 'component', 'typescript'],
       },
       // API Endpoint Template
       {
@@ -185,7 +186,7 @@ export default \${1:ComponentName};`,
             type: 'string',
             description: 'Name of the endpoint',
             required: true,
-            validation: { pattern: '^[a-z][a-zA-Z0-9]*$' }
+            validation: { pattern: '^[a-z][a-zA-Z0-9]*$' },
           },
           {
             id: 'method',
@@ -194,7 +195,7 @@ export default \${1:ComponentName};`,
             description: 'HTTP method for the endpoint',
             required: true,
             defaultValue: 'get',
-            options: ['get', 'post', 'put', 'delete', 'patch']
+            options: ['get', 'post', 'put', 'delete', 'patch'],
           },
           {
             id: 'withAuth',
@@ -202,8 +203,8 @@ export default \${1:ComponentName};`,
             type: 'boolean',
             description: 'Add authentication middleware',
             required: false,
-            defaultValue: false
-          }
+            defaultValue: false,
+          },
         ],
         template: `import { Request, Response } from 'express';
 
@@ -226,7 +227,7 @@ export const \${1:endpointName}Handler = async (req: Request, res: Response) => 
 
 // Route definition
 // router.\${4:get}('/\${1:endpointName}', \${1:endpointName}Handler);`,
-        tags: ['api', 'express', 'typescript', 'backend']
+        tags: ['api', 'express', 'typescript', 'backend'],
       },
       // Database Model Template
       {
@@ -244,7 +245,7 @@ export const \${1:endpointName}Handler = async (req: Request, res: Response) => 
             type: 'string',
             description: 'Name of the model',
             required: true,
-            validation: { pattern: '^[A-Z][a-zA-Z0-9]*$' }
+            validation: { pattern: '^[A-Z][a-zA-Z0-9]*$' },
           },
           {
             id: 'tableName',
@@ -252,7 +253,7 @@ export const \${1:endpointName}Handler = async (req: Request, res: Response) => 
             type: 'string',
             description: 'Database table name',
             required: true,
-            defaultValue: ''
+            defaultValue: '',
           },
           {
             id: 'withTimestamps',
@@ -260,8 +261,8 @@ export const \${1:endpointName}Handler = async (req: Request, res: Response) => 
             type: 'boolean',
             description: 'Add createdAt and updatedAt fields',
             required: false,
-            defaultValue: true
-          }
+            defaultValue: true,
+          },
         ],
         template: `import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
@@ -278,7 +279,7 @@ export class \${2:ModelName} {
   \${5:@UpdateDateColumn()}
   updatedAt: Date;
 }`,
-        tags: ['database', 'typeorm', 'model', 'typescript']
+        tags: ['database', 'typeorm', 'model', 'typescript'],
       },
       // Test Suite Template
       {
@@ -295,7 +296,7 @@ export class \${2:ModelName} {
             name: 'Suite Name',
             type: 'string',
             description: 'Name of the test suite',
-            required: true
+            required: true,
           },
           {
             id: 'testType',
@@ -304,8 +305,8 @@ export class \${2:ModelName} {
             description: 'Type of tests to generate',
             required: true,
             defaultValue: 'unit',
-            options: ['unit', 'integration', 'e2e']
-          }
+            options: ['unit', 'integration', 'e2e'],
+          },
         ],
         template: `import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { \${1:serviceName} } from '../\${1:serviceName}';
@@ -336,8 +337,8 @@ describe('\${2:SuiteName}', () => {
     });
   });
 });`,
-        tags: ['test', 'jest', 'typescript', 'testing']
-      }
+        tags: ['test', 'jest', 'typescript', 'testing'],
+      },
     ];
 
     setTemplates(defaultTemplates);
@@ -346,19 +347,20 @@ describe('\${2:SuiteName}', () => {
   /**
    * Filter templates by category
    */
-  const filteredTemplates = selectedCategory === 'all'
-    ? templates
-    : templates.filter(template => template.category === selectedCategory);
+  const filteredTemplates =
+    selectedCategory === 'all'
+      ? templates
+      : templates.filter((template) => template.category === selectedCategory);
 
   /**
    * Handle template selection
    */
   const handleTemplateSelect = useCallback((template: GenerationTemplate) => {
     setSelectedTemplate(template);
-    
+
     // Initialize parameters with default values
     const defaultParams: Record<string, unknown> = {};
-    template.parameters.forEach(param => {
+    template.parameters.forEach((param) => {
       if (param.defaultValue !== undefined) {
         defaultParams[param.id] = param.defaultValue;
       }
@@ -369,12 +371,15 @@ describe('\${2:SuiteName}', () => {
   /**
    * Handle parameter change
    */
-  const handleParameterChange = useCallback((paramId: string, value: unknown) => {
-    setParameters(prev => ({
-      ...prev,
-      [paramId]: value
-    }));
-  }, []);
+  const handleParameterChange = useCallback(
+    (paramId: string, value: unknown) => {
+      setParameters((prev) => ({
+        ...prev,
+        [paramId]: value,
+      }));
+    },
+    []
+  );
 
   /**
    * Generate code from template
@@ -383,11 +388,11 @@ describe('\${2:SuiteName}', () => {
     if (!selectedTemplate) return;
 
     setIsGenerating(true);
-    
+
     try {
       // Simple template substitution (in real implementation, use a proper template engine)
       let generatedCode = selectedTemplate.template;
-      
+
       // Replace parameter placeholders
       Object.entries(parameters).forEach(([key, value]) => {
         const placeholder = new RegExp(`\\$\\{1:${key}\\}`, 'g');
@@ -400,10 +405,10 @@ describe('\${2:SuiteName}', () => {
         parameters,
         generatedCode,
         timestamp: new Date(),
-        applied: false
+        applied: false,
       };
 
-      setResults(prev => [result, ...prev]);
+      setResults((prev) => [result, ...prev]);
       await onGenerate(result);
       success('Code generated successfully!');
     } catch {
@@ -416,27 +421,33 @@ describe('\${2:SuiteName}', () => {
   /**
    * Apply generated code
    */
-  const handleApply = useCallback(async (result: GenerationResult) => {
-    try {
-      await onGenerate(result);
-      result.applied = true;
-      success('Code applied successfully!');
-    } catch {
-      error('Failed to apply code');
-    }
-  }, [onGenerate, success, error]);
+  const handleApply = useCallback(
+    async (result: GenerationResult) => {
+      try {
+        await onGenerate(result);
+        result.applied = true;
+        success('Code applied successfully!');
+      } catch {
+        error('Failed to apply code');
+      }
+    },
+    [onGenerate, success, error]
+  );
 
   /**
    * Copy generated code to clipboard
    */
-  const handleCopy = useCallback(async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      success('Code copied to clipboard!');
-    } catch {
-      error('Failed to copy code');
-    }
-  }, [success, error]);
+  const handleCopy = useCallback(
+    async (code: string) => {
+      try {
+        await navigator.clipboard.writeText(code);
+        success('Code copied to clipboard!');
+      } catch {
+        error('Failed to copy code');
+      }
+    },
+    [success, error]
+  );
 
   /**
    * Clear all results
@@ -449,7 +460,9 @@ describe('\${2:SuiteName}', () => {
   if (!isVisible) return null;
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${className}`}>
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${className}`}
+    >
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -497,7 +510,7 @@ describe('\${2:SuiteName}', () => {
               {/* Template List */}
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-2">
-                  {filteredTemplates.map(template => (
+                  {filteredTemplates.map((template) => (
                     <div
                       key={template.id}
                       className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -533,32 +546,43 @@ describe('\${2:SuiteName}', () => {
                       Configure {selectedTemplate.name}
                     </h3>
                   </div>
-                  
+
                   <div className="flex-1 overflow-y-auto p-4">
                     <div className="space-y-4">
-                      {selectedTemplate.parameters.map(param => (
+                      {selectedTemplate.parameters.map((param) => (
                         <div key={param.id}>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                             {param.name}
-                            {param.required && <span className="text-red-500 ml-1">*</span>}
+                            {param.required && (
+                              <span className="text-red-500 ml-1">*</span>
+                            )}
                           </label>
-                          
+
                           {param.type === 'string' && (
                             <input
                               type="text"
-                              value={parameters[param.id] as string || ''}
-                              onChange={(e) => handleParameterChange(param.id, e.target.value)}
+                              value={(parameters[param.id] as string) || ''}
+                              onChange={(e) =>
+                                handleParameterChange(param.id, e.target.value)
+                              }
                               placeholder={param.description}
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                             />
                           )}
-                          
+
                           {param.type === 'boolean' && (
                             <label className="flex items-center space-x-2">
                               <input
                                 type="checkbox"
-                                checked={parameters[param.id] as boolean || false}
-                                onChange={(e) => handleParameterChange(param.id, e.target.checked)}
+                                checked={
+                                  (parameters[param.id] as boolean) || false
+                                }
+                                onChange={(e) =>
+                                  handleParameterChange(
+                                    param.id,
+                                    e.target.checked
+                                  )
+                                }
                                 className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-800"
                               />
                               <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -566,31 +590,35 @@ describe('\${2:SuiteName}', () => {
                               </span>
                             </label>
                           )}
-                          
+
                           {param.type === 'select' && (
                             <select
-                              value={parameters[param.id] as string || ''}
-                              onChange={(e) => handleParameterChange(param.id, e.target.value)}
+                              value={(parameters[param.id] as string) || ''}
+                              onChange={(e) =>
+                                handleParameterChange(param.id, e.target.value)
+                              }
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                             >
-                              {param.options?.map(option => (
+                              {param.options?.map((option) => (
                                 <option key={option} value={option}>
                                   {option}
                                 </option>
                               ))}
                             </select>
                           )}
-                          
+
                           {param.type === 'textarea' && (
                             <textarea
-                              value={parameters[param.id] as string || ''}
-                              onChange={(e) => handleParameterChange(param.id, e.target.value)}
+                              value={(parameters[param.id] as string) || ''}
+                              onChange={(e) =>
+                                handleParameterChange(param.id, e.target.value)
+                              }
                               placeholder={param.description}
                               rows={3}
                               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
                             />
                           )}
-                          
+
                           {param.description && param.type !== 'boolean' && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {param.description}
@@ -600,7 +628,7 @@ describe('\${2:SuiteName}', () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                     <InteractiveButton
                       variant="primary"
@@ -635,7 +663,7 @@ describe('\${2:SuiteName}', () => {
                   </InteractiveButton>
                 )}
               </div>
-              
+
               <div className="flex-1 overflow-y-auto">
                 {results.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400 p-8">
@@ -643,8 +671,11 @@ describe('\${2:SuiteName}', () => {
                   </div>
                 ) : (
                   <div className="p-4 space-y-4">
-                    {results.map(result => (
-                      <div key={result.id} className="border border-gray-200 dark:border-gray-700 rounded-lg">
+                    {results.map((result) => (
+                      <div
+                        key={result.id}
+                        className="border border-gray-200 dark:border-gray-700 rounded-lg"
+                      >
                         <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                           <div>
                             <div className="font-medium text-gray-900 dark:text-gray-100">
@@ -703,32 +734,38 @@ export const useCodeGeneration = () => {
     path: string;
   } | null>(null);
 
-  const openGenerator = useCallback((file?: {
-    name: string;
-    content: string;
-    language: string;
-    path: string;
-  }) => {
-    setCurrentFile(file || null);
-    setIsVisible(true);
-  }, []);
+  const openGenerator = useCallback(
+    (file?: {
+      name: string;
+      content: string;
+      language: string;
+      path: string;
+    }) => {
+      setCurrentFile(file || null);
+      setIsVisible(true);
+    },
+    []
+  );
 
   const closeGenerator = useCallback(() => {
     setIsVisible(false);
   }, []);
 
-  const toggleGenerator = useCallback((file?: {
-    name: string;
-    content: string;
-    language: string;
-    path: string;
-  }) => {
-    if (isVisible) {
-      closeGenerator();
-    } else {
-      openGenerator(file);
-    }
-  }, [isVisible, openGenerator, closeGenerator]);
+  const toggleGenerator = useCallback(
+    (file?: {
+      name: string;
+      content: string;
+      language: string;
+      path: string;
+    }) => {
+      if (isVisible) {
+        closeGenerator();
+      } else {
+        openGenerator(file);
+      }
+    },
+    [isVisible, openGenerator, closeGenerator]
+  );
 
   return {
     isVisible,

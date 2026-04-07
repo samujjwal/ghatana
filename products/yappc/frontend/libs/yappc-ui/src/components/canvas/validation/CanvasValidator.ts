@@ -77,7 +77,9 @@ export class CanvasValidator {
     const issues: ValidationIssue[] = [];
 
     // Component configuration validation
-    issues.push(...this.validateComponentConfig(nodeId, nodeData, metadata, options));
+    issues.push(
+      ...this.validateComponentConfig(nodeId, nodeData, metadata, options)
+    );
 
     // Data binding validation
     if (options.checkDataBindings !== false && nodeData.dataBinding) {
@@ -91,7 +93,9 @@ export class CanvasValidator {
 
     // Accessibility validation
     if (options.checkAccessibility && metadata) {
-      issues.push(...this.validateAccessibility(nodeId, componentType, nodeData, metadata));
+      issues.push(
+        ...this.validateAccessibility(nodeId, componentType, nodeData, metadata)
+      );
     }
 
     return issues;
@@ -246,7 +250,13 @@ export class CanvasValidator {
     const issues: ValidationIssue[] = [];
 
     // Interactive components need accessible labels
-    const interactiveComponents = ['Button', 'TextField', 'Checkbox', 'Radio', 'Select'];
+    const interactiveComponents = [
+      'Button',
+      'TextField',
+      'Checkbox',
+      'Radio',
+      'Select',
+    ];
     if (interactiveComponents.includes(componentType)) {
       const hasLabel =
         nodeData.props?.label ||
@@ -296,7 +306,8 @@ export class CanvasValidator {
         severity: 'warning',
         category: 'performance',
         message: `Canvas has ${nodeCount} nodes which may impact performance`,
-        suggestion: 'Consider breaking into smaller canvases or using virtualization',
+        suggestion:
+          'Consider breaking into smaller canvases or using virtualization',
         autoFixable: false,
       });
     }
@@ -307,7 +318,8 @@ export class CanvasValidator {
         severity: 'error',
         category: 'performance',
         message: `Canvas has ${nodeCount} nodes which will significantly impact performance`,
-        suggestion: 'Reduce the number of nodes or split into multiple canvases',
+        suggestion:
+          'Reduce the number of nodes or split into multiple canvases',
         autoFixable: false,
       });
     }
@@ -348,7 +360,9 @@ export class CanvasValidator {
 
     // Count issues by severity
     const errorCount = allIssues.filter((i) => i.severity === 'error').length;
-    const warningCount = allIssues.filter((i) => i.severity === 'warning').length;
+    const warningCount = allIssues.filter(
+      (i) => i.severity === 'warning'
+    ).length;
     const infoCount = allIssues.filter((i) => i.severity === 'info').length;
 
     return {

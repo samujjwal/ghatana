@@ -1,10 +1,10 @@
 /**
  * Consolidated Canvas AI Hook
- * 
- * Replaces: useAIBrainstorming, useComponentGeneration, useCodeScaffold, 
+ *
+ * Replaces: useAIBrainstorming, useComponentGeneration, useCodeScaffold,
  *           useRequirementWireframer, useMicroservicesExtractor, useServiceBlueprint
  * Provides: AI-powered canvas features
- * 
+ *
  * @doc.type hook
  * @doc.purpose Consolidated AI features
  * @doc.layer presentation
@@ -127,22 +127,25 @@ export interface UseCanvasAIOptions {
 export interface UseCanvasAIReturn {
   // Brainstorming
   generateIdeas: (prompt: string) => Promise<Idea[]>;
-  
+
   // Component Generation
   generateComponent: (spec: ComponentSpec) => Promise<Component>;
-  
+
   // Code Scaffolding
-  generateScaffold: (template: string, config: Record<string, unknown>) => Promise<Scaffold>;
-  
+  generateScaffold: (
+    template: string,
+    config: Record<string, unknown>
+  ) => Promise<Scaffold>;
+
   // Wireframing
   generateWireframe: (requirement: Requirement) => Promise<Wireframe>;
-  
+
   // Microservices Extraction
   extractMicroservices: (monolith: Architecture) => Promise<Microservice[]>;
-  
+
   // Service Blueprint
   generateBlueprint: (service: ServiceSpec) => Promise<Blueprint>;
-  
+
   // Common state
   isGenerating: boolean;
   error: Error | null;
@@ -171,7 +174,7 @@ export function useCanvasAI(options: UseCanvasAIOptions): UseCanvasAIReturn {
 
   // Helper to make AI API calls
   const callAI = useCallback(
-    async <T,>(endpoint: string, payload: unknown): Promise<T> => {
+    async <T>(endpoint: string, payload: unknown): Promise<T> => {
       setIsGenerating(true);
       setError(null);
 
@@ -229,7 +232,10 @@ export function useCanvasAI(options: UseCanvasAIOptions): UseCanvasAIReturn {
 
   // Code Scaffolding
   const generateScaffold = useCallback(
-    async (template: string, config: Record<string, unknown>): Promise<Scaffold> => {
+    async (
+      template: string,
+      config: Record<string, unknown>
+    ): Promise<Scaffold> => {
       if (!enabledFeatures.includes('code-scaffold')) {
         throw new Error('Code scaffold feature is not enabled');
       }

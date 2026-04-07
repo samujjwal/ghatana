@@ -12,7 +12,9 @@ import type { UserRole } from '../../services/auth/permissions';
 // Fixtures & Helpers
 // ---------------------------------------------------------------------------
 
-function createMockRequest(overrides: Partial<FastifyRequest> = {}): FastifyRequest {
+function createMockRequest(
+  overrides: Partial<FastifyRequest> = {}
+): FastifyRequest {
   return {
     user: undefined,
     ...overrides,
@@ -58,8 +60,8 @@ describe('requirePermission - workspace', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
-    expect((reply.send as jest.Mock)).toHaveBeenCalledWith(
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
+    expect(reply.send as jest.Mock).toHaveBeenCalledWith(
       expect.objectContaining({
         error: 'Forbidden',
       })
@@ -73,7 +75,7 @@ describe('requirePermission - workspace', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('allows ADMIN to update workspace', async () => {
@@ -94,7 +96,7 @@ describe('requirePermission - workspace', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 });
 
@@ -120,7 +122,7 @@ describe('requirePermission - project', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('allows EDITOR to create project', async () => {
@@ -140,7 +142,7 @@ describe('requirePermission - project', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('allows ADMIN to delete project', async () => {
@@ -196,7 +198,7 @@ describe('requirePermission - canvas', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 });
 
@@ -212,7 +214,7 @@ describe('requirePermission - member management', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('denies EDITOR to manage members', async () => {
@@ -222,7 +224,7 @@ describe('requirePermission - member management', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('allows ADMIN to manage members', async () => {
@@ -258,8 +260,8 @@ describe('requirePermission - Missing Authentication', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(401);
-    expect((reply.send as jest.Mock)).toHaveBeenCalledWith(
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(401);
+    expect(reply.send as jest.Mock).toHaveBeenCalledWith(
       expect.objectContaining({
         error: 'Unauthorized',
         message: expect.stringContaining('Authentication'),
@@ -300,7 +302,7 @@ describe('requireRole - Role Hierarchy', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('allows ADMIN to access any resource', async () => {
@@ -314,7 +316,7 @@ describe('requireRole - Role Hierarchy', () => {
       await handler(request, reply);
 
       if (level === 'VIEWER' || level === 'EDITOR') {
-        expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+        expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
       } else {
         expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
       }
@@ -340,7 +342,7 @@ describe('requireRole - Role Hierarchy', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 
   it('denies ADMIN to access OWNER-level resource', async () => {
@@ -350,7 +352,7 @@ describe('requireRole - Role Hierarchy', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
   });
 });
 
@@ -366,7 +368,7 @@ describe('requireRole - Missing Authentication', () => {
 
     await handler(request, reply);
 
-    expect((reply.status as jest.Mock)).toHaveBeenCalledWith(401);
+    expect(reply.status as jest.Mock).toHaveBeenCalledWith(401);
   });
 });
 
@@ -434,7 +436,7 @@ describe('All Role Types - Comprehensive', () => {
       if (['ADMIN', 'OWNER'].includes(role)) {
         expect((reply.status as jest.Mock).mock.calls).toHaveLength(0);
       } else {
-        expect((reply.status as jest.Mock)).toHaveBeenCalledWith(403);
+        expect(reply.status as jest.Mock).toHaveBeenCalledWith(403);
       }
 
       jest.clearAllMocks();

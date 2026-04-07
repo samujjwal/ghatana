@@ -7,8 +7,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   createRestoreRunbook,
   type SmokeTest,
-
-  RestoreRunbookManager} from '../restoreRunbook';
+  RestoreRunbookManager,
+} from '../restoreRunbook';
 
 describe('RestoreRunbookManager', () => {
   let manager: RestoreRunbookManager;
@@ -138,13 +138,19 @@ describe('RestoreRunbookManager', () => {
     it('should reject production restore without staging validation', async () => {
       await expect(
         manager.startRestore('snapshot-1', 'production', 'user-1')
-      ).rejects.toThrow('Production restore requires successful staging validation');
+      ).rejects.toThrow(
+        'Production restore requires successful staging validation'
+      );
     });
 
     it('should allow production restore with staging validation', async () => {
       // First run staging validation
-      const stagingOp = await manager.startRestore('snapshot-1', 'staging', 'user-1');
-      
+      const stagingOp = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
+
       // Register passing test
       const test: SmokeTest = {
         id: 'test-1',
@@ -158,7 +164,11 @@ describe('RestoreRunbookManager', () => {
       await manager.runSmokeTests(stagingOp.id);
 
       // Now production restore should work
-      const prodOp = await manager.startRestore('snapshot-1', 'production', 'user-1');
+      const prodOp = await manager.startRestore(
+        'snapshot-1',
+        'production',
+        'user-1'
+      );
       expect(prodOp.environment).toBe('production');
     });
 
@@ -175,7 +185,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should get operation by ID', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       const retrieved = manager.getOperation(operation.id);
 
       expect(retrieved).toEqual(operation);
@@ -189,7 +203,11 @@ describe('RestoreRunbookManager', () => {
 
   describe('Dry-Run Validation', () => {
     it('should perform successful dry-run', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       const snapshotData = { elements: [{ id: '1' }], metadata: {} };
 
       const result = await manager.performDryRun(operation.id, snapshotData);
@@ -202,7 +220,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should detect empty snapshot data', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const result = await manager.performDryRun(operation.id, {});
 
@@ -211,7 +233,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should update operation stage during dry-run', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       await manager.performDryRun(operation.id, { data: 'test' });
 
       const updated = manager.getOperation(operation.id);
@@ -220,7 +246,11 @@ describe('RestoreRunbookManager', () => {
 
     it('should skip dry-run when disabled', async () => {
       manager.updateConfig({ enableDryRun: false });
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const result = await manager.performDryRun(operation.id, {});
 
@@ -229,15 +259,19 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should throw error for non-existent operation', async () => {
-      await expect(
-        manager.performDryRun('non-existent', {})
-      ).rejects.toThrow('Operation not found');
+      await expect(manager.performDryRun('non-existent', {})).rejects.toThrow(
+        'Operation not found'
+      );
     });
   });
 
   describe('Smoke Tests Execution', () => {
     it('should run passing smoke tests', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -257,7 +291,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should run failing smoke tests', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -277,7 +315,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should detect critical test failures', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -295,7 +337,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should handle test exceptions', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -315,7 +361,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should enforce test timeout', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -337,7 +387,11 @@ describe('RestoreRunbookManager', () => {
 
     it('should require all tests to pass when configured', async () => {
       manager.updateConfig({ requireAllSmokeTests: true });
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test1: SmokeTest = {
         id: 'test-1',
@@ -362,7 +416,11 @@ describe('RestoreRunbookManager', () => {
 
     it('should skip smoke tests when disabled', async () => {
       manager.updateConfig({ enableSmokeTests: false });
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const result = await manager.runSmokeTests(operation.id);
 
@@ -371,7 +429,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should update operation stage during smoke tests', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       await manager.runSmokeTests(operation.id);
 
       const updated = manager.getOperation(operation.id);
@@ -379,7 +441,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should store staging validation results', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
 
       const test: SmokeTest = {
         id: 'test-1',
@@ -399,7 +465,11 @@ describe('RestoreRunbookManager', () => {
 
   describe('Operation Management', () => {
     it('should complete restore operation', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       const result = manager.completeRestore(operation.id);
 
       expect(result).toBe(true);
@@ -415,7 +485,11 @@ describe('RestoreRunbookManager', () => {
     });
 
     it('should update operation stage', async () => {
-      const operation = await manager.startRestore('snapshot-1', 'staging', 'user-1');
+      const operation = await manager.startRestore(
+        'snapshot-1',
+        'staging',
+        'user-1'
+      );
       const result = manager.updateStage(operation.id, 'restore');
 
       expect(result).toBe(true);
@@ -441,7 +515,7 @@ describe('RestoreRunbookManager', () => {
     it('should get operations by stage', async () => {
       const op1 = await manager.startRestore('snapshot-1', 'staging', 'user-1');
       const op2 = await manager.startRestore('snapshot-2', 'staging', 'user-1');
-      
+
       manager.completeRestore(op1.id);
 
       const validation = manager.getOperationsByStage('validation');

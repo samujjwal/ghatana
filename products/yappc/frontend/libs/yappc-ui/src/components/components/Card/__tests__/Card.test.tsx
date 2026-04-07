@@ -14,11 +14,11 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     const cardContent = screen.getByText('Card Content');
     expect(cardContent).toBeInTheDocument();
   });
-  
+
   it('renders with CardHeader, CardContent, and CardActions', () => {
     render(
       <ThemeProvider mode="light">
@@ -29,18 +29,18 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     const cardTitle = screen.getByText('Card Title');
     const cardSubtitle = screen.getByText('Card Subtitle');
     const cardContent = screen.getByText('Card Content');
     const cardActions = screen.getByText('Card Actions');
-    
+
     expect(cardTitle).toBeInTheDocument();
     expect(cardSubtitle).toBeInTheDocument();
     expect(cardContent).toBeInTheDocument();
     expect(cardActions).toBeInTheDocument();
   });
-  
+
   it('applies variant styles correctly', () => {
     render(
       <ThemeProvider mode="light">
@@ -52,14 +52,14 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     const outlinedCard = screen.getByTestId('outlined-card');
     const elevationCard = screen.getByTestId('elevation-card');
-    
+
     expect(outlinedCard).toHaveClass('MuiPaper-outlined');
     expect(elevationCard).not.toHaveClass('MuiPaper-outlined');
   });
-  
+
   it('applies elevation correctly', () => {
     render(
       <ThemeProvider mode="light">
@@ -74,16 +74,16 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     const elevation0 = screen.getByTestId('elevation-0');
     const elevation2 = screen.getByTestId('elevation-2');
     const elevation8 = screen.getByTestId('elevation-8');
-    
+
     expect(elevation0).toHaveClass('MuiPaper-elevation0');
     expect(elevation2).toHaveClass('MuiPaper-elevation2');
     expect(elevation8).toHaveClass('MuiPaper-elevation8');
   });
-  
+
   it('applies shape styles correctly', () => {
     render(
       <ThemeProvider mode="light">
@@ -98,18 +98,18 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     // These are custom styles applied via styled-components, so we can't check classes directly
     // Instead, we check for the presence of the cards
     const roundedCard = screen.getByTestId('rounded-card');
     const squareCard = screen.getByTestId('square-card');
     const softCard = screen.getByTestId('soft-card');
-    
+
     expect(roundedCard).toBeInTheDocument();
     expect(squareCard).toBeInTheDocument();
     expect(softCard).toBeInTheDocument();
   });
-  
+
   it('applies hover effect when hover prop is true', () => {
     render(
       <ThemeProvider mode="light">
@@ -118,10 +118,10 @@ describe('Card Component', () => {
         </Card>
       </ThemeProvider>
     );
-    
+
     const hoverCard = screen.getByTestId('hover-card');
     expect(hoverCard).toBeInTheDocument();
-    
+
     // Note: We can't test the actual hover effect in JSDOM as it doesn't support CSS :hover
     // For that, we would need a more advanced testing setup like Cypress or Playwright
   });

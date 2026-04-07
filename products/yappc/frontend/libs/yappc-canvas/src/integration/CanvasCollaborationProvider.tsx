@@ -1,9 +1,9 @@
 /**
  * Canvas Collaboration Provider
- * 
+ *
  * Complete integration example combining Yjs CRDT with WebSocket backend.
  * Provides both local CRDT sync and server-side persistence/broadcasting.
- * 
+ *
  * @module canvas/integration
  */
 
@@ -16,28 +16,28 @@ import { getWebSocketClient } from '@yappc/ai/realtime';
 import { useCanvasCollaborationBackend } from '../hooks/useCanvasCollaborationBackend';
 import { useCollaboration } from '../hooks/useCollaboration';
 
-
 /**
  * Collaboration context value
  */
 interface CanvasCollaborationContextValue {
   // Backend integration
   backend: ReturnType<typeof useCanvasCollaborationBackend>;
-  
+
   // Yjs CRDT integration
   yjs: ReturnType<typeof useCollaboration>;
-  
+
   // Combined state
   isConnected: boolean;
   remoteUsers: unknown[];
-  
+
   // Actions
   updateCanvas: (nodes: Node[], edges: Edge[]) => void;
   updateCursor: (x: number, y: number) => void;
   updateSelection: (nodeIds: string[]) => void;
 }
 
-const CanvasCollaborationContext = createContext<CanvasCollaborationContextValue | null>(null);
+const CanvasCollaborationContext =
+  createContext<CanvasCollaborationContextValue | null>(null);
 
 /**
  * Canvas Collaboration Provider Props
@@ -45,40 +45,40 @@ const CanvasCollaborationContext = createContext<CanvasCollaborationContextValue
 export interface CanvasCollaborationProviderProps {
   /** Canvas/room ID */
   canvasId: string;
-  
+
   /** Current user ID */
   userId: string;
-  
+
   /** Current user name */
   userName: string;
-  
+
   /** WebSocket endpoint */
   wsEndpoint: string;
-  
+
   /** Auth token */
   authToken?: string;
-  
+
   /** Tenant ID */
   tenantId?: string;
-  
+
   /** Children */
   children: React.ReactNode;
-  
+
   /** Enable debug logging */
   debug?: boolean;
 }
 
 /**
  * Canvas Collaboration Provider
- * 
+ *
  * Provides complete canvas collaboration with both Yjs CRDT and backend integration.
  * Combines local conflict-free editing with server-side persistence and broadcasting.
- * 
+ *
  * Architecture:
  * - Yjs CRDT: Local conflict-free collaborative editing
  * - WebSocket Backend: Server-side persistence, broadcasting, presence
  * - Hybrid approach: Best of both worlds
- * 
+ *
  * @example
  * ```tsx
  * <CanvasCollaborationProvider
@@ -95,7 +95,9 @@ export interface CanvasCollaborationProviderProps {
  * </CanvasCollaborationProvider>
  * ```
  */
-export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderProps> = ({
+export const CanvasCollaborationProvider: React.FC<
+  CanvasCollaborationProviderProps
+> = ({
   canvasId,
   userId,
   userName,
@@ -140,7 +142,7 @@ export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderPr
     userName,
     userColor,
     debug,
-    
+
     // Handle backend updates
     onCanvasUpdate: (payload) => {
       if (debug) {
@@ -148,25 +150,25 @@ export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderPr
       }
       // Yjs will handle the actual node/edge updates via CRDT
     },
-    
+
     onCursorUpdate: (payload) => {
       if (debug) {
         console.log('[CanvasCollaboration] Cursor update:', payload);
       }
     },
-    
+
     onSelectionUpdate: (payload) => {
       if (debug) {
         console.log('[CanvasCollaboration] Selection update:', payload);
       }
     },
-    
+
     onUserJoin: (user) => {
       if (debug) {
         console.log('[CanvasCollaboration] User joined:', user.userName);
       }
     },
-    
+
     onUserLeave: (userId) => {
       if (debug) {
         console.log('[CanvasCollaboration] User left:', userId);
@@ -178,7 +180,7 @@ export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderPr
   const updateCanvas = (nodes: Node[], edges: Edge[]) => {
     // Update Yjs CRDT (local sync)
     yjs.syncLocalToYjs(nodes, edges);
-    
+
     // Send to backend (server persistence + broadcast)
     backend.sendCanvasUpdate(nodes, edges);
   };
@@ -186,7 +188,7 @@ export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderPr
   const updateCursor = (x: number, y: number) => {
     // Update Yjs awareness
     yjs.updateCursor(x, y);
-    
+
     // Send to backend
     backend.sendCursorPosition(x, y);
   };
@@ -194,17 +196,14 @@ export const CanvasCollaborationProvider: React.FC<CanvasCollaborationProviderPr
   const updateSelection = (nodeIds: string[]) => {
     // Update Yjs awareness
     yjs.updateSelection(nodeIds);
-    
+
     // Send to backend
     backend.sendSelection(nodeIds);
   };
 
   // Combined state
   const isConnected = backend.isConnected && yjs.isConnected;
-  const remoteUsers = [
-    ...backend.remoteUsers,
-    ...yjs.remoteUsers,
-  ];
+  const remoteUsers = [...backend.remoteUsers, ...yjs.remoteUsers];
 
   const value: CanvasCollaborationContextValue = {
     backend,
@@ -241,8 +240,16 @@ export function useCanvasCollaboration() {
  */
 function generateUserColor(userId: string): string {
   const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+    '#FF6B6B',
+    '#4ECDC4',
+    '#45B7D1',
+    '#96CEB4',
+    '#FFEAA7',
+    '#DDA0DD',
+    '#98D8C8',
+    '#F7DC6F',
+    '#BB8FCE',
+    '#85C1E9',
   ];
 
   let hash = 0;

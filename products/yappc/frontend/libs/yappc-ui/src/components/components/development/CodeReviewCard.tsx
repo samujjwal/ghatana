@@ -15,8 +15,17 @@ import React, { useCallback, useMemo } from 'react';
 // ============================================================================
 
 export type PRStatus = 'open' | 'merged' | 'closed' | 'draft';
-export type CIStatus = 'pending' | 'running' | 'success' | 'failure' | 'cancelled';
-export type ReviewDecision = 'approved' | 'changes_requested' | 'commented' | 'pending';
+export type CIStatus =
+  | 'pending'
+  | 'running'
+  | 'success'
+  | 'failure'
+  | 'cancelled';
+export type ReviewDecision =
+  | 'approved'
+  | 'changes_requested'
+  | 'commented'
+  | 'pending';
 
 export interface PRReviewer {
   id: string;
@@ -254,7 +263,9 @@ export const CodeReviewCard: React.FC<CodeReviewCardProps> = ({
           <span className="stat-value stat-value--added">+{linesAdded}</span>
         </span>
         <span className="stat" title="Lines deleted">
-          <span className="stat-value stat-value--deleted">-{linesDeleted}</span>
+          <span className="stat-value stat-value--deleted">
+            -{linesDeleted}
+          </span>
         </span>
         <span className="stat" title="Files changed">
           📄 {filesChanged}
@@ -353,7 +364,10 @@ export const CodeReviewCard: React.FC<CodeReviewCardProps> = ({
           )}
           <span className="author-name">{author.name}</span>
         </div>
-        <span className="timestamps" title={`Updated ${formatTimeAgo(updatedAt)}`}>
+        <span
+          className="timestamps"
+          title={`Updated ${formatTimeAgo(updatedAt)}`}
+        >
           {formatTimeAgo(createdAt)}
         </span>
       </footer>

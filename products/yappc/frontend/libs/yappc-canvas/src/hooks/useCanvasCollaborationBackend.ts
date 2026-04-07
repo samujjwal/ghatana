@@ -1,9 +1,9 @@
 /**
  * Canvas Collaboration Backend Integration
- * 
+ *
  * Integrates canvas collaboration with backend CanvasCollaborationHandler.
  * Bridges Yjs CRDT with WebSocket backend for server-side persistence and broadcasting.
- * 
+ *
  * @module canvas/hooks
  * @doc.type integration
  * @doc.purpose Real-time canvas collaboration with backend
@@ -80,44 +80,44 @@ export interface CanvasCollaborationState {
 export interface UseCanvasCollaborationBackendConfig {
   /** WebSocket client instance */
   wsClient: WebSocketClient;
-  
+
   /** Canvas ID for this collaboration session */
   canvasId: string;
-  
+
   /** Current user ID */
   userId: string;
-  
+
   /** Current user name */
   userName: string;
-  
+
   /** Current user color */
   userColor: string;
-  
+
   /** Callback when canvas updates received */
   onCanvasUpdate?: (payload: CanvasUpdatePayload) => void;
-  
+
   /** Callback when cursor position received */
   onCursorUpdate?: (payload: CanvasCursorPayload) => void;
-  
+
   /** Callback when selection received */
   onSelectionUpdate?: (payload: CanvasSelectionPayload) => void;
-  
+
   /** Callback when user joins */
   onUserJoin?: (user: RemoteUser) => void;
-  
+
   /** Callback when user leaves */
   onUserLeave?: (userId: string) => void;
-  
+
   /** Enable debug logging */
   debug?: boolean;
 }
 
 /**
  * Canvas Collaboration Backend Integration Hook
- * 
+ *
  * Connects canvas to backend CanvasCollaborationHandler via WebSocket.
  * Handles join/leave, updates, cursor tracking, and selection sync.
- * 
+ *
  * Features:
  * - Automatic join on mount, leave on unmount
  * - Real-time canvas updates broadcast to all users
@@ -126,7 +126,7 @@ export interface UseCanvasCollaborationBackendConfig {
  * - Presence management
  * - Automatic reconnection handling
  * - Message queuing during disconnect
- * 
+ *
  * @example
  * ```tsx
  * function CollaborativeCanvas() {
@@ -136,7 +136,7 @@ export interface UseCanvasCollaborationBackendConfig {
  *     tenantId: user.tenantId,
  *     userId: user.id,
  *   });
- *   
+ *
  *   const collaboration = useCanvasCollaborationBackend({
  *     wsClient,
  *     canvasId: 'canvas-123',
@@ -153,17 +153,17 @@ export interface UseCanvasCollaborationBackendConfig {
  *       updateRemoteCursor(payload.userId, payload.position);
  *     },
  *   });
- *   
+ *
  *   // Send canvas updates
  *   const handleNodesChange = (nodes) => {
  *     collaboration.sendCanvasUpdate(nodes, edges);
  *   };
- *   
+ *
  *   // Send cursor position
  *   const handleMouseMove = (e) => {
  *     collaboration.sendCursorPosition(e.clientX, e.clientY);
  *   };
- *   
+ *
  *   return (
  *     <div onMouseMove={handleMouseMove}>
  *       <ReactFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} />
@@ -277,7 +277,10 @@ export function useCanvasCollaborationBackend(
       };
 
       wsClient.send('canvas.update', payload);
-      log('Sent canvas update:', { nodeCount: nodes.length, edgeCount: edges.length });
+      log('Sent canvas update:', {
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+      });
     },
     [wsClient, canvasId, userId, log]
   );
@@ -411,7 +414,11 @@ export function useCanvasCollaborationBackend(
           return;
         }
 
-        log('Received selection from:', payload.userId, payload.selectedNodeIds);
+        log(
+          'Received selection from:',
+          payload.userId,
+          payload.selectedNodeIds
+        );
 
         // Update remote user selection
         setState((prev) => {
@@ -505,7 +512,7 @@ export function useCanvasCollaborationBackend(
   useEffect(() => {
     const unsubscribe = wsClient.onStateChange((connectionState) => {
       const isConnected = connectionState === 'connected';
-      
+
       setState((prev) => ({ ...prev, isConnected }));
       log('Connection state changed:', connectionState);
 
@@ -566,7 +573,7 @@ export function useCanvasCollaborationBackend(
     state,
     isConnected: state.isConnected,
     remoteUsers: Array.from(state.remoteUsers.values()),
-    
+
     // Actions
     joinCanvas,
     leaveCanvas,

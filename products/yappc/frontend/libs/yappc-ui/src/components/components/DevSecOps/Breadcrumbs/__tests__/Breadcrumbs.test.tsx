@@ -11,7 +11,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { Breadcrumbs } from './Breadcrumbs';
 import { devsecopsTheme } from '../../../theme/devsecops-theme';
 
-
 const renderWithTheme = (component: React.ReactElement) => {
   return render(
     <ThemeProvider theme={devsecopsTheme}>{component}</ThemeProvider>
@@ -56,10 +55,7 @@ describe('Breadcrumbs', () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
 
-    const itemsWithClick = [
-      { label: 'Home', onClick },
-      { label: 'Current' },
-    ];
+    const itemsWithClick = [{ label: 'Home', onClick }, { label: 'Current' }];
 
     renderWithTheme(<Breadcrumbs items={itemsWithClick} />);
 

@@ -12,7 +12,15 @@
 import { useAtom } from 'jotai';
 import React, { Suspense } from 'react';
 
-import { Box, Card, CardContent, Typography, Stack, Chip, Skeleton } from '@ghatana/design-system';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Stack,
+  Chip,
+  Skeleton,
+} from '@ghatana/design-system';
 
 import { selectedDomainIdAtom } from '@yappc/state';
 
@@ -63,19 +71,40 @@ const TaskListSkeleton: React.FC = () => (
     {[1, 2, 3].map((i) => (
       <Card key={i} variant="outlined">
         <CardContent>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-start"
+            mb={1}
+          >
             <Box className="flex-1">
               <Skeleton variant="ghost" width="50%" height={24} />
               <Skeleton variant="ghost" width="75%" height={20} />
             </Box>
             <Stack direction="row" spacing={1}>
-              <Skeleton variant="rectangular" width={48} height={24} className="rounded" />
-              <Skeleton variant="rectangular" width={64} height={24} className="rounded" />
+              <Skeleton
+                variant="rectangular"
+                width={48}
+                height={24}
+                className="rounded"
+              />
+              <Skeleton
+                variant="rectangular"
+                width={64}
+                height={24}
+                className="rounded"
+              />
             </Stack>
           </Stack>
           <Stack direction="row" spacing={0.5} mt={2}>
             {[1, 2, 3].map((j) => (
-              <Skeleton key={j} variant="rectangular" width={48} height={24} className="rounded" />
+              <Skeleton
+                key={j}
+                variant="rectangular"
+                width={48}
+                height={24}
+                className="rounded"
+              />
             ))}
           </Stack>
         </CardContent>
@@ -89,15 +118,28 @@ const TaskListSkeleton: React.FC = () => (
 // ============================================================================
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task }) => (
-  <Card variant="outlined" className="hover:border-gray-200 dark:hover:border-gray-700">
+  <Card
+    variant="outlined"
+    className="hover:border-gray-200 dark:hover:border-gray-700"
+  >
     <CardContent>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        mb={1}
+      >
         <Box className="flex-1">
           <Typography as="p" className="text-lg font-medium" fontWeight={500}>
             {task.name}
           </Typography>
           {task.description && (
-            <Typography as="p" className="text-sm" color="text.secondary" className="mt-1">
+            <Typography
+              as="p"
+              className="text-sm"
+              color="text.secondary"
+              className="mt-1"
+            >
               {task.description}
             </Typography>
           )}
@@ -107,7 +149,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => (
             <Chip label={task.category} size="sm" variant="outlined" />
           )}
           {task.estimatedDuration && (
-            <Chip label={task.estimatedDuration} size="sm" tone="primary" variant="outlined" />
+            <Chip
+              label={task.estimatedDuration}
+              size="sm"
+              tone="primary"
+              variant="outlined"
+            />
           )}
         </Stack>
       </Stack>
@@ -129,7 +176,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => (
       {/* Tools */}
       {task.tools && task.tools.length > 0 && (
         <Box className="mt-3">
-          <Typography as="span" className="text-xs text-gray-500" fontWeight={500} color="text.secondary" gutterBottom>
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            fontWeight={500}
+            color="text.secondary"
+            gutterBottom
+          >
             Tools
           </Typography>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
@@ -149,7 +202,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task }) => (
       {/* Dependencies */}
       {task.dependencies && task.dependencies.length > 0 && (
         <Box className="mt-3">
-          <Typography as="span" className="text-xs text-gray-500" fontWeight={500} color="text.secondary" gutterBottom>
+          <Typography
+            as="span"
+            className="text-xs text-gray-500"
+            fontWeight={500}
+            color="text.secondary"
+            gutterBottom
+          >
             Dependencies
           </Typography>
           <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
@@ -225,12 +284,17 @@ const TaskListContent: React.FC<TaskListContentProps> = ({ domainId }) => {
  * <TaskListView className="my-4" />
  * ```
  */
-export const TaskListView: React.FC<TaskListViewProps> = ({ className = '' }) => {
+export const TaskListView: React.FC<TaskListViewProps> = ({
+  className = '',
+}) => {
   const [selectedDomainId] = useAtom(selectedDomainIdAtom);
 
   if (!selectedDomainId) {
     return (
-      <Box className={className} className="text-center py-16 text-gray-500 dark:text-gray-400">
+      <Box
+        className={className}
+        className="text-center py-16 text-gray-500 dark:text-gray-400"
+      >
         <Typography className="mb-2 text-[2.5rem]">📋</Typography>
         <Typography as="p">Select a domain to view tasks</Typography>
       </Box>

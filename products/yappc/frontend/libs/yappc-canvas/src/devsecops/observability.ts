@@ -1,6 +1,6 @@
 /**
  * Observability & Metrics Overlay System
- * 
+ *
  * Supports:
  * - Prometheus metrics integration
  * - Grafana dashboard embedding
@@ -227,7 +227,9 @@ export function createObservabilityConfig(
 /**
  * Create observability overlay
  */
-export function createObservabilityOverlay(documentId: string): ObservabilityOverlay {
+export function createObservabilityOverlay(
+  documentId: string
+): ObservabilityOverlay {
   return {
     documentId,
     metrics: new Map(),
@@ -246,7 +248,9 @@ export function createObservabilityOverlay(documentId: string): ObservabilityOve
 /**
  * Parse Prometheus metrics from text format
  */
-export function parsePrometheusMetrics(metricsText: string): PrometheusMetric[] {
+export function parsePrometheusMetrics(
+  metricsText: string
+): PrometheusMetric[] {
   const metrics: PrometheusMetric[] = [];
   const lines = metricsText.split('\n');
 
@@ -257,7 +261,12 @@ export function parsePrometheusMetrics(metricsText: string): PrometheusMetric[] 
     const trimmed = line.trim();
 
     // Skip empty lines and comments (except TYPE and HELP)
-    if (!trimmed || (trimmed.startsWith('#') && !trimmed.includes('TYPE') && !trimmed.includes('HELP'))) {
+    if (
+      !trimmed ||
+      (trimmed.startsWith('#') &&
+        !trimmed.includes('TYPE') &&
+        !trimmed.includes('HELP'))
+    ) {
       continue;
     }
 
@@ -277,7 +286,9 @@ export function parsePrometheusMetrics(metricsText: string): PrometheusMetric[] 
     }
 
     // Parse metric line
-    const metricMatch = trimmed.match(/^([a-zA-Z_:][a-zA-Z0-9_:]*)((?:\{[^}]+\})?) (.+)$/);
+    const metricMatch = trimmed.match(
+      /^([a-zA-Z_:][a-zA-Z0-9_:]*)((?:\{[^}]+\})?) (.+)$/
+    );
     if (!metricMatch) continue;
 
     const [, name, labelsStr, valueStr] = metricMatch;
@@ -294,7 +305,9 @@ export function parsePrometheusMetrics(metricsText: string): PrometheusMetric[] 
     // Parse value and timestamp
     const valueParts = valueStr.split(' ');
     const value = parseFloat(valueParts[0]);
-    const timestamp = valueParts[1] ? new Date(parseInt(valueParts[1])) : new Date();
+    const timestamp = valueParts[1]
+      ? new Date(parseInt(valueParts[1]))
+      : new Date();
 
     metrics.push({
       name,
@@ -348,7 +361,7 @@ export function queryMetrics(
     return metrics;
   }
 
-  return metrics.filter(metric => {
+  return metrics.filter((metric) => {
     return Object.entries(labelFilters).every(
       ([key, value]) => metric.labels[key] === value
     );
@@ -367,8 +380,8 @@ export function createTimeSeries(
   }
 ): TimeSeries {
   const dataPoints: TimeSeriesDataPoint[] = metrics
-    .filter(m => m.name === metricName)
-    .map(m => ({
+    .filter((m) => m.name === metricName)
+    .map((m) => ({
       timestamp: m.timestamp,
       value: m.value,
       labels: m.labels,
@@ -378,7 +391,11 @@ export function createTimeSeries(
   // Apply aggregation if specified
   let aggregatedPoints = dataPoints;
   if (options?.aggregation && options?.interval) {
-    aggregatedPoints = aggregateDataPoints(dataPoints, options.interval, options.aggregation);
+    aggregatedPoints = aggregateDataPoints(
+      dataPoints,
+      options.interval,
+      options.aggregation
+    );
   }
 
   return {
@@ -407,7 +424,8 @@ function aggregateDataPoints(
 
   // Group data points into time buckets
   for (const point of dataPoints) {
-    const bucket = Math.floor(point.timestamp.getTime() / intervalMs) * intervalMs;
+    const bucket =
+      Math.floor(point.timestamp.getTime() / intervalMs) * intervalMs;
     if (!buckets.has(bucket)) {
       buckets.set(bucket, []);
     }
@@ -581,7 +599,7 @@ export function updateSLOCompliance(
   sloId: string,
   currentValue: number
 ): ObservabilityOverlay {
-  const updatedSLOs = overlay.slos.map(slo => {
+  const updatedSLOs = overlay.slos.map((slo) => {
     if (slo.id !== sloId) return slo;
 
     const updatedSLI = {
@@ -598,7 +616,11 @@ export function updateSLOCompliance(
       compliance,
       metadata: {
         ...slo.metadata,
-        priority: (compliance < slo.target ? 'critical' : 'medium') as 'low' | 'medium' | 'high' | 'critical',
+        priority: (compliance < slo.target ? 'critical' : 'medium') as
+          | 'low'
+          | 'medium'
+          | 'high'
+          | 'critical',
         errorBudget,
       },
     };
@@ -656,10 +678,8 @@ export function resolveAlert(
   overlay: ObservabilityOverlay,
   alertId: string
 ): ObservabilityOverlay {
-  const updatedAlerts = overlay.alerts.map(alert =>
-    alert.id === alertId
-      ? { ...alert, status: 'resolved' as const }
-      : alert
+  const updatedAlerts = overlay.alerts.map((alert) =>
+    alert.id === alertId ? { ...alert, status: 'resolved' as const } : alert
   );
 
   return {
@@ -676,7 +696,7 @@ export function silenceAlert(
   alertId: string,
   until: Date
 ): ObservabilityOverlay {
-  const updatedAlerts = overlay.alerts.map(alert =>
+  const updatedAlerts = overlay.alerts.map((alert) =>
     alert.id === alertId
       ? {
           ...alert,
@@ -699,7 +719,7 @@ export function silenceAlert(
  * Get active alerts
  */
 export function getActiveAlerts(overlay: ObservabilityOverlay): Alert[] {
-  return overlay.alerts.filter(alert => alert.status === 'firing');
+  return overlay.alerts.filter((alert) => alert.status === 'firing');
 }
 
 /**
@@ -709,7 +729,7 @@ export function getAlertsBySeverity(
   overlay: ObservabilityOverlay,
   severity: AlertSeverity
 ): Alert[] {
-  return overlay.alerts.filter(alert => alert.severity === severity);
+  return overlay.alerts.filter((alert) => alert.severity === severity);
 }
 
 /**
@@ -789,9 +809,11 @@ export function updateHealthCheck(
 /**
  * Get unhealthy services
  */
-export function getUnhealthyServices(overlay: ObservabilityOverlay): HealthCheck[] {
+export function getUnhealthyServices(
+  overlay: ObservabilityOverlay
+): HealthCheck[] {
   return Array.from(overlay.healthChecks.values()).filter(
-    check => check.status === 'unhealthy' || check.status === 'degraded'
+    (check) => check.status === 'unhealthy' || check.status === 'degraded'
   );
 }
 
@@ -811,11 +833,16 @@ export function getObservabilitySummary(overlay: ObservabilityOverlay): {
 } {
   const activeAlerts = getActiveAlerts(overlay);
   const criticalAlerts = getAlertsBySeverity(overlay, 'critical');
-  const compliantSLOs = overlay.slos.filter(slo => slo.compliance >= slo.target);
+  const compliantSLOs = overlay.slos.filter(
+    (slo) => slo.compliance >= slo.target
+  );
   const unhealthyServices = getUnhealthyServices(overlay);
 
   return {
-    totalMetrics: Array.from(overlay.metrics.values()).reduce((sum, metrics) => sum + metrics.length, 0),
+    totalMetrics: Array.from(overlay.metrics.values()).reduce(
+      (sum, metrics) => sum + metrics.length,
+      0
+    ),
     totalTimeSeries: overlay.timeSeries.size,
     activeDashboards: overlay.dashboards.length,
     totalSLOs: overlay.slos.length,
@@ -830,12 +857,14 @@ export function getObservabilitySummary(overlay: ObservabilityOverlay): {
 /**
  * Cleanup old metrics based on retention period
  */
-export function cleanupOldMetrics(overlay: ObservabilityOverlay): ObservabilityOverlay {
+export function cleanupOldMetrics(
+  overlay: ObservabilityOverlay
+): ObservabilityOverlay {
   const cutoff = new Date(Date.now() - overlay.metadata.dataRetention);
 
   const updatedMetrics = new Map<string, PrometheusMetric[]>();
   overlay.metrics.forEach((metrics, name) => {
-    const filtered = metrics.filter(m => m.timestamp >= cutoff);
+    const filtered = metrics.filter((m) => m.timestamp >= cutoff);
     if (filtered.length > 0) {
       updatedMetrics.set(name, filtered);
     }
@@ -843,7 +872,7 @@ export function cleanupOldMetrics(overlay: ObservabilityOverlay): ObservabilityO
 
   // Also cleanup resolved alerts older than retention
   const updatedAlerts = overlay.alerts.filter(
-    alert => alert.status === 'firing' || alert.timestamp >= cutoff
+    (alert) => alert.status === 'firing' || alert.timestamp >= cutoff
   );
 
   return {

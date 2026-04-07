@@ -599,7 +599,11 @@ export interface TypedEventMap {
 
   // Data events
   'data:refresh': { source: string };
-  'data:update': { entityType: string; entityId: string; data: Record<string, unknown> };
+  'data:update': {
+    entityType: string;
+    entityId: string;
+    data: Record<string, unknown>;
+  };
   'data:delete': { entityType: string; entityId: string };
 
   // Form events

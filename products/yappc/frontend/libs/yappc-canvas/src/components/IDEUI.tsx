@@ -1,6 +1,6 @@
 /**
  * IDE UI Components - ContextMenu, TabBar Bridge
- * 
+ *
  * @deprecated Use ContextMenu, TabBar from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -57,7 +57,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] ContextMenu from @ghatana/yappc-ide is deprecated. ' +
-      'Use ContextMenu or CanvasContextMenu from @ghatana/yappc-canvas.'
+        'Use ContextMenu or CanvasContextMenu from @ghatana/yappc-canvas.'
     );
   }, []);
 
@@ -72,24 +72,30 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onClose?.();
   }, [onClose]);
 
-  const handleItemClick = useCallback((item: ContextMenuItem) => {
-    item.action?.();
-    onItemClick?.(item);
-    handleClose();
-  }, [onItemClick, handleClose]);
+  const handleItemClick = useCallback(
+    (item: ContextMenuItem) => {
+      item.action?.();
+      onItemClick?.(item);
+      handleClose();
+    },
+    [onItemClick, handleClose]
+  );
 
   const open = controlledOpen !== undefined ? controlledOpen : isOpen;
   const pos = position || menuPosition;
 
   return (
-    <div className={`context-menu-wrapper ${className || ''}`} onContextMenu={handleContextMenu}>
+    <div
+      className={`context-menu-wrapper ${className || ''}`}
+      onContextMenu={handleContextMenu}
+    >
       {children}
       {open && (
-        <div 
+        <div
           className="context-menu"
           style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 1000 }}
         >
-          {items.map(item => (
+          {items.map((item) => (
             <div key={item.id}>
               {item.separator ? (
                 <hr className="context-menu-separator" />
@@ -101,7 +107,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                 >
                   {item.icon && <span className="item-icon">{item.icon}</span>}
                   <span className="item-label">{item.label}</span>
-                  {item.shortcut && <span className="item-shortcut">{item.shortcut}</span>}
+                  {item.shortcut && (
+                    <span className="item-shortcut">{item.shortcut}</span>
+                  )}
                 </button>
               )}
             </div>
@@ -154,13 +162,13 @@ export const TabBar: React.FC<TabBarProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] TabBar from @ghatana/yappc-ide is deprecated. ' +
-      'Use TabBar or CanvasTabBar from @ghatana/yappc-canvas.'
+        'Use TabBar or CanvasTabBar from @ghatana/yappc-canvas.'
     );
   }, []);
 
   return (
     <div className={`tab-bar ${className || ''}`}>
-      {tabs.map(tab => (
+      {tabs.map((tab) => (
         <div
           key={tab.id}
           className={`tab-item ${activeTab === tab.id ? 'active' : ''} ${tab.modified ? 'modified' : ''}`}
@@ -171,7 +179,7 @@ export const TabBar: React.FC<TabBarProps> = ({
           <span className="tab-label">{tab.label}</span>
           {tab.modified && <span className="tab-modified-indicator">●</span>}
           {closable && (
-            <button 
+            <button
               className="tab-close"
               onClick={(e) => {
                 e.stopPropagation();

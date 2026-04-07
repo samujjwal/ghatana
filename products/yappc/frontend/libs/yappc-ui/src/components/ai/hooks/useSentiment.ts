@@ -45,7 +45,7 @@ export interface UseSentimentResult extends UseSentimentState {
 
 /**
  * Hook for AI-powered sentiment analysis with debouncing and auto-analysis
- * 
+ *
  * Provides sentiment analysis features including:
  * - Real-time text sentiment detection (positive, negative, neutral)
  * - Confidence scoring for sentiment predictions
@@ -55,17 +55,17 @@ export interface UseSentimentResult extends UseSentimentState {
  * - Emotion detection and intensity measurement
  * - Cancellable operations
  * - Error handling and state management
- * 
+ *
  * Integrates with sentiment analysis services for feedback analysis, content moderation,
  * and user experience monitoring.
- * 
+ *
  * @param analyzer - Sentiment analyzer instance implementing SentimentAnalyzer interface
  * @param options - Configuration options for sentiment analysis
  * @param options.debounceMs - Delay before triggering analysis (default: 500ms)
  * @param options.minLength - Minimum text length to analyze (default: 5)
  * @param options.autoAnalyze - Auto-analyze on text change (default: false)
  * @returns Sentiment analysis state and control functions
- * 
+ *
  * @example
  * ```tsx
  * function FeedbackForm() {
@@ -81,27 +81,27 @@ export interface UseSentimentResult extends UseSentimentState {
  *     minLength: 10,
  *     autoAnalyze: true
  *   });
- *   
+ *
  *   const [feedback, setFeedback] = useState('');
- *   
+ *
  *   const handleSubmit = async () => {
  *     const sentiment = await analyze(feedback);
- *     
+ *
  *     // Flag negative feedback for review
  *     if (sentiment.label === 'negative' && sentiment.confidence > 0.8) {
  *       await flagForReview(feedback, sentiment);
  *     }
- *     
+ *
  *     submitFeedback(feedback, sentiment);
  *   };
- *   
+ *
  *   const getSentimentColor = () => {
  *     if (!result) return 'gray';
  *     if (result.label === 'positive') return 'green';
  *     if (result.label === 'negative') return 'red';
  *     return 'yellow';
  *   };
- *   
+ *
  *   return (
  *     <div>
  *       <textarea

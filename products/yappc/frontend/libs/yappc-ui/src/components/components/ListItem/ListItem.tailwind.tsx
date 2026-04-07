@@ -59,10 +59,10 @@ export interface ListItemProps extends React.HTMLAttributes<HTMLLIElement> {
 
 /**
  * ListItem - Individual list item component
- * 
+ *
  * Simple Tailwind component for list items. Supports icons, secondary text,
  * clickable states, and selection highlighting.
- * 
+ *
  * @example
  * ```tsx
  * <List>
@@ -71,7 +71,7 @@ export interface ListItemProps extends React.HTMLAttributes<HTMLLIElement> {
  *   <ListItem secondaryText="Description">Item with subtitle</ListItem>
  * </List>
  * ```
- * 
+ *
  * @example
  * ```tsx
  * <List>
@@ -116,15 +116,18 @@ export const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
           align === 'center' ? 'items-center' : 'items-start',
 
           // Interactive states
-          isInteractive && !disabled && [
-            'cursor-pointer',
-            'hover:bg-grey-100 dark:hover:bg-grey-800',
-            'active:bg-grey-200 dark:active:bg-grey-700',
-            'transition-colors duration-150',
-          ],
+          isInteractive &&
+            !disabled && [
+              'cursor-pointer',
+              'hover:bg-grey-100 dark:hover:bg-grey-800',
+              'active:bg-grey-200 dark:active:bg-grey-700',
+              'transition-colors duration-150',
+            ],
 
           // Selected state
-          selected && !disabled && 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300',
+          selected &&
+            !disabled &&
+            'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300',
 
           // Disabled state
           disabled && 'opacity-50 cursor-not-allowed',
@@ -138,7 +141,13 @@ export const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
       >
         {/* Icon */}
         {icon && (
-          <span className={cn('flex-shrink-0', dense ? 'w-5 h-5' : 'w-6 h-6', align === 'start' && 'mt-0.5')}>
+          <span
+            className={cn(
+              'flex-shrink-0',
+              dense ? 'w-5 h-5' : 'w-6 h-6',
+              align === 'start' && 'mt-0.5'
+            )}
+          >
             {icon}
           </span>
         )}

@@ -1,8 +1,8 @@
 /**
  * ObjectContextMenu Component
- * 
+ *
  * Enhanced right-click context menu with search and recent actions
- * 
+ *
  * Features:
  * - Search filter input at top
  * - Recent actions section (top 3)
@@ -10,7 +10,7 @@
  * - Keyboard shortcuts displayed in right column
  * - Fuzzy search with highlighting
  * - Keyboard navigation (arrow keys)
- * 
+ *
  * @doc.type component
  * @doc.purpose Enhanced context menu for canvas objects
  * @doc.layer components
@@ -18,15 +18,40 @@
  */
 
 import { useAtom } from 'jotai';
-import { Copy as DuplicateIcon, Trash2 as DeleteIcon, Lock as LockIcon, LockOpen as UnlockIcon, BringToFront as BringToFrontIcon, SendToBack as SendToBackIcon, Users as GroupIcon, Ungroup as UngroupIcon, Pencil as EditIcon, Eye as ShowIcon, EyeOff as HideIcon, Search as SearchIcon, History as HistoryIcon } from 'lucide-react';
+import {
+  Copy as DuplicateIcon,
+  Trash2 as DeleteIcon,
+  Lock as LockIcon,
+  LockOpen as UnlockIcon,
+  BringToFront as BringToFrontIcon,
+  SendToBack as SendToBackIcon,
+  Users as GroupIcon,
+  Ungroup as UngroupIcon,
+  Pencil as EditIcon,
+  Eye as ShowIcon,
+  EyeOff as HideIcon,
+  Search as SearchIcon,
+  History as HistoryIcon,
+} from 'lucide-react';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider, Box, Typography, Input as InputBase } from '@ghatana/design-system';
+import {
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Box,
+  Typography,
+  Input as InputBase,
+} from '@ghatana/design-system';
 
 import type { ContextAction } from '../lib/actions/ContextActionsManager';
-import { chromeRecentActionsAtom, addRecentActionAtom } from '../state/chrome-atoms';
+import {
+  chromeRecentActionsAtom,
+  addRecentActionAtom,
+} from '../state/chrome-atoms';
 import { CANVAS_TOKENS } from '../tokens/canvas-tokens';
-
 
 const { SPACING, COLORS, TYPOGRAPHY, FONT_WEIGHT, RADIUS } = CANVAS_TOKENS;
 
@@ -114,7 +139,11 @@ function highlightMatch(text: string, query: string): React.ReactNode {
         parts.push(text.substring(lastIndex, i));
       }
       parts.push(
-        <Box component="span" key={i} style={{ fontWeight: FONT_WEIGHT.BOLD, color: COLORS.PRIMARY }}>
+        <Box
+          component="span"
+          key={i}
+          style={{ fontWeight: FONT_WEIGHT.BOLD, color: COLORS.PRIMARY }}
+        >
           {text[i]}
         </Box>
       );
@@ -132,14 +161,14 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 
 /**
  * ObjectContextMenu - Right-click context menu for canvas objects
- * 
+ *
  * Provides quick access to common object actions without requiring
  * users to find them in toolbars or menus. Adapts based on selection.
- * 
+ *
  * @example
  * ```tsx
  * const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
- * 
+ *
  * <ObjectContextMenu
  *   position={contextMenu}
  *   actions={contextActions}
@@ -236,16 +265,30 @@ export function ObjectContextMenu({
     >
       {/* Search filter */}
       {enableSearch && (
-        <Box style={{ paddingLeft: SPACING.SM, paddingRight: SPACING.SM, paddingTop: SPACING.SM, paddingBottom: SPACING.SM, borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`}}>
-          <Box
-            className="flex items-center gap-1 px-2 py-1 rounded-[RADIUS.SMpx]" >
-            <SearchIcon style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }} />
+        <Box
+          style={{
+            paddingLeft: SPACING.SM,
+            paddingRight: SPACING.SM,
+            paddingTop: SPACING.SM,
+            paddingBottom: SPACING.SM,
+            borderBottom: `1px solid ${COLORS.BORDER_LIGHT}`,
+          }}
+        >
+          <Box className="flex items-center gap-1 px-2 py-1 rounded-[RADIUS.SMpx]">
+            <SearchIcon
+              style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }}
+            />
             <InputBase
               inputRef={searchInputRef}
               placeholder="Search actions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1" style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY, backgroundColor: COLORS.NEUTRAL_100 }}
+              className="flex-1"
+              style={{
+                fontSize: TYPOGRAPHY.SM,
+                color: COLORS.TEXT_SECONDARY,
+                backgroundColor: COLORS.NEUTRAL_100,
+              }}
             />
           </Box>
         </Box>
@@ -254,8 +297,19 @@ export function ObjectContextMenu({
       {/* Menu header with selection info */}
       {selectedInfo && (
         <>
-          <Box style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}>
-            <Typography as="span" className="text-xs text-gray-500" style={{ color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.XS }}>
+          <Box
+            style={{
+              paddingLeft: SPACING.MD,
+              paddingRight: SPACING.MD,
+              paddingTop: SPACING.SM,
+              paddingBottom: SPACING.SM,
+            }}
+          >
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              style={{ color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.XS }}
+            >
               {selectedInfo.count === 1
                 ? `1 ${selectedInfo.type}`
                 : `${selectedInfo.count} objects`}
@@ -268,10 +322,20 @@ export function ObjectContextMenu({
       {/* Recent actions */}
       {!searchQuery && recentActionsList.length > 0 && (
         <>
-          <Box style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.XS, paddingBottom: SPACING.XS, marginTop: SPACING.XS }}>
+          <Box
+            style={{
+              paddingLeft: SPACING.MD,
+              paddingRight: SPACING.MD,
+              paddingTop: SPACING.XS,
+              paddingBottom: SPACING.XS,
+              marginTop: SPACING.XS,
+            }}
+          >
             <Typography
-              as="span" className="text-xs text-gray-500"
-              className="uppercase text-xs font-semibold" >
+              as="span"
+              className="text-xs text-gray-500"
+              className="uppercase text-xs font-semibold"
+            >
               Recent
             </Typography>
           </Box>
@@ -283,10 +347,20 @@ export function ObjectContextMenu({
                 handleActionExecute(action);
               }}
               disabled={!action.isEnabled}
-              style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}
+              style={{
+                paddingLeft: SPACING.MD,
+                paddingRight: SPACING.MD,
+                paddingTop: SPACING.SM,
+                paddingBottom: SPACING.SM,
+              }}
             >
               <ListItemIcon className="min-w-[32px]">
-                <HistoryIcon style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.TEXT_SECONDARY }} />
+                <HistoryIcon
+                  style={{
+                    fontSize: TYPOGRAPHY.SM,
+                    color: COLORS.TEXT_SECONDARY,
+                  }}
+                />
               </ListItemIcon>
               <ListItemText
                 primary={action.label}
@@ -294,64 +368,102 @@ export function ObjectContextMenu({
               />
               {action.shortcut && (
                 <Typography
-                  as="span" className="text-xs text-gray-500"
-                  className="ml-4 text-xs" style={{ color: COLORS.TEXT_SECONDARY }} >
+                  as="span"
+                  className="text-xs text-gray-500"
+                  className="ml-4 text-xs"
+                  style={{ color: COLORS.TEXT_SECONDARY }}
+                >
                   {action.shortcut}
                 </Typography>
               )}
             </MenuItem>
           ))}
-          <Divider style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }} />
+          <Divider
+            style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }}
+          />
         </>
       )}
 
       {/* Edit actions */}
       {actionsByCategory.edit.length > 0 && (
         <>
-          <Box style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.XS, paddingBottom: SPACING.XS, marginTop: SPACING.XS }}>
+          <Box
+            style={{
+              paddingLeft: SPACING.MD,
+              paddingRight: SPACING.MD,
+              paddingTop: SPACING.XS,
+              paddingBottom: SPACING.XS,
+              marginTop: SPACING.XS,
+            }}
+          >
             <Typography
-              as="span" className="text-xs text-gray-500"
-              className="uppercase text-xs font-semibold" style={{ color: COLORS.TEXT_SECONDARY }} >
+              as="span"
+              className="text-xs text-gray-500"
+              className="uppercase text-xs font-semibold"
+              style={{ color: COLORS.TEXT_SECONDARY }}
+            >
               Edit
             </Typography>
           </Box>
-          {actionsByCategory.edit.filter((a) => a.id !== 'delete').map((action) => (
-            <MenuItem
-              key={action.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleActionExecute(action);
-              }}
-              disabled={!action.isEnabled}
-              style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}
-            >
-              <ListItemIcon className="min-w-[32px]">
-                {action.icon || getActionIcon(action.id)}
-              </ListItemIcon>
-              <ListItemText
-                primary={highlightMatch(action.label, searchQuery)}
-                primaryTypographyProps={{ fontSize: TYPOGRAPHY.SM }}
-              />
-              {action.shortcut && (
-                <Typography
-                  as="span" className="text-xs text-gray-500"
-                  className="ml-4 text-xs" style={{ color: COLORS.TEXT_SECONDARY }} >
-                  {action.shortcut}
-                </Typography>
-              )}
-            </MenuItem>
-          ))}
-          <Divider style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }} />
+          {actionsByCategory.edit
+            .filter((a) => a.id !== 'delete')
+            .map((action) => (
+              <MenuItem
+                key={action.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleActionExecute(action);
+                }}
+                disabled={!action.isEnabled}
+                style={{
+                  paddingLeft: SPACING.MD,
+                  paddingRight: SPACING.MD,
+                  paddingTop: SPACING.SM,
+                  paddingBottom: SPACING.SM,
+                }}
+              >
+                <ListItemIcon className="min-w-[32px]">
+                  {action.icon || getActionIcon(action.id)}
+                </ListItemIcon>
+                <ListItemText
+                  primary={highlightMatch(action.label, searchQuery)}
+                  primaryTypographyProps={{ fontSize: TYPOGRAPHY.SM }}
+                />
+                {action.shortcut && (
+                  <Typography
+                    as="span"
+                    className="text-xs text-gray-500"
+                    className="ml-4 text-xs"
+                    style={{ color: COLORS.TEXT_SECONDARY }}
+                  >
+                    {action.shortcut}
+                  </Typography>
+                )}
+              </MenuItem>
+            ))}
+          <Divider
+            style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }}
+          />
         </>
       )}
 
       {/* Arrange actions */}
       {actionsByCategory.arrange.length > 0 && (
         <>
-          <Box style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.XS, paddingBottom: SPACING.XS }}>
+          <Box
+            style={{
+              paddingLeft: SPACING.MD,
+              paddingRight: SPACING.MD,
+              paddingTop: SPACING.XS,
+              paddingBottom: SPACING.XS,
+            }}
+          >
             <Typography
-              as="span" className="text-xs text-gray-500"
-              className="uppercase text-xs font-semibold" style={{ color: COLORS.TEXT_SECONDARY }} >
+              as="span"
+              className="text-xs text-gray-500"
+              className="uppercase text-xs font-semibold"
+              style={{ color: COLORS.TEXT_SECONDARY }}
+            >
               Arrange
             </Typography>
           </Box>
@@ -363,7 +475,12 @@ export function ObjectContextMenu({
                 handleActionExecute(action);
               }}
               disabled={!action.isEnabled}
-              style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}
+              style={{
+                paddingLeft: SPACING.MD,
+                paddingRight: SPACING.MD,
+                paddingTop: SPACING.SM,
+                paddingBottom: SPACING.SM,
+              }}
             >
               <ListItemIcon className="min-w-[32px]">
                 {action.icon || getActionIcon(action.id)}
@@ -374,24 +491,39 @@ export function ObjectContextMenu({
               />
               {action.shortcut && (
                 <Typography
-                  as="span" className="text-xs text-gray-500"
-                  className="ml-4 text-xs" style={{ color: COLORS.TEXT_SECONDARY }} >
+                  as="span"
+                  className="text-xs text-gray-500"
+                  className="ml-4 text-xs"
+                  style={{ color: COLORS.TEXT_SECONDARY }}
+                >
                   {action.shortcut}
                 </Typography>
               )}
             </MenuItem>
           ))}
-          <Divider style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }} />
+          <Divider
+            style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }}
+          />
         </>
       )}
 
       {/* Style actions */}
       {actionsByCategory.style.length > 0 && (
         <>
-          <Box style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.XS, paddingBottom: SPACING.XS }}>
+          <Box
+            style={{
+              paddingLeft: SPACING.MD,
+              paddingRight: SPACING.MD,
+              paddingTop: SPACING.XS,
+              paddingBottom: SPACING.XS,
+            }}
+          >
             <Typography
-              as="span" className="text-xs text-gray-500"
-              className="uppercase text-xs font-semibold" style={{ color: COLORS.TEXT_SECONDARY }} >
+              as="span"
+              className="text-xs text-gray-500"
+              className="uppercase text-xs font-semibold"
+              style={{ color: COLORS.TEXT_SECONDARY }}
+            >
               Style
             </Typography>
           </Box>
@@ -403,7 +535,12 @@ export function ObjectContextMenu({
                 handleActionExecute(action);
               }}
               disabled={!action.isEnabled}
-              style={{ paddingLeft: SPACING.MD, paddingRight: SPACING.MD, paddingTop: SPACING.SM, paddingBottom: SPACING.SM }}
+              style={{
+                paddingLeft: SPACING.MD,
+                paddingRight: SPACING.MD,
+                paddingTop: SPACING.SM,
+                paddingBottom: SPACING.SM,
+              }}
             >
               <ListItemIcon className="min-w-[32px]">
                 {action.icon || getActionIcon(action.id)}
@@ -414,25 +551,34 @@ export function ObjectContextMenu({
               />
               {action.shortcut && (
                 <Typography
-                  as="span" className="text-xs text-gray-500"
-                  className="ml-4 text-xs" style={{ color: COLORS.TEXT_SECONDARY }} >
+                  as="span"
+                  className="text-xs text-gray-500"
+                  className="ml-4 text-xs"
+                  style={{ color: COLORS.TEXT_SECONDARY }}
+                >
                   {action.shortcut}
                 </Typography>
               )}
             </MenuItem>
           ))}
-          <Divider style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }} />
+          <Divider
+            style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }}
+          />
         </>
       )}
 
       {/* Delete action (always at bottom) */}
       {actionsByCategory.edit.find((a) => a.id === 'delete') && (
         <>
-          <Divider style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }} />
+          <Divider
+            style={{ marginTop: SPACING.XS, marginBottom: SPACING.XS }}
+          />
           <MenuItem
             onClick={(e) => {
               e.stopPropagation();
-              const deleteAction = actionsByCategory.edit.find((a) => a.id === 'delete');
+              const deleteAction = actionsByCategory.edit.find(
+                (a) => a.id === 'delete'
+              );
               if (deleteAction) {
                 handleActionExecute(deleteAction);
               }
@@ -446,13 +592,20 @@ export function ObjectContextMenu({
             }}
           >
             <ListItemIcon className="min-w-[32px]">
-              <DeleteIcon style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.ERROR }} />
+              <DeleteIcon
+                style={{ fontSize: TYPOGRAPHY.SM, color: COLORS.ERROR }}
+              />
             </ListItemIcon>
             <ListItemText
               primary="Delete"
               primaryTypographyProps={{ fontSize: TYPOGRAPHY.SM }}
             />
-            <Typography as="span" className="text-xs text-gray-500" className="ml-4 text-xs" style={{ color: COLORS.ERROR }} >
+            <Typography
+              as="span"
+              className="text-xs text-gray-500"
+              className="ml-4 text-xs"
+              style={{ color: COLORS.ERROR }}
+            >
               Del
             </Typography>
           </MenuItem>
@@ -461,8 +614,10 @@ export function ObjectContextMenu({
 
       {/* No results message */}
       {searchQuery && filteredActions.length === 0 && (
-        <Box className="text-center px-4 py-6" >
-          <Typography style={{ color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.SM }}>
+        <Box className="text-center px-4 py-6">
+          <Typography
+            style={{ color: COLORS.TEXT_SECONDARY, fontSize: TYPOGRAPHY.SM }}
+          >
             No actions found for "{searchQuery}"
           </Typography>
         </Box>

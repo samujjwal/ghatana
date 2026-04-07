@@ -26,7 +26,10 @@ function makeVectorClock(
 }
 
 function makeOp(
-  params: Partial<CRDTOperation> & { targetId: string; type: CRDTOperation['type'] }
+  params: Partial<CRDTOperation> & {
+    targetId: string;
+    type: CRDTOperation['type'];
+  }
 ): CRDTOperation {
   return {
     id: `op-${Math.random()}`,
@@ -103,7 +106,11 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
   });
 
   it('detects a concurrent-update conflict on same target', () => {
-    const opA = makeOp({ targetId: 'doc-1', type: 'update', data: { field: 'title', value: 'A' } });
+    const opA = makeOp({
+      targetId: 'doc-1',
+      type: 'update',
+      data: { field: 'title', value: 'A' },
+    });
     const opB = makeOp({
       targetId: 'doc-1',
       type: 'update',
@@ -127,7 +134,11 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
       timestamp: Date.now(),
     };
 
-    const opA = makeOp({ targetId: 'doc-1', type: 'update', vectorClock: sharedClock });
+    const opA = makeOp({
+      targetId: 'doc-1',
+      type: 'update',
+      vectorClock: sharedClock,
+    });
     const opB = makeOp({
       targetId: 'doc-1',
       type: 'update',
@@ -146,7 +157,11 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
   });
 
   it('does not flag concurrent updates when they touch different fields', () => {
-    const opA = makeOp({ targetId: 'doc-1', type: 'update', data: { field: 'title', value: 'A' } });
+    const opA = makeOp({
+      targetId: 'doc-1',
+      type: 'update',
+      data: { field: 'title', value: 'A' },
+    });
     const opB = makeOp({
       targetId: 'doc-1',
       type: 'update',
@@ -176,26 +191,39 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
     });
 
     const conflicts = engine.detectConflicts(opA, opB);
-    expect(conflicts.some(c => c.type === 'concurrent-delete')).toBe(true);
+    expect(conflicts.some((c) => c.type === 'concurrent-delete')).toBe(true);
   });
 
   it('does not detect concurrent-delete when config disables it', () => {
     const cfg: ConflictResolutionEngineConfig = {
       ...BASE_CONFIG,
-      detectorConfig: { ...BASE_CONFIG.detectorConfig, detectConcurrentDeletes: false },
+      detectorConfig: {
+        ...BASE_CONFIG.detectorConfig,
+        detectConcurrentDeletes: false,
+      },
     };
     const eng = new ConflictResolutionEngine(cfg);
 
     const opA = makeOp({ targetId: 'x', type: 'delete' });
-    const opB = makeOp({ targetId: 'x', type: 'delete', replicaId: 'b', vectorClock: makeVectorClock('b') });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'delete',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+    });
 
     const conflicts = eng.detectConflicts(opA, opB);
-    expect(conflicts.some(c => c.type === 'concurrent-delete')).toBe(false);
+    expect(conflicts.some((c) => c.type === 'concurrent-delete')).toBe(false);
   });
 
   it('detects update-delete conflict (update vs delete)', () => {
     const opA = makeOp({ targetId: 'x', type: 'update' });
-    const opB = makeOp({ targetId: 'x', type: 'delete', replicaId: 'b', vectorClock: makeVectorClock('b') });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'delete',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+    });
 
     const conflicts = engine.detectConflicts(opA, opB);
     expect(conflicts.length).toBeGreaterThan(0);
@@ -213,25 +241,37 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
     });
 
     const conflicts = engine.detectConflicts(opA, opB);
-    expect(conflicts.some(c => c.type === 'structural-conflict')).toBe(true);
+    expect(conflicts.some((c) => c.type === 'structural-conflict')).toBe(true);
   });
 
   it('detects move conflict when detectMoveConflicts is enabled', () => {
     const opA = makeOp({ targetId: 'x', type: 'move' });
-    const opB = makeOp({ targetId: 'x', type: 'move', replicaId: 'b', vectorClock: makeVectorClock('b') });
+    const opB = makeOp({
+      targetId: 'x',
+      type: 'move',
+      replicaId: 'b',
+      vectorClock: makeVectorClock('b'),
+    });
 
     const conflicts = engine.detectConflicts(opA, opB);
-    expect(conflicts.some(c => c.type === 'move-conflict')).toBe(true);
+    expect(conflicts.some((c) => c.type === 'move-conflict')).toBe(true);
   });
 
   it('detects insert ordering conflict at the same position', () => {
     const cfg: ConflictResolutionEngineConfig = {
       ...BASE_CONFIG,
-      detectorConfig: { ...BASE_CONFIG.detectorConfig, detectOrderingConflicts: true },
+      detectorConfig: {
+        ...BASE_CONFIG.detectorConfig,
+        detectOrderingConflicts: true,
+      },
     };
     const eng = new ConflictResolutionEngine(cfg);
 
-    const opA = makeOp({ targetId: 'x', type: 'insert', data: { position: 2, value: 'A' } });
+    const opA = makeOp({
+      targetId: 'x',
+      type: 'insert',
+      data: { position: 2, value: 'A' },
+    });
     const opB = makeOp({
       targetId: 'x',
       type: 'insert',
@@ -241,17 +281,24 @@ describe('ConflictResolutionEngine.detectConflicts()', () => {
     });
 
     const conflicts = eng.detectConflicts(opA, opB);
-    expect(conflicts.some(c => c.type === 'ordering-conflict')).toBe(true);
+    expect(conflicts.some((c) => c.type === 'ordering-conflict')).toBe(true);
   });
 
   it('does not flag concurrent inserts at different positions', () => {
     const cfg: ConflictResolutionEngineConfig = {
       ...BASE_CONFIG,
-      detectorConfig: { ...BASE_CONFIG.detectorConfig, detectOrderingConflicts: true },
+      detectorConfig: {
+        ...BASE_CONFIG.detectorConfig,
+        detectOrderingConflicts: true,
+      },
     };
     const eng = new ConflictResolutionEngine(cfg);
 
-    const opA = makeOp({ targetId: 'x', type: 'insert', data: { position: 1, value: 'A' } });
+    const opA = makeOp({
+      targetId: 'x',
+      type: 'insert',
+      data: { position: 1, value: 'A' },
+    });
     const opB = makeOp({
       targetId: 'x',
       type: 'insert',
@@ -288,7 +335,9 @@ describe('ConflictResolutionEngine.analyzeConflict()', () => {
     const conflict = makeConflict();
     const analysis = engine.analyzeConflict(conflict);
 
-    const lwwSuggestion = analysis.suggestedResolutions.find(s => s.strategy === 'last-write-wins');
+    const lwwSuggestion = analysis.suggestedResolutions.find(
+      (s) => s.strategy === 'last-write-wins'
+    );
     expect(lwwSuggestion).toBeTruthy();
     expect(lwwSuggestion!.confidence).toBeGreaterThan(0.8);
     expect(analysis.canAutoResolve).toBe(true);
@@ -298,7 +347,11 @@ describe('ConflictResolutionEngine.analyzeConflict()', () => {
     const conflict = makeConflict();
     const analysis = engine.analyzeConflict(conflict);
 
-    expect(analysis.suggestedResolutions.some(s => s.strategy === 'first-write-wins')).toBe(true);
+    expect(
+      analysis.suggestedResolutions.some(
+        (s) => s.strategy === 'first-write-wins'
+      )
+    ).toBe(true);
   });
 
   it('includes merge suggestion when both operations have object data', () => {
@@ -308,14 +361,21 @@ describe('ConflictResolutionEngine.analyzeConflict()', () => {
     );
     const analysis = engine.analyzeConflict(conflict);
 
-    expect(analysis.suggestedResolutions.some(s => s.strategy === 'merge')).toBe(true);
+    expect(
+      analysis.suggestedResolutions.some((s) => s.strategy === 'merge')
+    ).toBe(true);
   });
 
   it('does NOT include merge suggestion when data is not an object', () => {
-    const conflict = makeConflict({ data: 'plain string A' }, { data: 'plain string B' });
+    const conflict = makeConflict(
+      { data: 'plain string A' },
+      { data: 'plain string B' }
+    );
     const analysis = engine.analyzeConflict(conflict);
 
-    expect(analysis.suggestedResolutions.some(s => s.strategy === 'merge')).toBe(false);
+    expect(
+      analysis.suggestedResolutions.some((s) => s.strategy === 'merge')
+    ).toBe(false);
   });
 });
 
@@ -377,12 +437,13 @@ describe('ConflictResolutionEngine.resolveConflict()', () => {
   });
 
   it('resolves with custom strategy and custom resolver', () => {
-    const conflict = makeConflict(
-      { data: 'from A' },
-      { data: 'from B' }
-    );
+    const conflict = makeConflict({ data: 'from A' }, { data: 'from B' });
 
-    const result = engine.resolveConflict(conflict, 'custom', () => 'custom-resolved');
+    const result = engine.resolveConflict(
+      conflict,
+      'custom',
+      () => 'custom-resolved'
+    );
 
     expect(result.resolved).toBe(true);
     expect(result.resolvedValue).toBe('custom-resolved');

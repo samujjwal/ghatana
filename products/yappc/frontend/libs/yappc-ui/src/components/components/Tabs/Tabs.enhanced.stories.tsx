@@ -10,7 +10,13 @@ import { MessageSquare as MessageIcon } from 'lucide-react';
 import { Bell as NotificationsIcon } from 'lucide-react';
 import { User as PersonIcon } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { Stack, Box, Typography, Card, CardContent } from '@ghatana/design-system';
+import {
+  Stack,
+  Box,
+  Typography,
+  Card,
+  CardContent,
+} from '@ghatana/design-system';
 import { useState } from 'react';
 
 import { Tabs, Tab, TabPanel } from './Tabs.enhanced';
@@ -138,9 +144,24 @@ export const WithBadges: Story = {
     return (
       <Box>
         <Tabs value={value} onChange={(e, newValue) => setValue(newValue)}>
-          <Tab label="Messages" startIcon={<MessageIcon />} badgeCount={5} badgeColor="primary" />
-          <Tab label="Notifications" startIcon={<NotificationsIcon />} badgeCount={12} badgeColor="error" />
-          <Tab label="Favorites" startIcon={<FavoriteIcon />} badgeCount={3} badgeColor="secondary" />
+          <Tab
+            label="Messages"
+            startIcon={<MessageIcon />}
+            badgeCount={5}
+            badgeColor="primary"
+          />
+          <Tab
+            label="Notifications"
+            startIcon={<NotificationsIcon />}
+            badgeCount={12}
+            badgeColor="error"
+          />
+          <Tab
+            label="Favorites"
+            startIcon={<FavoriteIcon />}
+            badgeCount={3}
+            badgeColor="secondary"
+          />
         </Tabs>
         <TabPanel value={value} index={0}>
           <Typography>You have 5 unread messages</Typography>
@@ -173,7 +194,11 @@ export const ShapeVariants: Story = {
           <Typography as="p" className="text-sm font-medium" gutterBottom>
             Rounded (4px - borderRadiusSm)
           </Typography>
-          <Tabs value={value1} onChange={(e, v) => setValue1(v)} shape="rounded">
+          <Tabs
+            value={value1}
+            onChange={(e, v) => setValue1(v)}
+            shape="rounded"
+          >
             <Tab label="Tab 1" />
             <Tab label="Tab 2" />
             <Tab label="Tab 3" />
@@ -310,7 +335,12 @@ export const ScrollableTabs: Story = {
 
     return (
       <Box className="max-w-[500px]">
-        <Tabs value={value} onChange={(e, v) => setValue(v)} variant="scrollable" scrollButtons="auto">
+        <Tabs
+          value={value}
+          onChange={(e, v) => setValue(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
           {Array.from({ length: 10 }, (_, i) => (
             <Tab key={i} label={`Tab ${i + 1}`} />
           ))}
@@ -333,7 +363,11 @@ export const FullWidthTabs: Story = {
 
     return (
       <Box>
-        <Tabs value={value} onChange={(e, v) => setValue(v)} variant="fullWidth">
+        <Tabs
+          value={value}
+          onChange={(e, v) => setValue(v)}
+          variant="fullWidth"
+        >
           <Tab label="Overview" />
           <Tab label="Details" />
           <Tab label="Activity" />
@@ -367,8 +401,18 @@ export const DashboardTabs: Story = {
         </Typography>
         <Tabs value={value} onChange={(e, v) => setValue(v)} shape="soft">
           <Tab label="Overview" startIcon={<HomeIcon />} />
-          <Tab label="Users" startIcon={<PersonIcon />} badgeCount={156} badgeColor="info" />
-          <Tab label="Messages" startIcon={<MessageIcon />} badgeCount={8} badgeColor="error" />
+          <Tab
+            label="Users"
+            startIcon={<PersonIcon />}
+            badgeCount={156}
+            badgeColor="info"
+          />
+          <Tab
+            label="Messages"
+            startIcon={<MessageIcon />}
+            badgeCount={8}
+            badgeColor="error"
+          />
           <Tab label="Settings" startIcon={<SettingsIcon />} />
         </Tabs>
         <TabPanel value={value} index={0}>
@@ -443,7 +487,11 @@ export const ProfileTabs: Story = {
             <Typography as="h5" gutterBottom>
               User Profile
             </Typography>
-            <Tabs value={value} onChange={(e, v) => setValue(v)} variant="fullWidth">
+            <Tabs
+              value={value}
+              onChange={(e, v) => setValue(v)}
+              variant="fullWidth"
+            >
               <Tab label="About" />
               <Tab label="Posts" badgeCount={24} />
               <Tab label="Photos" badgeCount={156} />
@@ -452,7 +500,8 @@ export const ProfileTabs: Story = {
             <TabPanel value={value} index={0}>
               <Typography as="h6">About</Typography>
               <Typography as="p" className="text-sm" color="text.secondary">
-                Bio: Full-stack developer passionate about building great user experiences.
+                Bio: Full-stack developer passionate about building great user
+                experiences.
                 <br />
                 <br />
                 Location: San Francisco, CA
@@ -499,7 +548,12 @@ export const AccessibilityDemo: Story = {
           <Typography as="h6" gutterBottom>
             WCAG 2.1 AA Compliance
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            paragraph
+          >
             All tabs maintain minimum 44px height for touch targets
           </Typography>
           <Tabs value={value} onChange={(e, v) => setValue(v)} size="sm">
@@ -512,7 +566,12 @@ export const AccessibilityDemo: Story = {
           <Typography as="h6" gutterBottom>
             Keyboard Navigation
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            paragraph
+          >
             Use Arrow keys to navigate tabs, Home/End to jump to first/last tab
           </Typography>
           <Tabs value={value} onChange={(e, v) => setValue(v)}>
@@ -527,8 +586,14 @@ export const AccessibilityDemo: Story = {
           <Typography as="h6" gutterBottom>
             Screen Reader Support
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" paragraph>
-            Tabs use proper ARIA attributes (role, aria-labelledby, aria-controls)
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            paragraph
+          >
+            Tabs use proper ARIA attributes (role, aria-labelledby,
+            aria-controls)
           </Typography>
           <Tabs value={value} onChange={(e, v) => setValue(v)}>
             <Tab label="Overview" startIcon={<HomeIcon />} />
@@ -546,7 +611,12 @@ export const AccessibilityDemo: Story = {
           <Typography as="h6" gutterBottom>
             Badge Accessibility
           </Typography>
-          <Typography as="p" className="text-sm" color="text.secondary" paragraph>
+          <Typography
+            as="p"
+            className="text-sm"
+            color="text.secondary"
+            paragraph
+          >
             Badges include accessible labels for screen readers
           </Typography>
           <Tabs value={value} onChange={(e, v) => setValue(v)}>

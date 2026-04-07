@@ -1,16 +1,16 @@
 /**
  * Collaborative Editing Manager
- * 
+ *
  * Manages real-time collaborative editing with cursor tracking,
  * conflict resolution, and user presence for Monaco editors.
- * 
+ *
  * Features:
  * - 👥 Real-time cursor and selection synchronization
  * - 🎨 User color assignment and avatar display
  * - ⚡ Conflict detection and resolution
  * - 📊 User presence and activity tracking
  * - 🔄 Undo/redo synchronization
- * 
+ *
  * @doc.type class
  * @doc.purpose Collaborative editing management
  * @doc.layer product
@@ -150,17 +150,25 @@ export class CollaborativeEditingManager {
       cursorDebounceMs: 100,
       inactivityTimeout: 300000, // 5 minutes
       colorPalette: [
-        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-        '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
+        '#FF6B6B',
+        '#4ECDC4',
+        '#45B7D1',
+        '#96CEB4',
+        '#FFEAA7',
+        '#DDA0DD',
+        '#98D8C8',
+        '#F7DC6F',
+        '#BB8FCE',
+        '#85C1E2',
       ],
       ...config,
     };
     this.events = {
-      onUserJoined: () => { },
-      onUserLeft: () => { },
-      onCursorUpdated: () => { },
-      onConflictDetected: () => { },
-      onConflictResolved: () => { },
+      onUserJoined: () => {},
+      onUserLeft: () => {},
+      onCursorUpdated: () => {},
+      onConflictDetected: () => {},
+      onConflictResolved: () => {},
       ...events,
     };
 
@@ -181,9 +189,11 @@ export class CollaborativeEditingManager {
     const ymap = this.ydoc.getMap('collaborative');
 
     // Get or create shared maps
-    this.yusers = ymap.get('users') as Y.Map<UserPresence> || new Y.Map();
-    this.ycursors = ymap.get('cursors') as Y.Map<CollaborativeCursor> || new Y.Map();
-    this.yconflicts = ymap.get('conflicts') as Y.Map<EditConflict> || new Y.Map();
+    this.yusers = (ymap.get('users') as Y.Map<UserPresence>) || new Y.Map();
+    this.ycursors =
+      (ymap.get('cursors') as Y.Map<CollaborativeCursor>) || new Y.Map();
+    this.yconflicts =
+      (ymap.get('conflicts') as Y.Map<EditConflict>) || new Y.Map();
 
     // Store in main map if newly created
     if (!ymap.has('users')) ymap.set('users', this.yusers);
@@ -273,7 +283,9 @@ export class CollaborativeEditingManager {
       return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
 
-    return this.config.colorPalette[Math.abs(hash) % this.config.colorPalette.length];
+    return this.config.colorPalette[
+      Math.abs(hash) % this.config.colorPalette.length
+    ];
   }
 
   /**
@@ -306,12 +318,15 @@ export class CollaborativeEditingManager {
     const toRemove: string[] = [];
 
     this.yusers.forEach((user, userId) => {
-      if (userId !== this.localUserId && now - user.lastSeen > this.config.inactivityTimeout) {
+      if (
+        userId !== this.localUserId &&
+        now - user.lastSeen > this.config.inactivityTimeout
+      ) {
         toRemove.push(userId);
       }
     });
 
-    toRemove.forEach(userId => {
+    toRemove.forEach((userId) => {
       this.yusers.delete(userId);
       this.ycursors.delete(userId);
     });
@@ -355,14 +370,27 @@ export class CollaborativeEditingManager {
   /**
    * Setup cursor tracking for editor
    */
-  private setupCursorTracking(fileId: string, editor: editor.IStandaloneCodeEditor): void {
+  private setupCursorTracking(
+    fileId: string,
+    editor: editor.IStandaloneCodeEditor
+  ): void {
     const cursorId = `${this.localUserId}:${fileId}`;
 
     const disposable = editor.onDidChangeCursorPosition((e) => {
       if (this.config.cursorDebounceMs > 0) {
-        this.debouncedUpdateCursor(cursorId, fileId, e.position.lineNumber, e.position.column);
+        this.debouncedUpdateCursor(
+          cursorId,
+          fileId,
+          e.position.lineNumber,
+          e.position.column
+        );
       } else {
-        this.updateCursor(cursorId, fileId, e.position.lineNumber, e.position.column);
+        this.updateCursor(
+          cursorId,
+          fileId,
+          e.position.lineNumber,
+          e.position.column
+        );
       }
     });
 
@@ -372,7 +400,10 @@ export class CollaborativeEditingManager {
   /**
    * Setup selection tracking for editor
    */
-  private setupSelectionTracking(fileId: string, editor: editor.IStandaloneCodeEditor): void {
+  private setupSelectionTracking(
+    fileId: string,
+    editor: editor.IStandaloneCodeEditor
+  ): void {
     const cursorId = `${this.localUserId}:${fileId}`;
 
     const disposable = editor.onDidChangeCursorSelection((e) => {
@@ -400,7 +431,12 @@ export class CollaborativeEditingManager {
   /**
    * Debounced cursor update
    */
-  private debouncedUpdateCursor(cursorId: string, fileId: string, line: number, column: number): void {
+  private debouncedUpdateCursor(
+    cursorId: string,
+    fileId: string,
+    line: number,
+    column: number
+  ): void {
     if (this.cursorTimeout) {
       clearTimeout(this.cursorTimeout);
     }
@@ -413,7 +449,12 @@ export class CollaborativeEditingManager {
   /**
    * Update cursor position
    */
-  private updateCursor(cursorId: string, fileId: string, line: number, column: number): void {
+  private updateCursor(
+    cursorId: string,
+    fileId: string,
+    line: number,
+    column: number
+  ): void {
     const cursor: CollaborativeCursor = {
       userId: this.localUserId,
       userName: this.localUserName,
@@ -427,7 +468,10 @@ export class CollaborativeEditingManager {
   /**
    * Update cursor decorations in editor
    */
-  private updateCursorDecorations(cursorId: string, cursor: CollaborativeCursor): void {
+  private updateCursorDecorations(
+    cursorId: string,
+    cursor: CollaborativeCursor
+  ): void {
     const [userId, fileId] = cursorId.split(':');
     const editor = this.editors.get(fileId);
 
@@ -475,7 +519,8 @@ export class CollaborativeEditingManager {
 
     // Apply decorations
     const decorationIds = editor.deltaDecorations([], decorations);
-    (editor as unknown as { [key: string]: string[] })[decorationKey] = decorationIds;
+    (editor as unknown as { [key: string]: string[] })[decorationKey] =
+      decorationIds;
   }
 
   /**
@@ -483,7 +528,7 @@ export class CollaborativeEditingManager {
    */
   getActiveUsers(): UserPresence[] {
     const users: UserPresence[] = [];
-    this.yusers.forEach(user => {
+    this.yusers.forEach((user) => {
       if (user.isActive) {
         users.push(user);
       }
@@ -497,7 +542,10 @@ export class CollaborativeEditingManager {
   getCursorsForFile(fileId: string): CollaborativeCursor[] {
     const cursors: CollaborativeCursor[] = [];
     this.ycursors.forEach((cursor, cursorId) => {
-      if (cursorId.endsWith(`:${fileId}`) && cursor.userId !== this.localUserId) {
+      if (
+        cursorId.endsWith(`:${fileId}`) &&
+        cursor.userId !== this.localUserId
+      ) {
         cursors.push(cursor);
       }
     });
@@ -509,7 +557,7 @@ export class CollaborativeEditingManager {
    */
   getConflicts(): EditConflict[] {
     const conflicts: EditConflict[] = [];
-    this.yconflicts.forEach(conflict => {
+    this.yconflicts.forEach((conflict) => {
       conflicts.push(conflict);
     });
     return conflicts;
@@ -567,5 +615,11 @@ export function createCollaborativeEditingManager(
   config?: Partial<CollaborativeEditingConfig>,
   events?: Partial<CollaborativeEditingEvents>
 ): CollaborativeEditingManager {
-  return new CollaborativeEditingManager(ydoc, localUserId, localUserName, config, events);
+  return new CollaborativeEditingManager(
+    ydoc,
+    localUserId,
+    localUserName,
+    config,
+    events
+  );
 }

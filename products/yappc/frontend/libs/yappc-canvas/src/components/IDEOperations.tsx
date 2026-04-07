@@ -1,6 +1,6 @@
 /**
  * IDE Operations - AdvancedSearchPanel, BulkOperationsToolbar Bridge
- * 
+ *
  * @deprecated Use SearchPanel, OperationsToolbar from @ghatana/yappc-canvas
  * @see /docs/LIBRARY_CONSOLIDATION_PLAN.md
  */
@@ -72,7 +72,7 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] AdvancedSearchPanel from @ghatana/yappc-ide is deprecated. ' +
-      'Use SearchPanel from @ghatana/yappc-canvas.'
+        'Use SearchPanel from @ghatana/yappc-canvas.'
     );
   }, []);
 
@@ -81,7 +81,12 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
     // Mock results for demo
     setResults([
       { id: '1', path: '/src/file1.ts', preview: 'example code', matches: 2 },
-      { id: '2', path: '/src/file2.ts', preview: 'another example', matches: 1 },
+      {
+        id: '2',
+        path: '/src/file2.ts',
+        preview: 'another example',
+        matches: 1,
+      },
     ]);
   };
 
@@ -100,19 +105,19 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
           🔍
         </button>
       </div>
-      
+
       {filterOptions.length > 0 && (
         <div className="filter-section">
-          {filterOptions.map(option => (
+          {filterOptions.map((option) => (
             <div key={option.id} className="filter-option">
               <label>{option.label}</label>
-              {option.type === 'checkbox' && (
-                <input type="checkbox" />
-              )}
+              {option.type === 'checkbox' && <input type="checkbox" />}
               {option.type === 'select' && option.options && (
                 <select>
-                  {option.options.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  {option.options.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               )}
@@ -123,8 +128,8 @@ export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
 
       {results.length > 0 && (
         <div className="results-list">
-          {results.map(result => (
-            <div 
+          {results.map((result) => (
+            <div
               key={result.id}
               className="search-result"
               onClick={() => onResultSelect?.(result)}
@@ -178,15 +183,15 @@ export const BulkOperationsToolbar: React.FC<BulkOperationsToolbarProps> = ({
   useEffect(() => {
     console.warn(
       '[MIGRATION] BulkOperationsToolbar from @ghatana/yappc-ide is deprecated. ' +
-      'Use OperationsToolbar from @ghatana/yappc-canvas.'
+        'Use OperationsToolbar from @ghatana/yappc-canvas.'
     );
   }, []);
 
   return (
     <div className={`bulk-operations-toolbar ${className || ''}`}>
       <span className="selection-count">{selectionCount} selected</span>
-      
-      {operations.map(op => (
+
+      {operations.map((op) => (
         <button
           key={op.id}
           className={`operation-button ${op.danger ? 'danger' : ''} ${op.disabled ? 'disabled' : ''}`}

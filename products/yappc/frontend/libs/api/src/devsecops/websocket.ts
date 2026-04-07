@@ -30,27 +30,27 @@ export type WebSocketEventHandler = (event: WebSocketEvent) => void;
 
 /**
  * WebSocket client for DevSecOps real-time updates
- * 
+ *
  * Provides real-time event notifications for item updates, status changes,
  * and system notifications. Currently uses mock data for development.
- * 
+ *
  * @example
  * ```ts
  * const ws = new DevSecOpsWebSocket('ws://api.example.com/ws');
- * 
+ *
  * // Connect
  * await ws.connect();
- * 
+ *
  * // Subscribe to events
  * ws.on('item:updated', (event) => {
  *   console.log('Item updated:', event.data.itemId);
  *   refreshItemData(event.data.itemId);
  * });
- * 
+ *
  * ws.on('notification:alert', (event) => {
  *   toast.info(event.data.message);
  * });
- * 
+ *
  * // Disconnect when done
  * ws.disconnect();
  * ```
@@ -58,7 +58,8 @@ export type WebSocketEventHandler = (event: WebSocketEvent) => void;
 export class DevSecOpsWebSocket {
   private url: string;
   private ws: WebSocket | null = null;
-  private handlers: Map<WebSocketEventType, Set<WebSocketEventHandler>> = new Map();
+  private handlers: Map<WebSocketEventType, Set<WebSocketEventHandler>> =
+    new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
@@ -66,7 +67,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Create a new WebSocket client
-   * 
+   *
    * @param url - WebSocket server URL (default: ws://localhost:3000/ws)
    */
   constructor(url: string = 'ws://localhost:3000/ws') {
@@ -75,7 +76,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Connect to the WebSocket server
-   * 
+   *
    * @returns Promise that resolves when connected
    * @throws Error if connection fails after retries
    */
@@ -93,14 +94,18 @@ export class DevSecOpsWebSocket {
         this.startMockUpdates();
         resolve();
       } catch (error) {
-        reject(error instanceof Error ? error : new Error('WebSocket connection failed'));
+        reject(
+          error instanceof Error
+            ? error
+            : new Error('WebSocket connection failed')
+        );
       }
     });
   }
 
   /**
    * Disconnect from the WebSocket server
-   * 
+   *
    * Cleans up event handlers and closes the connection.
    */
   disconnect(): void {
@@ -116,7 +121,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Subscribe to a specific event type
-   * 
+   *
    * @param type - Event type to listen for
    * @param handler - Function to call when event is received
    * @example
@@ -135,7 +140,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Unsubscribe from a specific event type
-   * 
+   *
    * @param type - Event type to stop listening for
    * @param handler - Handler function to remove
    */
@@ -145,7 +150,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Emit an event to all registered handlers
-   * 
+   *
    * @param type - Event type
    * @param data - Event data
    * @private
@@ -159,13 +164,13 @@ export class DevSecOpsWebSocket {
 
     const handlers = this.handlers.get(type);
     if (handlers) {
-      handlers.forEach(handler => handler(event));
+      handlers.forEach((handler) => handler(event));
     }
   }
 
   /**
    * Handle incoming WebSocket message
-   * 
+   *
    * @param message - Raw message string
    * @private
    */
@@ -191,10 +196,10 @@ export class DevSecOpsWebSocket {
 
   /**
    * Start sending mock events for development
-   * 
+   *
    * Emits random events every 5 seconds to simulate real-time updates.
    * Replace with real WebSocket connection in production.
-   * 
+   *
    * @private
    */
   private startMockUpdates(): void {
@@ -202,7 +207,10 @@ export class DevSecOpsWebSocket {
       const events: Array<[WebSocketEventType, Record<string, unknown>]> = [
         ['item:updated', { itemId: '1', status: 'in-progress' }],
         ['status:changed', { phaseId: 'development', status: 'active' }],
-        ['notification:alert', { severity: 'info', message: 'New update available' }],
+        [
+          'notification:alert',
+          { severity: 'info', message: 'New update available' },
+        ],
       ];
 
       const randomEvent = events[Math.floor(Math.random() * events.length)];
@@ -212,7 +220,7 @@ export class DevSecOpsWebSocket {
 
   /**
    * Check if WebSocket is currently connected
-   * 
+   *
    * @returns True if connected, false otherwise
    */
   isConnected(): boolean {

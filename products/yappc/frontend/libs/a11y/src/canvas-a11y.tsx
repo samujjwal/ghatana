@@ -1,7 +1,7 @@
 /**
  * @file Accessibility Utilities for YAPPC Canvas
  * WCAG 2.1 AA compliance helpers for canvas components
- * 
+ *
  * @doc.type utility
  * @doc.purpose Ensure canvas accessibility for screen readers and keyboard users
  * @doc.layer presentation
@@ -40,9 +40,11 @@ export interface A11yConfig {
  * Generate ARIA attributes for canvas elements
  * @doc.purpose Create accessible canvas element attributes
  */
-export function generateAriaProps(config: A11yConfig): Record<string, string | boolean | number | undefined> {
+export function generateAriaProps(
+  config: A11yConfig
+): Record<string, string | boolean | number | undefined> {
   const props: Record<string, string | boolean | number | undefined> = {};
-  
+
   if (config.role) props.role = config.role;
   if (config.label) props['aria-label'] = config.label;
   if (config.description) props['aria-description'] = config.description;
@@ -58,7 +60,7 @@ export function generateAriaProps(config: A11yConfig): Record<string, string | b
   if (config.level !== undefined) props['aria-level'] = config.level;
   if (config.posInSet !== undefined) props['aria-posinset'] = config.posInSet;
   if (config.setSize !== undefined) props['aria-setsize'] = config.setSize;
-  
+
   return props;
 }
 
@@ -71,7 +73,9 @@ export function generateAriaProps(config: A11yConfig): Record<string, string | b
  * @doc.purpose Handle keyboard navigation and focus trapping
  */
 export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
-  const [focusedElement, setFocusedElement] = React.useState<string | null>(null);
+  const [focusedElement, setFocusedElement] = React.useState<string | null>(
+    null
+  );
   const focusableElementsRef = useRef<string[]>([]);
 
   const registerFocusable = useCallback((id: string) => {
@@ -81,7 +85,9 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
   }, []);
 
   const unregisterFocusable = useCallback((id: string) => {
-    focusableElementsRef.current = focusableElementsRef.current.filter(el => el !== id);
+    focusableElementsRef.current = focusableElementsRef.current.filter(
+      (el) => el !== id
+    );
   }, []);
 
   const focusNext = useCallback(() => {
@@ -89,7 +95,7 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
     const currentIndex = focusedElement ? elements.indexOf(focusedElement) : -1;
     const nextIndex = (currentIndex + 1) % elements.length;
     const nextId = elements[nextIndex];
-    
+
     setFocusedElement(nextId);
     document.getElementById(nextId)?.focus();
   }, [focusedElement]);
@@ -97,9 +103,10 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
   const focusPrevious = useCallback(() => {
     const elements = focusableElementsRef.current;
     const currentIndex = focusedElement ? elements.indexOf(focusedElement) : -1;
-    const prevIndex = currentIndex <= 0 ? elements.length - 1 : currentIndex - 1;
+    const prevIndex =
+      currentIndex <= 0 ? elements.length - 1 : currentIndex - 1;
     const prevId = elements[prevIndex];
-    
+
     setFocusedElement(prevId);
     document.getElementById(prevId)?.focus();
   }, [focusedElement]);
@@ -142,18 +149,21 @@ export function useCanvasFocus(containerRef: React.RefObject<HTMLElement>) {
  * @doc.purpose Provide feedback for canvas operations
  */
 export function useAnnouncer() {
-  const announce = useCallback((message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    const announcer = document.getElementById('yappc-announcer');
-    if (announcer) {
-      announcer.setAttribute('aria-live', priority);
-      announcer.textContent = message;
-      
-      // Clear after announcement
-      setTimeout(() => {
-        announcer.textContent = '';
-      }, 1000);
-    }
-  }, []);
+  const announce = useCallback(
+    (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+      const announcer = document.getElementById('yappc-announcer');
+      if (announcer) {
+        announcer.setAttribute('aria-live', priority);
+        announcer.textContent = message;
+
+        // Clear after announcement
+        setTimeout(() => {
+          announcer.textContent = '';
+        }, 1000);
+      }
+    },
+    []
+  );
 
   return { announce };
 }
@@ -203,7 +213,9 @@ export interface AccessibleCanvasElementProps {
  * Accessible Canvas Element Wrapper
  * @doc.purpose Make canvas elements keyboard accessible
  */
-export const AccessibleCanvasElement: React.FC<AccessibleCanvasElementProps> = ({
+export const AccessibleCanvasElement: React.FC<
+  AccessibleCanvasElementProps
+> = ({
   id,
   type,
   x,
@@ -221,44 +233,47 @@ export const AccessibleCanvasElement: React.FC<AccessibleCanvasElementProps> = (
   const elementRef = useRef<HTMLDivElement>(null);
   const { announce } = useAnnouncer();
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const moveStep = 10; // pixels
-    
-    switch (e.key) {
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        onSelect?.();
-        announce(`${type} selected`);
-        break;
-      case 'Delete':
-      case 'Backspace':
-        e.preventDefault();
-        onDelete?.();
-        announce(`${type} deleted`);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        onMove?.(x, y - moveStep);
-        announce(`${type} moved up`);
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        onMove?.(x, y + moveStep);
-        announce(`${type} moved down`);
-        break;
-      case 'ArrowLeft':
-        e.preventDefault();
-        onMove?.(x - moveStep, y);
-        announce(`${type} moved left`);
-        break;
-      case 'ArrowRight':
-        e.preventDefault();
-        onMove?.(x + moveStep, y);
-        announce(`${type} moved right`);
-        break;
-    }
-  }, [type, x, y, onSelect, onDelete, onMove, announce]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const moveStep = 10; // pixels
+
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          onSelect?.();
+          announce(`${type} selected`);
+          break;
+        case 'Delete':
+        case 'Backspace':
+          e.preventDefault();
+          onDelete?.();
+          announce(`${type} deleted`);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          onMove?.(x, y - moveStep);
+          announce(`${type} moved up`);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          onMove?.(x, y + moveStep);
+          announce(`${type} moved down`);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          onMove?.(x - moveStep, y);
+          announce(`${type} moved left`);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          onMove?.(x + moveStep, y);
+          announce(`${type} moved right`);
+          break;
+      }
+    },
+    [type, x, y, onSelect, onDelete, onMove, announce]
+  );
 
   const typeLabel = {
     shape: 'Shape',
@@ -274,7 +289,9 @@ export const AccessibleCanvasElement: React.FC<AccessibleCanvasElementProps> = (
       id={id}
       role="button"
       tabIndex={0}
-      aria-label={label || `${typeLabel} at position ${Math.round(x)}, ${Math.round(y)}`}
+      aria-label={
+        label || `${typeLabel} at position ${Math.round(x)}, ${Math.round(y)}`
+      }
       aria-description={description}
       aria-selected={selected}
       onKeyDown={handleKeyDown}
@@ -326,30 +343,37 @@ export const AccessibleToolbar: React.FC<AccessibleToolbarProps> = ({
   const toolbarId = useId();
   const [activeIndex, setActiveIndex] = React.useState(0);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const isHorizontal = orientation === 'horizontal';
-    switch (e.key) {
-      case isHorizontal ? 'ArrowRight' : 'ArrowDown':
-        e.preventDefault();
-        setActiveIndex((activeIndex + 1) % buttons.length);
-        break;
-      case isHorizontal ? 'ArrowLeft' : 'ArrowUp':
-        e.preventDefault();
-        setActiveIndex(activeIndex === 0 ? buttons.length - 1 : activeIndex - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        setActiveIndex(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        setActiveIndex(buttons.length - 1);
-        break;
-    }
-  }, [activeIndex, buttons.length, orientation]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const isHorizontal = orientation === 'horizontal';
+      switch (e.key) {
+        case isHorizontal ? 'ArrowRight' : 'ArrowDown':
+          e.preventDefault();
+          setActiveIndex((activeIndex + 1) % buttons.length);
+          break;
+        case isHorizontal ? 'ArrowLeft' : 'ArrowUp':
+          e.preventDefault();
+          setActiveIndex(
+            activeIndex === 0 ? buttons.length - 1 : activeIndex - 1
+          );
+          break;
+        case 'Home':
+          e.preventDefault();
+          setActiveIndex(0);
+          break;
+        case 'End':
+          e.preventDefault();
+          setActiveIndex(buttons.length - 1);
+          break;
+      }
+    },
+    [activeIndex, buttons.length, orientation]
+  );
 
   useEffect(() => {
-    const button = document.getElementById(`${toolbarId}-button-${activeIndex}`);
+    const button = document.getElementById(
+      `${toolbarId}-button-${activeIndex}`
+    );
     button?.focus();
   }, [activeIndex, toolbarId]);
 
@@ -366,7 +390,11 @@ export const AccessibleToolbar: React.FC<AccessibleToolbarProps> = ({
           id={`${toolbarId}-button-${index}`}
           type="button"
           tabIndex={index === activeIndex ? 0 : -1}
-          aria-label={button.shortcut ? `${button.label} (${button.shortcut})` : button.label}
+          aria-label={
+            button.shortcut
+              ? `${button.label} (${button.shortcut})`
+              : button.label
+          }
           aria-pressed={button.active}
           disabled={button.disabled}
           onClick={button.onClick}

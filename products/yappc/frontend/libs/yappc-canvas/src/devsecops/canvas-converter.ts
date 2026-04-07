@@ -1,8 +1,8 @@
 /**
  * Canvas Converter for Runbooks
- * 
+ *
  * Converts runbook execution plans into visual canvas documents for interactive visualization.
- * 
+ *
  * Note: This is a simplified implementation. For production use, consider:
  * - More sophisticated layout algorithms
  * - Custom node types for different step types
@@ -10,7 +10,12 @@
  * - Real-time status updates
  */
 
-import type { CanvasDocument, CanvasNode, CanvasEdge, CanvasElement } from '../types/canvas-document';
+import type {
+  CanvasDocument,
+  CanvasNode,
+  CanvasEdge,
+  CanvasElement,
+} from '../types/canvas-document';
 
 import { calculateStepPositions, getStepStyle } from './helpers';
 import type { Runbook, RunbookConfig } from './types';
@@ -19,11 +24,11 @@ const CANVAS_DOCUMENT_VERSION = '1.0.0';
 
 /**
  * Convert a runbook to a canvas document for visualization
- * 
+ *
  * @param runbook - The runbook to convert
  * @param config - Configuration for layout and display
  * @returns Canvas document ready for rendering
- * 
+ *
  * @example
  * ```typescript
  * const canvasDoc = runbookToCanvas(runbook, {
@@ -33,7 +38,10 @@ const CANVAS_DOCUMENT_VERSION = '1.0.0';
  * });
  * ```
  */
-export function runbookToCanvas(runbook: Runbook, config: RunbookConfig): CanvasDocument {
+export function runbookToCanvas(
+  runbook: Runbook,
+  config: RunbookConfig
+): CanvasDocument {
   const elements: Record<string, CanvasElement> = {};
   const elementIds: string[] = [];
 
@@ -41,7 +49,7 @@ export function runbookToCanvas(runbook: Runbook, config: RunbookConfig): Canvas
   const positions = calculateStepPositions(runbook.steps, config);
 
   // Create nodes for each step
-  runbook.steps.forEach(step => {
+  runbook.steps.forEach((step) => {
     const pos = positions.get(step.id) || { x: 0, y: 0 };
     const style = getStepStyle(step, config);
 
@@ -93,8 +101,8 @@ export function runbookToCanvas(runbook: Runbook, config: RunbookConfig): Canvas
   });
 
   // Create edges for dependencies
-  runbook.steps.forEach(step => {
-    step.dependsOn.forEach(depId => {
+  runbook.steps.forEach((step) => {
+    step.dependsOn.forEach((depId) => {
       const edgeId = `edge-${depId}-${step.id}`;
       const sourceNode = elements[depId] as CanvasNode;
       const targetNode = elements[step.id] as CanvasNode;
@@ -164,7 +172,8 @@ export function runbookToCanvas(runbook: Runbook, config: RunbookConfig): Canvas
       completedSteps: runbook.metadata?.completedSteps || 0,
       failedSteps: runbook.metadata?.failedSteps || 0,
       createdBy: runbook.metadata?.author || 'system',
-      createdAt: runbook.metadata?.startTime?.toISOString() || new Date().toISOString(),
+      createdAt:
+        runbook.metadata?.startTime?.toISOString() || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
     capabilities: {

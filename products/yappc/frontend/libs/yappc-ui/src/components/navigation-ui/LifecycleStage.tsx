@@ -7,22 +7,34 @@ import React from 'react';
 
 /**
  * Lifecycle Stage Definition
- * 
+ *
  * Maps to canonical stages from stages.yaml:
  * intent → context → plan → execute → verify → observe → learn → institutionalize
  */
 export const LIFECYCLE_STAGES = [
-  { id: 'intent', label: 'Intent', description: 'Define what needs to be built' },
-  { id: 'context', label: 'Context', description: 'Gather requirements and constraints' },
+  {
+    id: 'intent',
+    label: 'Intent',
+    description: 'Define what needs to be built',
+  },
+  {
+    id: 'context',
+    label: 'Context',
+    description: 'Gather requirements and constraints',
+  },
   { id: 'plan', label: 'Plan', description: 'Design the solution approach' },
   { id: 'execute', label: 'Execute', description: 'Build and implement' },
   { id: 'verify', label: 'Verify', description: 'Test and validate' },
   { id: 'observe', label: 'Observe', description: 'Monitor in production' },
   { id: 'learn', label: 'Learn', description: 'Analyze and improve' },
-  { id: 'institutionalize', label: 'Institutionalize', description: 'Document and standardize' },
+  {
+    id: 'institutionalize',
+    label: 'Institutionalize',
+    description: 'Document and standardize',
+  },
 ] as const;
 
-export type LifecycleStageId = typeof LIFECYCLE_STAGES[number]['id'];
+export type LifecycleStageId = (typeof LIFECYCLE_STAGES)[number]['id'];
 
 export interface LifecycleStageProps {
   /** Current active stage */
@@ -41,14 +53,14 @@ export interface LifecycleStageProps {
 
 /**
  * LifecycleStage Component
- * 
+ *
  * Visual indicator of project lifecycle progression with 8 canonical stages.
  * Shows current position, completed stages, and allows navigation between stages.
- * 
+ *
  * @example
  * ```tsx
- * <LifecycleStage 
- *   currentStage="execute" 
+ * <LifecycleStage
+ *   currentStage="execute"
  *   onStageClick={(stage) => navigateToStage(stage)}
  * />
  * ```
@@ -61,21 +73,22 @@ export function LifecycleStage({
   compact = false,
   className = '',
 }: LifecycleStageProps) {
-  const currentIndex = LIFECYCLE_STAGES.findIndex(s => s.id === currentStage);
-  
-  // Calculate completed stages if not explicitly provided
-  const completed = completedStages ?? 
-    LIFECYCLE_STAGES.slice(0, currentIndex).map(s => s.id);
+  const currentIndex = LIFECYCLE_STAGES.findIndex((s) => s.id === currentStage);
 
-  const isCompleted = (stageId: LifecycleStageId) => completed.includes(stageId);
+  // Calculate completed stages if not explicitly provided
+  const completed =
+    completedStages ?? LIFECYCLE_STAGES.slice(0, currentIndex).map((s) => s.id);
+
+  const isCompleted = (stageId: LifecycleStageId) =>
+    completed.includes(stageId);
   const isCurrent = (stageId: LifecycleStageId) => stageId === currentStage;
   const isPending = (stageId: LifecycleStageId) => {
-    const stageIndex = LIFECYCLE_STAGES.findIndex(s => s.id === stageId);
+    const stageIndex = LIFECYCLE_STAGES.findIndex((s) => s.id === stageId);
     return stageIndex > currentIndex;
   };
 
   return (
-    <div 
+    <div
       className={`lifecycle-stage ${compact ? 'lifecycle-stage--compact' : ''} ${className}`}
       role="navigation"
       aria-label="Project lifecycle stages"
@@ -100,7 +113,7 @@ export function LifecycleStage({
             >
               {/* Connector line */}
               {index > 0 && (
-                <div 
+                <div
                   className={`lifecycle-stage__connector ${completed_stage ? 'lifecycle-stage__connector--completed' : ''}`}
                 />
               )}
@@ -155,7 +168,8 @@ export function LifecycleStage({
           Stage {currentIndex + 1} of {LIFECYCLE_STAGES.length}
         </span>
         <span className="lifecycle-stage__percentage">
-          {Math.round((completed.length / LIFECYCLE_STAGES.length) * 100)}% complete
+          {Math.round((completed.length / LIFECYCLE_STAGES.length) * 100)}%
+          complete
         </span>
       </div>
     </div>
@@ -165,15 +179,29 @@ export function LifecycleStage({
 // Icon components
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="lifecycle-stage__svg lifecycle-stage__svg--check">
-      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="lifecycle-stage__svg lifecycle-stage__svg--check"
+    >
+      <path
+        d="M20 6L9 17l-5-5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function CurrentIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="lifecycle-stage__svg lifecycle-stage__svg--current">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="lifecycle-stage__svg lifecycle-stage__svg--current"
+    >
       <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="2" />
       <circle cx="12" cy="12" r="3" fill="currentColor" />
     </svg>
@@ -182,7 +210,11 @@ function CurrentIcon() {
 
 function PendingIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="lifecycle-stage__svg lifecycle-stage__svg--pending">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="lifecycle-stage__svg lifecycle-stage__svg--pending"
+    >
       <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="2" />
     </svg>
   );

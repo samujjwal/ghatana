@@ -47,7 +47,9 @@ export const WithValue: Story = {
 export const TwentyFourHour: Story = {
   render: () => {
     const [value, setValue] = React.useState<Date | null>(null);
-    return <DateTimePicker value={value} onChange={setValue} timeFormat="24h" />;
+    return (
+      <DateTimePicker value={value} onChange={setValue} timeFormat="24h" />
+    );
   },
 };
 
@@ -79,7 +81,9 @@ export const MinuteSteps: Story = {
     return (
       <div>
         <DateTimePicker value={value} onChange={setValue} minuteStep={15} />
-        <div className="mt-2 text-sm text-grey-600">Time in 15-minute intervals</div>
+        <div className="mt-2 text-sm text-grey-600">
+          Time in 15-minute intervals
+        </div>
       </div>
     );
   },
@@ -96,7 +100,9 @@ export const EventScheduling: Story = {
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Event Date & Time</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Event Date & Time
+        </label>
         <DateTimePicker
           value={value}
           onChange={setValue}
@@ -125,7 +131,9 @@ export const DeadlinePicker: Story = {
 
     return (
       <div>
-        <label className="block text-sm font-medium text-grey-700 mb-2">Deadline</label>
+        <label className="block text-sm font-medium text-grey-700 mb-2">
+          Deadline
+        </label>
         <DateTimePicker
           value={value}
           onChange={setValue}

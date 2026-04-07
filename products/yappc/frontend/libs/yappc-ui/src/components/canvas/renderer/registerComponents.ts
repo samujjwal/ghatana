@@ -7,7 +7,6 @@
  * @module canvas/renderer/registerComponents
  */
 
-
 // Import UI components
 import { Accordion } from '../../components/Accordion/Accordion';
 import { Alert } from '../../components/Alert/Alert';

@@ -346,7 +346,7 @@ export const TEAM_GOAL_FRAGMENT = gql`
 export const GET_TEAM = gql`
   ${TEAM_FRAGMENT}
   ${TEAM_MEMBER_FRAGMENT}
-  
+
   query GetTeam($id: ID!) {
     team(id: $id) {
       ...TeamFields
@@ -359,7 +359,7 @@ export const GET_TEAM = gql`
 
 export const LIST_TEAMS = gql`
   ${TEAM_FRAGMENT}
-  
+
   query ListTeams($projectId: ID!, $filter: TeamFilter) {
     teams(projectId: $projectId, filter: $filter) {
       ...TeamFields
@@ -369,7 +369,7 @@ export const LIST_TEAMS = gql`
 
 export const GET_TEAM_MEMBER = gql`
   ${TEAM_MEMBER_FRAGMENT}
-  
+
   query GetTeamMember($teamId: ID!, $memberId: ID!) {
     teamMember(teamId: $teamId, memberId: $memberId) {
       ...TeamMemberFields
@@ -418,7 +418,7 @@ export const GET_TEAM_WORKLOAD = gql`
 
 export const GET_CALENDAR_EVENTS = gql`
   ${CALENDAR_EVENT_FRAGMENT}
-  
+
   query GetCalendarEvents(
     $projectId: ID!
     $startDate: String!
@@ -438,7 +438,7 @@ export const GET_CALENDAR_EVENTS = gql`
 
 export const GET_CALENDAR_EVENT = gql`
   ${CALENDAR_EVENT_FRAGMENT}
-  
+
   query GetCalendarEvent($id: ID!) {
     calendarEvent(id: $id) {
       ...CalendarEventFields
@@ -457,7 +457,11 @@ export const GET_CALENDAR_EVENT = gql`
 `;
 
 export const GET_AVAILABILITY = gql`
-  query GetAvailability($userIds: [ID!]!, $startDate: String!, $endDate: String!) {
+  query GetAvailability(
+    $userIds: [ID!]!
+    $startDate: String!
+    $endDate: String!
+  ) {
     availability(userIds: $userIds, startDate: $startDate, endDate: $endDate) {
       userId
       slots {
@@ -498,7 +502,7 @@ export const FIND_MEETING_TIMES = gql`
 
 export const GET_KNOWLEDGE_ARTICLE = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
+
   query GetKnowledgeArticle($id: ID!) {
     knowledgeArticle(id: $id) {
       ...KnowledgeArticleFields
@@ -518,7 +522,7 @@ export const GET_KNOWLEDGE_ARTICLE = gql`
 
 export const LIST_KNOWLEDGE_ARTICLES = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
+
   query ListKnowledgeArticles(
     $projectId: ID!
     $filter: ArticleFilter
@@ -549,8 +553,16 @@ export const LIST_KNOWLEDGE_ARTICLES = gql`
 `;
 
 export const SEARCH_KNOWLEDGE_BASE = gql`
-  query SearchKnowledgeBase($projectId: ID!, $query: String!, $filters: ArticleFilter) {
-    searchKnowledgeBase(projectId: $projectId, query: $query, filters: $filters) {
+  query SearchKnowledgeBase(
+    $projectId: ID!
+    $query: String!
+    $filters: ArticleFilter
+  ) {
+    searchKnowledgeBase(
+      projectId: $projectId
+      query: $query
+      filters: $filters
+    ) {
       results {
         article {
           id
@@ -600,7 +612,7 @@ export const GET_KNOWLEDGE_CATEGORIES = gql`
 
 export const GET_STANDUP = gql`
   ${STANDUP_FRAGMENT}
-  
+
   query GetStandup($id: ID!) {
     standup(id: $id) {
       ...StandupFields
@@ -610,7 +622,7 @@ export const GET_STANDUP = gql`
 
 export const LIST_STANDUPS = gql`
   ${STANDUP_FRAGMENT}
-  
+
   query ListStandups(
     $teamId: ID!
     $startDate: String
@@ -639,7 +651,7 @@ export const LIST_STANDUPS = gql`
 
 export const GET_TODAY_STANDUP = gql`
   ${STANDUP_FRAGMENT}
-  
+
   query GetTodayStandup($teamId: ID!) {
     todayStandup(teamId: $teamId) {
       ...StandupFields
@@ -649,7 +661,7 @@ export const GET_TODAY_STANDUP = gql`
 
 export const GET_CHANNEL = gql`
   ${CHANNEL_FRAGMENT}
-  
+
   query GetChannel($id: ID!) {
     channel(id: $id) {
       ...ChannelFields
@@ -675,7 +687,7 @@ export const GET_CHANNEL = gql`
 
 export const LIST_CHANNELS = gql`
   ${CHANNEL_FRAGMENT}
-  
+
   query ListChannels($projectId: ID!, $filter: ChannelFilter) {
     channels(projectId: $projectId, filter: $filter) {
       ...ChannelFields
@@ -685,13 +697,17 @@ export const LIST_CHANNELS = gql`
 
 export const GET_MESSAGES = gql`
   ${MESSAGE_FRAGMENT}
-  
+
   query GetMessages(
     $channelId: ID!
     $pagination: CursorPaginationInput
     $threadId: ID
   ) {
-    messages(channelId: $channelId, pagination: $pagination, threadId: $threadId) {
+    messages(
+      channelId: $channelId
+      pagination: $pagination
+      threadId: $threadId
+    ) {
       edges {
         cursor
         node {
@@ -710,7 +726,7 @@ export const GET_MESSAGES = gql`
 
 export const SEARCH_MESSAGES = gql`
   ${MESSAGE_FRAGMENT}
-  
+
   query SearchMessages(
     $projectId: ID!
     $query: String!
@@ -741,13 +757,17 @@ export const SEARCH_MESSAGES = gql`
 
 export const GET_ACTIVITY_FEED = gql`
   ${ACTIVITY_ITEM_FRAGMENT}
-  
+
   query GetActivityFeed(
     $projectId: ID!
     $filter: ActivityFilter
     $pagination: PaginationInput
   ) {
-    activityFeed(projectId: $projectId, filter: $filter, pagination: $pagination) {
+    activityFeed(
+      projectId: $projectId
+      filter: $filter
+      pagination: $pagination
+    ) {
       edges {
         cursor
         node {
@@ -765,7 +785,7 @@ export const GET_ACTIVITY_FEED = gql`
 
 export const GET_TEAM_GOALS = gql`
   ${TEAM_GOAL_FRAGMENT}
-  
+
   query GetTeamGoals($teamId: ID!, $filter: GoalFilter) {
     teamGoals(teamId: $teamId, filter: $filter) {
       ...TeamGoalFields
@@ -775,7 +795,7 @@ export const GET_TEAM_GOALS = gql`
 
 export const GET_TEAM_GOAL = gql`
   ${TEAM_GOAL_FRAGMENT}
-  
+
   query GetTeamGoal($id: ID!) {
     teamGoal(id: $id) {
       ...TeamGoalFields
@@ -811,7 +831,7 @@ export const GET_TEAM_GOAL = gql`
 
 export const CREATE_TEAM = gql`
   ${TEAM_FRAGMENT}
-  
+
   mutation CreateTeam($projectId: ID!, $input: CreateTeamInput!) {
     createTeam(projectId: $projectId, input: $input) {
       ...TeamFields
@@ -821,7 +841,7 @@ export const CREATE_TEAM = gql`
 
 export const UPDATE_TEAM = gql`
   ${TEAM_FRAGMENT}
-  
+
   mutation UpdateTeam($id: ID!, $input: UpdateTeamInput!) {
     updateTeam(id: $id, input: $input) {
       ...TeamFields
@@ -839,7 +859,7 @@ export const DELETE_TEAM = gql`
 
 export const ADD_TEAM_MEMBER = gql`
   ${TEAM_MEMBER_FRAGMENT}
-  
+
   mutation AddTeamMember($teamId: ID!, $input: AddTeamMemberInput!) {
     addTeamMember(teamId: $teamId, input: $input) {
       ...TeamMemberFields
@@ -849,8 +869,12 @@ export const ADD_TEAM_MEMBER = gql`
 
 export const UPDATE_TEAM_MEMBER_ROLE = gql`
   ${TEAM_MEMBER_FRAGMENT}
-  
-  mutation UpdateTeamMemberRole($teamId: ID!, $memberId: ID!, $role: TeamMemberRole!) {
+
+  mutation UpdateTeamMemberRole(
+    $teamId: ID!
+    $memberId: ID!
+    $role: TeamMemberRole!
+  ) {
     updateTeamMemberRole(teamId: $teamId, memberId: $memberId, role: $role) {
       ...TeamMemberFields
     }
@@ -866,7 +890,11 @@ export const REMOVE_TEAM_MEMBER = gql`
 `;
 
 export const UPDATE_MEMBER_STATUS = gql`
-  mutation UpdateMemberStatus($status: UserStatus!, $message: String, $until: String) {
+  mutation UpdateMemberStatus(
+    $status: UserStatus!
+    $message: String
+    $until: String
+  ) {
     updateMemberStatus(status: $status, message: $message, until: $until) {
       id
       status
@@ -878,8 +906,11 @@ export const UPDATE_MEMBER_STATUS = gql`
 
 export const CREATE_CALENDAR_EVENT = gql`
   ${CALENDAR_EVENT_FRAGMENT}
-  
-  mutation CreateCalendarEvent($projectId: ID!, $input: CreateCalendarEventInput!) {
+
+  mutation CreateCalendarEvent(
+    $projectId: ID!
+    $input: CreateCalendarEventInput!
+  ) {
     createCalendarEvent(projectId: $projectId, input: $input) {
       ...CalendarEventFields
     }
@@ -888,7 +919,7 @@ export const CREATE_CALENDAR_EVENT = gql`
 
 export const UPDATE_CALENDAR_EVENT = gql`
   ${CALENDAR_EVENT_FRAGMENT}
-  
+
   mutation UpdateCalendarEvent(
     $id: ID!
     $input: UpdateCalendarEventInput!
@@ -922,8 +953,11 @@ export const RESPOND_TO_CALENDAR_EVENT = gql`
 
 export const CREATE_KNOWLEDGE_ARTICLE = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
-  mutation CreateKnowledgeArticle($projectId: ID!, $input: CreateArticleInput!) {
+
+  mutation CreateKnowledgeArticle(
+    $projectId: ID!
+    $input: CreateArticleInput!
+  ) {
     createKnowledgeArticle(projectId: $projectId, input: $input) {
       ...KnowledgeArticleFields
     }
@@ -932,7 +966,7 @@ export const CREATE_KNOWLEDGE_ARTICLE = gql`
 
 export const UPDATE_KNOWLEDGE_ARTICLE = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
+
   mutation UpdateKnowledgeArticle($id: ID!, $input: UpdateArticleInput!) {
     updateKnowledgeArticle(id: $id, input: $input) {
       ...KnowledgeArticleFields
@@ -950,7 +984,7 @@ export const DELETE_KNOWLEDGE_ARTICLE = gql`
 
 export const PUBLISH_KNOWLEDGE_ARTICLE = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
+
   mutation PublishKnowledgeArticle($id: ID!) {
     publishKnowledgeArticle(id: $id) {
       ...KnowledgeArticleFields
@@ -960,7 +994,7 @@ export const PUBLISH_KNOWLEDGE_ARTICLE = gql`
 
 export const UNPUBLISH_KNOWLEDGE_ARTICLE = gql`
   ${KNOWLEDGE_ARTICLE_FRAGMENT}
-  
+
   mutation UnpublishKnowledgeArticle($id: ID!) {
     unpublishKnowledgeArticle(id: $id) {
       ...KnowledgeArticleFields
@@ -979,7 +1013,10 @@ export const RATE_KNOWLEDGE_ARTICLE = gql`
 `;
 
 export const CREATE_KNOWLEDGE_CATEGORY = gql`
-  mutation CreateKnowledgeCategory($projectId: ID!, $input: CreateCategoryInput!) {
+  mutation CreateKnowledgeCategory(
+    $projectId: ID!
+    $input: CreateCategoryInput!
+  ) {
     createKnowledgeCategory(projectId: $projectId, input: $input) {
       id
       name
@@ -1015,7 +1052,7 @@ export const DELETE_KNOWLEDGE_CATEGORY = gql`
 
 export const CREATE_STANDUP = gql`
   ${STANDUP_FRAGMENT}
-  
+
   mutation CreateStandup($teamId: ID!, $date: String) {
     createStandup(teamId: $teamId, date: $date) {
       ...StandupFields
@@ -1054,7 +1091,7 @@ export const UPDATE_STANDUP_ENTRY = gql`
 
 export const COMPLETE_STANDUP = gql`
   ${STANDUP_FRAGMENT}
-  
+
   mutation CompleteStandup($standupId: ID!) {
     completeStandup(standupId: $standupId) {
       ...StandupFields
@@ -1064,7 +1101,7 @@ export const COMPLETE_STANDUP = gql`
 
 export const CREATE_CHANNEL = gql`
   ${CHANNEL_FRAGMENT}
-  
+
   mutation CreateChannel($projectId: ID!, $input: CreateChannelInput!) {
     createChannel(projectId: $projectId, input: $input) {
       ...ChannelFields
@@ -1074,7 +1111,7 @@ export const CREATE_CHANNEL = gql`
 
 export const UPDATE_CHANNEL = gql`
   ${CHANNEL_FRAGMENT}
-  
+
   mutation UpdateChannel($id: ID!, $input: UpdateChannelInput!) {
     updateChannel(id: $id, input: $input) {
       ...ChannelFields
@@ -1124,7 +1161,7 @@ export const REMOVE_CHANNEL_MEMBER = gql`
 
 export const SEND_MESSAGE = gql`
   ${MESSAGE_FRAGMENT}
-  
+
   mutation SendMessage($channelId: ID!, $input: SendMessageInput!) {
     sendMessage(channelId: $channelId, input: $input) {
       ...MessageFields
@@ -1134,7 +1171,7 @@ export const SEND_MESSAGE = gql`
 
 export const UPDATE_MESSAGE = gql`
   ${MESSAGE_FRAGMENT}
-  
+
   mutation UpdateMessage($id: ID!, $content: String!) {
     updateMessage(id: $id, content: $content) {
       ...MessageFields
@@ -1220,7 +1257,7 @@ export const MARK_ACTIVITY_READ = gql`
 
 export const CREATE_TEAM_GOAL = gql`
   ${TEAM_GOAL_FRAGMENT}
-  
+
   mutation CreateTeamGoal($teamId: ID!, $input: CreateGoalInput!) {
     createTeamGoal(teamId: $teamId, input: $input) {
       ...TeamGoalFields
@@ -1230,7 +1267,7 @@ export const CREATE_TEAM_GOAL = gql`
 
 export const UPDATE_TEAM_GOAL = gql`
   ${TEAM_GOAL_FRAGMENT}
-  
+
   mutation UpdateTeamGoal($id: ID!, $input: UpdateGoalInput!) {
     updateTeamGoal(id: $id, input: $input) {
       ...TeamGoalFields
@@ -1264,7 +1301,11 @@ export const ADD_GOAL_UPDATE = gql`
 
 export const UPDATE_KEY_RESULT = gql`
   mutation UpdateKeyResult($goalId: ID!, $keyResultId: ID!, $current: Float!) {
-    updateKeyResult(goalId: $goalId, keyResultId: $keyResultId, current: $current) {
+    updateKeyResult(
+      goalId: $goalId
+      keyResultId: $keyResultId
+      current: $current
+    ) {
       id
       keyResults {
         id
@@ -1287,7 +1328,7 @@ export const UPDATE_KEY_RESULT = gql`
 export const SUBSCRIBE_TO_TEAM_UPDATES = gql`
   ${TEAM_FRAGMENT}
   ${TEAM_MEMBER_FRAGMENT}
-  
+
   subscription OnTeamUpdate($teamId: ID!) {
     teamUpdated(teamId: $teamId) {
       type
@@ -1314,7 +1355,7 @@ export const SUBSCRIBE_TO_PRESENCE = gql`
 
 export const SUBSCRIBE_TO_CALENDAR_UPDATES = gql`
   ${CALENDAR_EVENT_FRAGMENT}
-  
+
   subscription OnCalendarUpdate($projectId: ID!) {
     calendarUpdated(projectId: $projectId) {
       type
@@ -1327,7 +1368,7 @@ export const SUBSCRIBE_TO_CALENDAR_UPDATES = gql`
 
 export const SUBSCRIBE_TO_MESSAGES = gql`
   ${MESSAGE_FRAGMENT}
-  
+
   subscription OnMessage($channelId: ID!) {
     messageReceived(channelId: $channelId) {
       type
@@ -1350,7 +1391,7 @@ export const SUBSCRIBE_TO_TYPING = gql`
 
 export const SUBSCRIBE_TO_CHANNEL_UPDATES = gql`
   ${CHANNEL_FRAGMENT}
-  
+
   subscription OnChannelUpdate($projectId: ID!) {
     channelUpdated(projectId: $projectId) {
       type
@@ -1363,7 +1404,7 @@ export const SUBSCRIBE_TO_CHANNEL_UPDATES = gql`
 
 export const SUBSCRIBE_TO_ACTIVITY = gql`
   ${ACTIVITY_ITEM_FRAGMENT}
-  
+
   subscription OnActivity($projectId: ID!) {
     activityAdded(projectId: $projectId) {
       ...ActivityItemFields
@@ -1373,7 +1414,7 @@ export const SUBSCRIBE_TO_ACTIVITY = gql`
 
 export const SUBSCRIBE_TO_STANDUP_UPDATES = gql`
   ${STANDUP_FRAGMENT}
-  
+
   subscription OnStandupUpdate($standupId: ID!) {
     standupUpdated(standupId: $standupId) {
       ...StandupFields
@@ -1415,7 +1456,13 @@ export interface AddTeamMemberInput {
 export interface CreateCalendarEventInput {
   title: string;
   description?: string;
-  type: 'meeting' | 'review' | 'standup' | 'planning' | 'retrospective' | 'other';
+  type:
+    | 'meeting'
+    | 'review'
+    | 'standup'
+    | 'planning'
+    | 'retrospective'
+    | 'other';
   startTime: string;
   endTime: string;
   allDay?: boolean;
@@ -1619,6 +1666,10 @@ export interface CursorPaginationInput {
 
 export type TeamMemberRole = 'member' | 'lead' | 'admin';
 export type UserStatus = 'online' | 'away' | 'busy' | 'offline';
-export type AttendeeResponse = 'accepted' | 'declined' | 'tentative' | 'pending';
+export type AttendeeResponse =
+  | 'accepted'
+  | 'declined'
+  | 'tentative'
+  | 'pending';
 export type RecurrenceUpdateMode = 'this' | 'this_and_following' | 'all';
 export type RecurrenceDeleteMode = 'this' | 'this_and_following' | 'all';

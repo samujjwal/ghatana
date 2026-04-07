@@ -192,24 +192,44 @@ export interface ResourcesListProps {
 const getResourceIcon = (type: ResourceType): React.ReactNode => {
   const icons: Record<ResourceType, React.ReactNode> = {
     repository: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
       </svg>
     ),
     database: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <ellipse cx="12" cy="5" rx="9" ry="3" />
         <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
         <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
       </svg>
     ),
     storage: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
       </svg>
     ),
     compute: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="4" y="4" width="16" height="16" rx="2" ry="2" />
         <rect x="9" y="9" width="6" height="6" />
         <line x1="9" y1="1" x2="9" y2="4" />
@@ -223,24 +243,44 @@ const getResourceIcon = (type: ResourceType): React.ReactNode => {
       </svg>
     ),
     network: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <line x1="2" y1="12" x2="22" y2="12" />
         <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
       </svg>
     ),
     cdn: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
       </svg>
     ),
     cache: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
       </svg>
     ),
     queue: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <line x1="8" y1="6" x2="21" y2="6" />
         <line x1="8" y1="12" x2="21" y2="12" />
         <line x1="8" y1="18" x2="21" y2="18" />
@@ -250,24 +290,44 @@ const getResourceIcon = (type: ResourceType): React.ReactNode => {
       </svg>
     ),
     serverless: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
         <polyline points="22 6 12 13 2 6" />
       </svg>
     ),
     container: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
       </svg>
     ),
     monitoring: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
     cicd: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <polyline points="17 1 21 5 17 9" />
         <path d="M3 11V9a4 4 0 0 1 4-4h14" />
         <polyline points="7 23 3 19 7 15" />
@@ -275,24 +335,44 @@ const getResourceIcon = (type: ResourceType): React.ReactNode => {
       </svg>
     ),
     dns: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="2" />
         <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14" />
       </svg>
     ),
     ssl: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     ),
     secret: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
       </svg>
     ),
     other: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="10" />
         <line x1="12" y1="16" x2="12" y2="12" />
         <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -322,9 +402,16 @@ const getProviderLabel = (provider: ResourceProvider): string => {
 const getStatusConfig = (
   status: ResourceStatus
 ): { label: string; color: string; bgColor: string } => {
-  const configs: Record<typeof status, { label: string; color: string; bgColor: string }> = {
+  const configs: Record<
+    typeof status,
+    { label: string; color: string; bgColor: string }
+  > = {
     pending: { label: 'Pending', color: '#6B7280', bgColor: '#F3F4F6' },
-    provisioning: { label: 'Provisioning', color: '#3B82F6', bgColor: '#DBEAFE' },
+    provisioning: {
+      label: 'Provisioning',
+      color: '#3B82F6',
+      bgColor: '#DBEAFE',
+    },
     running: { label: 'Running', color: '#10B981', bgColor: '#D1FAE5' },
     updating: { label: 'Updating', color: '#F59E0B', bgColor: '#FEF3C7' },
     error: { label: 'Error', color: '#EF4444', bgColor: '#FEE2E2' },
@@ -362,7 +449,9 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const statusConfig = getStatusConfig(resource.status);
-  const isAnimated = ['provisioning', 'updating', 'deleting'].includes(resource.status);
+  const isAnimated = ['provisioning', 'updating', 'deleting'].includes(
+    resource.status
+  );
 
   const getAvailableActions = (): ResourceAction[] => {
     const actions: ResourceAction[] = ['view'];
@@ -417,7 +506,9 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
             {resource.config?.region && (
               <>
                 <span className="resource-item-separator">•</span>
-                <span className="resource-item-region">{resource.config.region}</span>
+                <span className="resource-item-region">
+                  {resource.config.region}
+                </span>
               </>
             )}
           </div>
@@ -440,17 +531,19 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
 
         {onAction && (
           <div className="resource-item-actions">
-            {getAvailableActions().slice(0, compact ? 2 : 3).map((action) => (
-              <button
-                key={action}
-                type="button"
-                className={`resource-action-btn resource-action-btn--${action}`}
-                onClick={() => onAction(action)}
-                aria-label={`${action} ${resource.name}`}
-              >
-                {action}
-              </button>
-            ))}
+            {getAvailableActions()
+              .slice(0, compact ? 2 : 3)
+              .map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  className={`resource-action-btn resource-action-btn--${action}`}
+                  onClick={() => onAction(action)}
+                  aria-label={`${action} ${resource.name}`}
+                >
+                  {action}
+                </button>
+              ))}
             {!compact && showConfig && resource.config && (
               <button
                 type="button"
@@ -522,8 +615,12 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
   className = '',
 }) => {
   const [filterType, setFilterType] = useState<ResourceType | 'all'>('all');
-  const [filterStatus, setFilterStatus] = useState<ResourceStatus | 'all'>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'type' | 'status' | 'cost'>('name');
+  const [filterStatus, setFilterStatus] = useState<ResourceStatus | 'all'>(
+    'all'
+  );
+  const [sortBy, setSortBy] = useState<'name' | 'type' | 'status' | 'cost'>(
+    'name'
+  );
 
   const filteredResources = useMemo(() => {
     let filtered = [...resources];
@@ -582,7 +679,9 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
         {showCosts && totalCost > 0 && (
           <div className="resources-total-cost">
             <span className="resources-cost-label">Est. Monthly</span>
-            <span className="resources-cost-value">${totalCost.toFixed(2)}</span>
+            <span className="resources-cost-value">
+              ${totalCost.toFixed(2)}
+            </span>
           </div>
         )}
       </div>
@@ -592,7 +691,9 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
         <div className="resources-filters">
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as ResourceType | 'all')}
+            onChange={(e) =>
+              setFilterType(e.target.value as ResourceType | 'all')
+            }
             className="resources-filter-select"
             aria-label="Filter by type"
           >
@@ -606,7 +707,9 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
 
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as ResourceStatus | 'all')}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as ResourceStatus | 'all')
+            }
             className="resources-filter-select"
             aria-label="Filter by status"
           >
@@ -642,7 +745,12 @@ export const ResourcesList: React.FC<ResourcesListProps> = ({
           </div>
         ) : filteredResources.length === 0 ? (
           <div className="resources-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
               <line x1="12" y1="22.08" x2="12" y2="12" />

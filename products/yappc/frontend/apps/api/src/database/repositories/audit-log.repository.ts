@@ -266,12 +266,19 @@ export class AuditLogRepository extends BaseRepository<
       eventsByActor[entry.actor] = (eventsByActor[entry.actor] || 0) + 1;
 
       // Count by severity
-      eventsBySeverity[entry.severity] = (eventsBySeverity[entry.severity] || 0) + 1;
+      eventsBySeverity[entry.severity] =
+        (eventsBySeverity[entry.severity] || 0) + 1;
     }
 
     const timestamps = entries.map((e) => e.timestamp);
-    const earliestTime = timestamps.length > 0 ? new Date(Math.min(...timestamps.map((t) => t.getTime()))) : new Date();
-    const latestTime = timestamps.length > 0 ? new Date(Math.max(...timestamps.map((t) => t.getTime()))) : new Date();
+    const earliestTime =
+      timestamps.length > 0
+        ? new Date(Math.min(...timestamps.map((t) => t.getTime())))
+        : new Date();
+    const latestTime =
+      timestamps.length > 0
+        ? new Date(Math.max(...timestamps.map((t) => t.getTime())))
+        : new Date();
 
     return {
       totalEvents: entries.length,
@@ -387,7 +394,8 @@ export class AuditLogRepository extends BaseRepository<
       isValid: gaps.length === 0,
       totalEntries: entries.length,
       gaps,
-      warnings: gaps.length > 0 ? ['Suspicious gaps detected in audit log'] : [],
+      warnings:
+        gaps.length > 0 ? ['Suspicious gaps detected in audit log'] : [],
     };
   }
 
@@ -402,10 +410,7 @@ export class AuditLogRepository extends BaseRepository<
    * @param retentionDays - Number of days to retain (default: 2555 = 7 years)
    * @returns Promise<number> - Number of entries deleted
    */
-  async purgeOldLogs(
-    tenantId: string,
-    retentionDays = 2555
-  ): Promise<number> {
+  async purgeOldLogs(tenantId: string, retentionDays = 2555): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
@@ -419,4 +424,3 @@ export class AuditLogRepository extends BaseRepository<
     return result.count;
   }
 }
-

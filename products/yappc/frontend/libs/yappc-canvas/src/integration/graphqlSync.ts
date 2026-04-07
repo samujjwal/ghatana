@@ -1,6 +1,6 @@
 /**
  * GraphQL Sync Adapter
- * 
+ *
  * Synchronizes Canvas documents using GraphQL queries/mutations/subscriptions.
  */
 
@@ -15,7 +15,10 @@ import type {
 /**
  *
  */
-export interface GraphQLSyncConfig extends Pick<SyncConfig, 'endpoint' | 'authToken' | 'retry'> {
+export interface GraphQLSyncConfig extends Pick<
+  SyncConfig,
+  'endpoint' | 'authToken' | 'retry'
+> {
   /** Enable GraphQL subscriptions for real-time updates */
   enableSubscriptions?: boolean;
 }
@@ -25,11 +28,11 @@ export interface GraphQLSyncConfig extends Pick<SyncConfig, 'endpoint' | 'authTo
  */
 export class GraphQLSyncAdapter implements SyncAdapter {
   readonly type = 'graphql' as const;
-  
+
   private config: Required<GraphQLSyncConfig>;
   private connected = false;
   private subscriptionClients = new Map<string, unknown>();
-  
+
   /**
    *
    */
@@ -45,27 +48,31 @@ export class GraphQLSyncAdapter implements SyncAdapter {
       },
     };
   }
-  
+
   /**
    *
    */
   async connect(): Promise<void> {
     if (this.connected) return;
-    
+
     try {
       // Test connection with introspection query
       const response = await this.query(`{ __schema { queryType { name } } }`);
-      
+
       if (response.errors) {
-        throw new Error(`GraphQL connection failed: ${response.errors[0].message}`);
+        throw new Error(
+          `GraphQL connection failed: ${response.errors[0].message}`
+        );
       }
-      
+
       this.connected = true;
     } catch (error) {
-      throw new Error(`GraphQL connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `GraphQL connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-  
+
   /**
    *
    */
@@ -74,14 +81,14 @@ export class GraphQLSyncAdapter implements SyncAdapter {
     this.subscriptionClients.clear();
     this.connected = false;
   }
-  
+
   /**
    *
    */
   isConnected(): boolean {
     return this.connected;
   }
-  
+
   /**
    *
    */
@@ -89,7 +96,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
     if (!this.connected) {
       throw new Error('Not connected');
     }
-    
+
     const query = `
       query GetDocument($id: ID!) {
         document(id: $id) {
@@ -106,13 +113,12 @@ export class GraphQLSyncAdapter implements SyncAdapter {
         }
       }
     `;
-    
+
     try {
-      const response = await this.query<{ document: { version: number; changes: CanvasChange[] } }>(
-        query,
-        { id: documentId }
-      );
-      
+      const response = await this.query<{
+        document: { version: number; changes: CanvasChange[] };
+      }>(query, { id: documentId });
+
       if (response.errors) {
         return {
           success: false,
@@ -125,7 +131,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
           },
         };
       }
-      
+
       return {
         success: true,
         version: response.data!.document.version,
@@ -144,7 +150,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
       };
     }
   }
-  
+
   /**
    *
    */
@@ -152,7 +158,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
     if (!this.connected) {
       throw new Error('Not connected');
     }
-    
+
     const mutation = `
       mutation PushChanges($documentId: ID!, $changes: [ChangeInput!]!) {
         pushChanges(documentId: $documentId, changes: $changes) {
@@ -180,7 +186,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
         }
       }
     `;
-    
+
     try {
       const response = await this.mutate<{
         pushChanges: {
@@ -193,7 +199,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
           }>;
         };
       }>(mutation, { documentId, changes });
-      
+
       if (response.errors) {
         return {
           success: false,
@@ -206,7 +212,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
           },
         };
       }
-      
+
       const data = response.data!.pushChanges;
       const conflicts = data.conflicts?.map((c) => ({
         changeId: c.changeId,
@@ -216,7 +222,7 @@ export class GraphQLSyncAdapter implements SyncAdapter {
         strategy: 'last-write-wins' as const,
         resolved: false,
       }));
-      
+
       return {
         success: data.success,
         version: data.version,
@@ -236,16 +242,19 @@ export class GraphQLSyncAdapter implements SyncAdapter {
       };
     }
   }
-  
+
   /**
    *
    */
-  subscribe(documentId: string, callback: (change: CanvasChange) => void): () => void {
+  subscribe(
+    documentId: string,
+    callback: (change: CanvasChange) => void
+  ): () => void {
     if (!this.config.enableSubscriptions) {
       console.warn('GraphQL subscriptions not enabled');
       return () => {};
     }
-    
+
     // In a real implementation, this would use graphql-ws or similar
     const subscription = `
       subscription OnDocumentChange($documentId: ID!) {
@@ -259,40 +268,48 @@ export class GraphQLSyncAdapter implements SyncAdapter {
         }
       }
     `;
-    
+
     // Store subscription client for cleanup
     const key = `sub-${documentId}-${Date.now()}`;
     // Mock subscription client - replace with real graphql-ws implementation
     const client = { close: () => {} };
     this.subscriptionClients.set(key, client);
-    
+
     return () => {
       const client = this.subscriptionClients.get(key);
       client?.close?.();
       this.subscriptionClients.delete(key);
     };
   }
-  
+
   /**
    *
    */
-  private async query<T>(query: string, variables?: Record<string, unknown>): Promise<GraphQLResponse<T>> {
+  private async query<T>(
+    query: string,
+    variables?: Record<string, unknown>
+  ): Promise<GraphQLResponse<T>> {
     const response = await fetch(this.config.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(this.config.authToken && { Authorization: `Bearer ${this.config.authToken}` }),
+        ...(this.config.authToken && {
+          Authorization: `Bearer ${this.config.authToken}`,
+        }),
       },
       body: JSON.stringify({ query, variables }),
     });
-    
+
     return await response.json();
   }
-  
+
   /**
    *
    */
-  private async mutate<T>(mutation: string, variables?: Record<string, unknown>): Promise<GraphQLResponse<T>> {
+  private async mutate<T>(
+    mutation: string,
+    variables?: Record<string, unknown>
+  ): Promise<GraphQLResponse<T>> {
     return this.query<T>(mutation, variables);
   }
 }
@@ -300,6 +317,8 @@ export class GraphQLSyncAdapter implements SyncAdapter {
 /**
  *
  */
-export function createGraphQLSyncAdapter(config: GraphQLSyncConfig): GraphQLSyncAdapter {
+export function createGraphQLSyncAdapter(
+  config: GraphQLSyncConfig
+): GraphQLSyncAdapter {
   return new GraphQLSyncAdapter(config);
 }

@@ -5,10 +5,10 @@
 
 /**
  * GitHub integration adapter
- * 
+ *
  * Provides methods for interacting with GitHub API.
  * Currently uses mock data for development.
- * 
+ *
  * @example
  * ```ts
  * const github = new GitHubAdapter(process.env.GITHUB_TOKEN);
@@ -26,7 +26,7 @@ export class GitHubAdapter {
 
   /**
    * Create a new GitHub adapter
-   * 
+   *
    * @param token - GitHub personal access token (optional for public repos)
    */
   constructor(token?: string) {
@@ -35,7 +35,7 @@ export class GitHubAdapter {
 
   /**
    * Fetch pull requests for a repository
-   * 
+   *
    * @param repo - Repository in format 'owner/repo'
    * @returns Promise resolving to array of pull requests
    * @example
@@ -55,7 +55,7 @@ export class GitHubAdapter {
 
   /**
    * Fetch recent commits for a repository
-   * 
+   *
    * @param repo - Repository in format 'owner/repo'
    * @returns Promise resolving to array of commits
    * @example
@@ -72,7 +72,7 @@ export class GitHubAdapter {
 
   /**
    * Create a new pull request
-   * 
+   *
    * @param repo - Repository in format 'owner/repo'
    * @param data - PR data (title, base, head, body)
    * @returns Promise resolving to PR creation result
@@ -116,17 +116,17 @@ export class GitHubAdapter {
 
 /**
  * Jira integration adapter
- * 
+ *
  * Provides methods for interacting with Jira API.
  * Currently uses mock data for development.
- * 
+ *
  * @example
  * ```ts
  * const jira = new JiraAdapter(
  *   'https://company.atlassian.net',
  *   process.env.JIRA_TOKEN
  * );
- * 
+ *
  * const issues = await jira.getIssues('project=PROJ AND status="In Progress"');
  * const issue = await jira.getIssue('PROJ-123');
  * await jira.updateIssueStatus('PROJ-123', 'Done');
@@ -138,7 +138,7 @@ export class JiraAdapter {
 
   /**
    * Create a new Jira adapter
-   * 
+   *
    * @param baseURL - Jira instance base URL
    * @param token - Jira API token
    */
@@ -149,7 +149,7 @@ export class JiraAdapter {
 
   /**
    * Fetch issues using JQL (Jira Query Language)
-   * 
+   *
    * @param jql - JQL query string
    * @returns Promise resolving to array of issues
    * @example
@@ -169,7 +169,7 @@ export class JiraAdapter {
 
   /**
    * Fetch detailed information for a specific issue
-   * 
+   *
    * @param key - Jira issue key (e.g., 'PROJ-123')
    * @returns Promise resolving to issue details
    * @example
@@ -186,7 +186,7 @@ export class JiraAdapter {
 
   /**
    * Create a new Jira issue
-   * 
+   *
    * @param data - Issue data (summary, description, project, issueType, etc.)
    * @returns Promise resolving to issue creation result
    * @example
@@ -204,12 +204,16 @@ export class JiraAdapter {
   async createIssue(data: Record<string, unknown>) {
     await Promise.resolve(data);
     // NOTE: Replace with real Jira API call
-    return { success: true, key: 'PROJ-456', url: 'https://jira.example.com/...' };
+    return {
+      success: true,
+      key: 'PROJ-456',
+      url: 'https://jira.example.com/...',
+    };
   }
 
   /**
    * Update the status of a Jira issue
-   * 
+   *
    * @param key - Jira issue key
    * @param status - New status (must match workflow transitions)
    * @returns Promise resolving to update result
@@ -230,7 +234,11 @@ export class JiraAdapter {
    */
   private mockIssues() {
     return [
-      { key: 'PROJ-123', summary: 'Implement feature X', status: 'In Progress' },
+      {
+        key: 'PROJ-123',
+        summary: 'Implement feature X',
+        status: 'In Progress',
+      },
       { key: 'PROJ-124', summary: 'Fix critical bug', status: 'Done' },
     ];
   }
@@ -254,17 +262,17 @@ export class JiraAdapter {
 
 /**
  * SonarQube integration adapter
- * 
+ *
  * Provides methods for interacting with SonarQube API.
  * Currently uses mock data for development.
- * 
+ *
  * @example
  * ```ts
  * const sonar = new SonarQubeAdapter(
  *   'https://sonarcloud.io',
  *   process.env.SONAR_TOKEN
  * );
- * 
+ *
  * const metrics = await sonar.getProjectMetrics('my-project-key');
  * const issues = await sonar.getIssues('my-project-key');
  * const gate = await sonar.getQualityGateStatus('my-project-key');
@@ -276,7 +284,7 @@ export class SonarQubeAdapter {
 
   /**
    * Create a new SonarQube adapter
-   * 
+   *
    * @param baseURL - SonarQube instance base URL
    * @param token - SonarQube API token
    */
@@ -287,7 +295,7 @@ export class SonarQubeAdapter {
 
   /**
    * Fetch code quality metrics for a project
-   * 
+   *
    * @param projectKey - SonarQube project key
    * @returns Promise resolving to project metrics
    * @example
@@ -307,7 +315,7 @@ export class SonarQubeAdapter {
 
   /**
    * Fetch code issues for a project
-   * 
+   *
    * @param projectKey - SonarQube project key
    * @returns Promise resolving to array of issues
    * @example
@@ -324,7 +332,7 @@ export class SonarQubeAdapter {
 
   /**
    * Fetch quality gate status for a project
-   * 
+   *
    * @param projectKey - SonarQube project key
    * @returns Promise resolving to quality gate status
    * @example
@@ -372,7 +380,12 @@ export class SonarQubeAdapter {
       projectKey: 'my-project',
       status: 'OK',
       conditions: [
-        { metric: 'coverage', operator: 'GREATER_THAN', value: 80, status: 'OK' },
+        {
+          metric: 'coverage',
+          operator: 'GREATER_THAN',
+          value: 80,
+          status: 'OK',
+        },
         { metric: 'bugs', operator: 'LESS_THAN', value: 5, status: 'OK' },
       ],
     };
@@ -381,10 +394,10 @@ export class SonarQubeAdapter {
 
 /**
  * Integration manager for all DevSecOps integrations
- * 
+ *
  * Provides unified access to GitHub, Jira, and SonarQube integrations.
  * Simplifies multi-service workflows.
- * 
+ *
  * @example
  * ```ts
  * const integrations = new IntegrationManager({
@@ -394,12 +407,12 @@ export class SonarQubeAdapter {
  *   sonarqubeURL: 'https://sonarcloud.io',
  *   sonarqubeToken: process.env.SONAR_TOKEN
  * });
- * 
+ *
  * // Access individual adapters
  * const prs = await integrations.github.getPullRequests('owner/repo');
  * const issues = await integrations.jira.getIssues('project=PROJ');
  * const metrics = await integrations.sonarqube.getProjectMetrics('my-app');
- * 
+ *
  * // Check integration status
  * const statuses = await integrations.getIntegrationStatuses();
  * ```
@@ -411,18 +424,24 @@ export class IntegrationManager {
 
   /**
    * Create a new integration manager
-   * 
+   *
    * @param config - Configuration object with API tokens and URLs
    */
   constructor(config?: Record<string, unknown>) {
     this.github = new GitHubAdapter(config?.githubToken as string);
-    this.jira = new JiraAdapter(config?.jiraURL as string, config?.jiraToken as string);
-    this.sonarqube = new SonarQubeAdapter(config?.sonarqubeURL as string, config?.sonarqubeToken as string);
+    this.jira = new JiraAdapter(
+      config?.jiraURL as string,
+      config?.jiraToken as string
+    );
+    this.sonarqube = new SonarQubeAdapter(
+      config?.sonarqubeURL as string,
+      config?.sonarqubeToken as string
+    );
   }
 
   /**
    * Get connection status for all integrations
-   * 
+   *
    * @returns Promise resolving to status object for each integration
    */
   async getIntegrationStatuses() {

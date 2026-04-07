@@ -5,9 +5,9 @@ import type { SpacerProps as GlobalSpacerProps } from '@yappc/ui';
 
 export type { GlobalSpacerProps as SpacerProps };
 
-export const Spacer = React.forwardRef<HTMLDivElement, GlobalSpacerProps>((props, ref) => (
-  React.createElement(GlobalSpacer, { ref, ...props })
-));
+export const Spacer = React.forwardRef<HTMLDivElement, GlobalSpacerProps>(
+  (props, ref) => React.createElement(GlobalSpacer, { ref, ...props })
+);
 
 Spacer.displayName = 'Spacer';
 

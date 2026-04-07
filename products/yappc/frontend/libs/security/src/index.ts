@@ -5,7 +5,7 @@
  */
 
 export type { CSPConfig } from './csp';
-export { 
+export {
   buildCSPHeader,
   generateNonce,
   cspMiddleware,

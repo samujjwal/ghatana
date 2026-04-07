@@ -88,21 +88,9 @@ export const Variants: Story = {
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-80">
-      <TextField
-        size="sm"
-        label="Small"
-        placeholder="Small text field"
-      />
-      <TextField
-        size="md"
-        label="Medium"
-        placeholder="Medium text field"
-      />
-      <TextField
-        size="lg"
-        label="Large"
-        placeholder="Large text field"
-      />
+      <TextField size="sm" label="Small" placeholder="Small text field" />
+      <TextField size="md" label="Medium" placeholder="Medium text field" />
+      <TextField size="lg" label="Large" placeholder="Large text field" />
     </div>
   ),
 };
@@ -157,11 +145,7 @@ export const Required: Story = {
 export const Disabled: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-80">
-      <TextField
-        label="Disabled Empty"
-        placeholder="Cannot edit"
-        disabled
-      />
+      <TextField label="Disabled Empty" placeholder="Cannot edit" disabled />
       <TextField
         label="Disabled with Value"
         value="Pre-filled value"
@@ -178,36 +162,16 @@ export const Disabled: Story = {
 export const InputTypes: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-80">
-      <TextField
-        type="text"
-        label="Text"
-        placeholder="Enter text"
-      />
-      <TextField
-        type="email"
-        label="Email"
-        placeholder="email@example.com"
-      />
+      <TextField type="text" label="Text" placeholder="Enter text" />
+      <TextField type="email" label="Email" placeholder="email@example.com" />
       <TextField
         type="password"
         label="Password"
         placeholder="Enter password"
       />
-      <TextField
-        type="number"
-        label="Number"
-        placeholder="42"
-      />
-      <TextField
-        type="tel"
-        label="Phone"
-        placeholder="+1 (555) 123-4567"
-      />
-      <TextField
-        type="url"
-        label="Website"
-        placeholder="https://example.com"
-      />
+      <TextField type="number" label="Number" placeholder="42" />
+      <TextField type="tel" label="Phone" placeholder="+1 (555) 123-4567" />
+      <TextField type="url" label="Website" placeholder="https://example.com" />
     </div>
   ),
 };
@@ -219,7 +183,7 @@ export const FormExample: Story = {
   render: () => (
     <form className="flex flex-col gap-4 w-96 p-6 bg-grey-50 rounded-lg">
       <h2 className="text-xl font-bold text-grey-900 mb-2">Sign Up</h2>
-      
+
       <TextField
         label="Email"
         type="email"
@@ -227,27 +191,23 @@ export const FormExample: Story = {
         required
         helperText="We'll never share your email"
       />
-      
+
       <TextField
         label="Username"
         placeholder="john_doe"
         required
         helperText="3-20 characters, letters and underscores"
       />
-      
+
       <TextField
         label="Password"
         type="password"
         required
         helperText="At least 8 characters"
       />
-      
-      <TextField
-        label="Confirm Password"
-        type="password"
-        required
-      />
-      
+
+      <TextField label="Confirm Password" type="password" required />
+
       <button
         type="submit"
         className="mt-4 px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors"
