@@ -1,5 +1,8 @@
 package com.ghatana.audio.video.multimodal.grpc;
 
+import com.ghatana.audio.video.common.model.FileSystemModelStore;
+import com.ghatana.audio.video.common.model.ModelMetadata;
+import com.ghatana.audio.video.common.model.ModelRegistry;
 import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
 import com.ghatana.audio.video.multimodal.engine.AudioVideoProcessingError;
 import com.ghatana.audio.video.multimodal.engine.MultimodalAnalysisEngine;
@@ -33,6 +36,7 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
     private final MediaProcessingMetrics mediaMetrics;
+    private final ModelRegistry modelRegistry;
 
     public MultimodalGrpcService() {
         this(MediaProcessingMetrics.create());
@@ -42,7 +46,20 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
         this.platformAdapter = new PlatformMultimodalAdapter();
         this.engine = new MultimodalAnalysisEngine(platformAdapter);
         this.mediaMetrics = metrics;
+        this.modelRegistry = new FileSystemModelStore();
         LOG.info("Multimodal service initialized against platform audio-video library");
+    }
+
+    /**
+     * Package-private constructor for unit testing — inject a pre-configured engine.
+     * Avoids native-library and file-system dependencies during tests.
+     */
+    MultimodalGrpcService(MultimodalAnalysisEngine engine, PlatformMultimodalAdapter platformAdapter,
+                          MediaProcessingMetrics metrics) {
+        this.engine = engine;
+        this.platformAdapter = platformAdapter;
+        this.mediaMetrics = metrics;
+        this.modelRegistry = new FileSystemModelStore();
     }
 
     @Override
@@ -194,6 +211,297 @@ public class MultimodalGrpcService extends MultimodalServiceGrpc.MultimodalServi
         } catch (Exception e) {
             LOG.error("Description generation failed", e);
             responseObserver.onError(toStatus(e, "Description generation failed").asRuntimeException());
+        }
+    }
+
+    // ── AV-004.4: analyzeCrossModal ────────────────────────────────────────
+
+    @Override
+    public void analyzeCrossModal(CrossModalRequest request,
+                                   StreamObserver<CrossModalResponse> responseObserver) {
+        long startTime = System.currentTimeMillis();
+        try {
+            if (request.getAudioData().isEmpty() && request.getVideoData().isEmpty()) {
+                responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription("At least one of audio_data or video_data must be provided")
+                    .asRuntimeException());
+                return;
+            }
+
+            LOG.debug("Analyzing cross-modal alignment: audio={}, video={}",
+                !request.getAudioData().isEmpty(), !request.getVideoData().isEmpty());
+
+            // Analyse both modalities
+            com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
+                com.ghatana.audio.video.multimodal.engine.MultimodalRequest.builder()
+                    .audioData(request.getAudioData().isEmpty() ? null : request.getAudioData().toByteArray())
+                    .videoData(request.getVideoData().isEmpty() ? null : request.getVideoData().toByteArray())
+                    .build();
+
+            MultimodalResult result = engine.analyse(engineRequest);
+
+            boolean hasAudio = result.getAudioResult() != null && !result.getAudioResult().isError();
+            boolean hasVisual = result.getVisualResult() != null && !result.getVisualResult().isError();
+
+            // Compute a simple alignment score: both modalities present and non-empty → high score
+            double alignmentScore = 0.0;
+            List<CrossModalEvent> events = new ArrayList<>();
+
+            if (hasAudio && hasVisual) {
+                // Heuristic alignment: check if audio mentions objects detected visually
+                String transcription = result.getAudioResult().getTranscription().toLowerCase();
+                String sceneDescription = result.getVisualResult().getSceneDescription().toLowerCase();
+
+                // Count overlapping keywords
+                String[] audioWords = transcription.split("\\s+");
+                int matches = 0;
+                for (String word : audioWords) {
+                    if (word.length() > 3 && sceneDescription.contains(word)) {
+                        matches++;
+                    }
+                }
+                alignmentScore = Math.min(1.0, 0.5 + (matches * 0.1));
+
+                events.add(CrossModalEvent.newBuilder()
+                    .setTimestampMs(0)
+                    .setEventType("sync")
+                    .setDescription("Audio and visual streams aligned")
+                    .setConfidence(alignmentScore)
+                    .build());
+            } else if (hasAudio) {
+                alignmentScore = 0.4;
+                events.add(CrossModalEvent.newBuilder()
+                    .setTimestampMs(0)
+                    .setEventType("mismatch")
+                    .setDescription("Only audio stream available")
+                    .setConfidence(0.4)
+                    .build());
+            } else if (hasVisual) {
+                alignmentScore = 0.4;
+                events.add(CrossModalEvent.newBuilder()
+                    .setTimestampMs(0)
+                    .setEventType("mismatch")
+                    .setDescription("Only visual stream available")
+                    .setConfidence(0.4)
+                    .build());
+            }
+
+            long processingTime = System.currentTimeMillis() - startTime;
+            String summary = String.format(
+                "Cross-modal analysis: audio=%s, visual=%s, alignment=%.2f",
+                hasAudio ? "present" : "absent",
+                hasVisual ? "present" : "absent",
+                alignmentScore);
+
+            LOG.info("Cross-modal analysis completed: alignment={}, events={}",
+                alignmentScore, events.size());
+            responseObserver.onNext(CrossModalResponse.newBuilder()
+                .setAlignmentScore(alignmentScore)
+                .addAllEvents(events)
+                .setSummary(summary)
+                .setProcessingTimeMs(processingTime)
+                .build());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            LOG.error("Cross-modal analysis failed", e);
+            responseObserver.onError(toStatus(e, "Cross-modal analysis failed").asRuntimeException());
+        }
+    }
+
+    // ── AV-004.5: getInsights ──────────────────────────────────────────────
+
+    @Override
+    public void getInsights(InsightsRequest request, StreamObserver<InsightsResponse> responseObserver) {
+        long startTime = System.currentTimeMillis();
+        try {
+            com.ghatana.audio.video.multimodal.engine.MultimodalRequest engineRequest =
+                com.ghatana.audio.video.multimodal.engine.MultimodalRequest.builder()
+                    .audioData(request.getAudioData().isEmpty() ? null : request.getAudioData().toByteArray())
+                    .videoData(request.getVideoData().isEmpty() ? null : request.getVideoData().toByteArray())
+                    .imageData(request.getImageData().isEmpty() ? null : request.getImageData().toByteArray())
+                    .text(request.getText())
+                    .build();
+
+            MultimodalResult result = engine.analyse(engineRequest);
+
+            InsightsResponse.Builder builder = InsightsResponse.newBuilder();
+            List<String> topics = new ArrayList<>();
+            List<String> entities = new ArrayList<>();
+            List<String> actions = new ArrayList<>();
+
+            // Extract audio insights
+            if (result.getAudioResult() != null && !result.getAudioResult().isError()) {
+                String transcription = result.getAudioResult().getTranscription();
+                topics.add("speech");
+                if (!transcription.isBlank()) {
+                    // Simple NER heuristic: capitalized words as entities
+                    for (String word : transcription.split("\\s+")) {
+                        if (word.length() > 1 && Character.isUpperCase(word.charAt(0))) {
+                            String clean = word.replaceAll("[^\\w]", "");
+                            if (!clean.isBlank()) entities.add(clean);
+                        }
+                    }
+                }
+
+                // Simple sentiment based on transcription content
+                String lower = transcription.toLowerCase();
+                builder.setOverallSentiment(
+                    lower.contains("good") || lower.contains("great") || lower.contains("happy") ? "positive"
+                    : lower.contains("bad") || lower.contains("fail") || lower.contains("error") ? "negative"
+                    : "neutral");
+            }
+
+            // Extract visual insights
+            if (result.getVisualResult() != null && !result.getVisualResult().isError()) {
+                topics.add("visual");
+                String sceneDesc = result.getVisualResult().getSceneDescription();
+                if (!sceneDesc.isBlank()) {
+                    // Infer actions from scene description verbs
+                    if (sceneDesc.contains("running") || sceneDesc.contains("walking")) {
+                        actions.add("movement");
+                    }
+                    if (sceneDesc.contains("talking") || sceneDesc.contains("speaking")) {
+                        actions.add("communication");
+                    }
+                }
+            }
+
+            // Text insights
+            if (!request.getText().isBlank()) {
+                topics.add("text");
+            }
+
+            // Build confidence scores
+            builder.addAllTopics(topics)
+                .addAllEntities(entities.stream().distinct().limit(10).toList())
+                .addAllActions(actions)
+                .putConfidenceScores("audio", result.getAudioResult() != null ? 0.85 : 0.0)
+                .putConfidenceScores("visual", result.getVisualResult() != null ? 0.80 : 0.0)
+                .putConfidenceScores("text", !request.getText().isBlank() ? 0.90 : 0.0)
+                .setProcessingTimeMs(System.currentTimeMillis() - startTime);
+
+            if (builder.getOverallSentiment().isBlank()) {
+                builder.setOverallSentiment("neutral");
+            }
+
+            LOG.info("Insights extracted: topics={}, entities={}", topics.size(), entities.size());
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            LOG.error("Insights extraction failed", e);
+            responseObserver.onError(toStatus(e, "Insights extraction failed").asRuntimeException());
+        }
+    }
+
+    // ── AV-004.1: loadModel ────────────────────────────────────────────────
+
+    @Override
+    public void loadModel(LoadModelRequest request, StreamObserver<LoadModelResponse> responseObserver) {
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+        try {
+            if (modelRegistry.findById(modelId).isEmpty()) {
+                modelRegistry.register(ModelMetadata.builder()
+                    .modelId(modelId).name(modelId)
+                    .type(ModelMetadata.ModelType.MULTIMODAL)
+                    .build());
+            }
+            modelRegistry.load(modelId);
+            long loadTimeMs = System.currentTimeMillis() - startTime;
+
+            LOG.info("Multimodal model loaded: {} in {}ms", modelId, loadTimeMs);
+            responseObserver.onNext(LoadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model loaded: " + modelId)
+                .setModelId(modelId)
+                .setLoadTimeMs(loadTimeMs)
+                .build());
+            responseObserver.onCompleted();
+        } catch (ModelRegistry.ModelRegistryException e) {
+            responseObserver.onError(Status.NOT_FOUND
+                .withDescription("Model not found: " + modelId)
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Error loading multimodal model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(Status.INTERNAL
+                .withDescription("Failed to load model: " + e.getMessage())
+                .asRuntimeException());
+        }
+    }
+
+    // ── AV-004.2: unloadModel ──────────────────────────────────────────────
+
+    @Override
+    public void unloadModel(UnloadModelRequest request, StreamObserver<UnloadModelResponse> responseObserver) {
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try {
+            long freed = modelRegistry.unload(modelId);
+            LOG.info("Multimodal model unloaded: {} (freed ~{} bytes)", modelId, freed);
+            responseObserver.onNext(UnloadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model unloaded: " + modelId)
+                .setMemoryFreedBytes(freed)
+                .build());
+            responseObserver.onCompleted();
+        } catch (ModelRegistry.ModelRegistryException e) {
+            responseObserver.onError(Status.NOT_FOUND
+                .withDescription("Model not registered: " + modelId)
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Error unloading multimodal model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(Status.INTERNAL
+                .withDescription("Failed to unload model: " + e.getMessage())
+                .asRuntimeException());
+        }
+    }
+
+    // ── AV-004.3: listModels ───────────────────────────────────────────────
+
+    @Override
+    public void listModels(ListModelsRequest request, StreamObserver<ListModelsResponse> responseObserver) {
+        try {
+            List<ModelMetadata> models = modelRegistry.listModels(ModelMetadata.ModelType.MULTIMODAL);
+
+            ListModelsResponse.Builder builder = ListModelsResponse.newBuilder();
+            int loadedCount = 0;
+            for (ModelMetadata m : models) {
+                if (request.getIncludeLoadedOnly() && !m.loaded()) continue;
+                if (m.loaded()) loadedCount++;
+
+                builder.addModels(MultimodalModelInfo.newBuilder()
+                    .setModelId(m.modelId())
+                    .setName(m.name())
+                    .setVersion(m.version())
+                    .setIsLoaded(m.loaded())
+                    .setSizeBytes(m.sizeBytes())
+                    .addAllModalities(List.of("audio", "video", "image", "text"))
+                    .build());
+            }
+            builder.setTotalCount(builder.getModelsCount());
+            builder.setLoadedCount(loadedCount);
+
+            LOG.debug("Listed {} multimodal models", builder.getTotalCount());
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to list multimodal models: {}", e.getMessage(), e);
+            responseObserver.onError(Status.INTERNAL
+                .withDescription("Failed to list models: " + e.getMessage())
+                .asRuntimeException());
         }
     }
 

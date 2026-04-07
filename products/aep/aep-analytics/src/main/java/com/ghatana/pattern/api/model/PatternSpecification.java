@@ -3,6 +3,7 @@ package com.ghatana.pattern.api.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.platform.domain.pattern.SelectionMode;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,7 @@ public class PatternSpecification {
     private PatternWindowSpec window;
     
     @JsonProperty("operator")
-    private OperatorSpec operator;
+    private com.ghatana.pattern.api.model.OperatorSpec operator;
 
     @JsonProperty("eventTypes")
     private List<String> eventTypes;
@@ -173,7 +174,7 @@ public class PatternSpecification {
     public PatternStatus getStatus() { return status; }
     public SelectionMode getSelection() { return selection; }
     public PatternWindowSpec getWindow() { return window; }
-    public OperatorSpec getOperator() { return operator; }
+    public com.ghatana.pattern.api.model.OperatorSpec getOperator() { return operator; }
     public List<String> getEventTypes() { return eventTypes; }
     public String getWhereClause() { return whereClause; }
     public Instant getCreatedAt() { return createdAt; }
@@ -192,7 +193,7 @@ public class PatternSpecification {
     public void setStatus(PatternStatus status) { this.status = status; }
     public void setSelection(SelectionMode selection) { this.selection = selection; }
     public void setWindow(PatternWindowSpec window) { this.window = window; }
-    public void setOperator(OperatorSpec operator) { this.operator = operator; }
+    public void setOperator(com.ghatana.pattern.api.model.OperatorSpec operator) { this.operator = operator; }
     public void setEventTypes(List<String> eventTypes) { this.eventTypes = eventTypes; }
     public void setWhereClause(String whereClause) { this.whereClause = whereClause; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
@@ -215,7 +216,7 @@ public class PatternSpecification {
         private PatternStatus status = PatternStatus.DRAFT;
         private SelectionMode selection = SelectionMode.ALL;
         private PatternWindowSpec window;
-        private OperatorSpec operator;
+        private com.ghatana.pattern.api.model.OperatorSpec operator;
         private List<String> eventTypes;
         private String whereClause;
         private Instant createdAt = Instant.now();
@@ -233,7 +234,25 @@ public class PatternSpecification {
         public Builder status(PatternStatus status) { this.status = status; return this; }
         public Builder selection(SelectionMode selection) { this.selection = selection; return this; }
         public Builder window(PatternWindowSpec window) { this.window = window; return this; }
-        public Builder operator(OperatorSpec operator) { this.operator = operator; return this; }
+
+        /**
+         * Convenience shorthand that creates a {@link PatternWindowSpec} with the given
+         * {@code size} duration and sets it as the pattern window.
+         *
+         * @param duration the window size; {@code null} clears the window
+         * @return this builder
+         */
+        public Builder windowDuration(Duration duration) {
+            if (duration == null) {
+                this.window = null;
+            } else {
+                this.window = new PatternWindowSpec();
+                this.window.setSize(duration);
+            }
+            return this;
+        }
+
+        public Builder operator(com.ghatana.pattern.api.model.OperatorSpec operator) { this.operator = operator; return this; }
         public Builder eventTypes(List<String> eventTypes) { this.eventTypes = eventTypes; return this; }
         public Builder whereClause(String whereClause) { this.whereClause = whereClause; return this; }
         public Builder createdAt(Instant createdAt) { this.createdAt = createdAt; return this; }
@@ -255,6 +274,65 @@ public class PatternSpecification {
                 ", status=" + status +
                 ", selection=" + selection +
                 '}';
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Nested lightweight OperatorSpec — used by PatternProtoMapper for metadata
+    // encoding. This is a simplified summary type (type + children tree) that is
+    // distinct from the runtime com.ghatana.pattern.api.model.OperatorSpec.
+    // ────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Lightweight operator-spec summary used by {@link com.ghatana.pattern.api.mapper.PatternProtoMapper}
+     * for compact metadata transport.
+     *
+     * <p>Carries only the information needed to produce compact metadata strings
+     * ({@code "<type>:<leafCount>"}). For the full runtime operator specification
+     * see {@code com.ghatana.pattern.api.model.OperatorSpec}.
+     */
+    public static final class OperatorSpec {
+
+        private final String type;
+        private final java.util.List<OperatorSpec> children;
+
+        private OperatorSpec(Builder builder) {
+            this.type = builder.type;
+            this.children = builder.children != null ? builder.children : java.util.List.of();
+        }
+
+        /** Returns the operator type string (e.g. {@code "AND"}, {@code "OR"}, {@code "MATCH"}). */
+        public String type() {
+            return type;
+        }
+
+        /** Returns the child operator nodes (empty list for leaf nodes). */
+        public java.util.List<OperatorSpec> children() {
+            return children;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        /** Builder for {@link PatternSpecification.OperatorSpec}. */
+        public static final class Builder {
+            private String type;
+            private java.util.List<OperatorSpec> children;
+
+            public Builder type(String type) {
+                this.type = type;
+                return this;
+            }
+
+            public Builder children(java.util.List<OperatorSpec> children) {
+                this.children = children;
+                return this;
+            }
+
+            public OperatorSpec build() {
+                return new OperatorSpec(this);
+            }
+        }
     }
 }
 

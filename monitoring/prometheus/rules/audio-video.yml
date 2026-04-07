@@ -1,0 +1,181 @@
+groups:
+  - name: audio-video-availability
+    interval: 30s
+    rules:
+      - alert: SttServiceDown
+        expr: |
+          up{job="stt-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: audio-video
+          product: audio-video
+          service: stt
+        annotations:
+          summary: "STT service is unreachable"
+          description: "Prometheus cannot scrape the STT service pod {{ $labels.instance }}. Speech-to-text processing is unavailable."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-service-down"
+
+      - alert: TtsServiceDown
+        expr: |
+          up{job="tts-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: audio-video
+          product: audio-video
+          service: tts
+        annotations:
+          summary: "TTS service is unreachable"
+          description: "Prometheus cannot scrape the TTS service pod {{ $labels.instance }}. Text-to-speech synthesis is unavailable."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-service-down"
+
+      - alert: VisionServiceDown
+        expr: |
+          up{job="vision-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: audio-video
+          product: audio-video
+          service: vision
+        annotations:
+          summary: "Vision service is unreachable"
+          description: "Prometheus cannot scrape the Vision service pod {{ $labels.instance }}. Computer vision detection is unavailable."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-service-down"
+
+      - alert: MultimodalServiceDown
+        expr: |
+          up{job="multimodal-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: audio-video
+          product: audio-video
+          service: multimodal
+        annotations:
+          summary: "Multimodal service is unreachable"
+          description: "Prometheus cannot scrape the Multimodal service pod {{ $labels.instance }}. Audio+video analysis is unavailable."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-service-down"
+
+  - name: audio-video-errors
+    interval: 30s
+    rules:
+      - alert: AudioVideoHighProcessingErrorRate
+        expr: |
+          (
+            rate(media_processing_failed_total[5m])
+            /
+            (rate(media_processing_started_total[5m]) + 1e-9)
+          ) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+        annotations:
+          summary: "Audio-video processing error rate > 10%"
+          description: "Operation {{ $labels.operation }} on {{ $labels.instance }} has a {{ $value | humanizePercentage }} error rate over the last 5 minutes."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-high-error-rate"
+
+      - alert: AudioVideoProcessingErrorSpike
+        expr: |
+          (
+            rate(media_processing_failed_total[5m])
+            /
+            (rate(media_processing_started_total[5m]) + 1e-9)
+          ) > 0.25
+        for: 2m
+        labels:
+          severity: critical
+          team: audio-video
+          product: audio-video
+        annotations:
+          summary: "Audio-video processing error rate > 25%"
+          description: "Operation {{ $labels.operation }} on {{ $labels.instance }} has critically high error rate {{ $value | humanizePercentage }}. Immediate investigation required."
+
+  - name: audio-video-latency
+    interval: 30s
+    rules:
+      - alert: SttHighLatency
+        expr: |
+          (
+            rate(media_processing_latency_ms_total{operation="stt.transcribe"}[5m])
+            / (rate(media_processing_latency_ms_count{operation="stt.transcribe"}[5m]) + 1e-9)
+          ) > 5000
+        for: 5m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+          service: stt
+        annotations:
+          summary: "STT average transcription latency > 5 seconds"
+          description: "STT service on {{ $labels.instance }} has average transcription latency of {{ $value | humanizeDuration }}. Check model load or GPU utilization."
+
+      - alert: VisionHighLatency
+        expr: |
+          (
+            rate(media_processing_latency_ms_total{operation="vision.detect"}[5m])
+            / (rate(media_processing_latency_ms_count{operation="vision.detect"}[5m]) + 1e-9)
+          ) > 2000
+        for: 5m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+          service: vision
+        annotations:
+          summary: "Vision detection average latency > 2 seconds"
+          description: "Vision service on {{ $labels.instance }} has average detection latency of {{ $value | humanizeDuration }}. Check YOLO model inference time."
+
+  - name: audio-video-circuit-breaker
+    interval: 30s
+    rules:
+      - alert: AudioVideoCircuitBreakerOpen
+        expr: |
+          audio_video_circuit_breaker_state{state="OPEN"} == 1
+        for: 1m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+        annotations:
+          summary: "Audio-video circuit breaker is OPEN on {{ $labels.method }}"
+          description: "Circuit breaker for gRPC method {{ $labels.method }} on {{ $labels.instance }} has opened due to excessive failures. Requests are being short-circuited."
+          runbook_url: "https://wiki.ghatana.io/runbooks/audio-video-circuit-breaker"
+
+  - name: audio-video-model
+    interval: 60s
+    rules:
+      - alert: AudioVideoModelRegistrySizeHigh
+        expr: |
+          audio_video_model_registry_size > 20
+        for: 5m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+        annotations:
+          summary: "Audio-video model registry has more than 20 loaded models"
+          description: "Model registry on {{ $labels.instance }} has {{ $value }} models loaded. LRU eviction should manage this, but investigate if memory pressure is observed."
+
+  - name: audio-video-grpc
+    interval: 30s
+    rules:
+      - alert: AudioVideoGrpcHighErrorRate
+        expr: |
+          (
+            rate(grpc_server_handled_total{grpc_service=~".*Service", grpc_code!="OK"}[5m])
+            /
+            rate(grpc_server_handled_total{grpc_service=~".*Service"}[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: audio-video
+          product: audio-video
+        annotations:
+          summary: "Audio-video gRPC error rate > 5% for {{ $labels.grpc_method }}"
+          description: "gRPC method {{ $labels.grpc_method }} on {{ $labels.instance }} has a {{ $value | humanizePercentage }} error rate."
+

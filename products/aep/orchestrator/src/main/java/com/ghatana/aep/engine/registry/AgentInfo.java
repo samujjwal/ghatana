@@ -2,6 +2,7 @@ package com.ghatana.aep.engine.registry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Agent metadata for registry discovery and execution.
@@ -84,5 +85,56 @@ public class AgentInfo {
     @Override
     public String toString() {
         return "AgentInfo{id='" + id + "', name='" + name + "', type='" + type + "', status='" + status + "'}";
+    }
+
+    /** Returns a new builder for constructing {@link AgentInfo} instances. */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent builder for {@link AgentInfo}.
+     *
+     * @doc.type class
+     * @doc.purpose Builder for AgentInfo
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public static final class Builder {
+        private String id;
+        private String name;
+        private String type;
+        private String status = "ACTIVE";
+        private String product = "";
+        private String version = "1.0.0";
+        private String description = "";
+        private List<String> capabilities = List.of();
+        private Map<String, Object> config = Map.of();
+        private String registeredAt = java.time.Instant.now().toString();
+
+        public Builder id(String id) { this.id = id; return this; }
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder type(String type) { this.type = type; return this; }
+        public Builder status(String status) { this.status = status; return this; }
+        public Builder product(String product) { this.product = product; return this; }
+        public Builder version(String version) { this.version = version; return this; }
+        public Builder description(String description) { this.description = description; return this; }
+        public Builder capabilities(List<String> capabilities) { this.capabilities = capabilities; return this; }
+        public Builder capabilities(Set<String> capabilities) { this.capabilities = List.copyOf(capabilities); return this; }
+        public Builder config(Map<String, Object> config) { this.config = config; return this; }
+        public Builder registeredAt(String registeredAt) { this.registeredAt = registeredAt; return this; }
+
+        /** Builds and returns the {@link AgentInfo} instance. */
+        public AgentInfo build() {
+            AgentInfo info = new AgentInfo(id, name, type);
+            info.status = this.status;
+            info.product = this.product;
+            info.version = this.version;
+            info.description = this.description;
+            info.capabilities = this.capabilities;
+            info.config = this.config;
+            info.registeredAt = this.registeredAt;
+            return info;
+        }
     }
 }

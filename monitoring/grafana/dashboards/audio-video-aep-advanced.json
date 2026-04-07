@@ -1,0 +1,359 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "description": "Audio-Video advanced features and AEP KPI dashboard (CP-002.3)",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "🎙️ STT — Speech-to-Text",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "s", "thresholds": { "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 0.3 },
+          { "color": "red", "value": 0.5 }
+        ]}},
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "id": 101,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "title": "STT Avg Latency (AV-007.4 target: <500ms)",
+      "type": "stat",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(av_stt_request_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95 latency"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+      "id": 102,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "STT Request Throughput",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(av_stt_requests_total[5m])) by (status)",
+        "legendFormat": "{{status}}"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1.0 }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+      "id": 103,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto" },
+      "title": "STT Error Rate",
+      "type": "gauge",
+      "targets": [{
+        "expr": "sum(rate(av_stt_requests_total{status='error'}[5m])) / sum(rate(av_stt_requests_total[5m]))",
+        "legendFormat": "Error rate"
+      }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 110,
+      "title": "🔊 TTS — Text-to-Speech",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": { "unit": "s", "thresholds": { "steps": [
+          { "color": "green", "value": null },
+          { "color": "yellow", "value": 0.5 },
+          { "color": "red", "value": 1.5 }
+        ]}},
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "id": 111,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "title": "TTS Avg Synthesis Latency (target: <1.5s)",
+      "type": "stat",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(av_tts_synthesis_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95 latency"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "id": 112,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Voice Clone Requests",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(av_tts_voice_clone_requests_total[5m])) by (status)",
+        "legendFormat": "{{status}}"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "id": 113,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Emotion-Controlled Synthesis (AV-008.2)",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(av_tts_synthesis_total[5m])) by (emotion)",
+        "legendFormat": "{{emotion}}"
+      }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 120,
+      "title": "👁️ Vision — Object Detection",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 15 },
+      "id": 121,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "title": "Video Analysis Avg Duration (AV-009.4)",
+      "type": "stat",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum(rate(av_vision_analysis_duration_seconds_bucket[5m])) by (le))",
+        "legendFormat": "p95"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 15 },
+      "id": 122,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Detected Object Classes",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(rate(av_vision_detections_total[5m])) by (class_name)",
+        "legendFormat": "{{class_name}}"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 15 },
+      "id": 123,
+      "options": { "reduceOptions": { "calcs": ["sum"] } },
+      "title": "Object Tracks per Analysis",
+      "type": "stat",
+      "targets": [{
+        "expr": "avg(av_vision_tracks_per_analysis)",
+        "legendFormat": "Avg tracks"
+      }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "id": 200,
+      "title": "⚡ AEP — Event Processing KPIs",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 22 },
+      "id": 201,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Events Processed/s",
+      "type": "stat",
+      "targets": [{
+        "expr": "sum(rate(aep_engine_events_processed_total[1m]))",
+        "legendFormat": "ops/s"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 22 },
+      "id": 202,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "title": "Query Cache Hit Rate (AEP-004.2 target: >80%)",
+      "type": "stat",
+      "targets": [{
+        "expr": "aep_query_cache_hits_total / (aep_query_cache_hits_total + aep_query_cache_misses_total)",
+        "legendFormat": "hit rate"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 22 },
+      "id": 203,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Checkpoint Latency (AEP-004.3 target: <50ms)",
+      "type": "stat",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(aep_checkpoint_duration_ms_bucket[5m]))",
+        "legendFormat": "p95 ms"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 22 },
+      "id": 204,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "DB Pool Efficiency (AEP-004.4 target: >90%)",
+      "type": "stat",
+      "targets": [{
+        "expr": "aep_db_pool_successful_borrows_total / aep_db_pool_total_borrows_total",
+        "legendFormat": "efficiency"
+      }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 210,
+      "title": "💾 AEP — Resource & Performance",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1.0 }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 29 },
+      "id": 211,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "title": "Heap Usage (AEP-005.1 target: <80%)",
+      "type": "gauge",
+      "targets": [{
+        "expr": "jvm_memory_used_bytes{area='heap'} / jvm_memory_max_bytes{area='heap'}",
+        "legendFormat": "heap ratio"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 29 },
+      "id": 212,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Process CPU (AEP-005.2 target: <80%)",
+      "type": "gauge",
+      "targets": [{
+        "expr": "process_cpu_usage",
+        "legendFormat": "cpu"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 29 },
+      "id": 213,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "GC Avg Pause (AEP-005.3 target: <10ms)",
+      "type": "stat",
+      "targets": [{
+        "expr": "rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m]) * 1000",
+        "legendFormat": "avg pause ms"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 29 },
+      "id": 214,
+      "options": { "reduceOptions": { "calcs": ["sum"] } },
+      "title": "Resource Alerts Fired (AEP-005.4)",
+      "type": "stat",
+      "targets": [{
+        "expr": "sum(increase(aep_resource_alerts_total[1h])) by (type)",
+        "legendFormat": "{{type}}"
+      }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 35 },
+      "id": 220,
+      "title": "📊 AEP — Analytics & Capacity",
+      "type": "row"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 36 },
+      "id": 221,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Anomalies Detected per Series (AEP-011.3)",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "sum(increase(aep_anomalies_detected_total[5m])) by (series_id)",
+        "legendFormat": "{{series_id}}"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 36 },
+      "id": 222,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Capacity Usage Ratio (AEP-011.4)",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "aep_capacity_usage_ratio by (resource)",
+        "legendFormat": "{{resource}}"
+      }]
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 36 },
+      "id": 223,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "title": "Forecast Confidence (AEP-011.2)",
+      "type": "timeseries",
+      "targets": [{
+        "expr": "aep_forecast_confidence by (metric)",
+        "legendFormat": "{{metric}}"
+      }]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["audio-video", "aep", "cp-002"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": "Prometheus",
+        "definition": "label_values(av_stt_requests_total, tenant_id)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Tenant",
+        "name": "tenant",
+        "options": [],
+        "query": "label_values(av_stt_requests_total, tenant_id)",
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Audio-Video Advanced Features & AEP KPIs",
+  "uid": "audio-video-aep-kpi-cp002",
+  "version": 1
+}
+

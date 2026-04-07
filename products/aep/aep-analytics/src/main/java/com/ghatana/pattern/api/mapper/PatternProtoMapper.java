@@ -268,7 +268,82 @@ public class PatternProtoMapper {
         };
     }
     
-    // TODO: Add window and operator spec mapping when proto definitions are aligned
+    // ── Window spec mapping ────────────────────────────────────────────────────
+
+    /**
+     * Maps a domain {@link PatternSpecification} window duration to a human-readable proto string.
+     *
+     * <p>The window field is stored as an ISO-8601 duration string in the pattern metadata
+     * (e.g., {@code "PT30S"}) because the {@code PatternProto} contracts proto does not yet have
+     * a first-class {@code window} field. When the contract proto is updated with a {@code Window}
+     * message type, this method should be replaced with direct proto assignment.
+     *
+     * @param spec domain model spec; may be {@code null}
+     * @return ISO-8601 duration string, or empty string if no window is configured
+     */
+    static String mapWindowSpecToProtoString(PatternSpecification spec) {
+        if (spec == null) {
+            return "";
+        }
+        Duration window = spec.getWindow() != null ? spec.getWindow().getSize() : null;
+        if (window == null || window.isZero()) {
+            return "";
+        }
+        return window.toString(); // ISO-8601, e.g. "PT30S"
+    }
+
+    /**
+     * Parses a window duration string (ISO-8601) from a proto metadata field back into a
+     * {@link Duration}. Returns {@link Duration#ZERO} if the value is missing or unparseable.
+     *
+     * @param windowStr ISO-8601 duration string from proto metadata (may be {@code null}/empty)
+     * @return parsed {@link Duration}, never {@code null}
+     */
+    static Duration mapWindowSpecFromProtoString(String windowStr) {
+        if (windowStr == null || windowStr.isBlank()) {
+            return Duration.ZERO;
+        }
+        try {
+            return Duration.parse(windowStr);
+        } catch (java.time.format.DateTimeParseException e) {
+            return Duration.ZERO;
+        }
+    }
+
+    // ── Operator spec metadata mapping ─────────────────────────────────────────
+
+    /**
+     * Serializes the operator spec summary into a compact string for proto metadata transport.
+     *
+     * <p>The compact form is {@code "<operatorType>:<leafCount>"} (e.g. {@code "AND:3"}).
+     * This is used as the {@code operator_summary} metadata key in the proto until the
+     * {@code PatternProto} contracts schema gains a typed {@code OperatorSpec} message.
+     *
+     * @param operatorSpec root operator spec; may be {@code null}
+     * @return compact string representation, or empty string if no operator is configured
+     */
+    static String mapOperatorSpecToMetadataString(PatternSpecification.OperatorSpec operatorSpec) {
+        if (operatorSpec == null) {
+            return "";
+        }
+        int leafCount = countLeafOperators(operatorSpec);
+        return operatorSpec.type() + ":" + leafCount;
+    }
+
+    /**
+     * Recursively counts the leaf (event-type) nodes in an operator tree.
+     */
+    private static int countLeafOperators(PatternSpecification.OperatorSpec spec) {
+        if (spec == null) {
+            return 0;
+        }
+        if (spec.children() == null || spec.children().isEmpty()) {
+            return 1; // leaf
+        }
+        return spec.children().stream()
+                .mapToInt(PatternProtoMapper::countLeafOperators)
+                .sum();
+    }
 }
 
 

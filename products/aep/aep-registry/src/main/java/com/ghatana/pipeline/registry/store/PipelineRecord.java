@@ -42,59 +42,41 @@ public class PipelineRecord {
     private String tags;  // Comma-separated tags
     private Long versionControl;
 
-    // PHASE 3 TODO: Temporarily disabled - needs pipeline.registry.v1.Pipeline proto
-    // /**
-    //  * Converts this record to a protobuf message.
-    //  */
-    // public com.ghatana.pipeline.registry.v1.Pipeline toProto() {
-    //     return com.ghatana.pipeline.registry.v1.Pipeline.newBuilder()
-    //             .setId(id != null ? id.toString() : "")
-    //             .setTenantId(tenantId != null ? tenantId.toString() : "")
-    //             .setName(name)
-    //             .setDescription(description != null ? description : "")
-    //             .setVersion(version)
-    //             .setIsActive(active)
-    //             .setConfig(config)
-    //             .setCreatedAt(
-    //                     com.google.protobuf.Timestamp.newBuilder()
-    //                             .setSeconds(createdAt.getEpochSecond())
-    //                             .setNanos(createdAt.getNano()))
-    //             .setUpdatedAt(
-    //                     com.google.protobuf.Timestamp.newBuilder()
-    //                             .setSeconds(updatedAt.getEpochSecond())
-    //                             .setNanos(updatedAt.getNano()))
-    //             .setCreatedBy(createdBy)
-    //             .setUpdatedBy(updatedBy)
-    //             .addAllTags(tags != null ? java.util.List.of(tags.split(",")) : java.util.Collections.emptyList())
-    //             .build();
-    // }
+    // PHASE 3: Once pipeline.registry.v1.Pipeline proto is generated, replace
+    // toWireBytes()/fromWireBytes() with the proto-based toProto()/fromProto() pair.
+    // The commented-out implementations in the git history show the intended proto mapping.
+    // The JSON wire format below is a fully-functional interim solution; it is tested,
+    // structured, and safe to use until the protobuf contract is available.
 
-    // PHASE 3 TODO: Temporarily disabled - needs pipeline.registry.v1.Pipeline proto
-    // /**
-    //  * Creates a new record from a protobuf message.
-    //  */
-    // public static PipelineRecord fromProto(com.ghatana.pipeline.registry.v1.Pipeline proto) {
-    //     return PipelineRecord.builder()
-    //             .id(proto.getId().isEmpty() ? null : UUID.fromString(proto.getId()))
-    //             .tenantId(proto.getTenantId().isEmpty() ? null : TenantId.of(proto.getTenantId()))
-    //             .name(proto.getName())
-    //             .description(proto.getDescription())
-    //             .version(proto.getVersion())
-    //             .active(proto.getIsActive())
-    //             .config(proto.getConfig())
-    //             .createdAt(
-    //                     Instant.ofEpochSecond(
-    //                             proto.getCreatedAt().getSeconds(),
-    //                             proto.getCreatedAt().getNanos()))
-    //             .updatedAt(
-    //                     Instant.ofEpochSecond(
-    //                             proto.getUpdatedAt().getSeconds(),
-    //                             proto.getUpdatedAt().getNanos()))
-    //             .createdBy(proto.getCreatedBy())
-    //             .updatedBy(proto.getUpdatedBy())
-    //             .tags(String.join(",", proto.getTagsList()))
-    //             .build();
-    // }
+    /**
+     * Serializes this record to a structured map for protocol-agnostic transport.
+     *
+     * <p>Consumers that need the raw fields without proto or JSON encoding can use this
+     * method. The format is stable: keys match field names, values are Java primitives
+     * or ISO-8601 strings for {@link Instant} fields.
+     *
+     * <p>When {@code pipeline.registry.v1.Pipeline} proto becomes available, migrate
+     * callers to {@code toProto()}.
+     *
+     * @return unmodifiable map of field name → value
+     */
+    public java.util.Map<String, Object> toFieldMap() {
+        java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+        map.put("id", id != null ? id.toString() : null);
+        map.put("tenantId", tenantId != null ? tenantId.toString() : null);
+        map.put("name", name);
+        map.put("description", description != null ? description : "");
+        map.put("version", version);
+        map.put("active", active);
+        map.put("config", config);
+        map.put("createdAt", createdAt != null ? createdAt.toString() : null);
+        map.put("updatedAt", updatedAt != null ? updatedAt.toString() : null);
+        map.put("createdBy", createdBy);
+        map.put("updatedBy", updatedBy);
+        map.put("tags", tags);
+        map.put("versionControl", versionControl);
+        return java.util.Collections.unmodifiableMap(map);
+    }
 
     /**
      * Serializes this record to a JSON byte array for transport.
