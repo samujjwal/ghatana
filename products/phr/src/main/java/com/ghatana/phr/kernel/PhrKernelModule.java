@@ -17,6 +17,7 @@ import com.ghatana.phr.kernel.service.ClinicalNoteService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
 import com.ghatana.phr.kernel.service.ImagingService;
 import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
@@ -127,7 +128,8 @@ public class PhrKernelModule extends AbstractKernelModule {
         BillingService billing = new BillingService(context);
         TelemedicineService telemedicine = new TelemedicineService(context);
         CaregiverService caregivers = new CaregiverService(context);
-        EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context);
+        EmergencyAccessReviewWorkflow emergencyReview = EmergencyAccessReviewWorkflow.fromContext(context);
+        EmergencyAccessLogService emergencyAccess = new EmergencyAccessLogService(context, emergencyReview);
 
         serviceCatalog = new PhrServiceCatalog(
             new PhrServiceCatalog.ClinicalServices(
@@ -140,7 +142,7 @@ public class PhrKernelModule extends AbstractKernelModule {
             ),
             new PhrServiceCatalog.AdministrativeServices(appointments, billing, referrals, telemedicine),
             new PhrServiceCatalog.PatientServices(consent, medications, immunizations, caregivers),
-            new PhrServiceCatalog.EmergencyServices(emergencyAccess)
+            new PhrServiceCatalog.EmergencyServices(emergencyAccess, emergencyReview)
         );
 
         services.add(patientRecords);

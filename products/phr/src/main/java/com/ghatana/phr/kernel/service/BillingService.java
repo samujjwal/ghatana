@@ -105,18 +105,26 @@ public class BillingService extends AbstractDataService {
     public Promise<BillingEncounter> createEncounter(BillingEncounter encounter) {
         ensureRunning();
 
-        validateRequired(encounter.patientId(), "patientId");
-        validateRequired(encounter.providerId(), "providerId");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(encounter.patientId(), "patientId");
+        String providerId = PhrInputSanitizationUtils.requireSafeIdentifier(encounter.providerId(), "providerId");
+        String facilityId = encounter.facilityId() == null
+            ? null
+            : PhrInputSanitizationUtils.requireSafeIdentifier(encounter.facilityId(), "facilityId");
+        List<ServiceLine> serviceLines = sanitizeServiceLines(encounter.serviceLines());
+        if (encounter.totalAmount() == null || encounter.totalAmount().signum() < 0) {
+            return Promise.ofException(new IllegalArgumentException("totalAmount must be non-negative"));
+        }
+        String currency = PhrInputSanitizationUtils.requireSafeCode(encounter.currency(), "currency");
 
         String id = encounter.id() != null ? encounter.id() : generateId("enc");
         BillingEncounter toStore = new BillingEncounter(
             id,
-            encounter.patientId(),
-            encounter.providerId(),
-            encounter.facilityId(),
-            encounter.serviceLines(),
+            patientId,
+            providerId,
+            facilityId,
+            serviceLines,
             encounter.totalAmount(),
-            encounter.currency(),
+            currency,
             EncounterStatus.OPEN,
             Instant.now(),
             null
@@ -199,18 +207,24 @@ public class BillingService extends AbstractDataService {
     public Promise<InsuranceClaim> submitClaim(InsuranceClaim claim) {
         ensureRunning();
 
-        validateRequired(claim.patientId(), "patientId");
-        validateRequired(claim.encounterId(), "encounterId");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(claim.patientId(), "patientId");
+        String encounterId = PhrInputSanitizationUtils.requireSafeIdentifier(claim.encounterId(), "encounterId");
+        String insurerId = PhrInputSanitizationUtils.requireSafeIdentifier(claim.insurerId(), "insurerId");
+        String policyNumber = PhrInputSanitizationUtils.requireSafeCode(claim.policyNumber(), "policyNumber");
+        if (claim.claimedAmount() == null || claim.claimedAmount().signum() < 0) {
+            return Promise.ofException(new IllegalArgumentException("claimedAmount must be non-negative"));
+        }
+        String currency = PhrInputSanitizationUtils.requireSafeCode(claim.currency(), "currency");
 
         String id = claim.id() != null ? claim.id() : generateId("clm");
         InsuranceClaim toStore = new InsuranceClaim(
             id,
-            claim.patientId(),
-            claim.encounterId(),
-            claim.insurerId(),
-            claim.policyNumber(),
+            patientId,
+            encounterId,
+            insurerId,
+            policyNumber,
             claim.claimedAmount(),
-            claim.currency(),
+            currency,
             ClaimStatus.SUBMITTED,
             Instant.now(),
             null,
@@ -232,11 +246,14 @@ public class BillingService extends AbstractDataService {
     public Promise<InsuranceClaim> updateClaimStatus(String claimId, ClaimStatus newStatus, String adjNote) {
         ensureRunning();
 
-        return getClaim(claimId)
+        String sanitizedClaimId = PhrInputSanitizationUtils.requireSafeIdentifier(claimId, "claimId");
+        String sanitizedAdjudicationNote = PhrInputSanitizationUtils.sanitizeOptionalText(adjNote, "adjNote", 1000);
+
+        return getClaim(sanitizedClaimId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.<InsuranceClaim>ofException(
-                        new IllegalStateException("Claim not found: " + claimId));
+                        new IllegalStateException("Claim not found: " + sanitizedClaimId));
                 }
                 InsuranceClaim existing = opt.get();
                 InsuranceClaim updated = new InsuranceClaim(
@@ -246,11 +263,11 @@ public class BillingService extends AbstractDataService {
                     newStatus, existing.submittedAt(),
                     newStatus == ClaimStatus.APPROVED || newStatus == ClaimStatus.DENIED
                         ? Instant.now() : existing.adjudicatedAt(),
-                    adjNote
+                    sanitizedAdjudicationNote
                 );
                 return updateRecord(
                     CLAIM_DATASET,
-                    claimId,
+                    sanitizedClaimId,
                     updated,
                     Map.of("status", newStatus.name()),
                     "InsuranceClaim",
@@ -287,6 +304,26 @@ public class BillingService extends AbstractDataService {
     }
 
     // ==================== Private Helpers ====================
+
+    private List<ServiceLine> sanitizeServiceLines(List<ServiceLine> serviceLines) {
+        if (serviceLines == null || serviceLines.isEmpty()) {
+            throw new IllegalArgumentException("serviceLines is required");
+        }
+        return serviceLines.stream()
+            .map(line -> {
+                String serviceCode = PhrInputSanitizationUtils.requireSafeCode(line.serviceCode(), "serviceCode");
+                String description = PhrInputSanitizationUtils.sanitizeRequiredText(line.description(), "description", 500);
+                if (line.quantity() <= 0) {
+                    throw new IllegalArgumentException("quantity must be positive");
+                }
+                if (line.unitPrice() == null || line.unitPrice().signum() < 0) {
+                    throw new IllegalArgumentException("unitPrice must be non-negative");
+                }
+                String currency = PhrInputSanitizationUtils.requireSafeCode(line.currency(), "currency");
+                return new ServiceLine(serviceCode, description, line.quantity(), line.unitPrice(), currency);
+            })
+            .toList();
+    }
 
     // ==================== Inner Types ====================
 

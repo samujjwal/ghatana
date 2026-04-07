@@ -6,8 +6,6 @@
 package com.ghatana.finance.ai;
 
 import com.ghatana.kernel.ai.*;
-import com.ghatana.finance.ai.agents.FraudDetectionAgent;
-import com.ghatana.finance.ai.agents.FraudDetectionResult;
 import io.activej.inject.Injector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,8 +25,9 @@ public class FinanceAIGovernanceTest {
     private ModelGovernanceService governance;
     private AgentOrchestrator orchestrator;
     private AutonomyManager autonomyManager;
-    private FraudDetectionAgent fraudDetectionAgent;
+    private FinanceFraudDetectionKernelAgent fraudDetectionAgent;
     private ModelApprovalRepository approvalRepository;
+    private ModelRepository modelRepository;
 
     @BeforeEach
     public void setUp() {
@@ -40,9 +39,10 @@ public class FinanceAIGovernanceTest {
         orchestrator = injector.getInstance(AgentOrchestrator.class);
         autonomyManager = injector.getInstance(AutonomyManager.class);
         approvalRepository = injector.getInstance(ModelApprovalRepository.class);
+        modelRepository = injector.getInstance(ModelRepository.class);
 
-        // Create fraud detection agent with governance
-        fraudDetectionAgent = new FraudDetectionAgent(governance);
+        // Create fraud detection agent with injector-managed inference wiring
+        fraudDetectionAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
         
         // Register fraud detection agent
         orchestrator.registerAgent(fraudDetectionAgent);
@@ -58,6 +58,11 @@ public class FinanceAIGovernanceTest {
             "approved_operations", List.of("detect_fraud", "assess_risk", "analyze_transaction")
         ));
         approvalRepository.save(approval);
+
+        ModelRecord model = new ModelRecord();
+        model.setModelId("fraud-detection-v2");
+        model.setMetadata(Map.of("prediction_endpoint", "http://127.0.0.1:1/unreachable"));
+        modelRepository.save(model);
     }
 
     @Test
@@ -230,6 +235,7 @@ public class FinanceAIGovernanceTest {
         assertNotNull(metadata);
         assertEquals("new-fraud-model-v3", metadata.getModelId());
         assertEquals("Advanced Fraud Detection Model", metadata.getName());
+        assertEquals("classification", modelRepository.findByModelId("new-fraud-model-v3").getType());
     }
     
     @Test

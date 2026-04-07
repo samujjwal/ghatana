@@ -6,6 +6,7 @@ import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
+import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
 import io.activej.promise.Promise;
 import java.util.Set;
 
@@ -29,9 +30,13 @@ import java.util.Set;
 public class EmergencyServicesModule implements KernelModule {
 
     private final EmergencyAccessLogService emergencyAccessLogService;
+    private final EmergencyAccessReviewWorkflow emergencyAccessReviewWorkflow;
 
-    public EmergencyServicesModule(EmergencyAccessLogService emergencyAccessLogService) {
+    public EmergencyServicesModule(
+            EmergencyAccessLogService emergencyAccessLogService,
+            EmergencyAccessReviewWorkflow emergencyAccessReviewWorkflow) {
         this.emergencyAccessLogService = emergencyAccessLogService;
+        this.emergencyAccessReviewWorkflow = emergencyAccessReviewWorkflow;
     }
 
     @Override
@@ -78,5 +83,9 @@ public class EmergencyServicesModule implements KernelModule {
 
     public EmergencyAccessLogService getEmergencyAccessLogService() {
         return emergencyAccessLogService;
+    }
+
+    public EmergencyAccessReviewWorkflow getEmergencyAccessReviewWorkflow() {
+        return emergencyAccessReviewWorkflow;
     }
 }

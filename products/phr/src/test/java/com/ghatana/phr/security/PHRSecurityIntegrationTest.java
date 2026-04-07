@@ -3,11 +3,14 @@ package com.ghatana.phr.security;
 import com.ghatana.kernel.security.KernelSecurityManager;
 import com.ghatana.kernel.security.PolicyEnforcementPoint;
 import com.ghatana.kernel.security.SecurityContext;
+import com.ghatana.platform.security.crypto.PasswordHasher;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.model.PatientConsent;
+import com.ghatana.phr.kernel.consent.ConsentService;
 import com.ghatana.phr.repository.ConsentRepository;
 import com.ghatana.phr.repository.TenantConfigRepository;
 import com.ghatana.phr.repository.UserRepository;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests policy enforcement and HIPAA compliance.
  */
 class PHRSecurityIntegrationTest {
+    private final PasswordHasher passwordHasher = new PasswordHasher();
+
     private PolicyEnforcementPoint policyEnforcementPoint;
     private KernelSecurityManager securityManager;
     private UserRepository userRepository;
@@ -34,7 +39,10 @@ class PHRSecurityIntegrationTest {
         TenantConfigRepository tenantConfigRepository = new TenantConfigRepository();
         
         PHRSecurityConfig config = new PHRSecurityConfig(
-            userRepository, consentRepository, tenantConfigRepository
+            userRepository,
+            consentRepository,
+            tenantConfigRepository,
+            new TestConsentService()
         );
         
         securityManager = config.kernelSecurityManager();
@@ -50,12 +58,14 @@ class PHRSecurityIntegrationTest {
         provider.addPermission("export:phi");
         provider.setProviderId("PROV-001");
         provider.setAccessLevel("FULL");
+        provider.setPasswordHash(passwordHasher.hash("Password123!"));
         userRepository.save(provider);
 
         PHRUser patient = new PHRUser("patient-1", "john.doe", "john.doe@email.com");
         patient.addRole("PATIENT");
         patient.addPermission("read:patient-records");
         patient.setAccessLevel("SELF");
+        patient.setPasswordHash(passwordHasher.hash("Patient123!"));
         userRepository.save(patient);
 
         PatientConsent consent = new PatientConsent();
@@ -173,7 +183,7 @@ class PHRSecurityIntegrationTest {
     @Test
     void testCredentialValidation_ValidCredentials() {
         KernelSecurityManager.Credentials credentials = 
-            new KernelSecurityManager.Credentials("dr.smith", "password123", null);
+            new KernelSecurityManager.Credentials("dr.smith", "Password123!", null);
         
         KernelSecurityManager.ValidationResult result = 
             securityManager.validateCredentials(credentials);
@@ -184,13 +194,51 @@ class PHRSecurityIntegrationTest {
     @Test
     void testCredentialValidation_InvalidUser() {
         KernelSecurityManager.Credentials credentials = 
-            new KernelSecurityManager.Credentials("unknown", "password123", null);
+            new KernelSecurityManager.Credentials("unknown", "Password123!", null);
         
         KernelSecurityManager.ValidationResult result = 
             securityManager.validateCredentials(credentials);
         
         assertFalse(result.isValid());
         assertEquals("Invalid credentials", result.getReason());
+    }
+
+    @Test
+    void testCredentialValidation_InvalidPassword() {
+        KernelSecurityManager.Credentials credentials =
+            new KernelSecurityManager.Credentials("dr.smith", "WrongPassword123!", null);
+
+        KernelSecurityManager.ValidationResult result =
+            securityManager.validateCredentials(credentials);
+
+        assertFalse(result.isValid());
+        assertEquals("Invalid credentials", result.getReason());
+    }
+
+    @Test
+    void testCredentialValidation_LocksAccountAfterFiveFailures() {
+        for (int attempt = 0; attempt < 4; attempt++) {
+            KernelSecurityManager.ValidationResult result = securityManager.validateCredentials(
+                new KernelSecurityManager.Credentials("dr.smith", "WrongPassword123!", null)
+            );
+
+            assertFalse(result.isValid());
+            assertEquals("Invalid credentials", result.getReason());
+        }
+
+        KernelSecurityManager.ValidationResult lockedResult = securityManager.validateCredentials(
+            new KernelSecurityManager.Credentials("dr.smith", "WrongPassword123!", null)
+        );
+
+        assertFalse(lockedResult.isValid());
+        assertEquals("Account locked", lockedResult.getReason());
+
+        KernelSecurityManager.ValidationResult retryWhileLocked = securityManager.validateCredentials(
+            new KernelSecurityManager.Credentials("dr.smith", "Password123!", null)
+        );
+
+        assertFalse(retryWhileLocked.isValid());
+        assertEquals("Account locked", retryWhileLocked.getReason());
     }
 
     private static class UnauthenticatedContext implements SecurityContext {
@@ -214,5 +262,38 @@ class PHRSecurityIntegrationTest {
         public boolean isAuthenticated() { return false; }
         @Override
         public long getAuthenticationTime() { return 0; }
+    }
+
+    private static final class TestConsentService implements ConsentService {
+        @Override
+        public Promise<ConsentAccessDecision> checkAccess(ConsentCheckRequest request) {
+            String patientId = request.target().patientId();
+            boolean granted = "patient-1".equals(patientId)
+                && request.purposeOfUse() == PurposeOfUse.CARE_DELIVERY;
+
+            if (granted) {
+                return Promise.of(ConsentAccessDecision.allow(
+                    ReasonCode.EXPLICIT_GRANT,
+                    "grant-1",
+                    CacheStatus.MISS,
+                    Instant.now().plus(1, ChronoUnit.DAYS)
+                ));
+            }
+
+            return Promise.of(ConsentAccessDecision.deny(
+                ReasonCode.GRANT_REVOKED,
+                CacheStatus.MISS
+            ));
+        }
+
+        @Override
+        public Promise<ConsentAccessDecision> assertAccess(ConsentCheckRequest request) {
+            return checkAccess(request);
+        }
+
+        @Override
+        public Promise<Void> invalidatePatientAccessCache(CacheInvalidationRequest request) {
+            return Promise.complete();
+        }
     }
 }

@@ -35,17 +35,11 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
     private final TenantConfigRepository tenantConfigRepository;
     private final ConsentService consentService;
 
-    public PHRPrivacyManagerImpl(ConsentRepository consentRepository,
-                                 TenantConfigRepository tenantConfigRepository) {
-        this(consentRepository, tenantConfigRepository, null);
-    }
-
     /**
-     * Creates a privacy manager with optional delegation to {@link ConsentService}.
+     * Creates a privacy manager backed by the centralized consent service.
      *
-     * <p>When {@code consentService} is supplied, consent checks are delegated to the
-     * centralized consent module to keep policy decisions in a single source of truth.
-     * If absent, the legacy repository-based decision path is used for backward compatibility.
+     * <p>Consent checks are delegated to the centralized consent module to keep
+     * policy decisions in a single source of truth.
      */
     public PHRPrivacyManagerImpl(ConsentRepository consentRepository,
                                  TenantConfigRepository tenantConfigRepository,
@@ -53,16 +47,13 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
         this.consentRepository = Objects.requireNonNull(consentRepository, "consentRepository cannot be null");
         this.tenantConfigRepository = Objects.requireNonNull(tenantConfigRepository,
             "tenantConfigRepository cannot be null");
-        this.consentService = consentService;
+        this.consentService = Objects.requireNonNull(consentService, "consentService cannot be null");
     }
 
     @Override
     public ConsentStatus checkConsent(DataRequest request, String tenantId) {
         Objects.requireNonNull(request, "request cannot be null");
-        if (consentService != null) {
-            return checkConsentViaConsentService(request, tenantId);
-        }
-        return checkConsentLegacy(request, tenantId);
+        return checkConsentViaConsentService(request, tenantId);
     }
 
     private ConsentStatus checkConsentViaConsentService(DataRequest request, String tenantId) {
@@ -116,35 +107,6 @@ public class PHRPrivacyManagerImpl implements PrivacyManager {
                 tenantId, request.getRequesterId(), exception.getMessage());
             return ConsentStatus.PENDING;
         }
-    }
-
-    private ConsentStatus checkConsentLegacy(DataRequest request, String tenantId) {
-        String dataType = request.getDataType();
-        String purpose = request.getPurpose();
-        
-        if (dataType.equals("patient-health-records")) {
-            // Use patient_id from metadata when available (provider accessing patient records),
-            // otherwise fall back to the requesterId (patient accessing their own records).
-            String patientId = (request.getMetadata() != null && request.getMetadata().containsKey("patient_id"))
-                ? (String) request.getMetadata().get("patient_id")
-                : request.getRequesterId();
-
-            PatientConsent consent = consentRepository.findByPatientAndPurpose(
-                patientId, purpose
-            );
-            
-            if (consent == null) {
-                return ConsentStatus.PENDING;
-            }
-            
-            if (consent.isExpired()) {
-                return ConsentStatus.EXPIRED;
-            }
-            
-            return consent.isGranted() ? ConsentStatus.GRANTED : ConsentStatus.DENIED;
-        }
-        
-        return ConsentStatus.NOT_REQUIRED;
     }
 
     private static String extractPatientId(DataRequest request) {

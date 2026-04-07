@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Finance implementation of the ModelGovernanceService.
@@ -30,15 +29,17 @@ public class FinanceModelGovernanceImpl implements ModelGovernanceService {
 
     private final ModelApprovalRepository approvalRepository;
     private final ModelPerformanceRepository performanceRepository;
+    private final ModelRepository modelRepository;
     private final AlertService alertService;
-    private final Map<String, ModelRecord> modelRegistry = new ConcurrentHashMap<>();
 
     public FinanceModelGovernanceImpl(
             ModelApprovalRepository approvalRepository,
             ModelPerformanceRepository performanceRepository,
+            ModelRepository modelRepository,
             AlertService alertService) {
         this.approvalRepository = Objects.requireNonNull(approvalRepository, "approvalRepository cannot be null");
         this.performanceRepository = Objects.requireNonNull(performanceRepository, "performanceRepository cannot be null");
+        this.modelRepository = Objects.requireNonNull(modelRepository, "modelRepository cannot be null");
         this.alertService = Objects.requireNonNull(alertService, "alertService cannot be null");
     }
 
@@ -122,12 +123,12 @@ public class FinanceModelGovernanceImpl implements ModelGovernanceService {
         record.setVersion(model.getVersion());
         record.setType(model.getType());
         record.setMetadata(model.getMetadata());
-        modelRegistry.put(model.getModelId(), record);
+        modelRepository.save(record);
     }
 
     @Override
     public ModelMetadata getModelMetadata(String modelId) {
-        ModelRecord record = modelRegistry.get(modelId);
+        ModelRecord record = modelRepository.findByModelId(modelId);
         if (record == null) {
             return null;
         }

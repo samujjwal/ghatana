@@ -63,17 +63,24 @@ public class CaregiverService extends AbstractDataService {
     public Promise<CaregiverRelationship> createRelationship(CaregiverRelationship relationship) {
         ensureRunning();
 
-        validateRequired(relationship.caregiverId(), "caregiverId");
-        validateRequired(relationship.patientId(), "patientId");
-        validateRequired(relationship.relationshipType(), "relationshipType");
+        String caregiverId = PhrInputSanitizationUtils.requireSafeIdentifier(relationship.caregiverId(), "caregiverId");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(relationship.patientId(), "patientId");
+        if (relationship.relationshipType() == null) {
+            return Promise.ofException(new IllegalArgumentException("relationshipType is required"));
+        }
+        Set<String> sanitizedScope = relationship.consentScope() == null
+            ? Set.of()
+            : relationship.consentScope().stream()
+                .map(scope -> PhrInputSanitizationUtils.requireSafeCode(scope, "consentScope"))
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
         String id = relationship.id() != null ? relationship.id() : generateId("cgv");
         CaregiverRelationship toStore = new CaregiverRelationship(
             id,
-            relationship.caregiverId(),
-            relationship.patientId(),
+            caregiverId,
+            patientId,
             relationship.relationshipType(),
-            relationship.consentScope() != null ? relationship.consentScope() : Set.of(),
+            sanitizedScope,
             RelationshipStatus.ACTIVE,
             Instant.now(),
             relationship.expiresAt()

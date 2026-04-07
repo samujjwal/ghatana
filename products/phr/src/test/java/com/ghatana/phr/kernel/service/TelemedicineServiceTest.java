@@ -26,12 +26,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class TelemedicineServiceTest extends EventloopTestBase {
 
     private TelemedicineService service;
+    private PhrNotificationTestSupport.RecordingNotificationSender notificationSender;
 
     @BeforeEach
     void setUp() {
         PhrTestInfrastructure.StubDataCloudAdapter dataCloud =
                 new PhrTestInfrastructure.StubDataCloudAdapter();
-        service = new TelemedicineService(PhrTestInfrastructure.createTestContext(dataCloud));
+        notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
+        service = new TelemedicineService(PhrTestInfrastructure.createTestContext(dataCloud), notificationSender);
         runPromise(service::start);
     }
 
@@ -63,6 +65,9 @@ class TelemedicineServiceTest extends EventloopTestBase {
 
             assertNotNull(stored.id());
             assertThat(stored.status()).isEqualTo(SessionStatus.SCHEDULED);
+            assertThat(notificationSender.telemedicineNotifications()).hasSize(1);
+            assertThat(notificationSender.telemedicineNotifications().getFirst().notificationType())
+                .isEqualTo(PhrNotificationSender.TelemedicineNotificationType.SESSION_SCHEDULED);
         }
 
         @Test
@@ -70,6 +75,27 @@ class TelemedicineServiceTest extends EventloopTestBase {
         void rejectsNullPatient() {
             assertThrows(Exception.class,
                     () -> runPromise(() -> service.scheduleSession(buildSession(null, "dr", null))));
+            clearFatalError();
+        }
+
+        @Test
+        @DisplayName("rejects non-https join urls")
+        void rejectsNonHttpsJoinUrl() {
+            TeleSession session = new TeleSession(
+                null,
+                "patient-1",
+                "provider-1",
+                Instant.now().plusSeconds(3600),
+                30,
+                "ZOOM_HEALTH",
+                "http://zoom.us/j/12345",
+                SessionStatus.SCHEDULED,
+                null,
+                null,
+                null
+            );
+
+            assertThrows(Exception.class, () -> runPromise(() -> service.scheduleSession(session)));
             clearFatalError();
         }
     }
@@ -89,9 +115,10 @@ class TelemedicineServiceTest extends EventloopTestBase {
             assertNotNull(started.startedAt());
 
             TeleSession completed = runPromise(() ->
-                    service.completeSession(started.id(), "Good session"));
+                    service.completeSession(started.id(), "<b>Good session</b>"));
             assertThat(completed.status()).isEqualTo(SessionStatus.COMPLETED);
             assertNotNull(completed.endedAt());
+                assertThat(completed.notes()).isEqualTo("&lt;b&gt;Good session&lt;/b&gt;");
         }
 
         @Test
@@ -115,6 +142,9 @@ class TelemedicineServiceTest extends EventloopTestBase {
                     service.cancelSession(created.id(), "Patient unavailable"));
 
             assertThat(cancelled.status()).isEqualTo(SessionStatus.CANCELLED);
+            assertThat(notificationSender.telemedicineNotifications()).hasSize(2);
+            assertThat(notificationSender.telemedicineNotifications().getLast().notificationType())
+            .isEqualTo(PhrNotificationSender.TelemedicineNotificationType.SESSION_CANCELLED);
         }
 
         @Test

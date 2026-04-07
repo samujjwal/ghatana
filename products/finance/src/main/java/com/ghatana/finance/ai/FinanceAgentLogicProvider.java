@@ -39,6 +39,7 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
 
     public static final String PROVIDER_ID = "finance";
 
+    private final ModelRepository modelRepository;
     private final Map<String, Function<AgentConfig, TypedAgent<?, ?>>> factories =
             new ConcurrentHashMap<>();
 
@@ -47,6 +48,7 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
      * registered later via {@link #registerFactory}.
      */
     public FinanceAgentLogicProvider() {
+        this.modelRepository = null;
         // No real agent wiring; factories must be registered externally.
     }
 
@@ -56,7 +58,18 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
      * @param alertService the standalone alert service for event notifications
      */
     public FinanceAgentLogicProvider(AlertService alertService) {
+        this(alertService, new ModelRepository());
+    }
+
+    /**
+     * Constructor that wires fully initialized finance agents with shared model metadata.
+     *
+     * @param alertService the standalone alert service for event notifications
+     * @param modelRepository the shared model repository backing fraud inference configuration
+     */
+    public FinanceAgentLogicProvider(AlertService alertService, ModelRepository modelRepository) {
         Objects.requireNonNull(alertService, "alertService must not be null");
+        this.modelRepository = Objects.requireNonNull(modelRepository, "modelRepository must not be null");
 
         // Wire RiskAssessmentAgent with minimal default service adapters.
         factories.put("finance:risk-assessment", config -> {
@@ -78,11 +91,42 @@ public class FinanceAgentLogicProvider implements AgentLogicProvider {
             return new BaseAgentAdapter<>(new RiskAssessmentAgent(modelRegistry, inferenceService, riskAlertService));
         });
 
-        // FraudDetectionAgent requires external wiring since FraudDetectionResult
-        // is not available in this package. Register via registerFactory() with
-        // production-grade InferenceService and AlertService implementations.
-        log.info("FinanceAgentLogicProvider initialized; " +
-                "finance:fraud-detection requires external factory registration");
+        factories.put("finance:fraud-detection", config -> {
+            FraudModelInferenceService inferenceService =
+                new DefaultFraudModelInferenceService(this.modelRepository);
+            FraudDetectionAgent.ModelRegistry modelRegistry =
+                modelId -> {
+                    log.info("Fraud model retraining triggered for '{}'", modelId);
+                    return Promise.complete();
+                };
+            FraudDetectionAgent.InferenceService fraudInference =
+                (modelId, features) -> {
+                    FraudModelPrediction prediction = inferenceService.predict(modelId, features);
+                    return FraudDetectionResult.scored(
+                        String.valueOf(features.getOrDefault("trade_id", "unknown")),
+                        String.valueOf(features.getOrDefault("account_id", "unknown")),
+                        prediction.getFraudType(),
+                        prediction.getFraudScore(),
+                        prediction.getRiskLevel(),
+                        prediction.isFraudulent(),
+                        prediction.getConfidence(),
+                        prediction.getAccuracy(),
+                        features,
+                        0L,
+                        prediction.getInferenceSource(),
+                        prediction.getModelVersion(),
+                        prediction.getLatencyMs()
+                    );
+                };
+            FraudDetectionAgent.AlertService fraudAlertService =
+                alert -> {
+                    alertService.sendAlert("Fraud Alert", alert.toString());
+                    return Promise.complete();
+                };
+            return new BaseAgentAdapter<>(new FraudDetectionAgent(modelRegistry, fraudInference, fraudAlertService));
+        });
+
+        log.info("FinanceAgentLogicProvider initialized with fraud and risk agent factories");
     }
 
     @Override

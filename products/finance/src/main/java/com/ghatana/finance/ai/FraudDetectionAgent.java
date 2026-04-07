@@ -8,7 +8,7 @@ import com.ghatana.agent.framework.runtime.BaseAgent;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,10 +38,26 @@ import java.util.Set;
 public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionResult> {
 
     private static final String AGENT_ID = "fraud-detection-agent";
+    private static final String MODEL_ID = "fraud-detection-v2";
 
     private final ModelRegistry modelRegistry;
     private final InferenceService inferenceService;
     private final AlertService alertService;
+    private final FraudFeatureExtractor featureExtractor;
+
+    /**
+     * Creates a new fraud detection agent using the default output generator.
+     *
+     * @param modelRegistry the model registry for fraud detection models
+     * @param inferenceService the inference service for predictions
+     * @param alertService the alert service for notifications
+     */
+    public FraudDetectionAgent(
+            ModelRegistry modelRegistry,
+            InferenceService inferenceService,
+            AlertService alertService) {
+        this(defaultOutputGenerator(inferenceService), modelRegistry, inferenceService, alertService);
+    }
 
     /**
      * Creates a new fraud detection agent.
@@ -60,6 +76,7 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
         this.modelRegistry = Objects.requireNonNull(modelRegistry, "modelRegistry cannot be null");
         this.inferenceService = Objects.requireNonNull(inferenceService, "inferenceService cannot be null");
         this.alertService = Objects.requireNonNull(alertService, "alertService cannot be null");
+        this.featureExtractor = new FraudFeatureExtractor();
     }
 
     // ==================== GAA Lifecycle ====================
@@ -86,7 +103,10 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
         }
 
         // Enrich with historical context
-        Map<String, Object> features = extractFeatures(input);
+        Map<String, Object> features = new LinkedHashMap<>(featureExtractor.extractTradeEventFeatures(input));
+        features.putIfAbsent("trade_id", input.getTradeId());
+        features.putIfAbsent("account_id", input.getAccountId());
+        features.putIfAbsent("symbol", input.getSymbol());
 
         return TradeEvent.builder()
             .tradeId(input.getTradeId())
@@ -94,9 +114,14 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
             .symbol(input.getSymbol())
             .quantity(input.getQuantity())
             .price(input.getPrice())
+            .marketPrice(input.getMarketPrice())
             .timestamp(input.getTimestamp())
             .market(input.getMarket())
-            .features(features)
+                .marketRegion(input.getMarketRegion())
+                .counterpartyCountry(input.getCounterpartyCountry())
+                .executionChannel(input.getExecutionChannel())
+            .eventType(input.getEventType())
+                .features(Map.copyOf(features))
             .build();
     }
 
@@ -205,51 +230,9 @@ public class FraudDetectionAgent extends BaseAgent<TradeEvent, FraudDetectionRes
 
     // ==================== Private Methods ====================
 
-    private Map<String, Object> extractFeatures(TradeEvent event) {
-        return Map.of(
-            "price_deviation", calculatePriceDeviation(event),
-            "volume_anomaly", calculateVolumeAnomaly(event),
-            "time_pattern", analyzeTimePattern(event),
-            "account_history", getAccountHistory(event.getAccountId()),
-            "market_correlation", getMarketCorrelation(event),
-            "velocity_score", calculateVelocityScore(event)
-        );
-    }
-
-    private double calculatePriceDeviation(TradeEvent event) {
-        // Calculate deviation from market price
-        return Math.abs(event.getPrice() - event.getMarketPrice()) / event.getMarketPrice();
-    }
-
-    private double calculateVolumeAnomaly(TradeEvent event) {
-        // Calculate volume anomaly score
-        return event.getQuantity() / getAverageVolume(event.getSymbol());
-    }
-
-    private String analyzeTimePattern(TradeEvent event) {
-        // Analyze if trade occurs during suspicious hours
-        int hour = event.getTimestamp().atZone(ZoneOffset.UTC).getHour();
-        return (hour < 9 || hour > 16) ? "after_hours" : "market_hours";
-    }
-
-    private Object getAccountHistory(String accountId) {
-        // Retrieve account trading history
-        return Map.of("account_id", accountId);
-    }
-
-    private double getMarketCorrelation(TradeEvent event) {
-        // Calculate correlation with market movements
-        return 0.5; // Placeholder
-    }
-
-    private double calculateVelocityScore(TradeEvent event) {
-        // Calculate trading velocity (trades per minute)
-        return 1.0; // Placeholder
-    }
-
-    private double getAverageVolume(String symbol) {
-        // Get average volume for symbol
-        return 1000.0; // Placeholder
+    private static OutputGenerator<TradeEvent, FraudDetectionResult> defaultOutputGenerator(
+            InferenceService inferenceService) {
+        return (input, context) -> Promise.of(inferenceService.predict(MODEL_ID, input.getFeatures()));
     }
 
     private boolean shouldRetrain(FraudDetectionResult output) {

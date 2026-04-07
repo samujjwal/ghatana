@@ -1,5 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
 import com.ghatana.platform.cache.DistributedCachePort;
@@ -53,11 +55,13 @@ public class ConsentManagementService extends AbstractDataService implements Con
     private static final int CHECK_ACCESS_MAX_PER_WINDOW = 200;
     /** Sliding window duration for rate limiting. */
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);
+    private static final Duration EMERGENCY_ACCESS_WINDOW = Duration.ofHours(4);
 
     /** Distributed cache for consent decisions — multi-node safe (ISSUE-X02). */
     private final DistributedCachePort<String, ConsentCacheEntry> consentCache;
     private final RateLimiter createGrantLimiter;
     private final RateLimiter checkAccessLimiter;
+    private final PhrNotificationSender notificationSender;
 
     /**
      * Constructs a ConsentManagementService with a supplied distributed cache.
@@ -67,8 +71,16 @@ public class ConsentManagementService extends AbstractDataService implements Con
      */
     public ConsentManagementService(KernelContext context,
                                      DistributedCachePort<String, ConsentCacheEntry> consentCache) {
+        this(context, consentCache, PhrNotificationSenders.fromContext(context));
+    }
+
+    ConsentManagementService(
+            KernelContext context,
+            DistributedCachePort<String, ConsentCacheEntry> consentCache,
+            PhrNotificationSender notificationSender) {
         super(context);
         this.consentCache = Objects.requireNonNull(consentCache, "consentCache must not be null");
+        this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
         this.createGrantLimiter = DefaultRateLimiter.create(
             RateLimiterConfig.builder()
                 .maxRequestsPerMinute(CREATE_GRANT_MAX_PER_WINDOW)
@@ -91,6 +103,10 @@ public class ConsentManagementService extends AbstractDataService implements Con
      */
     public ConsentManagementService(KernelContext context) {
         this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)));
+    }
+
+    ConsentManagementService(KernelContext context, PhrNotificationSender notificationSender) {
+        this(context, new InMemoryCacheAdapter<>(50_000, Duration.ofMinutes(5)), notificationSender);
     }
 
     @Override
@@ -146,14 +162,18 @@ public class ConsentManagementService extends AbstractDataService implements Con
     public Promise<ConsentGrant> createGrant(ConsentGrant grant) {
         ensureRunning();
 
-        String rateLimitKey = grant.getRecipientId();
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(grant.getPatientId(), "patientId");
+        String recipientId = PhrInputSanitizationUtils.requireSafeIdentifier(grant.getRecipientId(), "recipientId");
+        ConsentScope sanitizedScope = sanitizeScope(grant.getScope());
+
+        String rateLimitKey = recipientId;
         if (!tryAcquire(createGrantLimiter, rateLimitKey)) {
             return Promise.ofException(new RateLimitExceededException(
                     "Grant creation rate limit exceeded for actor: " + rateLimitKey));
         }
 
         // Check for conflicting grants
-        return checkConflictingGrants(grant.getPatientId(), grant.getRecipientId(), grant.getScope())
+        return checkConflictingGrants(patientId, recipientId, sanitizedScope)
             .then(conflict -> {
                 if (conflict) {
                     return Promise.<ConsentGrant>ofException(
@@ -161,7 +181,16 @@ public class ConsentManagementService extends AbstractDataService implements Con
                 }
 
                 String grantId = grant.getId() != null ? grant.getId() : generateId("cns");
-                ConsentGrant toStore = grant.withId(grantId).withCreatedAt(Instant.now());
+                ConsentGrant toStore = new ConsentGrant(
+                    grantId,
+                    patientId,
+                    recipientId,
+                    sanitizedScope,
+                    grant.getStatus(),
+                    Instant.now(),
+                    grant.getExpiresAt(),
+                    grant.getRevokedAt()
+                );
 
                 return createRecord(
                     CONSENT_DATASET,
@@ -176,6 +205,7 @@ public class ConsentManagementService extends AbstractDataService implements Con
                     "ConsentGrant",
                     1
                 ).then(stored -> invalidateConsentCache(stored.getRecipientId(), stored.getPatientId())
+                    .then($ -> notifyConsentChange(stored, PhrNotificationSender.ConsentChangeType.GRANT_CREATED))
                     .then($ -> audit("GRANT_CREATE", stored.getPatientId(),
                         "Grant created for " + stored.getRecipientId()))
                     .map($ -> stored));
@@ -206,6 +236,7 @@ public class ConsentManagementService extends AbstractDataService implements Con
                     .then($ -> invalidatePatientAccessCache(
                             new CacheInvalidationRequest(null, grant.getPatientId(),
                                     CacheInvalidationReason.GRANT_REVOKED)))
+            .then($ -> notifyConsentChange(revoked, PhrNotificationSender.ConsentChangeType.GRANT_REVOKED))
                     .then($ -> Promise.complete());
             });
     }
@@ -379,19 +410,21 @@ public class ConsentManagementService extends AbstractDataService implements Con
         ensureRunning();
 
         // Validate emergency request
-        if (request.getJustification() == null || request.getJustification().isBlank()) {
-            return Promise.ofException(new IllegalStateException("Emergency access requires justification"));
-        }
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getPatientId(), "patientId");
+        String providerId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getProviderId(), "providerId");
+        String justification = PhrInputSanitizationUtils.sanitizeRequiredText(request.getJustification(), "justification", 2000);
+        String category = PhrInputSanitizationUtils.requireSafeCode(request.getCategory(), "category");
 
-        Instant expiresAt = Instant.now().plus(Duration.ofHours(4)); // Default 4 hours
+        Instant grantedAt = Instant.now();
+        Instant expiresAt = grantedAt.plus(EMERGENCY_ACCESS_WINDOW);
 
         EmergencyGrant grant = new EmergencyGrant(
             generateId("emg"),
-            request.getPatientId(),
-            request.getProviderId(),
-            request.getJustification(),
-            request.getCategory(),
-            Instant.now(),
+            patientId,
+            providerId,
+            justification,
+            category,
+            grantedAt,
             expiresAt,
             Set.of("allergies", "medications", "bloodType", "emergencyContacts"), // Limited scope
             false
@@ -402,16 +435,16 @@ public class ConsentManagementService extends AbstractDataService implements Con
             grant.getId(),
             grant,
             Map.of(
-                "patientId", grant.getPatientId(),
-                "providerId", grant.getProviderId(),
+                "patientId", patientId,
+                "providerId", providerId,
                 "status", "ACTIVE",
                 "expiresAt", expiresAt.toString()
             ),
             "EmergencyGrant",
             1
         ).then(stored -> notifyPatientOfEmergencyAccess(stored)
-            .then($ -> audit("EMERGENCY_ACCESS", request.getPatientId(),
-                "Emergency access granted to " + request.getProviderId()))
+            .then($ -> audit("EMERGENCY_ACCESS", patientId,
+                "Emergency access granted to " + providerId))
             .map($ -> stored));
     }
 
@@ -490,9 +523,41 @@ public class ConsentManagementService extends AbstractDataService implements Con
     }
 
     private Promise<Void> notifyPatientOfEmergencyAccess(EmergencyGrant grant) {
-        // Send push + SMS notification
-        // Implementation would integrate with notification service
-        return Promise.complete();
+        return notificationSender.notifyConsentChange(new PhrNotificationSender.ConsentChangeNotification(
+            grant.getPatientId(),
+            grant.getProviderId(),
+            grant.getId(),
+            PhrNotificationSender.ConsentChangeType.EMERGENCY_ACCESS_GRANTED,
+            PhrNotificationSender.DEFAULT_CHANNELS
+        ));
+    }
+
+    private Promise<Void> notifyConsentChange(
+            ConsentGrant grant,
+            PhrNotificationSender.ConsentChangeType changeType) {
+        return notificationSender.notifyConsentChange(new PhrNotificationSender.ConsentChangeNotification(
+            grant.getPatientId(),
+            grant.getRecipientId(),
+            grant.getId(),
+            changeType,
+            PhrNotificationSender.DEFAULT_CHANNELS
+        ));
+    }
+
+    private ConsentScope sanitizeScope(ConsentScope scope) {
+        if (scope == null) {
+            throw new IllegalArgumentException("scope is required");
+        }
+        Set<String> resourceTypes = scope.resourceTypes.stream()
+            .map(resourceType -> PhrInputSanitizationUtils.requireSafeCode(resourceType, "scope.resourceTypes"))
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        Set<String> documentIds = scope.specificDocumentIds.stream()
+            .map(documentId -> PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "scope.documentIds"))
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        Set<String> actions = scope.actions.stream()
+            .map(action -> PhrInputSanitizationUtils.requireSafeCode(action, "scope.actions"))
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        return new ConsentScope(resourceTypes, scope.allDocuments, documentIds, actions);
     }
 
     // ==================== Inner Types ====================
@@ -507,9 +572,16 @@ public class ConsentManagementService extends AbstractDataService implements Con
         private final Instant expiresAt;
         private final Instant revokedAt;
 
-        public ConsentGrant(String id, String patientId, String recipientId,
-                           ConsentScope scope, String status, Instant createdAt,
-                           Instant expiresAt, Instant revokedAt) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public ConsentGrant(
+            @JsonProperty("id") String id,
+            @JsonProperty("patientId") String patientId,
+            @JsonProperty("recipientId") String recipientId,
+            @JsonProperty("scope") ConsentScope scope,
+            @JsonProperty("status") String status,
+            @JsonProperty("createdAt") Instant createdAt,
+            @JsonProperty("expiresAt") Instant expiresAt,
+            @JsonProperty("revokedAt") Instant revokedAt) {
             this.id = id;
             this.patientId = patientId;
             this.recipientId = recipientId;
@@ -568,13 +640,25 @@ public class ConsentManagementService extends AbstractDataService implements Con
         private final Set<String> specificDocumentIds;
         private final Set<String> actions; // READ, WRITE
 
-        public ConsentScope(Set<String> resourceTypes, boolean allDocuments,
-                           Set<String> specificDocumentIds, Set<String> actions) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public ConsentScope(
+                @JsonProperty("resourceTypes") Set<String> resourceTypes,
+                @JsonProperty("allDocuments") boolean allDocuments,
+                @JsonProperty("specificDocumentIds") Set<String> specificDocumentIds,
+                @JsonProperty("actions") Set<String> actions) {
             this.resourceTypes = resourceTypes != null ? resourceTypes : Set.of();
             this.allDocuments = allDocuments;
             this.specificDocumentIds = specificDocumentIds != null ? specificDocumentIds : Set.of();
             this.actions = actions != null ? actions : Set.of("READ");
         }
+
+        public Set<String> getResourceTypes() { return resourceTypes; }
+
+        public boolean isAllDocuments() { return allDocuments; }
+
+        public Set<String> getSpecificDocumentIds() { return specificDocumentIds; }
+
+        public Set<String> getActions() { return actions; }
 
         public boolean includes(String resourceType) {
             return resourceTypes.contains(resourceType) || resourceTypes.contains("*");

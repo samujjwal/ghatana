@@ -5,6 +5,9 @@
 package com.ghatana.products.finance;
 
 import com.ghatana.finance.kernel.FinanceCapabilities;
+import com.ghatana.kernel.ai.AgentOrchestrator;
+import com.ghatana.kernel.ai.AutonomyManager;
+import com.ghatana.kernel.ai.ModelGovernanceService;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
@@ -88,6 +91,7 @@ public final class FinanceProductModule implements KernelModule {
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private FinanceKernelModule kernelModule;
+    private FinanceAiRuntimeService aiRuntimeService;
     private FinanceProductShell productShell;
     private FinanceBFF bff;
     private KernelContext context;
@@ -166,6 +170,7 @@ public final class FinanceProductModule implements KernelModule {
             kernelModule = null;
         }
 
+        aiRuntimeService = new FinanceAiRuntimeService(FinanceAiRuntimeConfig.fromContext(context));
         productShell = new FinanceProductShell(context);
         bff = new FinanceBFF(context);
 
@@ -186,6 +191,10 @@ public final class FinanceProductModule implements KernelModule {
 
         initializeDomainModules();
 
+        context.registerService(FinanceAiRuntimeService.class, aiRuntimeService);
+        context.registerService(AgentOrchestrator.class, aiRuntimeService);
+        context.registerService(ModelGovernanceService.class, aiRuntimeService);
+        context.registerService(AutonomyManager.class, aiRuntimeService);
         context.registerService(FinanceProductShell.class, productShell);
         context.registerService(FinanceBFF.class, bff);
 
@@ -220,7 +229,7 @@ public final class FinanceProductModule implements KernelModule {
         Promise<Void> kernelStart = kernelModule != null
                 ? kernelModule.start() : Promise.complete();
 
-        return kernelStart.then($ -> {
+        return kernelStart.then($ -> aiRuntimeService.start()).then($ -> {
             startDomainModules();
             productShell.start();
             bff.start();
@@ -261,13 +270,14 @@ public final class FinanceProductModule implements KernelModule {
         if (productShell != null) {
             productShell.stop();
         }
+        Promise<Void> aiStop = aiRuntimeService != null ? aiRuntimeService.stop() : Promise.complete();
 
         stopDomainModules();
 
         Promise<Void> kernelStop = kernelModule != null
                 ? kernelModule.stop() : Promise.complete();
 
-        return kernelStop.then($ -> {
+        return aiStop.then($ -> kernelStop).then($ -> {
             log.info("Finance product module stopped successfully");
             return Promise.complete();
         });
@@ -301,7 +311,8 @@ public final class FinanceProductModule implements KernelModule {
             boolean bffHealthy = bff != null && bff.isHealthy();
             boolean domainsHealthy = checkDomainModulesHealth();
             boolean kernelHealthy = kernelModule == null || kernelModule.getHealthStatus().isHealthy();
-            boolean overallHealthy = shellHealthy && bffHealthy && domainsHealthy && kernelHealthy;
+            boolean aiHealthy = aiRuntimeService != null && aiRuntimeService.isHealthy();
+            boolean overallHealthy = shellHealthy && bffHealthy && domainsHealthy && kernelHealthy && aiHealthy;
 
             return overallHealthy
                 ? HealthStatus.healthy("All finance services and 14 domains operational")

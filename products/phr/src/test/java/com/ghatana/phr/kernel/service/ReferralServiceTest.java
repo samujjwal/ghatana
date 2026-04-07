@@ -72,6 +72,29 @@ class ReferralServiceTest extends EventloopTestBase {
                     () -> runPromise(() -> service.createReferral(buildReferral(null, "dr", "spec", null))));
             clearFatalError();
         }
+
+        @Test
+        @DisplayName("sanitizes clinical reason")
+        void sanitizesClinicalReason() {
+            Referral referral = new Referral(
+                null,
+                "patient-1",
+                "enc-1",
+                "dr-from",
+                null,
+                "spec-cardio",
+                "<script>alert('xss')</script>",
+                ReferralUrgency.ROUTINE,
+                ReferralStatus.PENDING,
+                Instant.now(),
+                null,
+                null
+            );
+
+            Referral stored = runPromise(() -> service.createReferral(referral));
+
+            assertThat(stored.clinicalReason()).isEqualTo("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
+        }
     }
 
     @Nested

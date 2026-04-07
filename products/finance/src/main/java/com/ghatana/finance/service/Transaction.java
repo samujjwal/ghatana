@@ -24,6 +24,10 @@ public class Transaction {
     private double amount;
     private String currency;
     private String location;
+    private String merchantCategory;
+    private String counterpartyCountry;
+    private String paymentMethod;
+    private double velocity;
     private Instant timestamp;
     private String status;
     
@@ -66,6 +70,38 @@ public class Transaction {
     public void setLocation(String location) {
         this.location = location;
     }
+
+    public String getMerchantCategory() {
+        return merchantCategory;
+    }
+
+    public void setMerchantCategory(String merchantCategory) {
+        this.merchantCategory = merchantCategory;
+    }
+
+    public String getCounterpartyCountry() {
+        return counterpartyCountry;
+    }
+
+    public void setCounterpartyCountry(String counterpartyCountry) {
+        this.counterpartyCountry = counterpartyCountry;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public double getVelocity() {
+        return velocity;
+    }
+
+    public void setVelocity(double velocity) {
+        this.velocity = velocity;
+    }
     
     public Instant getTimestamp() {
         return timestamp;
@@ -86,9 +122,14 @@ public class Transaction {
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("id", id);
+        map.put("tenant_id", tenantId);
         map.put("amount", amount);
         map.put("currency", currency);
         map.put("location", location);
+        map.put("merchant_category", merchantCategory);
+        map.put("counterparty_country", counterpartyCountry);
+        map.put("payment_method", paymentMethod);
+        map.put("velocity", velocity);
         map.put("timestamp", timestamp);
         map.put("status", status);
         return map;

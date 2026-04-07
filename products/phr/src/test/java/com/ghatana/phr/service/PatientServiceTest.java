@@ -2,6 +2,7 @@ package com.ghatana.phr.service;
 
 import com.ghatana.kernel.observability.AuditTrailService;
 import com.ghatana.kernel.observability.KernelTelemetryManager;
+import com.ghatana.phr.model.PatientRecord;
 import com.ghatana.kernel.security.TenantSecurityContext;
 import com.ghatana.phr.model.PatientRecords;
 import com.ghatana.phr.observability.PHRAuditTrailServiceImpl;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -66,5 +68,64 @@ class PatientServiceTest {
         
         PatientRecords records = recordsRepository.findByPatientId("patient-1");
         assertEquals(1, records.size());
+    }
+
+    @Test
+    void testCreateRecord_SanitizesNestedRecordData() {
+        patientService.createRecord("patient-1", Map.of(
+            "diagnosis", "<script>alert('xss')</script>",
+            "nested", Map.of("note", "<b>Urgent</b>")
+        ));
+
+        PatientRecords records = recordsRepository.findByPatientId("patient-1");
+        PatientRecord stored = records.getRecords().get(0);
+
+        assertThat(stored.getData().get("diagnosis"))
+            .isEqualTo("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> nested = (Map<String, Object>) stored.getData().get("nested");
+        assertThat(nested)
+            .containsEntry("note", "&lt;b&gt;Urgent&lt;/b&gt;");
+    }
+
+    @Test
+    void testCreateRecord_RejectsUnsafePatientId() {
+        assertThrows(IllegalArgumentException.class,
+            () -> patientService.createRecord("patient 1", Map.of("diagnosis", "Hypertension")));
+    }
+
+    @Test
+    void testCreateRecord_RollsBackWhenAuditFails() {
+        KernelTelemetryManager telemetry = new PHRTelemetryManagerImpl();
+        AuditTrailService failingAuditTrail = new AuditTrailService() {
+            @Override
+            public void recordAuditEvent(AuditEvent event) {
+                throw new IllegalStateException("audit storage unavailable");
+            }
+
+            @Override
+            public java.util.List<AuditEvent> queryAuditEvents(AuditQuery query) {
+                return java.util.List.of();
+            }
+
+            @Override
+            public ImmutableAuditTrail getImmutableTrail(String entityId) {
+                throw new UnsupportedOperationException("not used in test");
+            }
+
+            @Override
+            public VerificationResult verifyTrailIntegrity(String entityId) {
+                return new VerificationResult(true, "not used", java.util.List.of());
+            }
+        };
+
+        patientService = new PatientService(telemetry, failingAuditTrail, recordsRepository);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+            patientService.createRecord("patient-1", Map.of("diagnosis", "Hypertension"))
+        );
+
+        assertTrue(exception.getMessage().contains("audit logging failed"));
+        assertTrue(recordsRepository.findByPatientId("patient-1").isEmpty());
     }
 }

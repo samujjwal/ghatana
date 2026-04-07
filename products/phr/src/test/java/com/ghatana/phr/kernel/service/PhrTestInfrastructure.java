@@ -43,10 +43,20 @@ final class PhrTestInfrastructure {
      * @return a test-scoped KernelContext
      */
     static KernelContext createTestContext(DataCloudKernelAdapter dataCloud) {
+        return createTestContext(dataCloud, Map.of());
+    }
+
+    static KernelContext createTestContext(
+            DataCloudKernelAdapter dataCloud,
+            Map<Class<?>, Object> dependencies) {
         return new KernelContext() {
             @SuppressWarnings("unchecked")
             @Override
             public <T> T getDependency(Class<T> type) {
+                Object dependency = dependencies.get(type);
+                if (dependency != null) {
+                    return (T) dependency;
+                }
                 if (DataCloudKernelAdapter.class.isAssignableFrom(type)) return (T) dataCloud;
                 return null;
             }

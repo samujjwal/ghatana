@@ -80,6 +80,24 @@ class CaregiverServiceTest extends EventloopTestBase {
                     () -> runPromise(() -> service.createRelationship(build("cg1", null))));
             clearFatalError();
         }
+
+        @Test
+        @DisplayName("rejects consent scope with unsupported characters")
+        void rejectsUnsafeConsentScope() {
+            CaregiverRelationship relationship = new CaregiverRelationship(
+                null,
+                "caregiver-1",
+                "patient-1",
+                RelationshipType.PARENT,
+                Set.of("labs", "bad scope"),
+                RelationshipStatus.ACTIVE,
+                null,
+                null
+            );
+
+            assertThrows(Exception.class, () -> runPromise(() -> service.createRelationship(relationship)));
+            clearFatalError();
+        }
     }
 
     @Nested

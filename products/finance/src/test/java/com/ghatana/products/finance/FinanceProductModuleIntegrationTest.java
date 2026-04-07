@@ -5,12 +5,20 @@
 package com.ghatana.products.finance;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 import com.ghatana.finance.kernel.FinanceCapabilities;
+import com.ghatana.kernel.ai.AgentOrchestrator;
+import com.ghatana.kernel.ai.AutonomyManager;
+import com.ghatana.kernel.ai.ModelGovernanceService;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.products.finance.bff.FinanceBFF;
 import com.ghatana.products.finance.rules.service.FinanceRulesService;
+import com.ghatana.products.finance.shell.FinanceProductShell;
 import io.activej.promise.Promise;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -98,7 +106,13 @@ public class FinanceProductModuleIntegrationTest extends EventloopTestBase {
     @Test
     void testInitialization() {
         module.initialize(mockContext);
-        assertThat(true).isTrue();
+
+        verify(mockContext).registerService(eq(FinanceAiRuntimeService.class), any(FinanceAiRuntimeService.class));
+        verify(mockContext).registerService(eq(AgentOrchestrator.class), any(FinanceAiRuntimeService.class));
+        verify(mockContext).registerService(eq(ModelGovernanceService.class), any(FinanceAiRuntimeService.class));
+        verify(mockContext).registerService(eq(AutonomyManager.class), any(FinanceAiRuntimeService.class));
+        verify(mockContext).registerService(eq(FinanceProductShell.class), any(FinanceProductShell.class));
+        verify(mockContext).registerService(eq(FinanceBFF.class), any(FinanceBFF.class));
     }
 
     @Test

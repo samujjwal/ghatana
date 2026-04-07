@@ -5,6 +5,8 @@
 package com.ghatana.products.finance.shell;
 
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public final class FinanceProductShell {
+public final class FinanceProductShell implements KernelLifecycleAware {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceProductShell.class);
 
@@ -41,19 +43,23 @@ public final class FinanceProductShell {
     /**
      * Starts the finance product shell.
      */
-    public void start() {
+    @Override
+    public Promise<Void> start() {
         log.info("Starting Finance product shell");
         started = true;
         log.info("Finance product shell started");
+        return Promise.complete();
     }
 
     /**
      * Stops the finance product shell.
      */
-    public void stop() {
+    @Override
+    public Promise<Void> stop() {
         log.info("Stopping Finance product shell");
         started = false;
         log.info("Finance product shell stopped");
+        return Promise.complete();
     }
 
     /**
@@ -61,8 +67,14 @@ public final class FinanceProductShell {
      *
      * @return true if healthy
      */
+    @Override
     public boolean isHealthy() {
         return started;
+    }
+
+    @Override
+    public String getName() {
+        return "finance-product-shell";
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.adapter.datacloud.DataQueryRequest;
 import com.ghatana.kernel.adapter.datacloud.DataReadRequest;
 import com.ghatana.kernel.adapter.datacloud.DataWriteRequest;
@@ -9,7 +11,6 @@ import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -46,9 +47,15 @@ public class AppointmentService extends AbstractDataService {
     private static final ZoneId NEPAL_ZONE = ZoneId.of("Asia/Kathmandu");
 
     private final Map<String, SlotCacheEntry> slotCache = new ConcurrentHashMap<>();
+    private final PhrNotificationSender notificationSender;
 
     public AppointmentService(KernelContext context) {
+        this(context, PhrNotificationSenders.fromContext(context));
+    }
+
+    AppointmentService(KernelContext context, PhrNotificationSender notificationSender) {
         super(context);
+        this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
     }
 
     @Override
@@ -101,8 +108,24 @@ public class AppointmentService extends AbstractDataService {
     public Promise<Appointment> createAppointment(AppointmentRequest request) {
         ensureRunning();
 
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getPatientId(), "patientId");
+        String providerId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getProviderId(), "providerId");
+        String slotId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getSlotId(), "slotId");
+        if (request.getScheduledTime() == null) {
+            return Promise.ofException(new IllegalArgumentException("scheduledTime is required"));
+        }
+        if (request.getDurationMinutes() <= 0 || request.getDurationMinutes() > 480) {
+            return Promise.ofException(new IllegalArgumentException("durationMinutes must be between 1 and 480"));
+        }
+        String reason = PhrInputSanitizationUtils.sanitizeRequiredText(request.getReason(), "reason", 500);
+        String appointmentType = PhrInputSanitizationUtils.requireAllowedValue(
+            request.getAppointmentType(),
+            "appointmentType",
+            java.util.Set.of("IN_PERSON", "TELEMEDICINE")
+        );
+
         // Check slot availability with optimistic locking
-        return checkSlotAvailability(request.getSlotId())
+        return checkSlotAvailability(slotId)
             .then(available -> {
                 if (!available) {
                     return Promise.<Appointment>ofException(
@@ -114,14 +137,14 @@ public class AppointmentService extends AbstractDataService {
 
                 Appointment appointment = new Appointment(
                     appointmentId,
-                    request.getPatientId(),
-                    request.getProviderId(),
-                    request.getSlotId(),
+                    patientId,
+                    providerId,
+                    slotId,
                     request.getScheduledTime(),
                     request.getDurationMinutes(),
-                    request.getReason(),
+                    reason,
                     "SCHEDULED",
-                    request.getAppointmentType(),
+                    appointmentType,
                     now,
                     now,
                     1 // version for optimistic locking
@@ -141,10 +164,10 @@ public class AppointmentService extends AbstractDataService {
                 );
 
                 return dataCloud.writeData(writeRequest)
-                    .then($ -> markSlotBooked(request.getSlotId()))
+                    .then($ -> markSlotBooked(slotId))
                     .then($ -> createReminderPlan(appointment))
-                    .then($ -> audit("APPOINTMENT_CREATE", request.getPatientId(),
-                        "Appointment scheduled with " + request.getProviderId()))
+                    .then($ -> audit("APPOINTMENT_CREATE", patientId,
+                        "Appointment scheduled with " + providerId))
                     .map($ -> appointment)
                     .whenException(e -> {
                         // Conflict detected - slot was booked by another request
@@ -206,7 +229,10 @@ public class AppointmentService extends AbstractDataService {
             return Promise.ofException(new IllegalStateException("Service not running"));
         }
 
-        return getAppointment(appointmentId)
+        String sanitizedAppointmentId = PhrInputSanitizationUtils.requireSafeIdentifier(appointmentId, "appointmentId");
+        String sanitizedReason = PhrInputSanitizationUtils.sanitizeRequiredText(reason, "reason", 500);
+
+        return getAppointment(sanitizedAppointmentId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.ofException(new IllegalStateException("Appointment not found"));
@@ -222,8 +248,8 @@ public class AppointmentService extends AbstractDataService {
 
                 return updateAppointment(cancelled)
                     .then($ -> freeSlot(appointment.getSlotId()))
-                    .then($ -> cancelReminders(appointmentId))
-                    .then($ -> audit("APPOINTMENT_CANCEL", appointment.getPatientId(), reason));
+                    .then($ -> cancelReminders(cancelled))
+                    .then($ -> audit("APPOINTMENT_CANCEL", appointment.getPatientId(), sanitizedReason));
             });
     }
 
@@ -354,13 +380,23 @@ public class AppointmentService extends AbstractDataService {
     }
 
     private Promise<Void> createReminderPlan(Appointment appointment) {
-        // Integration with reminder/notification service
-        return Promise.complete();
+        return notificationSender.scheduleAppointmentReminder(new PhrNotificationSender.AppointmentReminderNotification(
+            appointment.getId(),
+            appointment.getPatientId(),
+            appointment.getProviderId(),
+            appointment.getScheduledTime(),
+            PhrNotificationSender.DEFAULT_CHANNELS
+        ));
     }
 
-    private Promise<Void> cancelReminders(String appointmentId) {
-        // Cancel any scheduled reminders
-        return Promise.complete();
+    private Promise<Void> cancelReminders(Appointment appointment) {
+        return notificationSender.cancelAppointmentReminder(new PhrNotificationSender.AppointmentReminderNotification(
+            appointment.getId(),
+            appointment.getPatientId(),
+            appointment.getProviderId(),
+            appointment.getScheduledTime(),
+            PhrNotificationSender.DEFAULT_CHANNELS
+        ));
     }
 
     @Override
@@ -384,10 +420,20 @@ public class AppointmentService extends AbstractDataService {
         private final Instant updatedAt;
         private final int version;
 
-        public Appointment(String id, String patientId, String providerId, String slotId,
-                          Instant scheduledTime, int durationMinutes, String reason,
-                          String status, String appointmentType, Instant createdAt,
-                          Instant updatedAt, int version) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Appointment(
+            @JsonProperty("id") String id,
+            @JsonProperty("patientId") String patientId,
+            @JsonProperty("providerId") String providerId,
+            @JsonProperty("slotId") String slotId,
+            @JsonProperty("scheduledTime") Instant scheduledTime,
+            @JsonProperty("durationMinutes") int durationMinutes,
+            @JsonProperty("reason") String reason,
+            @JsonProperty("status") String status,
+            @JsonProperty("appointmentType") String appointmentType,
+            @JsonProperty("createdAt") Instant createdAt,
+            @JsonProperty("updatedAt") Instant updatedAt,
+            @JsonProperty("version") int version) {
             this.id = id;
             this.patientId = patientId;
             this.providerId = providerId;
@@ -464,8 +510,14 @@ public class AppointmentService extends AbstractDataService {
         private final Instant endTime;
         private final String status; // AVAILABLE, BOOKED, BLOCKED
 
-        public TimeSlot(String id, String providerId, String date, Instant startTime,
-                       Instant endTime, String status) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public TimeSlot(
+            @JsonProperty("id") String id,
+            @JsonProperty("providerId") String providerId,
+            @JsonProperty("date") String date,
+            @JsonProperty("startTime") Instant startTime,
+            @JsonProperty("endTime") Instant endTime,
+            @JsonProperty("status") String status) {
             this.id = id;
             this.providerId = providerId;
             this.date = date;

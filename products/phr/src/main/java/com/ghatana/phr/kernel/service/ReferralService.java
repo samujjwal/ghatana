@@ -60,19 +60,29 @@ public class ReferralService extends AbstractDataService {
     public Promise<Referral> createReferral(Referral referral) {
         ensureRunning();
 
-        validateRequired(referral.patientId(), "patientId");
-        validateRequired(referral.referringProviderId(), "referringProviderId");
-        validateRequired(referral.specialtyCode(), "specialtyCode");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(referral.patientId(), "patientId");
+        String encounterId = referral.encounterId() == null
+            ? null
+            : PhrInputSanitizationUtils.requireSafeIdentifier(referral.encounterId(), "encounterId");
+        String referringProviderId = PhrInputSanitizationUtils.requireSafeIdentifier(
+            referral.referringProviderId(),
+            "referringProviderId"
+        );
+        String receivingProviderId = referral.receivingProviderId() == null
+            ? null
+            : PhrInputSanitizationUtils.requireSafeIdentifier(referral.receivingProviderId(), "receivingProviderId");
+        String specialtyCode = PhrInputSanitizationUtils.requireSafeCode(referral.specialtyCode(), "specialtyCode");
+        String clinicalReason = PhrInputSanitizationUtils.sanitizeRequiredText(referral.clinicalReason(), "clinicalReason", 2000);
 
         String id = referral.id() != null ? referral.id() : generateId("ref");
         Referral toStore = new Referral(
             id,
-            referral.patientId(),
-            referral.encounterId(),
-            referral.referringProviderId(),
-            referral.receivingProviderId(),
-            referral.specialtyCode(),
-            referral.clinicalReason(),
+            patientId,
+            encounterId,
+            referringProviderId,
+            receivingProviderId,
+            specialtyCode,
+            clinicalReason,
             referral.urgency(),
             ReferralStatus.PENDING,
             Instant.now(),
@@ -99,11 +109,17 @@ public class ReferralService extends AbstractDataService {
     public Promise<Referral> acceptReferral(String referralId, String acceptingProviderId) {
         ensureRunning();
 
-        return getReferral(referralId)
+        String sanitizedReferralId = PhrInputSanitizationUtils.requireSafeIdentifier(referralId, "referralId");
+        String sanitizedAcceptingProviderId = PhrInputSanitizationUtils.requireSafeIdentifier(
+            acceptingProviderId,
+            "acceptingProviderId"
+        );
+
+        return getReferral(sanitizedReferralId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.<Referral>ofException(
-                        new IllegalStateException("Referral not found: " + referralId));
+                        new IllegalStateException("Referral not found: " + sanitizedReferralId));
                 }
                 Referral existing = opt.get();
                 if (existing.status() != ReferralStatus.PENDING) {
@@ -112,19 +128,19 @@ public class ReferralService extends AbstractDataService {
                 }
                 Referral accepted = new Referral(
                     existing.id(), existing.patientId(), existing.encounterId(),
-                    existing.referringProviderId(), acceptingProviderId, existing.specialtyCode(),
+                    existing.referringProviderId(), sanitizedAcceptingProviderId, existing.specialtyCode(),
                     existing.clinicalReason(), existing.urgency(),
                     ReferralStatus.ACCEPTED, existing.createdAt(), Instant.now(), null
                 );
                 return updateRecord(
                     REFERRAL_DATASET,
-                    referralId,
+                    sanitizedReferralId,
                     accepted,
                     Map.of("status", "ACCEPTED"),
                     "Referral",
                     1
                 ).then(updated -> audit("ACCEPT_REFERRAL", updated.patientId(),
-                    "Referral accepted by: " + acceptingProviderId)
+                    "Referral accepted by: " + sanitizedAcceptingProviderId)
                     .map($ -> updated));
             });
     }
@@ -132,11 +148,14 @@ public class ReferralService extends AbstractDataService {
     public Promise<Referral> closeReferral(String referralId, String closureNotes) {
         ensureRunning();
 
-        return getReferral(referralId)
+        String sanitizedReferralId = PhrInputSanitizationUtils.requireSafeIdentifier(referralId, "referralId");
+        String sanitizedClosureNotes = PhrInputSanitizationUtils.sanitizeOptionalText(closureNotes, "closureNotes", 1000);
+
+        return getReferral(sanitizedReferralId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.<Referral>ofException(
-                        new IllegalStateException("Referral not found: " + referralId));
+                        new IllegalStateException("Referral not found: " + sanitizedReferralId));
                 }
                 Referral existing = opt.get();
                 Referral closed = new Referral(
@@ -147,12 +166,15 @@ public class ReferralService extends AbstractDataService {
                 );
                 return updateRecord(
                     REFERRAL_DATASET,
-                    referralId,
+                    sanitizedReferralId,
                     closed,
                     Map.of("status", "COMPLETED"),
                     "Referral",
                     1
-                ).then(updated -> audit("CLOSE_REFERRAL", updated.patientId(), "Referral closed")
+                ).then(updated -> audit(
+                        "CLOSE_REFERRAL",
+                        updated.patientId(),
+                        sanitizedClosureNotes == null ? "Referral closed" : "Referral closed: " + sanitizedClosureNotes)
                     .map($ -> updated));
             });
     }
