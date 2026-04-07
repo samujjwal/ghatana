@@ -7,7 +7,6 @@
  * @doc.type hooks
  * @doc.purpose Initialization phase data management
  * @doc.layer integration
- * @doc.phase initialization
  */
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
@@ -16,10 +15,9 @@ import {
   useQuery,
   useMutation,
   useSubscription,
-  useLazyQuery,
 } from '@apollo/client';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useMemo, useEffect } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
 
 import {
   wizardStateAtom,
@@ -52,12 +50,7 @@ import {
   INFRASTRUCTURE_PROVISIONING_SUBSCRIPTION,
   WIZARD_PROGRESS_SUBSCRIPTION,
   type WizardState,
-  type WizardStep,
   type InfrastructureConfig,
-  type Environment,
-  type EnvironmentInput,
-  type TeamInvite,
-  type CostEstimate,
 } from '@yappc/core/api';
 
 // =============================================================================
@@ -68,37 +61,86 @@ import {
  * Hook for managing wizard session state
  */
 export function useWizard(sessionId?: string) {
+  type WizardQueryData = { wizardState?: WizardState };
+  type WizardQueryState = {
+    data?: WizardQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type WizardMutationResult = { [key: string]: unknown };
+  type WizardMutationState = { loading: boolean; error?: unknown };
+  const runWizardQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => WizardQueryState;
+  const runWizardMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [
+    (args: unknown) => Promise<{ data?: WizardMutationResult }>,
+    WizardMutationState,
+  ];
+
   const [wizardState, setWizardState] = useAtom(wizardStateAtom);
   const [currentStep, setCurrentStep] = useAtom(currentWizardStepAtom);
   const [progress, setProgress] = useAtom(wizardProgressAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_WIZARD_STATE, {
+  const { loading, error, refetch } = runWizardQuery(GET_WIZARD_STATE, {
     variables: { sessionId },
     skip: !sessionId,
-    onCompleted: (data) => {
-      if (data?.wizardState) {
-        setWizardState(data.wizardState);
-        setCurrentStep(data.wizardState.currentStep);
-        setProgress(data.wizardState.progress);
+    onCompleted: (queryData: WizardQueryData) => {
+      if (queryData?.wizardState) {
+        setWizardState(queryData.wizardState);
+        setCurrentStep(queryData.wizardState.currentStep);
+        setProgress(queryData.wizardState.progress);
       }
     },
   });
 
-  const [createSession] = useMutation(CREATE_WIZARD_SESSION);
-  const [updateStep] = useMutation(UPDATE_WIZARD_STEP);
-  const [completeStep] = useMutation(COMPLETE_WIZARD_STEP);
-  const [finalize] = useMutation(FINALIZE_SETUP);
+  const [createSessionValue] = runWizardMutation(CREATE_WIZARD_SESSION);
+  const createSession = createSessionValue as (
+    args: unknown
+  ) => Promise<{ data?: WizardMutationResult }>;
+
+  const [updateStepValue] = runWizardMutation(UPDATE_WIZARD_STEP);
+  const updateStep = updateStepValue as (
+    args: unknown
+  ) => Promise<{ data?: WizardMutationResult }>;
+
+  const [completeStepValue] = runWizardMutation(
+    COMPLETE_WIZARD_STEP
+  );
+  const completeStep = completeStepValue as (
+    args: unknown
+  ) => Promise<{ data?: WizardMutationResult }>;
+
+  const [finalizeValue] = runWizardMutation(
+    FINALIZE_SETUP
+  );
+  const finalize = finalizeValue as (
+    args: unknown
+  ) => Promise<{ data?: WizardMutationResult }>;
 
   // Subscribe to wizard progress updates
-  useSubscription(WIZARD_PROGRESS_SUBSCRIPTION, {
+  type WizardProgressPayload = { wizardProgress?: Record<string, unknown> };
+  type WizardSubscriptionState = { data?: WizardProgressPayload };
+  const runWizardSubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => WizardSubscriptionState;
+
+  runWizardSubscription(WIZARD_PROGRESS_SUBSCRIPTION, {
     variables: { sessionId },
     skip: !sessionId,
-    onData: ({ data }) => {
+    onData: ({ data }: { data: WizardSubscriptionState }) => {
       if (data?.data?.wizardProgress) {
-        const progressUpdate = data.data.wizardProgress;
-        setProgress(progressUpdate.percentage);
+        const progressUpdate = data.data.wizardProgress as Record<
+          string,
+          unknown
+        >;
+        setProgress((progressUpdate.percentage ?? 0) as number);
         if (progressUpdate.currentStep) {
-          setCurrentStep(progressUpdate.currentStep);
+          setCurrentStep(progressUpdate.currentStep as string);
         }
       }
     },
@@ -173,35 +215,70 @@ export function useWizard(sessionId?: string) {
  * Hook for managing infrastructure configuration
  */
 export function useInfrastructure(sessionId?: string) {
+  type InfrastructureOptionsData = {
+    infrastructureOptions?: { [key: string]: unknown };
+  };
+  type InfrastructureOptionsState = {
+    data?: InfrastructureOptionsData;
+    loading: boolean;
+    error?: unknown;
+  };
+  type InfrastructureMutationResult = { [key: string]: unknown };
+  type InfrastructureMutationState = { loading: boolean; error?: unknown };
+  const runInfraQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => InfrastructureOptionsState;
+  const runInfraMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: InfrastructureMutationResult }>, InfrastructureMutationState];
+  const runInfraSubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => { data?: { data?: { infrastructureProvisioning?: Record<string, unknown> } } };
+
   const [infraState, setInfraState] = useAtom(infrastructureStateAtom);
   const [provisioningStatus, setProvisioningStatus] = useAtom(
     provisioningStatusAtom
   );
 
-  const { data: optionsData, loading: optionsLoading } = useQuery(
+  const { data: optionsData, loading: optionsLoading } = runInfraQuery(
     GET_INFRASTRUCTURE_OPTIONS,
     {
       skip: !sessionId,
     }
   );
 
-  const [saveConfig] = useMutation(SAVE_INFRASTRUCTURE_CONFIG);
-  const [provision] = useMutation(PROVISION_INFRASTRUCTURE);
+  const [saveConfigValue] = runInfraMutation(SAVE_INFRASTRUCTURE_CONFIG);
+  const saveConfig = saveConfigValue as (
+    args: unknown
+  ) => Promise<{ data?: InfrastructureMutationResult }>;
+
+  const [provisionValue] = runInfraMutation(PROVISION_INFRASTRUCTURE);
+  const provision = provisionValue as (
+    args: unknown
+  ) => Promise<{ data?: InfrastructureMutationResult }>;
 
   // Subscribe to provisioning updates
-  useSubscription(INFRASTRUCTURE_PROVISIONING_SUBSCRIPTION, {
+  runInfraSubscription(INFRASTRUCTURE_PROVISIONING_SUBSCRIPTION, {
     variables: { sessionId },
     skip: !sessionId,
-    onData: ({ data }) => {
+    onData: ({
+      data,
+    }: {
+      data?: {
+        data?: { infrastructureProvisioning?: Record<string, unknown> };
+      };
+    }) => {
       if (data?.data?.infrastructureProvisioning) {
         const update = data.data.infrastructureProvisioning;
         setProvisioningStatus({
-          status: update.status,
-          progress: update.progress,
-          currentResource: update.currentResource,
-          completedResources: update.completedResources,
-          totalResources: update.totalResources,
-          errors: update.errors,
+          status: (update.status ?? 'unknown') as string,
+          progress: (update.progress ?? 0) as number,
+          currentResource: (update.currentResource ?? null) as unknown,
+          completedResources: (update.completedResources ?? []) as unknown,
+          totalResources: (update.totalResources ?? 0) as number,
+          errors: (update.errors ?? []) as unknown,
         });
       }
     },

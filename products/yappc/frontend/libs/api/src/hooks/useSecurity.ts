@@ -7,7 +7,6 @@
  * @doc.type hooks
  * @doc.purpose Security phase data management
  * @doc.layer integration
- * @doc.phase security
  */
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
@@ -16,9 +15,8 @@ import {
   useQuery,
   useMutation,
   useSubscription,
-  useLazyQuery,
 } from '@apollo/client';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import { useCallback, useMemo, useState } from 'react';
 
 import {
@@ -36,17 +34,6 @@ import {
   GET_VULNERABILITY,
   GET_VULNERABILITIES,
   GET_VULNERABILITY_STATS,
-  GET_SECURITY_SCAN,
-  GET_SECURITY_SCANS,
-  GET_COMPLIANCE_FRAMEWORKS,
-  GET_COMPLIANCE_CONTROLS,
-  GET_COMPLIANCE_EVIDENCE,
-  GET_SECRETS,
-  GET_SECRET_AUDIT_LOG,
-  GET_SECURITY_POLICIES,
-  GET_SECURITY_SCORE,
-  GET_SECURITY_ALERTS,
-  GET_AUDIT_LOGS,
   UPDATE_VULNERABILITY,
   ASSIGN_VULNERABILITY,
   SUPPRESS_VULNERABILITY,
@@ -70,17 +57,6 @@ import {
   type Vulnerability,
   type VulnerabilityInput,
   type VulnerabilityFilters,
-  type SecurityScan,
-  type ScanType,
-  type ComplianceFramework,
-  type ComplianceControl,
-  type ComplianceEvidence,
-  type Secret,
-  type SecretInput,
-  type SecurityPolicy,
-  type PolicyInput,
-  type SecurityAlert,
-  type AuditLogEntry,
 } from '@yappc/core/api';
 
 // =============================================================================
@@ -91,27 +67,49 @@ import {
  * Hook for fetching a single vulnerability
  */
 export function useVulnerability(vulnerabilityId?: string) {
+  type VulnerabilityQueryData = { vulnerability?: Vulnerability };
+  type VulnerabilityQueryState = {
+    data?: VulnerabilityQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type VulnerabilitySubscriptionState = {
+    data?: { vulnerabilityUpdates?: Vulnerability };
+  };
+  const runVulnerabilityQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => VulnerabilityQueryState;
+  const runVulnerabilitySubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => VulnerabilitySubscriptionState;
+
   const [selected, setSelected] = useAtom(selectedVulnerabilityAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_VULNERABILITY, {
-    variables: { vulnerabilityId },
-    skip: !vulnerabilityId,
-    onCompleted: (data) => {
-      if (data?.vulnerability) {
-        setSelected(data.vulnerability);
-      }
-    },
-  });
+  const { data, loading, error, refetch } = runVulnerabilityQuery(
+    GET_VULNERABILITY,
+    {
+      variables: { vulnerabilityId },
+      skip: !vulnerabilityId,
+      onCompleted: (queryData: VulnerabilityQueryData) => {
+        if (queryData?.vulnerability) {
+          setSelected(queryData.vulnerability);
+        }
+      },
+    }
+  );
 
   // Subscribe to vulnerability updates
-  useSubscription(VULNERABILITY_UPDATES_SUBSCRIPTION, {
+  runVulnerabilitySubscription(VULNERABILITY_UPDATES_SUBSCRIPTION, {
     variables: { vulnerabilityId },
     skip: !vulnerabilityId,
-    onData: ({ data }) => {
-      if (data?.data?.vulnerabilityUpdates) {
+    onData: ({ data: subData }: { data: VulnerabilitySubscriptionState }) => {
+      if (subData?.data?.vulnerabilityUpdates) {
         setSelected((prev) =>
           prev?.id === vulnerabilityId
-            ? { ...prev, ...data.data.vulnerabilityUpdates }
+            ? { ...prev, ...subData.data.vulnerabilityUpdates }
             : prev
         );
       }
@@ -130,15 +128,32 @@ export function useVulnerability(vulnerabilityId?: string) {
  * Hook for fetching vulnerabilities list
  */
 export function useVulnerabilities(filters?: VulnerabilityFilters) {
+  type VulnerabilitiesQueryData = {
+    vulnerabilities?: {
+      nodes?: Vulnerability[];
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type VulnerabilitiesQueryState = {
+    data?: VulnerabilitiesQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<{ data?: VulnerabilitiesQueryData }>;
+  };
+  const runVulnerabilitiesQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => VulnerabilitiesQueryState;
+
   const [vulnerabilities, setVulnerabilities] = useAtom(vulnerabilitiesAtom);
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(
+  const { data, loading, error, refetch, fetchMore } = runVulnerabilitiesQuery(
     GET_VULNERABILITIES,
     {
       variables: { filters, first: 50 },
-      onCompleted: (data) => {
-        if (data?.vulnerabilities?.nodes) {
-          setVulnerabilities(data.vulnerabilities.nodes);
+      onCompleted: (queryData: VulnerabilitiesQueryData) => {
+        if (queryData?.vulnerabilities?.nodes) {
+          setVulnerabilities(queryData.vulnerabilities.nodes);
         }
       },
     }

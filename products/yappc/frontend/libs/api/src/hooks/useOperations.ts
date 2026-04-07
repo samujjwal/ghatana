@@ -7,7 +7,6 @@
  * @doc.type hooks
  * @doc.purpose Operations phase data management
  * @doc.layer integration
- * @doc.phase operations
  */
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-return -- Apollo hook refactor pending */
@@ -16,11 +15,9 @@ import {
   useQuery,
   useMutation,
   useSubscription,
-  useLazyQuery,
 } from '@apollo/client';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useMemo, useEffect } from 'react';
-import { useState } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
+import { useCallback } from 'react';
 
 import {
   incidentsAtom,
@@ -36,13 +33,8 @@ import {
 import {
   GET_INCIDENT,
   GET_INCIDENTS,
-  GET_INCIDENT_TIMELINE,
-  GET_ALERT,
-  GET_ALERTS,
   GET_DASHBOARD,
   GET_DASHBOARDS,
-  GET_RUNBOOK,
-  GET_RUNBOOKS,
   GET_SERVICE_HEALTH,
   GET_ON_CALL_SCHEDULE,
   GET_METRICS,
@@ -67,15 +59,6 @@ import {
   LOG_STREAM_SUBSCRIPTION,
   type Incident,
   type IncidentInput,
-  type Alert,
-  type Dashboard,
-  type DashboardInput,
-  type Widget,
-  type WidgetInput,
-  type Runbook,
-  type ServiceHealth,
-  type OnCallSchedule,
-  type MetricPoint,
 } from '@yappc/core/api';
 
 // =============================================================================
@@ -86,28 +69,45 @@ import {
  * Hook for fetching a single incident with real-time updates
  */
 export function useIncident(incidentId?: string) {
+  type IncidentQueryData = { incident?: Incident };
+  type IncidentQueryState = {
+    data?: IncidentQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type IncidentSubscriptionState = { data?: { incidentUpdates?: Incident } };
+  const runIncidentQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => IncidentQueryState;
+  const runIncidentSubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => IncidentSubscriptionState;
+
   const [activeIncident, setActiveIncident] = useAtom(activeIncidentAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_INCIDENT, {
+  const { data, loading, error, refetch } = runIncidentQuery(GET_INCIDENT, {
     variables: { incidentId },
     skip: !incidentId,
-    onCompleted: (data) => {
-      if (data?.incident) {
-        setActiveIncident(data.incident);
+    onCompleted: (queryData: IncidentQueryData) => {
+      if (queryData?.incident) {
+        setActiveIncident(queryData.incident);
       }
     },
   });
 
   // Subscribe to incident updates
-  useSubscription(INCIDENT_UPDATES_SUBSCRIPTION, {
+  runIncidentSubscription(INCIDENT_UPDATES_SUBSCRIPTION, {
     variables: { incidentId },
     skip: !incidentId,
-    onData: ({ data }) => {
-      if (data?.data?.incidentUpdates) {
+    onData: ({ data: subData }: { data: IncidentSubscriptionState }) => {
+      if (subData?.data?.incidentUpdates) {
         setActiveIncident((prev) =>
           prev
-            ? { ...prev, ...data.data.incidentUpdates }
-            : data.data.incidentUpdates
+            ? { ...prev, ...subData.data.incidentUpdates }
+            : subData.data.incidentUpdates
         );
       }
     },
@@ -131,16 +131,43 @@ export function useIncidents(filters?: {
   startDate?: string;
   endDate?: string;
 }) {
+  type IncidentsQueryData = {
+    incidents?: {
+      nodes?: Incident[];
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type IncidentsQueryState = {
+    data?: IncidentsQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<{ data?: IncidentsQueryData }>;
+  };
+  type IncidentsSubscriptionState = {
+    data?: { incidentUpdates?: Incident };
+  };
+  const runIncidentsQuery = useQuery as unknown as (
+    query: unknown,
+    options: unknown
+  ) => IncidentsQueryState;
+  const runIncidentsSubscription = useSubscription as unknown as (
+    subscription: unknown,
+    options: unknown
+  ) => IncidentsSubscriptionState;
+
   const [incidents, setIncidents] = useAtom(incidentsAtom);
 
-  const { data, loading, error, refetch, fetchMore } = useQuery(GET_INCIDENTS, {
-    variables: { filters, first: 20 },
-    onCompleted: (data) => {
-      if (data?.incidents?.nodes) {
-        setIncidents(data.incidents.nodes);
-      }
-    },
-  });
+  const { data, loading, error, refetch, fetchMore } = runIncidentsQuery(
+    GET_INCIDENTS,
+    {
+      variables: { filters, first: 20 },
+      onCompleted: (queryData: IncidentsQueryData) => {
+        if (queryData?.incidents?.nodes) {
+          setIncidents(queryData.incidents.nodes);
+        }
+      },
+    }
+  );
 
   const loadMore = useCallback(async () => {
     if (!data?.incidents?.pageInfo?.hasNextPage) return;
@@ -149,22 +176,27 @@ export function useIncidents(filters?: {
         after: data.incidents.pageInfo.endCursor,
       },
     });
-    if (result.data?.incidents?.nodes) {
-      setIncidents((prev) => [...prev, ...result.data.incidents.nodes]);
+    if ((result.data as IncidentsQueryData)?.incidents?.nodes) {
+      setIncidents((prev) => [
+        ...prev,
+        ...((result.data as IncidentsQueryData).incidents?.nodes ?? []),
+      ]);
     }
   }, [data, fetchMore, setIncidents]);
 
   // Subscribe to new incidents
-  useSubscription(INCIDENT_UPDATES_SUBSCRIPTION, {
+  runIncidentsSubscription(INCIDENT_UPDATES_SUBSCRIPTION, {
     variables: { incidentId: null }, // Subscribe to all incidents
-    onData: ({ data }) => {
-      if (data?.data?.incidentUpdates) {
-        const update = data.data.incidentUpdates;
+    onData: ({ data: subData }: { data: IncidentsSubscriptionState }) => {
+      if (subData?.data?.incidentUpdates) {
+        const update = subData.data.incidentUpdates;
         setIncidents((prev) => {
-          const exists = prev.find((i) => i.id === update.id);
+          const exists = prev.find((i: Incident) => (i as Record<string, unknown>).id === (update as Record<string, unknown>).id);
           if (exists) {
-            return prev.map((i) =>
-              i.id === update.id ? { ...i, ...update } : i
+            return prev.map((i: Incident) =>
+              (i as Record<string, unknown>).id === (update as Record<string, unknown>).id
+                ? { ...i, ...update }
+                : i
             );
           }
           return [update, ...prev];
