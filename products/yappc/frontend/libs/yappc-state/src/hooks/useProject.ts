@@ -157,7 +157,21 @@ async function gqlFetch<T>(
  * const { projects, currentProject, selectProject, createProject } = useProject('workspace-id');
  * ```
  */
-export function useProject(workspaceId: string | null) {
+export function useProject(workspaceId: string | null): {
+  projects: Array<Record<string, unknown>>;
+  currentProject: Record<string, unknown> | undefined;
+  currentProjectId: string | null;
+  isLoading: boolean;
+  error: Error | null;
+  selectProject: (id: string | null) => void;
+  createProject: (input: { name: string; description?: string; type?: string }) => Promise<unknown>;
+  updateProject: (input: { id: string; name?: string; description?: string; status?: string }) => Promise<unknown>;
+  deleteProject: (id: string) => Promise<string>;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  refetch: () => Promise<Array<Record<string, unknown>> | undefined>;
+} {
   const queryClient = useQueryClient();
 
   const [currentProjectId, setCurrentProjectId] = useAtom(currentProjectIdAtom);

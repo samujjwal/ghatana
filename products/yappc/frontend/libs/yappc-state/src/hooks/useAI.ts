@@ -177,7 +177,19 @@ async function gqlFetch<T>(
  * await sendMessage('How can I improve this component?', { projectId });
  * ```
  */
-export function useCopilot() {
+export function useCopilot(): {
+  session: CopilotSession | undefined;
+  isLoading: boolean;
+  error: Error | null;
+  sendMessage: (input: { message: string; projectId?: string; context?: Record<string, unknown> }) => Promise<{
+    sessionId: string;
+    userMessage: CopilotMessage;
+    assistantMessage: CopilotMessage;
+  }>;
+  isSending: boolean;
+  loadSession: (sessionId: string) => Promise<void>;
+  clearSession: () => void;
+} {
   const queryClient = useQueryClient();
 
   const [session, setSession] = useAtom(copilotSessionAtom);
@@ -291,7 +303,15 @@ export function useCopilot() {
  * const { insights, dismissInsight } = useAIInsights('project-id');
  * ```
  */
-export function useAIInsights(projectId?: string | null) {
+export function useAIInsights(
+  projectId?: string | null
+): {
+  insights: AIInsight[];
+  isLoading: boolean;
+  error: Error | null;
+  dismissInsight: (insightId: string) => void;
+  refetch: () => Promise<AIInsight[] | undefined>;
+} {
   const setInsights = useSetAtom(aiInsightsAtom);
   const setLoading = useSetAtom(aiInsightsLoadingAtom);
   const insights = useAtomValue(aiInsightsAtom);
@@ -340,7 +360,14 @@ export function useAIInsights(projectId?: string | null) {
  * const { predictions } = useAIPredictions('project-id');
  * ```
  */
-export function useAIPredictions(projectId?: string | null) {
+export function useAIPredictions(
+  projectId?: string | null
+): {
+  predictions: AIPrediction[];
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<AIPrediction[] | undefined>;
+} {
   const setPredictions = useSetAtom(aiPredictionsAtom);
   const predictions = useAtomValue(aiPredictionsAtom);
 

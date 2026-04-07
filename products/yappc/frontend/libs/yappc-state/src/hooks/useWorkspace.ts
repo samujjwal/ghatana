@@ -128,7 +128,21 @@ async function gqlFetch<T>(
  * const { workspaces, currentWorkspace, selectWorkspace, createWorkspace } = useWorkspace();
  * ```
  */
-export function useWorkspace() {
+export function useWorkspace(): {
+  workspaces: Array<Record<string, unknown>>;
+  currentWorkspace: Record<string, unknown> | undefined;
+  currentWorkspaceId: string | null;
+  isLoading: boolean;
+  error: Error | null;
+  selectWorkspace: (id: string | null) => void;
+  createWorkspace: (input: { name: string; description?: string }) => Promise<unknown>;
+  updateWorkspace: (input: { id: string; name?: string; description?: string }) => Promise<unknown>;
+  deleteWorkspace: (id: string) => Promise<string>;
+  isCreating: boolean;
+  isUpdating: boolean;
+  isDeleting: boolean;
+  refetch: () => Promise<Array<Record<string, unknown>> | undefined>;
+} {
   const queryClient = useQueryClient();
 
   const [currentWorkspaceId, setCurrentWorkspaceId] = useAtom(
