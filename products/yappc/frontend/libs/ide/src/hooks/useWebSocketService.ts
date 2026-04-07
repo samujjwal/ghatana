@@ -115,9 +115,15 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>): UseWebSo
         }
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = (event: MessageEvent<unknown>) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+          const data = event.data;
+          if (typeof data !== 'string') {
+            console.warn('Received non-string WebSocket message:', typeof data);
+            return;
+          }
+
+          const message: WebSocketMessage = JSON.parse(data) as WebSocketMessage;
 
           // Handle heartbeat responses
           if (message.type === 'heartbeat') {

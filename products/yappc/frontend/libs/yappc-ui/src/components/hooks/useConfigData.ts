@@ -249,7 +249,7 @@ export function useTasks(filters?: {
         const endpoint =
           queryParams.size > 0 ? `tasks?${queryParams.toString()}` : 'tasks';
         return await fetchConfig<TaskData[]>(endpoint);
-      } catch (error) {
+      } catch (_error) {
         // Backend not ready - return empty array
         // Components should handle with fallback to mock data
         console.warn('Tasks API not available, using component mock data');
@@ -269,7 +269,7 @@ export function useTask(id: string): UseQueryResult<TaskData | null, unknown> {
     queryFn: async () => {
       try {
         return await fetchConfig<TaskData>(`tasks/${id}`);
-      } catch (error) {
+      } catch (_error) {
         console.warn(
           `Task ${id} not found in backend, using component mock data`
         );
