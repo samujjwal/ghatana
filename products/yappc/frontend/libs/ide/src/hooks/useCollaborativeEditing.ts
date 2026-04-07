@@ -81,9 +81,40 @@ export interface CollaborationSettings {
 }
 
 /**
+ * Return type for useCollaborativeEditing hook
+ */
+export interface UseCollaborativeEditingReturn {
+  // State
+  activeUsers: UserPresence[];
+  conflicts: Conflict[];
+  settings: CollaborationSettings;
+
+  // Actions
+  broadcastCursor: (position: { line: number; column: number }) => void;
+  broadcastSelection: (selection: {
+    start: { line: number; column: number };
+    end: { line: number; column: number };
+  }) => void;
+  broadcastTextEdit: (edit: Record<string, unknown>) => void;
+  updatePresence: (updates: Partial<UserPresence>) => void;
+  resolveConflict: (conflictId: string, resolution: Record<string, unknown>) => void;
+  updateSettings: (settings: Partial<CollaborationSettings>) => void;
+
+  // Queries
+  getUsersInFile: (fileId: string) => UserPresence[];
+  getConflictsInFile: (fileId: string) => Conflict[];
+
+  // Utilities
+  activeFileId: string | null;
+  isCollaborating: boolean;
+  userCount: number;
+  conflictCount: number;
+}
+
+/**
  * Hook for collaborative editing
  */
-export function useCollaborativeEditing(fileId?: string) {
+export function useCollaborativeEditing(fileId?: string): UseCollaborativeEditingReturn {
   const [activeFileId] = useAtom(ideActiveFileIdAtom);
   const [, _setCollaborationState] = useAtom(ideCollaborationAtom);
 

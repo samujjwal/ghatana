@@ -10,7 +10,7 @@
  * @doc.pattern Data Fetching Hook
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 /**
  * API Configuration
@@ -139,7 +139,7 @@ export const configQueryKeys = {
 /**
  * Hook to fetch all personas
  */
-export function usePersonas() {
+export function usePersonas(): UseQueryResult<PersonaConfig[], unknown> {
   return useQuery({
     queryKey: configQueryKeys.personas,
     queryFn: () => fetchConfig<PersonaConfig[]>('personas'),
@@ -150,7 +150,7 @@ export function usePersonas() {
 /**
  * Hook to fetch a single persona by ID
  */
-export function usePersona(id: string) {
+export function usePersona(id: string): UseQueryResult<PersonaConfig, unknown> {
   return useQuery({
     queryKey: configQueryKeys.persona(id),
     queryFn: () => fetchConfig<PersonaConfig>(`personas/${id}`),
@@ -162,7 +162,7 @@ export function usePersona(id: string) {
 /**
  * Hook to fetch all task domains
  */
-export function useDomains() {
+export function useDomains(): UseQueryResult<TaskDomain[], unknown> {
   return useQuery({
     queryKey: configQueryKeys.domains,
     queryFn: () => fetchConfig<TaskDomain[]>('domains'),
@@ -173,7 +173,7 @@ export function useDomains() {
 /**
  * Hook to fetch a single domain by ID
  */
-export function useDomain(id: string) {
+export function useDomain(id: string): UseQueryResult<TaskDomain, unknown> {
   return useQuery({
     queryKey: configQueryKeys.domain(id),
     queryFn: () => fetchConfig<TaskDomain>(`domains/${id}`),
@@ -185,7 +185,7 @@ export function useDomain(id: string) {
 /**
  * Hook to fetch all task templates
  */
-export function useTemplates() {
+export function useTemplates(): UseQueryResult<TaskTemplate[], unknown> {
   return useQuery({
     queryKey: configQueryKeys.templates,
     queryFn: () => fetchConfig<TaskTemplate[]>('templates'),
@@ -196,7 +196,7 @@ export function useTemplates() {
 /**
  * Hook to fetch a single template by ID
  */
-export function useTemplate(id: string) {
+export function useTemplate(id: string): UseQueryResult<TaskTemplate, unknown> {
   return useQuery({
     queryKey: configQueryKeys.template(id),
     queryFn: () => fetchConfig<TaskTemplate>(`templates/${id}`),
@@ -208,7 +208,7 @@ export function useTemplate(id: string) {
 /**
  * Hook to fetch all workflows
  */
-export function useWorkflows() {
+export function useWorkflows(): UseQueryResult<WorkflowConfig[], unknown> {
   return useQuery({
     queryKey: configQueryKeys.workflows,
     queryFn: () => fetchConfig<WorkflowConfig[]>('workflows'),
@@ -219,7 +219,7 @@ export function useWorkflows() {
 /**
  * Hook to fetch a single workflow by ID
  */
-export function useWorkflow(id: string) {
+export function useWorkflow(id: string): UseQueryResult<WorkflowConfig, unknown> {
   return useQuery({
     queryKey: configQueryKeys.workflow(id),
     queryFn: () => fetchConfig<WorkflowConfig>(`workflows/${id}`),
@@ -236,7 +236,7 @@ export function useTasks(filters?: {
   status?: string;
   assignee?: string;
   phase?: string;
-}) {
+}): UseQueryResult<TaskData[], unknown> {
   return useQuery({
     queryKey: [...configQueryKeys.tasks, filters],
     queryFn: async () => {
@@ -263,7 +263,7 @@ export function useTasks(filters?: {
 /**
  * Hook to fetch a single task by ID
  */
-export function useTask(id: string) {
+export function useTask(id: string): UseQueryResult<TaskData | null, unknown> {
   return useQuery({
     queryKey: configQueryKeys.task(id),
     queryFn: async () => {

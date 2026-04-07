@@ -28,11 +28,32 @@ import {
 import { createTab, addTab, removeTab } from '../utils/tabManager';
 
 /**
+ * Return type for useIDEFileOperations hook
+ */
+export interface UseIDEFileOperationsReturn {
+  // File operations
+  createNewFile: (path: string) => Promise<Record<string, unknown> | null>;
+  updateFileContent: (path: string, content: string) => Promise<void>;
+  saveFile: (path: string) => Promise<void>;
+  deleteFile: (path: string) => Promise<void>;
+  renameFile: (oldPath: string, newPath: string) => Promise<Record<string, unknown> | null>;
+  moveFile: (fromPath: string, toPath: string) => Promise<Record<string, unknown> | null>;
+  openFile: (path: string) => Promise<void>;
+  closeFile: (path: string) => void;
+
+  // Folder operations
+  createNewFolder: (path: string) => Promise<Record<string, unknown> | null>;
+  deleteFolder: (path: string) => Promise<void>;
+  renameFolder: (oldPath: string, newPath: string) => Promise<Record<string, unknown> | null>;
+  toggleFolderExpanded: (path: string) => void;
+}
+
+/**
  * Hook for IDE file operations
  *
  * @doc.returns File operation functions
  */
-export function useIDEFileOperations() {
+export function useIDEFileOperations(): UseIDEFileOperationsReturn {
   const [files, setFiles] = useAtom(ideFilesAtom);
   const [folders, setFolders] = useAtom(ideFoldersAtom);
   const [activeFileId, setActiveFileId] = useAtom(ideActiveFileIdAtom);

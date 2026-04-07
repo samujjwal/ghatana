@@ -76,9 +76,43 @@ export interface FileSelection {
 }
 
 /**
+ * Return type for useAdvancedFileOperations hook
+ */
+export interface UseAdvancedFileOperationsReturn {
+  // Selection management
+  selectFile: (fileId: string, event: React.MouseEvent | KeyboardEvent) => void;
+  selectAll: () => void;
+  clearSelection: () => void;
+  selectedFiles: IDEFile[];
+  isFileSelected: (fileId: string) => boolean;
+  selectionCount: number;
+
+  // Bulk operations
+  bulkRename: (pattern: string) => Promise<void>;
+  bulkMove: (destination: string, overwrite?: boolean) => Promise<void>;
+  bulkDelete: () => Promise<void>;
+  bulkOperation: BulkOperation | null;
+
+  // Search functionality
+  searchFiles: (query: FileSearchQuery) => Promise<void>;
+  clearSearch: () => void;
+  searchResults: SearchResult[];
+  isSearching: boolean;
+
+  // Base operations (re-exported)
+  createFile: (path: string) => Promise<IDEFile | null>;
+  createFolder: (path: string) => Promise<IDEFolder | null>;
+  deleteFile: (path: string) => Promise<void>;
+  deleteFolder: (path: string) => Promise<void>;
+  renameFile: (oldPath: string, newPath: string) => Promise<IDEFile | null>;
+  moveFile: (fromPath: string, toPath: string) => Promise<IDEFile | null>;
+  openFile: (path: string) => Promise<void>;
+}
+
+/**
  * Hook for advanced file operations
  */
-export function useAdvancedFileOperations() {
+export function useAdvancedFileOperations(): UseAdvancedFileOperationsReturn {
   const [files, setFiles] = useAtom(ideFilesAtom);
   const [folders, setFolders] = useAtom(ideFoldersAtom);
 

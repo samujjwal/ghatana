@@ -37,9 +37,35 @@ export interface ShortcutHelpItem {
 }
 
 /**
+ * Return type for useKeyboardShortcuts hook
+ */
+export interface UseKeyboardShortcutsReturn {
+  // Command palette
+  isCommandPaletteOpen: boolean;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  commandPaletteQuery: string;
+  setCommandPaletteQuery: (query: string) => void;
+  filteredCommands: KeyboardShortcut[];
+  activeCommandIndex: number;
+  setActiveCommandIndex: (index: number) => void;
+  handleCommandPaletteKeyDown: (event: React.KeyboardEvent) => void;
+
+  // Shortcut management
+  executeCommand: (id: string) => void;
+  registerShortcut: (shortcut: KeyboardShortcut) => void;
+  unregisterShortcut: (id: string) => void;
+  getHelpText: () => ShortcutHelpItem[];
+
+  // Utilities
+  normalizeKeyEvent: (event: KeyboardEvent) => string;
+  matchesShortcut: (event: KeyboardEvent, shortcut: KeyboardShortcut) => boolean;
+}
+
+/**
  * Hook for keyboard shortcuts
  */
-export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []) {
+export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[] = []): UseKeyboardShortcutsReturn {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('');
   const [activeCommandIndex, setActiveCommandIndex] = useState(0);

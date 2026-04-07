@@ -92,11 +92,56 @@ async function fetchApi<T>(
 }
 
 /**
+ * Return types for lifecycle API hooks
+ */
+export interface UseProjectsReturn {
+  projects: Project[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+export interface UseProjectReturn {
+  project: Project | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+export interface UseTasksReturn {
+  tasks: Task[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+export interface UseTaskReturn {
+  task: Task | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+export interface UsePhaseStatesReturn {
+  phaseStates: PhaseState[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+export interface UseProjectMetricsReturn {
+  metrics: Record<string, unknown> | null;
+  loading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+/**
  * useProjects Hook
  *
  * Fetches and manages project list with filtering.
  */
-export function useProjects(filters?: { status?: string; stage?: string }) {
+export function useProjects(filters?: { status?: string; stage?: string }): UseProjectsReturn {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -131,7 +176,7 @@ export function useProjects(filters?: { status?: string; stage?: string }) {
  *
  * Fetches single project with details.
  */
-export function useProject(projectId: string) {
+export function useProject(projectId: string): UseProjectReturn {
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -180,7 +225,7 @@ export function useTasks(filters?: {
   stage?: string;
   assignedAgentId?: string;
   priority?: string;
-}) {
+}): UseTasksReturn {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -255,7 +300,7 @@ export function useTasks(filters?: {
  *
  * Fetches single task details.
  */
-export function useTask(taskId: string) {
+export function useTask(taskId: string): UseTaskReturn {
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -288,7 +333,7 @@ export function useTask(taskId: string) {
  *
  * Fetches phase state history for a project.
  */
-export function usePhaseStates(projectId: string) {
+export function usePhaseStates(projectId: string): UsePhaseStatesReturn {
   const [phaseStates, setPhaseStates] = useState<PhaseState[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -335,7 +380,7 @@ export function usePhaseStates(projectId: string) {
  *
  * Fetches aggregated metrics for a project.
  */
-export function useProjectMetrics(projectId: string) {
+export function useProjectMetrics(projectId: string): UseProjectMetricsReturn {
   const [metrics, setMetrics] = useState({
     totalTasks: 0,
     completedTasks: 0,

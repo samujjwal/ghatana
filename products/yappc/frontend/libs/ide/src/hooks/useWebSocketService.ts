@@ -43,9 +43,29 @@ export interface WebSocketConfig {
 }
 
 /**
+ * Return type for useWebSocketService hook
+ */
+export interface UseWebSocketServiceReturn {
+  // Connection state
+  connectionState: ConnectionState;
+  isConnected: boolean;
+  error: string | null;
+
+  // Actions
+  connect: () => void;
+  disconnect: () => void;
+  sendMessage: (message: WebSocketMessage) => void;
+  addEventListener: (type: string, handler: (data: unknown) => void) => void;
+  removeEventListener: (type: string, handler: (data: unknown) => void) => void;
+
+  // Utilities
+  getConnectionStats: () => { messagesReceived: number; messagesSent: number };
+}
+
+/**
  * WebSocket service hook
  */
-export function useWebSocketService(config?: Partial<WebSocketConfig>) {
+export function useWebSocketService(config?: Partial<WebSocketConfig>): UseWebSocketServiceReturn {
   const [connectionState, setConnectionState] =
     useState<ConnectionState>('disconnected');
   const [isConnected, setIsConnected] = useState(false);
@@ -273,7 +293,7 @@ export function useWebSocketService(config?: Partial<WebSocketConfig>) {
 /**
  * Mock WebSocket service for development/testing
  */
-export function useMockWebSocketService() {
+export function useMockWebSocketService(): UseWebSocketServiceReturn {
   const [isConnected, setIsConnected] = useState(true);
   const eventListenersRef = useRef<Map<string, Set<(data: unknown) => void>>>(
     new Map()
