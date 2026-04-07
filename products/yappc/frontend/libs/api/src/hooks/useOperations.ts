@@ -219,15 +219,21 @@ export function useIncidents(filters?: {
  * Hook for incident mutations
  */
 export function useIncidentMutations() {
+  type _IncidentMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown } };
+  const runMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const setIncidents = useSetAtom(incidentsAtom);
   const setActiveIncident = useSetAtom(activeIncidentAtom);
 
-  const [create] = useMutation(CREATE_INCIDENT);
-  const [update] = useMutation(UPDATE_INCIDENT);
-  const [acknowledge] = useMutation(ACKNOWLEDGE_INCIDENT);
-  const [resolve] = useMutation(RESOLVE_INCIDENT);
-  const [escalate] = useMutation(ESCALATE_INCIDENT);
-  const [addTimeline] = useMutation(ADD_INCIDENT_TIMELINE_ENTRY);
+  const [create] = runMutation(CREATE_INCIDENT);
+  const [update] = runMutation(UPDATE_INCIDENT);
+  const [acknowledge] = runMutation(ACKNOWLEDGE_INCIDENT);
+  const [resolve] = runMutation(RESOLVE_INCIDENT);
+  const [escalate] = runMutation(ESCALATE_INCIDENT);
+  const [addTimeline] = runMutation(ADD_INCIDENT_TIMELINE_ENTRY);
 
   const createIncident = useCallback(
     async (input: IncidentInput) => {
@@ -349,9 +355,18 @@ export function useAlerts(filters?: {
   severity?: string[];
   service?: string;
 }) {
+  type AlertsData = { alerts?: { nodes?: Record<string, unknown>[] } };
+  type AlertsState = {
+    data?: AlertsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: AlertsData }>;
+  };
+  const runAlertsQuery = useQuery as unknown as (query: unknown, options: unknown) => AlertsState;
+
   const [alerts, setAlerts] = useAtom(alertsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_ALERTS, {
+  const { data, loading, error, refetch } = runAlertsQuery(GET_ALERTS, {
     variables: { filters, first: 50 },
     onCompleted: (data) => {
       if (data?.alerts?.nodes) {
@@ -389,10 +404,16 @@ export function useAlerts(filters?: {
  * Hook for alert mutations
  */
 export function useAlertMutations() {
+  type _AlertMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown } };
+  const runMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const setAlerts = useSetAtom(alertsAtom);
 
-  const [ack] = useMutation(ACKNOWLEDGE_ALERT);
-  const [snooze] = useMutation(SNOOZE_ALERT);
+  const [ack] = runMutation(ACKNOWLEDGE_ALERT);
+  const [snooze] = runMutation(SNOOZE_ALERT);
 
   const acknowledgeAlert = useCallback(
     async (alertId: string, message?: string) => {
@@ -436,9 +457,18 @@ export function useAlertMutations() {
  * Hook for fetching dashboards
  */
 export function useDashboards(projectId?: string) {
+  type DashboardsData = { dashboards?: Record<string, unknown>[] };
+  type DashboardsState = {
+    data?: DashboardsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: DashboardsData }>;
+  };
+  const runDashboardsQuery = useQuery as unknown as (query: unknown, options: unknown) => DashboardsState;
+
   const [dashboards, setDashboards] = useAtom(dashboardsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_DASHBOARDS, {
+  const { data, loading, error, refetch } = runDashboardsQuery(GET_DASHBOARDS, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -460,9 +490,18 @@ export function useDashboards(projectId?: string) {
  * Hook for active dashboard with widgets
  */
 export function useDashboard(dashboardId?: string) {
+  type DashboardData = { dashboard?: Record<string, unknown> };
+  type DashboardState = {
+    data?: DashboardData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: DashboardData }>;
+  };
+  const runDashboardQuery = useQuery as unknown as (query: unknown, options: unknown) => DashboardState;
+
   const [activeDashboard, setActiveDashboard] = useAtom(activeDashboardAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_DASHBOARD, {
+  const { data, loading, error, refetch } = runDashboardQuery(GET_DASHBOARD, {
     variables: { dashboardId },
     skip: !dashboardId,
     onCompleted: (data) => {

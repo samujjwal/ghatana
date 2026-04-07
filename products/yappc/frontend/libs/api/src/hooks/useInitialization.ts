@@ -330,9 +330,17 @@ export function useInfrastructure(sessionId?: string) {
  * Hook for cost estimation
  */
 export function useCostEstimate(config?: InfrastructureConfig) {
+  type CostEstimateData = { costEstimate?: Record<string, unknown> };
+  type CostEstimateState = {
+    data?: CostEstimateData;
+    loading: boolean;
+    refetch: (opts?: unknown) => Promise<{ data?: CostEstimateData }>;
+  };
+  const runCostEstimateQuery = useQuery as unknown as (query: unknown, options: unknown) => CostEstimateState;
+
   const [costEstimate, setCostEstimate] = useAtom(costEstimateAtom);
 
-  const { data, loading, refetch } = useQuery(GET_COST_ESTIMATE, {
+  const { data, loading, refetch } = runCostEstimateQuery(GET_COST_ESTIMATE, {
     variables: { config },
     skip: !config,
     onCompleted: (data) => {
@@ -368,9 +376,18 @@ export function useCostEstimate(config?: InfrastructureConfig) {
  * Hook for managing environments
  */
 export function useEnvironments(projectId?: string) {
+  type EnvironmentsData = { environments?: Record<string, unknown>[] };
+  type EnvironmentsState = {
+    data?: EnvironmentsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: EnvironmentsData }>;
+  };
+  const runEnvironmentsQuery = useQuery as unknown as (query: unknown, options: unknown) => EnvironmentsState;
+
   const [environments, setEnvironments] = useAtom(environmentsAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_ENVIRONMENTS, {
+  const { data, loading, error, refetch } = runEnvironmentsQuery(GET_ENVIRONMENTS, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -392,11 +409,17 @@ export function useEnvironments(projectId?: string) {
  * Hook for environment mutations
  */
 export function useEnvironmentMutations(projectId?: string) {
+  type _EnvironmentMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown } };
+  const runMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const setEnvironments = useSetAtom(environmentsAtom);
 
-  const [createEnv] = useMutation(CREATE_ENVIRONMENT);
-  const [updateEnv] = useMutation(UPDATE_ENVIRONMENT);
-  const [deleteEnv] = useMutation(DELETE_ENVIRONMENT);
+  const [createEnv] = runMutation(CREATE_ENVIRONMENT);
+  const [updateEnv] = runMutation(UPDATE_ENVIRONMENT);
+  const [deleteEnv] = runMutation(DELETE_ENVIRONMENT);
 
   const createEnvironment = useCallback(
     async (input: EnvironmentInput) => {
@@ -454,9 +477,23 @@ export function useEnvironmentMutations(projectId?: string) {
  * Hook for managing team invitations
  */
 export function useTeamInvites(projectId?: string) {
+  type TeamInvitesData = { teamInvites?: Record<string, unknown>[] };
+  type TeamInvitesState = {
+    data?: TeamInvitesData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: TeamInvitesData }>;
+  };
+  const runTeamInvitesQuery = useQuery as unknown as (query: unknown, options: unknown) => TeamInvitesState;
+
+  type InviteMutationResult = { [key: string]: unknown };
+  const runInviteMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: InviteMutationResult }>, { loading: boolean }];
+
   const [invites, setInvites] = useAtom(teamInvitesAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_TEAM_INVITES, {
+  const { data, loading, error, refetch } = runTeamInvitesQuery(GET_TEAM_INVITES, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -466,9 +503,9 @@ export function useTeamInvites(projectId?: string) {
     },
   });
 
-  const [inviteMember] = useMutation(INVITE_TEAM_MEMBER);
-  const [resendInvite] = useMutation(RESEND_INVITE);
-  const [revokeInvite] = useMutation(REVOKE_INVITE);
+  const [inviteMember] = runInviteMutation(INVITE_TEAM_MEMBER);
+  const [resendInvite] = runInviteMutation(RESEND_INVITE);
+  const [revokeInvite] = runInviteMutation(REVOKE_INVITE);
 
   const sendInvite = useCallback(
     async (email: string, role: string, message?: string) => {

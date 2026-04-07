@@ -208,7 +208,16 @@ export function useVulnerabilities(filters?: VulnerabilityFilters) {
  * Hook for vulnerability statistics
  */
 export function useVulnerabilityStats(projectId?: string) {
-  const { data, loading, error, refetch } = useQuery(GET_VULNERABILITY_STATS, {
+  type VulnStatsData = { vulnerabilityStats?: Record<string, unknown> };
+  type VulnStatsState = {
+    data?: VulnStatsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: VulnStatsData }>;
+  };
+  const runVulnStatsQuery = useQuery as unknown as (query: unknown, options: unknown) => VulnStatsState;
+
+  const { data, loading, error, refetch } = runVulnStatsQuery(GET_VULNERABILITY_STATS, {
     variables: { projectId },
     skip: !projectId,
   });
@@ -238,13 +247,19 @@ export function useVulnerabilityStats(projectId?: string) {
  * Hook for vulnerability mutations
  */
 export function useVulnerabilityMutations() {
+  type _VulnMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown } };
+  const runMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
   const setVulnerabilities = useSetAtom(vulnerabilitiesAtom);
   const setSelected = useSetAtom(selectedVulnerabilityAtom);
 
-  const [update] = useMutation(UPDATE_VULNERABILITY);
-  const [assign] = useMutation(ASSIGN_VULNERABILITY);
-  const [suppress] = useMutation(SUPPRESS_VULNERABILITY);
-  const [bulkUpdate] = useMutation(BULK_UPDATE_VULNERABILITIES);
+  const [update] = runMutation(UPDATE_VULNERABILITY);
+  const [assign] = runMutation(ASSIGN_VULNERABILITY);
+  const [suppress] = runMutation(SUPPRESS_VULNERABILITY);
+  const [bulkUpdate] = runMutation(BULK_UPDATE_VULNERABILITIES);
 
   const updateVulnerability = useCallback(
     async (vulnId: string, input: Partial<VulnerabilityInput>) => {
@@ -332,9 +347,23 @@ export function useVulnerabilityMutations() {
  * Hook for security scans
  */
 export function useSecurityScans(projectId?: string) {
+  type SecurityScansData = { securityScans?: Record<string, unknown>[] };
+  type SecurityScansState = {
+    data?: SecurityScansData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: SecurityScansData }>;
+  };
+  const runSecurityScansQuery = useQuery as unknown as (query: unknown, options: unknown) => SecurityScansState;
+
+  type ScanMutationResult = { [key: string]: unknown };
+  const runScanMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: ScanMutationResult }>, { loading: boolean }];
+
   const [scans, setScans] = useAtom(securityScansAtom);
 
-  const { data, loading, error, refetch } = useQuery(GET_SECURITY_SCANS, {
+  const { data, loading, error, refetch } = runSecurityScansQuery(GET_SECURITY_SCANS, {
     variables: { projectId },
     skip: !projectId,
     onCompleted: (data) => {
@@ -344,8 +373,8 @@ export function useSecurityScans(projectId?: string) {
     },
   });
 
-  const [trigger] = useMutation(TRIGGER_SECURITY_SCAN);
-  const [cancel] = useMutation(CANCEL_SECURITY_SCAN);
+  const [trigger] = runScanMutation(TRIGGER_SECURITY_SCAN);
+  const [cancel] = runScanMutation(CANCEL_SECURITY_SCAN);
 
   // Subscribe to scan progress
   useSubscription(SCAN_PROGRESS_SUBSCRIPTION, {
@@ -408,9 +437,18 @@ export function useSecurityScans(projectId?: string) {
  * Hook for compliance frameworks and status
  */
 export function useCompliance(projectId?: string) {
+  type ComplianceData = { complianceFrameworks?: Record<string, unknown>[] };
+  type ComplianceState = {
+    data?: ComplianceData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: ComplianceData }>;
+  };
+  const runComplianceQuery = useQuery as unknown as (query: unknown, options: unknown) => ComplianceState;
+
   const [complianceStatus, setComplianceStatus] = useAtom(complianceStatusAtom);
 
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refetch } = runComplianceQuery(
     GET_COMPLIANCE_FRAMEWORKS,
     {
       variables: { projectId },
@@ -435,33 +473,48 @@ export function useCompliance(projectId?: string) {
  * Hook for compliance controls
  */
 export function useComplianceControls(frameworkId?: string) {
+  type ComplianceControlsData = { complianceControls?: Record<string, unknown>[] };
+  type ComplianceControlsState = {
+    data?: ComplianceControlsData;
+    loading: boolean;
+    error?: unknown;
+    refetch: (opts?: unknown) => Promise<{ data?: ComplianceControlsData }>;
+  };
+  const runComplianceControlsQuery = useQuery as unknown as (query: unknown, options: unknown) => ComplianceControlsState;
+
+  type ControlMutationResult = { [key: string]: unknown };
+  const runControlMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<{ data?: ControlMutationResult }>, { loading: boolean }];
+
   const [controls, setControls] = useState<ComplianceControl[]>([]);
 
-  const { data, loading, error, refetch } = useQuery(GET_COMPLIANCE_CONTROLS, {
+  const { data, loading, error, refetch } = runComplianceControlsQuery(GET_COMPLIANCE_CONTROLS, {
     variables: { frameworkId },
     skip: !frameworkId,
     onCompleted: (data) => {
       if (data?.complianceControls) {
-        setControls(data.complianceControls);
+        setControls((data.complianceControls as unknown as ComplianceControl[]) || []);
       }
     },
   });
 
-  const [updateControl] = useMutation(UPDATE_COMPLIANCE_CONTROL);
-  const [uploadEvidence] = useMutation(UPLOAD_COMPLIANCE_EVIDENCE);
+  const [updateControl] = runControlMutation(UPDATE_COMPLIANCE_CONTROL);
+  const [uploadEvidence] = runControlMutation(UPLOAD_COMPLIANCE_EVIDENCE);
 
   const updateComplianceControl = useCallback(
     async (controlId: string, status: string, notes?: string) => {
-      const result = await updateControl({
+      const result = (await updateControl({
         variables: { controlId, status, notes },
-      });
+      })) as unknown as { data?: { updateComplianceControl?: ComplianceControl } };
       if (result.data?.updateComplianceControl) {
+        const updated = result.data.updateComplianceControl;
         setControls((prev) =>
           prev.map((c) =>
-            c.id === controlId ? result.data.updateComplianceControl : c
+            c.id === controlId ? updated : c
           )
         );
-        return result.data.updateComplianceControl;
+        return updated;
       }
       return null;
     },
