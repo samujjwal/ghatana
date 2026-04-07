@@ -26,7 +26,16 @@ export interface UseSuggestionsOptions {
  * Returns current suggestions, loading/error state, and controls to refresh or
  * generate suggestions on demand. Designed to be small and testable.
  */
-export function useSuggestions(options: UseSuggestionsOptions) {
+export function useSuggestions(
+  options: UseSuggestionsOptions
+): {
+  suggestions: Suggestion[];
+  isLoading: boolean;
+  error: string | null;
+  refresh: () => void;
+  generate: () => Promise<void>;
+  setSuggestions: (suggestions: Suggestion[]) => void;
+} {
   const {
     aiService,
     types,

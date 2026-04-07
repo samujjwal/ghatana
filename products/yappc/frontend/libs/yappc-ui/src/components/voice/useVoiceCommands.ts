@@ -176,7 +176,14 @@ export function useVoiceCommands(options: {
   onCommand: (command: VoiceCommand) => void;
   onError?: (error: Error) => void;
   config?: Partial<VoiceHandlerConfig>;
-}) {
+}): {
+  isListening: boolean;
+  isProcessing: boolean;
+  feedback: string;
+  lastCommand: VoiceCommand | null;
+  startListening: () => Promise<void>;
+  stopListening: () => void;
+} {
   const { onCommand, onError, config = {} } = options;
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
 
