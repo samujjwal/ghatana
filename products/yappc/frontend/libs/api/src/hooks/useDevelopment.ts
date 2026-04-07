@@ -317,13 +317,24 @@ export function useSprintMutations(projectId: string) {
  * Hook for fetching a single story with details
  */
 export function useStory(storyId: string | undefined) {
-  const { data, loading, error, refetch } = useQuery(GET_STORY, {
+  type StoryQueryData = { story?: Record<string, unknown> };
+  type StoryQueryState = {
+    data?: StoryQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type StorySubscriptionState = { data?: { storyUpdates?: Record<string, unknown> } };
+  const runStoryQuery = useQuery as unknown as (query: unknown, options: unknown) => StoryQueryState;
+  const runStorySubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => StorySubscriptionState;
+
+  const { data, loading, error, refetch } = runStoryQuery(GET_STORY, {
     variables: { id: storyId },
     skip: !storyId,
   });
 
   // Subscribe to story updates
-  useSubscription(SUBSCRIBE_TO_STORY_UPDATES, {
+  runStorySubscription(SUBSCRIBE_TO_STORY_UPDATES, {
     variables: { storyId },
     skip: !storyId,
   });
@@ -385,10 +396,21 @@ export function useStories(
  * Hook for sprint board
  */
 export function useSprintBoard(sprintId: string) {
+  type BoardQueryData = { sprintBoard?: { columns?: Record<string, unknown> } };
+  type BoardQueryState = {
+    data?: BoardQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type BoardSubscriptionState = { data?: { boardChanged?: Record<string, unknown> } };
+  const runBoardQuery = useQuery as unknown as (query: unknown, options: unknown) => BoardQueryState;
+  const runBoardSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => BoardSubscriptionState;
+
   const [boardColumns, setBoardColumns] = useAtom(boardColumnsAtom);
   const updateStoryStatus = useSetAtom(updateStoryStatusAction);
 
-  const { loading, error, refetch } = useQuery(GET_SPRINT_BOARD, {
+  const { loading, error, refetch } = runBoardQuery(GET_SPRINT_BOARD, {
     variables: { sprintId },
     skip: !sprintId,
     onCompleted: (data) => {
@@ -399,11 +421,11 @@ export function useSprintBoard(sprintId: string) {
   });
 
   // Subscribe to board changes
-  useSubscription(SUBSCRIBE_TO_BOARD_CHANGES, {
+  runBoardSubscription(SUBSCRIBE_TO_BOARD_CHANGES, {
     variables: { sprintId },
     skip: !sprintId,
-    onData: ({ data }) => {
-      const change = data.data?.boardChanged;
+    onData: ({ data: subData }: { data: BoardSubscriptionState }) => {
+      const change = (subData?.data?.boardChanged) as Record<string, unknown> | undefined;
       if (change?.story) {
         updateStoryStatus({
           storyId: change.story.id,
@@ -623,13 +645,24 @@ export function useStoryMutations(projectId: string) {
  * Hook for fetching a single PR
  */
 export function usePullRequest(prId: string | undefined) {
-  const { data, loading, error, refetch } = useQuery(GET_PULL_REQUEST, {
+  type PRQueryData = { pullRequest?: Record<string, unknown> };
+  type PRQueryState = {
+    data?: PRQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  type PRSubscriptionState = { data?: { prUpdates?: Record<string, unknown> } };
+  const runPRQuery = useQuery as unknown as (query: unknown, options: unknown) => PRQueryState;
+  const runPRSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => PRSubscriptionState;
+
+  const { data, loading, error, refetch } = runPRQuery(GET_PULL_REQUEST, {
     variables: { id: prId },
     skip: !prId,
   });
 
   // Subscribe to PR updates
-  useSubscription(SUBSCRIBE_TO_PR_UPDATES, {
+  runPRSubscription(SUBSCRIBE_TO_PR_UPDATES, {
     variables: { pullRequestId: prId },
     skip: !prId,
   });
@@ -652,10 +685,25 @@ export function usePullRequests(
     pageSize?: number;
   }
 ) {
+  type PRsQueryData = {
+    pullRequests?: {
+      edges?: Array<{ node?: Record<string, unknown> }>;
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type PRsQueryState = {
+    data?: PRsQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<unknown>;
+    refetch: () => Promise<unknown>;
+  };
+  const runPRsQuery = useQuery as unknown as (query: unknown, options: unknown) => PRsQueryState;
+
   const { filter, pageSize = 20 } = options ?? {};
   const [pullRequests, setPullRequests] = useAtom(pullRequestsAtom);
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(
+  const { data, loading, error, fetchMore, refetch } = runPRsQuery(
     LIST_PULL_REQUESTS,
     {
       variables: {
@@ -786,10 +834,24 @@ export function usePullRequestMutations(projectId: string) {
  * Hook for feature flags
  */
 export function useFeatureFlags(projectId: string, filter?: FeatureFlagFilter) {
+  type FFQueryData = {
+    featureFlags?: {
+      edges?: Array<{ node?: Record<string, unknown> }>;
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type FFQueryState = {
+    data?: FFQueryData;
+    loading: boolean;
+    error?: unknown;
+    refetch: () => Promise<unknown>;
+  };
+  const runFFQuery = useQuery as unknown as (query: unknown, options: unknown) => FFQueryState;
+
   const [featureFlags, setFeatureFlags] = useAtom(featureFlagsAtom);
   const toggleFlag = useSetAtom(toggleFeatureFlagAction);
 
-  const { loading, error, refetch } = useQuery(LIST_FEATURE_FLAGS, {
+  const { loading, error, refetch } = runFFQuery(LIST_FEATURE_FLAGS, {
     variables: { projectId, filter },
     skip: !projectId,
     onCompleted: (data) => {
@@ -903,10 +965,25 @@ export function useDeployments(
   projectId: string,
   options?: { environment?: string; pageSize?: number }
 ) {
+  type DeploymentsQueryData = {
+    deployments?: {
+      edges?: Array<{ node?: Record<string, unknown> }>;
+      pageInfo?: { hasNextPage?: boolean; endCursor?: string };
+    };
+  };
+  type DeploymentsQueryState = {
+    data?: DeploymentsQueryData;
+    loading: boolean;
+    error?: unknown;
+    fetchMore: (opts: unknown) => Promise<unknown>;
+    refetch: () => Promise<unknown>;
+  };
+  const runDeploymentsQuery = useQuery as unknown as (query: unknown, options: unknown) => DeploymentsQueryState;
+
   const { environment, pageSize = 20 } = options ?? {};
   const [deployments, setDeployments] = useAtom(deploymentsAtom);
 
-  const { data, loading, error, fetchMore, refetch } = useQuery(
+  const { data, loading, error, fetchMore, refetch } = runDeploymentsQuery(
     LIST_DEPLOYMENTS,
     {
       variables: {
