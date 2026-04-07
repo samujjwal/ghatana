@@ -72,6 +72,32 @@ class ClinicalNoteServiceTest extends EventloopTestBase {
             assertThrows(Exception.class, () -> runPromise(() -> service.createSoapNote(note)));
             clearFatalError();
         }
+
+        @Test
+        @DisplayName("sanitizes SOAP note sections")
+        void sanitizesSoapSections() {
+            SoapNote note = new SoapNote(
+                null,
+                "patient-1",
+                "enc-1",
+                "author-1",
+                "<script>alert('xss')</script>",
+                "<b>Objective</b>",
+                "<img src=x onerror=alert(1)>",
+                "<iframe>plan</iframe>",
+                NoteStatus.DRAFT,
+                null,
+                null,
+                null
+            );
+
+            SoapNote stored = runPromise(() -> service.createSoapNote(note));
+
+            assertThat(stored.subjective()).isEqualTo("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
+            assertThat(stored.objective()).isEqualTo("&lt;b&gt;Objective&lt;/b&gt;");
+            assertThat(stored.assessment()).isEqualTo("&lt;img src=x onerror=alert(1)&gt;");
+            assertThat(stored.plan()).isEqualTo("&lt;iframe&gt;plan&lt;/iframe&gt;");
+        }
     }
 
     @Nested

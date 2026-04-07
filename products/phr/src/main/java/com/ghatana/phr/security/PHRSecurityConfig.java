@@ -8,6 +8,9 @@ import com.ghatana.phr.repository.ConsentRepository;
 import com.ghatana.phr.repository.TenantConfigRepository;
 import com.ghatana.phr.repository.UserRepository;
 
+import javax.sql.DataSource;
+import java.util.Objects;
+
 /**
  * Configuration and setup for PHRSecurity
  *
@@ -22,24 +25,25 @@ public class PHRSecurityConfig {
     private final TenantConfigRepository tenantConfigRepository;
     private final ConsentService consentService;
 
-    public PHRSecurityConfig() {
-        this(new UserRepository(), new ConsentRepository(), new TenantConfigRepository(), null);
-    }
-
-    public PHRSecurityConfig(UserRepository userRepository, 
-                            ConsentRepository consentRepository,
-                            TenantConfigRepository tenantConfigRepository) {
-        this(userRepository, consentRepository, tenantConfigRepository, null);
-    }
-
     public PHRSecurityConfig(UserRepository userRepository,
                              ConsentRepository consentRepository,
                              TenantConfigRepository tenantConfigRepository,
                              ConsentService consentService) {
-        this.userRepository = userRepository;
-        this.consentRepository = consentRepository;
-        this.tenantConfigRepository = tenantConfigRepository;
-        this.consentService = consentService;
+        this.userRepository = Objects.requireNonNull(userRepository, "userRepository cannot be null");
+        this.consentRepository = Objects.requireNonNull(consentRepository, "consentRepository cannot be null");
+        this.tenantConfigRepository = Objects.requireNonNull(tenantConfigRepository,
+            "tenantConfigRepository cannot be null");
+        this.consentService = Objects.requireNonNull(consentService, "consentService cannot be null");
+    }
+
+    public static PHRSecurityConfig persistent(DataSource dataSource, ConsentService consentService) {
+        Objects.requireNonNull(dataSource, "dataSource cannot be null");
+        return new PHRSecurityConfig(
+            new UserRepository(dataSource),
+            new ConsentRepository(dataSource),
+            new TenantConfigRepository(dataSource),
+            consentService
+        );
     }
 
     public KernelSecurityManager kernelSecurityManager() {

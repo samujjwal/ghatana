@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -56,12 +57,14 @@ class ConsentManagementServiceTest extends EventloopTestBase {
 
     private StubDataCloudAdapter dataCloud;
     private ConsentManagementService service;
+    private PhrNotificationTestSupport.RecordingNotificationSender notificationSender;
 
     @BeforeEach
     void setUp() {
         dataCloud = new StubDataCloudAdapter();
         KernelContext context = createTestContext(dataCloud);
-        service = new ConsentManagementService(context);
+        notificationSender = new PhrNotificationTestSupport.RecordingNotificationSender();
+        service = new ConsentManagementService(context, notificationSender);
         runPromise(service::start);
     }
 
@@ -167,6 +170,80 @@ class ConsentManagementServiceTest extends EventloopTestBase {
             assertThrows(Exception.class,
                     () -> runPromise(() -> service.assertAccess(request)));
             clearFatalError();
+        }
+    }
+
+    @Nested
+    @DisplayName("createEmergencyAccess")
+    class EmergencyAccessGrantTests {
+
+        @Test
+        @DisplayName("creates a time-limited emergency grant with constrained scope")
+        void createsTimeLimitedEmergencyGrant() {
+            EmergencyGrant grant = runPromise(() -> service.createEmergencyAccess(
+                    new EmergencyAccessRequest("patient-1", "doctor-1", "Patient unconscious", "trauma")));
+
+            assertEquals("patient-1", grant.getPatientId());
+            assertEquals("doctor-1", grant.getProviderId());
+            assertTrue(grant.getExpiresAt().isAfter(grant.getGrantedAt()));
+            assertTrue(grant.getExpiresAt().isBefore(grant.getGrantedAt().plusSeconds(4 * 3600 + 60)));
+            assertEquals(Set.of("allergies", "medications", "bloodType", "emergencyContacts"),
+                    grant.getAllowedResources());
+            assertFalse(grant.isJustificationSubmitted());
+        }
+
+        @Test
+        @DisplayName("requires a category for emergency grants")
+        void requiresCategory() {
+            assertThrows(Exception.class,
+                    () -> runPromise(() -> service.createEmergencyAccess(
+                            new EmergencyAccessRequest("patient-1", "doctor-1", "Emergency", "  "))));
+            clearFatalError();
+        }
+
+        @Test
+        @DisplayName("sanitizes emergency justification text")
+        void sanitizesEmergencyJustification() {
+            EmergencyGrant grant = runPromise(() -> service.createEmergencyAccess(
+                new EmergencyAccessRequest(
+                    "patient-1",
+                    "doctor-1",
+                    "<script>alert('xss')</script>",
+                    "trauma"
+                )));
+
+            assertThat(grant.getJustification())
+                .isEqualTo("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
+            assertThat(notificationSender.consentChangeNotifications()).hasSize(1);
+            assertThat(notificationSender.consentChangeNotifications().getFirst().changeType())
+                .isEqualTo(PhrNotificationSender.ConsentChangeType.EMERGENCY_ACCESS_GRANTED);
+        }
+    }
+
+    @Nested
+    @DisplayName("consent change notifications")
+    class ConsentNotifications {
+
+        @Test
+        @DisplayName("notifies patient when a grant is created")
+        void notifiesGrantCreated() {
+            runPromise(() -> service.createGrant(testGrant("patient-1", "doctor-1")));
+
+            assertThat(notificationSender.consentChangeNotifications()).hasSize(1);
+            assertThat(notificationSender.consentChangeNotifications().getFirst().changeType())
+                .isEqualTo(PhrNotificationSender.ConsentChangeType.GRANT_CREATED);
+        }
+
+        @Test
+        @DisplayName("notifies patient when a grant is revoked")
+        void notifiesGrantRevoked() {
+            ConsentGrant created = runPromise(() -> service.createGrant(testGrant("patient-1", "doctor-1")));
+
+            runPromise(() -> service.revokeGrant(created.getId()));
+
+            assertThat(notificationSender.consentChangeNotifications()).hasSize(2);
+            assertThat(notificationSender.consentChangeNotifications().getLast().changeType())
+                .isEqualTo(PhrNotificationSender.ConsentChangeType.GRANT_REVOKED);
         }
     }
 

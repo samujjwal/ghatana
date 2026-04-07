@@ -72,6 +72,11 @@ dependencies {
     // Jackson for JSON processing
     implementation(libs.jackson.databind)
     implementation(libs.jackson.datatype.jsr310)
+
+    // PostgreSQL persistence
+    implementation(libs.postgresql)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
     
     // Commons utilities
     implementation(libs.commons.codec)
@@ -89,6 +94,8 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.jmh.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
     testAnnotationProcessor(libs.jmh.generator.annprocess)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)

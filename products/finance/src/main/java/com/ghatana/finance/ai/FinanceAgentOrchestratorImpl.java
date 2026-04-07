@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
 
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+
     private final Map<String, KernelAgent> agents = new ConcurrentHashMap<>();
 
     public FinanceAgentOrchestratorImpl() {
@@ -31,7 +33,39 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
     
     @Override
     public AgentResponse executeAgent(KernelAgent agent, AgentRequest request) {
-        return agent.execute(request);
+        Objects.requireNonNull(agent, "agent must not be null");
+        Objects.requireNonNull(request, "request must not be null");
+
+        RuntimeException lastException = null;
+        AgentResponse lastFailureResponse = null;
+
+        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+            try {
+                AgentResponse response = agent.execute(request);
+                if (response.isSuccess()) {
+                    return response;
+                }
+
+                lastFailureResponse = response;
+                log.warn("Agent '{}' returned unsuccessful response on attempt {}/{} for request '{}'",
+                    agent.getAgentId(), attempt, MAX_RETRY_ATTEMPTS, request.getRequestId());
+            } catch (RuntimeException exception) {
+                lastException = exception;
+                log.warn("Agent '{}' threw on attempt {}/{} for request '{}'",
+                    agent.getAgentId(), attempt, MAX_RETRY_ATTEMPTS, request.getRequestId(), exception);
+            }
+        }
+
+        if (lastFailureResponse != null) {
+            throw new IllegalStateException(
+                "Agent execution failed after " + MAX_RETRY_ATTEMPTS + " attempts: " + lastFailureResponse.getError()
+            );
+        }
+
+        throw new IllegalStateException(
+            "Agent execution failed after " + MAX_RETRY_ATTEMPTS + " attempts",
+            lastException
+        );
     }
 
     @Override
@@ -59,7 +93,7 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
 
         for (KernelAgent agent : agents) {
             try {
-                AgentResponse response = agent.execute(request);
+                AgentResponse response = executeAgent(agent, request);
                 responses.add(response);
                 if (!response.isSuccess()) {
                     log.warn("Agent '{}' reported failure in workflow", agent.getAgentId());
@@ -89,8 +123,12 @@ public class FinanceAgentOrchestratorImpl implements AgentOrchestrator {
         Objects.requireNonNull(agent,   "agent must not be null");
         Objects.requireNonNull(request, "request must not be null");
 
-        return Promise.ofBlocking(Runnable::run, () -> agent.execute(request))
-            .whenException(ex -> log.error("Async execution failed for agent '{}'", agent.getAgentId(), ex));
+        try {
+            return Promise.of(executeAgent(agent, request));
+        } catch (RuntimeException exception) {
+            log.error("Async execution failed for agent '{}'", agent.getAgentId(), exception);
+            return Promise.ofException(exception);
+        }
     }
 
     // =========================================================================

@@ -27,6 +27,7 @@ public class DefaultAuditTrailService implements AuditTrailService {
     private final ObjectMapper objectMapper;
     private final AuditTrailPersistence persistence;
     private final Map<String, List<StoredAuditEvent>> auditLogs = new ConcurrentHashMap<>();
+    private final Map<String, StoredAuditEvent> auditEventsById = new ConcurrentHashMap<>();
     private final AtomicBoolean hydrated = new AtomicBoolean(false);
 
     public DefaultAuditTrailService(ObjectMapper objectMapper, AuditTrailPersistence persistence) {
@@ -39,12 +40,17 @@ public class DefaultAuditTrailService implements AuditTrailService {
         hydrateIfNeeded();
 
         AuditEvent canonicalEvent = canonicalize(event);
+        if (auditEventsById.containsKey(canonicalEvent.getEventId())) {
+            return;
+        }
+
         String entityId = canonicalEvent.getEntityId();
         String previousHash = getLastHash(entityId);
         String eventHash = calculateHash(canonicalEvent, previousHash);
 
         StoredAuditEvent storedEvent = new StoredAuditEvent(canonicalEvent, eventHash);
         auditLogs.computeIfAbsent(entityId, ignored -> new CopyOnWriteArrayList<>()).add(storedEvent);
+        auditEventsById.put(canonicalEvent.getEventId(), storedEvent);
         persistence.persist(storedEvent);
     }
 
@@ -145,7 +151,10 @@ public class DefaultAuditTrailService implements AuditTrailService {
 
         persistence.loadAll().stream()
             .sorted(Comparator.comparingLong(entry -> entry.event().getTimestamp()))
-            .forEach(entry -> auditLogs.computeIfAbsent(entry.event().getEntityId(), ignored -> new CopyOnWriteArrayList<>()).add(entry));
+            .forEach(entry -> {
+                auditLogs.computeIfAbsent(entry.event().getEntityId(), ignored -> new CopyOnWriteArrayList<>()).add(entry);
+                auditEventsById.putIfAbsent(entry.event().getEventId(), entry);
+            });
     }
 
     private AuditEvent canonicalize(AuditEvent event) {

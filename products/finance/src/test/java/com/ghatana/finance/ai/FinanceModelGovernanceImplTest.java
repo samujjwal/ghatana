@@ -13,8 +13,9 @@ class FinanceModelGovernanceImplTest {
     void shouldRecordPerformanceAndAlertOnDegradation() {
         ModelApprovalRepository approvals = new ModelApprovalRepository();
         ModelPerformanceRepository performance = new ModelPerformanceRepository();
+        ModelRepository models = new ModelRepository();
         CapturingAlertService alerts = new CapturingAlertService();
-        FinanceModelGovernanceImpl governance = new FinanceModelGovernanceImpl(approvals, performance, alerts);
+        FinanceModelGovernanceImpl governance = new FinanceModelGovernanceImpl(approvals, performance, models, alerts);
 
         governance.recordModelPerformance(
             "risk-model-v1",
@@ -31,6 +32,7 @@ class FinanceModelGovernanceImplTest {
         FinanceModelGovernanceImpl governance = new FinanceModelGovernanceImpl(
             new ModelApprovalRepository(),
             new ModelPerformanceRepository(),
+            new ModelRepository(),
             new CapturingAlertService()
         );
         governance.registerModel(new ModelGovernanceService.ModelRegistration(

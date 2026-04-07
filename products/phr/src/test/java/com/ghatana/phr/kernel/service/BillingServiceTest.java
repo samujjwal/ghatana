@@ -87,6 +87,27 @@ class BillingServiceTest extends EventloopTestBase {
                     () -> runPromise(() -> service.createEncounter(buildEncounter(null, "dr", null))));
             clearFatalError();
         }
+
+        @Test
+        @DisplayName("sanitizes service line descriptions")
+        void sanitizesServiceLineDescriptions() {
+            BillingEncounter encounter = new BillingEncounter(
+                null,
+                "patient-1",
+                "provider-1",
+                "facility-1",
+                List.of(new ServiceLine("99213", "<b>Office visit</b>", 1, new BigDecimal("1200.00"), "NPR")),
+                new BigDecimal("1200.00"),
+                "NPR",
+                EncounterStatus.OPEN,
+                null,
+                null
+            );
+
+            BillingEncounter stored = runPromise(() -> service.createEncounter(encounter));
+
+            assertThat(stored.serviceLines().get(0).description()).isEqualTo("&lt;b&gt;Office visit&lt;/b&gt;");
+        }
     }
 
     @Nested

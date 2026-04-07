@@ -1,5 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
@@ -83,6 +85,19 @@ public class DocumentService extends AbstractDataService {
     public Promise<PatientDocument> uploadDocument(DocumentUploadRequest request) {
         ensureRunning();
 
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(request.getPatientId(), "patientId");
+        String documentType = PhrInputSanitizationUtils.requireSafeCode(request.getDocumentType(), "documentType");
+        String title = PhrInputSanitizationUtils.sanitizeRequiredText(request.getTitle(), "title", 200);
+        String description = PhrInputSanitizationUtils.sanitizeOptionalText(request.getDescription(), "description", 2000);
+        String contentType = PhrInputSanitizationUtils.requireContentType(request.getContentType(), "contentType");
+        byte[] contentBytes = PhrInputSanitizationUtils.requireBinaryContent(request.getContent(), "content", 5_000_000);
+        String contentHash = PhrInputSanitizationUtils.sanitizeRequiredText(request.getContentHash(), "contentHash", 256);
+        String visibility = PhrInputSanitizationUtils.requireAllowedValue(
+            request.getVisibility(),
+            "visibility",
+            java.util.Set.of("private", "shared-with-provider", "shared-with-all-granted")
+        );
+
         String documentId = generateId("doc");
         String contentId = generateId("cnt");
         Instant now = Instant.now();
@@ -90,22 +105,22 @@ public class DocumentService extends AbstractDataService {
         DocumentContent content = new DocumentContent(
             contentId,
             documentId,
-            request.getContentType(),
-            request.getContent(),
-            request.getContentHash()
+            contentType,
+            contentBytes,
+            contentHash
         );
 
         PatientDocument document = new PatientDocument(
             documentId,
-            request.getPatientId(),
-            request.getDocumentType(),
-            request.getTitle(),
-            request.getDescription(),
+            patientId,
+            documentType,
+            title,
+            description,
             now,
-            request.getContentType(),
-            request.getContent().length,
+            contentType,
+            contentBytes.length,
             contentId,
-            new DocumentConsent(request.getVisibility(), now),
+            new DocumentConsent(visibility, now),
             now,
             now,
             false
@@ -115,8 +130,8 @@ public class DocumentService extends AbstractDataService {
         Promise<PatientDocument> metadataWrite = storeDocument(document);
 
         return Promises.all(List.of(contentWrite, metadataWrite))
-            .then($ -> audit("DOCUMENT_UPLOAD", request.getPatientId(),
-                "Document uploaded: " + documentId + " with visibility: " + request.getVisibility()))
+            .then($ -> audit("DOCUMENT_UPLOAD", patientId,
+                "Document uploaded: " + documentId + " with visibility: " + visibility))
             .map($ -> document);
     }
 
@@ -191,25 +206,33 @@ public class DocumentService extends AbstractDataService {
     public Promise<Void> updateDocumentConsent(String documentId, String newVisibility, String patientId) {
         ensureRunning();
 
-        return fetchDocument(documentId)
+        String sanitizedDocumentId = PhrInputSanitizationUtils.requireSafeIdentifier(documentId, "documentId");
+        String sanitizedPatientId = PhrInputSanitizationUtils.requireSafeIdentifier(patientId, "patientId");
+        String sanitizedVisibility = PhrInputSanitizationUtils.requireAllowedValue(
+            newVisibility,
+            "newVisibility",
+            java.util.Set.of("private", "shared-with-provider", "shared-with-all-granted")
+        );
+
+        return fetchDocument(sanitizedDocumentId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.ofException(new IllegalStateException("Document not found"));
                 }
 
                 PatientDocument doc = opt.get();
-                if (!doc.getPatientId().equals(patientId)) {
+                if (!doc.getPatientId().equals(sanitizedPatientId)) {
                     return Promise.ofException(new IllegalStateException("Not authorized"));
                 }
 
                 PatientDocument updated = doc.withConsent(
-                    new DocumentConsent(newVisibility, Instant.now())
+                    new DocumentConsent(sanitizedVisibility, Instant.now())
                 ).withUpdatedAt(Instant.now());
 
                 return storeDocument(updated)
-                    .then($ -> invalidateConsentCache(patientId))
-                    .then($ -> audit("DOCUMENT_CONSENT_CHANGE", patientId,
-                        "Document " + documentId + " visibility changed to " + newVisibility));
+                    .then($ -> invalidateConsentCache(sanitizedPatientId))
+                    .then($ -> audit("DOCUMENT_CONSENT_CHANGE", sanitizedPatientId,
+                        "Document " + sanitizedDocumentId + " visibility changed to " + sanitizedVisibility));
             });
     }
 
@@ -381,10 +404,21 @@ public class DocumentService extends AbstractDataService {
         private final Instant updatedAt;
         private final boolean deleted;
 
-        public PatientDocument(String id, String patientId, String documentType, String title,
-                              String description, Instant documentDate, String contentType,
-                              int sizeBytes, String contentId, DocumentConsent consent,
-                              Instant createdAt, Instant updatedAt, boolean deleted) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public PatientDocument(
+            @JsonProperty("id") String id,
+            @JsonProperty("patientId") String patientId,
+            @JsonProperty("documentType") String documentType,
+            @JsonProperty("title") String title,
+            @JsonProperty("description") String description,
+            @JsonProperty("documentDate") Instant documentDate,
+            @JsonProperty("contentType") String contentType,
+            @JsonProperty("sizeBytes") int sizeBytes,
+            @JsonProperty("contentId") String contentId,
+            @JsonProperty("consent") DocumentConsent consent,
+            @JsonProperty("createdAt") Instant createdAt,
+            @JsonProperty("updatedAt") Instant updatedAt,
+            @JsonProperty("deleted") boolean deleted) {
             this.id = id;
             this.patientId = patientId;
             this.documentType = documentType;
@@ -437,8 +471,13 @@ public class DocumentService extends AbstractDataService {
         private final byte[] content;
         private final String contentHash; // SHA-256
 
-        public DocumentContent(String contentId, String documentId, String contentType,
-                                byte[] content, String contentHash) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DocumentContent(
+            @JsonProperty("contentId") String contentId,
+            @JsonProperty("documentId") String documentId,
+            @JsonProperty("contentType") String contentType,
+            @JsonProperty("content") byte[] content,
+            @JsonProperty("contentHash") String contentHash) {
             this.contentId = contentId;
             this.documentId = documentId;
             this.contentType = contentType;
@@ -457,7 +496,10 @@ public class DocumentService extends AbstractDataService {
         private final String visibility; // private, shared-with-provider, shared-with-all-granted
         private final Instant setAt;
 
-        public DocumentConsent(String visibility, Instant setAt) {
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DocumentConsent(
+                @JsonProperty("visibility") String visibility,
+                @JsonProperty("setAt") Instant setAt) {
             this.visibility = visibility;
             this.setAt = setAt;
         }

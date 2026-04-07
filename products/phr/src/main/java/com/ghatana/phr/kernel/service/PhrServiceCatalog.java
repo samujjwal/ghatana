@@ -67,7 +67,8 @@ public final class PhrServiceCatalog {
     }
 
     public record EmergencyServices(
-        EmergencyAccessLogService emergencyAccess
+        EmergencyAccessLogService emergencyAccess,
+        EmergencyAccessReviewWorkflow emergencyReview
     ) {
     }
 }

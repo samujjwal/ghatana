@@ -5,6 +5,8 @@
 package com.ghatana.products.finance.bff;
 
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.service.KernelLifecycleAware;
+import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public final class FinanceBFF {
+public final class FinanceBFF implements KernelLifecycleAware {
 
     private static final Logger log = LoggerFactory.getLogger(FinanceBFF.class);
 
@@ -42,19 +44,23 @@ public final class FinanceBFF {
     /**
      * Starts the finance BFF.
      */
-    public void start() {
+    @Override
+    public Promise<Void> start() {
         log.info("Starting Finance BFF");
         started = true;
         log.info("Finance BFF started");
+        return Promise.complete();
     }
 
     /**
      * Stops the finance BFF.
      */
-    public void stop() {
+    @Override
+    public Promise<Void> stop() {
         log.info("Stopping Finance BFF");
         started = false;
         log.info("Finance BFF stopped");
+        return Promise.complete();
     }
 
     /**
@@ -62,8 +68,14 @@ public final class FinanceBFF {
      *
      * @return true if healthy
      */
+    @Override
     public boolean isHealthy() {
         return started;
+    }
+
+    @Override
+    public String getName() {
+        return "finance-bff";
     }
 
     /**

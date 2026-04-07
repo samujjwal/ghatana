@@ -167,6 +167,32 @@ class PHRAuditTrailServiceTest {
         assertEquals("evt-persist-001", events.getFirst().getEventId());
     }
 
+    @Test
+    void testDuplicateEventIdRecordedOnce() {
+        AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder()
+            .eventId("evt-duplicate-001")
+            .eventType("patient.records.accessed")
+            .entityId("patient-duplicate")
+            .userId("provider-1")
+            .tenantId("tenant-1")
+            .action("read")
+            .data(Map.of("record_count", 1))
+            .build();
+
+        auditTrailService.recordAuditEvent(event);
+        auditTrailService.recordAuditEvent(event);
+
+        List<AuditTrailService.AuditEvent> events = auditTrailService.queryAuditEvents(
+            AuditTrailService.AuditQuery.builder()
+                .entityId("patient-duplicate")
+                .limit(10)
+                .build()
+        );
+
+        assertEquals(1, events.size());
+        assertEquals("evt-duplicate-001", events.getFirst().getEventId());
+    }
+
     private static final class InMemoryAuditAdapter implements DataCloudKernelAdapter {
         @Override
         public Promise<DataResult> readData(DataReadRequest request) {

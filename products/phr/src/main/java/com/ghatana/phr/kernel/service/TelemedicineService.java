@@ -3,8 +3,6 @@ package com.ghatana.phr.kernel.service;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
-import io.activej.promise.Promises;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -30,9 +28,15 @@ import java.util.Optional;
 public class TelemedicineService extends AbstractDataService {
 
     private static final String SESSION_DATASET = "phr.telemedicine.sessions";
+    private final PhrNotificationSender notificationSender;
 
     public TelemedicineService(KernelContext context) {
+        this(context, PhrNotificationSenders.fromContext(context));
+    }
+
+    TelemedicineService(KernelContext context, PhrNotificationSender notificationSender) {
         super(context);
+        this.notificationSender = Objects.requireNonNull(notificationSender, "notificationSender must not be null");
     }
 
     @Override
@@ -61,26 +65,41 @@ public class TelemedicineService extends AbstractDataService {
     public Promise<TeleSession> scheduleSession(TeleSession session) {
         ensureRunning();
 
-        validateRequired(session.patientId(), "patientId");
-        validateRequired(session.providerId(), "providerId");
-        validateRequired(session.scheduledAt(), "scheduledAt");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(session.patientId(), "patientId");
+        String providerId = PhrInputSanitizationUtils.requireSafeIdentifier(session.providerId(), "providerId");
+        if (session.scheduledAt() == null) {
+            return Promise.ofException(new IllegalArgumentException("scheduledAt is required"));
+        }
+        if (session.durationMinutes() <= 0 || session.durationMinutes() > 480) {
+            return Promise.ofException(new IllegalArgumentException("durationMinutes must be between 1 and 480"));
+        }
+        String platform = PhrInputSanitizationUtils.requireSafeCode(session.platform(), "platform");
+        String joinUrl = PhrInputSanitizationUtils.requireHttpsUrl(session.joinUrl(), "joinUrl");
 
         String id = session.id() != null ? session.id() : generateId("tele");
         TeleSession toStore = new TeleSession(
             id,
-            session.patientId(),
-            session.providerId(),
+            patientId,
+            providerId,
             session.scheduledAt(),
             session.durationMinutes(),
-            session.platform(),
-            session.joinUrl(),
+            platform,
+            joinUrl,
             SessionStatus.SCHEDULED,
             null,
             null,
             null
         );
 
-        return writeSession(toStore, "SCHEDULE_SESSION", "Scheduled telemedicine session");
+        return writeSession(toStore, "SCHEDULE_SESSION", "Scheduled telemedicine session")
+            .then(stored -> notificationSender.notifyTelemedicineSession(new PhrNotificationSender.TelemedicineSessionNotification(
+                stored.id(),
+                stored.patientId(),
+                stored.providerId(),
+                stored.scheduledAt(),
+                PhrNotificationSender.TelemedicineNotificationType.SESSION_SCHEDULED,
+                PhrNotificationSender.DEFAULT_CHANNELS
+            )).map($ -> stored));
     }
 
     public Promise<TeleSession> startSession(String sessionId) {
@@ -109,7 +128,10 @@ public class TelemedicineService extends AbstractDataService {
     public Promise<TeleSession> completeSession(String sessionId, String notes) {
         ensureRunning();
 
-        return getSession(sessionId)
+        String sanitizedSessionId = PhrInputSanitizationUtils.requireSafeIdentifier(sessionId, "sessionId");
+        String sanitizedNotes = PhrInputSanitizationUtils.sanitizeOptionalText(notes, "notes", 2000);
+
+        return getSession(sanitizedSessionId)
             .then(opt -> requireFound(opt, sessionId))
             .then(existing -> {
                 if (existing.status() == SessionStatus.COMPLETED) {
@@ -126,7 +148,7 @@ public class TelemedicineService extends AbstractDataService {
                     existing.id(), existing.patientId(), existing.providerId(),
                     existing.scheduledAt(), existing.durationMinutes(),
                     existing.platform(), existing.joinUrl(),
-                    SessionStatus.COMPLETED, existing.startedAt(), Instant.now(), notes
+                    SessionStatus.COMPLETED, existing.startedAt(), Instant.now(), sanitizedNotes
                 );
                 return writeSession(updated, "COMPLETE_SESSION",
                     "Session completed" + (actual != null ? " after " + actual.toMinutes() + "m" : ""));
@@ -136,7 +158,10 @@ public class TelemedicineService extends AbstractDataService {
     public Promise<TeleSession> cancelSession(String sessionId, String reason) {
         ensureRunning();
 
-        return getSession(sessionId)
+        String sanitizedSessionId = PhrInputSanitizationUtils.requireSafeIdentifier(sessionId, "sessionId");
+        String sanitizedReason = PhrInputSanitizationUtils.sanitizeRequiredText(reason, "reason", 500);
+
+        return getSession(sanitizedSessionId)
             .then(opt -> requireFound(opt, sessionId))
             .then(existing -> {
                 if (existing.status() == SessionStatus.COMPLETED
@@ -148,9 +173,17 @@ public class TelemedicineService extends AbstractDataService {
                     existing.id(), existing.patientId(), existing.providerId(),
                     existing.scheduledAt(), existing.durationMinutes(),
                     existing.platform(), existing.joinUrl(),
-                    SessionStatus.CANCELLED, existing.startedAt(), null, reason
+                    SessionStatus.CANCELLED, existing.startedAt(), null, sanitizedReason
                 );
-                return writeSession(updated, "CANCEL_SESSION", "Session cancelled: " + reason);
+                return writeSession(updated, "CANCEL_SESSION", "Session cancelled: " + sanitizedReason)
+                    .then(stored -> notificationSender.notifyTelemedicineSession(new PhrNotificationSender.TelemedicineSessionNotification(
+                        stored.id(),
+                        stored.patientId(),
+                        stored.providerId(),
+                        stored.scheduledAt(),
+                        PhrNotificationSender.TelemedicineNotificationType.SESSION_CANCELLED,
+                        PhrNotificationSender.DEFAULT_CHANNELS
+                    )).map($ -> stored));
             });
     }
 

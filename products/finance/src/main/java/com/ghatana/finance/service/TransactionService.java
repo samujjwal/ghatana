@@ -5,11 +5,15 @@
 
 package com.ghatana.finance.service;
 
+import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.kernel.ai.*;
-import com.ghatana.finance.ai.agents.FraudDetectionResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Business logic service for TransactionService
@@ -21,8 +25,11 @@ import java.util.UUID;
  */
 public class TransactionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
+
     private final AgentOrchestrator orchestrator;
     private final AutonomyManager autonomyManager;
+    private final Map<String, TransactionResult> processedTransactions = new ConcurrentHashMap<>();
 
     public TransactionService(AgentOrchestrator orchestrator, AutonomyManager autonomyManager) {
         this.orchestrator = orchestrator;
@@ -30,6 +37,26 @@ public class TransactionService {
     }
 
     public TransactionResult processTransaction(Transaction transaction) {
+        Objects.requireNonNull(transaction, "transaction must not be null");
+
+        String transactionId = transaction.getId();
+        if (transactionId == null || transactionId.isBlank()) {
+            throw new IllegalArgumentException("transaction id must not be blank");
+        }
+
+        TransactionResult cachedResult = processedTransactions.get(transactionId);
+        if (cachedResult != null) {
+            log.debug("Idempotent skip: transaction '{}' already processed with status '{}'",
+                transactionId, cachedResult.getStatus());
+            return cachedResult;
+        }
+
+        TransactionResult result = processNewTransaction(transaction);
+        TransactionResult existingResult = processedTransactions.putIfAbsent(transactionId, result);
+        return existingResult != null ? existingResult : result;
+    }
+
+    private TransactionResult processNewTransaction(Transaction transaction) {
         // Create agent request
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest(
             UUID.randomUUID().toString(),

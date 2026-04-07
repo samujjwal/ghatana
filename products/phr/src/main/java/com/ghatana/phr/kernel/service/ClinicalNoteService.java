@@ -59,19 +59,26 @@ public class ClinicalNoteService extends AbstractDataService {
     public Promise<SoapNote> createSoapNote(SoapNote note) {
         ensureRunning();
 
-        validateRequired(note.patientId(), "patientId");
-        validateRequired(note.authorId(), "authorId");
+        String patientId = PhrInputSanitizationUtils.requireSafeIdentifier(note.patientId(), "patientId");
+        String authorId = PhrInputSanitizationUtils.requireSafeIdentifier(note.authorId(), "authorId");
+        String encounterId = note.encounterId() == null
+            ? null
+            : PhrInputSanitizationUtils.requireSafeIdentifier(note.encounterId(), "encounterId");
+        String subjective = PhrInputSanitizationUtils.sanitizeRequiredText(note.subjective(), "subjective", 4000);
+        String objective = PhrInputSanitizationUtils.sanitizeRequiredText(note.objective(), "objective", 4000);
+        String assessment = PhrInputSanitizationUtils.sanitizeRequiredText(note.assessment(), "assessment", 4000);
+        String plan = PhrInputSanitizationUtils.sanitizeRequiredText(note.plan(), "plan", 4000);
 
         String id = note.id() != null ? note.id() : generateId("note");
         SoapNote toStore = new SoapNote(
             id,
-            note.patientId(),
-            note.encounterId(),
-            note.authorId(),
-            note.subjective(),
-            note.objective(),
-            note.assessment(),
-            note.plan(),
+            patientId,
+            encounterId,
+            authorId,
+            subjective,
+            objective,
+            assessment,
+            plan,
             NoteStatus.DRAFT,
             null,
             null,
@@ -104,11 +111,14 @@ public class ClinicalNoteService extends AbstractDataService {
     public Promise<SoapNote> signNote(String noteId, String signedBy) {
         ensureRunning();
 
-        return getSoapNote(noteId)
+        String sanitizedNoteId = PhrInputSanitizationUtils.requireSafeIdentifier(noteId, "noteId");
+        String sanitizedSignedBy = PhrInputSanitizationUtils.requireSafeIdentifier(signedBy, "signedBy");
+
+        return getSoapNote(sanitizedNoteId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     return Promise.<SoapNote>ofException(
-                        new IllegalStateException("Note not found: " + noteId));
+                        new IllegalStateException("Note not found: " + sanitizedNoteId));
                 }
                 SoapNote existing = opt.get();
                 if (existing.status() == NoteStatus.FINAL) {
@@ -118,17 +128,17 @@ public class ClinicalNoteService extends AbstractDataService {
                     existing.id(), existing.patientId(), existing.encounterId(),
                     existing.authorId(), existing.subjective(), existing.objective(),
                     existing.assessment(), existing.plan(),
-                    NoteStatus.FINAL, signedBy, Instant.now(), existing.createdAt()
+                    NoteStatus.FINAL, sanitizedSignedBy, Instant.now(), existing.createdAt()
                 );
                 return updateRecord(
                     NOTE_DATASET,
-                    noteId,
+                    sanitizedNoteId,
                     signed,
-                    Map.of("status", "FINAL", "signedBy", signedBy),
+                    Map.of("status", "FINAL", "signedBy", sanitizedSignedBy),
                     "SoapNote",
                     1
                 ).then(updated -> audit("SIGN_NOTE", updated.patientId(),
-                    "SOAP note signed by " + signedBy)
+                    "SOAP note signed by " + sanitizedSignedBy)
                     .map($ -> updated));
             });
     }

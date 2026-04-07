@@ -24,13 +24,22 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("EmergencyAccessLogService")
 class EmergencyAccessLogServiceTest extends EventloopTestBase {
 
-    private EmergencyAccessLogService service;
+    private TestableEmergencyAccessLogService service;
+    private RecordingNotificationSender notificationSender;
+    private RecordingAuditLogger auditLogger;
 
     @BeforeEach
     void setUp() {
         PhrTestInfrastructure.StubDataCloudAdapter dataCloud =
                 new PhrTestInfrastructure.StubDataCloudAdapter();
-        service = new EmergencyAccessLogService(PhrTestInfrastructure.createTestContext(dataCloud));
+        notificationSender = new RecordingNotificationSender();
+        auditLogger = new RecordingAuditLogger();
+        EmergencyAccessReviewWorkflow reviewWorkflow = new EmergencyAccessReviewWorkflow(
+                notificationSender,
+                auditLogger);
+        service = new TestableEmergencyAccessLogService(
+            PhrTestInfrastructure.createTestContext(dataCloud),
+            reviewWorkflow);
         runPromise(service::start);
     }
 
@@ -63,6 +72,12 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
             assertNotNull(stored.id());
             assertThat(stored.reviewStatus()).isEqualTo(ReviewStatus.PENDING_REVIEW);
             assertNotNull(stored.accessedAt());
+            assertNotNull(stored.accessExpiresAt());
+            assertNotNull(stored.reviewDueAt());
+            assertThat(stored.reviewCaseId()).startsWith("EMR-");
+            assertThat(notificationSender.complianceNotifications).hasSize(1);
+            assertThat(notificationSender.reviewSchedules).hasSize(1);
+            assertThat(auditLogger.queuedCases).hasSize(1);
         }
 
         @Test
@@ -92,8 +107,49 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
                     () -> runPromise(() -> service.logAccess(
                             new EmergencyAccessEvent(null, "patient-1", "dr-1",
                                     "ER_PHYSICIAN", null,
-                                    Set.of("medications"), null, null, null, null))));
+                        Set.of("medications"), null, null, null, null, null, null, null, null))));
             clearFatalError();
+        }
+
+        @Test
+        @DisplayName("sanitizes emergency justifications")
+        void sanitizesEmergencyJustification() {
+            EmergencyAccessEvent stored = runPromise(() -> service.logAccess(
+                buildEvent("patient-1", "<script>alert('xss')</script>")));
+
+            assertThat(stored.justification()).isEqualTo("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;");
+        }
+
+        @Test
+        @DisplayName("returns overdue reviews separately")
+        void returnsOverdueReviews() {
+            EmergencyAccessEvent overdue = new EmergencyAccessEvent(
+                    "event-overdue",
+                    "patient-overdue",
+                    "doctor-1",
+                    "ER_PHYSICIAN",
+                    "critical bleeding",
+                    Set.of("labs"),
+                    java.time.Instant.now().minusSeconds(172800),
+                    java.time.Instant.now().minusSeconds(158400),
+                    ReviewStatus.PENDING_REVIEW,
+                    java.time.Instant.now().minusSeconds(86400),
+                    null,
+                    null,
+                    null,
+                    "EMR-OVERDUE"
+            );
+            EmergencyAccessEvent current = buildEvent("patient-current", "current emergency");
+
+            runPromise(() -> service.seedEvent(overdue));
+            runPromise(() -> service.logAccess(current));
+
+            List<EmergencyAccessEvent> overdueReviews = runPromise(() -> service.getOverdueReviews(10));
+            List<EmergencyAccessEvent> pendingReviews = runPromise(() -> service.getPendingReviews(10));
+
+            assertThat(overdueReviews).hasSize(1);
+            assertThat(overdueReviews.get(0).patientId()).isEqualTo("patient-overdue");
+            assertThat(pendingReviews.get(0).patientId()).isEqualTo("patient-overdue");
         }
     }
 
@@ -112,6 +168,8 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
 
             assertThat(reviewed.reviewStatus()).isEqualTo(ReviewStatus.REVIEWED);
             assertEquals("reviewer-1", reviewed.reviewedBy());
+            assertNotNull(reviewed.reviewedAt());
+            assertThat(auditLogger.completedCases).hasSize(1);
         }
 
         @Test
@@ -121,9 +179,12 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
                     runPromise(() -> service.logAccess(buildEvent("patient-4", "critical")));
 
             EmergencyAccessEvent escalated = runPromise(() ->
-                    service.markReviewed(stored.id(), "reviewer-2", ReviewStatus.ESCALATED, "Needs inquiry"));
+                    service.markReviewed(stored.id(), "reviewer-2", ReviewStatus.ESCALATED,
+                        "<b>Needs inquiry</b>"));
 
             assertThat(escalated.reviewStatus()).isEqualTo(ReviewStatus.ESCALATED);
+            assertThat(escalated.reviewerNotes()).isEqualTo("&lt;b&gt;Needs inquiry&lt;/b&gt;");
+            assertThat(notificationSender.escalations).hasSize(1);
         }
 
         @Test
@@ -139,6 +200,18 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
                             service.markReviewed(stored.id(), "reviewer-2", ReviewStatus.REVIEWED, "Again")));
             clearFatalError();
         }
+
+            @Test
+            @DisplayName("requires reviewer notes for escalated events")
+            void escalationRequiresNotes() {
+                EmergencyAccessEvent stored =
+                    runPromise(() -> service.logAccess(buildEvent("patient-8", "trauma")));
+
+                assertThrows(Exception.class,
+                    () -> runPromise(() ->
+                        service.markReviewed(stored.id(), "reviewer-3", ReviewStatus.ESCALATED, "  ")));
+                clearFatalError();
+            }
     }
 
     @Nested
@@ -188,6 +261,84 @@ class EmergencyAccessLogServiceTest extends EventloopTestBase {
         return new EmergencyAccessEvent(
                 null, patientId, "doctor-1", "ER_PHYSICIAN",
                 justification, Set.of("medications", "labs"),
-                null, null, null, null);
+                null, null, null, null, null, null, null, null);
+    }
+
+    private static final class RecordingNotificationSender implements EmergencyAccessNotificationSender {
+        private final java.util.List<EmergencyAccessReviewCase> complianceNotifications = new java.util.ArrayList<>();
+        private final java.util.List<EmergencyAccessReviewCase> reviewSchedules = new java.util.ArrayList<>();
+        private final java.util.List<EmergencyAccessReviewCase> escalations = new java.util.ArrayList<>();
+
+        @Override
+        public io.activej.promise.Promise<Void> notifyComplianceLead(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            complianceNotifications.add(reviewCase);
+            return io.activej.promise.Promise.complete();
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> scheduleMandatoryReview(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            reviewSchedules.add(reviewCase);
+            return io.activej.promise.Promise.complete();
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> notifyEscalation(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            escalations.add(reviewCase);
+            return io.activej.promise.Promise.complete();
+        }
+    }
+
+    private static final class RecordingAuditLogger implements EmergencyAccessReviewAuditLogger {
+        private final java.util.List<EmergencyAccessReviewCase> queuedCases = new java.util.ArrayList<>();
+        private final java.util.List<EmergencyAccessReviewCase> completedCases = new java.util.ArrayList<>();
+
+        @Override
+        public io.activej.promise.Promise<Void> logReviewQueued(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            queuedCases.add(reviewCase);
+            return io.activej.promise.Promise.complete();
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> logReviewCompleted(
+                EmergencyAccessReviewCase reviewCase,
+                EmergencyAccessEvent event) {
+            completedCases.add(reviewCase);
+            return io.activej.promise.Promise.complete();
+        }
+    }
+
+    private static final class TestableEmergencyAccessLogService extends EmergencyAccessLogService {
+
+        private TestableEmergencyAccessLogService(
+                com.ghatana.kernel.context.KernelContext context,
+                EmergencyAccessReviewWorkflow reviewWorkflow) {
+            super(context, reviewWorkflow);
+        }
+
+        private io.activej.promise.Promise<EmergencyAccessEvent> seedEvent(EmergencyAccessEvent event) {
+            return createRecord(
+                    "phr.emergency.access.log",
+                    event.id(),
+                    event,
+                    java.util.Map.of(
+                            "patientId", event.patientId(),
+                            "accessorId", event.accessorId(),
+                            "reviewStatus", event.reviewStatus().name(),
+                            "accessedAt", event.accessedAt().toString(),
+                            "accessExpiresAt", event.accessExpiresAt().toString(),
+                            "reviewDueAt", event.reviewDueAt().toString(),
+                            "reviewCaseId", event.reviewCaseId()),
+                    "EmergencyAccessEvent",
+                    1
+            ).map($ -> event);
+        }
     }
 }

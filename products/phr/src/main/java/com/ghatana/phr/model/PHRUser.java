@@ -1,5 +1,6 @@
 package com.ghatana.phr.model;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,6 +21,9 @@ public class PHRUser {
     private Set<String> roles = new HashSet<>();
     private Set<String> permissions = new HashSet<>();
     private boolean active;
+    private String passwordHash;
+    private int failedLoginAttempts;
+    private Instant lockoutUntil;
 
     public PHRUser() {
     }
@@ -101,5 +105,33 @@ public class PHRUser {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public Instant getLockoutUntil() {
+        return lockoutUntil;
+    }
+
+    public void setLockoutUntil(Instant lockoutUntil) {
+        this.lockoutUntil = lockoutUntil;
+    }
+
+    public boolean isLockedAt(Instant timestamp) {
+        return lockoutUntil != null && lockoutUntil.isAfter(timestamp);
     }
 }

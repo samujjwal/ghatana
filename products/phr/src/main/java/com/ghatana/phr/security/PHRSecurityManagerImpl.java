@@ -1,9 +1,12 @@
 package com.ghatana.phr.security;
 
 import com.ghatana.kernel.security.*;
+import com.ghatana.platform.security.crypto.PasswordHasher;
 import com.ghatana.phr.model.PHRUser;
 import com.ghatana.phr.repository.UserRepository;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
@@ -15,10 +18,18 @@ import java.util.UUID;
  * @doc.pattern Manager
  */
 public class PHRSecurityManagerImpl implements KernelSecurityManager {
+    private static final int MAX_FAILED_LOGIN_ATTEMPTS = 5;
+
     private final UserRepository userRepository;
+    private final PasswordHasher passwordHasher;
 
     public PHRSecurityManagerImpl(UserRepository userRepository) {
+        this(userRepository, new PasswordHasher());
+    }
+
+    PHRSecurityManagerImpl(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
+        this.passwordHasher = passwordHasher;
     }
 
     @Override
@@ -72,7 +83,7 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
         }
 
         PHRUser user = userRepository.findByUsername(credentials.getUsername()).orElse(null);
-        
+
         if (user == null) {
             return ValidationResult.failure("Invalid credentials");
         }
@@ -80,6 +91,32 @@ public class PHRSecurityManagerImpl implements KernelSecurityManager {
         if (!user.isActive()) {
             return ValidationResult.failure("User account is inactive");
         }
+
+        Instant now = Instant.now();
+        if (user.isLockedAt(now)) {
+            return ValidationResult.failure("Account locked");
+        }
+
+        String passwordHash = user.getPasswordHash();
+        if (passwordHash == null || passwordHash.isBlank()) {
+            return ValidationResult.failure("Invalid credentials");
+        }
+
+        if (!passwordHasher.verify(credentials.getPassword(), passwordHash)) {
+            int failedAttempts = user.getFailedLoginAttempts() + 1;
+            user.setFailedLoginAttempts(failedAttempts);
+            if (failedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+                user.setLockoutUntil(now.plus(15, ChronoUnit.MINUTES));
+                userRepository.save(user);
+                return ValidationResult.failure("Account locked");
+            }
+            userRepository.save(user);
+            return ValidationResult.failure("Invalid credentials");
+        }
+
+        user.setFailedLoginAttempts(0);
+        user.setLockoutUntil(null);
+        userRepository.save(user);
 
         return ValidationResult.success();
     }

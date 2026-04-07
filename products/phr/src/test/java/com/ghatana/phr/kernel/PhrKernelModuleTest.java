@@ -95,6 +95,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertNotNull(module.getServiceCatalog().administrative().appointments());
         assertNotNull(module.getServiceCatalog().patient().consent());
         assertNotNull(module.getServiceCatalog().emergency().emergencyAccess());
+        assertNotNull(module.getServiceCatalog().emergency().emergencyReview());
 
         // Second initialization should throw
         IllegalStateException exception = assertThrows(IllegalStateException.class,

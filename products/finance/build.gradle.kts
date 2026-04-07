@@ -87,6 +87,8 @@ dependencies {
     // PostgreSQL
     implementation(libs.postgresql)
     implementation("com.zaxxer:HikariCP")
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
 
     // Testing
     testImplementation(project(":platform:java:testing"))
@@ -95,6 +97,8 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(libs.activej.test)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
 }
 
 tasks.register<JavaExec>("validateContracts") {

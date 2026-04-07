@@ -16,6 +16,9 @@ public class TradeEvent {
     private final double marketPrice;
     private final Instant timestamp;
     private final String market;
+    private final String marketRegion;
+    private final String counterpartyCountry;
+    private final String executionChannel;
     private final String eventType;
     private final Map<String, Object> features;
 
@@ -28,6 +31,9 @@ public class TradeEvent {
         this.marketPrice = builder.marketPrice;
         this.timestamp = builder.timestamp;
         this.market = builder.market;
+        this.marketRegion = builder.marketRegion;
+        this.counterpartyCountry = builder.counterpartyCountry;
+        this.executionChannel = builder.executionChannel;
         this.eventType = builder.eventType;
         this.features = builder.features;
     }
@@ -40,6 +46,9 @@ public class TradeEvent {
     public double getMarketPrice() { return marketPrice; }
     public Instant getTimestamp() { return timestamp; }
     public String getMarket() { return market; }
+    public String getMarketRegion() { return marketRegion; }
+    public String getCounterpartyCountry() { return counterpartyCountry; }
+    public String getExecutionChannel() { return executionChannel; }
     public String getEventType() { return eventType; }
     public Map<String, Object> getFeatures() { return features; }
 
@@ -56,6 +65,9 @@ public class TradeEvent {
         private double marketPrice;
         private Instant timestamp;
         private String market;
+        private String marketRegion;
+        private String counterpartyCountry;
+        private String executionChannel;
         private String eventType;
         private Map<String, Object> features;
 
@@ -96,6 +108,21 @@ public class TradeEvent {
 
         public Builder market(String market) {
             this.market = market;
+            return this;
+        }
+
+        public Builder marketRegion(String marketRegion) {
+            this.marketRegion = marketRegion;
+            return this;
+        }
+
+        public Builder counterpartyCountry(String counterpartyCountry) {
+            this.counterpartyCountry = counterpartyCountry;
+            return this;
+        }
+
+        public Builder executionChannel(String executionChannel) {
+            this.executionChannel = executionChannel;
             return this;
         }
 
