@@ -11,10 +11,10 @@ import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 
 /**
  * ESLint Configuration with Governance Rules
- * 
+ *
  * Phase 3: Warning Mode (Non-blocking)
  * Phase 6: Will switch to Error Mode (Blocking)
- * 
+ *
  * @see docs/NAMING_CONVENTIONS.md
  * @see docs/GOVERNANCE_IMPLEMENTATION_PLAN.md
  */
@@ -25,120 +25,144 @@ import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
 
 const governanceRules = {
   // Import order enforcement
-  'import/order': ['warn', {
-    groups: [
-      'builtin',      // Node.js built-ins (fs, path)
-      'external',     // npm packages (react, lodash)
-      'internal',     // @ghatana/* and @yappc/*
-      'parent',       // ../
-      'sibling',      // ./
-      'index',        // ./index
-    ],
-    pathGroups: [
-      // Platform libraries first
-      {
-        pattern: '@ghatana/**',
-        group: 'internal',
-        position: 'before',
+  'import/order': [
+    'warn',
+    {
+      groups: [
+        'builtin', // Node.js built-ins (fs, path)
+        'external', // npm packages (react, lodash)
+        'internal', // @ghatana/* and @yappc/*
+        'parent', // ../
+        'sibling', // ./
+        'index', // ./index
+      ],
+      pathGroups: [
+        // Platform libraries first
+        {
+          pattern: '@ghatana/**',
+          group: 'internal',
+          position: 'before',
+        },
+        // Product libraries second
+        {
+          pattern: '@yappc/**',
+          group: 'internal',
+          position: 'after',
+        },
+        // Other product scopes
+        {
+          pattern: '@data-cloud/**',
+          group: 'internal',
+          position: 'after',
+        },
+        {
+          pattern: '@flashit/**',
+          group: 'internal',
+          position: 'after',
+        },
+      ],
+      pathGroupsExcludedImportTypes: ['builtin'],
+      alphabetize: {
+        order: 'asc',
+        caseInsensitive: true,
       },
-      // Product libraries second
-      {
-        pattern: '@yappc/**',
-        group: 'internal',
-        position: 'after',
-      },
-      // Other product scopes
-      {
-        pattern: '@data-cloud/**',
-        group: 'internal',
-        position: 'after',
-      },
-      {
-        pattern: '@flashit/**',
-        group: 'internal',
-        position: 'after',
-      },
-    ],
-    pathGroupsExcludedImportTypes: ['builtin'],
-    alphabetize: {
-      order: 'asc',
-      caseInsensitive: true,
+      'newlines-between': 'always',
+      warnOnUnassignedImports: true,
     },
-    'newlines-between': 'always',
-    warnOnUnassignedImports: true,
-  }],
+  ],
 
   // No self-imports
   'import/no-self-import': 'error',
 
   // No cycle dependencies (warning during Phase 3)
-  'import/no-cycle': ['warn', {
-    maxDepth: 3,
-    ignoreExternal: true,
-  }],
+  'import/no-cycle': [
+    'warn',
+    {
+      maxDepth: 3,
+      ignoreExternal: true,
+    },
+  ],
 
   // Naming convention warnings
-  'import/no-restricted-paths': ['warn', {
-    zones: [
-      // Rule: Products should not depend on each other directly
-      // Products should use @ghatana/* abstractions
-      {
-        target: './products/data-cloud',
-        from: './products/yappc',
-        message: '🏛️ GOVERNANCE: Products should not depend on each other. ' +
-                 'Use @ghatana/* platform abstractions instead. ' +
-                 'See docs/NAMING_CONVENTIONS.md',
-      },
-      {
-        target: './products/flashit',
-        from: './products/yappc',
-        message: '🏛️ GOVERNANCE: Products should not depend on each other. ' +
-                 'Use @ghatana/* platform abstractions instead. ' +
-                 'See docs/NAMING_CONVENTIONS.md',
-      },
-      {
-        target: './products/data-cloud',
-        from: './products/flashit',
-        message: '🏛️ GOVERNANCE: Products should not depend on each other. ' +
-                 'Use @ghatana/* platform abstractions instead. ' +
-                 'See docs/NAMING_CONVENTIONS.md',
-      },
-    ],
-  }],
+  'import/no-restricted-paths': [
+    'warn',
+    {
+      zones: [
+        // Rule: Products should not depend on each other directly
+        // Products should use @ghatana/* abstractions
+        {
+          target: './products/data-cloud',
+          from: './products/yappc',
+          message:
+            '🏛️ GOVERNANCE: Products should not depend on each other. ' +
+            'Use @ghatana/* platform abstractions instead. ' +
+            'See docs/NAMING_CONVENTIONS.md',
+        },
+        {
+          target: './products/flashit',
+          from: './products/yappc',
+          message:
+            '🏛️ GOVERNANCE: Products should not depend on each other. ' +
+            'Use @ghatana/* platform abstractions instead. ' +
+            'See docs/NAMING_CONVENTIONS.md',
+        },
+        {
+          target: './products/data-cloud',
+          from: './products/flashit',
+          message:
+            '🏛️ GOVERNANCE: Products should not depend on each other. ' +
+            'Use @ghatana/* platform abstractions instead. ' +
+            'See docs/NAMING_CONVENTIONS.md',
+        },
+      ],
+    },
+  ],
 
   // Prefer type imports
-  '@typescript-eslint/consistent-type-imports': ['warn', {
-    prefer: 'type-imports',
-    fixStyle: 'inline-type-imports',
-  }],
+  '@typescript-eslint/consistent-type-imports': [
+    'warn',
+    {
+      prefer: 'type-imports',
+      fixStyle: 'inline-type-imports',
+    },
+  ],
 
   // No unused imports
-  'import/no-unused-modules': ['warn', {
-    unusedExports: true,
-    missingExports: false,
-  }],
+  'import/no-unused-modules': [
+    'warn',
+    {
+      unusedExports: true,
+      missingExports: false,
+    },
+  ],
 
   // JSDoc documentation requirements
-  'jsdoc/require-jsdoc': ['warn', {
-    require: {
-      FunctionDeclaration: false,
-      MethodDefinition: true,
-      ClassDeclaration: true,
-      ArrowFunctionExpression: false,
-      FunctionExpression: false,
+  'jsdoc/require-jsdoc': [
+    'warn',
+    {
+      require: {
+        FunctionDeclaration: false,
+        MethodDefinition: true,
+        ClassDeclaration: true,
+        ArrowFunctionExpression: false,
+        FunctionExpression: false,
+      },
     },
-  }],
+  ],
 
   // @doc.* tag requirements (custom rule simulated via jsdoc)
-  'jsdoc/check-tag-names': ['warn', {
-    definedTags: [
-      'doc.type',
-      'doc.purpose',
-      'doc.layer',
-      'doc.pattern',
-      'doc.component',
-    ],
-  }],
+  'jsdoc/check-tag-names': [
+    'warn',
+    {
+      definedTags: [
+        'doc.type',
+        'doc.purpose',
+        'doc.layer',
+        'doc.pattern',
+        'doc.component',
+      ],
+    },
+  ],
 };
 
 // ============================================================================
@@ -153,10 +177,13 @@ const standardRules = {
   'react-hooks/exhaustive-deps': 'warn',
 
   // TypeScript
-  '@typescript-eslint/no-unused-vars': ['warn', {
-    argsIgnorePattern: '^_',
-    varsIgnorePattern: '^_',
-  }],
+  '@typescript-eslint/no-unused-vars': [
+    'warn',
+    {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+    },
+  ],
   '@typescript-eslint/no-explicit-any': 'warn',
   '@typescript-eslint/explicit-function-return-type': 'off',
   '@typescript-eslint/explicit-module-boundary-types': 'off',
@@ -172,15 +199,18 @@ const standardRules = {
   'sonarjs/no-identical-functions': 'warn',
 
   // Best Practices
-  'unicorn/filename-case': ['warn', {
-    case: 'kebabCase',
-    ignore: [
-      /^\.*/,           // dotfiles
-      /\.test\./,       // test files
-      /\.spec\./,       // spec files
-      /\.config\./,     // config files
-    ],
-  }],
+  'unicorn/filename-case': [
+    'warn',
+    {
+      case: 'kebabCase',
+      ignore: [
+        /^\.*/, // dotfiles
+        /\.test\./, // test files
+        /\.spec\./, // spec files
+        /\.config\./, // config files
+      ],
+    },
+  ],
   'unicorn/prefer-node-protocol': 'warn',
   'unicorn/no-array-reduce': 'off',
 
@@ -209,7 +239,13 @@ const governanceOverrides = [
 
   // Test files - relaxed rules
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx', '**/__tests__/**/*'],
+    files: [
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+      '**/__tests__/**/*',
+    ],
     rules: {
       'sonarjs/no-duplicate-string': 'off',
       'unicorn/filename-case': 'off',
@@ -311,6 +347,8 @@ export default tseslint.config(
       '**/__examples__/**',
       '**/*.config.*',
       '**/scripts/**',
+      '**/*.mjs',
+      '**/*.cjs',
     ],
   }
 );
@@ -321,16 +359,16 @@ export default tseslint.config(
 
 /**
  * To switch to Phase 6 (Error Mode):
- * 
+ *
  * 1. Change 'warn' to 'error' for:
  *    - import/order
  *    - import/no-restricted-paths
  *    - import/no-cycle
  *    - @typescript-eslint/consistent-type-imports
- * 
+ *
  * 2. Update lint-staged to block commits on errors
- * 
+ *
  * 3. Update CI to fail on lint errors
- * 
+ *
  * 4. Remove this comment block after transition
  */
