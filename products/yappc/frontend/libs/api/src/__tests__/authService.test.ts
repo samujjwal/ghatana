@@ -62,15 +62,13 @@ describe('AuthService constructor', () => {
   });
 
   it('accepts a custom baseUrl', async () => {
-    const fetchMock = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(
-        makeFetchResponse({
-          ...SAMPLE_USER,
-          ...SAMPLE_TOKENS,
-          user: SAMPLE_USER,
-        })
-      );
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      makeFetchResponse({
+        ...SAMPLE_USER,
+        ...SAMPLE_TOKENS,
+        user: SAMPLE_USER,
+      })
+    );
     const svc = new AuthService({ baseUrl: 'https://custom.api' });
     await svc.login({ email: 'x@x.com', password: 'pw' });
     expect(fetchMock).toHaveBeenCalledWith(
