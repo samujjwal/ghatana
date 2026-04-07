@@ -69,6 +69,54 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 15s
 
+  # Audio-Video: STT gRPC service (health/metrics sidecar on 9091)
+  - job_name: 'stt-service'
+    static_configs:
+      - targets: ['host.docker.internal:9091']
+        labels:
+          service: 'stt-service'
+          product: 'audio-video'
+          layer: 'service'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Audio-Video: TTS gRPC service (health/metrics sidecar on 9092)
+  - job_name: 'tts-service'
+    static_configs:
+      - targets: ['host.docker.internal:9092']
+        labels:
+          service: 'tts-service'
+          product: 'audio-video'
+          layer: 'service'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Audio-Video: Vision gRPC service (health/metrics sidecar on 9094)
+  - job_name: 'vision-service'
+    static_configs:
+      - targets: ['host.docker.internal:9094']
+        labels:
+          service: 'vision-service'
+          product: 'audio-video'
+          layer: 'service'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Audio-Video: Multimodal gRPC service (health/metrics sidecar on 9095)
+  - job_name: 'multimodal-service'
+    static_configs:
+      - targets: ['host.docker.internal:9095']
+        labels:
+          service: 'multimodal-service'
+          product: 'audio-video'
+          layer: 'service'
+          tech: 'java'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
   # Tutorputor platform (Node.js/Fastify metrics on the main app port)
   - job_name: 'tutorputor-app'
     static_configs:

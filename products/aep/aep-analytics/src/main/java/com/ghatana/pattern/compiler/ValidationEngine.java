@@ -31,7 +31,7 @@ import java.util.Set;
  *                         <li><strong>Event Types</strong>: Format validation (namespace.name), catalog availability</li>
  *                         <li><strong>Operator Tree</strong>: Recursive validation via OperatorRegistry</li>
  *                         <li><strong>Window Spec</strong>: Time duration, overlap, session timeout validation</li>
- *                         <li><strong>Tenant Permissions</strong>: Access control, quota limits (TODO)</li>
+ *                         <li><strong>Tenant Permissions</strong>: Access control, quota limits — enforced via {@code permissionChecker} if configured</li>
  *                       </ol>
  * @doc.threading Thread-Safe - Stateless validator, safe for concurrent validation of independent patterns.
  *                Multiple threads can validate different patterns simultaneously without synchronization.

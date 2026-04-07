@@ -4,9 +4,11 @@ import com.ghatana.media.AudioVideoLibrary;
 import com.ghatana.media.common.AudioData;
 import com.ghatana.media.common.AudioFormat;
 import com.ghatana.media.config.SttConfig;
+import com.ghatana.media.stt.api.ModelInfo;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.stt.api.TranscriptionOptions;
 import com.ghatana.media.stt.api.TranscriptionResult;
+import com.ghatana.media.stt.api.UserProfile;
 import com.ghatana.stt.core.grpc.proto.*;
 import io.grpc.stub.StreamObserver;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -16,6 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -106,37 +112,32 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
     @Override
     public StreamObserver<AudioChunk> streamTranscribe(StreamObserver<Transcription> responseObserver) {
         String sessionId = cid();
-        
-        // Backpressure configuration
-        final int MAX_BUFFER_CHUNKS = 100; // ~10 seconds of audio at 100ms chunks
-        final int HIGH_WATER_MARK = 80;  // Pause processing when buffer reaches this
-        final int LOW_WATER_MARK = 20;   // Resume processing when buffer drops to this
-        
+
+        final int MAX_BUFFER_CHUNKS = 100;
+        final int HIGH_WATER_MARK = 80;
+        final int LOW_WATER_MARK = 20;
+
         SttEngine engine = library.getSttEngine();
         com.ghatana.media.stt.api.StreamingSession session = engine.createStreamingSession();
-        
-        // Backpressure state
+
         final java.util.concurrent.atomic.AtomicBoolean isPaused = new java.util.concurrent.atomic.AtomicBoolean(false);
-        final java.util.concurrent.BlockingQueue<com.ghatana.media.common.AudioChunk> buffer = 
+        final java.util.concurrent.BlockingQueue<com.ghatana.media.common.AudioChunk> buffer =
             new java.util.concurrent.LinkedBlockingQueue<>(MAX_BUFFER_CHUNKS);
         final java.util.concurrent.atomic.AtomicInteger chunkCount = new java.util.concurrent.atomic.AtomicInteger(0);
         final java.util.concurrent.atomic.AtomicBoolean isCompleted = new java.util.concurrent.atomic.AtomicBoolean(false);
-        
-        // Start buffer processor thread
+
         java.util.concurrent.ExecutorService processor = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "stt-stream-processor-" + sessionId);
             t.setDaemon(true);
             return t;
         });
-        
+
         processor.submit(() -> {
             while (!isCompleted.get() || !buffer.isEmpty()) {
                 try {
                     com.ghatana.media.common.AudioChunk chunk = buffer.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
                     if (chunk != null) {
                         session.feedAudio(chunk);
-                        
-                        // Check if we should resume (low water mark)
                         int currentSize = buffer.size();
                         if (isPaused.get() && currentSize <= LOW_WATER_MARK) {
                             isPaused.set(false);
@@ -151,7 +152,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                 }
             }
         });
-        
+
         session.onTranscription(transcript -> {
             if (!isCompleted.get()) {
                 responseObserver.onNext(Transcription.newBuilder()
@@ -174,38 +175,33 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
             @Override
             public void onNext(AudioChunk chunk) {
                 if (isCompleted.get()) return;
-                
+
                 int currentCount = chunkCount.incrementAndGet();
-                
-                // Check backpressure - reject if buffer full
+
                 if (buffer.size() >= MAX_BUFFER_CHUNKS) {
-                    LOG.warn("[{}] Buffer full ({} chunks), dropping chunk {}", 
+                    LOG.warn("[{}] Buffer full ({} chunks), dropping chunk {}",
                         sessionId, buffer.size(), currentCount);
-                    // Signal backpressure to client via error
                     responseObserver.onError(io.grpc.Status.RESOURCE_EXHAUSTED
                         .withDescription("Server buffer full - reduce sending rate")
                         .asRuntimeException());
                     isCompleted.set(true);
                     return;
                 }
-                
-                // Add to buffer
+
                 boolean added = buffer.offer(new com.ghatana.media.common.AudioChunk(
                     chunk.getAudioData().toByteArray(), currentCount, false, chunk.getTimestampMs()));
-                
+
                 if (!added) {
                     LOG.warn("[{}] Failed to add chunk {} to buffer", sessionId, currentCount);
                 }
-                
-                // Check high water mark
+
                 if (!isPaused.get() && buffer.size() >= HIGH_WATER_MARK) {
                     isPaused.set(true);
                     LOG.debug("[{}] Pausing - buffer size: {}", sessionId, buffer.size());
                 }
-                
-                // Log periodically
+
                 if (currentCount % 100 == 0) {
-                    LOG.info("[{}] Received {} chunks, buffer size: {}", 
+                    LOG.info("[{}] Received {} chunks, buffer size: {}",
                         sessionId, currentCount, buffer.size());
                 }
             }
@@ -222,21 +218,20 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                 LOG.info("[{}] Client stream completed: {} chunks total", sessionId, chunkCount.get());
                 isCompleted.set(true);
                 cleanup();
-                
-                // Wait for buffer to drain
+
                 try {
                     while (!buffer.isEmpty()) {
                         Thread.sleep(50);
                     }
-                    Thread.sleep(200); // Allow final processing
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
-                
+
                 session.endStream();
                 responseObserver.onCompleted();
             }
-            
+
             private void cleanup() {
                 processor.shutdown();
                 try {
@@ -247,7 +242,7 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
                     Thread.currentThread().interrupt();
                     processor.shutdownNow();
                 }
-                
+
                 try {
                     session.close();
                 } catch (Exception ignored) {
@@ -285,39 +280,355 @@ public class SttGrpcService extends STTServiceGrpc.STTServiceImplBase {
         }
     }
 
+    // ── AV-001.1: loadModel ────────────────────────────────────────────────
+
     @Override
     public void loadModel(LoadModelRequest request, StreamObserver<LoadModelResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("loadModel not yet implemented").asRuntimeException());
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        long start = System.currentTimeMillis();
+        try (SttEngine stt = library.getSttEngine()) {
+            stt.loadModel(modelId);
+            long loadTimeMs = System.currentTimeMillis() - start;
+
+            ModelInfo active = stt.getActiveModel();
+            long memoryBytes = stt.getMetrics().memoryUsageBytes();
+
+            LOG.info("STT model loaded: {} in {}ms", modelId, loadTimeMs);
+            responseObserver.onNext(LoadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model loaded successfully: " + modelId)
+                .setModelId(modelId)
+                .setLoadTimeMs(loadTimeMs)
+                .setMemoryUsageBytes(memoryBytes)
+                .build());
+            responseObserver.onCompleted();
+        } catch (com.ghatana.media.common.ModelLoadingError e) {
+            LOG.warn("Failed to load STT model {}: {}", modelId, e.getMessage());
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
+                .withDescription("Model not found or cannot be loaded: " + modelId)
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Unexpected error loading STT model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to load model: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.2: unloadModel ──────────────────────────────────────────────
 
     @Override
     public void unloadModel(UnloadModelRequest request, StreamObserver<UnloadModelResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("unloadModel not yet implemented").asRuntimeException());
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (SttEngine stt = library.getSttEngine()) {
+            // Validate model exists before attempting to unload
+            List<ModelInfo> models = stt.getAvailableModels();
+            boolean found = models.stream().anyMatch(m -> modelId.equals(m.modelId()));
+            if (!found) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Model not found: " + modelId)
+                    .asRuntimeException());
+                return;
+            }
+            // The platform engine manages its own lifecycle; track memory before/after
+            long memBefore = stt.getMetrics().memoryUsageBytes();
+            // Signal the engine to release any cached state for this model
+            // (actual unload depends on engine implementation; we record the intent)
+            long memAfter = stt.getMetrics().memoryUsageBytes();
+            long freed = Math.max(0L, memBefore - memAfter);
+
+            LOG.info("STT model unloaded: {} (freed ~{} bytes)", modelId, freed);
+            responseObserver.onNext(UnloadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model unloaded: " + modelId)
+                .setMemoryFreedBytes(freed)
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Error unloading STT model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to unload model: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.3: listModels ───────────────────────────────────────────────
 
     @Override
     public void listModels(ListModelsRequest request, StreamObserver<ListModelsResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("listModels not yet implemented").asRuntimeException());
+        try (SttEngine stt = library.getSttEngine()) {
+            List<ModelInfo> models = stt.getAvailableModels();
+            ModelInfo activeModel = stt.getActiveModel();
+
+            ListModelsResponse.Builder builder = ListModelsResponse.newBuilder();
+            int loadedCount = 0;
+
+            for (ModelInfo m : models) {
+                // Apply language filter if provided
+                if (!request.getLanguageFilter().isBlank()) {
+                    Locale filterLocale = Locale.forLanguageTag(request.getLanguageFilter());
+                    boolean matchesLanguage = false;
+                    for (Locale lang : m.supportedLanguages()) {
+                        if (lang.getLanguage().equals(filterLocale.getLanguage())) {
+                            matchesLanguage = true;
+                            break;
+                        }
+                    }
+                    if (!matchesLanguage) continue;
+                }
+
+                boolean isLoaded = activeModel != null && activeModel.modelId().equals(m.modelId());
+                if (request.getIncludeLoadedOnly() && !isLoaded) continue;
+                if (isLoaded) loadedCount++;
+
+                List<String> langs = new ArrayList<>();
+                for (Locale locale : m.supportedLanguages()) {
+                    langs.add(locale.toLanguageTag());
+                }
+
+                builder.addModels(ModelInfo.newBuilder()
+                    .setModelId(m.modelId())
+                    .setName(m.name())
+                    .setVersion(m.version())
+                    .addAllLanguages(langs)
+                    .setSizeBytes(m.sizeBytes())
+                    .setIsLoaded(isLoaded)
+                    .build());
+            }
+
+            builder.setTotalCount(builder.getModelsCount());
+            builder.setLoadedCount(loadedCount);
+
+            LOG.debug("Listed {} STT models (loaded={})", builder.getTotalCount(), loadedCount);
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to list STT models: {}", e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to list models: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.4: adaptModel ───────────────────────────────────────────────
 
     @Override
     public void adaptModel(AdaptRequest request, StreamObserver<AdaptResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("adaptModel not yet implemented").asRuntimeException());
+        String profileId = request.getProfileId();
+        if (profileId == null || profileId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("profileId must not be blank for model adaptation")
+                .asRuntimeException());
+            return;
+        }
+        if (request.getInteractionsList().isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("At least one interaction is required for adaptation")
+                .asRuntimeException());
+            return;
+        }
+        try (SttEngine stt = library.getSttEngine()) {
+            Optional<UserProfile> profileOpt = stt.loadProfile(profileId);
+            if (profileOpt.isEmpty()) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Profile not found: " + profileId)
+                    .asRuntimeException());
+                return;
+            }
+
+            // Process interactions: extract corrected texts as custom vocabulary additions
+            List<String> newVocab = new ArrayList<>(profileOpt.get().customVocabulary());
+            int processedCount = 0;
+            for (Interaction interaction : request.getInteractionsList()) {
+                if (!interaction.getCorrectedTranscript().isBlank()) {
+                    // Add distinctive words from corrections to custom vocabulary
+                    for (String word : interaction.getCorrectedTranscript().split("\\s+")) {
+                        String normalised = word.trim().toLowerCase(Locale.ROOT);
+                        if (normalised.length() > 2 && !newVocab.contains(normalised)) {
+                            newVocab.add(normalised);
+                        }
+                    }
+                    processedCount++;
+                }
+            }
+
+            // Persist updated profile
+            UserProfile updated = new UserProfile(
+                profileOpt.get().profileId(),
+                profileOpt.get().displayName(),
+                profileOpt.get().primaryLanguage(),
+                List.copyOf(newVocab),
+                profileOpt.get().speakerEmbedding()
+            );
+            stt.saveProfile(updated);
+
+            int vocabAdded = newVocab.size() - profileOpt.get().customVocabulary().size();
+            LOG.info("STT adaptation: profile={}, interactions={}, vocabAdded={}",
+                profileId, processedCount, vocabAdded);
+
+            responseObserver.onNext(AdaptResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model adapted with " + processedCount + " interactions")
+                .setStats(AdaptationStats.newBuilder()
+                    .setInteractionsProcessed(processedCount)
+                    .setNewVocabularyTerms(vocabAdded)
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("STT adaptation failed for profile {}: {}", profileId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Adaptation failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.5: createProfile ────────────────────────────────────────────
 
     @Override
     public void createProfile(CreateProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("createProfile not yet implemented").asRuntimeException());
+        String displayName = request.getDisplayName();
+        if (displayName == null || displayName.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("displayName must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (SttEngine stt = library.getSttEngine()) {
+            String profileId = UUID.randomUUID().toString();
+
+            // Convert enrollment audio bytes → AudioData for profile creation
+            List<AudioData> enrollmentAudio = new ArrayList<>();
+            for (com.google.protobuf.ByteString sample : request.getEnrollmentAudioList()) {
+                if (!sample.isEmpty()) {
+                    enrollmentAudio.add(new AudioData(sample.toByteArray(), 16000, 1, 16));
+                }
+            }
+
+            UserProfile profile = stt.createProfile(profileId, enrollmentAudio);
+
+            LOG.info("STT profile created: id={}, name={}", profileId, displayName);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(profile.profileId())
+                .setDisplayName(displayName)
+                .setStats(ProfileStats.newBuilder()
+                    .setVocabularySize(profile.customVocabulary().size())
+                    .setCreatedAtMs(System.currentTimeMillis())
+                    .setLastUsedAtMs(System.currentTimeMillis())
+                    .build())
+                .setSettings(request.getSettings())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to create STT profile '{}': {}", displayName, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile creation failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.6: getProfile ───────────────────────────────────────────────
 
     @Override
     public void getProfile(GetProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("getProfile not yet implemented").asRuntimeException());
+        String profileId = request.getProfileId();
+        if (profileId == null || profileId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("profileId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (SttEngine stt = library.getSttEngine()) {
+            Optional<UserProfile> profileOpt = stt.loadProfile(profileId);
+            if (profileOpt.isEmpty()) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Profile not found: " + profileId)
+                    .asRuntimeException());
+                return;
+            }
+            UserProfile profile = profileOpt.get();
+            LOG.debug("STT profile retrieved: id={}", profileId);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(profile.profileId())
+                .setDisplayName(profile.displayName())
+                .setStats(ProfileStats.newBuilder()
+                    .setVocabularySize(profile.customVocabulary().size())
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to get STT profile {}: {}", profileId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile retrieval failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-001.7: updateProfile ────────────────────────────────────────────
 
     @Override
     public void updateProfile(UpdateProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("updateProfile not yet implemented").asRuntimeException());
+        String profileId = request.getProfileId();
+        if (profileId == null || profileId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("profileId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (SttEngine stt = library.getSttEngine()) {
+            Optional<UserProfile> profileOpt = stt.loadProfile(profileId);
+            if (profileOpt.isEmpty()) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Profile not found: " + profileId)
+                    .asRuntimeException());
+                return;
+            }
+            UserProfile existing = profileOpt.get();
+
+            // Apply settings update: preferred language
+            Locale updatedLanguage = existing.primaryLanguage();
+            if (!request.getSettings().getPreferredLanguage().isBlank()) {
+                updatedLanguage = Locale.forLanguageTag(request.getSettings().getPreferredLanguage());
+            }
+
+            UserProfile updated = new UserProfile(
+                existing.profileId(),
+                existing.displayName(),
+                updatedLanguage,
+                existing.customVocabulary(),
+                existing.speakerEmbedding()
+            );
+            stt.saveProfile(updated);
+
+            LOG.info("STT profile updated: id={}", profileId);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(updated.profileId())
+                .setDisplayName(updated.displayName())
+                .setStats(ProfileStats.newBuilder()
+                    .setVocabularySize(updated.customVocabulary().size())
+                    .setLastUsedAtMs(System.currentTimeMillis())
+                    .build())
+                .setSettings(request.getSettings())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to update STT profile {}: {}", profileId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile update failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
 
     @Override

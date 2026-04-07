@@ -1,5 +1,8 @@
 package com.ghatana.audio.video.vision.grpc;
 
+import com.ghatana.audio.video.common.model.FileSystemModelStore;
+import com.ghatana.audio.video.common.model.ModelMetadata;
+import com.ghatana.audio.video.common.model.ModelRegistry;
 import com.ghatana.audio.video.common.observability.MediaProcessingMetrics;
 import com.ghatana.audio.video.vision.detection.VisionDetector;
 import com.ghatana.audio.video.vision.grpc.proto.*;
@@ -24,19 +27,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * both single-frame and streaming video detection use cases.
  *
  * @doc.type class
- * @doc.purpose gRPC service for computer vision object detection
+ * @doc.purpose gRPC service for computer vision object detection and classification
  * @doc.layer product
  * @doc.pattern Service
  */
 public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(VisionGrpcService.class);
-    
+
     private final VisionDetector detector;
     private final VideoFrameExtractor frameExtractor;
     private final AtomicLong requestCount = new AtomicLong(0);
     private final AtomicLong totalProcessingTime = new AtomicLong(0);
     private final MediaProcessingMetrics mediaMetrics;
+    private final ModelRegistry modelRegistry;
 
     /** Package-private constructor for unit testing — inject a fake {@link VisionDetector}. */
     VisionGrpcService(VisionDetector detector, VideoFrameExtractor frameExtractor) {
@@ -49,6 +53,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         this.detector = detector;
         this.frameExtractor = frameExtractor;
         this.mediaMetrics = metrics;
+        this.modelRegistry = new FileSystemModelStore();
     }
 
     public VisionGrpcService() {
@@ -85,14 +90,28 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         }
         this.detector = adapter;
         this.mediaMetrics = metrics;
+
+        // Register the default model in the registry
+        this.modelRegistry = new FileSystemModelStore();
+        ModelMetadata defaultModel = ModelMetadata.builder()
+                .modelId(modelName)
+                .name(modelName)
+                .type(ModelMetadata.ModelType.VISION)
+                .loaded(true)
+                .build();
+        try {
+            modelRegistry.register(defaultModel);
+        } catch (ModelRegistry.ModelRegistryException ignored) {
+            // Already registered on hot-reload
+        }
     }
-    
+
     @Override
     public void detectObjects(DetectRequest request, StreamObserver<DetectResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
         requestCount.incrementAndGet();
         mediaMetrics.recordStarted("vision.detect");
-        
+
         try {
             if (request.getImageData().isEmpty()) {
                 responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
@@ -103,20 +122,20 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             }
 
             LOG.debug("Detecting objects in image ({} bytes)", request.getImageData().size());
-            
+
             DetectionOptions options = DetectionOptions.builder()
                 .targetClasses(new HashSet<>(request.getTargetClassesList()))
                 .maxDetections(request.getMaxDetections() > 0 ? request.getMaxDetections() : 100)
                 .confidenceThreshold(request.getConfidenceThreshold() > 0 ? request.getConfidenceThreshold() : 0.5)
                 .build();
-            
+
             List<DetectedObject> detectedObjects = detector.detectObjects(
                 request.getImageData().toByteArray(),
                 options
             );
 
             DetectResponse.Builder responseBuilder = DetectResponse.newBuilder();
-            
+
             for (DetectedObject obj : detectedObjects) {
                 Detection detection = Detection.newBuilder()
                     .setClassName(obj.getClassName())
@@ -129,19 +148,19 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                         .build())
                     .putAllAttributes(convertAttributes(obj.getAttributes()))
                     .build();
-                
+
                 responseBuilder.addDetections(detection);
             }
-            
+
             long processingTime = System.currentTimeMillis() - startTime;
             totalProcessingTime.addAndGet(processingTime);
             mediaMetrics.recordSucceeded("vision.detect", processingTime);
-            
+
             responseBuilder.setProcessingTimeMs(processingTime);
-            
+
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
-            
+
             LOG.info("Detected {} objects in {}ms", detectedObjects.size(), processingTime);
 
         } catch (VisionDetector.DetectionException e) {
@@ -164,7 +183,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 .asRuntimeException());
         }
     }
-    
+
     @Override
     public void analyzeImage(AnalyzeRequest request, StreamObserver<AnalyzeResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
@@ -179,26 +198,26 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             }
 
             LOG.debug("Analyzing image ({} bytes)", request.getImageData().size());
-            
+
             AnalyzeResponse.Builder responseBuilder = AnalyzeResponse.newBuilder();
-            
+
             Set<String> analysisTypes = new HashSet<>(request.getAnalysisTypesList());
-            
+
             if (analysisTypes.isEmpty() || analysisTypes.contains("scene")) {
                 DetectionOptions options = DetectionOptions.builder()
                     .maxDetections(10)
                     .confidenceThreshold(0.5)
                     .build();
-                
+
                 List<DetectedObject> objects = detector.detectObjects(
                     request.getImageData().toByteArray(),
                     options
                 );
-                
+
                 String sceneDescription = generateSceneDescription(objects);
                 responseBuilder.setSceneDescription(sceneDescription);
             }
-            
+
             responseObserver.onNext(responseBuilder.build());
             responseObserver.onCompleted();
             mediaMetrics.recordSucceeded("vision.analyze", System.currentTimeMillis() - startTime);
@@ -225,7 +244,206 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 .asRuntimeException());
         }
     }
-    
+
+    // ── AV-003.5: classifyImage ────────────────────────────────────────────
+
+    @Override
+    public void classifyImage(ClassifyRequest request, StreamObserver<ClassifyResponse> responseObserver) {
+        long startTime = System.currentTimeMillis();
+        mediaMetrics.recordStarted("vision.classify");
+        try {
+            if (request.getImageData().isEmpty()) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Image data cannot be empty")
+                    .asRuntimeException());
+                mediaMetrics.recordFailed("vision.classify");
+                return;
+            }
+
+            int topK = request.getTopK() > 0 ? request.getTopK() : 5;
+            double confidenceThreshold = request.getConfidenceThreshold() > 0
+                ? request.getConfidenceThreshold() : 0.1;
+
+            LOG.debug("Classifying image ({} bytes), top-{}", request.getImageData().size(), topK);
+
+            // Use detection results to infer classification labels
+            DetectionOptions options = DetectionOptions.builder()
+                .maxDetections(topK * 3) // detect more, then reduce to topK
+                .confidenceThreshold(confidenceThreshold)
+                .build();
+
+            List<DetectedObject> detections = detector.detectObjects(
+                request.getImageData().toByteArray(), options);
+
+            // Aggregate by class name (sum confidence scores)
+            Map<String, Double> classScores = new LinkedHashMap<>();
+            for (DetectedObject obj : detections) {
+                classScores.merge(obj.getClassName(), obj.getConfidence(), Double::sum);
+            }
+
+            // Normalize and rank
+            double total = classScores.values().stream().mapToDouble(Double::doubleValue).sum();
+            List<Map.Entry<String, Double>> ranked = new ArrayList<>(classScores.entrySet());
+            ranked.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+            ClassifyResponse.Builder builder = ClassifyResponse.newBuilder();
+            int rank = 1;
+            for (Map.Entry<String, Double> entry : ranked) {
+                if (rank > topK) break;
+                double normalizedConfidence = total > 0 ? entry.getValue() / total : 0.0;
+                if (normalizedConfidence < confidenceThreshold && rank > 1) break;
+
+                builder.addLabels(ClassLabel.newBuilder()
+                    .setLabel(entry.getKey())
+                    .setConfidence(normalizedConfidence)
+                    .setRank(rank++)
+                    .build());
+            }
+
+            long processingTime = System.currentTimeMillis() - startTime;
+            builder.setProcessingTimeMs(processingTime);
+            builder.setModelUsed(
+                modelRegistry.getActiveModel(ModelMetadata.ModelType.VISION)
+                    .map(ModelMetadata::modelId)
+                    .orElse("yolov8n"));
+
+            mediaMetrics.recordSucceeded("vision.classify", processingTime);
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+
+            LOG.info("Classified image: {} labels found in {}ms", builder.getLabelsCount(), processingTime);
+
+        } catch (VisionDetector.DetectionException e) {
+            LOG.error("Image classification engine failure", e);
+            mediaMetrics.recordFailed("vision.classify");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Classification engine error: " + e.getMessage())
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Unexpected error during image classification", e);
+            mediaMetrics.recordFailed("vision.classify");
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Internal classification error")
+                .asRuntimeException());
+        }
+    }
+
+    // ── AV-003.1: loadModel ────────────────────────────────────────────────
+
+    @Override
+    public void loadModel(LoadModelRequest request, StreamObserver<LoadModelResponse> responseObserver) {
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        long startTime = System.currentTimeMillis();
+        try {
+            // Register if not already known
+            if (modelRegistry.findById(modelId).isEmpty()) {
+                ModelMetadata newModel = ModelMetadata.builder()
+                        .modelId(modelId)
+                        .name(modelId)
+                        .type(ModelMetadata.ModelType.VISION)
+                        .build();
+                modelRegistry.register(newModel);
+            }
+
+            ModelMetadata loaded = modelRegistry.load(modelId);
+            long loadTimeMs = System.currentTimeMillis() - startTime;
+
+            LOG.info("Vision model loaded: {} in {}ms", modelId, loadTimeMs);
+            responseObserver.onNext(LoadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Vision model loaded: " + modelId)
+                .setModelId(modelId)
+                .setLoadTimeMs(loadTimeMs)
+                .setMemoryUsageBytes(loaded.sizeBytes())
+                .build());
+            responseObserver.onCompleted();
+        } catch (ModelRegistry.ModelRegistryException e) {
+            LOG.warn("Failed to load vision model {}: {}", modelId, e.getMessage());
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
+                .withDescription("Model not found or cannot be loaded: " + e.getMessage())
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Error loading vision model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to load model: " + e.getMessage())
+                .asRuntimeException());
+        }
+    }
+
+    // ── AV-003.2: unloadModel ──────────────────────────────────────────────
+
+    @Override
+    public void unloadModel(UnloadModelRequest request, StreamObserver<UnloadModelResponse> responseObserver) {
+        String modelId = request.getModelId();
+        if (modelId == null || modelId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("modelId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try {
+            long freed = modelRegistry.unload(modelId);
+            LOG.info("Vision model unloaded: {} (freed ~{} bytes)", modelId, freed);
+            responseObserver.onNext(UnloadModelResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Model unloaded: " + modelId)
+                .setMemoryFreedBytes(freed)
+                .build());
+            responseObserver.onCompleted();
+        } catch (ModelRegistry.ModelRegistryException e) {
+            responseObserver.onError(io.grpc.Status.NOT_FOUND
+                .withDescription("Model not registered: " + modelId)
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Error unloading vision model {}: {}", modelId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to unload model: " + e.getMessage())
+                .asRuntimeException());
+        }
+    }
+
+    // ── AV-003.3: listModels ───────────────────────────────────────────────
+
+    @Override
+    public void listModels(ListModelsRequest request, StreamObserver<ListModelsResponse> responseObserver) {
+        try {
+            List<ModelMetadata> models = modelRegistry.listModels(ModelMetadata.ModelType.VISION);
+
+            ListModelsResponse.Builder builder = ListModelsResponse.newBuilder();
+            int loadedCount = 0;
+            for (ModelMetadata m : models) {
+                if (request.getIncludeLoadedOnly() && !m.loaded()) continue;
+                if (m.loaded()) loadedCount++;
+
+                builder.addModels(VisionModelInfo.newBuilder()
+                    .setModelId(m.modelId())
+                    .setName(m.name())
+                    .setVersion(m.version())
+                    .setIsLoaded(m.loaded())
+                    .setSizeBytes(m.sizeBytes())
+                    .addAllSupportedTasks(List.of("detection", "classification"))
+                    .build());
+            }
+            builder.setTotalCount(builder.getModelsCount());
+            builder.setLoadedCount(loadedCount);
+
+            LOG.debug("Listed {} vision models", builder.getTotalCount());
+            responseObserver.onNext(builder.build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to list vision models: {}", e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Failed to list models: " + e.getMessage())
+                .asRuntimeException());
+        }
+    }
+
     @Override
     public void analyzeVideoFile(VideoFileRequest request, StreamObserver<VideoFileResponse> responseObserver) {
         long startTime = System.currentTimeMillis();
@@ -234,16 +452,13 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         try {
             LOG.info("Analyzing video file ({} bytes)", request.getVideoData().size());
 
-            // Write video bytes to temp file for FFmpeg processing
             tempDir = Files.createTempDirectory("vision-video-");
             Path videoFile = tempDir.resolve("input.mp4");
             Files.write(videoFile, request.getVideoData().toByteArray());
 
-            // Get video metadata
             VideoFrameExtractor.VideoMetadata metadata = frameExtractor.getVideoMetadata(videoFile);
             LOG.info("Video metadata: {}", metadata);
 
-            // Configure frame extraction based on video duration
             int fps = request.getSampleFps() > 0 ? request.getSampleFps() : 1;
             int maxFrames = request.getMaxFrames() > 0 ? request.getMaxFrames() : 50;
 
@@ -260,7 +475,6 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
 
             LOG.info("Extracted {} frames for analysis", frames.size());
 
-            // Configure detection
             DetectionOptions detectionOptions = DetectionOptions.builder()
                 .confidenceThreshold(request.getConfidenceThreshold() > 0 ?
                     request.getConfidenceThreshold() : 0.5)
@@ -269,7 +483,6 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                     null : new HashSet<>(request.getTargetClassesList()))
                 .build();
 
-            // Detect objects in each frame
             VideoFileResponse.Builder responseBuilder = VideoFileResponse.newBuilder();
             Map<String, Long> aggregatedCounts = new HashMap<>();
 
@@ -319,7 +532,6 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 .withDescription("Video analysis failed: " + e.getMessage())
                 .asRuntimeException());
         } finally {
-            // Cleanup temp files
             if (tempDir != null) {
                 cleanupTempDirectory(tempDir);
             }
@@ -332,23 +544,23 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             @Override
             public void onNext(VideoFrameRequest request) {
                 try {
-                    LOG.debug("Processing video frame {} at {}ms", 
+                    LOG.debug("Processing video frame {} at {}ms",
                         request.getFrameNumber(), request.getTimestampMs());
-                    
+
                     DetectionOptions options = DetectionOptions.builder()
                         .maxDetections(50)
                         .confidenceThreshold(0.6)
                         .build();
-                    
+
                     List<DetectedObject> detectedObjects = detector.detectObjects(
                         request.getFrameData().toByteArray(),
                         options
                     );
-                    
+
                     VideoFrameResponse.Builder responseBuilder = VideoFrameResponse.newBuilder()
                         .setTimestampMs(request.getTimestampMs())
                         .setFrameNumber(request.getFrameNumber());
-                    
+
                     for (DetectedObject obj : detectedObjects) {
                         Detection detection = Detection.newBuilder()
                             .setClassName(obj.getClassName())
@@ -360,23 +572,23 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                                 .setHeight(obj.getBoundingBox().getHeight())
                                 .build())
                             .build();
-                        
+
                         responseBuilder.addDetections(detection);
                     }
-                    
+
                     responseObserver.onNext(responseBuilder.build());
-                    
+
                 } catch (Exception e) {
                     LOG.error("Video frame processing failed", e);
                     responseObserver.onError(e);
                 }
             }
-            
+
             @Override
             public void onError(Throwable t) {
                 LOG.error("Video processing stream error", t);
             }
-            
+
             @Override
             public void onCompleted() {
                 responseObserver.onCompleted();
@@ -384,50 +596,55 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             }
         };
     }
-    
+
     @Override
     public void getStatus(StatusRequest request, StreamObserver<StatusResponse> responseObserver) {
         try {
             long count = requestCount.get();
             long totalTime = totalProcessingTime.get();
             double avgTime = count > 0 ? (double) totalTime / count : 0.0;
-            
+
+            String activeModel = modelRegistry.getActiveModel(ModelMetadata.ModelType.VISION)
+                    .map(ModelMetadata::modelId).orElse("YOLOv8");
+
             StatusResponse response = StatusResponse.newBuilder()
                 .setStatus(detector.isInitialized() ? "healthy" : "not_initialized")
-                .setModelName("YOLOv8")
+                .setModelName(activeModel)
                 .setTotalRequests(count)
                 .setAvgProcessingTimeMs(avgTime)
                 .build();
-            
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            
+
         } catch (Exception e) {
             LOG.error("Failed to get status", e);
             responseObserver.onError(e);
         }
     }
-    
+
     @Override
     public void healthCheck(HealthCheckRequest request, StreamObserver<HealthCheckResponse> responseObserver) {
         try {
             boolean healthy = detector.isInitialized();
             String message = healthy ? "Vision service is healthy" : "Vision service not initialized";
-            
+
             HealthCheckResponse response = HealthCheckResponse.newBuilder()
                 .setHealthy(healthy)
                 .setMessage(message)
                 .build();
-            
+
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-            
+
         } catch (Exception e) {
             LOG.error("Health check failed", e);
             responseObserver.onError(e);
         }
     }
-    
+
+    // ── Private helpers ────────────────────────────────────────────────────
+
     private Map<String, String> convertAttributes(ObjectAttributes attributes) {
         Map<String, String> map = new HashMap<>();
         if (attributes != null) {
@@ -437,7 +654,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         }
         return map;
     }
-    
+
     private String generateVideoSummary(Map<String, Long> objectCounts, int frameCount,
                                          double durationSeconds) {
         if (objectCounts.isEmpty()) {
@@ -445,7 +662,6 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 frameCount, durationSeconds);
         }
 
-        // Find most frequent objects
         List<Map.Entry<String, Long>> sorted = new ArrayList<>(objectCounts.entrySet());
         sorted.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
 
@@ -485,15 +701,15 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
         if (objects.isEmpty()) {
             return "No objects detected in the image";
         }
-        
+
         Map<String, Long> objectCounts = new HashMap<>();
         for (DetectedObject obj : objects) {
             objectCounts.merge(obj.getClassName(), 1L, Long::sum);
         }
-        
+
         StringBuilder description = new StringBuilder("The image contains ");
         List<String> parts = new ArrayList<>();
-        
+
         for (Map.Entry<String, Long> entry : objectCounts.entrySet()) {
             long count = entry.getValue();
             String className = entry.getKey();
@@ -503,7 +719,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
                 parts.add(count + " " + className + "s");
             }
         }
-        
+
         for (int i = 0; i < parts.size(); i++) {
             if (i > 0 && i == parts.size() - 1) {
                 description.append(" and ");
@@ -512,7 +728,7 @@ public class VisionGrpcService extends VisionServiceGrpc.VisionServiceImplBase {
             }
             description.append(parts.get(i));
         }
-        
+
         description.append(".");
         return description.toString();
     }

@@ -49,11 +49,12 @@ final class PhrTestInfrastructure {
     static KernelContext createTestContext(
             DataCloudKernelAdapter dataCloud,
             Map<Class<?>, Object> dependencies) {
+        ConcurrentHashMap<Class<?>, Object> registeredDependencies = new ConcurrentHashMap<>(dependencies);
         return new KernelContext() {
             @SuppressWarnings("unchecked")
             @Override
             public <T> T getDependency(Class<T> type) {
-                Object dependency = dependencies.get(type);
+                Object dependency = registeredDependencies.get(type);
                 if (dependency != null) {
                     return (T) dependency;
                 }
@@ -144,6 +145,9 @@ final class PhrTestInfrastructure {
 
             @Override
             public <T> void registerService(Class<T> type, T service) {}
+            public <T> void registerService(Class<T> type, T service) {
+                registeredDependencies.put(type, service);
+            }
         };
     }
 

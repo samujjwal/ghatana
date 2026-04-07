@@ -16,6 +16,7 @@ import com.ghatana.phr.kernel.service.ClinicalDecisionSupportService;
 import com.ghatana.phr.kernel.service.ClinicalNoteService;
 import com.ghatana.phr.kernel.service.ConsentManagementService;
 import com.ghatana.phr.kernel.service.DocumentService;
+import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
 import com.ghatana.phr.kernel.service.EmergencyAccessLogService;
 import com.ghatana.phr.kernel.service.EmergencyAccessReviewWorkflow;
 import com.ghatana.phr.kernel.service.ImagingService;
@@ -23,6 +24,7 @@ import com.ghatana.phr.kernel.service.ImmunizationService;
 import com.ghatana.phr.kernel.service.LabResultService;
 import com.ghatana.phr.kernel.service.MedicationService;
 import com.ghatana.phr.kernel.service.PatientRecordService;
+import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.phr.kernel.service.PhrServiceCatalog;
 import com.ghatana.phr.kernel.service.ReferralService;
 import com.ghatana.phr.kernel.service.TelemedicineService;
@@ -114,6 +116,9 @@ public class PhrKernelModule extends AbstractKernelModule {
 
     @Override
     protected void registerServices(List<KernelLifecycleAware> services, KernelContext context) {
+        DurablePhrNotificationSender notificationSender = new DurablePhrNotificationSender(context);
+        context.registerService(PhrNotificationSender.class, notificationSender);
+
         PatientRecordService patientRecords = new PatientRecordService(context);
         ConsentManagementService consent = new ConsentManagementService(context);
         DocumentService documents = new DocumentService(context);
@@ -145,6 +150,7 @@ public class PhrKernelModule extends AbstractKernelModule {
             new PhrServiceCatalog.EmergencyServices(emergencyAccess, emergencyReview)
         );
 
+        services.add(notificationSender);
         services.add(patientRecords);
         services.add(consent);
         services.add(documents);

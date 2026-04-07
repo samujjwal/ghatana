@@ -6,7 +6,9 @@
 package com.ghatana.finance.service;
 
 import com.ghatana.finance.ai.FinanceFraudDetectionKernelAgent;
+import com.ghatana.finance.ai.FinanceFraudDetectionKernelAgent;
 import com.ghatana.finance.ai.FinanceAIModule;
+import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.finance.ai.FraudDetectionResult;
 import com.ghatana.finance.ai.ModelApprovalRecord;
 import com.ghatana.finance.ai.ModelApprovalRepository;
@@ -27,6 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,6 +43,7 @@ public class TransactionServiceTest {
 
     private TransactionService transactionService;
     private AgentOrchestrator orchestrator;
+    private FinanceFraudDetectionKernelAgent fraudDetectionAgent;
     private FinanceFraudDetectionKernelAgent fraudDetectionAgent;
 
     @BeforeEach
@@ -57,6 +64,14 @@ public class TransactionServiceTest {
         approval.setVersion("2.0");
         approvalRepository.save(approval);
 
+        ModelRepository modelRepository = injector.getInstance(ModelRepository.class);
+        ModelRecord model = new ModelRecord();
+        model.setModelId("fraud-detection-v2");
+        model.setMetadata(Map.of("endpoint", "http://127.0.0.1:1/unreachable"));
+        modelRepository.save(model);
+
+        // Create fraud detection agent with injector-managed inference wiring
+        fraudDetectionAgent = injector.getInstance(FinanceFraudDetectionKernelAgent.class);
         ModelRepository modelRepository = injector.getInstance(ModelRepository.class);
         ModelRecord model = new ModelRecord();
         model.setModelId("fraud-detection-v2");
@@ -247,6 +262,11 @@ public class TransactionServiceTest {
         transaction.setAmount(amount);
         transaction.setCurrency(currency);
         transaction.setLocation(location);
+        transaction.setMerchantCategory("BTC".equals(currency) ? "CRYPTO_EXCHANGE" : "RETAIL");
+        transaction.setCounterpartyCountry("UNKNOWN".equals(location) ? "RU" : location);
+        transaction.setPaymentMethod("BTC".equals(currency) ? "WIRE_TRANSFER" : "CARD");
+        transaction.setVelocity(amount >= 100000.0 ? 15.0 : amount >= 15000.0 ? 4.0 : 1.0);
+        transaction.setTimestamp(Instant.parse("2026-04-06T12:00:00Z"));
         transaction.setMerchantCategory("BTC".equals(currency) ? "CRYPTO_EXCHANGE" : "RETAIL");
         transaction.setCounterpartyCountry("UNKNOWN".equals(location) ? "RU" : location);
         transaction.setPaymentMethod("BTC".equals(currency) ? "WIRE_TRANSFER" : "CARD");

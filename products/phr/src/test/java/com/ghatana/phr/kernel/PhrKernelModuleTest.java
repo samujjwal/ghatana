@@ -5,6 +5,8 @@ import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
+import com.ghatana.phr.kernel.service.DurablePhrNotificationSender;
+import com.ghatana.phr.kernel.service.PhrNotificationSender;
 import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -12,6 +14,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -96,6 +100,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertNotNull(module.getServiceCatalog().patient().consent());
         assertNotNull(module.getServiceCatalog().emergency().emergencyAccess());
         assertNotNull(module.getServiceCatalog().emergency().emergencyReview());
+        assertTrue(mockContext.getOptionalDependency(PhrNotificationSender.class).isPresent());
 
         // Second initialization should throw
         IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -158,7 +163,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
 
         assertEquals(HealthStatus.Status.HEALTHY, status.getStatus());
         assertTrue(status.getMessage().contains("operational"));
-        assertEquals(15, status.getChecks().size()); // 15 implemented services
+        assertEquals(16, status.getChecks().size());
     }
 
     @Test
@@ -184,11 +189,22 @@ class PhrKernelModuleTest extends EventloopTestBase {
         assertTrue(status.getChecks().containsKey("document"));
         assertTrue(status.getChecks().containsKey("appointment"));
         assertTrue(status.getChecks().containsKey("clinical-decision-support"));
+        assertTrue(status.getChecks().containsKey("phr-notification-outbox"));
 
         // All should be healthy after start
         status.getChecks().values().forEach(check ->
             assertEquals(HealthStatus.Status.HEALTHY, check.getStatus())
         );
+    }
+
+    @Test
+    @DisplayName("Should register durable PHR notification sender")
+    void shouldRegisterDurablePhrNotificationSender() {
+        module.initialize(mockContext);
+
+        PhrNotificationSender sender = mockContext.getOptionalDependency(PhrNotificationSender.class).orElseThrow();
+
+        assertInstanceOf(DurablePhrNotificationSender.class, sender);
     }
 
     @Test
@@ -230,8 +246,13 @@ class PhrKernelModuleTest extends EventloopTestBase {
     // ==================== Test Helpers ====================
 
     private KernelContext createMockContext() {
+        ConcurrentHashMap<Class<?>, Object> registeredServices = new ConcurrentHashMap<>();
         return new KernelContext() {
             @Override public <T> T getDependency(Class<T> type) {
+                Object registered = registeredServices.get(type);
+                if (registered != null) {
+                    return type.cast(registered);
+                }
                 if (type == KernelConfigResolver.class) {
                     return type.cast(new KernelConfigResolver() {
                         @Override public <R> R resolve(String key, Class<R> type, KernelTenantContext tenantContext) { return null; }
@@ -260,10 +281,15 @@ class PhrKernelModuleTest extends EventloopTestBase {
                 throw new IllegalStateException("Dependency not found: " + type);
             }
             @Override public <T> java.util.Optional<T> getOptionalDependency(Class<T> type) {
+                Object registered = registeredServices.get(type);
+                if (registered != null) {
+                    return java.util.Optional.of(type.cast(registered));
+                }
                 return java.util.Optional.empty();
             }
             @Override public <T> boolean hasDependency(Class<T> type) {
-                return type == KernelConfigResolver.class
+                return registeredServices.containsKey(type)
+                    || type == KernelConfigResolver.class
                     || type == com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapter.class;
             }
             @Override public <T> T getDependency(String name, Class<T> type) { return null; }
@@ -281,7 +307,7 @@ class PhrKernelModuleTest extends EventloopTestBase {
             @Override public String getEnvironment() { return "test"; }
             @Override public java.util.concurrent.Executor getExecutor(String executorName) { return Runnable::run; }
             @Override public <T> java.util.Optional<T> getCapability(String capabilityId) { return java.util.Optional.empty(); }
-            @Override public <T> void registerService(Class<T> type, T service) {}
+            @Override public <T> void registerService(Class<T> type, T service) { registeredServices.put(type, service); }
         };
     }
 

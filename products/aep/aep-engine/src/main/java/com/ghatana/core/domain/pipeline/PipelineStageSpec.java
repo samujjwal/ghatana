@@ -98,7 +98,16 @@ public class PipelineStageSpec {
     public StageConfiguration getConfiguration() {
         return configuration;
     }
-    
+
+    /** Record-style accessor — equivalent to {@link #getId()}. */
+    public String stageId() { return id; }
+
+    /** Record-style accessor — equivalent to {@link #getStageType()}. */
+    public String stageType() { return stageType; }
+
+    /** Record-style accessor — equivalent to {@link #getConfiguration()}. */
+    public StageConfiguration configuration() { return configuration; }
+
     /**
      * Checks if the stage is enabled.
      * 
@@ -176,5 +185,8 @@ public class PipelineStageSpec {
         public long getTimeoutMs() { return timeoutMs; }
         public String getExecutionStrategy() { return executionStrategy; }
         public boolean isFaultTolerant() { return faultTolerant; }
+
+        /** Record-style accessor — equivalent to {@link #getExecutionStrategy()}. */
+        public String executionStrategy() { return executionStrategy; }
     }
 }

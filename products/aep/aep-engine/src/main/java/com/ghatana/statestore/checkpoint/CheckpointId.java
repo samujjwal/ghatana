@@ -37,7 +37,21 @@ public final class CheckpointId {
     public static CheckpointId checkpoint(String id) {
         return new CheckpointId(id, CheckpointType.CHECKPOINT, Instant.now());
     }
-    
+
+    /**
+     * Create a checkpoint ID from an explicit id and type, with the current timestamp.
+     *
+     * @param id   checkpoint identifier
+     * @param type checkpoint type
+     * @return new CheckpointId
+     */
+    public static CheckpointId of(String id, CheckpointType type) {
+        return new CheckpointId(
+                Objects.requireNonNull(id, "id must not be null"),
+                Objects.requireNonNull(type, "type must not be null"),
+                Instant.now());
+    }
+
     /**
      * Create a new savepoint ID with a name.
      */

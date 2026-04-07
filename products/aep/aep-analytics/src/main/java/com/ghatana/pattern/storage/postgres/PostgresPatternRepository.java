@@ -9,7 +9,6 @@ import com.ghatana.pattern.storage.PatternRepository;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsCollectorFactory;
 
@@ -233,41 +232,19 @@ public class PostgresPatternRepository implements PatternRepository {
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
     private final MetricsCollector metrics;
-    
-    // TODO: Migrate Timer operations to MetricsCollector when timer support is added
-    private final Timer saveTimer;
-    private final Timer findTimer;
-    private final Timer updateTimer;
-    private final Timer deleteTimer;
-    
+
     public PostgresPatternRepository(DataSource dataSource, ObjectMapper objectMapper, MeterRegistry meterRegistry) {
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
         this.metrics = MetricsCollectorFactory.create(meterRegistry);
-        
-        // Initialize timers (counters now use MetricsCollector abstraction)
-        this.saveTimer = Timer.builder("pattern.storage.save.time")
-                .description("Time taken to save a pattern")
-                .register(meterRegistry);
-        
-        this.findTimer = Timer.builder("pattern.storage.find.time")
-                .description("Time taken to find patterns")
-                .register(meterRegistry);
-        
-        this.updateTimer = Timer.builder("pattern.storage.update.time")
-                .description("Time taken to update a pattern")
-                .register(meterRegistry);
-        
-        this.deleteTimer = Timer.builder("pattern.storage.delete.time")
-                .description("Time taken to delete a pattern")
-                .register(meterRegistry);
     }
     
     @Override
     public Promise<PatternMetadata> save(PatternSpecification spec) {
+        long startTime = System.currentTimeMillis();
         try {
-            PatternMetadata result = saveTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            PatternMetadata result;
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = """
                         INSERT INTO patterns (id, tenant_id, name, version, description, labels, priority,
                                             activation, status, spec, event_types, created_at, updated_at)
@@ -292,24 +269,26 @@ public class PostgresPatternRepository implements PatternRepository {
                         stmt.executeUpdate();
 
                         metrics.incrementCounter("pattern.storage.save.success");
-                        return convertToMetadata(spec);
+                        result = convertToMetadata(spec);
                     }
-                } catch (SQLException | JsonProcessingException e) {
-                    metrics.incrementCounter("pattern.storage.save.failure");
-                    throw new RuntimeException("Failed to save pattern", e);
-                }
-            });
+            } catch (SQLException | JsonProcessingException e) {
+                metrics.incrementCounter("pattern.storage.save.failure");
+                throw new RuntimeException("Failed to save pattern", e);
+            }
+            metrics.recordTimer("pattern.storage.save.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.save.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<Optional<PatternMetadata>> findById(UUID id) {
+        long startTime = System.currentTimeMillis();
         try {
-            Optional<PatternMetadata> result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            Optional<PatternMetadata> result;
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = "SELECT * FROM patterns WHERE id = ?";
 
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -318,29 +297,31 @@ public class PostgresPatternRepository implements PatternRepository {
                         try (ResultSet rs = stmt.executeQuery()) {
                             if (rs.next()) {
                                 metrics.incrementCounter("pattern.storage.find.success");
-                                return Optional.of(convertToMetadata(rs));
+                                result = Optional.of(convertToMetadata(rs));
                             } else {
                                 metrics.incrementCounter("pattern.storage.find.success");
-                                return Optional.empty();
+                                result = Optional.empty();
                             }
                         }
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to find pattern by ID", e);
-                }
-            });
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                throw new RuntimeException("Failed to find pattern by ID", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<List<PatternMetadata>> findByTenant(String tenantId, PatternStatus status) {
+        long startTime = System.currentTimeMillis();
         try {
-            List<PatternMetadata> result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            List<PatternMetadata> result;
+            try (Connection conn = dataSource.getConnection()) {
                     StringBuilder sql = new StringBuilder("SELECT * FROM patterns WHERE tenant_id = ?");
                     List<Object> params = new ArrayList<>();
                     params.add(tenantId);
@@ -364,25 +345,27 @@ public class PostgresPatternRepository implements PatternRepository {
                             }
 
                             metrics.incrementCounter("pattern.storage.find.success");
-                            return patterns;
+                            result = patterns;
                         }
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to find patterns by tenant", e);
-                }
-            });
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                throw new RuntimeException("Failed to find patterns by tenant", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<List<PatternMetadata>> findByTenantAndName(String tenantId, String name) {
+        long startTime = System.currentTimeMillis();
         try {
-            List<PatternMetadata> result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            List<PatternMetadata> result;
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = "SELECT * FROM patterns WHERE tenant_id = ? AND name = ? ORDER BY version DESC";
 
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -396,25 +379,27 @@ public class PostgresPatternRepository implements PatternRepository {
                             }
 
                             metrics.incrementCounter("pattern.storage.find.success");
-                            return patterns;
+                            result = patterns;
                         }
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to find patterns by tenant and name", e);
-                }
-            });
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                throw new RuntimeException("Failed to find patterns by tenant and name", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<PatternMetadata> updatePattern(UUID id, PatternSpecification newSpec) {
+        long startTime = System.currentTimeMillis();
         try {
-            PatternMetadata result = updateTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            PatternMetadata result;
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = """
                         UPDATE patterns
                         SET name = ?, version = ?, description = ?, labels = ?, priority = ?,
@@ -442,24 +427,25 @@ public class PostgresPatternRepository implements PatternRepository {
                         }
 
                         metrics.incrementCounter("pattern.storage.update.success");
-                        return convertToMetadata(newSpec);
+                        result = convertToMetadata(newSpec);
                     }
-                } catch (SQLException | JsonProcessingException e) {
-                    metrics.incrementCounter("pattern.storage.update.failure");
-                    throw new RuntimeException("Failed to update pattern", e);
-                }
-            });
+            } catch (SQLException | JsonProcessingException e) {
+                metrics.incrementCounter("pattern.storage.update.failure");
+                throw new RuntimeException("Failed to update pattern", e);
+            }
+            metrics.recordTimer("pattern.storage.update.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.update.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<Void> updateStatus(UUID id, PatternStatus status) {
+        long startTime = System.currentTimeMillis();
         try {
-            Void result = updateTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = "UPDATE patterns SET status = ?, updated_at = ? WHERE id = ?";
 
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -473,24 +459,24 @@ public class PostgresPatternRepository implements PatternRepository {
                         }
 
                         metrics.incrementCounter("pattern.storage.update.success");
-                        return null;
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.update.failure");
-                    throw new RuntimeException("Failed to update pattern status", e);
-                }
-            });
-            return Promise.of(result);
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.update.failure");
+                throw new RuntimeException("Failed to update pattern status", e);
+            }
+            metrics.recordTimer("pattern.storage.update.time", System.currentTimeMillis() - startTime);
+            return Promise.of(null);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.update.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<Void> delete(UUID id) {
+        long startTime = System.currentTimeMillis();
         try {
-            Void result = deleteTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = "DELETE FROM patterns WHERE id = ?";
 
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -502,83 +488,85 @@ public class PostgresPatternRepository implements PatternRepository {
                         }
 
                         metrics.incrementCounter("pattern.storage.delete.success");
-                        return null;
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.delete.failure");
-                    throw new RuntimeException("Failed to delete pattern", e);
-                }
-            });
-            return Promise.of(result);
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.delete.failure");
+                throw new RuntimeException("Failed to delete pattern", e);
+            }
+            metrics.recordTimer("pattern.storage.delete.time", System.currentTimeMillis() - startTime);
+            return Promise.of(null);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.delete.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<Boolean> exists(UUID id) {
+        long startTime = System.currentTimeMillis();
         try {
-            Boolean result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
+            boolean exists;
+            try (Connection conn = dataSource.getConnection()) {
                     String sql = "SELECT 1 FROM patterns WHERE id = ? LIMIT 1";
 
                     try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                         stmt.setObject(1, id);
 
                         try (ResultSet rs = stmt.executeQuery()) {
-                            boolean exists = rs.next();
+                            exists = rs.next();
                             metrics.incrementCounter("pattern.storage.find.success");
-                            return exists;
                         }
                     }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to check pattern existence", e);
-                }
-            });
-            return Promise.of(result);
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                throw new RuntimeException("Failed to check pattern existence", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
+            return Promise.of(exists);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
     
     @Override
     public Promise<Long> countByTenant(String tenantId, PatternStatus status) {
+        long startTime = System.currentTimeMillis();
         try {
-            Long result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
-                    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM patterns WHERE tenant_id = ?");
-                    List<Object> params = new ArrayList<>();
-                    params.add(tenantId);
+            long count;
+            try (Connection conn = dataSource.getConnection()) {
+                StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM patterns WHERE tenant_id = ?");
+                List<Object> params = new ArrayList<>();
+                params.add(tenantId);
 
-                    if (status != null) {
-                        sql.append(" AND status = ?");
-                        params.add(status.getValue());
-                    }
-
-                    try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-                        for (int i = 0; i < params.size(); i++) {
-                            stmt.setObject(i + 1, params.get(i));
-                        }
-
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            if (rs.next()) {
-                                long count = rs.getLong(1);
-                                metrics.incrementCounter("pattern.storage.find.success");
-                                return count;
-                            } else {
-                                metrics.incrementCounter("pattern.storage.find.success");
-                                return 0L;
-                            }
-                        }
-                    }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to count patterns by tenant", e);
+                if (status != null) {
+                    sql.append(" AND status = ?");
+                    params.add(status.getValue());
                 }
-            });
-            return Promise.of(result);
+
+                try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+                    for (int i = 0; i < params.size(); i++) {
+                        stmt.setObject(i + 1, params.get(i));
+                    }
+
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (rs.next()) {
+                            count = rs.getLong(1);
+                            metrics.incrementCounter("pattern.storage.find.success");
+                        } else {
+                            metrics.incrementCounter("pattern.storage.find.success");
+                            count = 0L;
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                throw new RuntimeException("Failed to count patterns by tenant", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
+            return Promise.of(count);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }
@@ -620,45 +608,48 @@ public class PostgresPatternRepository implements PatternRepository {
 
     @Override
     public Promise<List<PatternMetadata>> findByEventType(String tenantId, String eventType, PatternStatus status) {
+        long startTime = System.currentTimeMillis();
         try {
-            List<PatternMetadata> result = findTimer.recordCallable(() -> {
-                try (Connection conn = dataSource.getConnection()) {
-                    StringBuilder sql = new StringBuilder(
-                        "SELECT * FROM patterns WHERE tenant_id = ? AND event_types @> ARRAY[?]::text[]"
-                    );
-                    List<Object> params = new ArrayList<>();
-                    params.add(tenantId);
-                    params.add(eventType);
+            List<PatternMetadata> result;
+            try (Connection conn = dataSource.getConnection()) {
+                StringBuilder sql = new StringBuilder(
+                    "SELECT * FROM patterns WHERE tenant_id = ? AND event_types @> ARRAY[?]::text[]"
+                );
+                List<Object> params = new ArrayList<>();
+                params.add(tenantId);
+                params.add(eventType);
 
-                    if (status != null) {
-                        sql.append(" AND status = ?");
-                        params.add(status.getValue());
-                    }
-
-                    sql.append(" ORDER BY created_at DESC");
-
-                    try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-                        for (int i = 0; i < params.size(); i++) {
-                            stmt.setObject(i + 1, params.get(i));
-                        }
-
-                        try (ResultSet rs = stmt.executeQuery()) {
-                            List<PatternMetadata> patterns = new ArrayList<>();
-                            while (rs.next()) {
-                                patterns.add(convertToMetadata(rs));
-                            }
-
-                            metrics.incrementCounter("pattern.storage.find.success");
-                            return patterns;
-                        }
-                    }
-                } catch (SQLException e) {
-                    metrics.incrementCounter("pattern.storage.find.failure");
-                    throw new RuntimeException("Failed to find patterns by event type", e);
+                if (status != null) {
+                    sql.append(" AND status = ?");
+                    params.add(status.getValue());
                 }
-            });
+
+                sql.append(" ORDER BY created_at DESC");
+
+                try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+                    for (int i = 0; i < params.size(); i++) {
+                        stmt.setObject(i + 1, params.get(i));
+                    }
+
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        List<PatternMetadata> patterns = new ArrayList<>();
+                        while (rs.next()) {
+                            patterns.add(convertToMetadata(rs));
+                        }
+
+                        metrics.incrementCounter("pattern.storage.find.success");
+                        result = patterns;
+                    }
+                }
+            } catch (SQLException e) {
+                metrics.incrementCounter("pattern.storage.find.failure");
+                metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
+                throw new RuntimeException("Failed to find patterns by event type", e);
+            }
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.of(result);
         } catch (Exception e) {
+            metrics.recordTimer("pattern.storage.find.time", System.currentTimeMillis() - startTime);
             return Promise.ofException(e);
         }
     }

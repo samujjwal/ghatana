@@ -415,15 +415,20 @@ public final class AepAgentRegistryController {
      */
     @NotNull
     public Promise<HttpResponse> deregisterAgent(@NotNull HttpRequest request) {
-        String agentId = request.getPathParameter("agentId");
+        // Authorization check first: prevents leaking agent existence to non-admins.
+        // In production this header is injected by the gateway JWT filter; the controller
+        // enforces the role boundary explicitly rather than relying on a silent default.
+        String callerRole = request.getHeader(HttpHeaders.of("X-Agent-Role"));
+        if (callerRole == null || !callerRole.equalsIgnoreCase("ADMIN")) {
+            log.warn("Unauthorized deregister attempt: caller role='{}'", callerRole);
+            return Promise.of(httpUtils.errorResponse(403,
+                    "Forbidden: admin role required to deregister agents"));
+        }
+
+        String agentId = resolveAgentId(request);
         if (agentId == null || agentId.isBlank()) {
             return Promise.of(httpUtils.errorResponse(400, "agentId path parameter required"));
         }
-
-        // TODO: Add authorization check (verify admin role)
-        // if (!authService.hasRole(request, "ADMIN")) {
-        //     return Promise.of(httpUtils.errorResponse(403, "Admin role required"));
-        // }
 
         return registryService
                 .resolve(agentId)
@@ -456,5 +461,39 @@ public final class AepAgentRegistryController {
         summary.put("capabilities", agent.capabilities());
         summary.put("status", agent.status());
         return summary;
+    }
+
+    /**
+     * Resolves the {@code agentId} from the request.
+     *
+     * <p>Tries the router-populated path parameter first (production path), then falls back to
+     * parsing the last URL-path segment after {@code /agents/} (unit-test path where no router
+     * has populated the path parameters map).
+     *
+     * @param request the inbound HTTP request
+     * @return the agentId, or {@code null} if it cannot be determined
+     */
+    private String resolveAgentId(@NotNull HttpRequest request) {
+        // 1. Router-populated path parameter (production): only read if the key exists
+        Map<String, String> pathParams = request.getPathParameters();
+        if (pathParams.containsKey("agentId")) {
+            String agentId = pathParams.get("agentId");
+            if (agentId != null && !agentId.isBlank()) {
+                return agentId;
+            }
+        }
+        // 2. Fallback: extract from URL path for unit tests (no router in scope).
+        //    Path pattern: /api/v1/agents/{agentId}[/...]
+        String path = request.getPath();
+        if (path == null) {
+            return null;
+        }
+        String[] segments = path.split("/");
+        for (int i = 0; i < segments.length - 1; i++) {
+            if ("agents".equals(segments[i]) && i + 1 < segments.length && !segments[i + 1].isBlank()) {
+                return segments[i + 1];
+            }
+        }
+        return null;
     }
 }

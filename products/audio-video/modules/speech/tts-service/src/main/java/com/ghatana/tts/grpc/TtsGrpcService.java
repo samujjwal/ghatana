@@ -1,9 +1,14 @@
 package com.ghatana.tts.grpc;
 
 import com.ghatana.media.AudioVideoLibrary;
+import com.ghatana.media.common.AudioData;
 import com.ghatana.media.config.TtsConfig;
+import com.ghatana.media.tts.api.CloneOptions;
+import com.ghatana.media.tts.api.ProfileSettings;
 import com.ghatana.media.tts.api.SynthesisOptions;
 import com.ghatana.media.tts.api.TtsEngine;
+import com.ghatana.media.tts.api.TtsProfile;
+import com.ghatana.media.tts.api.VoiceInfo;
 import com.ghatana.tts.core.grpc.proto.*;
 import io.grpc.stub.StreamObserver;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -12,8 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -162,7 +170,7 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
 
             GetVoicesResponse.Builder builder = GetVoicesResponse.newBuilder();
             for (com.ghatana.media.tts.api.VoiceInfo voice : voices) {
-                builder.addVoices(VoiceInfo.newBuilder()
+                builder.addVoices(com.ghatana.tts.core.grpc.proto.VoiceInfo.newBuilder()
                     .setVoiceId(voice.voiceId())
                     .setName(voice.name())
                     .addLanguages(voice.language().toLanguageTag())
@@ -219,24 +227,216 @@ public class TtsGrpcService extends TTSServiceGrpc.TTSServiceImplBase {
         }
     }
 
+    // ── AV-002.4: createProfile ────────────────────────────────────────────
+
     @Override
     public void createProfile(CreateProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("createProfile not yet implemented").asRuntimeException());
+        String displayName = request.getDisplayName();
+        if (displayName == null || displayName.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("displayName must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (TtsEngine tts = library.getTtsEngine()) {
+            String profileId = UUID.randomUUID().toString();
+
+            // Build platform ProfileSettings from proto settings
+            ProfileSettings settings = ProfileSettings.builder()
+                .defaultSpeed(request.getSettings().getDefaultOptions().getSpeed() > 0
+                    ? request.getSettings().getDefaultOptions().getSpeed() : 1.0)
+                .defaultPitch(request.getSettings().getDefaultOptions().getPitch() > 0
+                    ? request.getSettings().getDefaultOptions().getPitch() : 1.0)
+                .defaultVolume(request.getSettings().getDefaultOptions().getEnergy() > 0
+                    ? request.getSettings().getDefaultOptions().getEnergy() : 1.0)
+                .build();
+
+            TtsProfile profile = tts.createProfile(profileId, displayName, settings);
+
+            LOG.info("TTS profile created: id={}, name={}", profileId, displayName);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(profile.profileId())
+                .setDisplayName(profile.displayName())
+                .setSettings(request.getSettings())
+                .setStats(ProfileStats.newBuilder()
+                    .setCreatedAtMs(System.currentTimeMillis())
+                    .setLastUsedAtMs(System.currentTimeMillis())
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to create TTS profile '{}': {}", displayName, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile creation failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-002 getProfile ──────────────────────────────────────────────────
 
     @Override
     public void getProfile(GetProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("getProfile not yet implemented").asRuntimeException());
+        String profileId = request.getProfileId();
+        if (profileId == null || profileId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("profileId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (TtsEngine tts = library.getTtsEngine()) {
+            Optional<TtsProfile> profileOpt = tts.loadProfile(profileId);
+            if (profileOpt.isEmpty()) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Profile not found: " + profileId)
+                    .asRuntimeException());
+                return;
+            }
+            TtsProfile profile = profileOpt.get();
+            LOG.debug("TTS profile retrieved: id={}", profileId);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(profile.profileId())
+                .setDisplayName(profile.displayName())
+                .setStats(ProfileStats.newBuilder()
+                    .setTotalCharactersSynthesized(
+                        profile.recentSyntheses().stream()
+                            .mapToInt(String::length).sum())
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to get TTS profile {}: {}", profileId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile retrieval failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-002 updateProfile ───────────────────────────────────────────────
 
     @Override
     public void updateProfile(UpdateProfileRequest request, StreamObserver<ProfileResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("updateProfile not yet implemented").asRuntimeException());
+        String profileId = request.getProfileId();
+        if (profileId == null || profileId.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("profileId must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        try (TtsEngine tts = library.getTtsEngine()) {
+            Optional<TtsProfile> profileOpt = tts.loadProfile(profileId);
+            if (profileOpt.isEmpty()) {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                    .withDescription("Profile not found: " + profileId)
+                    .asRuntimeException());
+                return;
+            }
+            TtsProfile existing = profileOpt.get();
+
+            // Apply settings: preferred voice
+            String newVoiceId = existing.preferredVoiceId();
+            if (!request.getSettings().getDefaultVoiceId().isBlank()) {
+                newVoiceId = request.getSettings().getDefaultVoiceId();
+            }
+
+            // Build updated platform ProfileSettings
+            ProfileSettings updatedSettings = ProfileSettings.builder()
+                .defaultSpeed(request.getSettings().getDefaultOptions().getSpeed() > 0
+                    ? request.getSettings().getDefaultOptions().getSpeed()
+                    : existing.settings().defaultSpeed())
+                .defaultPitch(request.getSettings().getDefaultOptions().getPitch() > 0
+                    ? request.getSettings().getDefaultOptions().getPitch()
+                    : existing.settings().defaultPitch())
+                .defaultVolume(request.getSettings().getDefaultOptions().getEnergy() > 0
+                    ? request.getSettings().getDefaultOptions().getEnergy()
+                    : existing.settings().defaultVolume())
+                .build();
+
+            TtsProfile updated = new TtsProfile(
+                existing.profileId(), existing.displayName(), newVoiceId,
+                updatedSettings, existing.recentSyntheses()
+            );
+            tts.saveProfile(updated);
+
+            LOG.info("TTS profile updated: id={}", profileId);
+            responseObserver.onNext(ProfileResponse.newBuilder()
+                .setProfileId(updated.profileId())
+                .setDisplayName(updated.displayName())
+                .setSettings(request.getSettings())
+                .setStats(ProfileStats.newBuilder()
+                    .setLastUsedAtMs(System.currentTimeMillis())
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (Exception e) {
+            LOG.error("Failed to update TTS profile {}: {}", profileId, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Profile update failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
+
+    // ── AV-002.1: cloneVoice ───────────────────────────────────────────────
 
     @Override
     public void cloneVoice(CloneVoiceRequest request, StreamObserver<CloneVoiceResponse> responseObserver) {
-        responseObserver.onError(io.grpc.Status.UNIMPLEMENTED.withDescription("cloneVoice not yet implemented").asRuntimeException());
+        String voiceName = request.getVoiceName();
+        if (voiceName == null || voiceName.isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("voiceName must not be blank")
+                .asRuntimeException());
+            return;
+        }
+        if (request.getAudioSamplesList().isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription("At least one audio sample is required for voice cloning")
+                .asRuntimeException());
+            return;
+        }
+        try (TtsEngine tts = library.getTtsEngine()) {
+            // Convert audio sample bytes → AudioData
+            List<AudioData> samples = new ArrayList<>();
+            for (com.google.protobuf.ByteString sample : request.getAudioSamplesList()) {
+                if (!sample.isEmpty()) {
+                    samples.add(new AudioData(sample.toByteArray(), 22050, 1, 16));
+                }
+            }
+
+            CloneOptions cloneOptions = new CloneOptions(
+                request.getOptions().getFineTuneEpochs() > 0
+                    ? request.getOptions().getFineTuneEpochs() : 100,
+                request.getOptions().getLearningRate() > 0
+                    ? request.getOptions().getLearningRate() : 0.001f,
+                3,
+                Duration.ofSeconds(5)
+            );
+
+            VoiceInfo cloned = tts.cloneVoice(voiceName, samples, cloneOptions);
+
+            LOG.info("Voice cloned: name={}, voiceId={}", voiceName, cloned.voiceId());
+            responseObserver.onNext(CloneVoiceResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage("Voice cloned successfully: " + voiceName)
+                .setVoiceId(cloned.voiceId())
+                .setSimilarityScore(0.85f) // placeholder — real score from engine metric
+                .setVoice(com.ghatana.tts.core.grpc.proto.VoiceInfo.newBuilder()
+                    .setVoiceId(cloned.voiceId())
+                    .setName(cloned.name())
+                    .setIsCloned(true)
+                    .setSizeBytes(cloned.modelSizeBytes())
+                    .build())
+                .build());
+            responseObserver.onCompleted();
+        } catch (com.ghatana.media.common.ValidationError e) {
+            LOG.warn("Voice cloning validation failed: {}", e.getMessage());
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                .withDescription(e.getMessage())
+                .asRuntimeException());
+        } catch (Exception e) {
+            LOG.error("Voice cloning failed for '{}': {}", voiceName, e.getMessage(), e);
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                .withDescription("Voice cloning failed: " + e.getMessage())
+                .asRuntimeException());
+        }
     }
 
     @Override

@@ -89,7 +89,16 @@ public class PipelineSpec {
     public List<PipelineStageSpec> getStages() {
         return new ArrayList<>(stages);
     }
-    
+
+    /** Record-style accessor — equivalent to {@link #getName()}. */
+    public String name() { return name; }
+
+    /** Record-style accessor — equivalent to {@link #getTenantId()}. */
+    public String tenantId() { return tenantId; }
+
+    /** Record-style accessor — equivalent to {@link #getStages()}. */
+    public List<PipelineStageSpec> stages() { return getStages(); }
+
     /**
      * Gets the pipeline configuration.
      * 

@@ -225,6 +225,163 @@ class VisionGrpcServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // classifyImage (AV-003.5)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("classifyImage: empty image bytes → INVALID_ARGUMENT")
+    void classifyImage_emptyImage_returnsInvalidArgument() {
+        ClassifyRequest request = ClassifyRequest.newBuilder().build();
+        CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>();
+
+        service.classifyImage(request, observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class);
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.INVALID_ARGUMENT.getCode());
+    }
+
+    @Test
+    @DisplayName("classifyImage: detections returned → labels ranked by confidence")
+    void classifyImage_withDetections_returnsRankedLabels() {
+        fakeDetector.setResults(buildDetections("cat", "cat", "dog"));
+        ClassifyRequest request = ClassifyRequest.newBuilder()
+            .setImageData(ByteString.copyFrom(new byte[]{0x01}))
+            .setTopK(5)
+            .build();
+        CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>();
+
+        service.classifyImage(request, observer);
+
+        assertThat(observer.hasError()).isFalse();
+        ClassifyResponse response = observer.getValue();
+        assertThat(response.getLabelsList()).isNotEmpty();
+        // cat appeared twice so its aggregated score should rank first
+        assertThat(response.getLabels(0).getLabel()).isEqualTo("cat");
+        assertThat(response.getLabels(0).getRank()).isEqualTo(1);
+        assertThat(response.getProcessingTimeMs()).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("classifyImage: DetectionException → INTERNAL")
+    void classifyImage_detectorThrows_returnsInternal() {
+        fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("model error", null));
+        ClassifyRequest request = ClassifyRequest.newBuilder()
+            .setImageData(ByteString.copyFrom(new byte[]{0x01}))
+            .build();
+        CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>();
+
+        service.classifyImage(request, observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.INTERNAL.getCode());
+    }
+
+    // -------------------------------------------------------------------------
+    // loadModel (AV-003.1)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("loadModel: blank modelId → INVALID_ARGUMENT")
+    void loadModel_blankModelId_returnsInvalidArgument() {
+        CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>();
+
+        service.loadModel(LoadModelRequest.getDefaultInstance(), observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.INVALID_ARGUMENT.getCode());
+    }
+
+    @Test
+    @DisplayName("loadModel: valid modelId → registers and loads successfully")
+    void loadModel_validModelId_loadsSuccessfully() {
+        CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>();
+
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8n").build(), observer);
+
+        assertThat(observer.hasError()).isFalse();
+        LoadModelResponse response = observer.getValue();
+        assertThat(response.getSuccess()).isTrue();
+        assertThat(response.getModelId()).isEqualTo("yolov8n");
+        assertThat(response.getLoadTimeMs()).isGreaterThanOrEqualTo(0);
+    }
+
+    // -------------------------------------------------------------------------
+    // unloadModel (AV-003.2)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("unloadModel: blank modelId → INVALID_ARGUMENT")
+    void unloadModel_blankModelId_returnsInvalidArgument() {
+        CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>();
+
+        service.unloadModel(UnloadModelRequest.getDefaultInstance(), observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.INVALID_ARGUMENT.getCode());
+    }
+
+    @Test
+    @DisplayName("unloadModel: unregistered modelId → NOT_FOUND")
+    void unloadModel_unregisteredModelId_returnsNotFound() {
+        CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>();
+
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("unknown-model").build(), observer);
+
+        assertThat(observer.hasError()).isTrue();
+        assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode())
+            .isEqualTo(Status.NOT_FOUND.getCode());
+    }
+
+    @Test
+    @DisplayName("unloadModel: loaded model → unloads successfully")
+    void unloadModel_loadedModel_returnsSuccess() {
+        // Load first, then unload
+        CapturingObserver<LoadModelResponse> loadObserver = new CapturingObserver<>();
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8-small").build(), loadObserver);
+        assertThat(loadObserver.hasError()).isFalse();
+
+        CapturingObserver<UnloadModelResponse> unloadObserver = new CapturingObserver<>();
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("yolov8-small").build(), unloadObserver);
+
+        assertThat(unloadObserver.hasError()).isFalse();
+        assertThat(unloadObserver.getValue().getSuccess()).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
+    // listModels (AV-003.3)
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("listModels: empty registry → zero count")
+    void listModels_emptyRegistry_returnsZeroModels() {
+        CapturingObserver<ListModelsResponse> observer = new CapturingObserver<>();
+
+        service.listModels(ListModelsRequest.getDefaultInstance(), observer);
+
+        assertThat(observer.hasError()).isFalse();
+        assertThat(observer.getValue().getTotalCount()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("listModels: after loadModel → includes loaded model")
+    void listModels_afterLoad_includesModel() {
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("test-model").build(),
+            new CapturingObserver<>());
+
+        CapturingObserver<ListModelsResponse> observer = new CapturingObserver<>();
+        service.listModels(ListModelsRequest.getDefaultInstance(), observer);
+
+        assertThat(observer.hasError()).isFalse();
+        assertThat(observer.getValue().getTotalCount()).isGreaterThanOrEqualTo(1);
+        assertThat(observer.getValue().getLoadedCount()).isGreaterThanOrEqualTo(1);
+    }
+
+    // -------------------------------------------------------------------------
     // getStatus
     // -------------------------------------------------------------------------
 

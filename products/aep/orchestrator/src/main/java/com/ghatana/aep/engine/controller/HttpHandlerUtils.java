@@ -13,17 +13,17 @@ import java.util.Map;
  */
 public class HttpHandlerUtils {
 
-    public static HttpResponse jsonResponse(int status, Object data) {
+    public HttpResponse jsonResponse(int status, Object data) {
         // Stub implementation
         return HttpResponse.ok200().build();
     }
 
-    public static HttpResponse errorResponse(int status, String message) {
+    public HttpResponse errorResponse(int status, String message) {
         // Stub implementation
         return HttpResponse.ofCode(status).build();
     }
 
-    public static Map<String, Object> toJson(Object obj) {
+    public Map<String, Object> toJson(Object obj) {
         return Map.of();
     }
 }
