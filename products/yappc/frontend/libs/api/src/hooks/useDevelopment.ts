@@ -908,7 +908,10 @@ export function useFeatureFlags(projectId: string, filter?: FeatureFlagFilter) {
   });
 
   // Subscribe to feature flag changes
-  useSubscription(SUBSCRIBE_TO_FEATURE_FLAG_CHANGES, {
+  type FFSubscriptionState = { data?: { featureFlagChanged?: Record<string, unknown> } };
+  const runFFSubscription = useSubscription as unknown as (subscription: unknown, options: unknown) => FFSubscriptionState;
+
+  runFFSubscription(SUBSCRIBE_TO_FEATURE_FLAG_CHANGES, {
     variables: { projectId },
     skip: !projectId,
     onData: ({ data }) => {
@@ -1219,9 +1222,15 @@ export function useEpics(projectId: string, filter?: EpicFilter) {
  * Hook for epic mutations
  */
 export function useEpicMutations(projectId: string) {
-  const [createMutation, { loading: creating }] = useMutation(CREATE_EPIC);
-  const [updateMutation, { loading: updating }] = useMutation(UPDATE_EPIC);
-  const [deleteMutation, { loading: deleting }] = useMutation(DELETE_EPIC);
+  type _EpicMutationResult = { [key: string]: unknown };
+  type MutationState = { data?: { [key: string]: unknown }; loading: boolean };
+  const runEpicMutation = useMutation as unknown as (
+    mutation: unknown
+  ) => [(args: unknown) => Promise<MutationState>, { loading: boolean }];
+
+  const [createMutation, { loading: creating }] = runEpicMutation(CREATE_EPIC);
+  const [updateMutation, { loading: updating }] = runEpicMutation(UPDATE_EPIC);
+  const [deleteMutation, { loading: deleting }] = runEpicMutation(DELETE_EPIC);
 
   const create = useCallback(
     async (input: CreateEpicInput) => {
