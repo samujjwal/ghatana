@@ -1035,6 +1035,584 @@ The repo is already much closer to a strong agent platform than it may feel from
 
 If you do that, the existing architecture can evolve into a highly effective, extensible, and future-ready agent system without another destabilizing rewrite.
 
+## 19. Agent as a Dynamically Pluggable and Swappable Artifact
+
+The current system treats agents as statically registered implementations. An agent exists if its `AgentLogicProvider` is on the classpath and registered at startup. This is insufficient for a production platform that needs:
+
+- Hot-reload of new agent versions without runtime restart
+- Canary activation of a new agent alongside the current one
+- Zero-downtime swap during version upgrade (a `VERSION_UPGRADE` handoff)
+- Isolation of agent classloaders so incompatible dependency versions do not collide
+- Revocation of a misbehaving agent without taking down the whole runtime
+- Discovery of what any given agent is capable of before wiring it into an execution plan
+
+The infrastructure in `platform-kernel` (`KernelPluginRuntimeManager`) already supports JAR-based hot-reload with classloader isolation. The gap is that it has no agent-specific semantics: it does not understand capability declarations, interaction modes, supervision roles, handoff protocols, or the phased swap contract. This section defines those missing pieces.
+
+### 19.1 The AgentPackage — Standard Deployable Artifact
+
+An **AgentPackage** is the atomic deployable unit for an agent in the Ghatana runtime. It is a signed JAR (or JAR-equivalent bundle) that contains:
+
+1. The agent implementation classes
+2. A `META-INF/agent-manifest.yaml` — the `AgentCapabilityManifest`
+3. A Sigstore attestation bundle (linked via `AgentRelease.signingReference`)
+4. A `META-INF/MANIFEST.MF` extension: `Agent-Main-Class`, `Agent-Id`, `Agent-Version`
+
+The package is versioned and signed at the `AgentRelease` boundary (from Section 7.4). The runtime accepts a package only if:
+
+- The Sigstore attestation verifies against the repo's trust root
+- The `agentReleaseId` inside the manifest matches a `VALIDATED`, `SHADOW`, `CANARY`, or `ACTIVE` record in the release registry (Section 9.2)
+- The declared `compatibleRuntimeVersions` include the current AEP runtime version
+
+### 19.2 AgentCapabilityManifest — What the Agent Declares It Can Do
+
+The `AgentCapabilityManifest` is the machine-readable, version-stable declaration of everything an agent is capable of at runtime. It lives inside the `AgentPackage` and is loaded before any agent code is executed.
+
+```yaml
+# META-INF/agent-manifest.yaml
+agentId: "fraud-detector"
+agentVersion: "2.1.0"
+agentReleaseId: "rel-uuid-here"
+mainClass: "com.example.FraudDetectorAgent"
+
+# Interaction modes this agent can participate in
+interactionModes:
+  - REQUEST_RESPONSE
+  - ASYNC_REQUEST
+  - EVENT_DRIVEN
+
+# Composition roles
+compositionRoles:
+  - FOLLOWER
+  - VOTER
+
+# Supervision
+supervisionRoles:
+  - SUPERVISEE
+supervisionStrategy: RESTART
+maxRestarts: 3
+restartWindowSeconds: 60
+
+# Handoff
+handoffCapability: BIDIRECTIONAL
+handoffReasons:
+  - COMPLETION
+  - FAILURE_RECOVERY
+  - VERSION_UPGRADE
+
+# Repetition
+maxIterations: 10
+maxRecursionDepth: 5
+maxRetries: 3
+retryStrategy: EXPONENTIAL_BACKOFF
+
+# Self-learning
+learningLevel: L3 # matches LearningEngine.LearningLevel
+emitsLearningSignals: true
+receivesCrossAgentSignals: false
+
+# Context sharing
+contextSharingScope: WITHIN_SESSION
+sharesContextEntries:
+  - "fraud-score"
+  - "risk-bucket"
+
+# Tool contracts declared
+declaredToolContractIds:
+  - "fraud-detector:score-transaction:v2"
+  - "fraud-detector:flag-entity:v1"
+```
+
+This manifest must be validated by `AgentCapabilityManifestValidator` before the package is admitted into the runtime. Fields that are absent default to the most restrictive safe value (e.g., `handoffCapability: NONE`, `contextSharingScope: NONE`, `learningLevel: L0`).
+
+### 19.3 AgentPackageLoader — Agent-Specific Loading on the Kernel Substrate
+
+`AgentPackageLoader` is the agent-specific facade over `KernelPluginRuntimeManager`. It:
+
+1. Accepts an `AgentPackage` (a `Path` to the signed JAR or a remote URI)
+2. Verifies the Sigstore attestation
+3. Validates the `AgentRelease` state in Data Cloud
+4. Delegates to `KernelPluginRuntimeManager.loadPlugin(...)` for classloader isolation
+5. Reads and validates `AgentCapabilityManifest` from the loaded classloader
+6. Registers the agent and its capability manifest with `AgentRegistry` and `KernelRegistry`
+7. Emits an `AGENT_PACKAGE_LOADED` structured event
+
+Unloading (`AgentPackageLoader.unload(agentId)`) performs the reverse and transitions the release state to `DEPRECATED` or `RETIRED` as appropriate.
+
+### 19.4 Zero-Downtime Hot-Swap via AgentSwapCoordinator
+
+Hot-swap is the most complex pluggability operation. The `AgentSwapCoordinator` orchestrates:
+
+```
+Phase 1 — Load New:
+  Load v2 package alongside v1 (both active in classloader registry)
+  Validate v2 manifest, capabilities, and release state
+  Set v2 release state to CANARY
+
+Phase 2 — Drain In-Flight:
+  Stop routing new requests to v1
+  Wait for all in-flight v1 requests to complete (or timeout)
+  v1 remains callable for timeout duration as fallback
+
+Phase 3 — Handoff:
+  Issue AgentHandoff(source=v1, target=v2, reason=VERSION_UPGRADE)
+  Transfer task-state memory snapshots from v1 to v2 namespace
+  Transfer shared context entries owned by v1 to v2
+
+Phase 4 — Cut-Over:
+  Set v2 release state to ACTIVE
+  Set v1 release state to DEPRECATED
+  Remove v1 classloader after grace period
+  Emit AGENT_SWAP_COMPLETE event
+```
+
+The swap must emit structured telemetry at each phase boundary and must be resumable (if the coordinator crashes during Phase 3, it can restart from Phase 3 state persisted in Data Cloud).
+
+### 19.5 Capability Discovery via KernelRegistry
+
+Once an `AgentPackage` is loaded, its `AgentCapabilityManifest` is registered in the `KernelRegistry` under the capability ID `"agent:{agentId}"`. The AEP central runtime and the `DelegationManager` use this registry to:
+
+- Discover agents that support a given `InteractionMode`
+- Filter agents by `CompositionRole` before forming a composite
+- Verify that a target agent supports `RECEIVE` handoff before initiating a transfer
+- Check `learningLevel` before routing learning signals
+
+This makes the kernel registry the **live, queryable catalog of what every agent can do right now** — not just a static list of registered implementations.
+
+---
+
+## 20. Comprehensive Inter-Agent Interaction and Protocol System
+
+This section defines concrete, machine-enforceable contracts for every major interaction pattern that agents participate in. All contracts live in `platform/java/agent-core` so that AEP, Data Cloud, audio-video, and all products share the same vocabulary.
+
+The existing codebase has partial implementations of several of these patterns:
+
+| Pattern       | Existing                                                                                                 | Gap                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Delegation    | `DelegationManager`, `DelegationRequest`, `DelegationStatus`                                             | No correlation envelope, no timeout contract                        |
+| Composition   | `OrchestrationStrategy`, `SequentialOrchestration`, `ParallelOrchestration`, `HierarchicalOrchestration` | No voting, no fan-out/scatter-gather, no `CompositionPolicy` record |
+| Communication | `ConversationManager`, `Message`                                                                         | No typed message envelope, no broadcast, no streaming               |
+| Self-learning | `LearningEngine` (L0-L5), `LearningOutcome`                                                              | No cross-agent `LearningSignal` SPI, no signal routing              |
+| Context       | `AgentContext`                                                                                           | No `SharedContext` with scoped propagation across agents            |
+| Supervision   | None                                                                                                     | Fully missing                                                       |
+| Handoff       | None                                                                                                     | Fully missing                                                       |
+| Repetition    | None                                                                                                     | Fully missing                                                       |
+| Pluggability  | `AgentLogicProvider` SPI, `KernelPluginRuntimeManager`                                                   | No agent-level `AgentCapabilityManifest` or swap protocol           |
+
+### 20.1 Interaction Modes
+
+Every agent declares which interaction modes it supports in its `AgentCapabilityManifest`. The runtime validates that a requested mode is supported before attempting communication.
+
+```
+REQUEST_RESPONSE   — Synchronous one-to-one call with a typed result.
+                     Caller blocks on Promise. Governed by latencySla from AgentDescriptor.
+
+ASYNC_REQUEST      — Asynchronous one-to-one call with correlation ID.
+                     Caller receives an invocationId immediately.
+                     Result is delivered via callback or polling.
+
+STREAMING          — Long-running call producing a sequence of partial results.
+                     Caller receives an AsyncStreamProducer<O>.
+                     Used for token-by-token LLM output, live dashboards, etc.
+
+EVENT_DRIVEN       — Agent subscribes to typed events and reacts.
+                     Publisher does not wait for result.
+                     Governed by back-pressure and dead-letter policies.
+
+BROADCAST          — One-to-many notification with no individual result expected.
+                     Subject to fan-out limits in the PolicyPack.
+```
+
+The `AgentInteractionProtocol` interface is the uniform entry point into an agent for all modes:
+
+```java
+public interface AgentInteractionProtocol {
+
+    /** Synchronous or async request-response. Mode determined by AgentRequest.mode. */
+    Promise<AgentResponse> request(AgentRequest request);
+
+    /** Streaming invocation — returns a lazy stream of partial results. */
+    Promise<AsyncStreamProducer<Object>> stream(AgentRequest request);
+
+    /** Publish a typed event to this agent (EVENT_DRIVEN mode). */
+    Promise<Void> publish(AgentEvent event);
+
+    /** Returns the modes this agent currently supports. */
+    Set<InteractionMode> supportedModes();
+}
+```
+
+All inter-agent messages carry a standard envelope:
+
+```java
+public record AgentMessage(
+    String messageId,           // UUID
+    String correlationId,       // trace correlation — same across entire conversation
+    String sessionId,           // conversation session (nullable if stateless)
+    String sourceAgentId,
+    String targetAgentId,       // null for broadcast
+    InteractionMode mode,
+    Object payload,
+    Map<String, String> headers,
+    Instant sentAt,
+    Duration ttl               // null = no expiry
+) {}
+```
+
+### 20.2 Supervision Contract
+
+Supervision defines **what happens when an agent fails**. It is distinct from retry (which is about repeating the same operation) — supervision is about structural failure management at the agent-instance level.
+
+```java
+public record SupervisionContract(
+    String supervisorAgentId,
+    Set<String> superviseeAgentIds,
+    SupervisionStrategy strategy,
+    int maxRestarts,
+    Duration restartWindow,
+    Set<String> supervisedFailureClasses,  // FQCN of exceptions to handle
+    boolean escalateUnhandledFailures,     // if true, failures not in supervisedFailureClasses escalate
+    String escalationTargetAgentId        // nullable — if null, escalate to platform alert
+) {}
+
+public enum SupervisionStrategy {
+    /** Restart the failed supervisee. */
+    RESTART,
+    /** Restart only the failed supervisee's current task, not the agent itself. */
+    RESTART_TASK,
+    /** Escalate the failure to the supervisor's supervisor or platform. */
+    ESCALATE,
+    /** Isolate the failed agent (stop routing to it) but keep others running. */
+    ISOLATE,
+    /** Log the failure and continue — for non-critical supervisees only. */
+    LOG_AND_CONTINUE,
+    /** Shut down all supervisees when one fails. Used for atomically coupled composites. */
+    SHUTDOWN_ALL
+}
+```
+
+A supervisor registers `SupervisionContract`s with the `SupervisionRegistry` (a new sub-registry in `platform-kernel`). The `GovernedAgentDispatcher` checks the registry before routing to any agent and enforces supervision decisions on failure.
+
+Watchdog supervision (peer-to-peer health monitoring) is expressed as a `SupervisionContract` where `supervisorAgentId` has role `PEER_WATCHDOG` — it does not coordinate the work but observes and escalates.
+
+### 20.3 Composition Contract
+
+Composition defines **how agents work together** to produce a joint result. The existing `OrchestrationStrategy` provides SEQUENTIAL, PARALLEL, and HIERARCHICAL. The expanded set:
+
+```java
+public record CompositionPolicy(
+    String compositionId,
+    CompositionPattern pattern,
+    List<String> memberAgentIds,        // ordered for SEQUENTIAL/PIPELINE, unordered otherwise
+    Map<String, CompositionRole> roles, // agentId → role
+    VotingPolicy votingPolicy,          // only relevant for VOTING pattern
+    AggregationStrategy aggregation,    // how results are combined for FAN_OUT_FAN_IN / SCATTER_GATHER
+    boolean failFast,                   // abort all if any member fails
+    Duration compositionTimeout,
+    int maxConcurrentMembers           // for PARALLEL/FAN_OUT: cap on concurrent execution
+) {}
+
+public enum CompositionPattern {
+    /** Each agent processes the result of the previous. Output of agent[n] is input of agent[n+1]. */
+    SEQUENTIAL,
+    /** All agents process the same input concurrently. Results aggregated. */
+    PARALLEL,
+    /** Leader decomposes the task, distributes to followers, aggregates their results. */
+    FAN_OUT_FAN_IN,
+    /** All agents vote on the same input. Majority/unanimous/weighted decision applied. */
+    VOTING,
+    /** Agents are chained with typed transformations between them. */
+    PIPELINE,
+    /** Input is sharded across agents (scatter); their results are merged (gather). */
+    SCATTER_GATHER
+}
+
+public enum CompositionRole {
+    LEADER,            // coordinates FAN_OUT_FAN_IN or HIERARCHICAL
+    FOLLOWER,          // executes tasks assigned by LEADER
+    PEER,              // equals in PARALLEL / VOTING / SCATTER_GATHER
+    SEQUENCED,         // member of a SEQUENTIAL or PIPELINE chain
+    VOTER,             // participates in VOTING
+    AGGREGATOR         // collects and reduces results (can be a dedicated agent or the LEADER)
+}
+
+public enum VotingPolicy {
+    MAJORITY,                     // > 50% agreement
+    UNANIMOUS,                    // all agree
+    WEIGHTED,                     // each voter has a weight; result if sum(weights) > threshold
+    FIRST_EXCEEDING_THRESHOLD     // first agent to produce a result exceeding confidence threshold wins
+}
+
+public enum AggregationStrategy {
+    TAKE_ALL,          // return all results
+    TAKE_FIRST,        // return the first successful result
+    MERGE,             // merge maps/lists by key
+    REDUCE_BY_CONFIDENCE,  // return the result with the highest confidence score
+    CUSTOM             // use a registered AggregationFunction SPI
+}
+```
+
+### 20.4 Handoff Protocol
+
+A **handoff** is the structured transfer of a task and its context from one agent to another. Handoffs are distinct from delegation (which is ad hoc task routing) because they:
+
+- Transfer task state (persisted checkpoints, partial results)
+- Transfer working memory and session context
+- Maintain trace continuity (same `correlationId`)
+- Are governed (a `WRITE_IRREVERSIBLE` action class in the `ActionClass` taxonomy)
+- Can be triggered by the agent, the runtime, or a version upgrade
+
+```java
+public record AgentHandoff(
+    String handoffId,
+    String correlationId,          // must match the in-flight execution's correlationId
+    String sourceAgentId,
+    String sourceReleaseId,
+    String targetAgentId,
+    String targetReleaseId,
+    HandoffReason reason,
+    AgentContextSnapshot contextSnapshot,
+    Object taskState,              // serialized resumable state (may be null for COMPLETION handoffs)
+    Set<String> transferredCapabilities, // capabilities the target must have to accept
+    HandoffAcknowledgement acknowledgement, // NONE (fire-and-forget), REQUIRED (block until ACK)
+    Instant initiatedAt,
+    Duration handoffTimeout
+) {}
+
+public enum HandoffReason {
+    COMPLETION,        // agent finished its portion; pass to next in chain
+    DELEGATION,        // ad hoc delegation to a more appropriate specialist
+    FAILURE_RECOVERY,  // source failed; target takes over
+    SPECIALIZATION,    // source recognized it cannot handle this; target is more capable
+    LOAD_BALANCE,      // source is overloaded; target has capacity
+    VERSION_UPGRADE    // zero-downtime hot-swap (Section 19.4)
+}
+
+public record AgentContextSnapshot(
+    String snapshotId,
+    String sourceAgentId,
+    String sessionId,
+    String correlationId,
+    Map<String, Object> workingMemory,      // current turn's in-memory state
+    Map<String, Object> sharedContextRefs,  // IDs of SharedContext records to transfer ownership of
+    List<String> episodicMemoryIds,         // IDs of episodic records the target may read
+    Map<String, Object> planState,          // serialized PlanGraph state if the agent was planning
+    Instant capturedAt
+) {}
+
+public enum HandoffAcknowledgement { NONE, REQUIRED }
+```
+
+The `HandoffCoordinator` (a new service in `products/aep/aep-agent-runtime`) orchestrates the multi-step handoff protocol:
+
+1. Validate target agent accepts `RECEIVE` handoff capability
+2. Persist `AgentHandoff` record (action class: `WRITE_IRREVERSIBLE`)
+3. Snapshot context and task state into Data Cloud
+4. Notify target agent via `AgentInteractionProtocol.publish(handoffEvent)`
+5. Wait for `HandoffAcknowledgement` if required
+6. Deactivate source agent's task lease
+7. Emit `AGENT_HANDOFF_COMPLETE` telemetry span
+
+### 20.5 Repetition and Loop Governance
+
+Repetition governs **controlled iteration** within an agent's execution. This is distinct from supervision (which governs structural failure) and from retry (which is a resilience concern). Repetition answers: "when should this agent stop looping?"
+
+```java
+public record RepetitionPolicy(
+    int maxIterations,             // hard cap on loop count (0 = unlimited, requires explicit stop)
+    int maxRecursionDepth,         // hard cap on recursive self-invocation depth
+    int maxRetries,                // max retries on transient failures before escalating
+    Duration retryBackoffBase,     // base duration for backoff computation
+    RetryStrategy retryStrategy,
+    Set<ActionClass> retryableActionClasses, // only retry for these action classes
+    TerminationCondition terminationCondition,
+    double convergenceThreshold    // for CONVERGENCE termination: stop when result delta < threshold
+) {}
+
+public enum RetryStrategy {
+    IMMEDIATE,            // retry right away
+    LINEAR_BACKOFF,       // backoff = n * retryBackoffBase
+    EXPONENTIAL_BACKOFF,  // backoff = 2^n * retryBackoffBase (with jitter)
+    CIRCUIT_BREAK         // stop retrying; open circuit for cooling period
+}
+
+public enum TerminationCondition {
+    MAX_ITERATIONS,      // stop when iteration count hits maxIterations
+    CONVERGENCE,         // stop when output delta < convergenceThreshold
+    EXPLICIT_STOP,       // stop only on agent-emitted STOP signal
+    TIMEOUT,             // stop when compositionTimeout is exceeded
+    POLICY_GATE          // stop when a policy evaluation returns DENY
+}
+```
+
+The `RepetitionGovernor` (implemented in `platform/java/tool-runtime`) tracks iteration counts per `correlationId` and enforces the policy. On violation:
+
+- Iteration limit: throw `RepetitionLimitExceededException`, trigger `ESCALATE` in supervision
+- Recursion limit: throw `RecursionDepthExceededException`, isolate the agent
+- Retry limit: apply `CircuitBreaker`, emit `CIRCUIT_OPEN` metric
+
+### 20.6 Self-Learning Signal Contract
+
+The existing `LearningEngine` (L0-L5) runs a local reflect pass against an agent's own `MemoryStore`. The gap is **cross-agent and cross-session learning signals** — a structured way for agents, users, and external evaluators to emit typed feedback that the learning system consumes.
+
+```java
+public record LearningSignal(
+    String signalId,
+    String correlationId,          // links signal to the execution that produced it
+    String emittingAgentId,        // who emitted the signal (agent or platform)
+    String targetAgentId,          // which agent should learn from this signal
+    String agentReleaseId,         // release version being evaluated
+    LearningSignalType type,
+    Object observation,            // what was observed
+    Object expectedOutcome,        // what the expected result was (nullable)
+    Object actualOutcome,          // what actually happened
+    double confidence,             // 0.0–1.0: signal reliability
+    Map<String, Object> features,  // context features at signal time (for ML)
+    LearningSignalSource source,   // who originated the signal
+    Instant emittedAt
+) {}
+
+public enum LearningSignalType {
+    POSITIVE_REINFORCEMENT,  // agent did the right thing; reinforce
+    NEGATIVE_REINFORCEMENT,  // agent should not have done this; penalize
+    CORRECTION,              // here is what the agent should have done instead
+    OBSERVATION,             // neutral factual observation; no reward/penalty
+    PREFERENCE,              // human indicated preference between two outcomes
+    FAILURE_SIGNAL,          // agent failed on this input; provide context for analysis
+    SUCCESS_SIGNAL           // agent succeeded; record as positive evidence
+}
+
+public enum LearningSignalSource {
+    AGENT_SELF,             // the agent emitted its own learning signal (reflection)
+    PEER_AGENT,             // another agent in the composition evaluated this agent
+    HUMAN_FEEDBACK,         // a human operator provided feedback
+    AUTOMATED_EVAL,         // an EvaluationPack gate ran and produced a signal
+    PLATFORM_MONITOR        // the platform observed a metric crossing a threshold
+}
+```
+
+The `LearningSignalRouter` (new, in `platform/java/agent-core`) receives signals and:
+
+1. Validates signal against the target agent's `RepetitionPolicy` and `PolicyPack`
+2. Routes to the target agent's `LearningEngine` for batch processing in the next reflect cycle
+3. If `LearningSignalSource == HUMAN_FEEDBACK`: promote to `PromotionEvidence` immediately (Phase 5)
+4. Emits `ghatana.agent.learning.signal_received` telemetry
+
+Cross-agent signal routing is governed: a `PEER_AGENT` can only emit signals targeting agents it was in a `CompositionPolicy` with, or agents it supervised.
+
+### 20.7 Context Sharing Contract
+
+The existing `AgentContext` is per-invocation and not shared across agents. `SharedContext` adds scoped, explicitly owned, multi-agent readable state.
+
+```java
+public record SharedContext(
+    String contextId,
+    String ownerAgentId,            // the agent that created and owns this context
+    String sessionId,
+    String tenantId,
+    ContextSharingScope scope,
+    Map<String, SharedContextEntry> entries,
+    Set<String> authorizedAgentIds, // empty = all agents within scope
+    Instant createdAt,
+    Instant expiresAt,              // null = session-scoped (expires when session ends)
+    boolean immutable               // if true, only the owner can write new entries
+) {}
+
+public record SharedContextEntry(
+    String key,
+    Object value,
+    String writtenByAgentId,
+    Instant writtenAt,
+    MergeStrategy mergeStrategy    // how conflicts are resolved on concurrent writes
+) {}
+
+public enum ContextSharingScope {
+    NONE,             // not shared (default, same as per-invocation AgentContext)
+    WITHIN_SESSION,   // shared among agents in the same session
+    WITHIN_TENANT,    // shared among all agents for the same tenant
+    WITHIN_COMPOSITION, // shared only among agents in the same CompositionPolicy
+    GLOBAL            // shared across all tenants (platform-level, highly restricted)
+}
+
+public enum MergeStrategy {
+    LAST_WRITER_WINS,
+    FIRST_WRITER_WINS,
+    OWNER_ONLY,       // only the ownerAgentId can update this key
+    APPEND_LIST,      // value is treated as a list; new writes append
+    MERGE_MAP         // value is treated as a map; new writes deep-merge
+}
+
+public interface SharedContextRepository {
+    Promise<SharedContext> publish(SharedContext context);
+    Promise<Optional<SharedContext>> findById(String contextId);
+    Promise<List<SharedContext>> findBySession(String sessionId, ContextSharingScope scope);
+    Promise<SharedContextEntry> writeEntry(String contextId, SharedContextEntry entry, String writingAgentId);
+    Promise<Void> revoke(String contextId, String requestingAgentId);
+    Promise<Void> transferOwnership(String contextId, String newOwnerAgentId);
+}
+```
+
+`AgentContext` (the per-invocation context) gains a `readSharedContext(String contextId)` method that is a read-through from `SharedContextRepository`, subject to scope and authorization checks.
+
+### 20.8 The Universal Agent Runtime Contract
+
+All the contracts above are coordinated by the **Universal Agent Runtime Contract** — the complete set of obligations an agent must satisfy to participate in the platform at full capability. An agent that does not implement all parts still works — it simply operates with a reduced capability profile.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    Universal Agent Runtime Contract                      │
+│                                                                         │
+│  AgentCapabilityManifest  (declares what this agent can do)             │
+│    ├── Interaction Modes   (§20.1)  — REQUEST_RESPONSE, ASYNC, etc.    │
+│    ├── Supervision Roles   (§20.2)  — SUPERVISOR, SUPERVISEE, WATCHDOG │
+│    ├── Composition Roles   (§20.3)  — LEADER, FOLLOWER, VOTER, etc.    │
+│    ├── Handoff Capability  (§20.4)  — NONE, SEND_ONLY, RECEIVE_ONLY,  │
+│    │                                   BIDIRECTIONAL                    │
+│    ├── Repetition Policy   (§20.5)  — maxIterations, strategy, etc.    │
+│    ├── Learning Level      (§20.6)  — L0–L5; emits/receives signals    │
+│    └── Context Scope       (§20.7)  — scope of shared context access   │
+│                                                                         │
+│  AgentPackage              (the deployable artifact)                    │
+│    ├── Signed JAR with isolated classloader                             │
+│    ├── AgentCapabilityManifest (above)                                  │
+│    └── AgentRelease reference (links to release lifecycle §9.2)         │
+│                                                                         │
+│  Runtime Enforcement                                                    │
+│    ├── AgentPackageLoader  — load/unload/hot-reload                     │
+│    ├── AgentSwapCoordinator — zero-downtime hot-swap                    │
+│    ├── SupervisionRegistry — supervision graph management               │
+│    ├── HandoffCoordinator  — handoff protocol execution                 │
+│    ├── RepetitionGovernor  — loop/recursion/retry enforcement           │
+│    ├── LearningSignalRouter — routes cross-agent signals                │
+│    └── SharedContextRepository — scoped context store                  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**The key rule:** Any runtime component (AEP dispatcher, orchestrator, DelegationManager) that interacts with an agent must read its `AgentCapabilityManifest` from the `KernelRegistry` before initiating any interaction. If the agent does not declare a required capability, the operation is rejected with a structured error, not a silent null or NPE.
+
+### 20.9 Interaction Pattern Decision Guide
+
+Use this table when designing a new agent interaction:
+
+| You want to...                                    | Use this pattern                    | Key types                                    |
+| ------------------------------------------------- | ----------------------------------- | -------------------------------------------- |
+| Ask one agent to do something, wait for result    | `REQUEST_RESPONSE`                  | `AgentRequest`, `AgentResponse`              |
+| Ask one agent to do something, don't block        | `ASYNC_REQUEST`                     | `AgentRequest` + correlation ID              |
+| Get live output as it is produced                 | `STREAMING`                         | `AgentRequest`, `AsyncStreamProducer<O>`     |
+| Notify agents of an event, no reply needed        | `EVENT_DRIVEN` / `BROADCAST`        | `AgentEvent`                                 |
+| Run agents one after another (output → input)     | `SEQUENTIAL` / `PIPELINE`           | `CompositionPolicy`                          |
+| Run agents simultaneously on same input           | `PARALLEL`                          | `CompositionPolicy`                          |
+| Distribute a task, collect all results            | `FAN_OUT_FAN_IN` / `SCATTER_GATHER` | `CompositionPolicy`                          |
+| Get a consensus decision from multiple agents     | `VOTING`                            | `CompositionPolicy`, `VotingPolicy`          |
+| Transfer a task to a more capable agent           | `DELEGATION` (DelegationManager)    | `DelegationRequest`                          |
+| Transfer task + state to another agent (graceful) | `HANDOFF`                           | `AgentHandoff`, `HandoffCoordinator`         |
+| Replace an agent version without downtime         | `VERSION_UPGRADE` handoff           | `AgentSwapCoordinator`                       |
+| Monitor and manage another agent's failures       | `SUPERVISION`                       | `SupervisionContract`, `SupervisionRegistry` |
+| Control how many times an agent repeats           | `REPETITION`                        | `RepetitionPolicy`, `RepetitionGovernor`     |
+| Share state across agents in a session            | `CONTEXT_SHARING`                   | `SharedContext`, `SharedContextRepository`   |
+| Teach an agent from another agent's outcome       | `LEARNING_SIGNAL`                   | `LearningSignal`, `LearningSignalRouter`     |
+
+---
+
 ## Sources
 
 - Model Context Protocol specification overview and tools:
