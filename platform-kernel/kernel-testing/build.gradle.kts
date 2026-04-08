@@ -37,7 +37,7 @@ dependencies {
     api("org.junit.jupiter:junit-jupiter-engine:5.10.2")
 
     // Assertions
-    api("org.assertj:assertj-core:3.25.3")
+    api("org.assertj:assertj-core:3.27.7")
 
     // Mocking
     api("org.mockito:mockito-core:5.11.0")

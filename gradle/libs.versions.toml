@@ -103,7 +103,7 @@ junit-platform = "1.12.2"
 junit-jupiter = "5.12.2"
 mockito = "5.16.1"
 testcontainers = "1.21.4"
-assertj = "3.27.3"
+assertj = "3.27.7"
 awaitility = "4.3.0"
 
 # Codegen / Mapping
