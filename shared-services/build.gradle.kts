@@ -11,6 +11,8 @@ version = rootProject.version
 
 description = "Shared Services - Cross-product microservices"
 
+// Repository configuration is centralized in settings.gradle.kts
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)

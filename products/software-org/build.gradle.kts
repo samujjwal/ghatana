@@ -43,11 +43,11 @@ dependencies {
     "testImplementation"(libs.assertj.core)
     "testImplementation"(libs.mockito.core)
     "testImplementation"(libs.mockito.junit.jupiter)
-    "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine")
+    "testRuntimeOnly"(libs.junit.jupiter.engine)
 
     // JMH benchmark support for SoftwareOrgPerformanceBenchmark (compiled as part of tests)
-    "testImplementation"("org.openjdk.jmh:jmh-core:1.37")
-    "testAnnotationProcessor"("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+    "testImplementation"(libs.jmh.core)
+    "testAnnotationProcessor"(libs.jmh.generator.annprocess)
 }
 
 tasks.test {

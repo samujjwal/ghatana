@@ -127,6 +127,8 @@ spring-dependency-management-plugin = "1.1.4"
 jmh-plugin = "0.7.3"
 spotless = "8.4.0"
 openapi-generator-plugin = "7.12.0"
+foojay-resolver-convention = "1.0.0"
+shadow-plugin = "8.1.1"
 
 # Protocol Buffers
 protobuf = "4.34.1"
@@ -183,6 +185,11 @@ maxmind-geoip2 = "4.2.0"
 spotbugs-annotations = "4.9.3"
 prometheus-simpleclient = "0.16.0"
 rocksdb = "10.8.3"
+json = "20231013"
+snakeyaml = "2.0"
+protobuf-protoc = "3.25.1"
+grpc-protoc-gen-grpc-java = "1.60.0"
+findsecbugs-plugin = "1.13.0"
 
 # SQL Parsing
 jsqlparser = "5.1"
@@ -240,6 +247,8 @@ flyway = { id = "org.flywaydb.flyway", version.ref = "flyway-plugin" }
 jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-plugin" }
 openapi-generator = { id = "org.openapi.generator", version.ref = "openapi-generator-plugin" }
+foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay-resolver-convention" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow-plugin" }
 
 [libraries]
 # Drools Rules Engine
@@ -506,6 +515,17 @@ jline-reader = { module = "org.jline:jline-reader", version.ref = "jline" }
 jline-style = { module = "org.jline:jline-style", version.ref = "jline" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 fabric8-kubernetes-client = { module = "io.fabric8:kubernetes-client", version.ref = "fabric8-kubernetes-client" }
+
+# JSON / YAML
+json = { module = "org.json:json", version.ref = "json" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+
+# Protobuf compiler artifacts
+protobuf-protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf-protoc" }
+grpc-protoc-gen-grpc-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc-protoc-gen-grpc-java" }
+
+# SpotBugs plugins
+findsecbugs-plugin = { module = "com.h3xstream.findsecbugs:findsecbugs-plugin", version.ref = "findsecbugs-plugin" }
 
 # Parsing / AST
 javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }

@@ -22,8 +22,8 @@ description = "YAPPC — AI-Native Product Development Platform"
 // Add dependencies for JSON and YAML processing
 buildscript {
     dependencies {
-        classpath("org.json:json:20231013")
-        classpath("org.yaml:snakeyaml:2.0")
+        classpath(libs.json)
+        classpath(libs.snakeyaml)
     }
 }
 
@@ -42,9 +42,7 @@ subprojects {
     group = "com.ghatana.products.yappc"
     version = rootProject.version
 
-    repositories {
-        mavenCentral()
-    }
+    // Repository configuration is centralized in settings.gradle.kts
 
     configure<JavaPluginExtension> {
         toolchain {
