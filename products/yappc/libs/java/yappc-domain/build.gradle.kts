@@ -41,10 +41,10 @@ dependencies {
     // build helper normally auto-adds Lombok to projects that contain src/main/java
     // files, but this libs module compiles sources from a different directory
     // (products/yappc/domain), so add Lombok explicitly here.
-    compileOnly("org.projectlombok:lombok:1.18.34")
-    annotationProcessor("org.projectlombok:lombok:1.18.34")
-    testCompileOnly("org.projectlombok:lombok:1.18.34")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
+    compileOnly("org.projectlombok:lombok:1.18.44")
+    annotationProcessor("org.projectlombok:lombok:1.18.44")
+    testCompileOnly("org.projectlombok:lombok:1.18.44")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.44")
 
     testImplementation(project(":platform:java:testing"))
     testImplementation(libs.junit.jupiter)
