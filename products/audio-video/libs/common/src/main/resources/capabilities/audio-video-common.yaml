@@ -1,0 +1,37 @@
+# Audio-Video Common Tool Capabilities Descriptor
+# Top-level registry of all AV capabilities exposed as tools to the AEP catalog.
+# This file is used by AudioVideoToolHandlerFactory to enumerate available handlers
+# and by AEP catalog registration to discover all AV tool contracts.
+
+schemaVersion: "1.0"
+product: "audio-video"
+owner: "audio-video-team"
+description: >
+  Capability registry for the Audio-Video product domain. Provides speech-to-text,
+  text-to-speech, vision analysis, and multimodal inference as platform tools
+  for agent consumption via the AEP tool catalog.
+
+capabilities:
+  - toolId: "av.speech-to-text"
+    descriptorPath: "capabilities/speech-to-text.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.SpeechToTextToolHandler"
+    enabled: true
+    tags: [speech, stt, transcription]
+
+  - toolId: "av.text-to-speech"
+    descriptorPath: "capabilities/text-to-speech.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.TextToSpeechToolHandler"
+    enabled: true
+    tags: [speech, tts, synthesis]
+
+  - toolId: "av.vision-analysis"
+    descriptorPath: "capabilities/vision-analysis.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.VisionAnalysisToolHandler"
+    enabled: true
+    tags: [vision, ocr, object-detection]
+
+  - toolId: "av.multimodal-inference"
+    descriptorPath: "capabilities/multimodal-inference.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.MultimodalInferenceToolHandler"
+    enabled: true
+    tags: [multimodal, fusion, video-understanding]

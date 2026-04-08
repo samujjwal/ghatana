@@ -12,7 +12,7 @@
 
 This document is the unified, non-redundant consolidation of three source documents:
 
-1. **Unified_Self_Learning_Agents_Spec_Final.md** - Base comprehensive specification
+1. **Unified_Self_Learning_Agents_Spec_Merged.md** - Base comprehensive specification
 2. **DSLA_NDSLA_Full_Detailed_Spec.md** - Detailed implementation specifications
 3. **NDSLA_to_DSLA_Transition_Full_Spec.md** - Transition methodology (content integrated throughout)
 
@@ -3070,7 +3070,7 @@ Or, stated differently:
 ## Source Documents
 
 This merged document consolidates:
-1. **Unified_Self_Learning_Agents_Spec_Final.md** (base comprehensive specification)
+1. **Unified_Self_Learning_Agents_Spec_Merged.md** (base comprehensive specification)
 2. **DSLA_NDSLA_Full_Detailed_Spec.md** (detailed implementation specifications)
 3. **NDSLA_to_DSLA_Transition_Full_Spec.md** (transition methodology - content integrated throughout)
 

@@ -52,6 +52,8 @@ dependencies {
     api(project(":platform:java:ai-integration"))
     api(project(":platform:java:database"))
     api(project(":platform:contracts"))
+    api(project(":platform:java:tool-runtime"))
+    api(project(":platform:java:data-governance"))
 
     // ── ActiveJ ────────────────────────────────────────────────────────────────
     api(libs.activej.promise)
@@ -78,6 +80,7 @@ dependencies {
     testImplementation(libs.junit.jupiter.engine)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation(libs.archunit)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
 

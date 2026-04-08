@@ -22,6 +22,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { getRunDetail, cancelRun, type PipelineRun } from '@/api/aep.api';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import { ComingSoonPanel } from '@/components/core/ComingSoonPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -67,26 +69,6 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 // ─── Placeholder panel ────────────────────────────────────────────────
-
-function ComingSoonPanel({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-gray-300 dark:text-gray-700"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.2}
-        aria-hidden
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-      </svg>
-      <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">{title}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-600 max-w-xs">{description}</p>
-    </div>
-  );
-}
 
 // ─── Tabs ─────────────────────────────────────────────────────────────
 
@@ -238,24 +220,51 @@ export function RunDetailPage() {
 
           {/* Tab content */}
           <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-            {activeTab === 'lineage' && (
+            {activeTab === 'lineage' && isFeatureEnabled('EVENT_LINEAGE') ? (
+              <div className="p-6">
+                {/* TODO: Implement EventLineagePanel */}
+                <ComingSoonPanel
+                  title="Event lineage"
+                  description="Once Event Cloud integration is wired, this panel will show the ordered chain of events processed in this run, including source event, intermediate transformations, and output events."
+                />
+              </div>
+            ) : activeTab === 'lineage' ? (
               <ComingSoonPanel
                 title="Event lineage"
-                description="Once Event Cloud integration is wired, this panel will show the ordered chain of events processed in this run, including source event, intermediate transformations, and output events."
+                description="Event lineage tracing is an enterprise feature. Contact your administrator to enable."
+                isEnterprise
               />
-            )}
-            {activeTab === 'decisions' && (
+            ) : null}
+            {activeTab === 'decisions' && isFeatureEnabled('AGENT_DECISIONS') ? (
+              <div className="p-6">
+                {/* TODO: Implement AgentDecisionsPanel */}
+                <ComingSoonPanel
+                  title="Agent decisions"
+                  description="Agent decision records will appear here once the run ledger is connected. Each decision includes the agent ID, input context, confidence score, policy applied, and outcome."
+                />
+              </div>
+            ) : activeTab === 'decisions' ? (
               <ComingSoonPanel
                 title="Agent decisions"
-                description="Agent decision records will appear here once the run ledger is connected. Each decision includes the agent ID, input context, confidence score, policy applied, and outcome."
+                description="Agent decision tracking is an enterprise feature. Contact your administrator to enable."
+                isEnterprise
               />
-            )}
-            {activeTab === 'policies' && (
+            ) : null}
+            {activeTab === 'policies' && isFeatureEnabled('POLICY_REFERENCES') ? (
+              <div className="p-6">
+                {/* TODO: Implement PolicyReferencesPanel */}
+                <ComingSoonPanel
+                  title="Policy references"
+                  description="When governance rules are applied during this run, they will be listed here with their version, approval status, and effect on agent behavior."
+                />
+              </div>
+            ) : activeTab === 'policies' ? (
               <ComingSoonPanel
                 title="Policy references"
-                description="When governance rules are applied during this run, they will be listed here with their version, approval status, and effect on agent behavior."
+                description="Policy reference tracking is an enterprise feature. Contact your administrator to enable."
+                isEnterprise
               />
-            )}
+            ) : null}
           </div>
         </div>
       </div>

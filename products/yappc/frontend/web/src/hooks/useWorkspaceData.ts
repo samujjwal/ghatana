@@ -569,7 +569,36 @@ export function useCreateWorkspace() {
 
   return useMutation({
     mutationFn: createWorkspaceApi,
-    onSuccess: () => {
+    onMutate: async (newWorkspace) => {
+      // Cancel in-flight queries
+      await queryClient.cancelQueries({ queryKey: workspaceKeys.all });
+
+      // Snapshot previous value
+      const previousWorkspaces = queryClient.getQueryData(workspaceKeys.lists());
+
+      // Optimistically add new workspace
+      queryClient.setQueryData(workspaceKeys.lists(), (old: Workspace[] = []) => [
+        ...old,
+        {
+          id: 'temp-' + Date.now(),
+          name: newWorkspace.name,
+          description: newWorkspace.description,
+          isDefault: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          aiSummary: '',
+          aiTags: [],
+        } as Workspace,
+      ]);
+
+      return { previousWorkspaces };
+    },
+    onError: (err, _, context) => {
+      // Rollback on error
+      queryClient.setQueryData(workspaceKeys.lists(), context?.previousWorkspaces);
+    },
+    onSettled: () => {
+      // Refetch to ensure server state
       queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
     },
   });
@@ -584,9 +613,47 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: createProjectApi,
+    onMutate: async (variables) => {
+      const { ownerWorkspaceId } = variables;
+      
+      // Cancel in-flight queries
+      await queryClient.cancelQueries({ queryKey: projectKeys.list(ownerWorkspaceId) });
+
+      // Snapshot previous value
+      const previousProjects = queryClient.getQueryData(projectKeys.list(ownerWorkspaceId));
+
+      // Optimistically add new project
+      const tempProject: Project = {
+        id: 'temp-' + Date.now(),
+        name: variables.name,
+        description: variables.description,
+        type: variables.type,
+        workspaceId: ownerWorkspaceId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        aiNextActions: [],
+        aiHealthScore: 0,
+      };
+
+      queryClient.setQueryData(projectKeys.list(ownerWorkspaceId), (old: { owned?: Project[] } = {}) => ({
+        ...old,
+        owned: [...(old.owned || []), tempProject],
+      }));
+
+      return { previousProjects, tempProject };
+    },
     onSuccess: (project, variables) => {
-      // Transform to ProjectWithOwnership
+      // Transform to ProjectWithOwnership and update atom
       addOwned({ ...project, isOwned: true } as ProjectWithOwnership);
+    },
+    onError: (err, _, context) => {
+      // Rollback on error
+      if (context?.previousProjects) {
+        queryClient.setQueryData(projectKeys.list(context.tempProject.workspaceId), context.previousProjects);
+      }
+    },
+    onSettled: (_, variables) => {
+      // Refetch to ensure server state
       queryClient.invalidateQueries({
         queryKey: projectKeys.list(variables.ownerWorkspaceId),
       });
@@ -605,7 +672,35 @@ export function useIncludeProject() {
 
   return useMutation({
     mutationFn: includeProjectApi,
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      const { workspaceId, projectId } = variables;
+
+      // Cancel in-flight queries
+      await queryClient.cancelQueries({ queryKey: projectKeys.list(workspaceId) });
+      await queryClient.cancelQueries({ queryKey: projectKeys.available(workspaceId) });
+
+      // Snapshot previous values
+      const previousProjects = queryClient.getQueryData(projectKeys.list(workspaceId));
+      const previousAvailable = queryClient.getQueryData(projectKeys.available(workspaceId));
+
+      // Optimistically move project from available to included
+      queryClient.setQueryData(projectKeys.available(workspaceId), (old: Project[] = []) =>
+        old.filter(p => p.id !== projectId)
+      );
+
+      // Note: We don't optimistically add to included since we don't have the full project data
+      // The refetch will handle this
+
+      return { previousProjects, previousAvailable };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousAvailable) {
+        queryClient.setQueryData(projectKeys.available(variables.workspaceId), context.previousAvailable);
+      }
+    },
+    onSettled: (_, variables) => {
+      // Refetch to ensure server state
       queryClient.invalidateQueries({
         queryKey: projectKeys.list(variables.workspaceId),
       });
@@ -673,16 +768,30 @@ export function useRefreshAI() {
 
   const refreshWorkspace = useMutation({
     mutationFn: refreshWorkspaceAI,
-    onSuccess: (_, workspaceId) => {
-      queryClient.invalidateQueries({
-        queryKey: workspaceKeys.detail(workspaceId),
-      });
+    onMutate: async (workspaceId) => {
+      await queryClient.cancelQueries({ queryKey: workspaceKeys.detail(workspaceId) });
+      const previousWorkspace = queryClient.getQueryData(workspaceKeys.detail(workspaceId));
+      return { previousWorkspace };
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(workspaceKeys.detail(context?.previousWorkspace?.id || ''), context?.previousWorkspace);
+    },
+    onSettled: (_, workspaceId) => {
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.detail(workspaceId) });
     },
   });
 
   const refreshProject = useMutation({
     mutationFn: refreshProjectAI,
-    onSuccess: () => {
+    onMutate: async (projectId) => {
+      await queryClient.cancelQueries({ queryKey: projectKeys.detail(projectId) });
+      const previousProject = queryClient.getQueryData(projectKeys.detail(projectId));
+      return { previousProject };
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(projectKeys.detail(context?.previousProject?.id || ''), context?.previousProject);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });

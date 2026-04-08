@@ -43,6 +43,7 @@ dependencies {
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:agent-core"))
+    api(project(":platform:java:workflow"))
     api(project(":products:aep:aep-agent-runtime"))  // Merged: agent-dispatch + agent-resilience
     api(project(":platform:java:observability"))
     api(project(":platform:java:database"))
@@ -139,3 +140,27 @@ pmd {
 
 tasks.named("checkstyleMain") { dependsOn("spotlessJavaCheck") }
 tasks.named("pmdMain") { dependsOn("checkstyleMain") }
+
+// =============================================================================
+// validateAgentCatalogs — run CatalogCanonicalValuesTest as a named quality gate
+// =============================================================================
+
+/**
+ * Enforces that all AEP operator YAML catalog files reference only canonical
+ * platform enum values (AgentType, AutonomyLevel, DeterminismGuarantee, StateMutability).
+ *
+ * Run explicitly: ./gradlew :products:aep:orchestrator:validateAgentCatalogs
+ * This task also runs automatically as part of the standard test lifecycle via `check`.
+ */
+tasks.register("validateAgentCatalogs") {
+    group = "verification"
+    description = "Validates that all AEP agent catalog YAMLs use canonical platform enum values"
+    dependsOn(tasks.test)
+    doLast {
+        logger.lifecycle("✅  AEP catalog canonical enum validation complete (backed by CatalogCanonicalValuesTest)")
+    }
+}
+
+tasks.named("check") {
+    dependsOn("validateAgentCatalogs")
+}

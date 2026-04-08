@@ -155,6 +155,58 @@ public final class DurableWorkflowRuntime {
 
     // ── Core execution ───────────────────────────────────────────────────
 
+    /**
+     * Resumes a workflow run that is paused at a Human-in-the-Loop checkpoint.
+     *
+     * @param runId    the paused run to resume
+     * @param decision the HITL decision: {@code "APPROVED"} or {@code "REJECTED"}
+     * @param context  additional context merged into run variables
+     * @return a promise of the resumed {@link WorkflowRun}
+     */
+    public Promise<WorkflowRun> resume(
+            @NotNull String runId,
+            @NotNull String decision,
+            @NotNull Map<String, Object> context) {
+        return stateStore.findByRunId(runId)
+            .then(optRun -> {
+                if (optRun.isEmpty()) {
+                    return Promise.ofException(
+                        new WorkflowDefinitionException("Run not found: " + runId));
+                }
+                WorkflowRun run = optRun.get();
+                if (run.status() != WorkflowRunStatus.WAITING_FOR_HITL) {
+                    return Promise.ofException(new IllegalStateException(
+                        "Run is not waiting for HITL. Current status: " + run.status()));
+                }
+
+                Map<String, Object> mergedCtx = new HashMap<>(run.variables());
+                mergedCtx.put("__hitlDecision", decision);
+                mergedCtx.put("__hitlDecidedAt", java.time.Instant.now().toString());
+                mergedCtx.putAll(context);
+
+                // Resume from the next step after the HITL checkpoint
+                String nextStepId = (String) run.variables().get("__hitlNextStepId");
+                WorkflowRun resumed = new WorkflowRun(
+                    run.runId(), run.workflowId(), run.tenantId(), run.kind(),
+                    WorkflowRunStatus.RUNNING, run.options(),
+                    run.startedAt(), null, nextStepId, mergedCtx,
+                    null, run.triggeredBy(), run.history());
+
+                return stateStore.save(resumed)
+                    .then(v -> definitionRegistry.findLatest(run.workflowId()))
+                    .then(optDef -> {
+                        if (optDef.isEmpty()) {
+                            return Promise.ofException(new WorkflowDefinitionException(
+                                "Workflow not found: " + run.workflowId()));
+                        }
+                        return "REJECTED".equalsIgnoreCase(decision)
+                            ? Promise.of(resumed.withStatus(WorkflowRunStatus.CANCELLED)
+                                               .withError("HITL rejected by operator"))
+                            : executeRun(resumed, optDef.get());
+                    });
+            });
+    }
+
     private Promise<WorkflowRun> executeRun(WorkflowRun run, WorkflowDefinition def) {
         return Promise.ofBlocking(executor, () -> {
             emitEvent(WorkflowLifecycleEvent.of(
@@ -197,6 +249,22 @@ public final class DurableWorkflowRuntime {
                     current = current.withStatus(WorkflowRunStatus.WAITING)
                                      .withCurrentStep(e.nextStepId())
                                      .withVariables(ctx);
+                    awaitBlocking(stateStore.save(current));
+
+                    emitEvent(WorkflowLifecycleEvent.forStep(
+                        current.runId(), current.workflowId(),
+                        WorkflowLifecycleEvent.Phase.WORKFLOW_WAITING, stepDef.stepId()));
+
+                    return current;
+
+                } catch (HitlSuspendException e) {
+                    // HITL step — persist with WAITING_FOR_HITL status, store checkpoint
+                    Map<String, Object> hitlCtx = new HashMap<>(ctx);
+                    hitlCtx.put("__hitlStepId", e.hitlStepId());
+                    hitlCtx.put("__hitlNextStepId", e.nextStepId());
+                    current = current.withStatus(WorkflowRunStatus.WAITING_FOR_HITL)
+                                     .withCurrentStep(e.hitlStepId())
+                                     .withVariables(hitlCtx);
                     awaitBlocking(stateStore.save(current));
 
                     emitEvent(WorkflowLifecycleEvent.forStep(
@@ -250,6 +318,7 @@ public final class DurableWorkflowRuntime {
             case SUB_WORKFLOW -> executeSubWorkflow(stepDef, ctx);
             case LOOP -> executeLoop(stepDef, ctx, def);
             case COMPENSATION -> executeAction(stepDef, ctx); // Compensation runs like action
+            case HUMAN_IN_THE_LOOP -> executeHitl(stepDef);
         };
     }
 
@@ -313,6 +382,11 @@ public final class DurableWorkflowRuntime {
     private String executeWait(WorkflowStepDefinition stepDef) throws WaitSuspendException {
         // Suspend the run — the caller (signal()) will resume later
         throw new WaitSuspendException(stepDef.nextStep());
+    }
+
+    private String executeHitl(WorkflowStepDefinition stepDef) throws HitlSuspendException {
+        // Suspend at HITL checkpoint — the caller (resume()) will resume with a decision
+        throw new HitlSuspendException(stepDef.stepId(), stepDef.nextStep());
     }
 
     private String executeParallel(
@@ -475,6 +549,22 @@ public final class DurableWorkflowRuntime {
             this.nextStepId = nextStepId;
         }
 
+        String nextStepId() { return nextStepId; }
+    }
+
+    // ── Exception for HITL suspension ────────────────────────────────────
+
+    static final class HitlSuspendException extends Exception {
+        private final String hitlStepId;
+        private final String nextStepId;
+
+        HitlSuspendException(String hitlStepId, String nextStepId) {
+            super("HITL suspension at step: " + hitlStepId);
+            this.hitlStepId = hitlStepId;
+            this.nextStepId = nextStepId;
+        }
+
+        String hitlStepId() { return hitlStepId; }
         String nextStepId() { return nextStepId; }
     }
 

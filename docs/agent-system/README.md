@@ -71,25 +71,41 @@ This document serves as the **authoritative entry point** for all agent-related 
 
 ## 4. Implementation Architecture
 
-### 4.1 Three-Layer Model
+### 4.1 Five-Layer Operating Model
+
+See [ADR-020: Agent System Five-Layer Architecture](/docs/adr/ADR-020-agent-system-five-layer-architecture.md) for the full decision record.
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│  LAYER 1: AGENT SPECIFICATION (Declarative)                │
-│  ├─ agent-spec.md (YAML schema)                            │
-│  ├─ AgentDescriptor (Java)                                  │
-│  └─ platform/agent-catalog/ (Registry)                     │
-├────────────────────────────────────────────────────────────┤
-│  LAYER 2: AGENT FRAMEWORK (Runtime)                        │
-│  ├─ TypedAgent<I,O> (Core Interface)                        │
-│  ├─ AgentOperatorFactory (Pipeline Bridge)                │
-│  └─ AgentDispatcher (3-Tier Resolution)                   │
-├────────────────────────────────────────────────────────────┤
-│  LAYER 3: AEP EXECUTION (Product)                           │
-│  ├─ aep-agent-runtime/ (Execution Tier)                   │
-│  ├─ aep-engine/ (Pipeline Engine)                         │
-│  └─ aep-orchestrator/ (Lifecycle Management)              │
-└────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│  LAYER A: SPECIFICATION AND RELEASE PLANE                                │
+│  ├─ AgentSpec, AgentRelease, AgentInstanceConfig, PolicyPack             │
+│  ├─ EvaluationPack, ToolContract, MemoryContract                         │
+│  ├─ AgentCapabilityManifest (pluggability contract)                      │
+│  └─ platform/java/agent-core (contracts only — no product runtime)      │
+├──────────────────────────────────────────────────────────────────────────┤
+│  LAYER B: CONTROL AND GOVERNANCE PLANE                                   │
+│  ├─ ToolExecutor + ApprovalGateway + ToolSandbox (mandatory path)        │
+│  ├─ PolicyAsCodeEngine + AgentTraceLedger                                │
+│  ├─ DurableWorkflowRuntime + PlanCompiler (planning compilation)         │
+│  └─ platform/java/tool-runtime, workflow, policy-as-code, identity       │
+├──────────────────────────────────────────────────────────────────────────┤
+│  LAYER C: EXECUTION PLANE                                                │
+│  ├─ GovernedAgentDispatcher (single execution gate)                      │
+│  ├─ AgentPackageLoader + AgentSwapCoordinator (hot-swap)                 │
+│  ├─ CatalogAgentDispatcher (Tier-J / Tier-S / Tier-L resolution)         │
+│  └─ products/aep/aep-agent-runtime, orchestrator, aep-engine            │
+├──────────────────────────────────────────────────────────────────────────┤
+│  LAYER D: MEMORY, CONTEXT, AND EVALUATION PLANE                          │
+│  ├─ AgentReleaseRepository + DataCloudAgentReleaseRepository             │
+│  ├─ MemoryPromotionService (7-step episodic→procedural path)             │
+│  ├─ EvaluationResultRepository + MemoryNamespaceRepository               │
+│  └─ products/data-cloud/platform-api, agent-registry, platform-config   │
+├──────────────────────────────────────────────────────────────────────────┤
+│  LAYER E: PRODUCT CAPABILITY PLANE                                       │
+│  ├─ Audio-Video ToolHandler adapters (STT, TTS, vision, multimodal)      │
+│  ├─ AudioTranscriptionAgent + MultimodalAnalysisAgent (domain agents)    │
+│  └─ products/audio-video/*, product-specific provider registries         │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.2 Execution Tier Resolution

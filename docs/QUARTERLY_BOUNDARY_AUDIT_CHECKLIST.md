@@ -115,7 +115,7 @@ grep -r '\.getResult()' platform/ products/ --include="*.java" | grep -v test | 
 
 | Item | Check | Pass Criteria | Status |
 |------|-------|---------------|--------|
-| 5.1 | `SHARED_LIBRARY_REGISTRY.md` up to date | All global shared libs registered | ⬜ |
+| 5.1 | `settings.gradle.kts` reflects current shared/platform modules | Active, relocated, and archived modules documented in root settings | ⬜ |
 | 5.2 | `MODULE_ADMISSION_CHECKLIST.md` used for new modules | Each new module has checklist row | ⬜ |
 | 5.3 | ActiveJ-only (no Spring Reactor/WebFlux in platform) | 0 Reactor imports in platform | ⬜ |
 | 5.4 | No `CompletableFuture` mixing with ActiveJ in platform | 0 violations | ⬜ |
@@ -194,4 +194,4 @@ Copy this to the audit record after completing the checklist:
 ---
 
 *This checklist is maintained at `docs/QUARTERLY_BOUNDARY_AUDIT_CHECKLIST.md`.*  
-*Related: [SHARED_LIBRARY_REGISTRY.md](SHARED_LIBRARY_REGISTRY.md), [MODULE_ADMISSION_CHECKLIST.md](MODULE_ADMISSION_CHECKLIST.md), [NAMING_CONVENTIONS.md](NAMING_CONVENTIONS.md)*
+*Related: [../settings.gradle.kts](../settings.gradle.kts), [MODULE_ADMISSION_CHECKLIST.md](MODULE_ADMISSION_CHECKLIST.md), [NAMING_CONVENTIONS.md](NAMING_CONVENTIONS.md)*

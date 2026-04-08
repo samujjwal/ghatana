@@ -149,10 +149,9 @@ The right move is not to force Audio-Video to become another AEP clone. The righ
 
 The repo currently has multiple authoritative-looking documents that disagree with each other or with code:
 
-- `docs/SHARED_LIBRARY_REGISTRY.md` says `platform/java/agent-runtime` is active, but `settings.gradle.kts` says advanced runtime was relocated to `products:aep:aep-agent-runtime`.
-- `docs/SHARED_LIBRARY_REGISTRY.md` still points `plugin` to `platform/java/plugin`, while root settings mark that path as archived in favor of `platform-kernel`.
+- A separate shared-library registry doc drifted away from `settings.gradle.kts`, which caused incorrect ownership and relocation guidance. `settings.gradle.kts` should be the only module registry.
 - `docs/adr/ADR-001-typed-agent-framework.md` describes a six-type taxonomy, while `AgentType.java` is now effectively nine canonical types plus deprecated `LLM`.
-- `docs/agent-system/README.md` references `Unified_Self_Learning_Agents_Spec_Final.md`, but the actual document in the folder is `Unified_Self_Learning_Agents_Spec_Merged.md`.
+- The agent-system docs had stale references to `Unified_Self_Learning_Agents_Spec_Final.md`; those should be normalized to `Unified_Self_Learning_Agents_Spec_Merged.md`.
 
 This is not cosmetic. It causes wrong ownership decisions and wrong dependency decisions.
 
@@ -487,12 +486,12 @@ The current single giant spec is conceptually rich but operationally overloaded.
 A mandatory cleanup item:
 
 - one canonical agent type set
-- one canonical autonomy scale
+- one canonical autonomy scale for shared runtime and catalog storage
 - one canonical determinism scale
 - one canonical state mutability scale
 - one canonical failure mode set
 
-Then provide compatibility mappings for legacy YAML.
+Then provide compatibility mappings for legacy YAML, and keep explicit boundary mappings where a product-local control model intentionally differs.
 
 Do not keep silently divergent values like:
 
@@ -989,14 +988,14 @@ Data Cloud is the **durable brain and evidence plane**, not the main live execut
 
 **Do:**
 
-- update `docs/SHARED_LIBRARY_REGISTRY.md`
+- remove `docs/SHARED_LIBRARY_REGISTRY.md` and treat `settings.gradle.kts` as the sole module registry
 - update `docs/adr/ADR-001-typed-agent-framework.md`
 - update `docs/agent-system/README.md`
 - add a single "current ownership" matrix for platform/AEP/Data Cloud/Audio-Video
 
 **Where:**
 
-- `docs/SHARED_LIBRARY_REGISTRY.md`
+- `settings.gradle.kts`
 - `docs/adr/ADR-001-typed-agent-framework.md`
 - `docs/agent-system/README.md`
 

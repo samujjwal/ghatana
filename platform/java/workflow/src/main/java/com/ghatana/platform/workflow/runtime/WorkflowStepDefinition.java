@@ -90,6 +90,26 @@ public record WorkflowStepDefinition(
     }
 
     /**
+     * Creates a HUMAN_IN_THE_LOOP checkpoint step.
+     *
+     * <p>When execution reaches this step, the workflow transitions to
+     * {@link com.ghatana.platform.workflow.WorkflowRunStatus#WAITING_FOR_HITL} and
+     * pauses until an operator calls
+     * {@link com.ghatana.platform.workflow.runtime.HitlPauseOperator#approve(String)} or
+     * {@link com.ghatana.platform.workflow.runtime.HitlPauseOperator#reject(String, String)}.
+     *
+     * @param stepId   unique step identifier
+     * @param name     human-readable name for the checkpoint
+     * @param nextStep the step to execute after the HITL is approved (null for end)
+     */
+    public static WorkflowStepDefinition humanInTheLoop(String stepId, String name, String nextStep) {
+        return new WorkflowStepDefinition(
+            stepId, name, WorkflowStepKind.HUMAN_IN_THE_LOOP,
+            null, null, null, null, nextStep, null,
+            0, null, null, null, Map.of());
+    }
+
+    /**
      * Returns a copy with retry settings applied.
      */
     public WorkflowStepDefinition withRetries(int max, Duration backoff) {

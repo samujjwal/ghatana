@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:observability"))
+    implementation(project(":platform:java:agent-core"))
     
     // Metrics (for MetricsWorkflowListener)
     implementation(libs.micrometer.core)

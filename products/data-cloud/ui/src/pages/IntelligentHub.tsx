@@ -21,10 +21,11 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { brainService } from '../api/brain.service';
 import { collectionsApi } from '../lib/api/collections';
 import { workflowsApi } from '../lib/api/workflows';
+import { getRecentActivity, logActivity } from '../lib/api/user-activity';
 import {
   Database,
   Workflow,
@@ -346,7 +347,19 @@ export function IntelligentHub() {
     staleTime: 120_000,
   });
 
-  // Quick actions
+  // Fetch recent user activity
+  const { data: activityData } = useQuery({
+    queryKey: ['user-activity'],
+    queryFn: () => getRecentActivity(),
+    staleTime: 30_000,
+  });
+
+  // Audit logging mutation
+  const logActivityMutation = useMutation({
+    mutationFn: logActivity,
+  });
+
+  // Quick actions with audit logging
   const quickActions: QuickAction[] = [
     {
       id: 'explore-data',
@@ -354,7 +367,16 @@ export function IntelligentHub() {
       description: 'Browse collections and datasets',
       icon: <Database className="h-5 w-5 text-white" />,
       color: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      action: () => navigate('/data'),
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Explore Data',
+          type: 'query',
+          resourceType: 'navigation',
+          resourceId: '/data',
+        });
+        navigate('/data');
+      },
     },
     {
       id: 'create-workflow',
@@ -362,7 +384,16 @@ export function IntelligentHub() {
       description: 'Create a new data workflow',
       icon: <Workflow className="h-5 w-5 text-white" />,
       color: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      action: () => navigate('/pipelines/new'),
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Build Pipeline',
+          type: 'create',
+          resourceType: 'navigation',
+          resourceId: '/pipelines/new',
+        });
+        navigate('/pipelines/new');
+      },
     },
     {
       id: 'check-quality',
@@ -370,7 +401,16 @@ export function IntelligentHub() {
       description: 'Review quality issues',
       icon: <Activity className="h-5 w-5 text-white" />,
       color: 'bg-gradient-to-br from-green-500 to-green-600',
-      action: () => navigate('/data?view=quality'),
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Data Quality',
+          type: 'query',
+          resourceType: 'navigation',
+          resourceId: '/data?view=quality',
+        });
+        navigate('/data?view=quality');
+      },
     },
     {
       id: 'governance',
@@ -378,7 +418,16 @@ export function IntelligentHub() {
       description: 'Governance & compliance',
       icon: <Shield className="h-5 w-5 text-white" />,
       color: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      action: () => navigate('/trust'),
+      action: () => {
+        logActivityMutation.mutate({
+          action: 'navigate',
+          target: 'Trust Center',
+          type: 'query',
+          resourceType: 'navigation',
+          resourceId: '/trust',
+        });
+        navigate('/trust');
+      },
     },
   ];
 
@@ -410,18 +459,24 @@ export function IntelligentHub() {
     },
   ];
 
-  // Recent activity and continue-working items come from real usage patterns;
-  // these are intentionally empty until the user-activity API is wired.
-  const recentActivity: ActivityItem[] = [];
-  const continueWorking: ContinueWorkingItem[] = [];
+  // Recent activity and continue-working items from user-activity API
+  const recentActivity: ActivityItem[] = activityData?.activities ?? [];
+  const continueWorking: ContinueWorkingItem[] = activityData?.continueWorking ?? [];
 
   // Handle ask anything
   const handleAskAnything = useCallback((query: string) => {
+    logActivityMutation.mutate({
+      action: 'query',
+      target: query,
+      type: 'query',
+      resourceType: 'search',
+      resourceId: query,
+    });
     // In a real implementation, this would trigger the command bar or AI
     console.log('Ask:', query);
     // For now, navigate to search
     navigate(`/data?search=${encodeURIComponent(query)}`);
-  }, [navigate]);
+  }, [navigate, logActivityMutation]);
 
   // Get personalized greeting
   const greeting = useMemo(() => getGreeting(), []);

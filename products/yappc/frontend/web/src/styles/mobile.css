@@ -1,0 +1,401 @@
+/**
+ * Mobile-First Responsive Styles
+ *
+ * Mobile-first CSS styles for responsive design.
+ * Optimized for touch interactions and small screens.
+ *
+ * @doc.type stylesheet
+ * @doc.purpose Mobile-first responsive styles
+ * @doc.layer product
+ */
+
+/* ============================================================================
+ * Base Styles
+ * ============================================================================ */
+
+/* Ensure proper touch action */
+* {
+  touch-action: manipulation;
+}
+
+/* Prevent text selection on touch devices (except for inputs) */
+@media (hover: none) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    user-select: text;
+  }
+}
+
+/* ============================================================================
+ * Typography
+ * ============================================================================ */
+
+/* Scale font sizes for mobile */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* ============================================================================
+ * Touch-Friendly Interactions
+ * ============================================================================ */
+
+/* Minimum touch target size (44x44px per WCAG) */
+button,
+a,
+input[type="checkbox"],
+input[type="radio"],
+[role="button"],
+[role="checkbox"],
+[role="switch"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Increase padding for touch targets */
+@media (max-width: 768px) {
+  button,
+  .btn,
+  [role="button"] {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* ============================================================================
+ * Navigation
+ * ============================================================================ */
+
+/* Mobile navigation adjustments */
+@media (max-width: 768px) {
+  /* Hamburger menu for mobile */
+  .mobile-nav-toggle {
+    display: flex;
+  }
+
+  .desktop-nav {
+    display: none;
+  }
+
+  /* Bottom navigation bar for mobile */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    z-index: 50;
+  }
+
+  /* Safe area for mobile devices with home indicator */
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mobile-bottom-nav {
+      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* ============================================================================
+ * Layout
+ * ============================================================================ */
+
+/* Stack containers on mobile */
+@media (max-width: 768px) {
+  .grid,
+  .flex-row {
+    flex-direction: column;
+  }
+
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Remove side margins on mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* ============================================================================
+ * Cards and Panels
+ * ============================================================================ */
+
+/* Full-width cards on mobile */
+@media (max-width: 768px) {
+  .card,
+  .panel {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+  }
+
+  /* Stacked card actions */
+  .card-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .card-actions button,
+  .card-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================================
+ * Tables
+ * ============================================================================ */
+
+/* Responsive table - horizontal scroll on mobile */
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  /* Stack table cells on very small screens */
+  @media (max-width: 480px) {
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+      display: block;
+    }
+
+    thead tr {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+    }
+
+    tr {
+      border: 1px solid #ccc;
+      margin-bottom: 0.5rem;
+    }
+
+    td {
+      border: none;
+      border-bottom: 1px solid #eee;
+      position: relative;
+      padding-left: 50%;
+    }
+
+    td:before {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 45%;
+      padding-right: 10px;
+      white-space: nowrap;
+      font-weight: bold;
+    }
+  }
+}
+
+/* ============================================================================
+ * Forms
+ * ============================================================================ */
+
+/* Full-width form inputs on mobile */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    width: 100%;
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+
+  /* Stack form groups */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  /* Full-width buttons */
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button,
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================================
+ * Modals and Dialogs
+ * ============================================================================ */
+
+/* Full-screen modals on mobile */
+@media (max-width: 768px) {
+  .modal,
+  .dialog {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Safe area for notched devices */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .modal,
+    .dialog {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
+
+/* ============================================================================
+ * Canvas and Diagrams
+ * ============================================================================ */
+
+/* Responsive canvas */
+@media (max-width: 768px) {
+  .canvas-container {
+    touch-action: none;
+  }
+
+  /* Larger touch targets for canvas elements */
+  .canvas-node {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  /* Hide complex controls on mobile */
+  .canvas-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .canvas-toolbar .secondary-controls {
+    display: none;
+  }
+}
+
+/* ============================================================================
+ * Animations
+ * ============================================================================ */
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+ * Print Styles
+ * ============================================================================ */
+
+@media print {
+  .mobile-bottom-nav,
+  .mobile-nav-toggle,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    font-size: 12pt;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  .card {
+    break-inside: avoid;
+  }
+}
+
+/* ============================================================================
+ * Utility Classes
+ * ============================================================================ */
+
+/* Hide on mobile */
+.hide-mobile {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .hide-mobile {
+    display: revert;
+  }
+
+  .hide-desktop {
+    display: none;
+  }
+}
+
+/* Show only on mobile */
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .show-mobile {
+    display: revert;
+  }
+}
+
+/* Safe area utilities */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-all {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

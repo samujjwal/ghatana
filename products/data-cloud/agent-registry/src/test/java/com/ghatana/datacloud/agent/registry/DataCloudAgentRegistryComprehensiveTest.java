@@ -347,6 +347,7 @@ class DataCloudAgentRegistryComprehensiveTest extends EventloopTestBase {
             // Given
             stubCreateEntity(UUID.randomUUID());
             stubAppendEvent();
+            when(dataCloud.countEntities(any(), any(), any())).thenReturn(Promise.of(2L));
 
             runPromise(() -> registry.register(fraudDetectorAgent, fraudDetectorConfig));
             runPromise(() -> registry.register(anomalyDetectorAgent, anomalyDetectorConfig));
@@ -645,12 +646,14 @@ class DataCloudAgentRegistryComprehensiveTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     private void stubCreateEntity(UUID uuid) {
+        when(mockEntity.getId()).thenReturn(uuid);
         when(dataCloud.createEntity(any(), any(), any()))
                 .thenReturn(Promise.of(mockEntity));
     }
 
     private void stubAppendEvent() {
-        // Event publishing stub
+        lenient().when(dataCloud.appendEvent(any(), any(), any()))
+                .thenReturn(Promise.of(0L));
     }
 
     private void stubDeleteEntity() {

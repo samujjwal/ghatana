@@ -62,4 +62,17 @@ public enum ActionClass {
     public boolean isIrreversible() {
         return this == WRITE_IRREVERSIBLE || this == CALL_EXTERNAL || this == POLICY_CHANGE;
     }
+
+    /**
+     * Returns {@code true} if this action class is considered low-risk and may
+     * bypass certain approval or policy-evaluation gates.
+     *
+     * <p>Low-risk actions are {@link #READ} and {@link #DRAFT} — they produce
+     * no durable side effects and do not require human-in-the-loop approval by default.
+     *
+     * @return whether this action class is low-risk
+     */
+    public boolean isLowRisk() {
+        return this == READ || this == DRAFT;
+    }
 }

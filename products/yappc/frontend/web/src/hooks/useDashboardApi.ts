@@ -7,6 +7,7 @@
  * - TanStack Query integration
  * - Loading/error state management
  * - Caching and refetching
+ * - Runtime schema validation with Zod
  *
  * @doc.type hook
  * @doc.purpose React hooks for Dashboard API access
@@ -67,6 +68,7 @@ import {
   UpdateSettingsRequest,
   ApiResponse,
 } from '../dashboard';
+import { ValidationMiddleware } from '../lib/validation';
 
 /**
  * Default API configuration

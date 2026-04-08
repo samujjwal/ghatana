@@ -268,10 +268,10 @@ export class AIServiceClient {
     }
 
     try {
-      this.logRequest('POST', '/scores/compute', request);
+      this.logRequest('POST', '/risk/compute', request);
 
       const response = await this.withRetry(() =>
-        this.httpClient.post<RiskScoringResponse>('/scores/compute', request)
+        this.httpClient.post<RiskScoringResponse>('/risk/compute', request)
       );
 
       const typedResponse = response as unknown as { data: RiskScoringResponse };
@@ -279,6 +279,70 @@ export class AIServiceClient {
       return typedResponse.data;
     } catch (error) {
       console.error('Risk scoring failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate text using LLM
+   */
+  async generate(request: {
+    prompt: string;
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+    stopSequences?: string[];
+    model?: string;
+  }): Promise<{
+    text: string;
+    model: string;
+    tokenCount: number;
+    tokenProbs?: number[];
+    finishReason?: string;
+  }> {
+    const endpoint = 'generate';
+    if (this.mode === 'mock') {
+      const mock = this.mockResponses.get(endpoint);
+      if (mock) {
+        return mock as { text: string; model: string; tokenCount: number };
+      }
+      return {
+        text: `Mock response for: ${request.prompt.slice(0, 50)}...`,
+        model: request.model || 'gpt-4-mock',
+        tokenCount: Math.floor(request.prompt.length / 4),
+        tokenProbs: [0.9, 0.85, 0.88],
+        finishReason: 'stop',
+      };
+    }
+
+    try {
+      this.logRequest('POST', '/llm/generate', request);
+
+      const response = await this.withRetry(() =>
+        this.httpClient.post<{
+          text: string;
+          model: string;
+          tokenCount: number;
+          tokenProbs?: number[];
+          finishReason?: string;
+        }>('/llm/generate', request)
+      );
+
+      const typedResponse = response as unknown as {
+        data: {
+          text: string;
+          model: string;
+          tokenCount: number;
+          tokenProbs?: number[];
+          finishReason?: string;
+        };
+      };
+      this.logResponse('generate', typedResponse.data);
+      return typedResponse.data;
+    } catch (error) {
+      console.error('LLM generation failed:', error);
       throw error;
     }
   }

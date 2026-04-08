@@ -31,6 +31,8 @@ import { AISuggestionsApiClient } from './AISuggestionsApiClient';
 import { ArchitectureApiClient } from './ArchitectureApiClient';
 import { WorkspaceApiClient } from './WorkspaceApiClient';
 import { WorkflowAgentApiClient } from './WorkflowAgentApiClient';
+import { TaskApiClient } from './TaskApiClient';
+import { RiskApiClient } from './RiskApiClient';
 
 // Re-export API Clients
 export {
@@ -42,6 +44,8 @@ export {
   ArchitectureApiClient,
   WorkspaceApiClient,
   WorkflowAgentApiClient,
+  TaskApiClient,
+  RiskApiClient,
 };
 
 // Re-export Workflow Agent types
@@ -159,6 +163,33 @@ export type {
   ListMembersResponse,
 } from './types';
 
+// Task types from TaskApiClient
+export type {
+  TaskStatus,
+  TaskPriority,
+  TaskType,
+  PriorityTask,
+  ListPriorityTasksRequest,
+  UpdateTaskStatusRequest,
+  BulkTaskActionRequest,
+  BulkTaskActionResult,
+} from './TaskApiClient';
+
+// Risk types from RiskApiClient
+export type {
+  RiskSeverity,
+  RiskCategory,
+  RiskStatus,
+  RiskAlert,
+  DecisionQueueItem,
+  ListRiskAlertsRequest,
+  CreateRiskAlertRequest,
+  UpdateRiskStatusRequest,
+  EscalateRiskRequest,
+  ListDecisionQueueRequest,
+  ProcessDecisionRequest,
+} from './RiskApiClient';
+
 /**
  * Create all dashboard API clients with shared configuration
  */
@@ -174,6 +205,8 @@ export function createDashboardClients(
     architecture: new ArchitectureApiClient(config),
     workspace: new WorkspaceApiClient(config),
     workflowAgent: new WorkflowAgentApiClient(config),
+    task: new TaskApiClient(config),
+    risk: new RiskApiClient(config),
   };
 }
 

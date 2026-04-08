@@ -1,7 +1,7 @@
-// @ts-nocheck
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block } from 'lucide-react';
-import { Typography, Button, Chip, Box, Surface as Paper, InteractiveList as List, ListItemButton, ListItemIcon, ListItemText, Stack } from '@ghatana/design-system';
+import { ChevronRight, Code as CodeIcon, ClipboardList as AssignmentIcon, CloudUpload as DeployIcon, ArrowRight as ArrowForwardIcon, CheckCircle as CheckCircleOutline, Clock as AccessTime, Ban as Block, Check, X, Loader2, AlertCircle } from 'lucide-react';
+import { Typography, Button, Chip, Box, Surface as Paper } from '@ghatana/design-system';
 
 /**
  * Priority Task interface 
@@ -16,100 +16,306 @@ export interface PriorityTask {
     persona: string;
     dueDate?: string;
     isBlocked?: boolean;
+    status?: 'pending' | 'in-progress' | 'blocked' | 'completed' | 'skipped';
+}
+
+/**
+ * Status indicator component
+ */
+function StatusIndicator({ status }: { status?: 'pending' | 'in-progress' | 'blocked' | 'completed' | 'skipped' }) {
+    if (!status || status === 'pending') {
+        return null;
+    }
+
+    const statusConfig = {
+        'in-progress': {
+            icon: <Loader2 className="w-4 h-4 animate-spin" />,
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-100',
+            label: 'In Progress'
+        },
+        'completed': {
+            icon: <Check className="w-4 h-4" />,
+            color: 'text-green-600',
+            bgColor: 'bg-green-100',
+            label: 'Completed'
+        },
+        'blocked': {
+            icon: <AlertCircle className="w-4 h-4" />,
+            color: 'text-red-600',
+            bgColor: 'bg-red-100',
+            label: 'Blocked'
+        },
+        'skipped': {
+            icon: <X className="w-4 h-4" />,
+            color: 'text-gray-600',
+            bgColor: 'bg-gray-100',
+            label: 'Skipped'
+        }
+    };
+
+    const config = statusConfig[status];
+
+    return (
+        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${config.bgColor} ${config.color} text-xs font-medium`}>
+            {config.icon}
+            <span>{config.label}</span>
+        </div>
+    );
 }
 
 interface PriorityTasksListProps {
     tasks: PriorityTask[];
     onTaskClick: (task: PriorityTask) => void;
     onViewAll: () => void;
+    onApprove?: (taskId: string) => Promise<void>;
+    onReject?: (taskId: string) => Promise<void>;
+    onBulkApprove?: (taskIds: string[]) => Promise<void>;
+    onBulkReject?: (taskIds: string[]) => Promise<void>;
 }
 
 /**
  * PriorityTasksList component
  * 
- * Displays a list of actionable high-priority tasks.
+ * Displays a list of actionable high-priority tasks with inline approve/reject actions.
  */
-export function PriorityTasksList({ tasks, onTaskClick, onViewAll }: PriorityTasksListProps) {
+export function PriorityTasksList({ 
+    tasks, 
+    onTaskClick, 
+    onViewAll, 
+    onApprove, 
+    onReject, 
+    onBulkApprove, 
+    onBulkReject 
+}: PriorityTasksListProps) {
+    const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+    const [processingTasks, setProcessingTasks] = useState<Set<string>>(new Set());
+
+    const hasActions = Boolean(onApprove || onReject);
+    const isBulkActionEnabled = selectedTasks.size > 0 && (onBulkApprove || onBulkReject);
+
+    const toggleSelection = (taskId: string, e: React.MouseEvent | React.ChangeEvent<HTMLInputElement>) => {
+        e.stopPropagation();
+        setSelectedTasks(prev => {
+            const next = new Set(prev);
+            if (next.has(taskId)) {
+                next.delete(taskId);
+            } else {
+                next.add(taskId);
+            }
+            return next;
+        });
+    };
+
+    const handleApprove = async (taskId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!onApprove || processingTasks.has(taskId)) return;
+        
+        setProcessingTasks(prev => new Set(prev).add(taskId));
+        try {
+            await onApprove(taskId);
+        } finally {
+            setProcessingTasks(prev => {
+                const next = new Set(prev);
+                next.delete(taskId);
+                return next;
+            });
+        }
+    };
+
+    const handleReject = async (taskId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!onReject || processingTasks.has(taskId)) return;
+        
+        setProcessingTasks(prev => new Set(prev).add(taskId));
+        try {
+            await onReject(taskId);
+        } finally {
+            setProcessingTasks(prev => {
+                const next = new Set(prev);
+                next.delete(taskId);
+                return next;
+            });
+        }
+    };
+
+    const handleBulkApprove = async () => {
+        if (!onBulkApprove) return;
+        const taskIds = Array.from(selectedTasks);
+        setProcessingTasks(new Set(taskIds));
+        try {
+            await onBulkApprove(taskIds);
+            setSelectedTasks(new Set());
+        } finally {
+            setProcessingTasks(new Set());
+        }
+    };
+
+    const handleBulkReject = async () => {
+        if (!onBulkReject) return;
+        const taskIds = Array.from(selectedTasks);
+        setProcessingTasks(new Set(taskIds));
+        try {
+            await onBulkReject(taskIds);
+            setSelectedTasks(new Set());
+        } finally {
+            setProcessingTasks(new Set());
+        }
+    };
+
+    const selectAll = () => {
+        setSelectedTasks(new Set(tasks.map(t => t.id)));
+    };
+
+    const clearSelection = () => {
+        setSelectedTasks(new Set());
+    };
+
     return (
         <div className="mb-10">
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography as="h6" fontWeight="bold" className="flex items-center gap-2">
-                    My Priority Tasks
-                    <Chip label={tasks.length} size="sm" tone="primary" />
-                </Typography>
-                <Button endIcon={<ArrowForwardIcon />} size="sm" onClick={onViewAll}>View all</Button>
-            </Box>
-            <Paper variant="outlined" className="rounded-lg overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                    <Typography className="flex items-center gap-2 font-bold text-lg">
+                        My Priority Tasks
+                        <Chip label={tasks.length} size="sm" />
+                    </Typography>
+                    {hasActions && (
+                        <div className="flex gap-1">
+                            <Button size="sm" variant="text" onClick={selectAll} disabled={selectedTasks.size === tasks.length}>
+                                Select All
+                            </Button>
+                            <Button size="sm" variant="text" onClick={clearSelection} disabled={selectedTasks.size === 0}>
+                                Clear
+                            </Button>
+                        </div>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    {isBulkActionEnabled && (
+                        <div className="flex gap-1">
+                            {onBulkApprove && (
+                                <Button 
+                                    size="sm" 
+                                    onClick={handleBulkApprove}
+                                    disabled={processingTasks.size > 0}
+                                >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Approve ({selectedTasks.size})
+                                </Button>
+                            )}
+                            {onBulkReject && (
+                                <Button 
+                                    size="sm" 
+                                    onClick={handleBulkReject}
+                                    disabled={processingTasks.size > 0}
+                                >
+                                    <X className="w-4 h-4 mr-1" />
+                                    Reject ({selectedTasks.size})
+                                </Button>
+                            )}
+                        </div>
+                    )}
+                    <Button size="sm" endIcon={<ArrowForwardIcon />} onClick={onViewAll}>View all</Button>
+                </div>
+            </div>
+            <Paper className="rounded-lg overflow-hidden border">
                 {tasks.length === 0 ? (
-                    <Box className="p-8 text-center text-gray-500 dark:text-gray-400">
-                        <CheckCircleOutline className="mb-2 text-5xl opacity-[0.5]" />
-                        <Typography as="p">
+                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                        <CheckCircleOutline className="mb-2 w-20 h-20 opacity-50 mx-auto" />
+                        <Typography>
                             No priority tasks. You're all caught up!
                         </Typography>
-                    </Box>
+                    </div>
                 ) : (
                     <>
-                        <List disablePadding>
-                            {tasks.map((task, index) => (
-                                <div key={task.id}>
-                                    <ListItemButton onClick={() => onTaskClick(task)} className="py-4">
-                                        <ListItemIcon>
-                                            {task.type === 'Code' && <CodeIcon tone="primary" />}
-                                            {task.type === 'Design' && <AssignmentIcon tone="secondary" />}
-                                            {task.type === 'Deploy' && <DeployIcon tone="success" />}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={
-                                                <Typography as="p" className="text-lg font-medium" fontWeight="medium">
-                                                    {task.title}
-                                                </Typography>
-                                            }
-                                            secondaryTypographyProps={{ component: 'div' }}
-                                            secondary={
-                                                <Box className="mt-1">
-                                                    <Typography as="p" className="text-sm" color="text.secondary">
-                                                        {task.project}
-                                                    </Typography>
-                                                    <Stack direction="row" spacing={2} className="mt-1">
-                                                        <Box
-                                                            component="span"
-                                                            style={{ color: task.priority === 'Urgent' ? 'error.main' :
-                                                                    task.priority === 'High' ? 'warning.main' : 'text.secondary' }} >
-                                                            {task.priority}
-                                                        </Box>
-                                                        {task.dueDate && (
-                                                            <Stack direction="row" spacing={0.5} alignItems="center" className="text-gray-500 dark:text-gray-400">
-                                                                <AccessTime className="text-sm" />
-                                                                <Typography as="span" className="text-xs text-gray-500">{new Date(task.dueDate).toLocaleDateString()}</Typography>
-                                                            </Stack>
-                                                        )}
-                                                        {task.isBlocked && (
-                                                            <Stack direction="row" spacing={0.5} alignItems="center" className="text-red-600">
-                                                                <Block className="text-sm" />
-                                                                <Typography as="span" className="text-xs text-gray-500" fontWeight="bold">Blocked</Typography>
-                                                            </Stack>
-                                                        )}
-                                                    </Stack>
-                                                </Box>
-                                            }
-                                        />
-                                        <Stack direction="row" spacing={1} alignItems="center">
+                        <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {tasks.map((task) => (
+                                <div 
+                                    key={task.id}
+                                    onClick={() => onTaskClick(task)}
+                                    className={`py-4 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors ${selectedTasks.has(task.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        {hasActions && (
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTasks.has(task.id)}
+                                                onChange={(e) => toggleSelection(task.id, e)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                        )}
+                                        <div className="flex-shrink-0">
+                                            {task.type === 'Code' && <CodeIcon className="w-5 h-5 text-blue-600" />}
+                                            {task.type === 'Design' && <AssignmentIcon className="w-5 h-5 text-purple-600" />}
+                                            {task.type === 'Deploy' && <DeployIcon className="w-5 h-5 text-green-600" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <Typography className="text-lg font-medium truncate">
+                                                {task.title}
+                                            </Typography>
+                                            <Typography className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                {task.project}
+                                            </Typography>
+                                            <div className="flex items-center gap-4 mt-1">
+                                                <span className={`text-sm font-medium ${
+                                                    task.priority === 'Urgent' ? 'text-red-600' :
+                                                    task.priority === 'High' ? 'text-orange-600' :
+                                                    'text-gray-600'
+                                                }`}>
+                                                    {task.priority}
+                                                </span>
+                                                {task.dueDate && (
+                                                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                                                        <AccessTime className="w-4 h-4" />
+                                                        {new Date(task.dueDate).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                                {task.isBlocked && (
+                                                    <span className="flex items-center gap-1 text-sm text-red-600 font-medium">
+                                                        <Block className="w-4 h-4" />
+                                                        Blocked
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <StatusIndicator status={task.status} />
+                                            {hasActions && task.status === 'pending' && (
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={(e) => handleApprove(task.id, e)}
+                                                        disabled={processingTasks.has(task.id)}
+                                                        className="p-2 rounded-md bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        title="Approve task"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleReject(task.id, e)}
+                                                        disabled={processingTasks.has(task.id)}
+                                                        className="p-2 rounded-md bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                        title="Reject task"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            )}
                                             <Chip label={task.type} size="sm" variant="outlined" />
                                             <Chip
                                                 label={task.persona}
                                                 size="sm"
-                                                className="h-[20px] text-[0.7rem] bg-gray-100 dark:bg-gray-800"
+                                                className="h-5 text-xs bg-gray-100 dark:bg-gray-800"
                                             />
-                                            <ChevronRight color="action" />
-                                        </Stack>
-                                    </ListItemButton>
-                                    {index < tasks.length - 1 && <Box className="border-gray-200 dark:border-gray-700 border-b" />}
+                                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
-                        </List>
-                        <Box className="p-2 text-center bg-gray-100 dark:bg-gray-800">
+                        </div>
+                        <div className="p-2 text-center bg-gray-100 dark:bg-gray-800">
                             <Button size="sm" endIcon={<ArrowForwardIcon />} onClick={onViewAll}>Go to Inbox</Button>
-                        </Box>
+                        </div>
                     </>
                 )}
             </Paper>

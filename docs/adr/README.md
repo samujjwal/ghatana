@@ -7,7 +7,7 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 
 | ADR | Title | Status | Phase |
 |-----|-------|--------|-------|
-| [ADR-001](ADR-001-typed-agent-framework.md) | Six-Type Agent Framework with Generic TypedAgent Interface | Accepted | 2 |
+| [ADR-001](ADR-001-typed-agent-framework.md) | Nine-Type Agent Framework with Generic TypedAgent Interface | Accepted | 2 |
 | [ADR-002](ADR-002-dag-pipeline-execution.md) | DAG-Based Pipeline Execution with Topological Sort | Accepted | 1 |
 | [ADR-003](ADR-003-four-tier-event-cloud.md) | Four-Tier Event-Cloud Storage with Automatic Lifecycle | Accepted | 1 |
 | [ADR-004](ADR-004-activej-framework.md) | ActiveJ as Core Async and DI Framework | Accepted | 0 |
@@ -20,6 +20,7 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 | [ADR-011](ADR-011-yappc-modular-refactoring.md) | Yappc Modular Refactoring | Accepted | 5 |
 | [ADR-012](ADR-012-keep-aep-gateway.md) | Keep AEP Gateway as First-Class Service | Accepted | 3 |
 | [ADR-017](ADR-017-aep-runtime-hardening.md) | AEP Runtime Hardening and Extension Seams | Accepted | 6 |
+| [ADR-020](ADR-020-agent-system-five-layer-architecture.md) | Agent System Five-Layer Architecture | Accepted | 8 |
 
 ## ADR Format
 

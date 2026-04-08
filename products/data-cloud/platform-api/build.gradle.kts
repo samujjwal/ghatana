@@ -32,6 +32,7 @@ dependencies {
     api(project(":products:data-cloud:platform-config"))
     api(project(":products:data-cloud:platform-analytics"))
     api(project(":platform:java:audit"))
+    api(project(":platform:java:agent-core"))
     api(project(":platform:contracts"))
 
     implementation(project(":platform:java:http"))

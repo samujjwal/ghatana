@@ -17,6 +17,12 @@ dependencies {
     // Platform audio-video library — media error types (ProcessingError hierarchy)
     api(project(":platform:java:audio-video"))
 
+    // Tool handler SPI — ToolHandler, ToolExecutionEnvelope, ToolExecutionResult
+    api(project(":platform:java:tool-runtime"))
+
+    // Agent framework — ToolContract, ActionClass
+    api(project(":platform:java:agent-core"))
+
     // gRPC interceptor API
     api(libs.grpc.stub)
     api(libs.grpc.protobuf)

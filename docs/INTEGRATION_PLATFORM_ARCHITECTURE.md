@@ -336,7 +336,7 @@ Existing hooks to reuse:
 - `scripts/check-architecture-compliance.js`
 - `eslint-rules/ghatana-architecture-rules.js`
 - `gradle/platform-boundary-check.gradle`
-- [Shared Library Registry](./SHARED_LIBRARY_REGISTRY.md)
+- [Root module registry in settings.gradle.kts](../settings.gradle.kts)
 - [Module Admission Checklist](./MODULE_ADMISSION_CHECKLIST.md)
 
 New enforcement to add incrementally:

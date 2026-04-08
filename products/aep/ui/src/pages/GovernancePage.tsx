@@ -20,6 +20,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { listPolicies, type LearnedPolicy, type PolicyStatus } from '@/api/aep.api';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import { ComingSoonSection } from '@/components/core/ComingSoonPanel';
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -140,26 +142,6 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
 
 // ─── Coming-soon section ──────────────────────────────────────────────
 
-function ComingSoonSection({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="p-6 flex flex-col items-center justify-center py-20 gap-3 text-center">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-gray-300 dark:text-gray-700"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.2}
-        aria-hidden
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-      <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">{title}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-600 max-w-sm">{description}</p>
-    </div>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────
 
 /**
@@ -203,24 +185,51 @@ export function GovernancePage() {
       {/* Section content */}
       <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {section === 'policies' && <PoliciesPanel tenantId={tenantId} />}
-        {section === 'compliance' && (
+        {section === 'compliance' && isFeatureEnabled('COMPLIANCE_REPORTS') ? (
+          <div className="p-6">
+            {/* TODO: Implement CompliancePanel */}
+            <ComingSoonSection
+              title="Compliance reports"
+              description="GDPR access/erasure/portability operations, CCPA opt-out records, and SOC2 evidence packages will appear here once the compliance service API is wired to this view."
+            />
+          </div>
+        ) : section === 'compliance' ? (
           <ComingSoonSection
             title="Compliance reports"
-            description="GDPR access/erasure/portability operations, CCPA opt-out records, and SOC2 evidence packages will appear here once the compliance service API is wired to this view."
+            description="Compliance reporting is an enterprise feature. Contact your administrator to enable."
+            isEnterprise
           />
-        )}
-        {section === 'tenancy' && (
+        ) : null}
+        {section === 'tenancy' && isFeatureEnabled('TENANT_MANAGEMENT') ? (
+          <div className="p-6">
+            {/* TODO: Implement TenantManagementPanel */}
+            <ComingSoonSection
+              title="Tenant management"
+              description="Per-tenant isolation settings, capability grants, rate limits, and agent-type restrictions will be configurable here in a future release."
+            />
+          </div>
+        ) : section === 'tenancy' ? (
           <ComingSoonSection
             title="Tenant management"
-            description="Per-tenant isolation settings, capability grants, rate limits, and agent-type restrictions will be configurable here in a future release."
+            description="Tenant management is an enterprise feature. Contact your administrator to enable."
+            isEnterprise
           />
-        )}
-        {section === 'audit' && (
+        ) : null}
+        {section === 'audit' && isFeatureEnabled('AUDIT_LOG') ? (
+          <div className="p-6">
+            {/* TODO: Implement AuditLogPanel */}
+            <ComingSoonSection
+              title="Audit log"
+              description="A chronological, tamper-evident record of all control-plane events — policy promotions, agent registrations, compliance operations, and configuration changes — will stream here via the run ledger once Phase 6 is complete."
+            />
+          </div>
+        ) : section === 'audit' ? (
           <ComingSoonSection
             title="Audit log"
-            description="A chronological, tamper-evident record of all control-plane events — policy promotions, agent registrations, compliance operations, and configuration changes — will stream here via the run ledger once Phase 6 is complete."
+            description="Audit log viewing is an enterprise feature. Contact your administrator to enable."
+            isEnterprise
           />
-        )}
+        ) : null}
       </div>
     </div>
   );

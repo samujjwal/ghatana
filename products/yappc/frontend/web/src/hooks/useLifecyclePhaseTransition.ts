@@ -34,13 +34,40 @@ export function useLifecyclePhaseTransition() {
 
             return response.json();
         },
-        onSuccess: (data) => {
-            // Invalidate project query to refetch
+        onMutate: async (newPhase) => {
+            if (!projectId) return;
+
+            await queryClient.cancelQueries({ queryKey: ['project', projectId] });
+            await queryClient.cancelQueries({ queryKey: ['projects'] });
+
+            const previousProject = queryClient.getQueryData(['project', projectId]);
+            const previousProjects = queryClient.getQueryData(['projects']);
+
+            // Optimistically update the project phase
+            queryClient.setQueryData(['project', projectId], (old: unknown) => {
+                if (typeof old === 'object' && old !== null) {
+                    return { ...(old as Record<string, unknown>), lifecyclePhase: newPhase };
+                }
+                return old;
+            });
+
+            return { previousProject, previousProjects };
+        },
+        onError: (err, _, context) => {
+            // Rollback on error
+            if (context?.previousProject) {
+                queryClient.setQueryData(['project', projectId], context.previousProject);
+            }
+            if (context?.previousProjects) {
+                queryClient.setQueryData(['projects'], context.previousProjects);
+            }
+        },
+        onSettled: () => {
+            // Refetch to ensure server state
             queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-
-            // Invalidate projects list
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-
+        },
+        onSuccess: (data) => {
             console.log('[LifecycleTransition] Phase updated successfully:', data);
         },
     });

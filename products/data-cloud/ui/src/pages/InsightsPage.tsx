@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { brainService } from '../api/brain.service';
 import { costService } from '../api/cost.service';
@@ -786,6 +787,23 @@ function AiSuggestionIcon({ type }: { type: AnalyticsAiSuggestion['type'] }) {
 
 export function InsightsPage() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const navigate = useNavigate();
+
+  /**
+   * Handle AI suggestion action with deep-link routing
+   */
+  const handleSuggestionAction = useCallback((suggestion: AnalyticsAiSuggestion) => {
+    if (suggestion.type === 'optimization' && suggestion.reasons?.includes('query')) {
+      navigate('/query', { state: { query: suggestion.description } });
+    } else if (suggestion.type === 'anomaly') {
+      navigate('/data', { state: { view: 'quality', filter: suggestion.reasons?.[0] } });
+    } else if (suggestion.type === 'warning') {
+      navigate('/data', { state: { view: 'quality' } });
+    } else {
+      // Default: navigate to data page with search
+      navigate('/data', { state: { search: suggestion.description } });
+    }
+  }, [navigate]);
 
   // Fetch brain stats
   const { data: brainStats } = useQuery({
@@ -846,7 +864,7 @@ export function InsightsPage() {
               description={s.description}
               confidence={s.confidence > 0 ? s.confidence : undefined}
               actionLabel={s.fallback ? undefined : 'View'}
-              onAction={s.fallback ? undefined : () => { /* TODO: deep-link to relevant view */ }}
+              onAction={s.fallback ? undefined : () => handleSuggestionAction(s)}
             />
           ))}
           {(aiSuggestions ?? []).length === 0 && (

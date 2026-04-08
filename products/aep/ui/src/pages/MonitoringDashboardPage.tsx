@@ -12,7 +12,7 @@
  * @doc.layer frontend
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import {
   BarChart,
@@ -31,6 +31,11 @@ import { tenantIdAtom } from '@/stores/tenant.store';
 import { useLivePipelineRuns, useCancelRun } from '@/hooks/usePipelineRuns';
 import { StatCard } from '@/components/monitoring/StatCard';
 import { RunTable } from '@/components/monitoring/RunTable';
+import { AiSuggestionsPanel } from '@/components/monitoring/AiSuggestionsPanel';
+import { useSelection } from '@/hooks/useSelection';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import { useConsent } from '@/components/privacy/ConsentManager';
+import { useSpeechSynthesis } from '@audio-video/ui';
 
 // ─── Chart ───────────────────────────────────────────────────────────
 
@@ -62,14 +67,45 @@ function SuccessRateChart({ metrics }: { metrics: PipelineMetrics[] }) {
 
 export function MonitoringDashboardPage() {
   const tenantId = useAtomValue(tenantIdAtom);
+  const qc = useQueryClient();
 
   const { data: runs = [], isLoading: runsLoading } = useLivePipelineRuns(30);
   const cancelRun = useCancelRun();
+  const { speak } = useSpeechSynthesis();
+  const { consentGranted: voiceConsent } = useConsent('voice_processing');
 
   const { data: metrics = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['aep', 'metrics', tenantId],
     queryFn: () => getPipelineMetrics(tenantId),
     refetchInterval: 15_000,
+  });
+
+  // Bulk selection
+  const {
+    selectedIds,
+    selectedItems,
+    toggle,
+    toggleAll,
+    isAllSelected,
+    isIndeterminate,
+    deselectAll,
+  } = useSelection({
+    items: runs,
+    keyFn: (run) => run.id,
+  });
+
+  // Bulk cancel mutation
+  const bulkCancelMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      return Promise.all(ids.map((id) => cancelRun.mutateAsync(id)));
+    },
+    onSuccess: () => {
+      deselectAll();
+      qc.invalidateQueries({ queryKey: ['aep', 'runs', tenantId] });
+      if (voiceConsent) {
+        speak(`Cancelled ${selectedIds.size} pipeline runs`);
+      }
+    },
   });
 
   // KPIs derived from runs
@@ -135,9 +171,53 @@ export function MonitoringDashboardPage() {
 
         {/* Runs tab */}
         {tab === 'runs' && (
-          runsLoading
-            ? <p className="text-gray-400 text-center py-8">Loading runs…</p>
-            : <RunTable runs={runs} onCancel={(id) => cancelRun.mutate(id)} />
+          <>
+            {/* Bulk action toolbar */}
+            {selectedIds.size > 0 && isFeatureEnabled('BULK_OPERATIONS') && (
+              <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-950 border border-indigo-200 dark:border-indigo-800 rounded-lg px-4 py-2 mb-4">
+                <span className="text-sm text-indigo-900 dark:text-indigo-100">
+                  {selectedIds.size} run{selectedIds.size !== 1 ? 's' : ''} selected
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      const runningIds = selectedItems.filter(r => r.status === 'RUNNING').map(r => r.id);
+                      if (runningIds.length > 0) {
+                        bulkCancelMut.mutate(runningIds);
+                      }
+                    }}
+                    disabled={bulkCancelMut.isPending}
+                    className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Cancel Selected
+                  </button>
+                  <button
+                    onClick={deselectAll}
+                    className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded"
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* AI suggestions panel */}
+            <AiSuggestionsPanel tenantId={tenantId} className="mb-4" />
+
+            {runsLoading ? (
+              <p className="text-gray-400 text-center py-8">Loading runs…</p>
+            ) : (
+              <RunTable
+                runs={runs}
+                onCancel={(id) => cancelRun.mutate(id)}
+                selectedIds={selectedIds}
+                onSelectToggle={toggle}
+                onSelectAll={toggleAll}
+                isAllSelected={isAllSelected}
+                isIndeterminate={isIndeterminate}
+              />
+            )}
+          </>
         )}
 
         {/* Metrics tab */}

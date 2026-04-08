@@ -1,0 +1,75 @@
+# Audio-Video Capabilities — AEP Catalog Registration
+#
+# Registers AV tool capabilities in the AEP tool catalog.
+# Each entry maps a capability ID to its ToolContract descriptor (in products/audio-video/libs/common),
+# the handler class, and the RemoteToolHandler endpoint configuration.
+#
+# Tools are available to all agents with the "av-tools-access" policy tag.
+# Endpoint overrides via environment variables (see remoteEndpoint fields).
+
+schemaVersion: "1.0"
+source:
+  product: "audio-video"
+  registry: "products/audio-video/libs/common/src/main/resources/capabilities/audio-video-common.yaml"
+
+tools:
+
+  - toolId: "av.speech-to-text"
+    name: "Speech-to-Text"
+    category: "audio-video.speech"
+    version: "1.0.0"
+    contractPath: "capabilities/speech-to-text.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.SpeechToTextToolHandler"
+    transport: REMOTE
+    remoteEndpoint: "${STT_SERVICE_ENDPOINT:http://stt-service:50051}"
+    policyTags: [audio-processing, external-call, pii-risk, av-tools-access]
+    timeout: 30s
+    retryable: true
+    accessPolicy:
+      requiredRoles: []
+      blockedActionClasses: []
+
+  - toolId: "av.text-to-speech"
+    name: "Text-to-Speech"
+    category: "audio-video.speech"
+    version: "1.0.0"
+    contractPath: "capabilities/text-to-speech.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.TextToSpeechToolHandler"
+    transport: REMOTE
+    remoteEndpoint: "${TTS_SERVICE_ENDPOINT:http://tts-service:50052}"
+    policyTags: [audio-processing, external-call, av-tools-access]
+    timeout: 15s
+    retryable: true
+    accessPolicy:
+      requiredRoles: []
+      blockedActionClasses: []
+
+  - toolId: "av.vision-analysis"
+    name: "Vision Analysis"
+    category: "audio-video.vision"
+    version: "1.0.0"
+    contractPath: "capabilities/vision-analysis.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.VisionAnalysisToolHandler"
+    transport: REMOTE
+    remoteEndpoint: "${VISION_SERVICE_ENDPOINT:http://vision-service:50053}"
+    policyTags: [vision-processing, external-call, pii-risk, biometric-risk, av-tools-access]
+    timeout: 20s
+    retryable: true
+    accessPolicy:
+      requiredRoles: []
+      blockedActionClasses: []
+
+  - toolId: "av.multimodal-inference"
+    name: "Multimodal Inference"
+    category: "audio-video.multimodal"
+    version: "1.0.0"
+    contractPath: "capabilities/multimodal-inference.yaml"
+    handlerClass: "com.ghatana.audio.video.tools.MultimodalInferenceToolHandler"
+    transport: REMOTE
+    remoteEndpoint: "${MULTIMODAL_SERVICE_ENDPOINT:http://multimodal-service:50055}"
+    policyTags: [multimodal-processing, external-call, pii-risk, biometric-risk, audio-processing, vision-processing, av-tools-access]
+    timeout: 60s
+    retryable: false
+    accessPolicy:
+      requiredRoles: []
+      blockedActionClasses: []

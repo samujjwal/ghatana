@@ -871,11 +871,11 @@ learningModel:
 
 - [Master Index](./README.md) - Documentation navigation
 - [Agent Implementation Guide](./Agent_Implementation_Guide.md) - Building agents
-- [Unified Self-Learning Agents Spec](./Unified_Self_Learning_Agents_Spec_Final.md) - Theory
+- [Unified Self-Learning Agents Spec](./Unified_Self_Learning_Agents_Spec_Merged.md) - Theory
 - [agent-spec.md](./agent-spec.md) - YAML contract reference
 - [AEP World-Class Report](../../products/aep/docs/AEP_WORLD_CLASS_AGENTIC_EVENT_PROCESSING_REPORT_2026-03-23.md)
 - [AEP Operational Runbook](../../products/aep/docs/OPERATIONAL_RUNBOOK.md)
 
 ---
 
-**Next:** Review [Unified_Self_Learning_Agents_Spec_Final.md](./Unified_Self_Learning_Agents_Spec_Final.md) for theoretical foundations.
+**Next:** Review [Unified_Self_Learning_Agents_Spec_Merged.md](./Unified_Self_Learning_Agents_Spec_Merged.md) for theoretical foundations.

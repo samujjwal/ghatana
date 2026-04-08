@@ -1,5 +1,6 @@
 package com.ghatana.orchestrator.core;
 
+import com.ghatana.agent.planning.PlanGraph;
 import com.ghatana.orchestrator.cache.PipelineCache;
 import com.ghatana.orchestrator.client.AgentRegistryClient;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
@@ -7,13 +8,18 @@ import com.ghatana.orchestrator.config.OrchestratorConfig;
 import com.ghatana.orchestrator.loader.SpecFormatLoader;
 import com.ghatana.orchestrator.models.OrchestratorPipelineEntity;
 import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.workflow.planning.PlanCompiler;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +29,10 @@ import org.slf4j.LoggerFactory;
  * <p>Manages the full pipeline lifecycle: loading, caching, deployment, and health
  * monitoring. Delegates to {@code PipelineRegistryClient} for pipeline retrieval and
  * {@code AgentRegistryClient} for agent availability checks.
+ *
+ * <p>When a {@link PlanCompiler} is provided, planning agents route through
+ * {@link #compilePlan(String, String, String)} before pipeline execution, ensuring
+ * all planned actions are validated and governance-checked before they run.
  *
  * @doc.type class
  * @doc.purpose Core pipeline lifecycle manager — load, cache, deploy, and monitor pipelines
@@ -40,9 +50,15 @@ public class Orchestrator {
     private final MetricsCollector metrics;
     private final SpecFormatLoader specFormatLoader;
 
+    @Nullable
+    private final PlanCompiler planCompiler;
+
     private final AtomicInteger currentRefreshes = new AtomicInteger(0);
     private volatile boolean isStarted = false;
 
+    /**
+     * Creates an Orchestrator without planning support (backward-compatible constructor).
+     */
     public Orchestrator(
             PipelineCache pipelineCache,
             AgentRegistryClient agentRegistryClient,
@@ -50,12 +66,29 @@ public class Orchestrator {
             OrchestratorConfig config,
             MetricsCollector metrics,
             SpecFormatLoader specFormatLoader) {
-        this.pipelineCache = pipelineCache;
-        this.agentRegistryClient = agentRegistryClient;
-        this.pipelineRegistryClient = pipelineRegistryClient;
-        this.config = config;
-        this.metrics = metrics;
-        this.specFormatLoader = specFormatLoader;
+        this(pipelineCache, agentRegistryClient, pipelineRegistryClient, config, metrics, specFormatLoader, null);
+    }
+
+    /**
+     * Creates an Orchestrator with planning support via a {@link PlanCompiler}.
+     *
+     * @param planCompiler optional plan compiler for planning-agent pipelines; may be null
+     */
+    public Orchestrator(
+            @NotNull PipelineCache pipelineCache,
+            @NotNull AgentRegistryClient agentRegistryClient,
+            @NotNull PipelineRegistryClient pipelineRegistryClient,
+            @NotNull OrchestratorConfig config,
+            @NotNull MetricsCollector metrics,
+            @NotNull SpecFormatLoader specFormatLoader,
+            @Nullable PlanCompiler planCompiler) {
+        this.pipelineCache = Objects.requireNonNull(pipelineCache, "pipelineCache");
+        this.agentRegistryClient = Objects.requireNonNull(agentRegistryClient, "agentRegistryClient");
+        this.pipelineRegistryClient = Objects.requireNonNull(pipelineRegistryClient, "pipelineRegistryClient");
+        this.config = Objects.requireNonNull(config, "config");
+        this.metrics = Objects.requireNonNull(metrics, "metrics");
+        this.specFormatLoader = Objects.requireNonNull(specFormatLoader, "specFormatLoader");
+        this.planCompiler = planCompiler;
     }
 
     /**
@@ -116,6 +149,37 @@ public class Orchestrator {
      */
     public Promise<Void> refreshPipelines() {
         return loadPipelinesFromRegistry().then(pipelines -> pipelineCache.putAll(pipelines));
+    }
+
+    /**
+     * Compiles a planning objective into a {@link PlanGraph} using the configured
+     * {@link PlanCompiler}.
+     *
+     * <p>Planning agents route their objectives through this method before pipeline
+     * execution, ensuring that all planned actions are validated and governance-checked.
+     *
+     * @param agentId   the planning agent ID; must not be blank
+     * @param tenantId  the owning tenant; must not be blank
+     * @param objective the objective or prompt to compile into a plan
+     * @return a promise of the compiled {@link PlanGraph}
+     * @throws IllegalStateException if no {@link PlanCompiler} has been configured
+     */
+    public Promise<PlanGraph> compilePlan(
+            @NotNull String agentId, @NotNull String tenantId, @NotNull String objective) {
+        if (planCompiler == null) {
+            return Promise.ofException(
+                    new IllegalStateException("PlanCompiler is not configured for this Orchestrator. "
+                            + "Inject one via the 7-arg constructor."));
+        }
+        log.debug("Compiling plan for agent {} (tenant {}) — objective: {}", agentId, tenantId, objective);
+        return planCompiler.compile(agentId, tenantId, objective, Map.of());
+    }
+
+    /**
+     * Returns {@code true} if this Orchestrator has a {@link PlanCompiler} configured.
+     */
+    public boolean hasPlanCompiler() {
+        return planCompiler != null;
     }
 
     /**

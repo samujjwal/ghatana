@@ -26,6 +26,24 @@
       "@ghatana/platform-utils": [
         "../../../platform/typescript/foundation/platform-utils/src/index.ts"
       ],
+      "@ghatana/privacy-ui": [
+        "../../../platform/typescript/privacy-ui/src"
+      ],
+      "@ghatana/security-ui": [
+        "../../../platform/typescript/security-ui/src"
+      ],
+      "@ghatana/voice-ui": [
+        "../../../platform/typescript/voice-ui/src"
+      ],
+      "@ghatana/nlp-ui": [
+        "../../../platform/typescript/nlp-ui/src"
+      ],
+      "@ghatana/audit-ui": [
+        "../../../platform/typescript/audit-ui/src"
+      ],
+      "@ghatana/selection-ui": [
+        "../../../platform/typescript/selection-ui/src"
+      ],
       "clsx": ["./node_modules/clsx/clsx.d.ts"],
       "tailwind-merge": ["./node_modules/tailwind-merge/dist/types.d.ts"]
     },

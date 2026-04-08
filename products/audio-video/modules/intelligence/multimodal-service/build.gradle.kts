@@ -21,6 +21,9 @@ dependencies {
     // Canonical platform media processing library
     implementation(project(":platform:java:audio-video"))
 
+    // Agent framework — AbstractTypedAgent, AgentResult, AgentContext
+    implementation(project(":platform:java:agent-core"))
+
     // Reuse the existing product video frame extraction utility instead of re-implementing it
     implementation(project(":products:audio-video:modules:vision:vision-service"))
 

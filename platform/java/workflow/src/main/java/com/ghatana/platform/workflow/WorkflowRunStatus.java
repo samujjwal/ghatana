@@ -49,5 +49,8 @@ public enum WorkflowRunStatus {
     COMPENSATING,
 
     /** Saga compensation completed successfully. */
-    COMPENSATED
+    COMPENSATED,
+
+    /** Paused at a Human-in-the-Loop checkpoint awaiting an explicit human decision. */
+    WAITING_FOR_HITL
 }

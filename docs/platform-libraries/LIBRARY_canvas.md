@@ -63,7 +63,7 @@ The `capabilities/canvas-core` `dist/` folder MUST NOT be committed. A `.gitigno
 ## Governance
 
 - **Breaking changes:** Require approval from both Data-Cloud and YAPPC leads
-- **New consumers:** Update this library index and SHARED_LIBRARY_REGISTRY.md
+- **New consumers:** Update this library index and ensure any required module-state changes are reflected in `settings.gradle.kts`
 - **API stability:** `./react`, `./types`, and `./hybrid` exports are stable. Others considered internal
 - **Versioning:** Semantic versioning; minor versions for new features, patch for fixes
 - **Build:** `pnpm --filter @ghatana/canvas build`

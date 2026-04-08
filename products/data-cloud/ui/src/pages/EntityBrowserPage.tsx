@@ -11,9 +11,15 @@
  * @doc.pattern Page
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../lib/api/client';
+import { useSelection } from '../hooks/useSelection';
+import { logActivity } from '../lib/api/user-activity';
+import { useSpeechSynthesis } from '@audio-video/ui';
+import { useConsent } from '../components/privacy/ConsentManager';
+import { RBACGuard } from '../components/security/RBACGuard';
+import { Check, Trash2, Mic } from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -268,12 +274,16 @@ function SchemaPanel({ schema }: { schema: EntitySchema }): React.ReactElement {
 function EntityRow({
   entity,
   selected,
+  selectedForBulk,
   onClick,
+  onToggleSelection,
   onDelete,
 }: {
   entity: Entity;
   selected: boolean;
+  selectedForBulk: boolean;
   onClick: () => void;
+  onToggleSelection: () => void;
   onDelete: () => void;
 }): React.ReactElement {
   const preview = Object.entries(entity.data)
@@ -286,6 +296,14 @@ function EntityRow({
       className={`border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selected ? 'bg-indigo-50' : ''}`}
       onClick={onClick}
     >
+      <td className="px-4 py-2.5 w-10">
+        <input
+          type="checkbox"
+          checked={selectedForBulk}
+          onChange={(e) => { e.stopPropagation(); onToggleSelection(); }}
+          aria-label={`Select entity ${entity.id}`}
+        />
+      </td>
       <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{entity.id}</td>
       <td className="px-4 py-2.5 text-sm text-gray-700 max-w-sm truncate">{preview || '—'}</td>
       <td className="px-4 py-2.5 text-xs text-gray-400">v{entity.version}</td>
@@ -368,6 +386,8 @@ export function EntityBrowserPage(): React.ReactElement {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [aiDismissed, setAiDismissed] = useState(false);
+  const { speak } = useSpeechSynthesis();
+  const { consentGranted: voiceConsent } = useConsent('voice_processing');
 
   const { data: namespaces = [], isLoading: nsLoading } = useQuery({
     queryKey: ['dc', 'entities', 'namespaces'],
@@ -417,6 +437,30 @@ export function EntityBrowserPage(): React.ReactElement {
     },
   });
 
+  // Bulk delete mutation with audit logging
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async ({ ns, ids }: { ns: string; ids: string[] }) => {
+      await logActivity({
+        action: 'bulk_delete',
+        target: ns,
+        type: 'delete',
+        resourceType: 'entity',
+      });
+      
+      // Delete all selected entities
+      await Promise.all(ids.map(id => deleteEntity(ns, id)));
+    },
+    onSuccess: (_, { ids }) => {
+      qc.invalidateQueries({ queryKey: ['dc', 'entities', namespace] });
+      clearSelection();
+      
+      // TTS feedback for bulk delete
+      if (voiceConsent) {
+        speak(`Deleted ${ids.length} entities`);
+      }
+    },
+  });
+
   const filteredEntities = searchQuery
     ? (entityList?.entities ?? []).filter(
         (e) =>
@@ -424,6 +468,20 @@ export function EntityBrowserPage(): React.ReactElement {
           JSON.stringify(e.data).toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : (entityList?.entities ?? []);
+
+  // Bulk selection state
+  const {
+    selectedIds,
+    selectedItems,
+    isAllSelected,
+    isIndeterminate,
+    toggleSelection,
+    toggleAll,
+    clearSelection,
+  } = useSelection({
+    items: filteredEntities,
+    keyFn: (e: Entity) => e.id,
+  });
 
   const handleNamespaceChange = (ns: string): void => {
     setNamespace(ns);
@@ -496,6 +554,46 @@ export function EntityBrowserPage(): React.ReactElement {
               </span>
             </div>
 
+            {/* Bulk Action Toolbar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50 border-b border-indigo-200">
+                <span className="text-sm font-medium text-indigo-700">
+                  {selectedIds.size} selected
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <RBACGuard
+                    permission="entities:delete"
+                    resource={namespace}
+                    action="delete"
+                    fallback={
+                      <button
+                        disabled
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 rounded cursor-not-allowed"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    }
+                  >
+                    <button
+                      onClick={() => bulkDeleteMutation.mutate({ ns: namespace, ids: Array.from(selectedIds) })}
+                      disabled={bulkDeleteMutation.isPending}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </RBACGuard>
+                  <button
+                    onClick={clearSelection}
+                    className="text-sm text-gray-600 hover:text-gray-800 px-2 py-1"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <div className="flex-1 overflow-auto">
               {!namespace && (
@@ -517,6 +615,17 @@ export function EntityBrowserPage(): React.ReactElement {
                 <table className="w-full text-left text-sm" aria-label="Entity list">
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="px-4 py-2 font-medium text-gray-500 text-xs w-10">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          ref={(el) => {
+                            if (el) el.indeterminate = isIndeterminate;
+                          }}
+                          onChange={toggleAll}
+                          aria-label="Select all entities"
+                        />
+                      </th>
                       <th className="px-4 py-2 font-medium text-gray-500 text-xs">ID</th>
                       <th className="px-4 py-2 font-medium text-gray-500 text-xs">PREVIEW</th>
                       <th className="px-4 py-2 font-medium text-gray-500 text-xs">VER</th>
@@ -530,7 +639,9 @@ export function EntityBrowserPage(): React.ReactElement {
                         key={entity.id}
                         entity={entity}
                         selected={selectedEntity?.id === entity.id}
+                        selectedForBulk={selectedIds.has(entity.id)}
                         onClick={() => setSelectedEntity((prev) => prev?.id === entity.id ? null : entity)}
+                        onToggleSelection={() => toggleSelection(entity.id)}
                         onDelete={() => deleteMutation.mutate({ ns: namespace, id: entity.id })}
                       />
                     ))}

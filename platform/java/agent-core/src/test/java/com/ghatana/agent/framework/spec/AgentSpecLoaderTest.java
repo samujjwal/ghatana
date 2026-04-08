@@ -918,4 +918,88 @@ class AgentSpecLoaderTest {
             assertThat(ref.enforcementMode()).isEqualTo("hard");
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Spec version guard (UnsupportedSpecVersionException)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Spec-version guard")
+    class SpecVersionGuard {
+
+        private static final String MINIMAL_1_0_0 = """
+                agentSpecVersion: "1.0.0"
+                metadata:
+                  id: agent.version.test
+                  version: "1.0.0"
+                  status: active
+                identity:
+                  agentType: deterministic
+                  autonomyLevel: supervised
+                """;
+
+        @Test
+        @DisplayName("version 1.0.0 is accepted without exception")
+        void version100Accepted() throws Exception {
+            assertThatCode(() -> loader.loadFromString(MINIMAL_1_0_0))
+                    .doesNotThrowAnyException();
+            AgentSpec spec = loader.loadFromString(MINIMAL_1_0_0);
+            assertThat(spec.getAgentSpecVersion()).isEqualTo("1.0.0");
+        }
+
+        @Test
+        @DisplayName("version 2.0.0 is accepted without exception")
+        void version200Accepted() throws Exception {
+            String yaml = """
+                    agentSpecVersion: "2.0.0"
+                    metadata:
+                      id: agent.version.v2.test
+                      version: "1.0.0"
+                      status: active
+                    identity:
+                      agentType: deterministic
+                      autonomyLevel: supervised
+                    """;
+            AgentSpec spec = loader.loadFromString(yaml);
+            assertThat(spec.getAgentSpecVersion()).isEqualTo("2.0.0");
+        }
+
+        @Test
+        @DisplayName("unknown version 3.0.0 throws UnsupportedSpecVersionException")
+        void version300Rejected() {
+            String yaml = """
+                    agentSpecVersion: "3.0.0"
+                    metadata:
+                      id: agent.version.v3.test
+                      version: "1.0.0"
+                      status: active
+                    identity:
+                      agentType: deterministic
+                      autonomyLevel: supervised
+                    """;
+            assertThatThrownBy(() -> loader.loadFromString(yaml))
+                    .isInstanceOf(UnsupportedSpecVersionException.class)
+                    .hasMessageContaining("3.0.0")
+                    .hasMessageContaining("Supported versions");
+        }
+
+        @Test
+        @DisplayName("UnsupportedSpecVersionException exposes the unsupported version string")
+        void exceptionExposesVersion() {
+            String yaml = """
+                    agentSpecVersion: "0.5.0"
+                    metadata:
+                      id: agent.version.old.test
+                      version: "1.0.0"
+                      status: active
+                    identity:
+                      agentType: deterministic
+                      autonomyLevel: supervised
+                    """;
+            UnsupportedSpecVersionException ex = catchThrowableOfType(
+                    () -> loader.loadFromString(yaml), UnsupportedSpecVersionException.class);
+            assertThat(ex).isNotNull();
+            assertThat(ex.getUnsupportedVersion()).isEqualTo("0.5.0");
+        }
+    }
 }

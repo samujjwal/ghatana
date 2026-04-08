@@ -36,5 +36,8 @@ public enum WorkflowStepKind {
     LOOP,
 
     /** Terminal step — marks the end of a branch or the workflow itself. */
-    END
+    END,
+
+    /** Human-in-the-loop checkpoint — pauses execution until a human approves or rejects. */
+    HUMAN_IN_THE_LOOP
 }

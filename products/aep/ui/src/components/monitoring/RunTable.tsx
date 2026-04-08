@@ -12,6 +12,13 @@ import type { PipelineRun } from '@/api/aep.api';
 interface RunTableProps {
   runs: PipelineRun[];
   onCancel?: (runId: string) => void;
+  onApprove?: (runId: string) => void;
+  onReject?: (runId: string, reason: string) => void;
+  selectedIds?: Set<string>;
+  onSelectToggle?: (runId: string) => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
+  isIndeterminate?: boolean;
   className?: string;
 }
 
@@ -26,7 +33,18 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
+export function RunTable({ 
+  runs, 
+  onCancel, 
+  onApprove, 
+  onReject, 
+  selectedIds, 
+  onSelectToggle, 
+  onSelectAll, 
+  isAllSelected, 
+  isIndeterminate, 
+  className = '' 
+}: RunTableProps) {
   if (runs.length === 0) {
     return (
       <p className={['text-sm text-gray-400', className].join(' ')}>No pipeline runs found.</p>
@@ -38,11 +56,30 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
       <table className="w-full text-sm border-collapse">
         <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
           <tr>
+            {onSelectToggle && (
+              <th className="px-3 py-2 w-10">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected ?? false}
+                  ref={(el) => {
+                    if (el && isIndeterminate) {
+                      el.indeterminate = true;
+                    }
+                  }}
+                  onChange={onSelectAll}
+                  className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-900"
+                  aria-label="Select all runs"
+                />
+              </th>
+            )}
             <th className="px-3 py-2 text-left font-medium">Pipeline</th>
             <th className="px-3 py-2 text-left font-medium">Status</th>
             <th className="px-3 py-2 text-left font-medium">Started</th>
             <th className="px-3 py-2 text-right font-medium">Events</th>
             <th className="px-3 py-2 text-right font-medium">Errors</th>
+            {(onApprove || onReject) && (
+              <th className="px-3 py-2 text-right font-medium">Actions</th>
+            )}
             <th className="px-3 py-2" />
           </tr>
         </thead>
@@ -52,6 +89,17 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
               key={run.id}
               className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             >
+              {onSelectToggle && (
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds?.has(run.id) ?? false}
+                    onChange={() => onSelectToggle(run.id)}
+                    className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-900"
+                    aria-label={`Select run ${run.id}`}
+                  />
+                </td>
+              )}
               <td className="px-3 py-2 font-medium text-gray-800 dark:text-gray-200 max-w-[14rem] truncate">
                 <Link
                   to={`/operate/runs/${run.id}`}
@@ -81,6 +129,35 @@ export function RunTable({ runs, onCancel, className = '' }: RunTableProps) {
                   {run.errorsCount}
                 </span>
               </td>
+              {(onApprove || onReject) && (
+                <td className="px-3 py-2 text-right">
+                  {(run.status === 'FAILED' || run.status === 'SUCCEEDED') && (
+                    <div className="flex gap-2 justify-end">
+                      {onApprove && (
+                        <button
+                          onClick={() => onApprove(run.id)}
+                          className="text-xs text-green-600 hover:text-green-700 font-medium"
+                          aria-label={`Approve run ${run.id}`}
+                        >
+                          Approve
+                        </button>
+                      )}
+                      {onReject && (
+                        <button
+                          onClick={() => {
+                            const reason = prompt('Enter rejection reason:');
+                            if (reason) onReject(run.id, reason);
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium"
+                          aria-label={`Reject run ${run.id}`}
+                        >
+                          Reject
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </td>
+              )}
               {onCancel && (
                 <td className="px-3 py-2 text-right">
                   {run.status === 'RUNNING' && (

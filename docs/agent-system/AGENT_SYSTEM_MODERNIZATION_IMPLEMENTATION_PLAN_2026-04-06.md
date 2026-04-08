@@ -91,19 +91,20 @@ Use `lenient().when(...)` for stubs only called in a subset of tests. Stub all c
 > **Goal:** Make documents match code reality. No code changes. Documentation and cross-reference fixes only.  
 > **Why First:** Every later task inherits confusion if the docs say "agent-runtime is active" when settings.gradle.kts says it moved to AEP.
 
-### P0-T1 — Fix `docs/SHARED_LIBRARY_REGISTRY.md`
+### P0-T1 — Remove `docs/SHARED_LIBRARY_REGISTRY.md` and Use `settings.gradle.kts` as the Sole Module Registry
 
 **What:**  
-Update all stale module paths. Remove references to the archived `platform/java/agent-runtime`. Replace with the correct split: contracts in `platform/java/agent-core`, advanced runtime in `products/aep/aep-agent-runtime`, durable registry in `products/data-cloud/agent-registry`.
+Remove the separate shared-library registry document and use `settings.gradle.kts` as the sole module-truth source for shared-platform and product module state.
 
-**Where:** `docs/SHARED_LIBRARY_REGISTRY.md`
+**Where:** `settings.gradle.kts`
 
 **How:**
 
-- Find every row containing `platform/java/agent-runtime` → replace with correct AEP path.
-- Find every row containing `platform/java/plugin` → replace with `platform-kernel`.
-- Add a new "Archived" section listing modules removed from `settings.gradle.kts` to make removals explicit and intentional.
-- Add an "Ownership Matrix" table:
+- Use `settings.gradle.kts` as the only authoritative module list for active, relocated, and archived modules.
+- Delete `docs/SHARED_LIBRARY_REGISTRY.md`.
+- Reconcile the current inconsistency around `agent-memory` directly in the build metadata and agent-system docs. Today the old registry doc marks it deleted while the root build still includes it.
+- Add or retain concise relocation/archive comments in `settings.gradle.kts` where module history would otherwise be ambiguous.
+- Add an ownership matrix in agent-system documentation rather than maintaining a second repo-wide registry file:
 
 | Concern                                         | Module                               | Owner       |
 | ----------------------------------------------- | ------------------------------------ | ----------- |
@@ -115,7 +116,7 @@ Update all stale module paths. Remove references to the archived `platform/java/
 | Plugin/kernel packaging                         | `platform-kernel`                    | Platform    |
 | Multimodal capability tools                     | `products/audio-video`               | Audio-Video |
 
-**Acceptance:** No row in the registry points to a path that does not exist in the repo.
+**Acceptance:** `settings.gradle.kts` is the sole documented module registry for agent-core, agent-runtime, agent-registry, plugin/platform-kernel, and agent-memory state. No remaining docs instruct readers to maintain `docs/SHARED_LIBRARY_REGISTRY.md`.
 
 ---
 
@@ -137,20 +138,21 @@ The ADR describes a six-type taxonomy. `AgentType.java` now has nine canonical t
 
 ---
 
-### P0-T3 — Fix `docs/agent-system/README.md`
+### P0-T3 — Fix Agent-System Cross-References and README Architecture Notes
 
 **What:**  
-The README references `Unified_Self_Learning_Agents_Spec_Final.md`, but the actual file in the folder is `Unified_Self_Learning_Agents_Spec_Merged.md`. Also, the Implementation Architecture section references old paths.
+The README already points to `Unified_Self_Learning_Agents_Spec_Merged.md`, and adjacent stale references should be cleaned as part of this task. The README also still needs architecture and path cleanup.
 
 **Where:** `docs/agent-system/README.md`
 
 **How:**
 
-- Replace every reference to `Unified_Self_Learning_Agents_Spec_Final.md` with `Unified_Self_Learning_Agents_Spec_Merged.md`.
+- Verify the README links that already target `Unified_Self_Learning_Agents_Spec_Merged.md` still resolve.
+- Replace any stale `Unified_Self_Learning_Agents_Spec_Final.md` references in adjacent agent-system docs such as `AEP_Integration_Architecture.md`, `Agent_Implementation_Guide.md`, and any remaining references inside `Unified_Self_Learning_Agents_Spec_Merged.md` itself.
 - Update the three-layer architecture diagram to the five-layer model from the blueprint (Spec, Control, Execution, Memory/Eval, Capability).
 - Update module paths in the table.
 
-**Acceptance:** All hyperlinks in the README resolve to files that exist. No stale paths.
+**Acceptance:** All hyperlinks in the README and the adjacent agent-system docs touched by this task resolve to existing files, and the README no longer carries stale ownership or path references.
 
 ---
 
@@ -210,7 +212,7 @@ grep -rn "mission-critical\|semi-autonomous\|fully-deterministic\|persistent" \
 ### P1-T2 — Canonicalize the Existing `AutonomyLevel` Model and Compatibility Mappings
 
 **What:**  
-Align the implementation plan with the autonomy model that already exists in `agent-core`, and make that model the single canonical runtime vocabulary across catalogs, loaders, and product adapters.
+Align the implementation plan with the autonomy model that already exists in `agent-core`, and make that model the canonical shared runtime vocabulary across catalogs and loaders.
 
 **Where:**
 
@@ -220,13 +222,13 @@ Align the implementation plan with the autonomy model that already exists in `ag
 
 **How:**
 
-- Treat the existing runtime enum as canonical unless there is a deliberate ADR to change it.
+- Treat the existing runtime enum as canonical for shared runtime and catalog storage unless there is a deliberate ADR to change it.
 - Preserve the five current canonical values:
   ```
   ADVISORY, DRAFT, SUPERVISED, BOUNDED_AUTONOMOUS, AUTONOMOUS
   ```
 - Keep legacy ingestion aliases (`manual`, `assisted`, `semi-autonomous`) in loader/catalog compatibility paths, but do not persist them as stored values.
-- Audit the Data Cloud client autonomy enum and either map it explicitly to the same canonical vocabulary or document the reason it must stay product-local.
+- Audit the Data Cloud client autonomy enum and document it as a product-local policy/control model unless there is a deliberate decision to collapse it. Add an explicit mapping boundary between the shared runtime vocabulary and Data Cloud's `SUGGEST/CONFIRM/NOTIFY/AUTONOMOUS` control ladder instead of forcing a rename in-place.
 - Update any doc text that still describes a different autonomy scale.
 
 **Files:**
@@ -241,21 +243,21 @@ Align the implementation plan with the autonomy model that already exists in `ag
 - Verify legacy aliases continue to map to canonical values.
 - Verify catalog validation rejects non-canonical stored values while still allowing loader-side normalization at ingress.
 
-**Acceptance:** There is one documented canonical autonomy vocabulary across runtime and catalog storage, with explicit compatibility mappings for legacy values.
+**Acceptance:** There is one documented canonical autonomy vocabulary across shared runtime and catalog storage, with explicit compatibility mappings for legacy values and an explicit boundary mapping for Data Cloud's product-local autonomy policy model.
 
 ---
 
 ### P1-T3 — Canonicalize `AgentType` Aliases
 
 **What:**  
-Add `@JsonAlias` annotations or a custom Jackson deserializer to `AgentType.java` so that old YAML spellings load without error, but the stored value is always canonical.
+Centralize `AgentType` compatibility in the existing resolver and loader path so that old YAML spellings load without error, but stored and emitted values remain canonical.
 
 **Where:** `platform/java/agent-core/src/main/java/com/ghatana/agent/AgentType.java`
 
 **How:**
 
-- Add `@JsonAlias({"llm", "LLM"})` to `PROBABILISTIC`.
-- Add similar aliases to any other types with known drift found in P1-T1.
+- Extend the existing `AgentType.resolve(...)` and `AgentSpecLoader` normalization path rather than adding a second aliasing mechanism alongside the current loader behavior.
+- Add any missing aliases found in P1-T1 to that shared resolver path.
 - Add deprecation notices and Javadoc migration notes for the deprecated `LLM` constant.
 - Update `agent-base-schema.json` to list all canonical values in the enum field.
 
@@ -266,7 +268,7 @@ Add `@JsonAlias` annotations or a custom Jackson deserializer to `AgentType.java
 
 **Test:** `platform/java/agent-core/src/test/java/com/ghatana/agent/AgentTypeSerializationTest.java`
 
-- Test that each alias value deserializes to the canonical enum constant.
+- Test that each alias value normalizes through the shared resolver/loader path to the canonical enum constant.
 - Test that unknown values produce a clear `IllegalArgumentException`.
 
 **Acceptance:** YAML with old spellings loads into canonical enums. No silent coercion.
@@ -592,18 +594,19 @@ public interface AgentReleaseRepository {
 
 ---
 
-### P2-T4 — Implement `DataCloudAgentReleaseRepository` in Data Cloud
+### P2-T4 — Implement `DataCloudAgentReleaseRepository` Behind the Existing Data Cloud Persistence Boundary
 
 **What:**  
-Implement `AgentReleaseRepository` in `products/data-cloud/agent-registry` backed by the Data Cloud persistence layer.
+Implement `AgentReleaseRepository` in `products/data-cloud/agent-registry` backed by the existing Data Cloud persistence boundary. Do not introduce a second ad hoc persistence style into this module unless a separate architectural decision explicitly changes the module shape.
 
 **Where:** `products/data-cloud/agent-registry/src/main/java/com/ghatana/datacloud/agent/registry/release/DataCloudAgentReleaseRepository.java`
 
 **How:**
 
 - Implement `AgentReleaseRepository` SPI.
-- Use the existing JDBI/jOOQ/Flyway persistence pattern already present in `products/data-cloud`.
-- Add Flyway migration for the `agent_releases` table:
+- Reuse the current Data Cloud client/entity persistence seam already used by `DataCloudAgentRegistry` unless Data Cloud maintainers explicitly approve a move to direct SQL repositories.
+- If durable schema changes are required, implement them in the Data Cloud-owned persistence layer that backs this module rather than assuming local Flyway ownership inside `agent-registry`.
+- Add durable storage support for the equivalent of an `agent_releases` record with these fields:
 
 ```sql
 -- V{next}__create_agent_releases.sql
@@ -630,7 +633,7 @@ CREATE INDEX idx_agent_releases_agent_id ON agent_releases(agent_id);
 CREATE INDEX idx_agent_releases_state ON agent_releases(state);
 ```
 
-- Add JSON-backed tables for `policy_packs`, `evaluation_packs`, `memory_contracts`.
+- Add durable storage representations for `policy_packs`, `evaluation_packs`, and `memory_contracts` using the same persistence style.
 - Implement `transition()` with a state-machine validation using `AgentReleaseState.allowedTransitions()`.
 - Emit a structured log on every state transition.
 
@@ -638,9 +641,9 @@ CREATE INDEX idx_agent_releases_state ON agent_releases(state);
 
 - `products/data-cloud/agent-registry/src/test/java/com/ghatana/datacloud/agent/registry/release/DataCloudAgentReleaseRepositoryIT.java`
 - Extends `AgentReleaseRepositoryContractTest`.
-- Uses Testcontainers PostgreSQL.
+- Uses the same integration-test style as the owning Data Cloud persistence boundary.
 
-**Acceptance:** All contract tests pass against PostgreSQL. State machine violations are rejected with a clear exception.
+**Acceptance:** All contract tests pass against the real Data Cloud-backed persistence implementation chosen for this module. State machine violations are rejected with a clear exception.
 
 ---
 
@@ -671,7 +674,7 @@ Update `GovernedAgentDispatcher` and the AEP central registry to look up the act
 
 ---
 
-### P2-T6 — Add Tenant-Scoped Rollout Records
+### P2-T6 — Add Tenant-Scoped Rollout Records Using the Same Data Cloud Persistence Boundary
 
 **What:**  
 Add a `AgentRolloutRecord` entity in Data Cloud to store per-tenant rollout state (traffic split, fallback release, approval status).
@@ -691,13 +694,13 @@ Add a `AgentRolloutRecord` entity in Data Cloud to store per-tenant rollout stat
   ) {}
   ```
 - Add `AgentRolloutApprovalState` enum: `PENDING`, `APPROVED`, `REJECTED`.
-- Add Flyway migration for `agent_rollout_records` table.
+- Persist rollout records through the same Data Cloud storage boundary selected in P2-T4.
 - Add `AgentRolloutRepository` SPI in `agent-core`.
 - Implement `DataCloudAgentRolloutRepository`.
 
 **Test:** `products/data-cloud/agent-registry/src/test/java/com/ghatana/datacloud/agent/registry/rollout/DataCloudAgentRolloutRepositoryIT.java`
 
-- Testcontainers PostgreSQL.
+- Use the same real integration-test style as P2-T4.
 - Test CRUD + approval state transitions.
 
 **Acceptance:** Rollout records persist, approval state machine works, kill switch is testable.
@@ -709,40 +712,25 @@ Add a `AgentRolloutRecord` entity in Data Cloud to store per-tenant rollout stat
 > **Goal:** Every tool call — in-process, sandboxed, remote, or MCP-compatible — goes through one normalized `ToolContract` with consistent action classification, audit metadata, and approval hooks.  
 > **Why:** Tool execution is where governance, safety, interoperability, and modern agent standards meet. The existing `ToolSandbox` and `ToolExecutionStats` are too thin.
 
-### P3-T1 — Define `ActionClass` Enum in `agent-core`
+### P3-T1 — Normalize `ActionClass` in Its Existing Governance Home
 
 **What:**  
-Create a canonical `ActionClass` enum to classify tool actions by their risk and reversibility profile.
+Use the existing canonical `ActionClass` enum in `agent-core` and expand it only if the current values are insufficient. Do not create a second `ActionClass` in a new package.
 
-**Where:** `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/tools/ActionClass.java`
+**Where:** `platform/java/agent-core/src/main/java/com/ghatana/agent/framework/governance/ActionClass.java`
 
 **How:**
 
-```java
-/**
- * @doc.type enum
- * @doc.purpose Canonical action class taxonomy for tool execution governance.
- * @doc.layer platform
- * @doc.pattern ValueObject
- */
-public enum ActionClass {
-    READ,                // Idempotent reads
-    DRAFT,               // Creates a draft without persisting
-    WRITE_REVERSIBLE,    // Persisting write that can be rolled back
-    WRITE_IRREVERSIBLE,  // Persisting write that cannot be rolled back
-    CALL_EXTERNAL,       // Calls a remote external service
-    DELEGATE,            // Spawns a sub-agent or delegates to another agent
-    MEMORY_MUTATION,     // Writes to durable memory
-    POLICY_CHANGE        // Modifies a policy or governance rule
-}
-```
+- Review the existing enum and confirm whether it already covers the required risk classes.
+- If gaps remain, extend the current enum in place and migrate all tool/governance consumers to that one type.
+- Keep the package location under `framework/governance` so policy evaluation, approval, and tool execution share one taxonomy.
 
 **Test:** `platform/java/agent-core/src/test/java/com/ghatana/agent/framework/tools/ActionClassTest.java`
 
 - Verify `READ` and `DRAFT` are considered low-risk (implement a `isLowRisk()` method).
 - Verify `WRITE_IRREVERSIBLE` and `POLICY_CHANGE` require approval by default.
 
-**Acceptance:** Enum exists, documents its risk profile per value, test green.
+**Acceptance:** There is exactly one canonical `ActionClass` type in `agent-core`, documented and used by tool governance, policy, and runtime code.
 
 ---
 
@@ -864,7 +852,7 @@ public enum ToolExecutionStatus { SUCCESS, FAILED, DENIED, APPROVAL_PENDING, TIM
 ### P3-T4 — Expand `platform/java/tool-runtime` with Governance Layer
 
 **What:**  
-The existing `tool-runtime` module has only `ToolSandbox` and `ToolExecutionStats`. Expand it to be the canonical tool governance boundary by implementing `ToolExecutor` — the single entry point for all tool calls.
+Expand `tool-runtime` to be the canonical tool governance boundary by implementing `ToolExecutor` on top of the primitives that already exist there. The module already contains sandbox, approval, workflow, monitoring, and stats seams; this task should compose them into one entry path rather than recreating them.
 
 **Where:** `platform/java/tool-runtime/src/main/java/com/ghatana/platform/toolruntime/`
 
@@ -895,7 +883,7 @@ Create `DefaultToolExecutor`:
 
 - Validates `ToolExecutionEnvelope` against `ToolContract.inputSchema`.
 - Checks `ActionClass` against allowed classes from `PolicyPack` (injected via `PolicyEvalResult`).
-- If `requiresApproval=true` and class is high-risk: call `ApprovalGateway.requestApproval(...)` and return `APPROVAL_PENDING`.
+- If `requiresApproval=true` and class is high-risk: call the existing `tool-runtime` approval gateway/workflow seam and return `APPROVAL_PENDING`.
 - Delegates execution to the registered `ToolHandler`.
 - Wraps result into `ToolExecutionResult` with policy and approval decisions.
 - Emits a structured audit event.
@@ -903,7 +891,6 @@ Create `DefaultToolExecutor`:
 Create supporting types:
 
 - `ToolHandler` interface: `Promise<Object> handle(ToolExecutionEnvelope envelope)`
-- `ApprovalGateway` interface: `Promise<ApprovalDecision> requestApproval(ToolExecutionEnvelope envelope)`
 - `InProcessToolHandler` — wraps an existing `FunctionTool` or lambda
 - `SandboxToolHandler` — delegates to `ToolSandbox`
 
@@ -912,7 +899,6 @@ Create supporting types:
 - `ToolExecutor.java`
 - `DefaultToolExecutor.java`
 - `ToolHandler.java`
-- `ApprovalGateway.java`
 - `InProcessToolHandler.java`
 - `SandboxToolHandler.java`
 - `ApprovalDecision.java` (enum: `APPROVED`, `DENIED`, `PENDING`)
@@ -986,14 +972,18 @@ Update AEP agent runtime so that all side-effecting tool calls from agents go th
 > **Goal:** Planning agents compile their plan graphs into `platform/java/workflow` definitions, which AEP then executes durably. No private orchestration semantics outside the durable workflow runtime.  
 > **Why:** Durable, inspectable, pause/resume-able planning is better than per-planner private state.
 
-### P4-T1 — Define `PlanGraph` and `PlanStep` Models in `agent-core`
+### P4-T1 — Reconcile the Planning Model Before Introducing a Portable Plan Graph
 
 **What:**  
-Add a portable `PlanGraph` model that planning agents produce and that the workflow compiler consumes.
+Introduce a portable planning model that workflow compilation can consume, but reconcile it with the existing `PlanningAgent` abstractions first so the repo does not end up with two unrelated `PlanStep` concepts in the same package.
 
 **Where:** `platform/java/agent-core/src/main/java/com/ghatana/agent/planning/`
 
 **How:**
+
+- Start by reviewing the current `PlanningAgent` contract and its existing `PlanStep` type.
+- Either extract a shared portable model from the current planning package, or introduce a distinct durable-workflow-facing type name if the semantics differ.
+- Do not add a second conflicting `PlanStep` record beside the existing planning abstraction.
 
 ```java
 /**
@@ -1007,7 +997,7 @@ public record PlanGraph(
     String planId,
     String agentId,
     String correlationId,
-    List<PlanStep> steps,        // ordered list (DAG edges via dependsOn)
+    List<PlannedAction> steps,   // ordered list (DAG edges via dependsOn)
     Map<String, Object> planMetadata
 ) {}
 
@@ -1017,7 +1007,7 @@ public record PlanGraph(
  * @doc.layer platform
  * @doc.pattern ValueObject
  */
-public record PlanStep(
+public record PlannedAction(
     String stepId,
     String name,
     String toolId,               // tool to invoke (references ToolContract)
@@ -1034,7 +1024,7 @@ public record PlanStep(
 - Test: DAG with dependencies compiles.
 - Test: cycle detection throws `InvalidPlanException`.
 
-**Acceptance:** `PlanGraph` is DAG-validated, serializable, documented.
+**Acceptance:** The planning package has one coherent portable planning model, DAG validation is covered, and there is no naming or semantic collision with the existing `PlanningAgent` abstractions.
 
 ---
 
@@ -1641,16 +1631,16 @@ Define a `media` memory class and add a `MediaMemoryContract` to handle media ar
 
 ---
 
-### P7-T5 — Add Optional Domain Orchestration Agents for Audio-Video
+### P7-T5 — Add Optional Domain Orchestration Agents in the Existing Audio-Video Intelligence Module
 
 **What:**  
 Add optional `PLANNING` and `COMPOSITE` type domain agents for common Audio-Video workflows (e.g., `AudioTranscriptionAgent`, `MultimodalAnalysisAgent`).
 
-**Where:** `products/audio-video/modules/intelligence/src/main/java/com/ghatana/audiovideo/agents/`
+**Where:** `products/audio-video/modules/intelligence/multimodal-service/src/main/java/com/ghatana/audio/video/multimodal/agents/`
 
 **How:**
 
-- Implement `AudioTranscriptionAgent extends AbstractTypedAgent<AudioTranscriptionRequest, AudioTranscriptionResult>`:
+- Implement `AudioTranscriptionAgent extends AbstractTypedAgent<AudioTranscriptionRequest, AudioTranscriptionResult>` in the existing intelligence module unless Audio-Video maintainers explicitly choose to create a new submodule:
   - Plans: STT → speaker diarization → transcript post-processing
   - Compiles plan into `PlanGraph`, routes to AEP orchestrator via `PlanCompiler`.
 - Implement `MultimodalAnalysisAgent extends AbstractTypedAgent<MultimodalInput, AnalysisResult>`:

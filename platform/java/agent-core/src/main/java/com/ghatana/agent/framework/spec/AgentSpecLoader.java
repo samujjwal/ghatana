@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Loads the <b>complete</b> {@link AgentSpec} from agent-spec YAML files, covering
@@ -298,7 +299,16 @@ public final class AgentSpecLoader {
     // ─── Materialisation ──────────────────────────────────────────────────────
 
     @NotNull
+    private static final Set<String> SUPPORTED_SPEC_VERSIONS = Set.of("1.0.0", "2.0.0");
+
     private AgentSpec materialize(@NotNull AgentSpecDto dto, @NotNull String source) {
+        // ── Spec version guard ────────────────────────────────────────────────
+        String rawSpecVersion = dto.agentSpecVersion != null ? dto.agentSpecVersion : "1.0.0";
+        if (!SUPPORTED_SPEC_VERSIONS.contains(rawSpecVersion)) {
+            throw new UnsupportedSpecVersionException(rawSpecVersion,
+                    String.join(", ", SUPPORTED_SPEC_VERSIONS));
+        }
+
         // ── Metadata ─────────────────────────────────────────────────────────
         MetadataDto m = dto.metadata;
         if (m == null) throw new IllegalStateException("AgentSpec from '" + source + "' is missing 'metadata' section");

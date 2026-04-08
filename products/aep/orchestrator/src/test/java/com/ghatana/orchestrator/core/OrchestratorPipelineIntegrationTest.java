@@ -1,11 +1,18 @@
 package com.ghatana.orchestrator.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.ghatana.agent.framework.governance.ActionClass;
+import com.ghatana.agent.planning.PlanGraph;
+import com.ghatana.agent.planning.PlannedAction;
 import com.ghatana.orchestrator.cache.PipelineCache;
 import com.ghatana.orchestrator.client.AgentRegistryClient;
 import com.ghatana.orchestrator.client.PipelineRegistryClient;
@@ -14,12 +21,15 @@ import com.ghatana.orchestrator.loader.SpecFormatLoader;
 import com.ghatana.orchestrator.models.OrchestratorPipelineEntity;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.platform.workflow.planning.PlanCompiler;
 import io.activej.promise.Promise;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -39,7 +49,11 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
     @Mock
     private SpecFormatLoader specFormatLoader;
 
+    @Mock
+    private PlanCompiler planCompiler;
+
     private Orchestrator orchestrator;
+    private Orchestrator orchestratorWithPlanning;
 
     @BeforeEach
     void setUp() {
@@ -51,6 +65,16 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
         orchestrator = new Orchestrator(
                 pipelineCache, agentRegistryClient, pipelineRegistryClient, config, metricsCollector, specFormatLoader);
+
+        PipelineCache pipelineCachePlanning = new PipelineCache(Duration.ofMinutes(10), metricsCollector);
+        orchestratorWithPlanning = new Orchestrator(
+                pipelineCachePlanning,
+                agentRegistryClient,
+                pipelineRegistryClient,
+                config,
+                metricsCollector,
+                specFormatLoader,
+                planCompiler);
     }
 
     @Test
@@ -93,6 +117,49 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
         assertTrue(removed);
         verify(metricsCollector).incrementCounter("orch.pipeline.undeployed");
+    }
+
+    // ── Planning integration ───────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("Planning agent integration via PlanCompiler")
+    class PlanningIntegration {
+
+        @Test
+        @DisplayName("compilePlan delegates to PlanCompiler")
+        void compilePlanDelegatesToCompiler() {
+            PlanGraph expectedGraph = PlanGraph.of(
+                    "p1", "agent-1", "Do something", List.of(PlannedAction.simple("a1", "Step 1", ActionClass.READ)));
+            when(planCompiler.compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any()))
+                    .thenReturn(Promise.of(expectedGraph));
+
+            PlanGraph graph =
+                    runPromise(() -> orchestratorWithPlanning.compilePlan("agent-1", "tenant-1", "Do something"));
+
+            assertThat(graph.planId()).isEqualTo("p1");
+            assertThat(graph.actions()).hasSize(1);
+            verify(planCompiler).compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any());
+        }
+
+        @Test
+        @DisplayName("compilePlan throws when PlanCompiler is not configured")
+        void compilePlanThrowsWhenNoPlanCompiler() {
+            assertThatThrownBy(() -> runPromise(() -> orchestrator.compilePlan("a", "t", "Obj")))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("PlanCompiler is not configured");
+        }
+
+        @Test
+        @DisplayName("hasPlanCompiler returns true when compiler is set")
+        void hasPlanCompilerTrueWhenSet() {
+            assertThat(orchestratorWithPlanning.hasPlanCompiler()).isTrue();
+        }
+
+        @Test
+        @DisplayName("hasPlanCompiler returns false when no compiler is set")
+        void hasPlanCompilerFalseWhenNotSet() {
+            assertThat(orchestrator.hasPlanCompiler()).isFalse();
+        }
     }
 
     private static OrchestratorPipelineEntity pipeline(String id, String agentId) {

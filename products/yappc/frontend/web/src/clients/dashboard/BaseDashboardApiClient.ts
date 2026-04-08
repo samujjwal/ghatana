@@ -9,6 +9,7 @@
  * - Request/response logging
  * - Tenant context injection
  * - Mock mode for testing
+ * - Runtime schema validation with Zod
  * 
  * @doc.type class
  * @doc.purpose Base HTTP client for dashboard APIs
@@ -18,6 +19,7 @@
 
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { DashboardApiConfig, ApiResponse, ApiError } from './types';
+import { ValidationMiddleware } from '../../lib/validation';
 
 /**
  * Default configuration
@@ -79,13 +81,20 @@ export abstract class BaseDashboardApiClient {
             (error) => Promise.reject(error)
         );
 
-        // Add response interceptor for logging and error handling
+        // Add response interceptor for logging, validation, and error handling
         this.httpClient.interceptors.response.use(
             (response) => {
                 if (this.config.logResponses) {
                     console.log(`[Dashboard API] Response:`, response.data);
                 }
-                return response;
+                // Validate API response structure
+                try {
+                    const validated = ValidationMiddleware.wrapResponse(response.data);
+                    return { ...response, data: validated };
+                } catch (validationError) {
+                    console.warn('[Dashboard API] Validation warning:', validationError);
+                    return response;
+                }
             },
             (error) => this.handleError(error)
         );

@@ -739,7 +739,7 @@ public class NewAgent implements TypedAgent<SpecificInput, SpecificOutput> {
 ## 10. References
 
 - [Master Index](./README.md) - Navigation hub
-- [Unified Self-Learning Agents Spec](./Unified_Self_Learning_Agents_Spec_Final.md) - Theory
+- [Unified Self-Learning Agents Spec](./Unified_Self_Learning_Agents_Spec_Merged.md) - Theory
 - [AEP Integration Architecture](./AEP_Integration_Architecture.md) - Product integration
 - [agent-spec.md](./agent-spec.md) - YAML contract reference
 - [platform/java/agent-core](../../../platform/java/agent-core/) - Source code
