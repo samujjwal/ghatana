@@ -15,12 +15,18 @@ package com.ghatana.platform.plugin;
  * @doc.type enum
  * @doc.purpose Track plugin lifecycle
  * @doc.layer core
+ * @doc.pattern State
  */
 public enum PluginState {
     /**
      * Plugin code is loaded but not yet initialized.
      */
     UNLOADED,
+
+    /**
+     * Plugin has been loaded into memory.
+     */
+    LOADED,
 
     /**
      * Plugin has been discovered by the registry.
@@ -56,6 +62,11 @@ public enum PluginState {
      * Plugin has stopped.
      */
     STOPPED,
+
+    /**
+     * Plugin has been shut down.
+     */
+    SHUTDOWN,
 
     /**
      * Plugin encountered a recoverable error.

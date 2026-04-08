@@ -25,6 +25,7 @@ public final class PluginManifest {
     private final String description;
     private final PluginTier tier;
     private final Set<String> capabilities;
+    private final Set<PluginDependency> dependencies;
     private final PluginResourceQuota resourceQuotas;
     private final Map<String, Object> metadata;
 
@@ -34,6 +35,7 @@ public final class PluginManifest {
         this.description = Objects.requireNonNullElse(builder.description, "");
         this.tier = Objects.requireNonNullElse(builder.tier, PluginTier.T2);
         this.capabilities = Set.copyOf(Objects.requireNonNullElse(builder.capabilities, Set.of()));
+        this.dependencies = Set.copyOf(Objects.requireNonNullElse(builder.dependencies, Set.of()));
         this.resourceQuotas = Objects.requireNonNullElse(builder.resourceQuotas, PluginResourceQuota.defaults());
         this.metadata = Map.copyOf(Objects.requireNonNullElse(builder.metadata, Map.of()));
     }
@@ -84,6 +86,15 @@ public final class PluginManifest {
     }
 
     /**
+     * Gets the plugin dependencies.
+     *
+     * @return immutable set of dependencies
+     */
+    public Set<PluginDependency> getDependencies() {
+        return dependencies;
+    }
+
+    /**
      * Gets the resource quotas.
      *
      * @return the resource quotas
@@ -129,6 +140,7 @@ public final class PluginManifest {
         private String description;
         private PluginTier tier;
         private Set<String> capabilities;
+        private Set<PluginDependency> dependencies;
         private PluginResourceQuota resourceQuotas;
         private Map<String, Object> metadata;
 
@@ -156,6 +168,11 @@ public final class PluginManifest {
 
         public Builder capabilities(Set<String> capabilities) {
             this.capabilities = capabilities;
+            return this;
+        }
+
+        public Builder dependencies(Set<PluginDependency> dependencies) {
+            this.dependencies = dependencies;
             return this;
         }
 

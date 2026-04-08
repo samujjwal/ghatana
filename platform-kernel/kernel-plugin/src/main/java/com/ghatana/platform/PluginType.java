@@ -6,6 +6,7 @@ package com.ghatana.platform.plugin;
  * @doc.type enum
  * @doc.purpose Categorize plugins for discovery and management
  * @doc.layer core
+ * @doc.pattern Type
  */
 public enum PluginType {
     /**

@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Governance policy enforcement
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface GovernancePlugin extends Plugin {
 

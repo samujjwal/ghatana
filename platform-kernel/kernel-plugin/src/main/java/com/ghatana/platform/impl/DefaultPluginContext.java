@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose Default context implementation
  * @doc.layer core
+ * @doc.pattern Context
  */
 public class DefaultPluginContext implements PluginContext {
 

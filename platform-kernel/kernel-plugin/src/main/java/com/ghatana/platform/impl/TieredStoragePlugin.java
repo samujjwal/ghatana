@@ -25,6 +25,7 @@ import java.util.Set;
  * @doc.type class
  * @doc.purpose Tiered storage routing
  * @doc.layer core
+ * @doc.pattern Plugin
  */
 public class TieredStoragePlugin<T> implements StoragePlugin<T> {
 

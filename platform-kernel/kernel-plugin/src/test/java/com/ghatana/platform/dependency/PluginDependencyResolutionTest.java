@@ -31,7 +31,7 @@ class PluginDependencyResolutionTest extends PluginTestBase {
     private Map<String, PluginManifest> pluginRegistry;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         resolver = new PluginDependencyResolver();
         pluginRegistry = new HashMap<>();
     }
@@ -410,52 +410,25 @@ class PluginDependencyResolutionTest extends PluginTestBase {
      * Creates a simple plugin manifest for testing.
      */
     private PluginManifest createManifest(String id, Set<String> dependencies) {
-        return new TestPluginManifest(id, dependencies, Set.of());
+        return createManifestWithOptional(id, dependencies, Set.of());
     }
 
     /**
      * Creates a plugin manifest with optional dependencies.
      */
     private PluginManifest createManifestWithOptional(String id, Set<String> required, Set<String> optional) {
-        return new TestPluginManifest(id, required, optional);
-    }
-
-    /**
-     * Test implementation of PluginManifest.
-     */
-    private static class TestPluginManifest implements PluginManifest {
-        private final String id;
-        private final Set<String> dependencies;
-        private final Set<String> optionalDependencies;
-
-        TestPluginManifest(String id, Set<String> dependencies, Set<String> optionalDependencies) {
-            this.id = id;
-            this.dependencies = new HashSet<>(dependencies);
-            this.optionalDependencies = new HashSet<>(optionalDependencies);
+        Set<PluginDependency> deps = new HashSet<>();
+        for (String dep : required) {
+            deps.add(new PluginDependency(dep, "^1.0.0", false));
         }
-
-        @Override
-        public String getPluginId() {
-            return id;
+        for (String dep : optional) {
+            deps.add(new PluginDependency(dep, "^1.0.0", true));
         }
-
-        @Override
-        public Set<String> getDependencies() {
-            return Collections.unmodifiableSet(dependencies);
-        }
-
-        public Set<String> getOptionalDependencies() {
-            return Collections.unmodifiableSet(optionalDependencies);
-        }
-
-        @Override
-        public String getVersion() {
-            return "1.0.0";
-        }
-
-        @Override
-        public String getName() {
-            return id;
-        }
+        return PluginManifest.builder()
+                .pluginId(id)
+                .version("1.0.0")
+                .description("Test plugin " + id)
+                .dependencies(deps)
+                .build();
     }
 }

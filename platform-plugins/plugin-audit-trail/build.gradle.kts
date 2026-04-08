@@ -14,10 +14,6 @@ group = "com.ghatana.plugin"
 version = "1.0.0"
 description = "Audit Trail Plugin - immutable audit logging"
 
-repositories {
-    mavenCentral()
-}
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -25,19 +21,23 @@ java {
 }
 
 dependencies {
-    // Kernel
-    api("com.ghatana.kernel:kernel-core")
-    api("com.ghatana.kernel:kernel-plugin")
+    // Kernel and Platform libraries via BOMs
+    implementation(platform(project(":platform-kernel:kernel-bom")))
+    implementation(platform(project(":platform:java:platform-bom")))
 
-    // ActiveJ
-    api("io.activej:activej-promise:6.0-rc2")
+    // Kernel modules
+    api(project(":platform-kernel:kernel-core"))
+    api(project(":platform-kernel:kernel-plugin"))
 
-    // Logging
-    api("org.slf4j:slf4j-api:2.0.12")
+    // Plugin-specific dependencies
+    api(libs.activej.promise)
 
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.assertj:assertj-core:3.25.3")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(project(":platform:java:testing"))
 }
 
 tasks.test {
@@ -47,7 +47,7 @@ tasks.test {
 
 // JaCoCo configuration for test coverage measurement
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {

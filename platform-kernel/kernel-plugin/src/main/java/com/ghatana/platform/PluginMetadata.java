@@ -33,6 +33,7 @@ import java.util.Set;
  * @doc.type record
  * @doc.purpose Plugin metadata
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public record PluginMetadata(
     @NotNull String id,

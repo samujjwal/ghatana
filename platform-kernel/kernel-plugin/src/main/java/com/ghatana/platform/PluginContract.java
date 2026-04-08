@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Typed interaction contract
  * @doc.layer core
+ * @doc.pattern Contract
  */
 public interface PluginContract<Req, Res> {
     /**

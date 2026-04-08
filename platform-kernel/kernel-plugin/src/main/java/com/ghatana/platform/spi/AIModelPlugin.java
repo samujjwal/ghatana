@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose AI Model abstraction
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface AIModelPlugin extends Plugin, LLMGateway {
 

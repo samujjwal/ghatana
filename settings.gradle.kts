@@ -44,16 +44,25 @@ if (javaMajorVersion < 21) {
 rootProject.name = "ghatana"
 
 // =============================================================================
-// Platform Kernel — Core kernel framework with plugin system (Composite Build)
+// Platform Kernel — Core kernel framework with plugin system (Regular subprojects)
 // =============================================================================
 
-includeBuild("platform-kernel")
+include(":platform-kernel:kernel-core")
+include(":platform-kernel:kernel-plugin")
+include(":platform-kernel:kernel-persistence")
+include(":platform-kernel:kernel-testing")
+include(":platform-kernel:kernel-bom")
 
 // =============================================================================
-// Platform Plugins — Shared product-agnostic plugins (Composite Build)
+// Platform Plugins — Shared product-agnostic plugins (Regular subprojects)
 // =============================================================================
 
-includeBuild("platform-plugins")
+include(":platform-plugins:plugin-audit-trail")
+include(":platform-plugins:plugin-billing-ledger")
+include(":platform-plugins:plugin-compliance")
+include(":platform-plugins:plugin-consent")
+include(":platform-plugins:plugin-fraud-detection")
+include(":platform-plugins:plugin-risk-management")
 
 pluginManagement {
     repositories {
@@ -88,6 +97,7 @@ include(":platform:java:domain")
 include(":platform:java:database")
 include(":platform:java:http")
 include(":platform:java:observability")
+include(":platform:java:platform-bom")
 include(":platform:java:testing")
 // RELOCATING to platform-kernel:kernel-testing (2026-04-05 — see PLATFORM_KERNEL_EXTRACTION_PLAN.md)
 include(":platform:java:runtime")

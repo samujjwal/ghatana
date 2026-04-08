@@ -12,6 +12,7 @@ import java.util.function.Consumer;
  * @doc.type interface
  * @doc.purpose Plugin interaction
  * @doc.layer core
+ * @doc.pattern Mediator
  */
 public interface PluginInteractionBus {
 

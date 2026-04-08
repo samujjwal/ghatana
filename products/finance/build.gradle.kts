@@ -35,19 +35,12 @@ dependencies {
     implementation(project(":platform:java:observability"))
     implementation(project(":platform:java:config"))
     implementation(project(":platform:java:workflow"))
-    // implementation(project(":platform:java:plugin"))  // MIGRATED: use platform-kernel:kernel-plugin
     implementation(project(":platform:java:audit"))
     implementation(project(":platform:java:agent-core"))
 
-    // Kernel modules (MIGRATED: use platform-kernel:kernel-core)
-    // implementation(project(":platform:java:kernel"))
-
-    // Shared billing contracts (MIGRATED: use platform-plugins:plugin-billing-ledger)
-    // api(project(":platform:java:billing"))
-
     // AI-specific dependencies
-    implementation("dev.langchain4j:langchain4j:0.34.0")
-    implementation("com.openai:openai-java:0.12.0")
+    implementation(libs.langchain4j)
+    implementation(libs.openai.client)
 
     // ActiveJ - for async operations and DI
     implementation(libs.activej.promise)
@@ -78,15 +71,15 @@ dependencies {
     implementation(project(":platform:java:distributed-cache"))
 
     // Jackson for JSON
-    implementation("com.fasterxml.jackson.core:jackson-databind")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.datatype.jsr310)
 
     // Micrometer for metrics
-    implementation("io.micrometer:micrometer-core")
+    implementation(libs.micrometer.core)
 
     // PostgreSQL
     implementation(libs.postgresql)
-    implementation("com.zaxxer:HikariCP")
+    implementation(libs.hikaricp)
     implementation(libs.flyway.core)
     implementation(libs.flyway.database.postgresql)
 

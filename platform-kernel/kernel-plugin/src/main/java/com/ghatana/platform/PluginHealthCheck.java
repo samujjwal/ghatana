@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Composable health check contract
  * @doc.layer core
+ * @doc.pattern Health
  */
 @FunctionalInterface
 public interface PluginHealthCheck {

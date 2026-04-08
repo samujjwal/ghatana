@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose ServiceLoader-based plugin discovery
  * @doc.layer core
+ * @doc.pattern Provider
  */
 public interface PluginProvider {
 
