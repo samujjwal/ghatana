@@ -21,55 +21,35 @@
 // Platform module versions
 // ─────────────────────────────────────────────────────────────────────────────
 ext {
-    // Platform module version — bump here to update ALL products at once
     platformVersion = project.findProperty('platform.version') ?: '1.0.0-SNAPSHOT'
 
-    // ── Core JVM ──────────────────────────────────────────────────────────────
     javaVersion            = 21
+    activejVersion         = libs.versions.activej.get()
+    jacksonVersion         = libs.versions.jackson.get()
+    slf4jVersion           = libs.versions.slf4j.get()
 
-    // ── ActiveJ ───────────────────────────────────────────────────────────────
-    activejVersion         = '6.0-rc2'
+    hikariVersion          = libs.versions.hikari.get()
+    postgresDriverVersion  = libs.versions.postgresql.get()
+    flywayVersion          = libs.versions.flyway.get()
+    jpaApiVersion          = libs.versions.jakarta.persistence.api.get()
+    hibernateVersion       = libs.versions.hibernate.core.get()
 
-    // ── Jackson ───────────────────────────────────────────────────────────────
-    jacksonVersion         = '2.17.1'
+    jakartaValidationVersion = libs.versions.jakarta.validation.get()
+    hibernateValidatorVersion = libs.versions.hibernate.validator.get()
 
-    // ── Logging ───────────────────────────────────────────────────────────────
-    slf4jVersion           = '2.0.12'
-    // logbackVersion removed: Log4j2 is the canonical logging impl (see log4j2-config.gradle)
-    // Retain logback-classic exclusion in log4j2-config.gradle to prevent transitive pulls.
+    langchain4jVersion     = libs.versions.langchain4j.get()
 
-    // ── Database ──────────────────────────────────────────────────────────────
-    hikariVersion          = '5.1.0'
-    postgresDriverVersion  = '42.7.1'
-    flywayVersion          = '10.8.1'
-    jpaApiVersion          = '3.1.0'
-    hibernateVersion       = '6.4.4.Final'
+    micrometerVersion      = libs.versions.micrometer.get()
+    prometheusVersion      = libs.versions.prometheus.simpleclient.get()
 
-    // ── Validation ────────────────────────────────────────────────────────────
-    jakartaValidationVersion = '3.0.2'
-    hibernateValidatorVersion = '8.0.1.Final'
+    junitVersion           = libs.versions.junit.jupiter.get()
+    assertjVersion         = libs.versions.assertj.get()
+    mockitoVersion         = libs.versions.mockito.get()
+    testcontainersVersion  = libs.versions.testcontainers.get()
 
-    // ── AI / LLM ──────────────────────────────────────────────────────────────
-    langchain4jVersion     = '0.34.0'
+    swaggerParserVersion   = libs.versions.swagger.annotations.get()
+    graphqlJavaVersion     = libs.versions.graphql.java.get()
 
-    // ── Metrics / Observability ───────────────────────────────────────────────
-    micrometerVersion      = '1.12.2'
-    prometheusVersion      = '0.16.0'
-
-    // ── Testing ───────────────────────────────────────────────────────────────
-    junitVersion           = '5.10.2'
-    assertjVersion         = '3.25.3'
-    mockitoVersion         = '5.11.0'
-    testcontainersVersion  = '1.19.3'
-
-    // ── Security — use Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt) directly
-    // jjwtVersion removed: codebase migrated to Nimbus JOSE+JWT (see libs.versions.toml)
-
-    // ── Serialization / OpenAPI ───────────────────────────────────────────────
-    swaggerParserVersion   = '2.1.22'
-    graphqlJavaVersion     = '21.5'
-
-    // ── DI ────────────────────────────────────────────────────────────────────
     javaxInjectVersion     = '1'
 }
 

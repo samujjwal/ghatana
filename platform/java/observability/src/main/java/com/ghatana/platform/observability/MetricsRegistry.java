@@ -473,7 +473,7 @@ public final class MetricsRegistry {
      * Otherwise return an empty string for compatibility.
      */
     public String scrape() {
-        if (meterRegistry instanceof io.micrometer.prometheus.PrometheusMeterRegistry prometheus) {
+        if (meterRegistry instanceof io.micrometer.prometheusmetrics.PrometheusMeterRegistry prometheus) {
             return prometheus.scrape();
         }
         return "";

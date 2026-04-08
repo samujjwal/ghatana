@@ -9,7 +9,7 @@ import com.ghatana.yappc.core.orchestrator.PolyglotBuildOrchestrator;
 import com.ghatana.yappc.core.services.ProjectAnalysisService;
 import io.activej.inject.annotation.Provides;
 import io.activej.inject.module.AbstractModule;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

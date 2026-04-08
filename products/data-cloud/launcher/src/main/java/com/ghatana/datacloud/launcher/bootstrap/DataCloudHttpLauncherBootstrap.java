@@ -94,8 +94,8 @@ public final class DataCloudHttpLauncherBootstrap {
                     .withAiModelManager(aiModelManager)
                     .withFeatureStoreService(featureStoreService)
                     .withMetricsCollector(MetricsCollectorFactory.create(
-                            new io.micrometer.prometheus.PrometheusMeterRegistry(
-                                    io.micrometer.prometheus.PrometheusConfig.DEFAULT)));
+                            new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                                    io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)));
             startTransport(
                     httpServer,
                     port,
@@ -148,9 +148,9 @@ public final class DataCloudHttpLauncherBootstrap {
     }
 
     private static AiServices buildAiServices(DataSource databaseDataSource) {
-        io.micrometer.prometheus.PrometheusMeterRegistry promRegistry =
-                new io.micrometer.prometheus.PrometheusMeterRegistry(
-                        io.micrometer.prometheus.PrometheusConfig.DEFAULT);
+        io.micrometer.prometheusmetrics.PrometheusMeterRegistry promRegistry =
+                new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                        io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
         MetricsCollector metrics = MetricsCollectorFactory.create(promRegistry);
         AiMetricsEmitter aiMetrics = new AiMetricsEmitter(metrics);
         ModelRegistryService modelRegistry = new ModelRegistryService(databaseDataSource, metrics);

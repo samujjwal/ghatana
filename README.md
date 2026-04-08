@@ -81,6 +81,32 @@ ghatana-new/
 
 - `TestFixture` - Test fixture pattern interface
 
+## Prerequisites
+
+- **Java 21 or higher** (required for ZGC generational mode support)
+- Gradle 9.x (wrapper included)
+- Docker (optional, for integration tests with Testcontainers)
+
+### Java Version Check
+
+```bash
+# Verify Java version
+java -version
+
+# Expected output: openjdk version "21.0.x" or higher
+```
+
+If you have multiple Java versions installed, set `JAVA_HOME` before running Gradle:
+
+```bash
+# Linux/macOS
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+./gradlew build
+
+# Or one-liner
+JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew build
+```
+
 ## Building
 
 ```bash

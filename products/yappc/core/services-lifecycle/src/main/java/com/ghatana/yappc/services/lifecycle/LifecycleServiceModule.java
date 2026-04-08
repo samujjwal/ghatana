@@ -66,7 +66,7 @@ import com.ghatana.yappc.services.lifecycle.dlq.DlqPublisher;
 import com.ghatana.yappc.services.lifecycle.dlq.JdbcDlqPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import com.ghatana.platform.observability.MetricsProvider;
 // ─── Workflow Engine (YAPPC-Ph9) ──────────────────────────────────────────
 import com.ghatana.platform.workflow.engine.DurableWorkflowEngine;
