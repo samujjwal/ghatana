@@ -1,6 +1,6 @@
 plugins {
     id("java-library")
-    id("com.google.protobuf") version "0.9.4"
+    alias(libs.plugins.protobuf)
     id("jacoco")
 }
 
@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.micrometer.registry.otlp)
 
     // CLI dependencies
-    implementation("info.picocli:picocli:4.7.5")
+    implementation(libs.picocli)
     implementation(libs.jline)
 
     // Caching

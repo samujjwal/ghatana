@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
-    id("com.google.protobuf") version "0.9.4"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    alias(libs.plugins.protobuf)
+    alias(libs.plugins.shadow)
 }
 
 group = "com.ghatana.tutorputor"
