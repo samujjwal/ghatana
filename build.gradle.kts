@@ -14,11 +14,16 @@ import org.cyclonedx.gradle.CyclonedxDirectTask
 plugins {
     id("java-platform")
     id("idea")
-    id("org.cyclonedx.bom") version "3.2.2"
+    alias(libs.plugins.cyclonedx)
 }
 
 group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
+
+// =============================================================================
+// Java Version Validation - Must run before any daemon configuration
+// =============================================================================
+apply(from = file("gradle/java-version-check.gradle"))
 
 // =============================================================================
 // Repository Configuration
@@ -27,6 +32,7 @@ version = "2026.3.1-SNAPSHOT"
 allprojects {
     repositories {
         mavenCentral()
+        maven { url = uri("https://repo1.maven.org/maven2/") }
         // mavenLocal() is only enabled for local platform library development.
         // Activate with: ./gradlew <task> -PlocalBuild=true
         if (findProperty("localBuild") == "true") {
@@ -63,10 +69,6 @@ subprojects {
         withSourcesJar()
     }
 
-    dependencies {
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher:1.10.2")
-    }
-    
     tasks.withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.compilerArgs.addAll(listOf(

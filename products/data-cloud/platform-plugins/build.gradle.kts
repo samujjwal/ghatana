@@ -74,8 +74,8 @@ dependencies {
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
     compileOnly(libs.spotbugs.annotations)
-    compileOnly(libs.trino.plugin.toolkit)
     compileOnly(libs.trino.spi)
+    compileOnly(libs.trino.plugin.toolkit)
 
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.assertj.core)

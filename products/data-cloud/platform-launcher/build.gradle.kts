@@ -114,7 +114,7 @@ tasks.withType<com.github.spotbugs.snom.SpotBugsTask>().matching { it.name == "s
 }
 
 jacoco {
-    toolVersion = "0.8.11"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.jacocoTestReport {
@@ -199,7 +199,7 @@ dependencyCheck {
     failBuildOnCVSS = 7.0f
     suppressionFile = rootProject.file("config/owasp-suppressions.xml").path
     formats = listOf("HTML", "SARIF", "JSON")
-    outputDirectory = layout.buildDirectory.dir("reports/owasp").get().asFile
+    outputDirectory = layout.buildDirectory.dir("reports/owasp").get().asFile.absolutePath
     nvd {
         apiKey = System.getenv("NVD_API_KEY") ?: ""
         delay = 4000

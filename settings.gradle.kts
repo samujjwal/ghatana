@@ -11,6 +11,36 @@
  * - EXPLICIT: All modules declared, no conditional magic
  * - COMPLETE: Every module compiles and tests green
  */
+
+// =============================================================================
+// Early Java Version Validation (runs before daemon starts)
+// =============================================================================
+val javaVersion = System.getProperty("java.version")
+val javaMajorVersion = javaVersion?.split(".")?.firstOrNull()?.toIntOrNull() ?: 0
+if (javaMajorVersion < 21) {
+    throw GradleException("""
+        
+        ╔══════════════════════════════════════════════════════════════════════════════╗
+        ║                          JAVA VERSION ERROR                                   ║
+        ╠══════════════════════════════════════════════════════════════════════════════╣
+        ║  This project requires Java 21 or higher.                                   ║
+        ║                                                                               ║
+        ║  Current Java version: ${javaVersion?.padEnd(54) ?: "unknown"}  ║
+        ║  JAVA_HOME: ${System.getenv("JAVA_HOME")?.padEnd(54) ?: "not set"}  ║
+        ║                                                                               ║
+        ║  TO FIX:                                                                       ║
+        ║  1. Set JAVA_HOME in your shell:                                               ║
+        ║     export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64                      ║
+        ║                                                                               ║
+        ║  2. Or run with explicit JAVA_HOME:                                            ║
+        ║     JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew <task>            ║
+        ║                                                                               ║
+        ║  3. For IDE (Windsurf/Cascade), set in .env file or IDE settings             ║
+        ╚══════════════════════════════════════════════════════════════════════════════╝
+        
+    """.trimIndent())
+}
+
 rootProject.name = "ghatana"
 
 // =============================================================================

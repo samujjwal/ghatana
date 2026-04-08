@@ -1,0 +1,91 @@
+/**
+ * Java Version Validation for Ghatana Monorepo
+ *
+ * This script validates that the build is running with Java 21 or higher.
+ * It runs early in the build lifecycle to provide a clear error message
+ * before any compilation or daemon startup issues occur.
+ *
+ * @doc.type configuration
+ * @doc.purpose Validates Java 21+ requirement at build startup
+ * @doc.layer platform
+ */
+
+// Validate Java version at settings evaluation time (before daemon starts)
+def javaVersion = System.getProperty("java.version")
+def javaMajorVersion = extractMajorVersion(javaVersion)
+
+def MINIMUM_JAVA_VERSION = 21
+
+if (javaMajorVersion < MINIMUM_JAVA_VERSION) {
+    def errorMessage = """
+    ╔══════════════════════════════════════════════════════════════════════════════╗
+    ║                          JAVA VERSION ERROR                                   ║
+    ╠══════════════════════════════════════════════════════════════════════════════╣
+    ║  This project requires Java ${MINIMUM_JAVA_VERSION} or higher.                                  ║
+    ║                                                                               ║
+    ║  Current Java version: ${javaVersion.padRight(54)}  ║
+    ║                                                                               ║
+    ║  The -XX:+ZGenerational JVM flag (ZGC generational mode) requires Java 21+.   ║
+    ║                                                                               ║
+    ║  TO FIX THIS ERROR:                                                           ║
+    ║  1. Install Java 21 (e.g., OpenJDK 21):                                       ║
+    ║     sudo apt-get install openjdk-21-jdk  (Debian/Ubuntu)                      ║
+    ║     brew install openjdk@21              (macOS)                              ║
+    ║                                                                               ║
+    ║  2. Set JAVA_HOME to point to Java 21:                                        ║
+    ║     export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64                       ║
+    ║                                                                               ║
+    ║  3. Run Gradle with the correct Java version:                                 ║
+    ║     JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew <task>             ║
+    ║                                                                               ║
+    ║  4. (Optional) Add to your ~/.bashrc or ~/.zshrc:                             ║
+    ║     export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64                       ║
+    ╚══════════════════════════════════════════════════════════════════════════════╝
+    """.stripIndent()
+
+    throw new GradleException(errorMessage)
+}
+
+// Log success for Java 21+ builds
+logger.lifecycle("Java version validation passed: ${javaVersion} (required: ${MINIMUM_JAVA_VERSION}+)")
+
+/**
+ * Extracts the major version number from a Java version string.
+ * Handles formats like "21.0.2", "17.0.8", "1.8.0_292" (legacy format)
+ */
+static int extractMajorVersion(String version) {
+    if (version == null || version.isEmpty()) {
+        return 0
+    }
+
+    // Handle legacy format like "1.8.0_292" -> 8
+    if (version.startsWith("1.")) {
+        def secondDot = version.indexOf('.', 2)
+        if (secondDot > 0) {
+            def minorVersion = version.substring(2, secondDot)
+            try {
+                return Integer.parseInt(minorVersion)
+            } catch (NumberFormatException e) {
+                return 0
+            }
+        }
+    }
+
+    // Handle modern format like "21.0.2" -> 21
+    def firstDot = version.indexOf('.')
+    if (firstDot > 0) {
+        def majorVersion = version.substring(0, firstDot)
+        try {
+            return Integer.parseInt(majorVersion)
+        } catch (NumberFormatException e) {
+            return 0
+        }
+    }
+
+    // Handle simple format like "21" (no dots)
+    try {
+        return Integer.parseInt(version)
+    } catch (NumberFormatException e) {
+        return 0
+    }
+}

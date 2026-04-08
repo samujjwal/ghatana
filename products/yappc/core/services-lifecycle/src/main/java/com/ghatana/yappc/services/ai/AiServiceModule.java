@@ -14,7 +14,7 @@ import com.ghatana.ai.prompts.PromptTemplateManager;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.MetricsProvider;
 import com.ghatana.platform.observability.SimpleMetricsCollector;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import com.ghatana.yappc.ai.canvas.CanvasService;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.router.AIRouterConfig;

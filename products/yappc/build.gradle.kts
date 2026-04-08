@@ -7,8 +7,8 @@ import java.io.File
 
 plugins {
     id("java")
-    id("org.owasp.dependencycheck") version "12.1.6"
-    id("com.github.spotbugs") version "6.4.2" apply false
+    alias(libs.plugins.owasp)
+    alias(libs.plugins.spotbugs) apply false
     // NOTE: spotless plugin is provided via buildSrc and applied selectively via conventions;
     // do NOT re-declare it here to avoid plugin marker resolution conflicts.
     // Individual modules apply it by referencing the convention plugin.
@@ -69,7 +69,7 @@ subprojects {
     // Exclude generated, config, package-info, and boilerplate classes.
     // ========================================================================
     configure<JacocoPluginExtension> {
-        toolVersion = "0.8.11"
+        toolVersion = "0.8.12"
     }
 
     tasks.named<JacocoReport>("jacocoTestReport") {

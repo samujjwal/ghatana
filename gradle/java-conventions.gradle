@@ -176,6 +176,7 @@ project.afterEvaluate {
             useJUnitPlatform()
             
             // Set JVM arguments for tests with Generational ZGC alignment
+            // NOTE: -XX:+ZGenerational requires Java 21+. See java-version-check.gradle
             jvmArgs = [
                 '-Xmx1g',
                 '-XX:+UseZGC',

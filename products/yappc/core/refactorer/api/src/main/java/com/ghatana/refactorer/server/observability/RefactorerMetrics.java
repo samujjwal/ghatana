@@ -260,16 +260,16 @@ public final class RefactorerMetrics {
     public String getPrometheusMetrics() {
         // The meterRegistry might be a CompositeMeterRegistry containing Prometheus
         // This delegates to the platform's metrics infrastructure
-        if (meterRegistry instanceof io.micrometer.prometheus.PrometheusMeterRegistry) {
-            return ((io.micrometer.prometheus.PrometheusMeterRegistry) meterRegistry).scrape();
+        if (meterRegistry instanceof io.micrometer.prometheusmetrics.PrometheusMeterRegistry) {
+            return ((io.micrometer.prometheusmetrics.PrometheusMeterRegistry) meterRegistry).scrape();
         }
 
         // Try to find Prometheus registry in composite
         if (meterRegistry instanceof io.micrometer.core.instrument.composite.CompositeMeterRegistry) {
             var composite = (io.micrometer.core.instrument.composite.CompositeMeterRegistry) meterRegistry;
             for (var registry : composite.getRegistries()) {
-                if (registry instanceof io.micrometer.prometheus.PrometheusMeterRegistry) {
-                    return ((io.micrometer.prometheus.PrometheusMeterRegistry) registry).scrape();
+                if (registry instanceof io.micrometer.prometheusmetrics.PrometheusMeterRegistry) {
+                    return ((io.micrometer.prometheusmetrics.PrometheusMeterRegistry) registry).scrape();
                 }
             }
         }

@@ -90,8 +90,7 @@ subprojects { project ->
     
     // JaCoCo configuration
     jacoco {
-        // Use a JaCoCo version that resolves reliably from Maven Central
-        toolVersion = '0.8.13'
+        toolVersion = libs.versions.jacoco.get()
     }
 
     // Ensure the jacocoAnt configuration (used by -javaagent in test JVMs) resolves
@@ -106,11 +105,8 @@ subprojects { project ->
     }
 
     dependencies {
-        // Agent artifact - this is the runtime javaagent we will point the Test JVM at
-        jacocoAgent "org.jacoco:org.jacoco.agent:0.8.13"
-
-        // Also pin jacocoAnt to the same family for any tasks that still rely on it
-        jacocoAnt "org.jacoco:org.jacoco.ant:0.8.13"
+        jacocoAgent "org.jacoco:org.jacoco.agent:${libs.versions.jacoco.get()}"
+        jacocoAnt "org.jacoco:org.jacoco.ant:${libs.versions.jacoco.get()}"
     }
     
     jacocoTestReport {
@@ -157,8 +153,7 @@ subprojects { project ->
     
     // Checkstyle configuration
     checkstyle {
-        // Use explicit version (matches catalog) to avoid Kotlin accessor calls in Groovy
-        toolVersion = '10.12.5'
+        toolVersion = libs.versions.checkstyle.get()
         configFile = rootProject.file('config/checkstyle/checkstyle.xml')
         configProperties = [
             'suppressionFile': rootProject.file('config/checkstyle/suppressions.xml').absolutePath
@@ -169,8 +164,7 @@ subprojects { project ->
     
     // PMD configuration
     pmd {
-        // Use a Java 21–compatible PMD version
-        toolVersion = '7.3.0'
+        toolVersion = libs.versions.pmd.get()
         ruleSetFiles = files(rootProject.file('config/pmd/ruleset.xml'))
         ruleSets = []
         ignoreFailures = false
@@ -180,7 +174,7 @@ subprojects { project ->
     // SpotBugs configuration — ENABLED
     if (pluginManager.hasPlugin('com.github.spotbugs')) {
         spotbugs {
-            toolVersion = '4.8.5'
+            toolVersion = libs.versions.spotbugs.get()
             ignoreFailures = false
             showStackTraces = true
             showProgress = true
@@ -190,7 +184,7 @@ subprojects { project ->
         }
     
         dependencies {
-            spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.12.0'
+            spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
         }
     
         def spotbugsLauncher = javaToolchains.launcherFor {

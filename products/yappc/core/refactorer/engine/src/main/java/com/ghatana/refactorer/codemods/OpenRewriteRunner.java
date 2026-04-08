@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -120,6 +121,11 @@ public final class OpenRewriteRunner {
             @Override
             public <T> T pollMessage(String key) {
                 return null;
+            }
+
+            @Override
+            public Map<String, Object> getMessages() {
+                return java.util.Collections.emptyMap();
             }
 
             @Override
