@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type record
  * @doc.purpose Define plugin dependencies
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public record PluginDependency(
     @NotNull String pluginId,

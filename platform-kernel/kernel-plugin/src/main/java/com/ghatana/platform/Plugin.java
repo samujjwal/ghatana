@@ -15,6 +15,7 @@ import java.util.Set;
  * @doc.type interface
  * @doc.purpose Canonical Plugin definition
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface Plugin {
 

@@ -8,7 +8,9 @@ repositories {
 
 dependencies {
     // Spotless plugin on classpath so SpotlessConventionsPlugin can configure it type-safely
-    implementation("com.diffplug.spotless:spotless-plugin-gradle:8.0.0")
+    // NOTE: buildSrc has isolated classloader and cannot access libs.versions.toml
+    // Version must be manually synchronized with gradle/libs.versions.toml spotless = "8.4.0"
+    implementation("com.diffplug.spotless:spotless-plugin-gradle:8.4.0")
     // Saxon-HE for build-time XSLT tasks
     implementation("net.sf.saxon:Saxon-HE:12.4") {
         exclude(group = "org.apache.httpcomponents.client5", module = "httpclient5")

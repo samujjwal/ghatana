@@ -1,3 +1,9 @@
 #!/usr/bin/env sh
 # Run lint-staged to enforce formatting and linting rules on staged TypeScript/JavaScript files.
 pnpm exec lint-staged
+
+# Validate Gradle build files if any are staged
+if git diff --cached --name-only | grep -E "build\.gradle\.kts|\.versions\.toml|settings.gradle.kts"; then
+    echo "Checking Gradle build files..."
+    ./scripts/validate-gradle-build.sh || exit 1
+fi

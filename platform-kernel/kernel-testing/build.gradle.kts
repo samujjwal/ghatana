@@ -13,10 +13,6 @@ group = "com.ghatana.kernel"
 version = "1.0.0"
 description = "Platform Kernel Testing - test utilities and base classes"
 
-repositories {
-    mavenCentral()
-}
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -25,27 +21,27 @@ java {
 
 dependencies {
     // Kernel Core
-    api(project(":kernel-core"))
+    api(project(":platform-kernel:kernel-core"))
 
     // ActiveJ test support
-    api("io.activej:activej-promise:6.0-rc2")
-    api("io.activej:activej-eventloop:6.0-rc2")
+    api(libs.activej.promise)
+    api(libs.activej.eventloop)
 
     // JUnit
-    api("org.junit.jupiter:junit-jupiter:5.10.2")
-    api("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    api("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    api(libs.junit.jupiter)
+    api(libs.junit.jupiter.api)
+    api(libs.junit.jupiter.engine)
 
     // Assertions
-    api("org.assertj:assertj-core:3.25.3")
+    api(libs.assertj.core)
 
     // Mocking
-    api("org.mockito:mockito-core:5.11.0")
-    api("org.mockito:mockito-junit-jupiter:5.11.0")
+    api(libs.mockito.core)
+    api(libs.mockito.junit.jupiter)
 
     // Logging
-    api("org.slf4j:slf4j-api")
+    api(libs.slf4j.api)
 
     // Test runtime
-    runtimeOnly("org.junit.platform:junit-platform-launcher")
+    runtimeOnly(libs.junit.platform.launcher)
 }

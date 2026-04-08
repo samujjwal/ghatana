@@ -9,6 +9,7 @@ package com.ghatana.platform.plugin;
  * @doc.type interface
  * @doc.purpose Capability marker
  * @doc.layer core
+ * @doc.pattern Marker
  */
 public interface PluginCapability {
 }

@@ -13,6 +13,7 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Plugin loading abstraction
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface PluginLoader {
 

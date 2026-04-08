@@ -357,7 +357,7 @@ class PluginEdgeCasesTest extends PluginTestBase {
 
         @Test
         @DisplayName("checked exceptions are properly propagated")
-        void checkedExceptionsAreProperly Propagated() {
+        void checkedExceptionsAreProperlyPropagated() {
             TestCheckedExceptionPlugin plugin = new TestCheckedExceptionPlugin();
             registry.register(plugin);
 

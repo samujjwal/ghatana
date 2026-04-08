@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type record
  * @doc.purpose Version compatibility matrix
  * @doc.layer core
+ * @doc.pattern ValueObject
  */
 public record PluginCompatibility(
     @NotNull String minDataCloudVersion,

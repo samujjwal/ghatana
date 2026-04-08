@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  * @doc.type class
  * @doc.purpose JAR-based plugin loader
  * @doc.layer core
+ * @doc.pattern Service
  */
 public class JarPluginLoader implements PluginLoader {
 

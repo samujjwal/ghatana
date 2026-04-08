@@ -15,6 +15,7 @@ import java.util.function.Consumer;
  * @doc.type interface
  * @doc.purpose Streaming abstraction
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface StreamingPlugin<T> extends Plugin {
 

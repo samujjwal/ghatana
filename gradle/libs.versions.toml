@@ -72,7 +72,6 @@ google-auth-library-oauth2-http = "1.39.1"
 google-cloud-core = "2.60.4"
 google-http-client = "2.0.1"
 proto-google-common-protos = "2.29.0"
-grpc = "1.79.0"
 
 # Jakarta EE
 jakarta-annotation = "2.1.1"
@@ -133,7 +132,7 @@ shadow-plugin = "8.1.1"
 # Protocol Buffers
 protobuf = "4.34.1"
 protobuf-util = "4.34.1"
-grpc-version = "1.62.2"  # Used only by the protobuf Gradle plugin (com.google.protobuf). Runtime gRPC uses [versions.grpc]
+grpc = "1.79.0"  # Unified gRPC version for both protobuf plugin and runtime
 
 # LangChain4J (AI/LLM Integration)
 langchain4j = "1.0.0-beta1"
@@ -181,6 +180,7 @@ antlr = "4.13.2"
 openrewrite = "8.48.0"
 okhttp = "4.12.0"
 jedis = "5.2.0"
+lettuce-core = "6.3.2.RELEASE"
 maxmind-geoip2 = "4.2.0"
 spotbugs-annotations = "4.9.3"
 prometheus-simpleclient = "0.16.0"
@@ -190,6 +190,9 @@ snakeyaml = "2.0"
 protobuf-protoc = "3.25.1"
 grpc-protoc-gen-grpc-java = "1.60.0"
 findsecbugs-plugin = "1.13.0"
+jetbrains-annotations = "24.0.1"
+elasticsearch-java = "8.12.2"
+opensearch-java = "2.18.0"
 
 # SQL Parsing
 jsqlparser = "5.1"
@@ -382,7 +385,7 @@ jackson-datatype-protobuf = { module = "com.hubspot.jackson:jackson-datatype-pro
 
 # Development Tools
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
-jetbrains-annotations = { module = "org.jetbrains:annotations", version = "24.0.1" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
 lombok-mapstruct-binding = { module = "org.projectlombok:lombok-mapstruct-binding", version.ref = "lombok-mapstruct-binding" }
 
@@ -412,7 +415,7 @@ jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
 
 # GeoIP
 maxmind-geoip2 = { module = "com.maxmind.geoip2:geoip2", version.ref = "maxmind-geoip2" }
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "6.3.2.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version.ref = "lettuce-core" }
 
 # Kafka
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-clients" }
@@ -445,12 +448,12 @@ rocksdb = { module = "org.rocksdb:rocksdbjni", version.ref = "rocksdb" }
 jsqlparser = { module = "com.github.jsqlparser:jsqlparser", version.ref = "jsqlparser" }
 
 # Elasticsearch Java Client 8.x
-elasticsearch-java = { module = "co.elastic.clients:elasticsearch-java", version = "8.12.2" }
-elasticsearch-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "8.12.2" }
+elasticsearch-java = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elasticsearch-java" }
+elasticsearch-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version.ref = "elasticsearch-java" }
 
 # OpenSearch Java Client 2.x (Apache 2.0)
-opensearch-java = { module = "org.opensearch.client:opensearch-java", version = "2.18.0" }
-opensearch-rest-client = { module = "org.opensearch.client:opensearch-rest-client", version = "2.18.0" }
+opensearch-java = { module = "org.opensearch.client:opensearch-java", version.ref = "opensearch-java" }
+opensearch-rest-client = { module = "org.opensearch.client:opensearch-rest-client", version.ref = "opensearch-java" }
 
 # Apache Iceberg
 iceberg-api = { module = "org.apache.iceberg:iceberg-api", version.ref = "iceberg" }
@@ -491,6 +494,10 @@ disruptor = { module = "com.lmax:disruptor", version.ref = "disruptor" }
 # JSON Processing
 json-path = { module = "com.jayway.jsonpath:json-path", version = "2.9.0" }
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
+
+# Platform BOMs
+kernel-bom = { module = "com.ghatana.kernel:kernel-bom", version = "1.0.0" }
+platform-bom = { module = "com.ghatana.platform:platform-bom", version = "2026.3.1-SNAPSHOT" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }

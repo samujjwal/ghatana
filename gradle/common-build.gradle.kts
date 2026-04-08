@@ -89,7 +89,7 @@ subprojects {
     
     // JaCoCo configuration
     configure<JacocoPluginExtension> {
-        toolVersion = "0.8.12"
+        toolVersion = libs.versions.jacoco.get()
     }
 
     // Ensure the jacocoAnt configuration (used by -javaagent in test JVMs) resolves
@@ -102,8 +102,8 @@ subprojects {
     configurations.create("jacocoAgent")
 
     dependencies {
-        add("jacocoAgent", "org.jacoco:org.jacoco.agent:0.8.12")
-        add("jacocoAnt", "org.jacoco:org.jacoco.ant:0.8.12")
+        add("jacocoAgent", "org.jacoco:org.jacoco.agent:${libs.versions.jacoco.get()}")
+        add("jacocoAnt", "org.jacoco:org.jacoco.ant:${libs.versions.jacoco.get()}")
     }
     
     tasks.named<JacocoReport>("jacocoTestReport") {
@@ -133,24 +133,10 @@ subprojects {
         }
     }
 
-    // PITest configuration is currently disabled
-    // To enable PITest, uncomment the plugin application above and uncomment this block
-    /*
-    configure<PitestExtension> {
-        junit5PluginVersion.set(libs.versions.pitest.junit5.get())
-        pitestVersion.set(libs.versions.pitest.get())
-        targetClasses.set(listOf("com.ghatana.*"))
-        threads.set(Runtime.getRuntime().availableProcessors())
-        outputFormats.set(listOf("XML", "HTML"))
-        timestampedReports.set(false)
-        testStrengthThreshold.set(80)
-        mutationThreshold.set(70)
-    }
-    */
     
     // Checkstyle configuration
     configure<CheckstyleExtension> {
-        toolVersion = "10.3.3"
+        toolVersion = libs.versions.checkstyle.get()
         configFile = rootProject.file("config/checkstyle/checkstyle.xml")
         configProperties = mapOf(
             "suppressionFile" to rootProject.file("config/checkstyle/suppressions.xml").absolutePath
@@ -161,7 +147,7 @@ subprojects {
     
     // PMD configuration
     configure<PmdExtension> {
-        toolVersion = "6.55.0"
+        toolVersion = libs.versions.pmd.get()
         ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
         ruleSets = emptyList()
         isIgnoreFailures = false
@@ -171,7 +157,7 @@ subprojects {
     // SpotBugs configuration — ENABLED
     if (pluginManager.hasPlugin("com.github.spotbugs")) {
         configure<com.github.spotbugs.snom.SpotBugsExtension> {
-            toolVersion.set("4.9.3")
+            toolVersion.set(libs.versions.spotbugs.get())
             isIgnoreFailures = false
             isShowStackTraces = true
             isShowProgress = true
@@ -181,7 +167,7 @@ subprojects {
         }
     
         dependencies {
-            add("spotbugsPlugins", "com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0")
+            add("spotbugsPlugins", "com.h3xstream.findsecbugs:findsecbugs-plugin:${libs.versions.findsecbugs.plugin.get()}")
         }
     
         val spotbugsLauncher = javaToolchains.launcherFor {

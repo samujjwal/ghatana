@@ -37,11 +37,12 @@ dependencies {
     implementation(project(":platform:java:config"))
 
     // Redis
-    implementation("redis.clients:jedis:5.1.0")
+    implementation(libs.jedis)
 
-    // Logging
+    // Logging (canonical: Log4j2)
     implementation(libs.slf4j.api)
-    implementation(libs.logback.classic)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.slf4j.impl)
 
     // Lombok
     compileOnly(libs.lombok)

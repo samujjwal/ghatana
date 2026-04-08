@@ -17,6 +17,7 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Storage abstraction
  * @doc.layer core
+ * @doc.pattern SPI
  */
 public interface StoragePlugin<T> extends Plugin {
 
