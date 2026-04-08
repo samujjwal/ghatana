@@ -25,7 +25,7 @@ kafka-clients = "4.2.0"
 resilience4j = "2.3.0"
 
 # Vert.x
-vertx = "4.5.13"
+vertx = "5.0.10"
 
 # JSON Schema Validator
 networknt-json-schema = "1.5.9"
