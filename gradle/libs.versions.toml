@@ -236,6 +236,15 @@ pmd = "7.11.0"
 # Checkstyle
 checkstyle = "10.21.4"
 
+# ============================================================================
+# buildSrc Classpath Dependencies
+# IMPORTANT: Also update buildSrc/gradle.properties when changing these.
+# buildSrc has an isolated classloader and cannot read this file at build time.
+# ============================================================================
+saxon-he = "12.4"
+httpclient5 = "5.5.1"
+httpcore5 = "5.3.6"
+
 [plugins]
 # Development Tools
 lombok = { id = "io.freefair.lombok", version = "8.17" }
@@ -645,7 +654,94 @@ opencv-java = { module = "org.openpnp:opencv", version.ref = "opencv-java" }
 twelvemonkeys-imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "twelvemonkeys-imageio" }
 twelvemonkeys-imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "twelvemonkeys-imageio" }
 
+# buildSrc classpath dependencies (version catalog reference only — actual pins in buildSrc/gradle.properties)
+saxon-he = { module = "net.sf.saxon:Saxon-HE", version.ref = "saxon-he" }
+httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5", version.ref = "httpclient5" }
+httpcore5 = { module = "org.apache.httpcomponents.core5:httpcore5", version.ref = "httpcore5" }
+httpcore5-h2 = { module = "org.apache.httpcomponents.core5:httpcore5-h2", version.ref = "httpcore5" }
+
 [bundles]
+# ─── ActiveJ ──────────────────────────────────────────────────────────────────
+# Core async primitives (event loop, promise, injection, common utilities)
+activej-core = [
+    "activej-eventloop",
+    "activej-promise",
+    "activej-inject",
+    "activej-common"
+]
+# HTTP server + launcher stack
+activej-http = [
+    "activej-http",
+    "activej-launcher",
+    "activej-boot",
+    "activej-config",
+    "activej-servicegraph"
+]
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+# API only (safe to put in implementation scope)
+logging-api = [
+    "slf4j-api",
+    "log4j-api"
+]
+# Runtime binding — Log4j2 + SLF4J bridge (testRuntimeOnly / runtimeOnly)
+logging-runtime = [
+    "log4j-core",
+    "log4j-slf4j-impl",
+    "log4j-jul"
+]
+
+# ─── Jackson ──────────────────────────────────────────────────────────────────
+# Core Jackson with common type-adapters
+jackson-bundle = [
+    "jackson-databind",
+    "jackson-core",
+    "jackson-annotations",
+    "jackson-datatype-jsr310",
+    "jackson-datatype-jdk8"
+]
+
+# ─── Observability ────────────────────────────────────────────────────────────
+# Metrics + tracing API
+observability-api = [
+    "micrometer-core",
+    "opentelemetry-api",
+    "opentelemetry-sdk"
+]
+# Exporters for Prometheus + OTLP
+observability-exporters = [
+    "micrometer-registry-prometheus",
+    "opentelemetry-exporter-otlp"
+]
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+# Connection pooling + migration + PostgreSQL driver
+database-core = [
+    "hikaricp",
+    "flyway-core",
+    "flyway-database-postgresql",
+    "postgresql"
+]
+
+# ─── Testing ──────────────────────────────────────────────────────────────────
+# JUnit 5 API (testImplementation)
+testing-junit = [
+    "junit-jupiter",
+    "junit-jupiter-api",
+    "junit-jupiter-params"
+]
+# JUnit 5 runtime (testRuntimeOnly)
+testing-runtime = [
+    "junit-jupiter-engine",
+    "junit-platform-launcher"
+]
+# Standard assertion + mocking core
+testing-assertions = [
+    "assertj-core",
+    "mockito-core",
+    "mockito-junit-jupiter"
+]
+
 test-essentials = [
     "junit-jupiter-api",
     "junit-jupiter-params",

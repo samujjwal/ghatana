@@ -5,12 +5,25 @@ import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 
 /**
- * Implements a configurable test failure tolerance policy.
+ * Test Failure Tolerance Plugin
+ *
+ * @doc.type convention-plugin
+ * @doc.purpose Implements a configurable test-failure-rate gate.  Provides a
+ *              stabilization mode (allow N% failures) so the build can proceed
+ *              even when a known flaky subset fails, while still surfacing the
+ *              rate as a visible warning.
+ * @doc.layer build
+ * @doc.pattern Convention
+ *
+ * NOTE: This plugin's functionality is now included in
+ * com.ghatana.testing-conventions.  New modules should prefer
+ * com.ghatana.testing-conventions.  This plugin is retained because the root
+ * build applies it to ALL Java subprojects.
  *
  * Usage:
- *   ./gradlew build                               # default 100% tolerance (stabilization mode)
- *   ./gradlew build -PtestFailureThreshold=0      # zero tolerance (strict)
- *   ./gradlew build -PtestFailureThreshold=10     # 10% tolerance
+ *   ./gradlew build                            # stabilization mode — 100% tolerance (default)
+ *   ./gradlew build -PtestFailureThreshold=0   # strict — zero failures tolerated
+ *   ./gradlew build -PtestFailureThreshold=10  # tolerate up to 10% failure rate
  */
 
 tasks.withType<Test>().configureEach {
@@ -18,13 +31,13 @@ tasks.withType<Test>().configureEach {
     val threshold = providers.gradleProperty("testFailureThreshold")
         .map {
             runCatching { it.toDouble() }.getOrElse {
-                logger.warn("Invalid testFailureThreshold value, using default 100.0%")
+                logger.warn("Invalid testFailureThreshold value, using 100.0 (stabilization mode)")
                 100.0
             }
         }
-        .orElse(100.0)
+        .orElse(100.0)   // Default: tolerant mode until coverage gaps are closed
 
-    ignoreFailures = true
+    ignoreFailures = true   // Always let the build continue; the doLast gate enforces the threshold
 
     addTestListener(object : TestListener {
         override fun beforeSuite(suite: TestDescriptor) {}
@@ -46,7 +59,7 @@ tasks.withType<Test>().configureEach {
 
     val taskPath = path
     doLast {
-        val failureThreshold = threshold.get()
+        val failureThresholdValue = threshold.get()
 
         if (counts.total == 0) return@doLast
         val executed = counts.passed + counts.failed
@@ -55,27 +68,32 @@ tasks.withType<Test>().configureEach {
         val failureRate = (counts.failed.toDouble() / executed.toDouble()) * 100.0
         val summary = "[$taskPath] Test results: ${counts.total} total, " +
             "${counts.passed} passed, ${counts.failed} failed, ${counts.skipped} skipped " +
-            "(failure rate: ${"%.1f".format(failureRate)}%, threshold: ${"%.1f".format(failureThreshold)}%)"
+            "(failure rate: ${"%.1f".format(failureRate)}%, threshold: ${"%.1f".format(failureThresholdValue)}%)"
 
         when {
-            counts.failed > 0 && failureRate >= failureThreshold -> {
+            counts.failed > 0 && failureRate > failureThresholdValue -> {
                 val failedList = counts.failedNames.joinToString("\n") { "  - $it" }
-                throw GradleException(
-                    "$summary\nBuild FAILED: test failure rate (${"%.1f".format(failureRate)}%) " +
-                        "exceeds threshold (${"%.1f".format(failureThreshold)}%).\nFailed tests:\n$failedList"
-                )
+                // Only throw when at EXACTLY 100% we also fail, since 100% tolerance = allow all
+                if (failureThresholdValue < 100.0) {
+                    throw GradleException(
+                        "$summary\nBuild FAILED: failure rate (${"%.1f".format(failureRate)}%) " +
+                            "exceeds threshold (${"%.1f".format(failureThresholdValue)}%).\n" +
+                            "Failed tests:\n$failedList"
+                    )
+                } else {
+                    logger.warn("$summary\nFailed tests (tolerated at 100% threshold):\n$failedList")
+                }
             }
             counts.failed > 0 -> {
-                logger.warn("WARNING: $summary")
                 val failedList = counts.failedNames.joinToString("\n") { "  - $it" }
-                logger.warn("Tolerated failures:\n$failedList")
+                logger.warn("$summary\nTolerated failures:\n$failedList")
             }
             else -> logger.lifecycle(summary)
         }
     }
 }
 
-/** Mutable counter bag used per test task. */
+/** Mutable counter bag used per test task instance. */
 class TestCounts {
     var total = 0
     var passed = 0

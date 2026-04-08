@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "com.ghatana.products"
-version = "1.0.0"
+version = rootProject.version
 description = "PHR — Personal Health Records product module"
 
 java {

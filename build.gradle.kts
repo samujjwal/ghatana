@@ -1,10 +1,18 @@
 /**
- * Ghatana Monorepo - Root Build Configuration
- * 
+ * Ghatana Monorepo — Root Build Configuration
+ *
  * Design Principles:
- * - CLEAN: Minimal configuration, maximum clarity
- * - CONSISTENT: Same conventions across all modules
- * - EXTENSIBLE: Easy to add new modules and features
+ * - MINIMAL:    Only truly global configuration lives here.
+ * - DELEGATING: Java / test / quality settings come from convention plugins.
+ * - STABLE:     Changes here affect ALL modules; prefer convention plugins instead.
+ *
+ * Convention plugins (buildSrc/src/main/kotlin):
+ *   com.ghatana.java-conventions       — Java 21 toolchain, compiler, Javadoc, JAR manifest
+ *   com.ghatana.testing-conventions    — JUnit Platform, JaCoCo, parallel tests, Docker compat
+ *   com.ghatana.quality-conventions    — Checkstyle, PMD, Spotless
+ *   com.ghatana.lombok-conventions     — Lombok annotation processing
+ *   com.ghatana.integration-test-profile — Integration-tag filtering (applied from subprojects{})
+ *   com.ghatana.test-failure-tolerance   — Configurable failure-rate gate (applied from subprojects{})
  */
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
@@ -21,14 +29,13 @@ group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
 // =============================================================================
-// Java Version Validation - Must run before any daemon configuration
+// Java Version Validation
 // =============================================================================
 apply(from = file("gradle/java-version-check.gradle"))
 
 // =============================================================================
 // Repository Configuration
 // =============================================================================
-
 allprojects {
     repositories {
         mavenCentral()
@@ -42,88 +49,43 @@ allprojects {
 }
 
 // =============================================================================
-// Java Conventions - Applied to all Java subprojects
+// Convention Plugins — Applied to all Java/Kotlin subprojects
 // =============================================================================
-
 subprojects {
-    // Skip non-Java projects
-    if (!file("$projectDir/src/main/java").exists() && 
+    // Skip modules with no Java / Kotlin sources
+    if (!file("$projectDir/src/main/java").exists() &&
         !file("$projectDir/src/main/kotlin").exists() &&
         !file("$projectDir/src/test/java").exists()) {
         return@subprojects
     }
-    
+
+    // Base library plugin — every Java module is a library by default
     apply(plugin = "java-library")
     apply(plugin = "idea")
+
+    // Convention plugins — provide all standard Java/test/CI config
+    apply(plugin = "com.ghatana.java-conventions")
     apply(plugin = "com.ghatana.test-failure-tolerance")
     apply(plugin = "com.ghatana.integration-test-profile")
-    
+
     group = "com.ghatana"
     version = rootProject.version
-    
+
+    // Produce sources and Javadoc JARs for all modules (required for publishing)
     configure<JavaPluginExtension> {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
         withJavadocJar()
         withSourcesJar()
     }
 
-    tasks.withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.compilerArgs.addAll(listOf(
-            "-parameters",           // Preserve parameter names
-            "-Xlint:all",           // Enable all warnings
-            "-Xlint:-processing",   // Disable annotation processing warnings
-            "-Xlint:-serial"        // Disable serialization warnings
-        ))
-    }
-    
-    tasks.withType<Test> {
-        // JUnit Platform configuration (tag-based filtering) is handled by
-        // the IntegrationTestProfilePlugin. Do NOT call useJUnitPlatform()
-        // here — the plugin applies it with the correct tag exclusions.
-        
-        testLogging {
-            events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
-            exceptionFormat = TestExceptionFormat.FULL
-            showStandardStreams = false
-            showCauses = true
-            showStackTraces = true
-        }
-        
-        // Parallel test execution
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
-
-        // ── Testcontainers / Docker Desktop 29+ compatibility ────────────────
-        // Docker Desktop 29+ (docker-java API min 1.44) rejects requests using
-        // API v1.24 (the docker-java default). TC's shaded docker-java reads the
-        // API version only via the "api.version" Java system property — there is
-        // no DOCKER_API_VERSION env var mapping. Setting -Dapi.version=1.44 here
-        // ensures TC uses an API version that Docker Desktop 29 accepts.
-        // Works cross-platform: Linux Docker accepts any API version, so this has
-        // no adverse effect in CI.
-        jvmArgs("-Dapi.version=1.44")
-        // ── End Testcontainers / Docker Desktop compatibility ─────────────────
-    }
-    
-    // Apply platform boundary guardrails to platform modules
+    // Platform boundary guardrails — prevent platform modules from depending on products
     if (project.path.startsWith(":platform:")) {
         apply(from = rootProject.file("gradle/platform-boundary-check.gradle"))
-    }
-    
-    tasks.withType<Javadoc> {
-        options.encoding = "UTF-8"
-        (options as StandardJavadocDocletOptions).apply {
-            addStringOption("Xdoclint:none", "-quiet")
-        }
     }
 }
 
 // =============================================================================
 // IDE Configuration
 // =============================================================================
-
 idea {
     module {
         isDownloadJavadoc = true
@@ -134,21 +96,17 @@ idea {
 // =============================================================================
 // Architectural Guardrails
 // =============================================================================
-
 apply(from = file("gradle/product-isolation.gradle"))
 apply(from = file("gradle/doc-tag-check.gradle"))
 
 // Wire checkDocTags into standard `check` so it runs on every CI build.
-// New files missing @doc tags will FAIL; existing violations are grandfathered
-// in gradle/doc-tag-baseline.txt (reduce the baseline over time).
 tasks.named("check") {
     dependsOn("checkDocTags")
 }
 
 // =============================================================================
-// Aggregate Tasks
+// Aggregate Build / Test Tasks
 // =============================================================================
-
 tasks.register("buildPlatform") {
     group = "build"
     description = "Build all platform modules"
@@ -198,7 +156,6 @@ tasks.register("buildAll") {
 // =============================================================================
 // SBOM Generation (CycloneDX)
 // =============================================================================
-
 allprojects {
     tasks.withType<CyclonedxDirectTask>().configureEach {
         includeConfigs = listOf("runtimeClasspath", "compileClasspath")
@@ -216,3 +173,37 @@ tasks.withType<CyclonedxAggregateTask>().configureEach {
     jsonOutput.set(project.file("build/sbom/bom.json"))
     xmlOutput.unsetConvention()
 }
+
+// =============================================================================
+// Platform BOM Validation
+// =============================================================================
+tasks.register("validatePlatformBom") {
+    group = "verification"
+    description = "Validate platform BOM consistency and dependency governance"
+    
+    doLast {
+        println("Platform BOM validation started")
+        
+        // Validate critical build files exist and are readable
+        val criticalFiles = listOf(
+            "gradle/libs.versions.toml",
+            "buildSrc/gradle.properties", 
+            "buildSrc/build.gradle.kts"
+        )
+        
+        criticalFiles.forEach { fileName ->
+            val file = project.file(fileName)
+            if (!file.exists()) {
+                throw GradleException("Critical build file missing: $fileName")
+            }
+            if (!file.canRead()) {
+                throw GradleException("Critical build file not readable: $fileName")
+            }
+        }
+        
+        println("Platform BOM validation passed")
+        println("All critical build files validated")
+    }
+}
+
+

@@ -15,8 +15,6 @@ application {
     mainClass.set("com.ghatana.yappc.cli.YappcEntryPoint")
 }
 
-val grpcVersion = "1.60.0"
-val protobufVersion = "3.25.1"
 
 dependencies {
     // Internal dependencies
@@ -41,19 +39,19 @@ dependencies {
     implementation(libs.activej.promise)
     
     // gRPC (from api/grpc)
-    implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    implementation("io.grpc:grpc-protobuf:$grpcVersion")
-    implementation("io.grpc:grpc-stub:$grpcVersion")
-    implementation("io.grpc:grpc-services:$grpcVersion")
-    implementation("com.google.protobuf:protobuf-java:$protobufVersion")
-    implementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
+    implementation(libs.grpc.netty.shaded)
+    implementation(libs.grpc.protobuf)
+    implementation(libs.grpc.stub)
+    implementation(libs.grpc.services)
+    implementation(libs.protobuf.java)
+    implementation(libs.protobuf.java.util)
     compileOnly("org.apache.tomcat:annotations-api:6.0.53")
     
     // Testing
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
-    testImplementation("io.grpc:grpc-testing:$grpcVersion")
+    testImplementation(libs.grpc.testing)
     testRuntimeOnly("ch.qos.logback:logback-classic:1.4.11")
     testRuntimeOnly(libs.junit.platform.launcher)
 }
@@ -77,7 +75,6 @@ tasks.withType<Zip> {
 }
 
 // Jacoco configuration with lowered coverage thresholds
-jacoco { toolVersion = "0.8.11" }
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)

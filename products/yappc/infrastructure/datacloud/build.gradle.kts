@@ -6,6 +6,7 @@ plugins {
 
 group = "com.ghatana.products.yappc"
 version = rootProject.version
+description = "YAPPC Infrastructure - Data-Cloud Integration"
 
 dependencies {
     // Data-Cloud SPI only (no platform dep)
@@ -53,8 +54,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-// Jacoco configuration with lowered coverage thresholds
-jacoco { toolVersion = "0.8.11" }
+// JaCoCo configuration managed by convention plugin
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
@@ -70,5 +70,3 @@ tasks.jacocoTestReport {
 tasks.named("jacocoTestCoverageVerification") {
     enabled = false
 }
-
-description = "YAPPC Infrastructure - Data-Cloud Integration"

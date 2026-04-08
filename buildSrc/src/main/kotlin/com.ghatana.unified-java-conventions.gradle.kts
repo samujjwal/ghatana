@@ -1,52 +1,21 @@
 /**
- * Unified Java Convention Plugin
+ * @deprecated — superseded by com.ghatana.java-conventions (merged 2026-04-08).
  *
- * @doc.type convention-plugin
- * @doc.purpose Provides consistent Java configuration across all modules
- * @doc.layer build
+ * This plugin was an exact functional duplicate of com.ghatana.java-conventions.
+ * All configuration (Java 21 toolchain, sourceCompatibility, compiler args, JUnit
+ * Platform, Lombok wiring, test logging) has been merged into the canonical plugin.
  *
- * This plugin configures:
- * - Java 21 toolchain
- * - UTF-8 encoding
- * - Compiler arguments for safety
- * - JUnit 5 test platform
- * - Test logging
- * - Lombok annotation processing
+ * Migration — replace in your module's build.gradle.kts:
+ *
+ *   // Before
+ *   id("com.ghatana.unified-java-conventions")
+ *
+ *   // After
+ *   id("com.ghatana.java-conventions")
+ *
+ * This file is kept as a no-op forward-delegate to prevent build failures on any
+ * module that has not yet been migrated.  It will be deleted in a future cleanup.
  */
-plugins {
-    java
-}
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    options.encoding = "UTF-8"
-    options.compilerArgs.addAll(listOf(
-        "-parameters",
-        "-Xlint:unchecked",
-        "-Xlint:deprecation"
-    ))
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-        showStandardStreams = true
-    }
-}
-
-dependencies {
-    val lombokVersion = "1.18.36"
-    compileOnly("org.projectlombok:lombok:$lombokVersion")
-    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
-    testCompileOnly("org.projectlombok:lombok:$lombokVersion")
-    testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
-}
+// Forward all configuration to the canonical plugin.
+apply(plugin = "com.ghatana.java-conventions")

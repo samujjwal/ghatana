@@ -107,7 +107,7 @@ spotless {
 }
 
 checkstyle {
-    toolVersion = "10.12.5"
+    toolVersion = libs.versions.checkstyle.get()
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
     configProperties["suppressionFile"] = rootProject.file("config/checkstyle/suppressions.xml").absolutePath
     isIgnoreFailures = false
@@ -115,7 +115,7 @@ checkstyle {
 }
 
 pmd {
-    toolVersion = "7.3.0"
+    toolVersion = libs.versions.pmd.get()
     ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
     ruleSets = emptyList()
     isIgnoreFailures = true

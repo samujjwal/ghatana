@@ -127,8 +127,8 @@ tasks.named("check") {
     dependsOn("validateAgentConfigs")
 }
 
-// Jacoco configuration with lowered coverage thresholds
-jacoco { toolVersion = "0.8.11" }
+// Jacoco configuration — version from catalog (do not hardcode)
+// Apply com.ghatana.testing-conventions for new modules instead of configuring jacoco directly.
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)

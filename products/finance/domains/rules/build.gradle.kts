@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.ghatana.products.finance"
-version = "1.0.0"
+version = rootProject.version
 description = "Finance Rules Domain - finance-specific business rules engine"
 
 java {

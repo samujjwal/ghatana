@@ -23,7 +23,7 @@ plugins {
 }
 
 group = "com.ghatana.finance"
-version = "1.0.0"
+version = rootProject.version
 description = "Finance Platform SDK - finance-specific abstractions, compliance, regulatory support"
 
 java {

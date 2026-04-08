@@ -1,9 +1,23 @@
-// Java version and toolchain configuration for all projects
+// =============================================================================
+// DEPRECATED — This file is no longer applied anywhere in the build.
+// =============================================================================
+//
+// All Java convention configuration has been migrated to:
+//
+//   buildSrc/src/main/kotlin/com.ghatana.java-conventions.gradle.kts
+//
+// Apply that convention plugin in your module's build.gradle.kts:
+//
+//   plugins {
+//       id("java-library")
+//       id("com.ghatana.java-conventions")
+//   }
+//
+// This file is kept for historical reference and will be removed in a future
+// cleanup pass once the team has confirmed no external scripts reference it.
+// =============================================================================
 
-// Apply Java plugin if not already applied
-if (!project.plugins.hasPlugin('java')) {
-    project.plugins.apply('java')
-}
+
 if (!project.plugins.hasPlugin('java-library')) {
     project.plugins.apply('java-library')
 }

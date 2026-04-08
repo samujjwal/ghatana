@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "com.ghatana.kernel"
-version = "1.0.0"
+version = rootProject.version
 description = "Platform Kernel - core module abstractions, context, and lifecycle"
 
 java {

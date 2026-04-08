@@ -113,8 +113,7 @@ tasks.register("generateDomainDocs") {
     }
 }
 
-// Jacoco configuration with lowered coverage thresholds
-jacoco { toolVersion = "0.8.11" }
+// JaCoCo configuration managed by convention plugin
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)

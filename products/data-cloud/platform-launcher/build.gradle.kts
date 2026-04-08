@@ -183,7 +183,7 @@ tasks.javadoc {
 }
 
 spotbugs {
-    toolVersion.set("4.8.6")
+    toolVersion.set("4.8.6")  // Valid SpotBugs tool version
     ignoreFailures.set(false)
     effort.set(com.github.spotbugs.snom.Effort.MAX)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)

@@ -79,6 +79,9 @@ dependencyResolutionManagement {
 }
 
 plugins {
+    // Version must match [versions] foojay-resolver-convention in gradle/libs.versions.toml.
+    // settings.gradle.kts runs before the version catalog is available, so we inline it here.
+    // When updating, change BOTH this entry AND the catalog entry simultaneously.
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 

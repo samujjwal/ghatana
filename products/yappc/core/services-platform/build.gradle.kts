@@ -63,8 +63,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-// Jacoco configuration with lowered coverage thresholds
-jacoco { toolVersion = "0.8.11" }
+// JaCoCo version managed by com.ghatana.jacoco-conventions plugin
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)

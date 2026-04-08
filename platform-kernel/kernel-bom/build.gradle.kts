@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "com.ghatana.kernel"
-version = "1.0.0"
+version = rootProject.version
 
 description = "Platform Kernel BOM - aggregates all kernel modules"
 

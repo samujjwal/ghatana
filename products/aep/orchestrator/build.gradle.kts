@@ -127,13 +127,13 @@ spotless {
 }
 
 checkstyle {
-    toolVersion = "10.12.5"
+    toolVersion = libs.versions.checkstyle.get()
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
     isIgnoreFailures = false
 }
 
 pmd {
-    toolVersion = "6.55.0"
+    toolVersion = libs.versions.pmd.get()
     ruleSetFiles = files(rootProject.file("config/pmd/ruleset.xml"))
     isIgnoreFailures = true
 }

@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.ghatana.kernel"
-version = "1.0.0"
+version = rootProject.version
 description = "Platform Kernel Testing - test utilities and base classes"
 
 java {

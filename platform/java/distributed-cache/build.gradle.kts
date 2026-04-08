@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "com.ghatana.platform"
-version = "1.0.0"
+version = rootProject.version
 description = "Platform Distributed Cache — Redis-backed distributed cache abstraction (KRQ-05)"
 
 java {

@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "com.ghatana.products.finance.domains"
-version = "1.0.0"
+version = rootProject.version
 description = "Pricing Domain - asset valuation, pricing models"
 
 java {

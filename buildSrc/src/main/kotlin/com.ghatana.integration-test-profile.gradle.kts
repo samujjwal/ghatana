@@ -1,10 +1,21 @@
 import org.gradle.api.tasks.testing.Test
 
 /**
- * Manages integration test profiles.
+ * Integration Test Profile Plugin
+ *
+ * @doc.type convention-plugin
+ * @doc.purpose Manages JUnit tag-based integration test exclusion/inclusion.
+ * @doc.layer build
+ * @doc.pattern Convention
+ *
+ * NOTE: This plugin's functionality is now included in
+ * com.ghatana.testing-conventions.  New modules should prefer
+ * com.ghatana.testing-conventions.  This file is retained because the root
+ * build applies it to ALL Java subprojects via the subprojects{} block.
  *
  * Default: excludes tests tagged "integration".
- * With -PrunIntegrationTests: includes all tests and forwards infrastructure system properties.
+ * With -PrunIntegrationTests: includes all tests and forwards infrastructure
+ * system properties.
  *
  * Usage:
  *   ./gradlew build                       — regular build, excludes "integration"-tagged tests

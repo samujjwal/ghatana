@@ -2,14 +2,29 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.api.plugins.quality.CheckstyleExtension
 
-// Applies Checkstyle static analysis when the java plugin is present.
+/**
+ * Checkstyle Convention Plugin
+ *
+ * @doc.type convention-plugin
+ * @doc.purpose Applies Checkstyle static-analysis using the version and rule files
+ *              defined in the project's shared configuration.  Version is sourced
+ *              exclusively from the version catalog.
+ * @doc.layer build
+ * @doc.pattern Convention
+ *
+ * NOTE: This plugin is a focused checkstyle-only option.  New modules that need
+ * the full quality suite (Checkstyle + PMD + JaCoCo + Spotless) should prefer
+ * com.ghatana.quality-conventions instead.
+ *
+ * This plugin is applied automatically when the 'java' plugin is present.
+ */
 
 pluginManager.withPlugin("java") {
     project.pluginManager.apply("checkstyle")
 
     val libs = project.extensions.findByType(VersionCatalogsExtension::class.java)?.named("libs")
-    val checkstyleVersion =
-        libs?.findVersion("checkstyle")?.orElse(null)?.requiredVersion ?: "10.12.7"
+    val checkstyleVersion = libs?.findVersion("checkstyle")?.orElse(null)?.requiredVersion
+        ?: error("checkstyle version not found in libs.versions.toml")
 
     project.extensions.configure(CheckstyleExtension::class.java) {
         toolVersion = checkstyleVersion
@@ -25,7 +40,9 @@ pluginManager.withPlugin("java") {
     }
 
     project.tasks.withType(Checkstyle::class.java).configureEach {
-        reports.xml.required.set(true)
-        reports.html.required.set(true)
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+        }
     }
 }

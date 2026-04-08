@@ -100,7 +100,7 @@ tasks.test {
 }
 
 jacoco {
-    toolVersion = "0.8.11"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 val jacocoCoveredClasses = sourceSets.main.get().output.asFileTree.matching {
@@ -144,7 +144,7 @@ tasks.named("check") {
 }
 
 spotbugs {
-    toolVersion.set("4.8.6")
+    toolVersion.set("4.8.6")  // Valid SpotBugs tool version
     ignoreFailures.set(false)
     effort.set(com.github.spotbugs.snom.Effort.MAX)
     reportLevel.set(com.github.spotbugs.snom.Confidence.MEDIUM)

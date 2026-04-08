@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "com.ghatana.plugin"
-version = "1.0.0"
+version = rootProject.version
 description = "Billing Ledger Plugin - double-entry ledger system"
 
 java {

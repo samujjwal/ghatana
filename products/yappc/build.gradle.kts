@@ -67,7 +67,7 @@ subprojects {
     // Exclude generated, config, package-info, and boilerplate classes.
     // ========================================================================
     configure<JacocoPluginExtension> {
-        toolVersion = "0.8.12"
+        toolVersion = "0.8.14"  // Matches libs.versions.jacoco in catalog
     }
 
     tasks.named<JacocoReport>("jacocoTestReport") {

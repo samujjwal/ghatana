@@ -1,7 +1,24 @@
-// Common build configuration for all Java/Kotlin modules
+// =============================================================================
+// DEPRECATED — This file is no longer applied anywhere in the build.
+// =============================================================================
+//
+// All shared build configuration has been migrated to the convention plugins:
+//
+//   buildSrc/src/main/kotlin/com.ghatana.java-conventions.gradle.kts
+//   buildSrc/src/main/kotlin/com.ghatana.testing-conventions.gradle.kts
+//   buildSrc/src/main/kotlin/com.ghatana.quality-conventions.gradle.kts
+//   buildSrc/src/main/kotlin/com.ghatana.lombok-conventions.gradle.kts
+//
+// The root build.gradle.kts applies these plugins to all Java subprojects via
+// its subprojects{} block.  Module builds only need to declare their plugin
+// choice + dependencies.
+//
+// This file is kept for historical reference and will be deleted in a future
+// cleanup pass after confirming no scripts reference it.
+// See: GRADLE_BUILD_SYSTEM_REFACTORING_PLAN.md Phase 2 Task 2.2
+// =============================================================================
 
-// Apply common plugins and configurations to subprojects (excluding data-cloud)
-subprojects {
+
     // Skip data-cloud projects - they use their own build configuration
     if (project.path.startsWith(":products:data-cloud")) {
         return@subprojects

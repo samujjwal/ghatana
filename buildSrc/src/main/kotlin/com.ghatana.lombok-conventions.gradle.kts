@@ -1,20 +1,27 @@
 import org.gradle.api.artifacts.VersionCatalogsExtension
 
-// Opt-in Lombok convention for platform/java modules.
-//
-// Apply this plugin to any module that uses Lombok annotations (@Data, @Builder, @Slf4j, etc.)
-//
-// Usage in a module's build.gradle.kts:
-//   plugins {
-//       id("com.ghatana.lombok-conventions")
-//   }
-//
-// This configures:
-//   - compileOnly / annotationProcessor for main sources
-//   - testCompileOnly / testAnnotationProcessor for test sources
-//
-// HIGH-002 remediation: standardises Lombok across all platform/java modules
-// See: SHARED_MODULES_AUDIT_REPORT.md FINDING-003 / HIGH-002
+/**
+ * Lombok Convention Plugin
+ *
+ * @doc.type convention-plugin
+ * @doc.purpose Configures Lombok annotation processing consistently for main and
+ *              test source sets.  Version is sourced from the version catalog;
+ *              no fallback to a hardcoded string is permitted.
+ * @doc.layer build
+ * @doc.pattern Convention
+ *
+ * Apply to any module that uses Lombok annotations (@Data, @Builder, @Slf4j, etc.):
+ *
+ *   plugins {
+ *       id("java-library")
+ *       id("com.ghatana.java-conventions")
+ *       id("com.ghatana.lombok-conventions")
+ *   }
+ *
+ * Configures:
+ *   - compileOnly / annotationProcessor for main sources
+ *   - testCompileOnly / testAnnotationProcessor for test sources
+ */
 
 plugins {
     java
@@ -25,9 +32,12 @@ dependencies {
     val lombokCoordinate = libs?.findLibrary("lombok")
         ?.orElse(null)
         ?.get()
-        ?: "org.projectlombok:lombok:1.18.38"
+        ?: error(
+            "lombok library not found in libs.versions.toml — " +
+                "add 'lombok = { module = \"org.projectlombok:lombok\", version.ref = \"lombok\" }' " +
+                "to gradle/libs.versions.toml"
+        )
 
-    // Lombok annotation processor — opt-in, applied consistently to all modules using this plugin
     "compileOnly"(lombokCoordinate)
     "annotationProcessor"(lombokCoordinate)
     "testCompileOnly"(lombokCoordinate)

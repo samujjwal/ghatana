@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.ghatana.products.finance.domains"
-version = "1.0.0"
+version = rootProject.version
 description = "PMS Domain - Portfolio Management System"
 
 java {

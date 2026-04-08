@@ -68,7 +68,7 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-jacoco { toolVersion = "0.8.11" }
+// JaCoCo version managed by convention plugin
 
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
