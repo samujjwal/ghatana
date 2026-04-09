@@ -10,11 +10,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Audit - Audit logging and tracking"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 sourceSets {
     main {

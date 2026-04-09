@@ -13,9 +13,6 @@ plugins {
 group = "com.ghatana.products.yappc"
 version = rootProject.version
 
-repositories {
-    mavenCentral()
-}
 
 java {
     toolchain {

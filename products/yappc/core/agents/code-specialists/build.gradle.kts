@@ -5,11 +5,6 @@ plugins {
 
 description = "YAPPC Code Specialists - Code analysis, generation, and refactoring agents"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     api(project(":products:yappc:core:agents:runtime"))

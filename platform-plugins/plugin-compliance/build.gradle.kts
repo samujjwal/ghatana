@@ -14,11 +14,6 @@ group = "com.ghatana.plugin"
 version = rootProject.version
 description = "Compliance Plugin - generic compliance rule engine"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Kernel and Platform libraries via BOMs

@@ -25,7 +25,10 @@ plugins {
 
 // JaCoCo Version
 configure<JacocoPluginExtension> {
-    toolVersion = "0.8.14"  // Matches libs.versions.jacoco in catalog
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
+    toolVersion = "0.8.14"
 }
 
 // Integration Test Profile

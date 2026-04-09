@@ -8,9 +8,6 @@ plugins {
 
 val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     // Platform audio-video library — SttEngine, TtsEngine, media types

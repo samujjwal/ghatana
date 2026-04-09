@@ -12,7 +12,9 @@ plugins {
 }
 
 dependencies {
-    // Use hardcoded version for buildSrc compatibility
+    // Hardcoded version required due to buildSrc isolation
+    // This version must be kept in sync with gradle/libs.versions.toml
+    // See buildSrc/VERSION_SYNC.md for details
     val lombokVersion = "1.18.36"
     val lombokCoordinate = "org.projectlombok:lombok:$lombokVersion"
 

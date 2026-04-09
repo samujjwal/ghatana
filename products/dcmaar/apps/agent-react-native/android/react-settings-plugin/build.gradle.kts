@@ -5,10 +5,6 @@ plugins {
     id("java-gradle-plugin")
 }
 
-repositories {
-    mavenCentral()
-}
-
 gradlePlugin {
     plugins {
         create("reactSettingsPlugin") {

@@ -5,11 +5,6 @@ plugins {
 group = "com.ghatana.virtualorg"
 version = rootProject.version
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // ActiveJ for async support

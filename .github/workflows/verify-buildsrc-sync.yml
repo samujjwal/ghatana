@@ -1,0 +1,72 @@
+name: Verify buildSrc Version Sync
+
+on:
+  pull_request:
+    paths:
+      - 'buildSrc/gradle.properties'
+      - 'gradle/libs.versions.toml'
+  push:
+    paths:
+      - 'buildSrc/gradle.properties'
+      - 'gradle/libs.versions.toml'
+
+jobs:
+  verify-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Verify buildSrc and catalog are in sync
+        run: |
+          # Extract versions from buildSrc/gradle.properties (classpath dependencies only)
+          SPOTLESS_BUILD=$(grep "^spotlessVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
+          SPOTBUGS_BUILD=$(grep "^spotbugsPluginVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
+          SAXON_BUILD=$(grep "^saxonHeVersion=" buildSrc/gradle.properties | cut -d'=' -f2)
+          HTTPCLIENT_BUILD=$(grep "^httpclient5Version=" buildSrc/gradle.properties | cut -d'=' -f2)
+          HTTPCORE_BUILD=$(grep "^httpcore5Version=" buildSrc/gradle.properties | cut -d'=' -f2)
+          
+          # Extract versions from gradle/libs.versions.toml
+          SPOTLESS_CATALOG=$(grep "^spotless = \"" gradle/libs.versions.toml | sed 's/spotless = "\([^"]*\)"/\1/')
+          SPOTBUGS_CATALOG=$(grep "^spotbugs-plugin = \"" gradle/libs.versions.toml | sed 's/spotbugs-plugin = "\([^"]*\)"/\1/')
+          SAXON_CATALOG=$(grep "^saxon-he = \"" gradle/libs.versions.toml | sed 's/saxon-he = "\([^"]*\)"/\1/')
+          HTTPCLIENT_CATALOG=$(grep "^httpclient5 = \"" gradle/libs.versions.toml | sed 's/httpclient5 = "\([^"]*\)"/\1/')
+          HTTPCORE_CATALOG=$(grep "^httpcore5 = \"" gradle/libs.versions.toml | sed 's/httpcore5 = "\([^"]*\)"/\1/')
+          
+          # Compare
+          if [ "$SPOTLESS_BUILD" != "$SPOTLESS_CATALOG" ]; then
+            echo "ERROR: spotless version mismatch"
+            echo "  buildSrc/gradle.properties: $SPOTLESS_BUILD"
+            echo "  gradle/libs.versions.toml: $SPOTLESS_CATALOG"
+            exit 1
+          fi
+          
+          if [ "$SPOTBUGS_BUILD" != "$SPOTBUGS_CATALOG" ]; then
+            echo "ERROR: spotbugs-plugin version mismatch"
+            echo "  buildSrc/gradle.properties: $SPOTBUGS_BUILD"
+            echo "  gradle/libs.versions.toml: $SPOTBUGS_CATALOG"
+            exit 1
+          fi
+          
+          if [ "$SAXON_BUILD" != "$SAXON_CATALOG" ]; then
+            echo "ERROR: saxon-he version mismatch"
+            echo "  buildSrc/gradle.properties: $SAXON_BUILD"
+            echo "  gradle/libs.versions.toml: $SAXON_CATALOG"
+            exit 1
+          fi
+          
+          if [ "$HTTPCLIENT_BUILD" != "$HTTPCLIENT_CATALOG" ]; then
+            echo "ERROR: httpclient5 version mismatch"
+            echo "  buildSrc/gradle.properties: $HTTPCLIENT_BUILD"
+            echo "  gradle/libs.versions.toml: $HTTPCLIENT_CATALOG"
+            exit 1
+          fi
+          
+          if [ "$HTTPCORE_BUILD" != "$HTTPCORE_CATALOG" ]; then
+            echo "ERROR: httpcore5 version mismatch"
+            echo "  buildSrc/gradle.properties: $HTTPCORE_BUILD"
+            echo "  gradle/libs.versions.toml: $HTTPCORE_CATALOG"
+            exit 1
+          fi
+          
+          echo "All buildSrc classpath dependencies are in sync"
+          echo "Note: Convention plugin tool versions are hardcoded and require manual sync"

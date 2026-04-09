@@ -10,11 +10,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Domain - Shared domain models"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform Core

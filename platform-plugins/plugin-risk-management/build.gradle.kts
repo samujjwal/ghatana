@@ -14,11 +14,6 @@ group = "com.ghatana.plugin"
 version = rootProject.version
 description = "Risk Management Plugin - generic risk calculation framework"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Kernel and Platform libraries via BOMs

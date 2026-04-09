@@ -11,9 +11,6 @@ plugins {
 group = "com.ghatana.aep"
 version = rootProject.version
 
-java {
-    toolchain { languageVersion.set(JavaLanguageVersion.of(21)) }
-}
 
 dependencies {
     api(project(":platform:java:identity"))

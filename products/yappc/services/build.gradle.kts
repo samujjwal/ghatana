@@ -8,15 +8,6 @@ version = rootProject.version
 
 description = "YAPPC Services - Integration test aggregator (bounded contexts: domain, infrastructure, lifecycle, scaffold)"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
-repositories {
-    mavenCentral()
-}
 
 application {
     mainClass.set("com.ghatana.yappc.api.ApiApplication")

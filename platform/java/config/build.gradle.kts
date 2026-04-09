@@ -11,11 +11,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Config - Configuration management and runtime config"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform dependencies

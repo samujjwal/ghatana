@@ -13,11 +13,6 @@ group = "com.ghatana.kernel"
 version = rootProject.version
 description = "Platform Kernel Plugin - plugin framework and lifecycle management"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Kernel Core

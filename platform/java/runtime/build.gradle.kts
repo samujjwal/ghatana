@@ -11,11 +11,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Runtime - ActiveJ integration and runtime management"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform dependencies

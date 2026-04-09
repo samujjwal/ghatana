@@ -49,6 +49,8 @@ dependencyResolutionManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 }
 
 plugins {
@@ -179,19 +181,35 @@ include(":products:yappc:infrastructure:datacloud")
 include(":products:yappc:libs:java:yappc-domain")
 
 // =============================================================================
-// Other Products
+// Product: Flashit - Flashcard Learning Platform
 // =============================================================================
 include(":products:flashit")
+
+// =============================================================================
+// Product: Audio-Video - Audio and Video Processing
+// =============================================================================
 include(":products:audio-video")
 include(":products:audio-video:libs:common")
 include(":products:audio-video:modules:intelligence:multimodal-service")
 include(":products:audio-video:modules:speech:stt-service")
 include(":products:audio-video:modules:speech:tts-service")
 include(":products:audio-video:modules:vision:vision-service")
+
+// =============================================================================
+// Product: DCMaar - Device Configuration Management
+// =============================================================================
 include(":products:dcmaar:libs:java:ai-platform-adapters-guardian")
 include(":products:dcmaar:libs:java:guardian-threat-service")
+
+// =============================================================================
+// Product: Tutorputor - AI-Powered Content Generation
+// =============================================================================
 include(":products:tutorputor:services:tutorputor-content-generation")
 include(":products:tutorputor:libs:content-studio-agents")
+
+// =============================================================================
+// Product: Aura - AI Recommendation Platform
+// =============================================================================
 include(":products:aura")
 include(":products:aura:foundation")
 include(":products:aura:domain:profile")
@@ -205,6 +223,10 @@ include(":products:aura:platform:api")
 include(":products:aura:platform:config")
 include(":products:aura:integration:aep")
 include(":products:aura:integration:knowledge-graph")
+
+// =============================================================================
+// Product: Software-Org - Software Organization Management
+// =============================================================================
 include(":products:software-org")
 include(":products:software-org:engine:boot")
 include(":products:software-org:engine:modules:domain-model")
@@ -215,6 +237,10 @@ include(":products:software-org:engine:modules:integration:jira")
 include(":products:software-org:engine:modules:integration:github")
 include(":products:software-org:libs:java:departments")
 include(":products:software-org:launcher")
+
+// =============================================================================
+// Product: Virtual-Org - Virtual Organization Management
+// =============================================================================
 include(":products:virtual-org")
 include(":products:virtual-org:contracts:proto")
 include(":products:virtual-org:engine:service")
@@ -224,8 +250,20 @@ include(":products:virtual-org:modules:framework")
 include(":products:virtual-org:modules:integration")
 include(":products:virtual-org:modules:workflow")
 include(":products:virtual-org:launcher")
+
+// =============================================================================
+// Product: Security-Gateway
+// =============================================================================
 include(":products:security-gateway:platform:java")
+
+// =============================================================================
+// Product: PHR - Personal Health Record
+// =============================================================================
 include(":products:phr")
+
+// =============================================================================
+// Product: Finance - Financial Services Platform
+// =============================================================================
 include(":products:finance:platform-sdk")
 include(":products:finance:operator-workflows")
 include(":products:finance:regulator-portal")

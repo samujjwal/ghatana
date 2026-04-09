@@ -14,11 +14,6 @@ group = "com.ghatana.plugin"
 version = rootProject.version
 description = "Billing Ledger Plugin - double-entry ledger system"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Kernel and Platform libraries via BOMs

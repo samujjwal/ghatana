@@ -18,6 +18,26 @@ group = "com.ghatana"
 version = "2026.3.1-SNAPSHOT"
 
 // =============================================================================
+// Dependency Resolution Strategies - Global configuration
+// =============================================================================
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            cacheDynamicVersionsFor(24, "hours")
+            cacheChangingModulesFor(24, "hours")
+            // Use highest version for conflicts (Gradle default)
+            // failOnVersionConflict() - disabled for now, will re-enable after resolving conflicts
+            force(
+                "org.slf4j:slf4j-api:2.0.17",
+                "com.fasterxml.jackson.core:jackson-core:2.18.2",
+                "com.fasterxml.jackson.core:jackson-databind:2.18.2",
+                "org.junit:junit-bom:5.11.4"
+            )
+        }
+    }
+}
+
+// =============================================================================
 // Repository Configuration - Centralized in settings.gradle.kts only
 // =============================================================================
 

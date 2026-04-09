@@ -11,11 +11,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Testing - Common testing utilities and fixtures"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform Core — exposed as api so consumers get core types transitively

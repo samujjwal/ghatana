@@ -8,9 +8,6 @@ plugins {
 
 val libsCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     // Audio-Video common (health/metrics server, gRPC interceptor chain, security)

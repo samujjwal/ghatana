@@ -13,11 +13,6 @@ group = "com.ghatana.kernel"
 version = rootProject.version
 description = "Platform Kernel Testing - test utilities and base classes"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Kernel Core

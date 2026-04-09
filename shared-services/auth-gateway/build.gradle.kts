@@ -1,5 +1,4 @@
 plugins {
-    id("java")
     id("application")
 }
 
@@ -46,17 +45,9 @@ dependencies {
     // Rate limiting
     implementation(libs.guava)
     
-    // Testing
+    // Testing - convention plugins handle test dependencies automatically
     testImplementation(project(":platform:java:testing"))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.mockito.core)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }

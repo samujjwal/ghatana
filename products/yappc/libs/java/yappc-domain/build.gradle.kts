@@ -6,15 +6,6 @@ plugins {
 group = rootProject.group
 version = rootProject.version
 
-java {
-    // Use the repository-level Java toolchain via conventions if available
-    toolchain {
-        // Match the repository-wide Java source/target (Java 21) to avoid mixed-source
-        // release issues when the root build config enforces Java 21. Gradle will
-        // provision the appropriate toolchain if available on the machine.
-        languageVersion.set(org.gradle.jvm.toolchain.JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // api(project(":libs:types")) - path needs verification

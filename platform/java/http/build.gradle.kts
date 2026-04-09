@@ -11,11 +11,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform HTTP - HTTP client and server utilities"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform dependencies

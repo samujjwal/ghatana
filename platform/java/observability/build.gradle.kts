@@ -15,11 +15,6 @@ plugins {
 group = "com.ghatana.platform"
 description = "Platform Observability - Metrics, tracing, and logging utilities"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
 
 dependencies {
     // Platform Core (includes ActiveJ)
