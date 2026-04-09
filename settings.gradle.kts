@@ -1,55 +1,45 @@
 /**
- * Ghatana Monorepo Settings - Simplified
+ * Ghatana Monorepo Settings
  *
- * Design Principles:
- * - MINIMAL: Only essential modules explicitly included
- * - CONSISTENT: All modules use standard conventions
- * - SCALABLE: Easy to add/remove modules
+ * Hybrid approach: Explicit module includes with build-logic included build
  */
 
+rootProject.name = "ghatana"
+
 // =============================================================================
-// Early Java Version Validation (runs before daemon starts)
+// Java Version Validation
 // =============================================================================
 val javaVersion = System.getProperty("java.version")
 val javaMajorVersion = javaVersion?.split(".")?.firstOrNull()?.toIntOrNull() ?: 0
 if (javaMajorVersion < 21) {
     throw GradleException("""
-        
         ================ JAVA VERSION ERROR ================
         This project requires Java 21 or higher.
-        
         Current Java version: ${javaVersion ?: "unknown"}
         JAVA_HOME: ${System.getenv("JAVA_HOME") ?: "not set"}
-        
-        TO FIX:
-        1. Set JAVA_HOME in your shell:
-           export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-        
-        2. Or run with explicit JAVA_HOME:
-           JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 ./gradlew <task>
         ====================================================
-        
     """.trimIndent())
 }
 
-rootProject.name = "ghatana"
-
 // =============================================================================
-// Plugin Management
+// Plugin Management - Include build-logic for convention plugins
 // =============================================================================
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         gradlePluginPortal()
         mavenCentral()
     }
 }
 
+// =============================================================================
+// Dependency Resolution Management
+// =============================================================================
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
     }
-    
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 }
 
@@ -58,7 +48,7 @@ plugins {
 }
 
 // =============================================================================
-// Platform Kernel - Core framework modules
+// Platform Kernel
 // =============================================================================
 include(":platform-kernel:kernel-core")
 include(":platform-kernel:kernel-plugin")
@@ -67,7 +57,7 @@ include(":platform-kernel:kernel-testing")
 include(":platform-kernel:kernel-bom")
 
 // =============================================================================
-// Platform Plugins - Shared product-agnostic plugins
+// Platform Plugins
 // =============================================================================
 include(":platform-plugins:plugin-audit-trail")
 include(":platform-plugins:plugin-billing-ledger")
@@ -77,7 +67,7 @@ include(":platform-plugins:plugin-fraud-detection")
 include(":platform-plugins:plugin-risk-management")
 
 // =============================================================================
-// Platform Java - Shared infrastructure modules
+// Platform Java
 // =============================================================================
 include(":platform:contracts")
 include(":platform:java:core")
@@ -107,7 +97,7 @@ include(":platform:java:security-analytics")
 include(":platform:java:incident-response")
 
 // =============================================================================
-// Product: AEP - Autonomous Event Processing
+// Product: AEP
 // =============================================================================
 include(":products:aep:contracts")
 include(":products:aep:aep-operator-contracts")
@@ -128,7 +118,7 @@ include(":products:aep:aep-identity")
 include(":products:aep:aep-compliance")
 
 // =============================================================================
-// Product: Data-Cloud - Multi-tenant Metadata Management
+// Product: Data-Cloud
 // =============================================================================
 include(":products:data-cloud:spi")
 include(":products:data-cloud:platform-entity")
@@ -145,7 +135,7 @@ include(":products:data-cloud:agent-registry")
 include(":products:data-cloud:feature-store-ingest")
 
 // =============================================================================
-// Product: YAPPC - Yet Another Platform Creator
+// Product: YAPPC
 // =============================================================================
 include(":products:yappc")
 include(":products:yappc:platform")
@@ -181,12 +171,12 @@ include(":products:yappc:infrastructure:datacloud")
 include(":products:yappc:libs:java:yappc-domain")
 
 // =============================================================================
-// Product: Flashit - Flashcard Learning Platform
+// Product: Flashit
 // =============================================================================
 include(":products:flashit")
 
 // =============================================================================
-// Product: Audio-Video - Audio and Video Processing
+// Product: Audio-Video
 // =============================================================================
 include(":products:audio-video")
 include(":products:audio-video:libs:common")
@@ -196,19 +186,19 @@ include(":products:audio-video:modules:speech:tts-service")
 include(":products:audio-video:modules:vision:vision-service")
 
 // =============================================================================
-// Product: DCMaar - Device Configuration Management
+// Product: DCMaar
 // =============================================================================
 include(":products:dcmaar:libs:java:ai-platform-adapters-guardian")
 include(":products:dcmaar:libs:java:guardian-threat-service")
 
 // =============================================================================
-// Product: Tutorputor - AI-Powered Content Generation
+// Product: Tutorputor
 // =============================================================================
 include(":products:tutorputor:services:tutorputor-content-generation")
 include(":products:tutorputor:libs:content-studio-agents")
 
 // =============================================================================
-// Product: Aura - AI Recommendation Platform
+// Product: Aura
 // =============================================================================
 include(":products:aura")
 include(":products:aura:foundation")
@@ -225,7 +215,7 @@ include(":products:aura:integration:aep")
 include(":products:aura:integration:knowledge-graph")
 
 // =============================================================================
-// Product: Software-Org - Software Organization Management
+// Product: Software-Org
 // =============================================================================
 include(":products:software-org")
 include(":products:software-org:engine:boot")
@@ -239,7 +229,7 @@ include(":products:software-org:libs:java:departments")
 include(":products:software-org:launcher")
 
 // =============================================================================
-// Product: Virtual-Org - Virtual Organization Management
+// Product: Virtual-Org
 // =============================================================================
 include(":products:virtual-org")
 include(":products:virtual-org:contracts:proto")
@@ -257,12 +247,12 @@ include(":products:virtual-org:launcher")
 include(":products:security-gateway:platform:java")
 
 // =============================================================================
-// Product: PHR - Personal Health Record
+// Product: PHR
 // =============================================================================
 include(":products:phr")
 
 // =============================================================================
-// Product: Finance - Financial Services Platform
+// Product: Finance
 // =============================================================================
 include(":products:finance:platform-sdk")
 include(":products:finance:operator-workflows")
@@ -292,12 +282,12 @@ include(":products:finance:integration-testing")
 include(":products:finance:client-onboarding")
 
 // =============================================================================
-// Shared Services - Cross-product microservices
+// Shared Services
 // =============================================================================
 include(":shared-services:auth-gateway")
 include(":shared-services:user-profile-service")
 
 // =============================================================================
-// Integration Tests - Cross-product integration tests
+// Integration Tests
 // =============================================================================
 include(":integration-tests:phr-finance-integration")
